@@ -1,4 +1,5 @@
 """Configuración central del pipeline de datos MOVA Mundial 2026."""
+import os
 from pathlib import Path
 
 # ── Rutas ──────────────────────────────────────────────────────────
@@ -6,6 +7,23 @@ ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = ROOT / "data"
 RAW_DIR = DATA_DIR / "raw"
 DB_PATH = DATA_DIR / "mundial.db"
+
+
+# ── Secrets (.env.local, nunca al git) ─────────────────────────────
+def _load_env_local() -> dict:
+    env = {}
+    f = ROOT / ".env.local"
+    if f.exists():
+        for line in f.read_text().splitlines():
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                k, _, v = line.partition("=")
+                env[k.strip()] = v.strip()
+    return env
+
+
+_ENV = _load_env_local()
+ODDS_API_KEY = os.environ.get("ODDS_API_KEY") or _ENV.get("ODDS_API_KEY")
 
 # ── WhoScored: FIFA World Cup 2026 ─────────────────────────────────
 # Descubierto 2026-06-28 desde la página del torneo.

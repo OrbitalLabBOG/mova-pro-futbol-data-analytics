@@ -147,8 +147,27 @@ CREATE TABLE IF NOT EXISTS espn_fixtures (
     updated_at  TEXT
 );
 
+-- The Odds API: granular por casa (no se pierde ninguna casa/mercado).
+CREATE TABLE IF NOT EXISTS odds_quotes (
+    source         TEXT NOT NULL DEFAULT 'oddsapi',
+    captured_at    TEXT NOT NULL,
+    scope          TEXT NOT NULL,       -- 'winner' | 'match'
+    event_id       TEXT,
+    commence_time  TEXT,
+    home_team      TEXT,
+    away_team      TEXT,
+    bookmaker      TEXT,
+    market         TEXT,                -- outrights | h2h | totals | spreads
+    outcome        TEXT,                -- equipo / Over / Under / Draw
+    price          REAL,                -- cuota decimal
+    point          REAL,                -- línea (totals/spreads)
+    PRIMARY KEY (source, captured_at, scope, event_id, bookmaker, market, outcome, point)
+);
+
 CREATE INDEX IF NOT EXISTS idx_odds_entity ON market_odds(entity);
 CREATE INDEX IF NOT EXISTS idx_elo_team    ON elo_ratings(team);
+CREATE INDEX IF NOT EXISTS idx_quotes_evt  ON odds_quotes(event_id);
+CREATE INDEX IF NOT EXISTS idx_quotes_scope ON odds_quotes(scope);
 """
 
 
