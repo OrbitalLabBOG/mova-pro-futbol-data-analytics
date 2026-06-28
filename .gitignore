@@ -29,3 +29,7 @@ models/*.joblib
 # StatsBomb training cache (pesado, se regenera)
 data/raw/statsbomb/
 data/raw/_explore/
+
+# Artefactos de modelo (se regeneran)
+models/xg/*.joblib
+models/**/*.joblib

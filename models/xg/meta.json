@@ -1,0 +1,19 @@
+{
+  "features": [
+    "dist",
+    "angle",
+    "dist2",
+    "body_foot",
+    "body_head",
+    "body_other",
+    "play_open",
+    "play_setpiece",
+    "play_corner",
+    "play_freekick"
+  ],
+  "n_train": 3068,
+  "n_goals": 287,
+  "calibrated": true,
+  "trained_at": "2026-06-28T22:26:47.844160+00:00",
+  "version": "ecd189a5e40e"
+}
