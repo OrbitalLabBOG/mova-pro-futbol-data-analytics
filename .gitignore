@@ -20,3 +20,8 @@ models/*.joblib
 .DS_Store
 *.zip:Zone.Identifier
 .vscode/
+
+# DB y cache de datos (se regeneran con el collector)
+*.db
+*.db-wal
+*.db-shm

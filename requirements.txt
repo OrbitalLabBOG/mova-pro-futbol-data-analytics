@@ -1,0 +1,7 @@
+# Collector
+cloudscraper>=1.2.71
+
+# Análisis / modelo (siguiente fase)
+pandas>=2.0.0
+numpy>=1.26.0
+scipy>=1.11.0

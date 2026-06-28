@@ -43,6 +43,7 @@ mova-mundial-2026/
 | [docs/01-panorama.md](docs/01-panorama.md) | Resultados fase grupos, upsets, tabla xG/suerte, modelos, mercados |
 | [docs/02-fuentes-datos.md](docs/02-fuentes-datos.md) | **Disponibilidad de datos públicos/gratis, endpoints verificados, stack recomendado** |
 | [docs/03-supermodelos-referencia.md](docs/03-supermodelos-referencia.md) | Probabilidades actuales de Opta/Kalshi/Polymarket/casas + divergencias = value |
+| [docs/04-whoscored-collector.md](docs/04-whoscored-collector.md) | **Collector de event data (mina de oro): método, IDs, endpoints, arquitectura** |
 
 ## Stack de datos (gratis + permanente) — resumen
 
