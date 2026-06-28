@@ -17,7 +17,11 @@ from . import geometry as geo
 
 BODY = ["foot", "head", "other"]
 PLAY = ["open", "setpiece", "corner", "freekick"]   # penalty se maneja aparte
-FEATURES = ["dist", "angle", "dist2"] + [f"body_{b}" for b in BODY] + [f"play_{p}" for p in PLAY]
+# big_chance: señal de calidad de ocasión (WhoScored). Es el feature que captura
+# mano a mano / contraataque claro que la geometría sola no ve. StatsBomb=0.
+FEATURES = (["dist", "angle", "dist2"]
+            + [f"body_{b}" for b in BODY] + [f"play_{p}" for p in PLAY]
+            + ["big_chance"])
 
 
 def _body(name: str) -> str:
@@ -64,6 +68,7 @@ def from_statsbomb(raw_dir: Path) -> pd.DataFrame:
                 "dist": geo.distance(gx, gy), "angle": geo.angle(gx, gy),
                 "body_part": _body(e.get("shot_body_part")),
                 "play_type": _sb_play_type(e.get("shot_type"), e.get("play_pattern")),
+                "is_big_chance": 0,          # StatsBomb no expone BigChance
                 "is_goal": int(e.get("shot_outcome") == "Goal"),
                 "xg_sb": e.get("shot_statsbomb_xg"),
             })
@@ -121,4 +126,5 @@ def design_matrix(df: pd.DataFrame) -> np.ndarray:
         X[f"body_{b}"] = (df["body_part"] == b).astype(int)
     for p in PLAY:
         X[f"play_{p}"] = (df["play_type"] == p).astype(int)
+    X["big_chance"] = df["is_big_chance"] if "is_big_chance" in df else 0
     return X[FEATURES].to_numpy(dtype=float)

@@ -77,6 +77,34 @@ def run_dp(conn, eff_ratings: dict, params: dict) -> dict:
     return {t: reach[t][1:] for t in teams}   # [p_r16,p_qf,p_sf,p_final,p_champion]
 
 
+def anchor_to_market(conn, eff_ratings, params, market_champ: dict,
+                     w: float = 0.65, iters: int = 40, step: float = 70.0) -> tuple[dict, dict]:
+    """Ajusta fuerzas para que la simulación reproduzca log-pool(modelo, mercado).
+
+    Mantiene consistencia entre rondas (todo sale de UNA simulación con las fuerzas
+    ajustadas) y ancla el campeón al mercado. Devuelve (ratings_anclados, target).
+    """
+    import math
+    teams = _slots(eff_ratings)
+    base = run_dp(conn, eff_ratings, params)
+    model_c = {t: max(base[t][4], 1e-6) for t in teams}
+    # objetivo = log-pool por equipo, renormalizado
+    tgt = {}
+    for t in teams:
+        mc = market_champ.get(t)
+        tgt[t] = model_c[t] if mc is None else (model_c[t] ** (1 - w)) * (max(mc, 1e-6) ** w)
+    s = sum(tgt.values())
+    tgt = {t: v / s for t, v in tgt.items()}
+
+    r = dict(eff_ratings)
+    logit = lambda p: math.log(min(max(p, 1e-6), 1 - 1e-6) / (1 - min(max(p, 1e-6), 1 - 1e-6)))
+    for _ in range(iters):
+        probs = run_dp(conn, r, params)
+        for t in teams:
+            r[t] += step * (logit(tgt[t]) - logit(probs[t][4]))
+    return r, tgt
+
+
 def run_mc(conn, eff_ratings, params, n_sims=10000, seed=SEED) -> dict:
     """Monte Carlo (validación del DP)."""
     rng = np.random.default_rng(seed)

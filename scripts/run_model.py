@@ -25,7 +25,8 @@ if __name__ == "__main__":
     ap.add_argument("--n", type=int, default=N_SIM)
     ap.add_argument("--seed", type=int, default=SEED)
     ap.add_argument("--run-id", default=None)
+    ap.add_argument("--w-market", type=float, default=0.65, help="peso del mercado en el anclaje del torneo")
     args = ap.parse_args()
     res = pipeline.run(as_of=args.as_of, n_sims=args.n, seed=args.seed,
-                       retrain=args.retrain, run_id=args.run_id)
+                       retrain=args.retrain, run_id=args.run_id, w_market=args.w_market)
     print("OK:", res)

@@ -33,3 +33,5 @@ data/raw/_explore/
 # Artefactos de modelo (se regeneran)
 models/xg/*.joblib
 models/**/*.joblib
+
+outputs/*.md

@@ -9,11 +9,13 @@
     "play_open",
     "play_setpiece",
     "play_corner",
-    "play_freekick"
+    "play_freekick",
+    "big_chance"
   ],
-  "n_train": 3068,
-  "n_goals": 287,
+  "n_train": 1793,
+  "n_goals": 207,
   "calibrated": true,
-  "trained_at": "2026-06-28T22:26:47.844160+00:00",
-  "version": "ecd189a5e40e"
+  "trained_at": "2026-06-28T22:49:16.398153+00:00",
+  "source": "whoscored",
+  "version": "e2170a78854b"
 }

@@ -17,14 +17,15 @@ from .config import N_SIM, SEED
 logger = logging.getLogger("mova.pipeline")
 
 
-def ensure_xg(force=False):
+def ensure_xg(conn, force=False):
     if xg_model.exists() and not force:
         return xg_model.load()
     from . import shots
-    df = shots.from_statsbomb(RAW_DIR / "statsbomb")
+    df = shots.from_whoscored(conn)          # nativo WhoScored (con BigChance)
     m, meta = xg_model.train(df)
+    meta["source"] = "whoscored"
     xg_model.save(m, meta)
-    logger.info("xG entrenado (%d tiros)", meta["n_train"])
+    logger.info("xG entrenado nativo WhoScored (%d tiros)", meta["n_train"])
     return xg_model.load()
 
 
@@ -37,14 +38,14 @@ def ensure_match_model(conn, force=False):
     return p
 
 
-def run(as_of=None, n_sims=N_SIM, seed=SEED, retrain=False, run_id=None) -> dict:
+def run(as_of=None, n_sims=N_SIM, seed=SEED, retrain=False, run_id=None, w_market=0.65) -> dict:
     init_db()
     run_id = run_id or dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%S")
     started = dt.datetime.now(dt.timezone.utc).isoformat()
-    model, xmeta = ensure_xg(force=retrain)
     w = blend.get_w()
 
     with get_db() as conn:
+        model, xmeta = ensure_xg(conn, force=retrain)
         params = ensure_match_model(conn, force=retrain)
         # features
         n_shots = strengths.apply_xg(conn, model, xmeta["version"])
@@ -54,10 +55,20 @@ def run(as_of=None, n_sims=N_SIM, seed=SEED, retrain=False, run_id=None) -> dict
         # predict
         pinfo = predict_mod.run(conn, run_id, params, eff, w)
         logger.info("predict: %d partidos (%d con mercado)", pinfo["predicted"], pinfo["with_market"])
-        # simulate (DP exacto)
-        probs = simulate.run_dp(conn, eff, params)
-        simulate.write(conn, run_id, probs, n_sims=0, seed=seed, method="dp")
-        logger.info("simulate: %d equipos (DP exacto)", len(probs))
+        # simulate (DP exacto) + anclaje al mercado (log-pool de campeón)
+        from .market import p_market_winner
+        mkt_champ = p_market_winner(conn)
+        anc_ratings, _ = simulate.anchor_to_market(conn, eff, params, mkt_champ, w=w_market)
+        probs = simulate.run_dp(conn, anc_ratings, params)
+        simulate.write(conn, run_id, probs, n_sims=0, seed=seed, method="dp+anchor")
+        logger.info("simulate: %d equipos (DP anclado a mercado w=%.2f)", len(probs), w_market)
+        # insight (más allá de la fuerza): valor vs mercado, suerte/regresión, camino
+        from . import insight
+        from .config import OUTPUTS_DIR
+        OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
+        rep = insight.report(conn, run_id)
+        (OUTPUTS_DIR / f"insight_{run_id}.md").write_text(rep)
+        (OUTPUTS_DIR / "insight_latest.md").write_text(rep)
         # registro
         conn.execute(
             """INSERT OR REPLACE INTO model_runs
