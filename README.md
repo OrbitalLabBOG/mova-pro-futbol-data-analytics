@@ -36,12 +36,23 @@ mova-mundial-2026/
 └── outputs/                # Predicciones, brackets, reportes
 ```
 
-## Fuentes de datos candidatas
+## Documentación
 
-- **Resultados/standings**: FIFA.com, ESPN, NBC Sports (ver docs/01-panorama.md).
-- **Elo**: clubelo.com / eloratings.net (selecciones).
-- **xG / suerte**: xgquadrant.com, Opta/TheAnalyst.
-- **Mercados**: Kalshi, Polymarket, oddschecker, DraftKings.
+| Doc | Contenido |
+|-----|-----------|
+| [docs/01-panorama.md](docs/01-panorama.md) | Resultados fase grupos, upsets, tabla xG/suerte, modelos, mercados |
+| [docs/02-fuentes-datos.md](docs/02-fuentes-datos.md) | **Disponibilidad de datos públicos/gratis, endpoints verificados, stack recomendado** |
+| [docs/03-supermodelos-referencia.md](docs/03-supermodelos-referencia.md) | Probabilidades actuales de Opta/Kalshi/Polymarket/casas + divergencias = value |
+
+## Stack de datos (gratis + permanente) — resumen
+
+> ⚠️ **Clave:** el 20-ene-2026 FBref perdió la licencia Opta y Stats Perform quedó como distribuidor **exclusivo** de datos WC2026 → **no hay event data crudo gratis del Mundial 2026**. Estrategia: entrenar con histórico gratis + alimentar WC2026 con xG agregado. Detalle en [docs/02-fuentes-datos.md](docs/02-fuentes-datos.md).
+
+- **Resultados/live**: ESPN hidden API + FIFA v3 (sin key, en vivo) + football-data.org (fallback).
+- **Event data (train)**: StatsBomb Open Data (`statsbombpy`, hasta WC2022).
+- **Event data (WC2026)**: Kaggle `mominullptr` (CC0, xG agregado diario).
+- **Ratings**: eloratings.net/World.tsv (sin key) — el gap de Elo es el predictor #1.
+- **Mercados**: Kalshi `KXMENWORLDCUP` (sin auth) + The Odds API (500/mes) + Polymarket Gamma.
 - **Open-source base**: github.com/Hicruben/world-cup-2026-prediction-model (Elo + Dixon-Coles + Monte Carlo).
 
 ## Entorno
