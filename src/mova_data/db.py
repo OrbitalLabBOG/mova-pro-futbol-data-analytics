@@ -178,6 +178,20 @@ CREATE INDEX IF NOT EXISTS idx_quotes_evt  ON odds_quotes(event_id);
 CREATE INDEX IF NOT EXISTS idx_quotes_scope ON odds_quotes(scope);
 CREATE INDEX IF NOT EXISTS idx_aliases_canon ON team_aliases(canonical);
 
+-- Enlace de partidos entre fuentes (WhoScored ↔ ESPN ↔ OddsAPI).
+-- Clave = par de equipos canónicos ordenado (un par juega 1 vez en el torneo).
+CREATE TABLE IF NOT EXISTS match_map (
+    match_key        TEXT PRIMARY KEY,  -- 'team_a|team_b' (canónicos, ordenados)
+    team_a           TEXT,
+    team_b           TEXT,
+    match_date       TEXT,
+    whoscored_id     INTEGER,
+    espn_id          INTEGER,
+    oddsapi_event_id TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_mmap_ws ON match_map(whoscored_id);
+
 -- Vista unificada: cada equipo canónico con Elo + prob. de cada mercado
 -- (resuelve nombres entre fuentes vía team_aliases).
 CREATE VIEW IF NOT EXISTS v_team_board AS
@@ -195,6 +209,18 @@ SELECT
      WHERE a.canonical = t.name AND mo.source='oddsapi'
      ORDER BY mo.captured_at DESC LIMIT 1) AS p_oddsapi
 FROM (SELECT DISTINCT name FROM teams WHERE name IS NOT NULL) t;
+
+-- Partidos enlazados: WhoScored + ids de ESPN/OddsAPI + nº de eventos y cuotas.
+CREATE VIEW IF NOT EXISTS v_match AS
+SELECT
+  mm.match_key, mm.team_a, mm.team_b, mm.match_date,
+  mm.whoscored_id, mm.espn_id, mm.oddsapi_event_id,
+  m.stage_name, m.home_team, m.away_team, m.home_score, m.away_score,
+  m.n_events,
+  (SELECT count(*) FROM odds_quotes q
+     WHERE q.scope='match' AND q.event_id = mm.oddsapi_event_id) AS n_quotes
+FROM match_map mm
+LEFT JOIN matches m ON m.match_id = mm.whoscored_id;
 """
 
 
