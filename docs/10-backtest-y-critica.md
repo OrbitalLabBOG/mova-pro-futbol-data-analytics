@@ -58,3 +58,26 @@ El edge **no es un ranking mejor** (somos ≈ mercado). El edge es:
 - **Elo con trayectoria** (SDR, arXiv 2606.24171 reporta RPS mucho mejor) — requiere snapshots históricos de Elo; nuestro Elo propio podría extenderse.
 - **Subir w_market** (somos peores que el mercado → quizá merece más peso).
 - Todo lo demás (más features de evento) el backtest ya dijo que **no ayuda**.
+
+---
+
+## Experimentos sobre las ideas del usuario (aprender pesos + táctica) — VEREDICTO
+
+Probamos ambas ideas con rigor (entrenar < barrera, evaluar held-out):
+
+**Idea 1 — aprender pesos con ML** (logística/GBM sobre Elo+forma+abs, 374 partidos test):
+| modelo | WC2018 | WC2022 |
+|---|---|---|
+| Elo-Poisson | 0.2079 | 0.1896 |
+| LR[elo+forma+abs] | 0.2069 | 0.1885 (mejor por ~0.001) |
+| GBM (boosting) | 0.2109 | peor (sobreajusta) |
+
+**Idea 2 — eventos/táctica** (xG + set-pieces, matchup, 48 partidos test): mejoras aparentes de 0.002-0.006, con "solo táctica" engañosamente arriba.
+
+**Análisis de significancia (lo que zanja todo):** std del RPS por partido = **0.159**. Error estándar: ±0.014 (n=128), ±0.008 (n=374). → **Cualquier diferencia < ~0.02 es ruido.**
+
+Las mejoras observadas (idea1 ~0.001, set-pieces ~0.002, táctica ~0.006) son **10-40× menores que el ruido → estadísticamente NULAS.**
+
+**Conclusión definitiva (evidencia, no fe):** con ~cientos de partidos de Mundial, **ni aprender pesos ni las features tácticas mejoran la predicción sobre Elo+mercado.** El "solo táctica gana" fue espejismo de muestra chica (48 partidos). El techo predictivo es Elo+mercado.
+
+**Implicación estratégica:** lo "world class" NO es un predictor más fino (los datos lo prohíben) — es (1) core Elo+mercado calibrado [hecho], (2) **toda la riqueza de eventos/táctica va a la capa de INSIGHT/scouting** (narrativa por-matchup, regresión, valor), no al core, y (3) como no batimos al mercado, **el edge para ganar la polla está 100% en la capa de estrategia** (valor vs público, ownership, camino de bracket), no en la precisión del modelo.
