@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+*.egg-info/
+
+# Datos pesados / privados (versionar solo lo procesado y ligero si aplica)
+data/raw/*
+!data/raw/.gitkeep
+models/*.pkl
+models/*.joblib
+
+# Entorno
+.env
+.env.local
+
+# OS / editor
+.DS_Store
+*.zip:Zone.Identifier
+.vscode/
