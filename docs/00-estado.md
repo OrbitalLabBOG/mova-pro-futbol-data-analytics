@@ -1,6 +1,6 @@
-# Estado del proyecto — cierre Fase 1 (Capa de Datos)
+# Estado del proyecto
 
-> **Fase 1: COMPLETADA** ✅ (2026-06-28). Capa de datos multi-fuente, interconectada y validada. Lista para Fase 2 (features + modelo).
+> **Fase 1 (Datos) ✅ + Fase 2 (Modelo) ✅** (2026-06-28). Capa de datos multi-fuente validada + modelo Elo→Dixon-Coles anclado a mercado, backtesteado, con capas de insight y scouting. Siguiente: Fase 3 (estrategia de polla).
 
 ## Qué se construyó
 
@@ -86,11 +86,25 @@ python scripts/validate.py           # verificar integridad
 
 ---
 
-## Fase 2 — Features + Modelo (pendiente)
+## Fase 2 — Modelo (COMPLETADA, MVP + refinamiento) ✅
 
-1. **xG propio** — entrenar con StatsBomb (`shot_statsbomb_xg`) y aplicar a tiros de WhoScored (que no traen xG).
-2. **Agregados por equipo/partido** — xG for/against, tiros, posesión, PPDA, big chances → tabla plana de features.
-3. **Features de contexto** — Elo gap, consenso de mercado, divergencia entre mercados (señal de value).
-4. **Modelo** — Elo + Dixon-Coles + Monte Carlo del bracket → probabilidades de avance y de campeón.
-5. **Backtesting / calibración** vs Opta y mercados (Brier score).
-6. (Opcional) Cron de actualización automática.
+Paquete `src/mova_model/` (idempotente, re-ejecutable con datos frescos):
+- **Datos históricos:** `intl_results` (49.477 partidos martj42) + Elo propio (`elo_computed`).
+- **xG propio:** entrenado **nativo WhoScored** con BigChance (Brier 0.080, xG agregado insesgado).
+- **Motor:** Elo→Dixon-Coles (ρ=−0.045) → P(1X2). Core = **Elo puro** (el backtest probó que xG/features no mejoran el ranking).
+- **Anclaje a mercado:** log-pool (w=0.65) → calibrado ≈ Opta (Argentina 22.4 / France 21.3 / Spain 13.4).
+- **Simulación:** bracket WC2026 fijo, convolución exacta (DP) = Monte Carlo → `tournament_sim` (P avance/campeón).
+- **Capa insight:** valor vs mercado, suerte/regresión (goles−xG), camino de bracket → `outputs/insight_latest.md`.
+- **Capa scouting:** táctica por matchup desde eventos WC2026 (`scripts/scout.py`).
+
+### Veredicto honesto (docs/10)
+- **Backtest leakage-free WC2018/22:** RPS 0.216 ≈ casas (~0.20) → el modelo está **al nivel del mercado, no por encima**. Batir al mercado en selección es casi imposible.
+- **Experimentos (aprender pesos ML, forma, xG, táctica):** todas las mejoras (0.001-0.006) son **< ruido** (SE±0.008-0.014) → estadísticamente nulas. Elo+mercado es el techo predictivo.
+- **El edge para ganar la polla NO es el modelo** (es ≈ mercado) → está en la **capa de estrategia** (valor vs público, ownership, camino) + scouting como desempate.
+
+## Fase 3 — Estrategia de polla (pendiente)
+
+1. **Ownership/valor vs el público** (sesgo nacional: Colombia/Brasil/Argentina sobre-elegidos).
+2. **Optimización de picks** que maximice P(quedar 1º) simulando contra el campo.
+3. Scouting por-matchup como desempate.
+4. (Opcional con evidencia) valor de plantilla Transfermarkt, Elo-trayectoria; cron de actualización.

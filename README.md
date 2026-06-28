@@ -3,7 +3,7 @@
 Modelo de predicción de resultados para la **Copa Mundial FIFA 2026** (USA/México/Canadá, 48 equipos).
 Objetivo práctico: maximizar el puntaje esperado en la polla. Objetivo técnico: pipeline reutilizable de analítica deportiva (vertical **MOVA**).
 
-> **Estado: Fase 1 (Capa de Datos) COMPLETADA ✅** — 7 fuentes integradas, interconectadas y validadas (574K eventos). Ver [docs/00-estado.md](docs/00-estado.md). Siguiente: Fase 2 (features + modelo).
+> **Estado: Fase 1 (Datos) ✅ + Fase 2 (Modelo MVP) ✅** — 7 fuentes integradas (574K eventos) + modelo Elo→Dixon-Coles anclado a mercado, backtesteado (RPS≈mercado) + capas de insight y scouting. Ver [docs/00-estado.md](docs/00-estado.md) y [docs/10-backtest-y-critica.md](docs/10-backtest-y-critica.md). Siguiente: capa de estrategia de polla.
 
 ## Tesis del proyecto
 
@@ -51,21 +51,33 @@ Arquitectura, inventario de datos y plan de Fase 2 → **[docs/00-estado.md](doc
 | [docs/05-whoscored-data-dictionary.md](docs/05-whoscored-data-dictionary.md) | **Diccionario de datos WhoScored: campos, tipos, 39 eventos, 111 qualifiers, coords** |
 | [docs/06-fuentes-contexto-exploracion.md](docs/06-fuentes-contexto-exploracion.md) | **Exploración de Elo/Kalshi/ESPN/StatsBomb: campos reales + diseño de tablas** |
 | [docs/07-oddsapi.md](docs/07-oddsapi.md) | The Odds API: modelo de créditos, endpoints, tabla granular |
-| [docs/08-marco-estadistico-y-modelo.md](docs/08-marco-estadistico-y-modelo.md) | **★ Marco estadístico + diseño del modelo ganador + plan Fase 2** |
+| [docs/08-marco-estadistico-y-modelo.md](docs/08-marco-estadistico-y-modelo.md) | **★ Marco estadístico + diseño del modelo (Fase 2)** |
+| [docs/09-modelo-mvp-resultados.md](docs/09-modelo-mvp-resultados.md) | Resultados del MVP del modelo (E0-E4) |
+| [docs/10-backtest-y-critica.md](docs/10-backtest-y-critica.md) | **★ Backtest, experimentos y veredicto honesto (qué tan bueno es)** |
 
 ## Cómo correr el pipeline
 
 ```bash
+# ── Datos (collectors, idempotentes) ──
 python scripts/collect.py            # WhoScored: event data (discover→fetch→load)
 python scripts/collect_context.py    # Elo + Kalshi + Polymarket + ESPN (diario)
 python scripts/collect_odds.py       # The Odds API (credit-metered, ~4/día)
-python scripts/collect_statsbomb.py  # StatsBomb WC2022/2018 (entrenamiento xG)
+python scripts/collect_statsbomb.py  # StatsBomb WC2022/2018 (entrenamiento)
+python scripts/collect_elo_history.py # histórico martj42 + Elo propio (una vez)
 python scripts/build_aliases.py      # identidad canónica de equipos
 python scripts/build_match_map.py    # enlazar partidos entre fuentes
 python scripts/validate.py           # validar integridad (PASS/WARN/FAIL)
+
+# ── Modelo (Fase 2) ──
+python scripts/train_xg.py           # entrena xG nativo WhoScored (una vez)
+python scripts/fit_match_model.py    # calibra Elo→Dixon-Coles (una vez)
+python scripts/run_model.py --seed 42  # ★ pipeline: features→predict→simulate→insight
+python scripts/backtest.py           # RPS leakage-free WC2018/22
+python scripts/scout.py "Colombia" "Ghana"  # scouting táctico de un cruce
 ```
 
 Todo idempotente y source-agnostic (`source` en cada tabla). DB: `data/mundial.db`.
+Salidas del modelo: tabla `tournament_sim` (P avance/campeón) + `outputs/insight_latest.md`.
 
 ## Stack de datos (gratis + permanente) — resumen
 
