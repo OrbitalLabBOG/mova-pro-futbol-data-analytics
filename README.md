@@ -3,7 +3,7 @@
 Modelo de predicción de resultados para la **Copa Mundial FIFA 2026** (USA/México/Canadá, 48 equipos).
 Objetivo práctico: maximizar el puntaje esperado en la polla. Objetivo técnico: pipeline reutilizable de analítica deportiva (vertical **MOVA**).
 
-> Estado: **arranque** · Creado 2026-06-28 (justo al cierre de fase de grupos, inicio de Ronda de 32).
+> **Estado: Fase 1 (Capa de Datos) COMPLETADA ✅** — 7 fuentes integradas, interconectadas y validadas (574K eventos). Ver [docs/00-estado.md](docs/00-estado.md). Siguiente: Fase 2 (features + modelo).
 
 ## Tesis del proyecto
 
@@ -24,22 +24,26 @@ Stack inspirado en lo que la evidencia dice que funciona:
 
 ```
 mova-mundial-2026/
-├── README.md
-├── docs/
-│   └── 01-panorama.md      # Investigación inicial: resultados, upsets, xG, modelos, mercados
+├── docs/                   # 00-estado (cierre fase 1) + 01-07 investigación/fuentes
+├── src/mova_data/          # paquete del pipeline
+│   ├── config.py db.py teams.py matches_map.py
+│   ├── collectors/         # 1 por fuente (base.py = interfaz pluggable)
+│   └── loaders/            # JSON cache → SQLite
+├── scripts/                # collect*, build_aliases, build_match_map, validate, explore
 ├── data/
-│   ├── raw/                # Datos crudos (resultados, rankings Elo, xG, odds)
-│   └── processed/          # Datasets limpios para el modelo
-├── src/                    # Código del modelo (Elo, Dixon-Coles, Monte Carlo)
-├── notebooks/              # Exploración y prototipos
-├── models/                 # Artefactos entrenados / parámetros
-└── outputs/                # Predicciones, brackets, reportes
+│   ├── raw/                # cache crudo por fuente (gitignored)
+│   └── mundial.db          # SQLite interconectada (gitignored, se regenera)
+├── notebooks/ models/ outputs/   # fase 2
+└── .env.local              # ODDS_API_KEY (gitignored; ver .env.local.example)
 ```
+
+Arquitectura, inventario de datos y plan de Fase 2 → **[docs/00-estado.md](docs/00-estado.md)**.
 
 ## Documentación
 
 | Doc | Contenido |
 |-----|-----------|
+| [docs/00-estado.md](docs/00-estado.md) | **Cierre Fase 1: inventario, arquitectura, validación, plan Fase 2** |
 | [docs/01-panorama.md](docs/01-panorama.md) | Resultados fase grupos, upsets, tabla xG/suerte, modelos, mercados |
 | [docs/02-fuentes-datos.md](docs/02-fuentes-datos.md) | **Disponibilidad de datos públicos/gratis, endpoints verificados, stack recomendado** |
 | [docs/03-supermodelos-referencia.md](docs/03-supermodelos-referencia.md) | Probabilidades actuales de Opta/Kalshi/Polymarket/casas + divergencias = value |
@@ -51,9 +55,12 @@ mova-mundial-2026/
 
 ```bash
 python scripts/collect.py            # WhoScored: event data (discover→fetch→load)
-python scripts/collect_context.py    # Elo + Kalshi + ESPN (diario, ligero, sin browser)
+python scripts/collect_context.py    # Elo + Kalshi + Polymarket + ESPN (diario)
+python scripts/collect_odds.py       # The Odds API (credit-metered, ~4/día)
 python scripts/collect_statsbomb.py  # StatsBomb WC2022/2018 (entrenamiento xG)
-python scripts/explore_sources.py    # re-explorar muestras crudas de fuentes
+python scripts/build_aliases.py      # identidad canónica de equipos
+python scripts/build_match_map.py    # enlazar partidos entre fuentes
+python scripts/validate.py           # validar integridad (PASS/WARN/FAIL)
 ```
 
 Todo idempotente y source-agnostic (`source` en cada tabla). DB: `data/mundial.db`.
