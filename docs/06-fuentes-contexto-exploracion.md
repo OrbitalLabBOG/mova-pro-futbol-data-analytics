@@ -91,4 +91,5 @@
 
 **Principios reafirmados:** toda tabla de hechos lleva `source`; mercados van a una sola tabla genérica para mezclar proveedores; StatsBomb se cachea crudo y su normalización se decide cuando ataquemos el modelo de xG (no antes).
 
-> Tablas y collectors se implementan en el siguiente paso, ya con estos campos reales confirmados.
+> ✅ **Implementado** (2026-06-28): tablas en `db.py`; collectors `elo.py`/`kalshi.py`/`espn.py`/`statsbomb.py`; scripts `collect_context.py` y `collect_statsbomb.py`.
+> Resultados de la primera corrida: Elo **48/48** selecciones WC mapeadas · Kalshi 32 mercados (France 0.249) · ESPN **104** fixtures con moneyline · StatsBomb WC2022+2018 cacheado para entrenar xG.

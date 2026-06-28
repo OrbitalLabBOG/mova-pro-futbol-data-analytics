@@ -45,6 +45,18 @@ mova-mundial-2026/
 | [docs/03-supermodelos-referencia.md](docs/03-supermodelos-referencia.md) | Probabilidades actuales de Opta/Kalshi/Polymarket/casas + divergencias = value |
 | [docs/04-whoscored-collector.md](docs/04-whoscored-collector.md) | **Collector de event data (mina de oro): método, IDs, endpoints, arquitectura** |
 | [docs/05-whoscored-data-dictionary.md](docs/05-whoscored-data-dictionary.md) | **Diccionario de datos WhoScored: campos, tipos, 39 eventos, 111 qualifiers, coords** |
+| [docs/06-fuentes-contexto-exploracion.md](docs/06-fuentes-contexto-exploracion.md) | **Exploración de Elo/Kalshi/ESPN/StatsBomb: campos reales + diseño de tablas** |
+
+## Cómo correr el pipeline
+
+```bash
+python scripts/collect.py            # WhoScored: event data (discover→fetch→load)
+python scripts/collect_context.py    # Elo + Kalshi + ESPN (diario, ligero, sin browser)
+python scripts/collect_statsbomb.py  # StatsBomb WC2022/2018 (entrenamiento xG)
+python scripts/explore_sources.py    # re-explorar muestras crudas de fuentes
+```
+
+Todo idempotente y source-agnostic (`source` en cada tabla). DB: `data/mundial.db`.
 
 ## Stack de datos (gratis + permanente) — resumen
 
