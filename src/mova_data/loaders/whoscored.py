@@ -113,14 +113,19 @@ def load_match(json_path: Path, conn) -> dict:
         except Exception as ex:
             logger.warning("evento %s match %s: %s", e.get("id"), match_id, ex)
 
-    # enrich match row con datos del match centre
+    # enrich match row con datos del match centre.
+    # n_events = filas realmente cargadas (deduplicadas), no el conteo crudo:
+    # WhoScored a veces trae ids de evento duplicados que UNIQUE descarta.
     ref = mcd.get("referee") or {}
+    loaded = conn.execute(
+        "SELECT count(*) FROM events WHERE source=? AND match_id=?", (SOURCE, match_id)
+    ).fetchone()[0]
     conn.execute(
         """UPDATE matches SET venue=?, attendance=?, referee=?, ht_score=?,
            et_score=?, pk_score=?, n_events=?, scraped_at=? WHERE match_id=?""",
         (mcd.get("venueName"), mcd.get("attendance"), ref.get("name"),
          mcd.get("htScore"), mcd.get("etScore"), mcd.get("pkScore"),
-         len(events), datetime.now(timezone.utc).isoformat(), match_id),
+         loaded, datetime.now(timezone.utc).isoformat(), match_id),
     )
     conn.commit()
     return {"status": "loaded", "match_id": match_id, "events": inserted}
