@@ -1,0 +1,112 @@
+"""Simulación del bracket → P(avance/campeón) por equipo.
+
+Cada cruce de eliminación se colapsa a P(avance) determinista (reg → prórroga ⅓ →
+penales ~56% al favorito). Con eso, la propagación por el cuadro fijo es EXACTA por
+convolución/DP (sin ruido). Monte Carlo disponible como validación.
+"""
+from __future__ import annotations
+
+import datetime as dt
+
+import numpy as np
+
+from .config import ET_STRENGTH, PK_FAV, SEED
+from . import match_model, elo
+
+# Bracket fijo WC2026 (orden de slots; pares adyacentes → R16). Nombres canónicos.
+BRACKET = [
+    ("South Africa", "Canada"), ("Netherlands", "Morocco"),
+    ("Germany", "Paraguay"), ("France", "Sweden"),
+    ("Brazil", "Japan"), ("Ivory Coast", "Norway"),
+    ("Mexico", "Ecuador"), ("England", "DR Congo"),
+    ("Portugal", "Croatia"), ("Spain", "Austria"),
+    ("USA", "Bosnia and Herzegovina"), ("Belgium", "Senegal"),
+    ("Australia", "Egypt"), ("Argentina", "Cabo Verde"),
+    ("Switzerland", "Algeria"), ("Colombia", "Ghana"),
+]
+ROUNDS = ["p_r16", "p_qf", "p_sf", "p_final", "p_champion"]   # 32→1 = 5 rondas
+
+
+def advance_prob(ra: float, rb: float, params: dict) -> float:
+    """P(equipo A avanza) en eliminación (neutral): reg → ET(⅓) → penales."""
+    dr = elo.dr(ra, rb, neutral=True)
+    pa, pd, pb = match_model.predict_1x2(dr, params)            # regulación
+    # prórroga: mismas fuerzas, ⅓ de goles
+    lh, la = match_model.lambdas(dr, params)
+    M = match_model.score_matrix(lh * ET_STRENGTH, la * ET_STRENGTH, params["rho"])
+    ea, ed, eb = match_model.p_1x2(M)
+    pk_a = PK_FAV if ra >= rb else (1 - PK_FAV)
+    return pa + pd * (ea + ed * pk_a)
+
+
+def _slots(eff_ratings):
+    """Aplana el bracket a 32 equipos en orden de slot."""
+    teams = []
+    for h, a in BRACKET:
+        teams += [h, a]
+    return teams
+
+
+def run_dp(conn, eff_ratings: dict, params: dict) -> dict:
+    """Probabilidades EXACTAS de avance por convolución sobre el bracket fijo."""
+    teams = _slots(eff_ratings)
+    n = len(teams)                       # 32
+    # cache de advance_prob por par
+    cache = {}
+    def adv(a, b):
+        if (a, b) not in cache:
+            cache[(a, b)] = advance_prob(eff_ratings[a], eff_ratings[b], params)
+        return cache[(a, b)]
+
+    reach = {t: [0.0] * (len(ROUNDS) + 1) for t in teams}
+    for t in teams:
+        reach[t][0] = 1.0                # todos entran a R32
+    n_rounds = len(ROUNDS)               # 5
+    for r in range(n_rounds):
+        block = 2 ** (r + 1)
+        for i, t in enumerate(teams):
+            blk_start = (i // block) * block
+            half = blk_start + (block // 2)
+            opp_slots = range(blk_start, half) if i >= half else range(half, blk_start + block)
+            p = 0.0
+            for j in opp_slots:
+                o = teams[j]
+                if reach[o][r] > 0:
+                    p += reach[o][r] * adv(t, o)
+            reach[t][r + 1] = reach[t][r] * p
+    return {t: reach[t][1:] for t in teams}   # [p_r16,p_qf,p_sf,p_final,p_champion]
+
+
+def run_mc(conn, eff_ratings, params, n_sims=10000, seed=SEED) -> dict:
+    """Monte Carlo (validación del DP)."""
+    rng = np.random.default_rng(seed)
+    teams0 = _slots(eff_ratings)
+    counts = {t: [0] * len(ROUNDS) for t in teams0}
+    padv = {}
+    def adv(a, b):
+        if (a, b) not in padv:
+            padv[(a, b)] = advance_prob(eff_ratings[a], eff_ratings[b], params)
+        return padv[(a, b)]
+    for _ in range(n_sims):
+        alive = list(teams0)
+        for r in range(len(ROUNDS)):
+            nxt = []
+            for k in range(0, len(alive), 2):
+                a, b = alive[k], alive[k + 1]
+                w = a if rng.random() < adv(a, b) else b
+                nxt.append(w)
+                counts[w][r] += 1
+            alive = nxt
+    return {t: [counts[t][r] / n_sims for r in range(len(ROUNDS))] for t in teams0}
+
+
+def write(conn, run_id: str, probs: dict, n_sims: int, seed: int, method="dp"):
+    now = dt.datetime.now(dt.timezone.utc).isoformat()
+    rows = [(t, run_id, n_sims, *probs[t], 1.0, seed, now) for t in probs]
+    conn.executemany(
+        """INSERT OR REPLACE INTO tournament_sim
+           (team, run_id, n_sims, p_r16, p_qf, p_sf, p_final, p_champion,
+            p_group_adv, seed, generated_at)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?)""", rows)
+    conn.commit()
+    return {"teams": len(rows), "method": method}
