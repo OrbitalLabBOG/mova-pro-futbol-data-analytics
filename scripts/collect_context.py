@@ -16,14 +16,15 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from mova_data.db import get_db, init_db
-from mova_data.collectors import elo, kalshi, espn
+from mova_data.collectors import elo, kalshi, espn, polymarket
 
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
                     datefmt="%H:%M:%S")
 log = logging.getLogger("mova.context")
 
-SOURCES = {"elo": elo.collect, "kalshi": kalshi.collect, "espn": espn.collect}
+SOURCES = {"elo": elo.collect, "kalshi": kalshi.collect, "espn": espn.collect,
+           "polymarket": polymarket.collect}
 
 
 def main():
