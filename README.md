@@ -50,6 +50,8 @@ Arquitectura, inventario de datos y plan de Fase 2 → **[docs/00-estado.md](doc
 | [docs/04-whoscored-collector.md](docs/04-whoscored-collector.md) | **Collector de event data (mina de oro): método, IDs, endpoints, arquitectura** |
 | [docs/05-whoscored-data-dictionary.md](docs/05-whoscored-data-dictionary.md) | **Diccionario de datos WhoScored: campos, tipos, 39 eventos, 111 qualifiers, coords** |
 | [docs/06-fuentes-contexto-exploracion.md](docs/06-fuentes-contexto-exploracion.md) | **Exploración de Elo/Kalshi/ESPN/StatsBomb: campos reales + diseño de tablas** |
+| [docs/07-oddsapi.md](docs/07-oddsapi.md) | The Odds API: modelo de créditos, endpoints, tabla granular |
+| [docs/08-marco-estadistico-y-modelo.md](docs/08-marco-estadistico-y-modelo.md) | **★ Marco estadístico + diseño del modelo ganador + plan Fase 2** |
 
 ## Cómo correr el pipeline
 
