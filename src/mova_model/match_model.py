@@ -25,6 +25,20 @@ def lambdas(dr: float, params: dict) -> tuple[float, float]:
     return lh, la
 
 
+def lambdas_xg(dr: float, xgf_a, xga_a, xgf_b, xga_b, params: dict, theta: float):
+    """λ ataque/defensa: blend de la expectativa Elo con la implícita por xG.
+
+    λ_A = (1-θ)·λ_elo_A + θ·(xGF_A + xGA_B)/2  → captura matchup (ataque A vs defensa B).
+    Si falta xG (None), cae a Elo puro. θ=0 ≡ modelo Elo.
+    """
+    le_a, le_b = lambdas(dr, params)
+    if theta <= 0 or None in (xgf_a, xga_a, xgf_b, xga_b):
+        return le_a, le_b
+    lx_a = (xgf_a + xga_b) / 2.0
+    lx_b = (xgf_b + xga_a) / 2.0
+    return (1 - theta) * le_a + theta * lx_a, (1 - theta) * le_b + theta * lx_b
+
+
 # ── Dixon-Coles ────────────────────────────────────────────────────
 def _tau(x, y, lh, la, rho):
     if x == 0 and y == 0:

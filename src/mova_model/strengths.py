@@ -12,8 +12,11 @@ import numpy as np
 
 from . import shots, elo, xg_model
 
-# Ajuste de forma: puntos Elo por cada 1.0 de (xGF-xGA)/partido, acotado.
-XG_FORM_K = 40.0
+# Ajuste de forma xG en el CORE: DESACTIVADO por evidencia de backtest.
+# El backtest WC2018/22 mostró que meter xG al ranking no mejora el RPS
+# (mejor caso +0.2%, ruido; más peso empeora). El Elo puro es el mejor core.
+# El xG se conserva para la CAPA DE INSIGHT (regresión/suerte), no para el ranking.
+XG_FORM_K = 0.0
 XG_FORM_CAP = 100.0
 
 
