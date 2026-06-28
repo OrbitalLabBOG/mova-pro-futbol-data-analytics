@@ -164,10 +164,37 @@ CREATE TABLE IF NOT EXISTS odds_quotes (
     PRIMARY KEY (source, captured_at, scope, event_id, bookmaker, market, outcome, point)
 );
 
+-- Identidad canónica de equipos: cualquier alias/código → nombre canónico (WhoScored).
+CREATE TABLE IF NOT EXISTS team_aliases (
+    alias_norm TEXT PRIMARY KEY,        -- alias normalizado (lower, sin acentos/puntuación)
+    alias      TEXT,                    -- alias tal cual se vio
+    canonical  TEXT NOT NULL,           -- nombre canónico (= teams.name de WhoScored)
+    kind       TEXT                     -- 'identity' | 'override' | 'iso'
+);
+
 CREATE INDEX IF NOT EXISTS idx_odds_entity ON market_odds(entity);
 CREATE INDEX IF NOT EXISTS idx_elo_team    ON elo_ratings(team);
 CREATE INDEX IF NOT EXISTS idx_quotes_evt  ON odds_quotes(event_id);
 CREATE INDEX IF NOT EXISTS idx_quotes_scope ON odds_quotes(scope);
+CREATE INDEX IF NOT EXISTS idx_aliases_canon ON team_aliases(canonical);
+
+-- Vista unificada: cada equipo canónico con Elo + prob. de cada mercado
+-- (resuelve nombres entre fuentes vía team_aliases).
+CREATE VIEW IF NOT EXISTS v_team_board AS
+SELECT
+  t.name AS team,
+  (SELECT e.rating FROM elo_ratings e
+     WHERE e.team = t.name ORDER BY e.snapshot_date DESC LIMIT 1) AS elo,
+  (SELECT mo.prob FROM market_odds mo JOIN team_aliases a ON a.alias = mo.entity
+     WHERE a.canonical = t.name AND mo.source='kalshi'
+     ORDER BY mo.captured_at DESC LIMIT 1) AS p_kalshi,
+  (SELECT mo.prob FROM market_odds mo JOIN team_aliases a ON a.alias = mo.entity
+     WHERE a.canonical = t.name AND mo.source='polymarket'
+     ORDER BY mo.captured_at DESC LIMIT 1) AS p_polymarket,
+  (SELECT mo.prob FROM market_odds mo JOIN team_aliases a ON a.alias = mo.entity
+     WHERE a.canonical = t.name AND mo.source='oddsapi'
+     ORDER BY mo.captured_at DESC LIMIT 1) AS p_oddsapi
+FROM (SELECT DISTINCT name FROM teams WHERE name IS NOT NULL) t;
 """
 
 
