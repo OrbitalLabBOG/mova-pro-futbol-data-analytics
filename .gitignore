@@ -25,3 +25,7 @@ models/*.joblib
 *.db
 *.db-wal
 *.db-shm
+
+# StatsBomb training cache (pesado, se regenera)
+data/raw/statsbomb/
+data/raw/_explore/

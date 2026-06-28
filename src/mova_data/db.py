@@ -107,9 +107,48 @@ CREATE INDEX IF NOT EXISTS idx_events_player  ON events(player_id);
 CREATE INDEX IF NOT EXISTS idx_events_shot    ON events(is_shot) WHERE is_shot = 1;
 CREATE INDEX IF NOT EXISTS idx_matches_stage  ON matches(stage_id);
 
--- NOTA: las tablas de fuentes de contexto (Elo, mercados, fixtures, StatsBomb)
--- se definirán DESPUÉS de explorar y documentar la data real de cada fuente.
--- Ver scripts/explore_sources.py y docs/06-fuentes-contexto-exploracion.md
+-- ── Fuentes de contexto (diseño en docs/06 §5, campos confirmados) ──
+
+CREATE TABLE IF NOT EXISTS elo_ratings (
+    source        TEXT NOT NULL DEFAULT 'eloratings',
+    snapshot_date TEXT NOT NULL,        -- YYYY-MM-DD de la captura
+    iso           TEXT,                 -- código eloratings (AR, ES, EN, SCO...)
+    team          TEXT,                 -- nombre mapeado a WhoScored (si aplica)
+    rank          INTEGER,
+    rating        INTEGER,
+    PRIMARY KEY (source, snapshot_date, iso)
+);
+
+CREATE TABLE IF NOT EXISTS market_odds (
+    source       TEXT NOT NULL,         -- kalshi | polymarket | espn | oddsapi
+    captured_at  TEXT NOT NULL,         -- ISO timestamp de la captura (serie temporal)
+    market_type  TEXT NOT NULL,         -- 'winner' | 'match_ml' ...
+    entity       TEXT NOT NULL,         -- equipo / resultado
+    prob         REAL,                  -- probabilidad implícita 0-1
+    yes_bid      REAL,
+    yes_ask      REAL,
+    last_price   REAL,
+    ticker       TEXT,
+    PRIMARY KEY (source, market_type, entity, captured_at)
+);
+
+CREATE TABLE IF NOT EXISTS espn_fixtures (
+    espn_id     INTEGER PRIMARY KEY,
+    date_utc    TEXT,
+    status      TEXT,
+    home_team   TEXT,
+    away_team   TEXT,
+    home_score  INTEGER,
+    away_score  INTEGER,
+    ml_home     INTEGER,                -- moneyline american odds (DraftKings)
+    ml_draw     INTEGER,
+    ml_away     INTEGER,
+    venue       TEXT,
+    updated_at  TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_odds_entity ON market_odds(entity);
+CREATE INDEX IF NOT EXISTS idx_elo_team    ON elo_ratings(team);
 """
 
 
