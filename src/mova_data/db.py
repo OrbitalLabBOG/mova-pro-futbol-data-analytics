@@ -106,6 +106,10 @@ CREATE INDEX IF NOT EXISTS idx_events_type    ON events(event_type);
 CREATE INDEX IF NOT EXISTS idx_events_player  ON events(player_id);
 CREATE INDEX IF NOT EXISTS idx_events_shot    ON events(is_shot) WHERE is_shot = 1;
 CREATE INDEX IF NOT EXISTS idx_matches_stage  ON matches(stage_id);
+
+-- NOTA: las tablas de fuentes de contexto (Elo, mercados, fixtures, StatsBomb)
+-- se definirán DESPUÉS de explorar y documentar la data real de cada fuente.
+-- Ver scripts/explore_sources.py y docs/06-fuentes-contexto-exploracion.md
 """
 
 
