@@ -221,6 +221,119 @@ SELECT
      WHERE q.scope='match' AND q.event_id = mm.oddsapi_event_id) AS n_quotes
 FROM match_map mm
 LEFT JOIN matches m ON m.match_id = mm.whoscored_id;
+
+-- ════════════════════ CAPA DE MODELO (Fase 2) ════════════════════
+
+-- Histórico internacional (martj42) + Elo pre-partido calculado por nosotros.
+CREATE TABLE IF NOT EXISTS intl_results (
+    source        TEXT NOT NULL DEFAULT 'martj42',
+    match_date    TEXT NOT NULL,
+    home_team     TEXT NOT NULL,        -- nombre martj42 (crudo)
+    away_team     TEXT NOT NULL,
+    home_score    INTEGER,
+    away_score    INTEGER,
+    tournament    TEXT,
+    neutral       INTEGER,
+    home_elo_pre  REAL,                 -- Elo antes del partido (calculado)
+    away_elo_pre  REAL,
+    PRIMARY KEY (source, match_date, home_team, away_team)
+);
+CREATE INDEX IF NOT EXISTS idx_intl_date ON intl_results(match_date);
+
+-- Elo actual calculado por nosotros sobre todo el histórico martj42.
+CREATE TABLE IF NOT EXISTS elo_computed (
+    team_raw     TEXT PRIMARY KEY,      -- nombre martj42
+    team         TEXT,                  -- canónico (teams.resolve), NULL si no se reconoce
+    rating       REAL,
+    n_matches    INTEGER,
+    last_date    TEXT,
+    computed_at  TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_elocomp_team ON elo_computed(team);
+
+-- xG por tiro (ambos proveedores; SB lleva target, WS lleva predicción de nuestro modelo).
+CREATE TABLE IF NOT EXISTS shot_xg (
+    source        TEXT NOT NULL,        -- 'whoscored' | 'statsbomb'
+    match_id      TEXT NOT NULL,
+    shot_uid      TEXT NOT NULL,
+    team          TEXT,                 -- canónico
+    player_id     INTEGER,
+    minute        INTEGER,
+    dist_m        REAL,
+    angle_rad     REAL,
+    body_part     TEXT,                 -- foot | head | other
+    play_type     TEXT,                 -- open | setpiece | corner | freekick | penalty
+    is_big_chance INTEGER,
+    xg_model      REAL,                 -- nuestro xG
+    xg_statsbomb  REAL,                 -- target SB (NULL en WS)
+    is_goal       INTEGER,
+    model_version TEXT,
+    generated_at  TEXT,
+    PRIMARY KEY (source, match_id, shot_uid)
+);
+CREATE INDEX IF NOT EXISTS idx_shotxg_team ON shot_xg(team);
+
+-- Fuerzas/features por equipo (recomputado cada corrida).
+CREATE TABLE IF NOT EXISTS team_features (
+    team          TEXT NOT NULL,
+    run_id        TEXT NOT NULL,
+    as_of_date    TEXT,
+    n_matches     INTEGER,
+    xgf_per_match REAL,
+    xga_per_match REAL,
+    att_strength  REAL,
+    def_strength  REAL,
+    elo_rating    REAL,
+    elo_rank      INTEGER,
+    generated_at  TEXT,
+    PRIMARY KEY (team, run_id)
+);
+
+-- Predicciones por partido (1X2: modelo, mercado, blend).
+CREATE TABLE IF NOT EXISTS match_predictions (
+    match_key     TEXT NOT NULL,
+    run_id        TEXT NOT NULL,
+    home_team     TEXT,
+    away_team     TEXT,
+    match_date    TEXT,
+    lambda_home   REAL,
+    lambda_away   REAL,
+    p_home_model  REAL, p_draw_model REAL, p_away_model REAL,
+    p_home_mkt    REAL, p_draw_mkt   REAL, p_away_mkt   REAL,
+    p_home        REAL, p_draw       REAL, p_away       REAL,
+    w_blend       REAL,
+    n_quotes      INTEGER,
+    generated_at  TEXT,
+    PRIMARY KEY (match_key, run_id)
+);
+
+-- Simulación del torneo (salida estrella): P(avance/campeón) por equipo.
+CREATE TABLE IF NOT EXISTS tournament_sim (
+    team         TEXT NOT NULL,
+    run_id       TEXT NOT NULL,
+    n_sims       INTEGER,
+    p_r16 REAL, p_qf REAL, p_sf REAL, p_final REAL, p_champion REAL,
+    p_group_adv  REAL,
+    seed         INTEGER,
+    generated_at TEXT,
+    PRIMARY KEY (team, run_id)
+);
+
+-- Registro de corridas (auditoría / idempotencia).
+CREATE TABLE IF NOT EXISTS model_runs (
+    run_id        TEXT PRIMARY KEY,
+    started_at    TEXT,
+    finished_at   TEXT,
+    barrier_date  TEXT,
+    xg_version    TEXT,
+    dc_version    TEXT,
+    w_blend       REAL,
+    n_sims        INTEGER,
+    seed          INTEGER,
+    n_matches_pred INTEGER,
+    stages        TEXT,
+    status        TEXT
+);
 """
 
 

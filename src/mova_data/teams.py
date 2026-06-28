@@ -17,6 +17,8 @@ OVERRIDES = {
     "United States": "USA",
     "US": "USA",                 # código eloratings
     "USMNT": "USA",
+    "Turkey": "Turkiye",         # nombre martj42
+    "Czech Republic": "Czechia",  # nombre martj42
     "South Korea": "South Korea",
     "Korea Republic": "South Korea",
     "Ivory Coast": "Ivory Coast",
