@@ -18,11 +18,15 @@ _PARAMS_PATH = DC_DIR / "params.json"
 
 
 # ── Mapeo dr → (λ_home, λ_away) ────────────────────────────────────
+def _clamp_lambda(x: float) -> float:
+    return min(max(x, 0.03), 6.0)        # goles esperados realistas (evita matriz degenerada)
+
+
 def lambdas(dr: float, params: dict) -> tuple[float, float]:
     b0, b1 = params["b0"], params["b1"]
     lh = math.exp(b0 + b1 * dr / 100.0)
     la = math.exp(b0 - b1 * dr / 100.0)
-    return lh, la
+    return _clamp_lambda(lh), _clamp_lambda(la)
 
 
 def lambdas_xg(dr: float, xgf_a, xga_a, xgf_b, xga_b, params: dict, theta: float):

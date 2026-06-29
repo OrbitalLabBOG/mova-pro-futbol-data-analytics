@@ -57,8 +57,9 @@ def report(conn, run_id: str) -> str:
     rows = []
     for t, d in sim.items():
         m = mkt.get(t)
-        if m:
-            rows.append((t, d["champ"], m, d["champ"] - m))
+        ch = d["champ"]
+        if m and ch is not None and ch == ch:    # ch==ch descarta NaN
+            rows.append((t, ch, m, ch - m))
     for t, c, m, v in sorted(rows, key=lambda r: -abs(r[3]))[:10]:
         flag = "🟢 infravalorado" if v > 0.01 else ("🔴 caro" if v < -0.01 else "≈")
         lines.append(f"| {t} | {c*100:.1f}% | {m*100:.1f}% | {v*100:+.1f}pp {flag} |")

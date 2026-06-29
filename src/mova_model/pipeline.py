@@ -55,13 +55,16 @@ def run(as_of=None, n_sims=N_SIM, seed=SEED, retrain=False, run_id=None, w_marke
         # predict
         pinfo = predict_mod.run(conn, run_id, params, eff, w)
         logger.info("predict: %d partidos (%d con mercado)", pinfo["predicted"], pinfo["with_market"])
-        # simulate (DP exacto) + anclaje al mercado (log-pool de campeón)
+        # simulate (DP exacto) + anclaje al mercado + congelar resultados ya jugados
         from .market import p_market_winner
         mkt_champ = p_market_winner(conn)
-        anc_ratings, _ = simulate.anchor_to_market(conn, eff, params, mkt_champ, w=w_market)
-        probs = simulate.run_dp(conn, anc_ratings, params)
+        decided = simulate.decided_matches(conn)
+        anc_ratings, _ = simulate.anchor_to_market(conn, eff, params, mkt_champ,
+                                                   w=w_market, decided=decided)
+        probs = simulate.run_dp(conn, anc_ratings, params, decided)
         simulate.write(conn, run_id, probs, n_sims=0, seed=seed, method="dp+anchor")
-        logger.info("simulate: %d equipos (DP anclado a mercado w=%.2f)", len(probs), w_market)
+        logger.info("simulate: %d equipos (DP anclado w=%.2f, %d partidos congelados)",
+                    len(probs), w_market, len(decided))
         # insight (más allá de la fuerza): valor vs mercado, suerte/regresión, camino
         from . import insight
         from .config import OUTPUTS_DIR

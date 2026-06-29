@@ -42,9 +42,13 @@ WS_STAGES = {
 # Meses (YYYYMM) en los que se juega el torneo (11 jun – 19 jul 2026).
 WS_MONTHS = ["202606", "202607"]
 
-# Códigos de estado de partido en WhoScored.
-WS_STATUS_FINISHED = {3, 6}   # 3 = FT (también ET/PK), 6 visto en otras comps
+# Códigos de estado de partido en WhoScored (verificado 2026-06-29):
+#   6 = FT/finalizado (también AET/penales completados) ; elapsed='FT'
+#   3 = EN VIVO (elapsed="55'", etc.) — ¡NO finalizado!
+#   1/0 = programado
+WS_STATUS_FINISHED = {6}      # SOLO FT. status 3 es en juego (no congelar).
 WS_STATUS_SCHEDULED = {0, 1}
+WS_STATUS_LIVE = {3, 2, 4, 5}
 
 # ── Scraping ───────────────────────────────────────────────────────
 WS_DELAY_SECONDS = 6          # cortesía entre requests de partido

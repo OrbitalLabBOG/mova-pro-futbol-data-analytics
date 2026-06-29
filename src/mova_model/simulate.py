@@ -47,13 +47,43 @@ def _slots(eff_ratings):
     return teams
 
 
-def run_dp(conn, eff_ratings: dict, params: dict) -> dict:
-    """Probabilidades EXACTAS de avance por convolución sobre el bracket fijo."""
+def decided_matches(conn) -> dict:
+    """Resultados de eliminación YA finalizados (FT) → {frozenset(par): ganador}.
+
+    Solo partidos realmente terminados (is_finished=1). Los EN VIVO no se congelan.
+    """
+    out = {}
+    for h, a, hs, as_, pk in conn.execute(
+            """SELECT home_team, away_team, home_score, away_score, pk_score
+               FROM matches WHERE round='knockout' AND is_finished=1
+               AND home_score IS NOT NULL"""):
+        if hs > as_:
+            w = h
+        elif as_ > hs:
+            w = a
+        else:                            # empate → definido por penales
+            try:
+                ph, pa_ = (pk or "0:0").split(":")
+                w = h if int(ph) > int(pa_) else a
+            except (ValueError, AttributeError):
+                continue
+        out[frozenset((h, a))] = w
+    return out
+
+
+def run_dp(conn, eff_ratings: dict, params: dict, decided: dict | None = None) -> dict:
+    """Probabilidades EXACTAS de avance por convolución sobre el bracket fijo.
+
+    `decided` congela partidos de eliminación ya jugados (ganador avanza con prob 1).
+    """
+    decided = decided or {}
     teams = _slots(eff_ratings)
     n = len(teams)                       # 32
-    # cache de advance_prob por par
     cache = {}
     def adv(a, b):
+        pair = frozenset((a, b))
+        if pair in decided:              # partido ya jugado → resultado real
+            return 1.0 if decided[pair] == a else 0.0
         if (a, b) not in cache:
             cache[(a, b)] = advance_prob(eff_ratings[a], eff_ratings[b], params)
         return cache[(a, b)]
@@ -78,7 +108,8 @@ def run_dp(conn, eff_ratings: dict, params: dict) -> dict:
 
 
 def anchor_to_market(conn, eff_ratings, params, market_champ: dict,
-                     w: float = 0.65, iters: int = 40, step: float = 70.0) -> tuple[dict, dict]:
+                     w: float = 0.65, iters: int = 40, step: float = 70.0,
+                     decided: dict | None = None) -> tuple[dict, dict]:
     """Ajusta fuerzas para que la simulación reproduzca log-pool(modelo, mercado).
 
     Mantiene consistencia entre rondas (todo sale de UNA simulación con las fuerzas
@@ -86,7 +117,7 @@ def anchor_to_market(conn, eff_ratings, params, market_champ: dict,
     """
     import math
     teams = _slots(eff_ratings)
-    base = run_dp(conn, eff_ratings, params)
+    base = run_dp(conn, eff_ratings, params, decided)
     model_c = {t: max(base[t][4], 1e-6) for t in teams}
     # objetivo = log-pool por equipo, renormalizado
     tgt = {}
@@ -99,7 +130,7 @@ def anchor_to_market(conn, eff_ratings, params, market_champ: dict,
     r = dict(eff_ratings)
     logit = lambda p: math.log(min(max(p, 1e-6), 1 - 1e-6) / (1 - min(max(p, 1e-6), 1 - 1e-6)))
     for _ in range(iters):
-        probs = run_dp(conn, r, params)
+        probs = run_dp(conn, r, params, decided)
         for t in teams:
             r[t] += step * (logit(tgt[t]) - logit(probs[t][4]))
     return r, tgt
