@@ -26,7 +26,9 @@ if __name__ == "__main__":
     ap.add_argument("--seed", type=int, default=SEED)
     ap.add_argument("--run-id", default=None)
     ap.add_argument("--w-market", type=float, default=0.65, help="peso del mercado en el anclaje del torneo")
+    ap.add_argument("--no-live", action="store_true", help="no condicionar a partidos en vivo")
     args = ap.parse_args()
     res = pipeline.run(as_of=args.as_of, n_sims=args.n, seed=args.seed,
-                       retrain=args.retrain, run_id=args.run_id, w_market=args.w_market)
+                       retrain=args.retrain, run_id=args.run_id, w_market=args.w_market,
+                       no_live=args.no_live)
     print("OK:", res)

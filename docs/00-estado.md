@@ -102,9 +102,19 @@ Paquete `src/mova_model/` (idempotente, re-ejecutable con datos frescos):
 - **Experimentos (aprender pesos ML, forma, xG, táctica):** todas las mejoras (0.001-0.006) son **< ruido** (SE±0.008-0.014) → estadísticamente nulas. Elo+mercado es el techo predictivo.
 - **El edge para ganar la polla NO es el modelo** (es ≈ mercado) → está en la **capa de estrategia** (valor vs público, ownership, camino) + scouting como desempate.
 
-## Fase 3 — Estrategia de polla (pendiente)
+## Iteración de eliminatorias (2026-06-29) — info real por partido ✅
 
-1. **Ownership/valor vs el público** (sesgo nacional: Colombia/Brasil/Argentina sobre-elegidos).
-2. **Optimización de picks** que maximice P(quedar 1º) simulando contra el campo.
-3. Scouting por-matchup como desempate.
-4. (Opcional con evidencia) valor de plantilla Transfermarkt, Elo-trayectoria; cron de actualización.
+Jerarquía de información en la simulación: **FT(real) > en vivo > mercado h2h > modelo**.
+- **Freeze FT** (`decided_matches`): partidos terminados condicionan el bracket (ganador avanza 1).
+- **In-play** (`inplay_advance` + `fetch_live`): partidos status-3 se condicionan a marcador+minuto (Poisson de tiempo restante). Ej. Brasil-Japón 1-1 al 76' → 57/43 (vs 69/31 pre-partido).
+- **Mercado h2h en la sim** (`market_advance`): los partidos con odds usan la 1X2 blended (mejor estimador per-partido) en vez del rating.
+- Fix status: `WS_STATUS_FINISHED={6}` (status 3 = EN VIVO, no FT). clamp λ∈[0.03,6].
+
+## Fase 3 — Estrategia de polla (capa ligera ✅, ampliable)
+
+`insight.pick_sheet` → `outputs/pick_sheet_latest.md`: pick de campeón (seguro + valor por leverage),
+ownership con sesgo del público (Colombia/Brasil/Argentina sobre-elegidos), y quién avanza cada ronda.
+Ej.: Argentina pick seguro; **España = valor (leverage 1.35)**; Brasil caro (over-owned).
+
+Ampliaciones opcionales con evidencia: optimización P(quedar 1º) vs el campo, valor de plantilla
+Transfermarkt, Elo-trayectoria, cron de actualización en vivo.

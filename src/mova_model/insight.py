@@ -9,6 +9,47 @@ from __future__ import annotations
 from .market import p_market_winner
 from . import elo, simulate
 
+# Sesgo del público en polla colombiana: equipos que la gente sobre-elige.
+PUBLIC_BIAS = {"Brazil": 1.6, "Argentina": 1.4, "Colombia": 1.8,
+               "Spain": 1.1, "England": 1.1, "Germany": 1.2}
+
+
+def pick_sheet(conn, run_id: str) -> str:
+    """Capa de polla: quién pasa cada ronda + campeón + valor/leverage (ligera)."""
+    sim = {t: dict(r16=a, qf=b, sf=c, fin=d, champ=e) for t, a, b, c, d, e in conn.execute(
+        """SELECT team,p_r16,p_qf,p_sf,p_final,p_champion FROM tournament_sim
+           WHERE run_id=?""", (run_id,))}
+    mkt = p_market_winner(conn)
+    # ownership ≈ prob mercado escalada por sesgo del público, renormalizada
+    own = {t: mkt.get(t, 0.0) * PUBLIC_BIAS.get(t, 1.0) for t in sim}
+    s = sum(own.values()) or 1
+    own = {t: v / s for t, v in own.items()}
+
+    L = ["# Pick sheet de la polla\n"]
+    # campeón: pick = mayor prob; valor = mayor leverage entre contendientes reales
+    champ_rank = sorted(sim, key=lambda t: -sim[t]["champ"])
+    L.append("## Campeón")
+    L.append(f"- **Pick seguro (mayor prob):** {champ_rank[0]} ({sim[champ_rank[0]]['champ']*100:.1f}%)")
+    lev = [(t, sim[t]["champ"], own.get(t, 1e-9), sim[t]["champ"]/max(own.get(t,1e-9),1e-9))
+           for t in champ_rank[:12] if sim[t]["champ"] > 0.03]
+    lev.sort(key=lambda x: -x[3])
+    best = lev[0]
+    L.append(f"- **Pick de valor (leverage {best[3]:.2f}):** {best[0]} "
+             f"(modelo {best[1]*100:.1f}% vs ownership {best[2]*100:.1f}%) → diferenciador")
+    L.append("\n| Equipo | Campeón | Ownership | Leverage |")
+    L.append("|---|---|---|---|")
+    for t, c, o, lv in sorted(lev, key=lambda x: -x[1])[:6]:
+        flag = "🟢 valor" if lv > 1.15 else ("🔴 caro" if lv < 0.9 else "≈")
+        L.append(f"| {t} | {c*100:.1f}% | {o*100:.1f}% | {lv:.2f} {flag} |")
+
+    # quién pasa cada ronda (el equipo más probable por slot de bracket)
+    L.append("\n## Quién avanza (pick por probabilidad)")
+    for lab, key in [("a Octavos (R16)", "r16"), ("a Cuartos", "qf"),
+                     ("a Semis", "sf"), ("a Final", "fin")]:
+        top = sorted(sim, key=lambda t: -sim[t][key])[:8]
+        L.append(f"- **{lab}:** " + ", ".join(f"{t} ({sim[t][key]*100:.0f}%)" for t in top))
+    return "\n".join(L)
+
 
 def luck_table(conn) -> dict:
     """team → (goles_favor, xGF, dif_favor, goles_contra, xGA, dif_contra) en el torneo."""

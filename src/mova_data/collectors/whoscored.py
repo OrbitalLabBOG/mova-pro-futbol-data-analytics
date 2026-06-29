@@ -122,6 +122,28 @@ class WhoScoredCollector(BaseCollector):
                     len(fixtures), sum(f["is_finished"] for f in fixtures))
         return fixtures
 
+    def fetch_live(self) -> list[dict]:
+        """Partidos de eliminación EN VIVO (status 3) con marcador + minuto actual."""
+        from ..config import WS_STAGES, WS_MONTHS, WS_STATUS_LIVE
+        live = []
+        for stage_id, name in WS_STAGES.items():
+            if not name.startswith("Final"):
+                continue
+            for d in WS_MONTHS:
+                for m in self._fixtures(stage_id, d):
+                    if m.get("status") in WS_STATUS_LIVE:
+                        el = (m.get("elapsed") or "").rstrip("'")
+                        try:
+                            minute = int(el)
+                        except ValueError:
+                            minute = 45
+                        live.append({
+                            "home": m.get("homeTeamName"), "away": m.get("awayTeamName"),
+                            "home_score": m.get("homeScore"), "away_score": m.get("awayScore"),
+                            "minute": minute, "elapsed": m.get("elapsed"),
+                        })
+        return live
+
     def _fixtures(self, stage_id: int, d: str) -> list[dict]:
         url = f"{BASE}/tournaments/{stage_id}/data/?d={d}"
         try:

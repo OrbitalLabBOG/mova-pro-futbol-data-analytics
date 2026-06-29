@@ -39,6 +39,54 @@ def advance_prob(ra: float, rb: float, params: dict) -> float:
     return pa + pd * (ea + ed * pk_a)
 
 
+def _adv_from_1x2(ph, pd, pa, ra, rb):
+    """1X2 (regulación) → P(avance) repartiendo el empate con penales por favorito."""
+    pk = PK_FAV if ra >= rb else (1 - PK_FAV)
+    return ph + pd * pk
+
+
+def inplay_advance(ra, rb, params, hs, as_, minute) -> float:
+    """P(equipo local avanza | marcador actual hs-as_ y minuto). Poisson de tiempo restante."""
+    import numpy as np
+    frac = max(0.0, (90 - minute)) / 90.0
+    dr = elo.dr(ra, rb, neutral=True)
+    lh, la = match_model.lambdas(dr, params)
+    M = match_model.score_matrix(lh * frac, la * frac, params["rho"])   # goles RESTANTES
+    ph = pd = pa = 0.0
+    for x in range(M.shape[0]):
+        for y in range(M.shape[1]):
+            fh, fa = hs + x, as_ + y
+            if fh > fa: ph += M[x, y]
+            elif fh == fa: pd += M[x, y]
+            else: pa += M[x, y]
+    return _adv_from_1x2(ph, pd, pa, ra, rb)
+
+
+def market_advance(conn, run_id: str) -> dict:
+    """{frozenset(par): (local, P(local avanza))} desde match_predictions con mercado."""
+    out = {}
+    for h, a, ph, pdr, pa in conn.execute(
+            """SELECT home_team, away_team, p_home, p_draw, p_away FROM match_predictions
+               WHERE run_id=? AND p_home_mkt IS NOT NULL""", (run_id,)):
+        out[frozenset((h, a))] = (h, _adv_from_1x2(ph, pdr, pa, 1, 1))   # pk 50/50 (no rating aquí)
+    return out
+
+
+def live_advance_map(live_rows, eff_ratings, params, resolve) -> dict:
+    """{frozenset(par): (local, P(local avanza | en vivo))} para partidos status-3."""
+    out = {}
+    for m in live_rows:
+        h, a = resolve(m["home"]), resolve(m["away"])
+        if not h or not a or h not in eff_ratings or a not in eff_ratings:
+            continue
+        if m["home_score"] is None or m["away_score"] is None:
+            continue
+        p = inplay_advance(eff_ratings[h], eff_ratings[a], params,
+                           m["home_score"], m["away_score"], m["minute"])
+        out[frozenset((h, a))] = (h, p)
+    return out
+
+
 def _slots(eff_ratings):
     """Aplana el bracket a 32 equipos en orden de slot."""
     teams = []
@@ -71,20 +119,27 @@ def decided_matches(conn) -> dict:
     return out
 
 
-def run_dp(conn, eff_ratings: dict, params: dict, decided: dict | None = None) -> dict:
+def run_dp(conn, eff_ratings: dict, params: dict, decided: dict | None = None,
+           live: dict | None = None, market: dict | None = None) -> dict:
     """Probabilidades EXACTAS de avance por convolución sobre el bracket fijo.
 
-    `decided` congela partidos de eliminación ya jugados (ganador avanza con prob 1).
+    Jerarquía de info por partido: FT(real) > en vivo > mercado h2h > modelo.
+      decided: {frozenset: ganador} (FT). live/market: {frozenset: (local, P(local avanza))}.
     """
     decided = decided or {}
+    live = live or {}
+    market = market or {}
     teams = _slots(eff_ratings)
-    n = len(teams)                       # 32
     cache = {}
     def adv(a, b):
         pair = frozenset((a, b))
-        if pair in decided:              # partido ya jugado → resultado real
+        if pair in decided:              # 1) partido FT → resultado real
             return 1.0 if decided[pair] == a else 0.0
-        if (a, b) not in cache:
+        for src in (live, market):       # 2) en vivo  3) mercado h2h
+            if pair in src:
+                ref, p = src[pair]
+                return p if ref == a else 1.0 - p
+        if (a, b) not in cache:          # 4) modelo
             cache[(a, b)] = advance_prob(eff_ratings[a], eff_ratings[b], params)
         return cache[(a, b)]
 
@@ -109,7 +164,8 @@ def run_dp(conn, eff_ratings: dict, params: dict, decided: dict | None = None) -
 
 def anchor_to_market(conn, eff_ratings, params, market_champ: dict,
                      w: float = 0.65, iters: int = 40, step: float = 70.0,
-                     decided: dict | None = None) -> tuple[dict, dict]:
+                     decided: dict | None = None, live: dict | None = None,
+                     market: dict | None = None) -> tuple[dict, dict]:
     """Ajusta fuerzas para que la simulación reproduzca log-pool(modelo, mercado).
 
     Mantiene consistencia entre rondas (todo sale de UNA simulación con las fuerzas
@@ -117,7 +173,7 @@ def anchor_to_market(conn, eff_ratings, params, market_champ: dict,
     """
     import math
     teams = _slots(eff_ratings)
-    base = run_dp(conn, eff_ratings, params, decided)
+    base = run_dp(conn, eff_ratings, params, decided, live, market)
     model_c = {t: max(base[t][4], 1e-6) for t in teams}
     # objetivo = log-pool por equipo, renormalizado
     tgt = {}
@@ -130,7 +186,7 @@ def anchor_to_market(conn, eff_ratings, params, market_champ: dict,
     r = dict(eff_ratings)
     logit = lambda p: math.log(min(max(p, 1e-6), 1 - 1e-6) / (1 - min(max(p, 1e-6), 1 - 1e-6)))
     for _ in range(iters):
-        probs = run_dp(conn, r, params, decided)
+        probs = run_dp(conn, r, params, decided, live, market)
         for t in teams:
             r[t] += step * (logit(tgt[t]) - logit(probs[t][4]))
     return r, tgt

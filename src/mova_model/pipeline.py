@@ -38,7 +38,8 @@ def ensure_match_model(conn, force=False):
     return p
 
 
-def run(as_of=None, n_sims=N_SIM, seed=SEED, retrain=False, run_id=None, w_market=0.65) -> dict:
+def run(as_of=None, n_sims=N_SIM, seed=SEED, retrain=False, run_id=None, w_market=0.65,
+        no_live=False) -> dict:
     init_db()
     run_id = run_id or dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%S")
     started = dt.datetime.now(dt.timezone.utc).isoformat()
@@ -55,16 +56,27 @@ def run(as_of=None, n_sims=N_SIM, seed=SEED, retrain=False, run_id=None, w_marke
         # predict
         pinfo = predict_mod.run(conn, run_id, params, eff, w)
         logger.info("predict: %d partidos (%d con mercado)", pinfo["predicted"], pinfo["with_market"])
-        # simulate (DP exacto) + anclaje al mercado + congelar resultados ya jugados
+        # simulate: jerarquía FT(real) > en vivo > mercado h2h > modelo, anclado a mercado
         from .market import p_market_winner
+        from mova_data.teams import resolve as _resolve
+        from mova_data.collectors.whoscored import WhoScoredCollector
+        from mova_data.config import RAW_DIR
         mkt_champ = p_market_winner(conn)
-        decided = simulate.decided_matches(conn)
-        anc_ratings, _ = simulate.anchor_to_market(conn, eff, params, mkt_champ,
-                                                   w=w_market, decided=decided)
-        probs = simulate.run_dp(conn, anc_ratings, params, decided)
-        simulate.write(conn, run_id, probs, n_sims=0, seed=seed, method="dp+anchor")
-        logger.info("simulate: %d equipos (DP anclado w=%.2f, %d partidos congelados)",
-                    len(probs), w_market, len(decided))
+        decided = simulate.decided_matches(conn)                 # FT
+        market = simulate.market_advance(conn, run_id)           # h2h mercado
+        live = {}
+        if not no_live:
+            try:
+                rows = WhoScoredCollector(RAW_DIR / "whoscored").fetch_live()
+                live = simulate.live_advance_map(rows, eff, params, lambda n: _resolve(conn, n))
+            except Exception as e:
+                logger.warning("fetch en vivo falló (sigo sin in-play): %s", e)
+        anc_ratings, _ = simulate.anchor_to_market(conn, eff, params, mkt_champ, w=w_market,
+                                                   decided=decided, live=live, market=market)
+        probs = simulate.run_dp(conn, anc_ratings, params, decided, live, market)
+        simulate.write(conn, run_id, probs, n_sims=0, seed=seed, method="dp+anchor+live")
+        logger.info("simulate: %d eq | FT:%d en-vivo:%d mercado-h2h:%d (anclado w=%.2f)",
+                    len(probs), len(decided), len(live), len(market), w_market)
         # insight (más allá de la fuerza): valor vs mercado, suerte/regresión, camino
         from . import insight
         from .config import OUTPUTS_DIR
@@ -72,6 +84,8 @@ def run(as_of=None, n_sims=N_SIM, seed=SEED, retrain=False, run_id=None, w_marke
         rep = insight.report(conn, run_id)
         (OUTPUTS_DIR / f"insight_{run_id}.md").write_text(rep)
         (OUTPUTS_DIR / "insight_latest.md").write_text(rep)
+        picks = insight.pick_sheet(conn, run_id)
+        (OUTPUTS_DIR / "pick_sheet_latest.md").write_text(picks)
         # registro
         conn.execute(
             """INSERT OR REPLACE INTO model_runs
