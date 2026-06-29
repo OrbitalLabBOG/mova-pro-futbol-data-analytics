@@ -54,6 +54,7 @@ Arquitectura, inventario de datos y plan de Fase 2 → **[docs/00-estado.md](doc
 | [docs/08-marco-estadistico-y-modelo.md](docs/08-marco-estadistico-y-modelo.md) | **★ Marco estadístico + diseño del modelo (Fase 2)** |
 | [docs/09-modelo-mvp-resultados.md](docs/09-modelo-mvp-resultados.md) | Resultados del MVP del modelo (E0-E4) |
 | [docs/10-backtest-y-critica.md](docs/10-backtest-y-critica.md) | **★ Backtest, experimentos y veredicto honesto (qué tan bueno es)** |
+| [docs/11-pronostico-y-operacion.md](docs/11-pronostico-y-operacion.md) | **★ Pronóstico en vivo, salidas, cómo regenerar y leer los picks** |
 
 ## Cómo correr el pipeline
 
