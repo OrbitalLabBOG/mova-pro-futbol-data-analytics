@@ -13,15 +13,20 @@ import numpy as np
 from .config import ET_STRENGTH, PK_FAV, SEED
 from . import match_model, elo
 
-# Bracket fijo WC2026 (orden de slots; pares adyacentes → R16). Nombres canónicos.
+# Bracket fijo WC2026 — orden de slots VERIFICADO contra el template oficial
+# (openfootball/FIFA, match numbers 73-104). Pares adyacentes → R16; QF=R16(0,1),(2,3)…;
+# SF#0=QF(0,1) [mitad A], SF#1=QF(2,3) [mitad B]. Validado: España(A)⊥Argentina(B),
+# Francia(A)⊥Inglaterra(B), Portugal(A)⊥Colombia(B) (CBS). Nombres canónicos.
 BRACKET = [
+    # ── Mitad A (slots 0-7 → Semifinal 1) ──
+    ("Germany", "Paraguay"), ("France", "Sweden"),          # → QF (M89 vs M90 = M97)
     ("South Africa", "Canada"), ("Netherlands", "Morocco"),
-    ("Germany", "Paraguay"), ("France", "Sweden"),
-    ("Brazil", "Japan"), ("Ivory Coast", "Norway"),
-    ("Mexico", "Ecuador"), ("England", "DR Congo"),
-    ("Portugal", "Croatia"), ("Spain", "Austria"),
+    ("Portugal", "Croatia"), ("Spain", "Austria"),          # → QF (M93 vs M94 = M98)
     ("USA", "Bosnia and Herzegovina"), ("Belgium", "Senegal"),
-    ("Australia", "Egypt"), ("Argentina", "Cabo Verde"),
+    # ── Mitad B (slots 8-15 → Semifinal 2) ──
+    ("Brazil", "Japan"), ("Ivory Coast", "Norway"),         # → QF (M91 vs M92 = M99)
+    ("Mexico", "Ecuador"), ("England", "DR Congo"),
+    ("Argentina", "Cabo Verde"), ("Australia", "Egypt"),    # → QF (M95 vs M96 = M100)
     ("Switzerland", "Algeria"), ("Colombia", "Ghana"),
 ]
 ROUNDS = ["p_r16", "p_qf", "p_sf", "p_final", "p_champion"]   # 32→1 = 5 rondas
