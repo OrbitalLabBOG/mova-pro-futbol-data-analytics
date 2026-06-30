@@ -36,3 +36,4 @@ models/**/*.joblib
 
 outputs/*.md
 outputs/*.png
+data/club-odds-mirror/

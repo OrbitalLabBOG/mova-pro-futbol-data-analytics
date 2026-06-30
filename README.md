@@ -55,6 +55,9 @@ Arquitectura, inventario de datos y plan de Fase 2 → **[docs/00-estado.md](doc
 | [docs/09-modelo-mvp-resultados.md](docs/09-modelo-mvp-resultados.md) | Resultados del MVP del modelo (E0-E4) |
 | [docs/10-backtest-y-critica.md](docs/10-backtest-y-critica.md) | **★ Backtest, experimentos y veredicto honesto (qué tan bueno es)** |
 | [docs/11-pronostico-y-operacion.md](docs/11-pronostico-y-operacion.md) | **★ Pronóstico en vivo, salidas, cómo regenerar y leer los picks** |
+| [docs/12-estrategia-apuestas-investigacion.md](docs/12-estrategia-apuestas-investigacion.md) | **★ Apuestas cuantitativas: matemática (EV/devig/CLV/Kelly), referentes, Polymarket, fuentes de datos, veredicto +EV y plan accionable** |
+| [docs/13-clv-backtest-resultados.md](docs/13-clv-backtest-resultados.md) | **★ Backtest de CLV sobre 80K partidos: prueba empírica de que NO se le gana al cierre de Pinnacle (mercados eficientes)** |
+| [docs/14-polymarket-estrategia.md](docs/14-polymarket-estrategia.md) | **★ Polymarket por microestructura (MM/arb/resolution-edge): medición en vivo + veredicto (saturado para operador pequeño)** |
 
 ## Cómo correr el pipeline
 
@@ -76,6 +79,11 @@ python scripts/run_model.py --seed 42  # ★ pipeline: features→predict→simu
 python scripts/backtest.py           # RPS leakage-free WC2018/22
 python scripts/scout.py "Colombia" "Ghana"  # scouting táctico de un cruce
 python scripts/bracket.py            # bracket completo lleno (16vos→campeón)
+
+# ── Apuestas / CLV (Fase betting) ──
+python scripts/collect_club_odds.py  # mirror football-data → data/betting.db (80K con cierre Pinnacle)
+python scripts/clv_backtest.py       # ★ backtest CLV: ¿le ganamos al cierre? (4 tests, ~34s)
+python scripts/poly_microstructure.py # ★ microestructura PM+Kalshi en vivo (sandbox OFF; curl_cffi)
 ```
 
 Todo idempotente y source-agnostic (`source` en cada tabla). DB: `data/mundial.db`.
