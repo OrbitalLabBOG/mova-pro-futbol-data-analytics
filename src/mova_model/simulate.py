@@ -192,6 +192,41 @@ def anchor_to_market(conn, eff_ratings, params, market_champ: dict,
     return r, tgt
 
 
+def fill_bracket(eff_ratings, params, decided=None, live=None, market=None):
+    """Bracket más probable: en cada cruce elige el favorito (o el ganador real si FT).
+
+    Devuelve (rondas, campeón). Cada ronda = lista de ((a,b), ganador, prob_ganador).
+    Jerarquía: FT real > en vivo > mercado h2h > modelo.
+    """
+    decided = decided or {}; live = live or {}; market = market or {}
+
+    def pick(a, b):
+        pair = frozenset((a, b))
+        if pair in decided:
+            w = decided[pair]; return w, 1.0
+        for src in (live, market):
+            if pair in src:
+                ref, p = src[pair]
+                p_a = p if ref == a else 1 - p
+                return (a, p_a) if p_a >= 0.5 else (b, 1 - p_a)
+        p_a = advance_prob(eff_ratings[a], eff_ratings[b], params)
+        return (a, p_a) if p_a >= 0.5 else (b, 1 - p_a)
+
+    rounds = []
+    pairs = list(BRACKET)
+    labels = ["16vos", "Octavos", "Cuartos", "Semifinal", "Final"]
+    teams_pairs = pairs
+    for lab in labels:
+        res = [(ab[0], ab[1], *pick(ab[0], ab[1])) for ab in teams_pairs]
+        rounds.append((lab, res))
+        winners = [r[2] for r in res]
+        if len(winners) <= 1:
+            break
+        teams_pairs = [(winners[i], winners[i + 1]) for i in range(0, len(winners), 2)]
+    champion = rounds[-1][1][0][2]
+    return rounds, champion
+
+
 def run_mc(conn, eff_ratings, params, n_sims=10000, seed=SEED) -> dict:
     """Monte Carlo (validación del DP)."""
     rng = np.random.default_rng(seed)
