@@ -75,6 +75,7 @@ python scripts/fit_match_model.py    # calibra Elo→Dixon-Coles (una vez)
 python scripts/run_model.py --seed 42  # ★ pipeline: features→predict→simulate→insight
 python scripts/backtest.py           # RPS leakage-free WC2018/22
 python scripts/scout.py "Colombia" "Ghana"  # scouting táctico de un cruce
+python scripts/bracket.py            # bracket completo lleno (16vos→campeón)
 ```
 
 Todo idempotente y source-agnostic (`source` en cada tabla). DB: `data/mundial.db`.

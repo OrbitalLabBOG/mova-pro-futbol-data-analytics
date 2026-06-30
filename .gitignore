@@ -35,3 +35,4 @@ models/xg/*.joblib
 models/**/*.joblib
 
 outputs/*.md
+outputs/*.png
