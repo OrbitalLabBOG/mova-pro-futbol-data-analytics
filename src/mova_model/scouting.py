@@ -91,11 +91,15 @@ def matchup(conn, a: str, b: str) -> str:
     L.append(f"| Tiros/partido | {pa['total_shots']/pa['n']:.0f} | {pb['total_shots']/pb['n']:.0f} |")
 
     L.append("\n## Lectura accionable")
-    # ataque fuerte vs defensa débil
-    if pa["xgf"] - pb["xga"] > pb["xgf"] - pa["xga"]:
-        L.append(f"- **{a}** tiene la ventaja de matchup (su ataque {pa['xgf']:.2f} vs defensa de {b} {pb['xga']:.2f}).")
+    # goles proyectados = promedio(ataque propio, defensa que concede el rival)
+    ga_proj = (pa["xgf"] + pb["xga"]) / 2     # goles esperados de A
+    gb_proj = (pb["xgf"] + pa["xga"]) / 2     # goles esperados de B
+    if ga_proj >= gb_proj:
+        L.append(f"- **{a}** tiene la ventaja de matchup (goles proyectados {ga_proj:.2f} vs {gb_proj:.2f}): "
+                 f"su ataque {pa['xgf']:.2f} + la defensa de {b} ({pb['xga']:.2f} concedidos).")
     else:
-        L.append(f"- **{b}** tiene la ventaja de matchup (su ataque {pb['xgf']:.2f} vs defensa de {a} {pa['xga']:.2f}).")
+        L.append(f"- **{b}** tiene la ventaja de matchup (goles proyectados {gb_proj:.2f} vs {ga_proj:.2f}): "
+                 f"su ataque {pb['xgf']:.2f} + la defensa de {a} ({pa['xga']:.2f} concedidos).")
     for nm, fin in ((a, fina), (b, finb)):
         if fin > 2:
             L.append(f"- ⚠️ **{nm}** finaliza +{fin:.1f} sobre xG → caliente, riesgo de regresión (no sobre-confiar).")
