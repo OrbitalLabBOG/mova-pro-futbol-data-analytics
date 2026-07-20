@@ -76,6 +76,26 @@ Nosotros somos **consumidores independientes de ese mismo pipeline**: recolectam
 
 ---
 
+## 6b. ¿Esos datos son abiertos? — La pirámide de acceso al dato futbolístico
+
+**Respuesta corta: NO, el dato oficial de FIFA es cerrado — pero hay una cascada de capas, y con las capas públicas se puede hacer análisis de nivel profesional (nuestro repo es la prueba).**
+
+| Capa | Qué es | Quién accede | Costo |
+|---|---|---|---|
+| **1. Tracking oficial FIFA** | 150M puntos/partido, 50Hz, poses 3D, balón 500Hz, Football AI Pro | **Solo las 48 selecciones, FIFA y socios comerciales**. El tracking data crudo casi nunca se libera (ni de Mundiales pasados) | Cerrado |
+| **2. Event data comercial** | Opta/Stats Perform, StatsBomb (pago), Impect — el dato que anotan los data workers | Clubes, medios, casas de apuestas — licencias de miles de USD/año | $$$$ |
+| **3. La "capa gris" pública** | Ese MISMO event data Opta se **renderiza públicamente** en WhoScored, FotMob, SofaScore para audiencia. Se puede consultar viéndolo; scrapearlo es zona gris (público de facto, no licenciado para redistribución) | Cualquiera con técnica | Gratis |
+| **4. Datos genuinamente abiertos** | **StatsBomb Open Data** (event data COMPLETO de WC2018 y WC2022, con freeze frames 360, en GitHub), FBref (agregados Opta), Understat (xG), Elo ratings, resultados históricos (martj42, 49K partidos), APIs de mercados de predicción (Polymarket/Kalshi) | Cualquiera | Gratis y legal |
+| **5. Tracking abierto (excepción)** | Solo muestras para investigación: Metrica Sports samples, SkillCorner open data, datasets DFL académicos | Investigadores | Gratis (muestras) |
+
+**Los insights para el storytelling:**
+- La paradoja: **el dato lo genera el juego (público), lo anotan trabajadores del Sur Global, y lo posee una industria** — el aficionado ve el partido pero no "posee" su dato. (Conexión Data y Derecho: ¿de quién es el dato de un evento público?)
+- FIFA publica visualizaciones y métricas agregadas post-partido (FIFA Training Centre), pero **no datasets descargables**.
+- La capa 4 es suficiente para ciencia seria: Northeastern/NetSI trabaja con StatsBomb; nuestro modelo (≈ nivel casas de apuestas) usó solo capas 3-4. **[PROPIO]** 100% de nuestras 7 fuentes fueron gratuitas: WhoScored (capa 3), StatsBomb open/Elo/ESPN/mercados (capa 4), The Odds API (free tier).
+- Mensaje docente: *"no necesitas el dato de FIFA; necesitas método. El 90% de lo que hace un departamento de analytics profesional se puede replicar con datos abiertos"* — y es literalmente lo que hicimos desde Bogotá.
+
+---
+
 ## 7. Datos pendientes de validar con nuestra DB (backlog para las siguientes historias)
 
 | # | Claim externo | Validación propia posible |
