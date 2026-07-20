@@ -19,8 +19,8 @@ OUT.mkdir(parents=True, exist_ok=True)
 
 # base, capa media (oscura), gradiente vivo (c1 -> c2)
 CAPS = {
-    1: dict(name="ciencia-datos", base=(6, 10, 28),  mid=(20, 36, 128),
-            c1=(30, 70, 255), c2=(90, 150, 255)),                      # azul electrico
+    1: dict(name="ciencia-datos", base=(4, 16, 12),  mid=(10, 92, 56),
+            c1=(16, 200, 100), c2=(120, 255, 170)),                    # verde esmeralda vivo
     2: dict(name="matematicas",  base=(24, 8, 4),    mid=(140, 40, 16),
             c1=(255, 90, 40), c2=(255, 160, 60)),                      # naranja vivo
     3: dict(name="insights",     base=(20, 14, 2),   mid=(150, 105, 10),
@@ -29,8 +29,8 @@ CAPS = {
             c1=(240, 40, 55), c2=(255, 170, 40)),                      # rojo→gualda
     5: dict(name="messi",        base=(6, 14, 24),   mid=(40, 90, 140),
             c1=(110, 190, 240), c2=(200, 235, 255)),                   # celeste albiceleste
-    6: dict(name="tactica",      base=(4, 18, 12),   mid=(16, 100, 60),
-            c1=(30, 200, 120), c2=(140, 255, 190)),                    # verde cancha vivo
+    6: dict(name="tactica",      base=(12, 6, 26),   mid=(70, 30, 150),
+            c1=(140, 70, 255), c2=(200, 150, 255)),                    # violeta electrico
 }
 
 
