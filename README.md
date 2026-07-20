@@ -3,7 +3,7 @@
 Modelo de predicción de resultados para la **Copa Mundial FIFA 2026** (USA/México/Canadá, 48 equipos).
 Objetivo práctico: maximizar el puntaje esperado en la polla. Objetivo técnico: pipeline reutilizable de analítica deportiva (vertical **MOVA**).
 
-> **Estado: Fase 1 (Datos) ✅ + Fase 2 (Modelo MVP) ✅** — 7 fuentes integradas (574K eventos) + modelo Elo→Dixon-Coles anclado a mercado, backtesteado (RPS≈mercado) + capas de insight y scouting. Ver [docs/00-estado.md](docs/00-estado.md) y [docs/10-backtest-y-critica.md](docs/10-backtest-y-critica.md). Siguiente: capa de estrategia de polla.
+> **Estado: TORNEO TERMINADO — ciclo completo ✅** (2026-07-20). 🏆 **España campeón** (1-0 a Argentina). Datos completos: 104/104 partidos, 626K+ eventos. El modelo proyectó exactamente las dos semifinales reales (Francia-España, Argentina-Inglaterra) y el **pick de valor del pick sheet (España, leverage 1.31) fue el campeón**. Balance final y lecciones → **[docs/15-postmortem-final.md](docs/15-postmortem-final.md)**.
 
 ## Tesis del proyecto
 
@@ -58,6 +58,7 @@ Arquitectura, inventario de datos y plan de Fase 2 → **[docs/00-estado.md](doc
 | [docs/12-estrategia-apuestas-investigacion.md](docs/12-estrategia-apuestas-investigacion.md) | **★ Apuestas cuantitativas: matemática (EV/devig/CLV/Kelly), referentes, Polymarket, fuentes de datos, veredicto +EV y plan accionable** |
 | [docs/13-clv-backtest-resultados.md](docs/13-clv-backtest-resultados.md) | **★ Backtest de CLV sobre 80K partidos: prueba empírica de que NO se le gana al cierre de Pinnacle (mercados eficientes)** |
 | [docs/14-polymarket-estrategia.md](docs/14-polymarket-estrategia.md) | **★ Polymarket por microestructura (MM/arb/resolution-edge): medición en vivo + veredicto (saturado para operador pequeño)** |
+| [docs/15-postmortem-final.md](docs/15-postmortem-final.md) | **★ Post-mortem final: qué tan bueno fue el modelo vs el torneo real, por qué se desfasó el pick de campeón, lecciones** |
 
 ## Cómo correr el pipeline
 

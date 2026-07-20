@@ -1,6 +1,8 @@
 # Estado del proyecto
 
-> **Fase 1 (Datos) ✅ + Fase 2 (Modelo) ✅** (2026-06-28). Capa de datos multi-fuente validada + modelo Elo→Dixon-Coles anclado a mercado, backtesteado, con capas de insight y scouting. Siguiente: Fase 3 (estrategia de polla).
+> **CICLO COMPLETO ✅** (2026-07-20). Torneo terminado: 🏆 España campeón. Datos finales cargados (104/104 partidos, validación TODO OK) y evaluación del modelo vs realidad en **[15-postmortem-final.md](15-postmortem-final.md)**.
+>
+> **Fase 1 (Datos) ✅ + Fase 2 (Modelo) ✅** (2026-06-28). Capa de datos multi-fuente validada + modelo Elo→Dixon-Coles anclado a mercado, backtesteado, con capas de insight y scouting. Fase 3 (estrategia de polla) ✅ — el pick de valor (España) fue el campeón.
 
 ## Qué se construyó
 
