@@ -96,6 +96,42 @@ Nosotros somos **consumidores independientes de ese mismo pipeline**: recolectam
 
 ---
 
+## 6c. ¿Y esto de verdad funciona? — La evidencia de que los datos ganan partidos
+
+> Para la historia que responde al escéptico: "eso es humo, el fútbol se gana en la cancha". Casos con resultados medibles, ordenados del club al Mundial.
+
+### El punto de partida conceptual
+
+- **El dinero explica casi todo… y ahí está la oportunidad.** La economía del fútbol (Soccernomics, Kuper & Szymanski) muestra que la nómina salarial explica la gran mayoría de la posición final de un club en el largo plazo. Por eso la vara correcta para medir la analítica es: **¿rindes por encima de lo que tu presupuesto predice?** Todos los casos de éxito de datos son exactamente eso — equipos pobres rindiendo como ricos.
+- **El origen es Moneyball (béisbol, Oakland A's 2002):** playoffs con un tercio de la nómina de los Yankees explotando métricas que el mercado ignoraba (OBP). El fútbol tardó ~15 años más porque es un juego más fluido y difícil de medir — hasta que llegó el event data.
+
+### Los casos de club (el laboratorio donde se probó)
+
+| Caso | Qué hicieron | Resultado medible |
+|---|---|---|
+| **FC Midtjylland** 🇩🇰 (comprado por Matthew Benham, apostador profesional cuantitativo, 2014) | Modelos propios de valoración + **deep dive de balón parado** encargado a Ted Knutson (luego fundador de StatsBomb) | **Primer título danés de su historia en 2015**, en ~1 año de proyecto; 3 ligas en total. Balón parado como arma principal |
+| **Brentford** 🏴 (Benham) | Recruitment 100% por modelos: comprar infravalorados, vender caro (Watkins, Toney, Mbeumo…) | **Ascenso a Premier League 2021 tras 74 años fuera**, sosteniéndose en mitad de tabla con uno de los presupuestos más bajos — el club que más rinde sobre nómina de Inglaterra |
+| **Liverpool** (Ian Graham, PhD en física, dir. de research 2012-2023) | Datos para: contratar a **Klopp** (su modelo mostró que el Dortmund 2014-15 jugó mucho mejor de lo que sus resultados decían = mala suerte, no mal equipo), y fichar a **Salah, Mané, Robertson, van Dijk** | **Champions 2019 + primera Premier en 30 años (2020)**. El caso mejor documentado: Graham lo cuenta en "How to Win the Premier League" (2024) |
+| **Arsenal** | Compró la firma de analytics StatDNA (2012) y luego fichó al primer entrenador especialista de balón parado estrella (Nicolas Jover) | La referencia de córners de la era moderna; balón parado como ventaja estructural sostenida |
+
+*Patrón común: ninguno "predijo el futuro". Encontraron **ineficiencias del mercado** (jugadores mal valorados, jugadas entrenables que nadie entrenaba) y las explotaron sistemáticamente.*
+
+### Los casos de Mundial (lo que le da relevancia a la serie)
+
+1. **Alemania 2014 + SAP Match Insights — el caso fundacional en selecciones.** DFB y SAP construyeron el sistema en 2013: 8 cámaras, miles de puntos de dato por segundo, insights en tablets de los jugadores. El KPI famoso: **redujeron el tiempo promedio de posesión por jugador de 3.4s (2010) a 1.1s (2014)** — circular más rápido como objetivo cuantificado y entrenado. Resultado: campeones del mundo (y el 7-1 a Brasil como exhibición de esa velocidad).
+2. **Inglaterra 2018 — el balón parado como estrategia deliberada.** **9 de sus 12 goles (75%) llegaron de balón parado — récord histórico de un Mundial** (superando al Portugal del 66). No fue accidente: Southgate estudió deportes de situaciones estáticas (NBA, NFL) y lo entrenó como prioridad. Mismo torneo: **primera tanda de penales ganada por Inglaterra en un Mundial** con preparación sistemática (investigación del psicólogo Geir Jordet: los penales son entrenables — quién patea, en qué orden, cómo gestionar el tiempo entre el pito y el disparo; su research muestra que apurarse tras el silbato hunde la conversión).
+3. **Holanda 2014 — el cambio de arquero más famoso de la historia:** Van Gaal metió a Tim Krul al 120' SOLO para la tanda vs Costa Rica, con scouting de pateadores. Krul atajó 2 y Holanda pasó a semis.
+4. **Argentina 2022 — la tanda como ciencia:** el cuerpo de analistas + "Dibu" Martínez llegaron a Qatar con dossiers de pateadores; Argentina ganó 2 tandas camino al título (el scouting de penales rivales fue pieza reconocida del campeonato).
+5. **Mundial 2026:** la culminación — FIFA regaló la infraestructura (Football AI Pro para las 48) y el diferencial se movió del acceso al criterio. España campeona con identidad innegociable y pressing coordinado (1 solo gol encajado — por verificar con DB propia); los datos de circulación (PPM 17.0) confirman que su posesión era *rápida*, heredera directa del KPI alemán de 2014.
+
+### La magnitud honesta (para no sobrevender)
+
+- La analítica **no convierte a un equipo malo en campeón** — mueve probabilidades en los márgenes: un fichaje que no falla, un córner que rinde 2x, una tanda de penales con +10-20pp de ventaja preparada. En un torneo de 7 partidos eliminatorios, esos márgenes SON la diferencia (nuestro post-mortem: España campeona era un evento al 16%).
+- El balón parado es el ejemplo perfecto de ineficiencia: genera **~1 de cada 4-6 goles** en torneos grandes [validar % exacto WC2026 con DB propia] pero históricamente recibía una fracción mínima del tiempo de entrenamiento. Por eso fue lo primero que los cuantitativos (Midtjylland, Inglaterra 2018, Arsenal) atacaron.
+- **[PROPIO]** Nuestro propio experimento es evidencia en ambas direcciones: no le ganamos al mercado en predicción (RPS ≈ casas — el mercado es durísimo), pero el método sí encontró el value pick correcto (España). Funciona, pero donde hay ineficiencia — no magia.
+
+---
+
 ## 7. Datos pendientes de validar con nuestra DB (backlog para las siguientes historias)
 
 | # | Claim externo | Validación propia posible |
@@ -122,3 +158,12 @@ Nosotros somos **consumidores independientes de ese mismo pipeline**: recolectam
 - Total Football Analysis — analytics spotlight: https://totalfootballanalysis.com/thought-analysis/from-xg-to-pressing-efficiency-analytics-spotlight-on-the-2026-world-cup
 - Coaches' Voice — táctica de la final: https://learning.coachesvoice.com/cv/spain-argentina-2026-world-cup-final-tactical-analysis/
 - Serie técnica (Medium, CS teacher) — tracking y plataformas: https://parashar--manas.medium.com/understanding-fifa-world-cup-2026-technology-part-5-ai-powered-player-tracking-c4ac09039311
+
+**Sección 6c (evidencia):**
+- Computer Weekly — SAP y Alemania 2014 (posesión 3.4s→1.1s): https://www.computerweekly.com/news/2240224421/SAP-helps-Germany-lift-the-World-Cup
+- Goal — récord de balón parado Inglaterra 2018 (9/12 goles): https://www.goal.com/en/news/england-set-world-cup-set-piece-record/1c1xmsuse8kwi1a6x9p6jxh0vu
+- SI — Benham, Brentford y Midtjylland (Knutson y el deep dive de set pieces): https://www.si.com/soccer/2015/05/15/soccer-analytics-brentford-midtjylland-matthew-benham
+- Breaking The Lines — cómo los datos le dieron el título a Midtjylland: https://breakingthelines.com/data-analysis/how-data-analysis-won-fc-midtjylland-a-title-and-more/
+- Sky Sports — Ian Graham: cómo los datos ayudaron a ganar la Premier: https://www.skysports.com/football/news/11669/13200552/liverpool-s-former-director-of-research-ian-graham-explains-how-data-helped-the-reds-win-the-premier-league-title
+- Sky Sports — Jordet sobre el método de penales de Southgate: https://www.skysports.com/football/news/11095/12354137/debate-was-gareth-southgate-right-with-his-penalty-shootout-selections
+- Libros de referencia: *Soccernomics* (Kuper & Szymanski), *Moneyball* (Lewis), *How to Win the Premier League* (Ian Graham, 2024), *The Numbers Game* (Anderson & Sally)
