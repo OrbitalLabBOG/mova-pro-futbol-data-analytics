@@ -74,7 +74,16 @@ Gráficos reales ya computados por si se usan: xG por zonas, xG race, xT grid, m
 
 ## CAPÍTULO 3 — Insights del torneo 🟡
 
-Pool de 17 insights en `divulgacion/07` (C3-01..17). ⬜ Pendiente depurar a ~6 y producir.
+**Selección de Julián (2026-07-21):**
+
+| # | Insight | Gráfico | Estado |
+|---|---------|---------|--------|
+| C3-04 | **La dependencia goleadora** — Haaland 58%, Mbappé 50%, Messi 44%… campeón 38% con 7 goleadores | Lollipop con banderas | ✅ fijado |
+| C3-05 | **El banquillo ganó el Mundial** — 20% de los goles fueron de suplentes; el gol del título lo fabricaron dos cambios (Ferran+Nico) | Waffle de goles por posición | ✅ fijado |
+| C3-03 | **El 23% de los partidos se decidió después del 90'** — 54 goles en descuento, 8 en prórroga, 4 tandas | Mosaico de los 104 partidos por "cuándo se decidió" | ✅ fijado |
+| C3-13 | Cada equipo tiene huella digital de ataque (Australia 53% derecha, Noruega 47%) | Grid de mini-canchas con flechas | 🔖 marcado (confirmar antes de diseñar) |
+
+Resto del pool (C3-01,02,06..12,14..17) queda en reserva en `divulgacion/07`.
 
 ## CAPÍTULO 4 — España 🔴
 
