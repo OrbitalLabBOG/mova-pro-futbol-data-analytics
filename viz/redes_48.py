@@ -19,6 +19,8 @@ BG, LINE, INK, MUTED, MINT = "#07090c", "#2a3038", "#e8e6e3", "#8a8f98", "#3ceb8
 HUB_C = "#ffffff"
 TEAM_COLORS = {"Spain": "#e4353f", "Paraguay": "#8e2438", "Netherlands": "#ff7f2a",
                "Morocco": "#2e9e63", "Argentina": "#7cc0e8", "Colombia": "#ffd166"}
+TEAM_LABEL = {"Spain": "ESPAÑA", "Paraguay": "PARAGUAY", "Netherlands": "PAÍSES BAJOS",
+              "Morocco": "MARRUECOS", "Argentina": "ARGENTINA", "Colombia": "COLOMBIA"}
 plt.rcParams.update({"figure.facecolor": BG, "axes.facecolor": BG, "savefig.facecolor": BG,
                      "text.color": INK, "font.family": "DejaVu Sans"})
 
@@ -83,7 +85,7 @@ def metrics():
 
 def draw(teams):
     n = len(teams)
-    fig, axes = plt.subplots(2, 3, figsize=(17, 11))
+    fig, axes = plt.subplots(3, 2, figsize=(11.5, 16))
     for ax, team in zip(axes.flat, teams):
         import matplotlib.patheffects as pe
         col = TEAM_COLORS.get(team, MINT)
@@ -104,13 +106,13 @@ def draw(teams):
         ax.scatter([pos.loc[hub, "x"]], [pos.loc[hub, "y"]], s=float(s.get(hub, 500)) * 1.25,
                    color=HUB_C, edgecolor=col, lw=2.4, zorder=5)
         ax.annotate(hub.split()[-1], (pos.loc[hub, "x"], pos.loc[hub, "y"]), xytext=(0, -19),
-                    textcoords="offset points", ha="center", fontsize=11, color=HUB_C,
+                    textcoords="offset points", ha="center", fontsize=14, color=HUB_C,
                     fontweight="bold", zorder=6,
                     path_effects=[pe.Stroke(linewidth=3.2, foreground=BG), pe.Normal()])
-        ax.set_title(team, fontsize=12.5, color=col, fontweight="bold", pad=5)
+        ax.set_title(TEAM_LABEL.get(team, team), fontsize=17, color=col, fontweight="bold", pad=6)
     fig.tight_layout()
-    fig.savefig(OUT / "redes_candidatos.png", dpi=150)
-    print("→ redes_candidatos.png")
+    fig.savefig(OUT / "redes_vertical.png", dpi=150)
+    print("→ redes_vertical.png")
 
 
 if __name__ == "__main__":
