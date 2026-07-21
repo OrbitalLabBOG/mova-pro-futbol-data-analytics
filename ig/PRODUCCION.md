@@ -52,8 +52,16 @@
 
 ## CAPÍTULO 2 — Las matemáticas del gol 🟠
 
-Estructura definida en `divulgacion/07` (C2-A1..A5 explicación + C2-B1..B5 curiosidades). ⬜ Sin producir.
-Gráficos base ya computados: xG por zonas, xG race, xT grid, momentum (en `outputs/divulgacion/`).
+**Estructura fijada (2026-07-21): hilo tiro → pase → partido. Escenas reales icónicas + capa didáctica por código.**
+
+| # | Lámina | Escena real | Capa didáctica (por código) | Estado |
+|---|--------|-------------|------------------------------|--------|
+| S2 | **xG — la probabilidad de cada tiro** | Messi rematando gol icónico (asset de Julián, pendiente) | Retícula del arco + chip con el xG REAL de ese tiro (del modelo) + 2 anillos fantasma comparativos (penal 0.76, lejano 0.04) | ⬜ esperando asset |
+| S3 | **xT — cuánto vale cada zona** | Pase icónico — candidato: peinada Nico→Ferran (por confirmar) | Terreno de valor luminoso (codex) + chips de zona reales "0.02 → +0.29" + mini-sello de la superficie xT propia | ⬜ esperando asset |
+| S4 | **Momentum — la gráfica de la TV desarmada** | Sin codex: gráfica broadcast-glow con datos REALES de la final | Goles marcados, descanso, prórroga, pico en el gol de Ferran + micro-diagrama del cálculo (eventos→ventana 5'→barra) | ⬜ lista para producir |
+
+Copys curiosidades de reserva (C2-B): Van Dijk 7-en-1000, Adams 76-en-100, penales 73% vs 62%, Japón +4/Colombia −5, momentum de Alemania 77% y eliminada.
+Gráficos base ya computados: xG por zonas, xG race, xT grid, momentum 104 partidos (en `outputs/divulgacion/`).
 
 ## CAPÍTULO 3 — Insights del torneo 🟡
 
