@@ -16,6 +16,9 @@ OUT = ROOT / "outputs" / "divulgacion" / "experiments"
 db = sqlite3.connect(ROOT / "data" / "mundial.db")
 
 BG, LINE, INK, MUTED, MINT = "#07090c", "#2a3038", "#e8e6e3", "#8a8f98", "#3ceb8c"
+HUB_C = "#ffffff"
+TEAM_COLORS = {"Spain": "#e4353f", "Paraguay": "#d64550", "Netherlands": "#ff7f2a",
+               "Morocco": "#2e9e63", "Argentina": "#7cc0e8", "Colombia": "#ffd166"}
 plt.rcParams.update({"figure.facecolor": BG, "axes.facecolor": BG, "savefig.facecolor": BG,
                      "text.color": INK, "font.family": "DejaVu Sans"})
 
@@ -31,16 +34,18 @@ def network(team):
     passes = ev[(ev.event_type == "Pass") & (ev.outcome == "Successful")]
     top = passes.player_name.value_counts().head(11).index
     pos = passes[passes.player_name.isin(top)].groupby("player_name")[["x", "y"]].mean()
-    edges = collections.Counter(); prev = None
+    edges = collections.Counter(); deg_full = collections.Counter(); prev = None
     for r in ev.itertuples():
         if prev is not None and r.match_id == prev.match_id and prev.event_type == "Pass" \
-           and prev.outcome == "Successful" and r.player_name != prev.player_name \
-           and r.player_name in pos.index and prev.player_name in pos.index and r.t - prev.t < 20:
-            a, b = sorted([prev.player_name, r.player_name])
-            edges[(a, b)] += 1
+           and prev.outcome == "Successful" and r.player_name and prev.player_name \
+           and r.player_name != prev.player_name and r.t - prev.t < 20:
+            deg_full[prev.player_name] += 1; deg_full[r.player_name] += 1
+            if r.player_name in pos.index and prev.player_name in pos.index:
+                a, b = sorted([prev.player_name, r.player_name])
+                edges[(a, b)] += 1
         prev = r
     vol = passes[passes.player_name.isin(top)].player_name.value_counts()
-    return pos, edges, vol, n_matches, len(passes)
+    return pos, edges, vol, n_matches, len(passes), deg_full
 
 
 def metrics():
@@ -48,16 +53,13 @@ def metrics():
         GROUP BY team_name HAVING COUNT(*) > 3000 AND team_name IS NOT NULL""")]
     rows = []
     for team in teams:
-        pos, edges, vol, nm, npass = network(team)
+        pos, edges, vol, nm, npass, deg_full = network(team)
         if not edges or nm == 0: continue
         w = pd.Series(edges)
         wpm = w / nm                                   # peso por partido
         strong = (wpm >= 4).sum()                      # conexiones fuertes
-        deg = collections.Counter()
-        for (a, b), c in edges.items():
-            deg[a] += c; deg[b] += c
-        tot = sum(deg.values())
-        hub, hubw = max(deg.items(), key=lambda kv: kv[1])
+        tot = sum(deg_full.values())
+        hub, hubw = max(deg_full.items(), key=lambda kv: kv[1])
         # largo geometrico medio de las conexiones fuertes
         lens = [np.hypot(*(pos.loc[a] - pos.loc[b])) for (a, b), c in edges.items() if c / nm >= 4]
         rows.append(dict(team=team, matches=nm, passes_pm=round(npass / nm),
@@ -84,24 +86,29 @@ def draw(teams):
     fig, axes = plt.subplots(2, 3, figsize=(17, 11))
     fig.suptitle("REDES — candidatos arquetipo", fontsize=15, fontweight="bold", color=INK)
     for ax, team in zip(axes.flat, teams):
+        import matplotlib.patheffects as pe
+        col = TEAM_COLORS.get(team, MINT)
         p = Pitch(pitch_type="opta", pitch_color=BG, line_color=LINE, linewidth=0.9)
         p.draw(ax=ax)
-        pos, edges, vol, nm, _ = network(team)
+        pos, edges, vol, nm, _, deg_full = network(team)
         if not edges: continue
         mx = max(edges.values())
         for (a, b), w in edges.items():
             if w / nm < 3: continue
             ax.plot([pos.loc[a, "x"], pos.loc[b, "x"]], [pos.loc[a, "y"], pos.loc[b, "y"]],
-                    color=MINT, lw=.4 + 5 * w / mx, alpha=.15 + .6 * w / mx, solid_capstyle="round", zorder=2)
+                    color=col, lw=.4 + 5 * w / mx, alpha=.15 + .6 * w / mx, solid_capstyle="round", zorder=2)
+        hub = max((p for p in deg_full if p in pos.index), key=lambda p: deg_full[p])
+        rest = pos.drop(index=hub)
         s = 60 + 900 * (vol / vol.max())
-        ax.scatter(pos.x, pos.y, s=s.reindex(pos.index).fillna(60), color=BG, edgecolor=MINT, lw=1.6, zorder=3)
-        deg = collections.Counter()
-        for (a, b), c in edges.items():
-            deg[a] += c; deg[b] += c
-        hub = max(deg, key=deg.get)
-        ax.annotate(hub.split()[-1], (pos.loc[hub, "x"], pos.loc[hub, "y"]), xytext=(0, -13),
-                    textcoords="offset points", ha="center", fontsize=9, color=INK, fontweight="bold", zorder=4)
-        ax.set_title(team, fontsize=12.5, color=INK, fontweight="bold", pad=5)
+        ax.scatter(rest.x, rest.y, s=s.reindex(rest.index).fillna(60), color=BG, edgecolor=col, lw=1.6, zorder=3)
+        # hub resaltado: nodo blanco relleno + halo
+        ax.scatter([pos.loc[hub, "x"]], [pos.loc[hub, "y"]], s=float(s.get(hub, 500)) * 1.25,
+                   color=HUB_C, edgecolor=col, lw=2.4, zorder=5)
+        ax.annotate(hub.split()[-1], (pos.loc[hub, "x"], pos.loc[hub, "y"]), xytext=(0, -19),
+                    textcoords="offset points", ha="center", fontsize=11, color=HUB_C,
+                    fontweight="bold", zorder=6,
+                    path_effects=[pe.Stroke(linewidth=3.2, foreground=BG), pe.Normal()])
+        ax.set_title(team, fontsize=12.5, color=col, fontweight="bold", pad=5)
     fig.tight_layout(rect=[0, 0, 1, 0.95])
     fig.savefig(OUT / "redes_candidatos.png", dpi=150)
     print("→ redes_candidatos.png")
