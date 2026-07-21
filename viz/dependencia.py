@@ -45,13 +45,13 @@ def team_goals(team):
                        db, params=(team,))
 
 
-fig = plt.figure(figsize=(23, 7.6))
-gs = fig.add_gridspec(1, 4, wspace=.06, left=.02, right=.98, top=.9, bottom=.1)
+fig = plt.figure(figsize=(13.2, 12.8))
+gs = fig.add_gridspec(2, 2, wspace=.08, hspace=.30, left=.03, right=.97, top=.94, bottom=.06)
 
 # ---- fila 1: los dependientes ----
 for i, (team, star, col, label) in enumerate(STARS):
-    ax = fig.add_subplot(gs[0, i])
-    vp = VerticalPitch(pitch_type="opta", half=True, pitch_color=BG, line_color=LINE,
+    ax = fig.add_subplot(gs[i // 2, i % 2])
+    vp = VerticalPitch(pitch_type="opta", half=True, pitch_color="none", line_color=LINE,
                        linewidth=1.0, pad_bottom=2)
     vp.draw(ax=ax)
     S = shots_df(team)
@@ -77,8 +77,8 @@ for i, (team, star, col, label) in enumerate(STARS):
             transform=ax.transAxes, ha="center", fontsize=13.5, color=MUTED)
 
 # ---- fila 2: España coral ----
-ax = fig.add_subplot(gs[0, 3])
-vp = VerticalPitch(pitch_type="opta", half=True, pitch_color=BG, line_color=LINE,
+ax = fig.add_subplot(gs[1, 1])
+vp = VerticalPitch(pitch_type="opta", half=True, pitch_color="none", line_color=LINE,
                    linewidth=1.2)
 vp.draw(ax=ax)
 ax.set_ylim(57, 104)
@@ -106,5 +106,5 @@ ax.text(.5, .015, "38%", transform=ax.transAxes, ha="center", fontsize=46,
 ax.text(.5, -.045, "su máximo (Oyarzabal) — 7 goleadores distintos",
         transform=ax.transAxes, ha="center", fontsize=13.5, color=MUTED)
 
-fig.savefig(OUT / "dependencia_strip.png", dpi=150)
+fig.savefig(OUT / "dependencia_strip.png", dpi=150, transparent=True)
 print("→ dependencia_strip.png")

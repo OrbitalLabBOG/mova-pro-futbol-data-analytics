@@ -85,11 +85,11 @@ def metrics():
 
 def draw(teams):
     n = len(teams)
-    fig, axes = plt.subplots(3, 2, figsize=(11.5, 16))
+    fig, axes = plt.subplots(3, 2, figsize=(11.5, 14.6))
     for ax, team in zip(axes.flat, teams):
         import matplotlib.patheffects as pe
         col = TEAM_COLORS.get(team, MINT)
-        p = Pitch(pitch_type="opta", pitch_color=BG, line_color=LINE, linewidth=0.9)
+        p = Pitch(pitch_type="opta", pitch_color="none", line_color=LINE, linewidth=0.9)
         p.draw(ax=ax)
         pos, edges, vol, nm, _, deg_full = network(team)
         if not edges: continue
@@ -111,7 +111,7 @@ def draw(teams):
                     path_effects=[pe.Stroke(linewidth=3.2, foreground=BG), pe.Normal()])
         ax.set_title(TEAM_LABEL.get(team, team), fontsize=17, color=col, fontweight="bold", pad=6)
     fig.tight_layout()
-    fig.savefig(OUT / "redes_vertical.png", dpi=150)
+    fig.savefig(OUT / "redes_vertical.png", dpi=150, transparent=True)
     print("→ redes_vertical.png")
 
 
