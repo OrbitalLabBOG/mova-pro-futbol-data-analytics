@@ -78,10 +78,10 @@ Gráficos reales ya computados por si se usan: xG por zonas, xG race, xT grid, m
 
 | # | Insight | Gráfico | Estado |
 |---|---------|---------|--------|
-| C3-04 | **La dependencia goleadora** — Haaland 58%, Mbappé 50%, Messi 44%… campeón 38% con 7 goleadores | Lollipop con banderas | ✅ fijado |
+| C3-04 | **La dependencia goleadora** — Haaland 58%, Mbappé 50%, Messi 44%… campeón 38% con 7 goleadores | ✅ **GRÁFICO CHECK**: 4 shot-maps en línea (gradiente 58→38), estrella en color vs equipo gris, España con chips de sus 7 goleadores → `ig/cap3-insights-torneo/assets/chart_dependencia.png` (script `viz/dependencia.py`) | 🔨 gráfico listo, falta lámina |
 | C3-05 | **El banquillo ganó el Mundial** — 20% de los goles fueron de suplentes; el gol del título lo fabricaron dos cambios (Ferran+Nico) | Waffle de goles por posición | ✅ fijado |
 | C3-03 | **El 23% de los partidos se decidió después del 90'** — 54 goles en descuento, 8 en prórroga, 4 tandas | Mosaico de los 104 partidos por "cuándo se decidió" | ✅ fijado |
-| C3-13 | **Cada equipo es una red** (evolucionó de "huella digital" a redes de pases) — 6 arquetipos: España la telaraña (35 links, Rodri) · Paraguay la deshilachada (8 links, vino) · P. Bajos un solo sol (van Hecke 18.3%) · Marruecos el carril (Hakimi lateral) · Argentina la democracia (Paredes 1037 vs Enzo 977, empate técnico) · Colombia la elástica (links de 27.5, Davinson) | ✅ **GRÁFICO CHECK**: grid 2×3 limpio sin título, colores por equipo, hubs en blanco → `outputs/divulgacion/experiments/redes_candidatos.png` (script `viz/redes_48.py`). Pendiente: montaje codex sobre fondo + título | 🔨 gráfico listo, falta lámina |
+| C3-13 | **Cada equipo es una red** (evolucionó de "huella digital" a redes de pases) — 6 arquetipos: España la telaraña (35 links, Rodri) · Paraguay la deshilachada (8 links, vino) · P. Bajos un solo sol (van Hecke 18.3%) · Marruecos el carril (Hakimi lateral) · Argentina la democracia (Paredes 1037 vs Enzo 977, empate técnico) · Colombia la elástica (links de 27.5, Davinson) | ✅ **GRÁFICO CHECK**: grid 2×3 limpio sin título, colores por equipo, hubs en blanco → `outputs/divulgacion/experiments/redes_candidatos.png` (script `viz/redes_48.py`). Pendiente: montaje codex sobre fondo + título. Copia en `ig/cap3-insights-torneo/assets/chart_redes.png` | 🔨 gráfico listo, falta lámina |
 
 Resto del pool (C3-01,02,06..12,14..17) queda en reserva en `divulgacion/07`.
 
