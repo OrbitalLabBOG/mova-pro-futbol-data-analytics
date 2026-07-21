@@ -23,8 +23,8 @@ CAPS = {
             c1=(16, 200, 100), c2=(120, 255, 170)),                    # verde esmeralda vivo
     2: dict(name="matematicas",  base=(24, 8, 4),    mid=(140, 40, 16),
             c1=(255, 90, 40), c2=(255, 160, 60)),                      # naranja vivo
-    3: dict(name="insights",     base=(20, 14, 2),   mid=(150, 105, 10),
-            c1=(255, 190, 40), c2=(255, 225, 120)),                    # dorado
+    3: dict(name="insights",     base=(22, 4, 16),   mid=(140, 16, 90),
+            c1=(255, 45, 150), c2=(255, 130, 210)),                    # fucsia vivo
     4: dict(name="espana",       base=(24, 4, 6),    mid=(150, 20, 30),
             c1=(240, 40, 55), c2=(255, 170, 40)),                      # rojo→gualda
     5: dict(name="messi",        base=(6, 14, 24),   mid=(40, 90, 140),
