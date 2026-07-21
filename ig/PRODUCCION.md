@@ -50,18 +50,30 @@
 
 ---
 
-## CAPÍTULO 2 — Las matemáticas del gol 🟠
+## CAPÍTULO 2 — Las matemáticas del gol (fondo verde, continuidad con cap 1)
 
-**Estructura fijada (2026-07-21): hilo tiro → pase → partido. Escenas reales icónicas + capa didáctica por código.**
+**Decisión final (2026-07-21): UNA sola lámina con los 3 indicadores** — "Los 3 lentes" (se descartó 1 lámina por indicador y se descartaron datos puntuales: la lámina evoca, los copys explican).
 
-| # | Lámina | Escena real | Capa didáctica (por código) | Estado |
-|---|--------|-------------|------------------------------|--------|
-| S2 | **xG — la probabilidad de cada tiro** | Messi rematando gol icónico (asset de Julián, pendiente) | Retícula del arco + chip con el xG REAL de ese tiro (del modelo) + 2 anillos fantasma comparativos (penal 0.76, lejano 0.04) | ⬜ esperando asset |
-| S3 | **xT — cuánto vale cada zona** | Pase icónico — candidato: peinada Nico→Ferran (por confirmar) | Terreno de valor luminoso (codex) + chips de zona reales "0.02 → +0.29" + mini-sello de la superficie xT propia | ⬜ esperando asset |
-| S4 | **Momentum — la gráfica de la TV desarmada** | Sin codex: gráfica broadcast-glow con datos REALES de la final | Goles marcados, descanso, prórroga, pico en el gol de Ferran + micro-diagrama del cálculo (eventos→ventana 5'→barra) | ⬜ lista para producir |
+| # | Lámina | Estado | Archivo |
+|---|--------|--------|---------|
+| **S2** | **"Los 3 lentes"** — 3 escenas apiladas conectadas por línea punteada: Messi rematando (xG, trayectoria+retícula) → peinada de Nico vista elevada (xT, degradado de valor+flecha) → panel MATCH MOMENTUM broadcast fiel (Paraguay-Francia, banderas y todo) | ✅ **APROBADA** | `cap2-matematicas/final/s2_tres_lentes.png` |
 
-Copys curiosidades de reserva (C2-B): Van Dijk 7-en-1000, Adams 76-en-100, penales 73% vs 62%, Japón +4/Colombia −5, momentum de Alemania 77% y eliminada.
-Gráficos base ya computados: xG por zonas, xG race, xT grid, momentum 104 partidos (en `outputs/divulgacion/`).
+### Copys S2 (definiciones — Julián los escribe en IG, uno por franja)
+
+- **xG (goles esperados):** "La probabilidad de que un tiro termine en gol, según distancia, ángulo, parte del cuerpo y cómo llega el balón. Se calcula con modelos entrenados con cientos de miles de tiros históricos. Un xG de 0.20 = ese tiro entra 20 de cada 100 veces."
+- **xT (amenaza esperada):** "¿Y los pases? El 99% de las acciones no son tiros. El xT le pone valor a cada zona de la cancha: cada pase que acerca el balón a zonas más peligrosas suma amenaza, aunque no termine en tiro. Así se mide el peligro invisible."
+- **Momentum:** "La gráfica que ves en cada transmisión: amenaza generada por ventanas de 5 minutos — quién manda, minuto a minuto. Ojo: dominar no es ganar. Esa de ahí es Francia aplastando a Paraguay en cuartos… ganó apenas 1-0."
+- Cierre/teaser: "Con estos 3 lentes vamos a releer todo el Mundial. →"
+
+### Notas de producción (aprendizajes)
+
+- Codex RECHAZA nombrar figuras públicas ("Messi") → describir como "delantero albiceleste dorsal 10, rostro sin detalle" y pasa.
+- Edición quirúrgica funciona: pasar la lámina aprobada como ref 1 + "reproduce exactamente con UNA modificación" preservó las escenas al cambiar solo el panel.
+- Texto corto en codex (MATCH MOMENTUM, 0'-45') sale nítido; textos largos NO.
+- `codex exec` en background necesita `< /dev/null` (si no, se cuelga leyendo stdin).
+
+Reserva C2-B (curiosidades, por si el capítulo pide más historias): Van Dijk 7-en-1000, Adams 76-en-100, penales 73% vs 62%, Japón +4/Colombia −5, momentum Alemania 77% y eliminada.
+Gráficos reales ya computados por si se usan: xG por zonas, xG race, xT grid, momentum 104 partidos (`outputs/divulgacion/`).
 
 ## CAPÍTULO 3 — Insights del torneo 🟡
 
@@ -83,6 +95,7 @@ Pool de 17 insights en `divulgacion/07` (C3-01..17). ⬜ Pendiente depurar a ~6 
 
 ## Decisiones tomadas (log)
 
+- 2026-07-21 · S2 "Los 3 lentes" aprobada (v3): cap 2 consolidado en UNA lámina, fondo verde de continuidad, panel broadcast fiel.
 - 2026-07-21 · S1 aprobada (v5 "la jugada anotada"). Codex CLI actualizado 0.128→0.144 (habilita gpt-image-2 + refs vía `-i`).
 - 2026-07-21 · Fondos v3 "olas vivas" aprobados; verde para cap 1, violeta para cap 6 (azul descartado por Argentina).
 - 2026-07-20 · Sin marca/firma: publicación en IG personal.
