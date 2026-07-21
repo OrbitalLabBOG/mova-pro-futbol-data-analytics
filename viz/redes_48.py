@@ -17,7 +17,7 @@ db = sqlite3.connect(ROOT / "data" / "mundial.db")
 
 BG, LINE, INK, MUTED, MINT = "#07090c", "#2a3038", "#e8e6e3", "#8a8f98", "#3ceb8c"
 HUB_C = "#ffffff"
-TEAM_COLORS = {"Spain": "#e4353f", "Paraguay": "#d64550", "Netherlands": "#ff7f2a",
+TEAM_COLORS = {"Spain": "#e4353f", "Paraguay": "#8e2438", "Netherlands": "#ff7f2a",
                "Morocco": "#2e9e63", "Argentina": "#7cc0e8", "Colombia": "#ffd166"}
 plt.rcParams.update({"figure.facecolor": BG, "axes.facecolor": BG, "savefig.facecolor": BG,
                      "text.color": INK, "font.family": "DejaVu Sans"})
@@ -84,7 +84,6 @@ def metrics():
 def draw(teams):
     n = len(teams)
     fig, axes = plt.subplots(2, 3, figsize=(17, 11))
-    fig.suptitle("REDES — candidatos arquetipo", fontsize=15, fontweight="bold", color=INK)
     for ax, team in zip(axes.flat, teams):
         import matplotlib.patheffects as pe
         col = TEAM_COLORS.get(team, MINT)
@@ -109,7 +108,7 @@ def draw(teams):
                     fontweight="bold", zorder=6,
                     path_effects=[pe.Stroke(linewidth=3.2, foreground=BG), pe.Normal()])
         ax.set_title(team, fontsize=12.5, color=col, fontweight="bold", pad=5)
-    fig.tight_layout(rect=[0, 0, 1, 0.95])
+    fig.tight_layout()
     fig.savefig(OUT / "redes_candidatos.png", dpi=150)
     print("→ redes_candidatos.png")
 
