@@ -45,8 +45,8 @@ def team_goals(team):
                        db, params=(team,))
 
 
-fig = plt.figure(figsize=(13.2, 12.8))
-gs = fig.add_gridspec(2, 2, wspace=.08, hspace=.30, left=.03, right=.97, top=.94, bottom=.06)
+fig = plt.figure(figsize=(13.2, 11.6))
+gs = fig.add_gridspec(2, 2, wspace=.06, hspace=.20, left=.02, right=.98, top=.95, bottom=.05)
 
 # ---- fila 1: los dependientes ----
 for i, (team, star, col, label) in enumerate(STARS):

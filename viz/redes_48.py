@@ -85,7 +85,7 @@ def metrics():
 
 def draw(teams):
     n = len(teams)
-    fig, axes = plt.subplots(3, 2, figsize=(11.5, 14.6))
+    fig, axes = plt.subplots(3, 2, figsize=(11.5, 13.6))
     for ax, team in zip(axes.flat, teams):
         import matplotlib.patheffects as pe
         col = TEAM_COLORS.get(team, MINT)
@@ -109,7 +109,7 @@ def draw(teams):
                     textcoords="offset points", ha="center", fontsize=14, color=HUB_C,
                     fontweight="bold", zorder=6,
                     path_effects=[pe.Stroke(linewidth=3.2, foreground=BG), pe.Normal()])
-        ax.set_title(TEAM_LABEL.get(team, team), fontsize=17, color=col, fontweight="bold", pad=6)
+        ax.set_title(TEAM_LABEL.get(team, team), fontsize=18, color=col, fontweight="bold", pad=3)
     fig.tight_layout()
     fig.savefig(OUT / "redes_vertical.png", dpi=150, transparent=True)
     print("→ redes_vertical.png")
