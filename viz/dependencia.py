@@ -45,8 +45,8 @@ def team_goals(team):
                        db, params=(team,))
 
 
-fig = plt.figure(figsize=(12.5, 17))
-gs = fig.add_gridspec(2, 3, height_ratios=[1, 1.5], hspace=.16, wspace=.08,
+fig = plt.figure(figsize=(12.5, 14.5))
+gs = fig.add_gridspec(2, 3, height_ratios=[1, 1.35], hspace=.04, wspace=.08,
                       left=.03, right=.97, top=.97, bottom=.03)
 
 # ---- fila 1: los dependientes ----
@@ -80,29 +80,28 @@ for i, (team, star, col, label) in enumerate(STARS):
 # ---- fila 2: España coral ----
 ax = fig.add_subplot(gs[1, :])
 vp = VerticalPitch(pitch_type="opta", half=True, pitch_color=BG, line_color=LINE,
-                   linewidth=1.2, pad_bottom=-18)
+                   linewidth=1.2)
 vp.draw(ax=ax)
+ax.set_ylim(57, 104)
 S = shots_df("Spain")
+S = S[S.x >= 58]
 vp.scatter(S[S.event_type != "Goal"].x, S[S.event_type != "Goal"].y,
-           s=60, c="None", edgecolors=GRAY, lw=1.1, alpha=.7, ax=ax, zorder=2)
+           s=64, c="None", edgecolors=GRAY, lw=1.1, alpha=.7, ax=ax, zorder=2)
 G = S[S.event_type == "Goal"].copy()
-vp.scatter(G.x, G.y, s=300, c=SPAIN_C, edgecolors="white", lw=1.7, ax=ax, zorder=5)
-# UNA etiqueta por goleador (en el centroide de sus goles) con su conteo
+vp.scatter(G.x, G.y, s=340, c=SPAIN_C, edgecolors="white", lw=1.8, ax=ax, zorder=5)
+# chip por goleador en el centroide de sus goles (adjust_text separa choques)
 from adjustText import adjust_text
 texts = []
-for name, grp in G.groupby(G.player_name.str.split().str[-1]):
+for name, grp in sorted(G.groupby(G.player_name.str.split().str[-1]), key=lambda kv: -len(kv[1])):
     label = f"{name} ×{len(grp)}" if len(grp) > 1 else name
-    texts.append(ax.text(grp.y.mean(), grp.x.mean() - 3.5, label, ha="center",
-                 fontsize=12.5, color=INK, fontweight="bold",
-                 path_effects=PATH_EFF, zorder=6))
-adjust_text(texts, ax=ax, expand=(1.3, 1.9),
-            arrowprops=dict(arrowstyle="-", color="#6b7280", lw=.8))
-gdf = team_goals("Spain")
+    texts.append(ax.text(grp.y.mean(), grp.x.mean() - 2.8, label, ha="center", va="center",
+                 fontsize=12.5, color=INK, fontweight="bold", zorder=7,
+                 bbox=dict(boxstyle="round,pad=0.4", facecolor="#12161d",
+                           edgecolor=SPAIN_C, linewidth=1.3)))
+adjust_text(texts, ax=ax, expand=(1.5, 2.2),
+            arrowprops=dict(arrowstyle="-", color="#5a616c", lw=.9))
 ax.set_title("ESPAÑA", fontsize=21, color=SPAIN_C, fontweight="bold", pad=10)
-ax.text(.5, .012, f"{len(gdf)} goleadores distintos", transform=ax.transAxes, ha="center",
-        fontsize=27, color=SPAIN_C, fontweight="bold", path_effects=PATH_EFF)
-ax.text(.5, -.033, "nadie pasa del 38% — la casa entera anota",
-        transform=ax.transAxes, ha="center", fontsize=11.5, color=MUTED)
+ax.set_ylim(56, 104.5)
 
 fig.savefig(OUT / "dependencia_v1.png", dpi=150)
 print("→ dependencia_v1.png")
