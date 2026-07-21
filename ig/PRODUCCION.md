@@ -28,10 +28,7 @@
 | # | Lámina | Dato central | Estado | Archivo |
 |---|--------|--------------|--------|---------|
 | **S1** | **Portada — "La jugada anotada"** (gol real + línea remate→gol→Copa + lupa Trionda + esqueleto en el 7) | — | ✅ **APROBADA** | `cap1-ciencia-datos/final/s1_portada.png` (+ versión sin título) |
-| S2 | **El balón y los sensores** (Trionda estilo AFP, corte + chip IMU) | Sensor 500Hz, cada toque registrado, base del offside automático | ⬜ pendiente | asset: `assets/balon mundial.jpeg` |
-| S3 | **Las cámaras y los modelos de CV** (foto Ferran + tracking sutil) | 16 cámaras, 50 capturas/seg, pose estimation, 29 puntos corporales | ⬜ pendiente | asset: `assets/foto ferran.png` |
-| S4 | **Los equipos y la tecnificación FIFA** (la democratización) | Football AI Pro para las 48 por igual, adiós reportes de 60 páginas, PhDs en los banquillos | ⬜ pendiente | — |
-| S5 | Cierre/puente (opcional: anotadores invisibles o teaser cap 2) | — | ⬜ por definir | — |
+| ~~S2-S5~~ | ~~Balón / cámaras / tecnificación / cierre~~ — **DESCARTADAS: la portada cubre el capítulo** (decisión 2026-07-21). Los datos van en los copys de la S1 | — | ✖️ cerrado | — |
 
 ### Copys S1 (borradores — elegir al publicar)
 
@@ -95,6 +92,7 @@ Pool de 17 insights en `divulgacion/07` (C3-01..17). ⬜ Pendiente depurar a ~6 
 
 ## Decisiones tomadas (log)
 
+- 2026-07-21 · Cap 1 cerrado con solo la portada (los 3 datos van en copys). Cap 3 en producción.
 - 2026-07-21 · S2 "Los 3 lentes" aprobada (v3): cap 2 consolidado en UNA lámina, fondo verde de continuidad, panel broadcast fiel.
 - 2026-07-21 · S1 aprobada (v5 "la jugada anotada"). Codex CLI actualizado 0.128→0.144 (habilita gpt-image-2 + refs vía `-i`).
 - 2026-07-21 · Fondos v3 "olas vivas" aprobados; verde para cap 1, violeta para cap 6 (azul descartado por Argentina).
