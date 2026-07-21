@@ -55,6 +55,12 @@
 |---|--------|--------|---------|
 | **S2** | **"Los 3 lentes"** — 3 escenas apiladas conectadas por línea punteada: Messi rematando (xG, trayectoria+retícula) → peinada de Nico vista elevada (xT, degradado de valor+flecha) → panel MATCH MOMENTUM broadcast fiel (Paraguay-Francia, banderas y todo) | ✅ **APROBADA** | `cap2-matematicas/final/s2_tres_lentes.png` |
 
+### Copys Lámina 2 cap 3 (Julián en IG)
+
+- **Arriba (dependencia):** "¿De quién dependen los goles de un equipo? Haaland hizo el 58% de los de Noruega. Mbappé el 50% de Francia. Messi el 44% de Argentina. ¿Y el campeón? Nadie pasó del 38%: España tuvo 7 goleadores distintos. A los dependientes les cortas un cable — a España había que apagarle la casa entera."
+- **Abajo (redes):** "¿Y de quién depende el JUEGO? Cada red muestra las conexiones de pase reales del torneo: España es una telaraña con Rodri al centro. Paraguay una red deshilachada (8 conexiones fuertes vs 35 de España). Países Bajos gira alrededor de un solo sol. Marruecos vive en el carril de Hakimi. Argentina es la democracia: Paredes y Enzo empatados como cerebro. Y Colombia, la red elástica de Davinson."
+- Cierre: "el campeón no dependía de nadie — ni en goles ni en juego →"
+
 ### Copys Lámina 1 cap 3 (Julián en IG — uno por mitad)
 
 - **Banquillo (junto a la escena):** "El 20% de los goles del Mundial los hicieron suplentes. Si el banquillo fuera una selección, habría sido de las máximas goleadoras del torneo (59 goles). Hasta el gol del título lo fabricaron dos cambios: Nico asistió, Ferran definió."
@@ -84,9 +90,8 @@ Gráficos reales ya computados por si se usan: xG por zonas, xG race, xT grid, m
 
 | # | Insight | Gráfico | Estado |
 |---|---------|---------|--------|
-| C3-04 | **La dependencia goleadora** — Haaland 58%, Mbappé 50%, Messi 44%… campeón 38% con 7 goleadores | ✅ **GRÁFICO CHECK**: 4 shot-maps en línea (gradiente 58→38), estrella en color vs equipo gris, España con chips de sus 7 goleadores → `ig/cap3-insights-torneo/assets/chart_dependencia.png` (script `viz/dependencia.py`) | 🔨 gráfico listo, falta lámina |
+| C3-04 + C3-13 | **LÁMINA 2 — "¿De quién depende un equipo?"**: dependencia 2×2 (58→38%, España con chips de 7 goleadores) + redes 3×2 (6 arquetipos) — estilo neón transparente + sombras orgánicas + divisor de partículas, compuesta 100% por código (charts píxel-perfecto) | ✅ **APROBADA** → `cap3-insights-torneo/final/lamina2_dependencia_redes.png` (compose: `viz/compose_lamina2.py`) | ✅ |
 | C3-05 + C3-03 | **LÁMINA 1 — "El Mundial se decidió al final"**: escena del banquillo (DT + tablet glow + partículas + hilo dato→decisión) + reloj dial 0'→130' con los 62 goles del 90'+ ardiendo y 4 estrellas de tandas. Título horneado "ALGUNOS DATOS INTERESANTES" (única con título del cap) | ✅ **APROBADA** → `cap3-insights-torneo/final/lamina1_banquillo_reloj.png` (+ sin título). Dial: `viz/reloj.py` | ✅ |
-| C3-13 | **Cada equipo es una red** (evolucionó de "huella digital" a redes de pases) — 6 arquetipos: España la telaraña (35 links, Rodri) · Paraguay la deshilachada (8 links, vino) · P. Bajos un solo sol (van Hecke 18.3%) · Marruecos el carril (Hakimi lateral) · Argentina la democracia (Paredes 1037 vs Enzo 977, empate técnico) · Colombia la elástica (links de 27.5, Davinson) | ✅ **GRÁFICO CHECK**: grid 2×3 limpio sin título, colores por equipo, hubs en blanco → `outputs/divulgacion/experiments/redes_candidatos.png` (script `viz/redes_48.py`). Pendiente: montaje codex sobre fondo + título. Copia en `ig/cap3-insights-torneo/assets/chart_redes.png` | 🔨 gráfico listo, falta lámina |
 
 Resto del pool (C3-01,02,06..12,14..17) queda en reserva en `divulgacion/07`.
 
@@ -106,6 +111,7 @@ Resto del pool (C3-01,02,06..12,14..17) queda en reserva en `divulgacion/07`.
 
 ## Decisiones tomadas (log)
 
+- 2026-07-22 · Cap 3 CERRADO: lámina 2 aprobada (neón por código — pipeline nuevo para láminas con charts: transparencia + sombras orgánicas + divisor).
 - 2026-07-21 · Cap 1 cerrado con solo la portada (los 3 datos van en copys). Cap 3 en producción.
 - 2026-07-21 · S2 "Los 3 lentes" aprobada (v3): cap 2 consolidado en UNA lámina, fondo verde de continuidad, panel broadcast fiel.
 - 2026-07-21 · S1 aprobada (v5 "la jugada anotada"). Codex CLI actualizado 0.128→0.144 (habilita gpt-image-2 + refs vía `-i`).
