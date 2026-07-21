@@ -90,7 +90,7 @@ Gráficos reales ya computados por si se usan: xG por zonas, xG race, xT grid, m
 
 | # | Insight | Gráfico | Estado |
 |---|---------|---------|--------|
-| C3-04 + C3-13 | **LÁMINA 2 — "¿De quién depende un equipo?"**: dependencia 2×2 (58→38%, España con chips de 7 goleadores) + redes 3×2 (6 arquetipos) — estilo neón transparente + sombras orgánicas + divisor de partículas, compuesta 100% por código (charts píxel-perfecto) | ✅ **APROBADA** → `cap3-insights-torneo/final/lamina2_dependencia_redes.png` (compose: `viz/compose_lamina2.py`) | ✅ |
+| C3-04 + C3-13 | **LÁMINA 2 — "¿De quién depende un equipo?"**: dependencia 2×2 (58→38%, España con chips de 7 goleadores) + redes 3×2 (6 arquetipos) — estilo neón transparente + sombras orgánicas + río de partículas divisor, charts a máximo tamaño (v7), compuesta 100% por código (charts píxel-perfecto; test codex descartado por falsificar datos) | ✅ **APROBADA** → `cap3-insights-torneo/final/lamina2_dependencia_redes.png` (compose: `viz/compose_lamina2.py`) | ✅ |
 | C3-05 + C3-03 | **LÁMINA 1 — "El Mundial se decidió al final"**: escena del banquillo (DT + tablet glow + partículas + hilo dato→decisión) + reloj dial 0'→130' con los 62 goles del 90'+ ardiendo y 4 estrellas de tandas. Título horneado "ALGUNOS DATOS INTERESANTES" (única con título del cap) | ✅ **APROBADA** → `cap3-insights-torneo/final/lamina1_banquillo_reloj.png` (+ sin título). Dial: `viz/reloj.py` | ✅ |
 
 Resto del pool (C3-01,02,06..12,14..17) queda en reserva en `divulgacion/07`.
