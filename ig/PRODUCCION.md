@@ -55,6 +55,12 @@
 |---|--------|--------|---------|
 | **S2** | **"Los 3 lentes"** — 3 escenas apiladas conectadas por línea punteada: Messi rematando (xG, trayectoria+retícula) → peinada de Nico vista elevada (xT, degradado de valor+flecha) → panel MATCH MOMENTUM broadcast fiel (Paraguay-Francia, banderas y todo) | ✅ **APROBADA** | `cap2-matematicas/final/s2_tres_lentes.png` |
 
+### Copys Lámina 1 cap 3 (Julián en IG — uno por mitad)
+
+- **Banquillo (junto a la escena):** "El 20% de los goles del Mundial los hicieron suplentes. Si el banquillo fuera una selección, habría sido de las máximas goleadoras del torneo (59 goles). Hasta el gol del título lo fabricaron dos cambios: Nico asistió, Ferran definió."
+- **Reloj (junto al dial):** "¿Y cuándo caen esos goles? El 23% de los partidos se decidió DESPUÉS del minuto 90: 54 goles en el descuento, 8 en la prórroga y 4 tandas de penales. Cada punto rosa es un gol real del 90'+. El Mundial se jugó al final."
+- Cierre/teaser: "los datos del final del partido son otra dimensión →"
+
 ### Copys S2 (definiciones — Julián los escribe en IG, uno por franja)
 
 - **xG (goles esperados):** "La probabilidad de que un tiro termine en gol, según distancia, ángulo, parte del cuerpo y cómo llega el balón. Se calcula con modelos entrenados con cientos de miles de tiros históricos. Un xG de 0.20 = ese tiro entra 20 de cada 100 veces."
@@ -79,8 +85,7 @@ Gráficos reales ya computados por si se usan: xG por zonas, xG race, xT grid, m
 | # | Insight | Gráfico | Estado |
 |---|---------|---------|--------|
 | C3-04 | **La dependencia goleadora** — Haaland 58%, Mbappé 50%, Messi 44%… campeón 38% con 7 goleadores | ✅ **GRÁFICO CHECK**: 4 shot-maps en línea (gradiente 58→38), estrella en color vs equipo gris, España con chips de sus 7 goleadores → `ig/cap3-insights-torneo/assets/chart_dependencia.png` (script `viz/dependencia.py`) | 🔨 gráfico listo, falta lámina |
-| C3-05 | **El banquillo ganó el Mundial** — 20% de los goles fueron de suplentes; el gol del título lo fabricaron dos cambios (Ferran+Nico) | Waffle de goles por posición | ✅ fijado |
-| C3-03 | **El 23% de los partidos se decidió después del 90'** — 54 goles en descuento, 8 en prórroga, 4 tandas | Mosaico de los 104 partidos por "cuándo se decidió" | ✅ fijado |
+| C3-05 + C3-03 | **LÁMINA 1 — "El Mundial se decidió al final"**: escena del banquillo (DT + tablet glow + partículas + hilo dato→decisión) + reloj dial 0'→130' con los 62 goles del 90'+ ardiendo y 4 estrellas de tandas. Título horneado "ALGUNOS DATOS INTERESANTES" (única con título del cap) | ✅ **APROBADA** → `cap3-insights-torneo/final/lamina1_banquillo_reloj.png` (+ sin título). Dial: `viz/reloj.py` | ✅ |
 | C3-13 | **Cada equipo es una red** (evolucionó de "huella digital" a redes de pases) — 6 arquetipos: España la telaraña (35 links, Rodri) · Paraguay la deshilachada (8 links, vino) · P. Bajos un solo sol (van Hecke 18.3%) · Marruecos el carril (Hakimi lateral) · Argentina la democracia (Paredes 1037 vs Enzo 977, empate técnico) · Colombia la elástica (links de 27.5, Davinson) | ✅ **GRÁFICO CHECK**: grid 2×3 limpio sin título, colores por equipo, hubs en blanco → `outputs/divulgacion/experiments/redes_candidatos.png` (script `viz/redes_48.py`). Pendiente: montaje codex sobre fondo + título. Copia en `ig/cap3-insights-torneo/assets/chart_redes.png` | 🔨 gráfico listo, falta lámina |
 
 Resto del pool (C3-01,02,06..12,14..17) queda en reserva en `divulgacion/07`.
