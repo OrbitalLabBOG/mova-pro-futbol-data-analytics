@@ -97,7 +97,16 @@ Resto del pool (C3-01,02,06..12,14..17) queda en reserva en `divulgacion/07`.
 
 ## CAPÍTULO 4 — España 🔴
 
-15 insights (C4-01..15) + dashboard torneo (`outputs/divulgacion/dash_spain.png`). ⬜ Sin producir.
+**Concepto fijado:** "EL CAMINO DEL CAMPEÓN" — celebración del equipo como héroe compacto + gráficos reales orbitando en una infografía editorial rojo→gualda. Generador solo para fotografía/atmósfera; título y datos por código; copys en IG.
+
+| Versión | Contenido | Estado |
+|---|---|---|
+| **v1** | Equipo campeón + red de Rodri + sonar de pases + Cubarsí + línea de presión + momentum. Base editorial generada; composición reproducible en `viz/compose_espana_infografia.py` | 🔨 **WORK** → `cap4-espana/work/infografia_espana_v1.png` |
+| **v2** | Ruta orgánica escudo→equipo→Copa: equipo compacto, charts como hitos sin cajas (red, sonar, Cubarsí, presión, momentum secundario) y título asimétrico por código. Base `espana_camino_base_v2.png`; composición en `viz/compose_espana_infografia_v2.py` | 🔨 **CANDIDATA** → `cap4-espana/work/infografia_espana_v2.png` |
+| **v3** | Redistribución aireada: sonar radial en la esquina inferior izquierda, momentum reducido, hitos centrales separados y líneas de cancha recoloreadas en dorado sin alterar los charts fuente. Composición en `viz/compose_espana_infografia_v3.py` | 🔨 **CANDIDATA ACTUAL** → `cap4-espana/work/infografia_espana_v3.png` |
+| **v4 FINAL** | Cierre: título compacto, sonar desplazado abajo/centro con anillos dorados y momentum estrecho sin solaparse con presión. Composición reproducible en `viz/compose_espana_infografia_v4.py` | ✅ **APROBADA** → `cap4-espana/final/el_camino_del_campeon.png` |
+
+Pool completo: 15 insights (C4-01..15) + dashboards crudo/v2 en `outputs/divulgacion/espana/`.
 
 ## CAPÍTULO 5 — Messi 🩵
 
@@ -111,6 +120,7 @@ Resto del pool (C3-01,02,06..12,14..17) queda en reserva en `divulgacion/07`.
 
 ## Decisiones tomadas (log)
 
+- 2026-07-22 · Cap 4 CERRADO: “El camino del campeón” v4 aprobada (ruta escudo→equipo→Copa, 5 charts integrados por código).
 - 2026-07-22 · Cap 3 CERRADO: lámina 2 aprobada (neón por código — pipeline nuevo para láminas con charts: transparencia + sombras orgánicas + divisor).
 - 2026-07-21 · Cap 1 cerrado con solo la portada (los 3 datos van en copys). Cap 3 en producción.
 - 2026-07-21 · S2 "Los 3 lentes" aprobada (v3): cap 2 consolidado en UNA lámina, fondo verde de continuidad, panel broadcast fiel.
