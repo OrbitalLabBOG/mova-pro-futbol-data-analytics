@@ -221,7 +221,7 @@ def chart_radar():
     vals = [sp.pos, sp.tilt, sp.xg, sp.xga, sp.height]
     ang = np.linspace(0, 2 * np.pi, len(vals), endpoint=False)
     vals_c = vals + [vals[0]]; ang_c = list(ang) + [ang[0]]
-    fig = plt.figure(figsize=(6.4, 6.4))
+    fig = plt.figure(figsize=(7.6, 6.6))
     ax = fig.add_subplot(111, projection="polar")
     ax.set_facecolor("none")
     for r_ring in [25, 50, 75, 100]:
@@ -232,7 +232,7 @@ def chart_radar():
     ax.set_xticks(ang)
     ax.set_xticklabels(labels, fontsize=10.5, color=INK, fontweight="bold")
     ax.tick_params(pad=20)
-    fig.subplots_adjust(left=.12, right=.88, top=.88, bottom=.12)
+    fig.subplots_adjust(left=.16, right=.84, top=.87, bottom=.13)
     ax.set_yticks([]); ax.set_ylim(0, 105)
     ax.spines["polar"].set_visible(False)
     ax.grid(False)
