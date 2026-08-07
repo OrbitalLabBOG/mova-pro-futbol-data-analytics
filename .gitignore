@@ -18,7 +18,7 @@ models/*.joblib
 
 # OS / editor
 .DS_Store
-*.zip:Zone.Identifier
+*:Zone.Identifier
 .vscode/
 
 # DB y cache de datos (se regeneran con el collector)
