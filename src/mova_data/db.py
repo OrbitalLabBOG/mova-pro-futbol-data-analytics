@@ -222,6 +222,177 @@ SELECT
 FROM match_map mm
 LEFT JOIN matches m ON m.match_id = mm.whoscored_id;
 
+-- ════════════════════ CAPA FANTASY PREMIER LEAGUE (FPL) ════════════════════
+
+CREATE TABLE IF NOT EXISTS fpl_teams (
+    id                            INTEGER PRIMARY KEY,
+    name                          TEXT NOT NULL,
+    short_name                    TEXT,
+    strength                      INTEGER,
+    strength_overall_home        INTEGER,
+    strength_overall_away        INTEGER,
+    strength_attack_home         INTEGER,
+    strength_attack_away         INTEGER,
+    strength_defence_home        INTEGER,
+    strength_defence_away        INTEGER,
+    position                      INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS fpl_players (
+    id                            INTEGER PRIMARY KEY,
+    first_name                    TEXT,
+    second_name                   TEXT,
+    web_name                      TEXT NOT NULL,
+    team_id                       INTEGER REFERENCES fpl_teams(id),
+    element_type                  INTEGER, -- 1:GKP, 2:DEF, 3:MID, 4:FWD
+    now_cost                      INTEGER, -- precio en 0.1M (ej. 100 = £10.0M)
+    status                        TEXT,
+    total_points                  INTEGER,
+    minutes                       INTEGER,
+    goals_scored                  INTEGER,
+    assists                       INTEGER,
+    clean_sheets                  INTEGER,
+    goals_conceded                INTEGER,
+    yellow_cards                  INTEGER,
+    red_cards                     INTEGER,
+    saves                         INTEGER,
+    starts                        INTEGER,
+    expected_goals                REAL,
+    expected_assists              REAL,
+    expected_goal_involvements    REAL,
+    expected_goals_conceded       REAL,
+    influence                     REAL,
+    creativity                    REAL,
+    threat                        REAL,
+    ict_index                     REAL,
+    expected_goals_per_90         REAL,
+    expected_assists_per_90       REAL,
+    form                          REAL,
+    points_per_game               REAL,
+    selected_by_percent           REAL,
+    bonus                         INTEGER,
+    bps                           INTEGER,
+    transfers_in                  INTEGER,
+    transfers_out                 INTEGER,
+    penalties_missed              INTEGER,
+    penalties_saved               INTEGER,
+    own_goals                     INTEGER,
+    chance_of_playing_next_round INTEGER,
+    news                          TEXT
+);
+
+CREATE TABLE IF NOT EXISTS fpl_gameweeks (
+    id                            INTEGER PRIMARY KEY,
+    deadline_time                 TEXT,
+    finished                      INTEGER,
+    average_entry_score           INTEGER,
+    highest_score                 INTEGER,
+    most_selected                 INTEGER,
+    most_captained                INTEGER,
+    top_element                   INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS fpl_fixtures (
+    id                            INTEGER PRIMARY KEY,
+    event                         INTEGER,
+    team_h                        INTEGER REFERENCES fpl_teams(id),
+    team_a                        INTEGER REFERENCES fpl_teams(id),
+    team_h_score                  INTEGER,
+    team_a_score                  INTEGER,
+    kickoff_time                  TEXT,
+    finished                      INTEGER,
+    team_h_difficulty             INTEGER,
+    team_a_difficulty             INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS fpl_player_history (
+    id                            INTEGER PRIMARY KEY AUTOINCREMENT,
+    player_id                     INTEGER REFERENCES fpl_players(id),
+    gameweek                      INTEGER,
+    opponent_team                 INTEGER,
+    was_home                      INTEGER,
+    minutes                       INTEGER,
+    goals_scored                  INTEGER,
+    assists                       INTEGER,
+    clean_sheets                  INTEGER,
+    total_points                  INTEGER,
+    expected_goals                REAL,
+    expected_assists              REAL,
+    influence                     REAL,
+    creativity                    REAL,
+    threat                        REAL,
+    value                         INTEGER,
+    selected                      INTEGER,
+    transfers_in                  INTEGER,
+    transfers_out                 INTEGER,
+    UNIQUE(player_id, gameweek)
+);
+
+CREATE INDEX IF NOT EXISTS idx_fpl_players_team ON fpl_players(team_id);
+CREATE INDEX IF NOT EXISTS idx_fpl_players_type ON fpl_players(element_type);
+CREATE INDEX IF NOT EXISTS idx_fpl_fixtures_evt ON fpl_fixtures(event);
+CREATE INDEX IF NOT EXISTS idx_fpl_history_player ON fpl_player_history(player_id);
+
+-- ════════════════════ TABLAS Y VISTAS MAESTRAS DE ANALÍTICA ════════════════════
+
+-- Vista Maestra por Jugador y Gameweek (FPL + Rendimiento + Valor)
+CREATE VIEW IF NOT EXISTS v_master_player_gw AS
+SELECT
+    ph.player_id,
+    p.web_name AS player_name,
+    p.first_name || ' ' || p.second_name AS full_name,
+    t.name AS team_name,
+    t.short_name AS team_short,
+    p.element_type,
+    CASE p.element_type
+        WHEN 1 THEN 'GKP'
+        WHEN 2 THEN 'DEF'
+        WHEN 3 THEN 'MID'
+        WHEN 4 THEN 'FWD'
+    END AS position_name,
+    ph.gameweek,
+    ph.opponent_team,
+    opt.short_name AS opponent_short,
+    ph.was_home,
+    ph.minutes,
+    ph.total_points,
+    ph.goals_scored,
+    ph.assists,
+    ph.clean_sheets,
+    ph.expected_goals AS gw_xg,
+    ph.expected_assists AS gw_xa,
+    ph.influence,
+    ph.creativity,
+    ph.threat,
+    (ph.influence + ph.creativity + ph.threat) AS ict_sum,
+    ph.value / 10.0 AS cost_millions,
+    ph.selected AS gw_selected_by,
+    p.form AS current_form,
+    p.selected_by_percent AS total_selected_pct
+FROM fpl_player_history ph
+JOIN fpl_players p ON p.id = ph.player_id
+LEFT JOIN fpl_teams t ON t.id = p.team_id
+LEFT JOIN fpl_teams opt ON opt.id = ph.opponent_team;
+
+-- Vista Maestra de Analítica de Partidos (Partidos + Cuotas + Eventos + Goles)
+CREATE VIEW IF NOT EXISTS v_master_match_analytics AS
+SELECT
+    m.match_id,
+    m.source,
+    m.competition,
+    m.start_utc AS match_date,
+    m.home_team,
+    m.away_team,
+    m.home_score,
+    m.away_score,
+    m.n_events,
+    (SELECT COUNT(*) FROM events e WHERE e.match_id = m.match_id AND e.is_shot = 1) AS n_shots,
+    (SELECT COUNT(*) FROM events e WHERE e.match_id = m.match_id AND e.is_goal = 1) AS n_goals,
+    (SELECT mo.prob FROM market_odds mo WHERE mo.entity = m.home_team ORDER BY mo.captured_at DESC LIMIT 1) AS p_home_win,
+    (SELECT mo.prob FROM market_odds mo WHERE mo.entity = m.away_team ORDER BY mo.captured_at DESC LIMIT 1) AS p_away_win
+FROM matches m;
+
+
 -- ════════════════════ CAPA DE MODELO (Fase 2) ════════════════════
 
 -- Histórico internacional (martj42) + Elo pre-partido calculado por nosotros.

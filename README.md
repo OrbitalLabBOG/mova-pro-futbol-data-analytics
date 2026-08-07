@@ -58,12 +58,15 @@ Arquitectura, inventario de datos y plan de Fase 2 → **[docs/00-estado.md](doc
 | [docs/13-clv-backtest-resultados.md](docs/13-clv-backtest-resultados.md) | **★ Backtest de CLV sobre 80K partidos: prueba empírica de que NO se le gana al cierre de Pinnacle (mercados eficientes)** |
 | [docs/14-polymarket-estrategia.md](docs/14-polymarket-estrategia.md) | **★ Polymarket por microestructura (MM/arb/resolution-edge): medición en vivo + veredicto (saturado para operador pequeño)** |
 | [docs/15-postmortem-final.md](docs/15-postmortem-final.md) | **★ Post-mortem final: qué tan bueno fue el modelo vs el torneo real, por qué se desfasó el pick de campeón, lecciones** |
+| [docs/16-unificacion-fantasy-mova.md](docs/16-unificacion-fantasy-mova.md) | **★ Arquitectura unificada: Fantasy Premier League API, 600K+ eventos Opta, vista maestra y deprecación legacy** |
 
 ## Cómo correr el pipeline
 
 ```bash
 # ── Datos (collectors, idempotentes) ──
 python scripts/collect.py            # WhoScored: event data (discover→fetch→load)
+python scripts/collect_fpl.py --all  # ★ Fantasy Premier League: bootstrap, fixtures, historial GW por GW
+python scripts/migrate_premier_data.py # ★ Migración de premier.db (525K eventos Opta + 19K FPL history)
 python scripts/collect_context.py    # Elo + Kalshi + Polymarket + ESPN (diario)
 python scripts/collect_odds.py       # The Odds API (credit-metered, ~4/día)
 python scripts/collect_statsbomb.py  # StatsBomb WC2022/2018 (entrenamiento)

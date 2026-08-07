@@ -53,3 +53,11 @@ WS_STATUS_LIVE = {3, 2, 4, 5}
 # ── Scraping ───────────────────────────────────────────────────────
 WS_DELAY_SECONDS = 6          # cortesía entre requests de partido
 WS_TIMEOUT = 45
+
+# ── Fantasy Premier League (FPL API) ───────────────────────────────
+FPL_BASE_URL = "https://fantasy.premierleague.com/api"
+FPL_BOOTSTRAP_URL = f"{FPL_BASE_URL}/bootstrap-static/"
+FPL_FIXTURES_URL = f"{FPL_BASE_URL}/fixtures/"
+FPL_ELEMENT_SUMMARY_URL = f"{FPL_BASE_URL}/element-summary/{{player_id}}/"
+FPL_EVENT_LIVE_URL = f"{FPL_BASE_URL}/event/{{event_id}}/live/"
+

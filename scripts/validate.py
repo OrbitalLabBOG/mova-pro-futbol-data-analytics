@@ -25,7 +25,8 @@ def hr(t):
 
 # ── 1. Conteos base ────────────────────────────────────────────────
 hr("1. CONTEOS BASE")
-for t in ("events", "matches", "lineups", "players", "teams", "elo_ratings",
+for t in ("events", "matches", "lineups", "players", "teams", "fpl_players", "fpl_teams",
+          "fpl_gameweeks", "fpl_fixtures", "fpl_player_history", "elo_ratings",
           "market_odds", "odds_quotes", "espn_fixtures", "team_aliases", "match_map"):
     print(f"  {q1(f'SELECT count(*) FROM {t}'):>9,}  {t}")
 
@@ -37,10 +38,10 @@ orphan_ln = q1("SELECT count(*) FROM lineups WHERE match_id NOT IN (SELECT match
 check("lineups sin match padre", orphan_ln == 0, f"{orphan_ln} huérfanos")
 ev_noteam = q1("SELECT count(*) FROM events WHERE team_id IS NOT NULL AND team_id NOT IN (SELECT team_id FROM teams)")
 check("eventos con team_id inexistente", ev_noteam == 0, f"{ev_noteam}")
-# suma n_events declarado vs eventos reales
-decl = q1("SELECT COALESCE(SUM(n_events),0) FROM matches WHERE n_events>0")
-real = q1("SELECT count(*) FROM events")
-check("matches.n_events == count(events)", decl == real, f"declarado={decl:,} real={real:,}")
+# suma n_events declarado vs eventos reales en el Mundial 2026
+decl = q1("SELECT COALESCE(SUM(n_events),0) FROM matches WHERE n_events>0 AND source='whoscored'")
+real = q1("SELECT count(*) FROM events WHERE source='whoscored'")
+check("matches.n_events == count(events [whoscored])", decl == real, f"declarado={decl:,} real={real:,}")
 
 # ── 3. Consistencia con datos reales: GOLES vs MARCADOR ────────────
 hr("3. GOLES (eventos) vs MARCADOR (scoreboard) — datos reales")
@@ -84,11 +85,11 @@ nteams = q1("SELECT count(DISTINCT name) FROM teams")
 check("equipos canónicos = 48", nteams == 48, f"{nteams}")
 board = q1("SELECT count(*) FROM v_team_board")
 check("v_team_board filas = 48", board == 48, f"{board}")
-# todos los equipos de matches resuelven
+# todos los equipos de matches (Mundial) resuelven
 unres = c.execute("""SELECT count(*) FROM (
-  SELECT home_team t FROM matches UNION SELECT away_team FROM matches) x
+  SELECT home_team t FROM matches WHERE source='whoscored' UNION SELECT away_team FROM matches WHERE source='whoscored') x
   WHERE t NOT IN (SELECT alias FROM team_aliases) AND lower(t) NOT IN (SELECT lower(canonical) FROM team_aliases)""").fetchone()[0]
-check("equipos WhoScored resuelven", unres == 0, f"{unres} sin alias")
+check("equipos WhoScored (Mundial) resuelven", unres == 0, f"{unres} sin alias")
 
 # ── 6. match_map ───────────────────────────────────────────────────
 hr("6. ENLACE DE PARTIDOS (match_map)")
@@ -103,8 +104,8 @@ check("match_map.espn_id existe en espn_fixtures", bad_es == 0, f"{bad_es}")
 bad_oa = q1("SELECT count(*) FROM match_map WHERE oddsapi_event_id IS NOT NULL AND oddsapi_event_id NOT IN (SELECT DISTINCT event_id FROM odds_quotes)")
 check("match_map.oddsapi_event_id existe en odds_quotes", bad_oa == 0, f"{bad_oa}")
 mapped = q1("SELECT count(*) FROM match_map WHERE whoscored_id IS NOT NULL")
-nmatch = q1("SELECT count(*) FROM matches")
-check("todos los matches WhoScored mapeados", mapped == nmatch, f"{mapped}/{nmatch}")
+nmatch = q1("SELECT count(*) FROM matches WHERE source='whoscored'")
+check("todos los matches WhoScored (Mundial) mapeados", mapped == nmatch, f"{mapped}/{nmatch}")
 
 # ── 7. Cruce real end-to-end ───────────────────────────────────────
 hr("7. CRUCE END-TO-END (1 partido por todas las fuentes)")
