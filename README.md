@@ -1,7 +1,6 @@
-# MOVA Mundial 2026 — Predictor de la Polla
+# MOVA Pro Fútbol Data Analytics
 
-Modelo de predicción de resultados para la **Copa Mundial FIFA 2026** (USA/México/Canadá, 48 equipos).
-Objetivo práctico: maximizar el puntaje esperado en la polla. Objetivo técnico: pipeline reutilizable de analítica deportiva (vertical **MOVA**).
+Modelo de analítica deportiva, predicción probabilística y procesador de event data (vertical **MOVA**).
 
 > **Estado: TORNEO TERMINADO — ciclo completo ✅** (2026-07-20). 🏆 **España campeón** (1-0 a Argentina). Datos completos: 104/104 partidos, 626K+ eventos. El modelo proyectó exactamente las dos semifinales reales (Francia-España, Argentina-Inglaterra) y el **pick de valor del pick sheet (España, leverage 1.31) fue el campeón**. Balance final y lecciones → **[docs/15-postmortem-final.md](docs/15-postmortem-final.md)**.
 
