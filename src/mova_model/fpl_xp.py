@@ -90,10 +90,15 @@ class FPLxPEngine:
             lambda x: x.shift(1).ewm(alpha=1-decay_factor, min_periods=1).mean()
         ).fillna(60.0)
 
+        # Volatilidad de minutos (para detectar rotación inestable)
+        df["min_volatility"] = df.groupby("player_id")["minutes"].transform(
+            lambda x: x.shift(1).rolling(window=5, min_periods=1).std()
+        ).fillna(0.0)
+
         # Probabilidad de jugar >= 60 minutos
         df["prob_60_min"] = (df["xmin"] / 90.0).clip(0, 1)
 
-        # xG90 y xA90 exponenciales móviles
+        # xG90 y xA90 exponenciales móviles (largo plazo alpha=0.15)
         df["xg_exp"] = df.groupby("player_id")["expected_goals"].transform(
             lambda x: x.shift(1).ewm(alpha=1-decay_factor, min_periods=1).mean()
         ).fillna(0.05)
@@ -101,6 +106,18 @@ class FPLxPEngine:
         df["xa_exp"] = df.groupby("player_id")["expected_assists"].transform(
             lambda x: x.shift(1).ewm(alpha=1-decay_factor, min_periods=1).mean()
         ).fillna(0.05)
+
+        # xG5 y xA5 exponenciales móviles a corto plazo (alpha=0.35)
+        df["xg_exp_5"] = df.groupby("player_id")["expected_goals"].transform(
+            lambda x: x.shift(1).ewm(alpha=0.35, min_periods=1).mean()
+        ).fillna(0.05)
+
+        df["xa_exp_5"] = df.groupby("player_id")["expected_assists"].transform(
+            lambda x: x.shift(1).ewm(alpha=0.35, min_periods=1).mean()
+        ).fillna(0.05)
+
+        # Ratio de toques en área rival por 90 min
+        df["opta_box_touch_ratio"] = (df["opta_box_touches"] / (df["minutes"] + 1.0) * 90.0).clip(0, 20.0)
 
         # ICT Index esperado
         df["ict_exp"] = df.groupby("player_id")["influence"].transform(
