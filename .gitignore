@@ -9,6 +9,7 @@ venv/
 # Datos pesados / privados (versionar solo lo procesado y ligero si aplica)
 data/raw/*
 !data/raw/.gitkeep
+data/historical_fpl/*.csv
 models/*.pkl
 models/*.joblib
 
