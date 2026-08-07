@@ -59,6 +59,7 @@ Arquitectura, inventario de datos y plan de Fase 2 → **[docs/00-estado.md](doc
 | [docs/14-polymarket-estrategia.md](docs/14-polymarket-estrategia.md) | **★ Polymarket por microestructura (MM/arb/resolution-edge): medición en vivo + veredicto (saturado para operador pequeño)** |
 | [docs/15-postmortem-final.md](docs/15-postmortem-final.md) | **★ Post-mortem final: qué tan bueno fue el modelo vs el torneo real, por qué se desfasó el pick de campeón, lecciones** |
 | [docs/16-unificacion-fantasy-mova.md](docs/16-unificacion-fantasy-mova.md) | **★ Arquitectura unificada: Fantasy Premier League API, 600K+ eventos Opta, vista maestra y deprecación legacy** |
+| [docs/17-fpl-engine-rules-and-strategy.md](docs/17-fpl-engine-rules-and-strategy.md) | **★ Agente Autónomo FPL: Reglas 2025/2026, optimización MILP y evaluación contra Ground Truth** |
 
 ## Cómo correr el pipeline
 
@@ -75,10 +76,13 @@ python scripts/build_aliases.py      # identidad canónica de equipos
 python scripts/build_match_map.py    # enlazar partidos entre fuentes
 python scripts/validate.py           # validar integridad (PASS/WARN/FAIL)
 
-# ── Modelo (Fase 2) ──
+# ── Modelos FPL & Predictivos (Fase 2) ──
+python scripts/train_fpl_xp.py       # ★ Entrena y calibra modelo xP sobre 19K+ registros de Ground Truth
+python scripts/evaluate_fpl_xp.py    # ★ Evaluación cuantitativa out-of-sample vs Ground Truth (MAE, RMSE, Spearman rho)
 python scripts/train_xg.py           # entrena xG nativo WhoScored (una vez)
 python scripts/fit_match_model.py    # calibra Elo→Dixon-Coles (una vez)
 python scripts/run_model.py --seed 42  # ★ pipeline: features→predict→simulate→insight
+```,StartLine:60,TargetContent:
 python scripts/backtest.py           # RPS leakage-free WC2018/22
 python scripts/scout.py "Colombia" "Ghana"  # scouting táctico de un cruce
 python scripts/bracket.py            # bracket completo lleno (16vos→campeón)
