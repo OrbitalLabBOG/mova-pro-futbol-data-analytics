@@ -23,6 +23,17 @@ class FPLxPEngine:
         """Carga los datos históricos y características acumuladas antes de la Gameweek objetivo."""
         conn = sqlite3.connect(self.db_path)
         query = """
+        WITH opta_agg AS (
+            SELECT 
+                player_name,
+                COUNT(CASE WHEN is_shot = 1 THEN 1 END) AS opta_shots,
+                COUNT(CASE WHEN qualifiers LIKE '%KeyPass%' THEN 1 END) AS opta_key_passes,
+                COUNT(CASE WHEN x >= 83 AND y >= 21 AND y <= 79 THEN 1 END) AS opta_box_touches,
+                COUNT(CASE WHEN event_type = 'Tackle' THEN 1 END) AS opta_tackles
+            FROM events
+            WHERE source = 'whoscored_pl' AND player_name IS NOT NULL
+            GROUP BY player_name
+        )
         SELECT 
             ph.player_id,
             p.web_name AS player_name,
@@ -47,11 +58,16 @@ class FPLxPEngine:
             ph.creativity,
             ph.threat,
             ph.value,
-            ph.selected
+            ph.selected,
+            COALESCE(oa.opta_shots, 0) AS opta_shots,
+            COALESCE(oa.opta_key_passes, 0) AS opta_key_passes,
+            COALESCE(oa.opta_box_touches, 0) AS opta_box_touches,
+            COALESCE(oa.opta_tackles, 0) AS opta_tackles
         FROM fpl_player_history ph
         JOIN fpl_players p ON p.id = ph.player_id
         LEFT JOIN fpl_teams t ON t.id = p.team_id
         LEFT JOIN fpl_teams opt ON opt.id = ph.opponent_team
+        LEFT JOIN opta_agg oa ON (oa.player_name = p.web_name OR oa.player_name = p.first_name || ' ' || p.second_name)
         ORDER BY ph.player_id, ph.gameweek
         """
         df = pd.read_sql_query(query, conn)

@@ -33,7 +33,8 @@ def train_xp_model():
     features = [
         "element_type", "price", "was_home", "xmin", "prob_60_min",
         "xg_exp", "xa_exp", "ict_exp", "opp_def_strength",
-        "xp_goals", "xp_assists", "xp_cs", "xp_bonus", "xp_predicted"
+        "xp_goals", "xp_assists", "xp_cs", "xp_bonus", "xp_predicted",
+        "opta_shots", "opta_key_passes", "opta_box_touches", "opta_tackles"
     ]
     target = "total_points"
 
