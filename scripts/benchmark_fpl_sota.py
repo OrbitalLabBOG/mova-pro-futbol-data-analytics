@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 from typing import Dict, List, Tuple
+from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor, VotingRegressor
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -64,7 +65,7 @@ def pick_best_starting_11(gw_df: pd.DataFrame, max_budget: float = 100.0) -> Tup
 
 
 def run_sota_benchmark():
-    print("🚀 Iniciando Simulación Benchmark SOTA (GW1 a GW30)...")
+    print("🚀 Iniciando Simulación Benchmark SOTA Walk-Forward Sin Leakage (GW1 a GW30)...")
     versions = ["v1", "v2", "v3"]
     results = {}
 
@@ -72,12 +73,16 @@ def run_sota_benchmark():
     all_history = engine_base.load_player_features(target_gw=30)
     all_calc = engine_base.calculate_xp(all_history)
 
+    features = [
+        "element_type", "price", "was_home", "xmin", "prob_60_min",
+        "xg_exp", "xa_exp", "ict_exp", "opp_def_strength",
+        "xp_goals", "xp_assists", "xp_cs", "xp_bonus", "xp_predicted",
+        "opta_shots", "opta_key_passes", "opta_box_touches", "opta_tackles"
+    ]
+
     for ver in versions:
-        print(f"\n🧠 Simulando modelo versión: `{ver}`...")
-        inference = FPLInferenceEngine(ver)
+        print(f"\n🧠 Simulando modelo versión: `{ver}` (Walk-Forward sin ver el futuro)...")
         gw_points_history = []
-        gw_xp_history = []
-        captain_points_history = []
 
         for gw in range(1, 31):
             gw_df = all_calc[all_calc["gameweek"] == gw].copy()
@@ -87,38 +92,40 @@ def run_sota_benchmark():
             pos_map = {1: "GKP", 2: "DEF", 3: "MID", 4: "FWD"}
             gw_df["position"] = gw_df["element_type"].map(pos_map)
 
-            if inference.model is not None and inference.features:
-                X = gw_df[inference.features].fillna(0)
-                gw_df["xp_model"] = inference.model.predict(X)
-                gw_df["xp_final"] = gw_df["xp_model"].clip(lower=0.0).round(2)
+            if ver == "v1":
+                # v1: Fórmula empírica pura (sin ML)
+                gw_df["xp_final"] = np.clip(gw_df["xp_predicted"], 0, None).round(2)
             else:
-                gw_df["xp_final"] = gw_df["xp_predicted"].clip(lower=0.0).round(2)
+                # v2 y v3: Entrenamiento Walk-Forward (SOLO datos de GW < gw)
+                train_data = all_calc[(all_calc["gameweek"] < gw) & (all_calc["minutes"] > 0)]
+                if len(train_data) > 100:
+                    X_tr = train_data[features].fillna(0)
+                    y_tr = train_data["total_points"].fillna(0)
+                    
+                    if ver == "v2":
+                        model = GradientBoostingRegressor(n_estimators=50, learning_rate=0.05, max_depth=4, random_state=42)
+                    else:
+                        gb = GradientBoostingRegressor(n_estimators=50, learning_rate=0.05, max_depth=4, random_state=42)
+                        rf = RandomForestRegressor(n_estimators=50, max_depth=6, random_state=42, n_jobs=-1)
+                        model = VotingRegressor([("gb", gb), ("rf", rf)])
+
+                    model.fit(X_tr, y_tr)
+                    X_gw = gw_df[features].fillna(0)
+                    gw_df["xp_final"] = np.clip(model.predict(X_gw), 0, None).round(2)
+                else:
+                    gw_df["xp_final"] = np.clip(gw_df["xp_predicted"], 0, None).round(2)
 
             gw_df = gw_df.sort_values("xp_final", ascending=False)
 
-            # Seleccionar titulares y capitán según el modelo
+            # Seleccionar titulares y capitán según la predicción sin leakage
             starters, captain = pick_best_starting_11(gw_df)
 
-            # Obtener los puntos REALES obtenidos por esos jugadores en la jornada gw
-            starters_real = all_calc[
-                (all_calc["gameweek"] == gw) & 
-                (all_calc["player_id"].isin(starters["player_id"]))
-            ]
-
-            captain_real = all_calc[
-                (all_calc["gameweek"] == gw) & 
-                (all_calc["player_id"] == captain["player_id"])
-            ]
-
-            pts_starters = starters_real["total_points"].sum()
-            pts_captain_extra = captain_real["total_points"].sum() if not captain_real.empty else 0
-            
-            # Puntos totales de la jornada (11 titulares + 1x extra del capitán = 2x total capitán)
+            # Puntos REALES obtenidos en la jornada gw
+            pts_starters = starters["total_points"].sum()
+            pts_captain_extra = captain["total_points"]
             total_gw_pts = pts_starters + pts_captain_extra
 
             gw_points_history.append(total_gw_pts)
-            gw_xp_history.append(starters["xp_final"].sum() + captain["xp_final"])
-            captain_points_history.append(pts_captain_extra * 2)
 
         total_pts_30 = sum(gw_points_history)
         avg_gw_pts = np.mean(gw_points_history) if gw_points_history else 0
