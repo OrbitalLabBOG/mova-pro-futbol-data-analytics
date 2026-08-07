@@ -61,32 +61,25 @@ Arquitectura, inventario de datos y plan de Fase 2 → **[docs/00-estado.md](doc
 | [docs/16-unificacion-fantasy-mova.md](docs/16-unificacion-fantasy-mova.md) | **★ Arquitectura unificada: Fantasy Premier League API, 600K+ eventos Opta, vista maestra y deprecación legacy** |
 | [docs/17-fpl-engine-rules-and-strategy.md](docs/17-fpl-engine-rules-and-strategy.md) | **★ Agente Autónomo FPL: Reglas 2025/2026, optimización MILP y evaluación contra Ground Truth** |
 | [docs/18-modelos-fpl-xp-e-inferencia.md](docs/18-modelos-fpl-xp-e-inferencia.md) | **★ Versionamiento de Modelos xP (v1, v2, v3 Ensemble) y API de Inferencia** |
+| [docs/19-motor-de-produccion-y-backtest-out-of-time.md](docs/19-motor-de-produccion-y-backtest-out-of-time.md) | **★ Guía Operativa: Validación Out-of-Time y Ejecutor en Producción (live_agent_runner.py)** |
 
 ## Cómo correr el pipeline
 
 ```bash
+# ── Operación en vivo en Producción (Arranque Liga en 2 semanas) ──
+python scripts/live_agent_runner.py --gameweek 1 --dry-run # ★ Recomendación oficial en vivo + informe MD
+
 # ── Datos (collectors, idempotentes) ──
 python scripts/collect.py            # WhoScored: event data (discover→fetch→load)
 python scripts/collect_fpl.py --all  # ★ Fantasy Premier League: bootstrap, fixtures, historial GW por GW
 python scripts/migrate_premier_data.py # ★ Migración de premier.db (525K eventos Opta + 19K FPL history)
 python scripts/collect_context.py    # Elo + Kalshi + Polymarket + ESPN (diario)
 python scripts/collect_odds.py       # The Odds API (credit-metered, ~4/día)
-python scripts/collect_statsbomb.py  # StatsBomb WC2022/2018 (entrenamiento)
-python scripts/collect_elo_history.py # histórico martj42 + Elo propio (una vez)
-python scripts/build_aliases.py      # identidad canónica de equipos
-python scripts/build_match_map.py    # enlazar partidos entre fuentes
 python scripts/validate.py           # validar integridad (PASS/WARN/FAIL)
 
 # ── Modelos FPL & Predictivos (Fase 2) ──
 python scripts/train_fpl_xp_v3.py    # ★ Entrena y versiona v1, v2 y v3 (Ensemble RF+GB con 444K Opta)
 python scripts/evaluate_fpl_xp.py    # ★ Evaluación cuantitativa out-of-sample vs Ground Truth (MAE, RMSE, Spearman rho)
-python scripts/train_xg.py           # entrena xG nativo WhoScored (una vez)
-python scripts/fit_match_model.py    # calibra Elo→Dixon-Coles (una vez)
-python scripts/run_model.py --seed 42  # ★ pipeline: features→predict→simulate→insight
-python scripts/backtest.py           # RPS leakage-free WC2018/22
-python scripts/scout.py "Colombia" "Ghana"  # scouting táctico de un cruce
-python scripts/bracket.py            # bracket completo lleno (16vos→campeón)
-
 # ── Apuestas / CLV (Fase betting) ──
 python scripts/collect_club_odds.py  # mirror football-data → data/betting.db (80K con cierre Pinnacle)
 python scripts/clv_backtest.py       # ★ backtest CLV: ¿le ganamos al cierre? (4 tests, ~34s)
