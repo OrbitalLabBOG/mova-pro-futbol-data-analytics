@@ -85,7 +85,7 @@ Todos verificados por inspección directa el 2026-08-07.
 | --- | --- | --- |
 | Julián (operador) | Recibir una decisión accionable y justificada antes de cada deadline | Acta en Markdown con 15+11+C, costo, xP y razón por jugador |
 | Julián (sponsor) | Saber si el motor sirve **antes** de arriesgar la temporada | Número del backtest 2025/26 vs baselines, reproducible |
-| Nicolás (arquitecto) | Que el sistema sea modular y no repita el Frankenstein anterior | Fronteras explícitas: `rules` sin datos, `models` sin reglas, `engine` sin saber si es 2018 o hoy |
+| Julián (arquitecto) | Que el sistema sea modular y no repita el Frankenstein anterior | Fronteras explícitas: `rules` sin datos, `models` sin reglas, `engine` sin saber si es 2018 o hoy |
 | Iniciativa sucesora (agente LLM) | Un motor determinista medible contra el cual justificar su existencia | `decide()` estable + traza + baselines |
 
 ## Alcance
@@ -163,7 +163,8 @@ Explícitamente **no** forman parte de v1:
 
 ## Aprobaciones
 
+Julián es el aprobador único de esta iniciativa: alcance, arquitectura y riesgo.
+
 | Área | Responsable | Estado | Fecha |
 | --- | --- | --- | --- |
-| Intención y alcance | Julián Zuluaga | pending | — |
-| Arquitectura técnica | Nicolás Buitrago | pending | — |
+| Intención, alcance y arquitectura | Julián Zuluaga | **approved** | 2026-08-07 |

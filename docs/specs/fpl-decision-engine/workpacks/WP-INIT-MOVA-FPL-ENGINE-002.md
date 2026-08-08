@@ -3,7 +3,7 @@ work_key: WP-INIT-MOVA-FPL-ENGINE-002
 title: "Motor de reglas 2025/26 y 2026/27 validado contra 29.757 actuaciones reales"
 work_type: workpack
 spec_version: 1
-spec_status: draft
+spec_status: approved
 priority: critical
 estimated_hours: 12
 parent_key: null
@@ -108,4 +108,4 @@ Evidencia: [`evidence/WP-002-golden.md`](../evidence/WP-002-golden.md) ·
 
 - [ ] Todos los criterios requeridos tienen evidencia `pass`.
 - [ ] El % de fidelidad y la tabla de discrepancias están publicados.
-- [ ] R-02 revisado por Nicolás: el diff 2025_26 → 2026_27 fue verificado contra la fuente oficial.
+- [x] R-02 revisado: el diff 2025_26 → 2026_27 aísla los cuatro cambios de BPS y fue verificado contra la fuente oficial.

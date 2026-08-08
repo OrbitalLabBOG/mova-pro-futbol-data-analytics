@@ -3,7 +3,7 @@ work_key: WP-INIT-MOVA-FPL-ENGINE-006
 title: "Optimizador MILP con horizonte rodante multi-gameweek"
 work_type: workpack
 spec_version: 1
-spec_status: draft
+spec_status: approved
 priority: high
 estimated_hours: 12
 parent_key: null

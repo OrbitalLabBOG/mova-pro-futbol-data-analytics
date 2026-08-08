@@ -290,9 +290,9 @@ Sin alertas ni dashboards en v1: no hay servicio desplegado.
 | Riesgo | Impacto | Mitigación | Owner | Estado |
 | --- | --- | --- | --- | --- |
 | R-01 El plan estimado (~80 h) no cabe en 14 días | Se llega a GW1 sin motor | Walking skeleton temprano; corte declarado el 18-ago: si WP-006 no está, se juega GW1 con optimizador de horizonte 1 | Julián | open |
-| R-02 `rules_2026_27` no es validable contra ground truth (C-01) | Puntuación mal implementada en producción | Golden test valida `2025_26`; el diff `2025_26 → 2026_27` se revisa línea por línea contra la fuente oficial | Nicolás | open |
+| R-02 `rules_2026_27` no es validable contra ground truth (C-01) | Puntuación mal implementada en producción | Golden test valida `2025_26`; el diff `2025_26 → 2026_27` se revisa línea por línea contra la fuente oficial | Julián | aceptado |
 | R-03 DefCon se entrena con una sola temporada (C-02) | Componente con alta varianza | Se reporta el componente por separado con su incertidumbre; no se le da peso ciego | Julián | open |
-| R-04 El backtest sobreestima bonus por el cambio de BPS (C-03) | Expectativa inflada | Se reporta el desglose de bonus por separado para acotar el sesgo | Nicolás | open |
+| R-04 El backtest sobreestima bonus por el cambio de BPS (C-03) | Expectativa inflada | Se reporta el desglose de bonus por separado para acotar el sesgo | Julián | aceptado |
 | R-05 Cold start en GW1: sin datos de 2026/27, la primera decisión es la más débil | Mal arranque de temporada | El backtest mide exactamente este caso (GW1 ciego) y da una expectativa honesta antes del 21-ago | Julián | open |
 | R-06 `vaastav` deja de actualizar durante la temporada (S-01) | Sin datos frescos | Fallback a la API oficial de FPL, que sirve la gameweek en curso | Julián | open |
 | R-07 Red inestable en la descarga de fuentes | Ingesta incompleta | Descarga idempotente con reintentos y validación de cabecera; ya observado en la práctica | Julián | mitigado |

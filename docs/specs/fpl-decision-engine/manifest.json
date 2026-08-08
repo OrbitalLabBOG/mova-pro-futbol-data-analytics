@@ -4,13 +4,13 @@
   "slug": "fpl-decision-engine",
   "title": "Motor de decision FPL 2026/27 - modelos, reglas y harness de backtest blind",
   "version": 1,
-  "status": "draft",
+  "status": "approved",
   "risk_tier": "standard",
   "created": "2026-08-07",
   "updated": "2026-08-07",
   "owners": {
     "business": "Julian Zuluaga",
-    "technical": "Nicolas Buitrago"
+    "technical": "Julián Zuluaga"
   },
   "repositories": [
     "https://github.com/OrbitalLabBOG/mova-pro-futbol-data-analytics"

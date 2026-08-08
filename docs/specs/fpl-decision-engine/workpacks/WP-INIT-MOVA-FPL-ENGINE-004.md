@@ -3,7 +3,7 @@ work_key: WP-INIT-MOVA-FPL-ENGINE-004
 title: "Modelo de minutos calibrado - clasificador {0, 1-59, 60+}"
 work_type: workpack
 spec_version: 1
-spec_status: draft
+spec_status: approved
 priority: critical
 estimated_hours: 12
 parent_key: null

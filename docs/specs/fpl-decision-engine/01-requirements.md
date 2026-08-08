@@ -287,7 +287,7 @@ status: draft
 
 | # | Conflicto detectado | Resolución | Owner |
 | --- | --- | --- | --- |
-| C-01 | REQ-Q-002 exige recomputar puntos de 2025/26, pero producción usa reglas 2026/27, que no son validables contra ground truth porque la temporada no ha ocurrido | Se acepta: el golden test valida `rules_2025_26`; `rules_2026_27` se valida por revisión contra la fuente oficial y por diff explicado contra la versión anterior. Queda como riesgo declarado | Nicolás |
+| C-01 | REQ-Q-002 exige recomputar puntos de 2025/26, pero producción usa reglas 2026/27, que no son validables contra ground truth porque la temporada no ha ocurrido | Se acepta: el golden test valida `rules_2025_26`; `rules_2026_27` se valida por revisión contra la fuente oficial y por diff explicado contra la versión anterior. Queda como riesgo declarado | Julián |
 | C-02 | REQ-F-005 exige modelar DefCon, pero sólo 2025/26 tiene la regla (I-01): una sola temporada de entrenamiento para ese componente | Se acepta con 29.757 filas. Se reporta intervalo de confianza del componente por separado | Julián |
-| C-03 | S-05 supone que 2025/26 es representativa, pero H-03 dice que BPS cambió | El backtest sobreestima el componente bonus. Se documenta como sesgo conocido y se reporta el desglose bonus por separado para acotarlo | Nicolás |
+| C-03 | S-05 supone que 2025/26 es representativa, pero H-03 dice que BPS cambió | El backtest sobreestima el componente bonus. Se documenta como sesgo conocido y se reporta el desglose bonus por separado para acotarlo | Julián |
 | C-04 | Q-02 sin respuesta cambia la función objetivo de REQ-F-006 (maximizar puntos vs rank ajustado por ownership) | **Bloqueo para WP-006.** Por defecto se asume maximizar puntos esperados | Julián |

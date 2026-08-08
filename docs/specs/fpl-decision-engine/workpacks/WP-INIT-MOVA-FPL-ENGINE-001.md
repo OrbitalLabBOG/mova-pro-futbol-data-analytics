@@ -3,7 +3,7 @@ work_key: WP-INIT-MOVA-FPL-ENGINE-001
 title: "Almacen canonico multi-temporada con contrato as_of y fronteras verificadas"
 work_type: workpack
 spec_version: 1
-spec_status: draft
+spec_status: approved
 priority: critical
 estimated_hours: 10
 parent_key: null
@@ -110,8 +110,7 @@ Borrar `mova_fpl/data/` y `data/processed/fpl_canonical.db`. Nada existente camb
 Evidencia: [`evidence/WP-001-tests.md`](../evidence/WP-001-tests.md) ·
 [`evidence/WP-001-coverage.md`](../evidence/WP-001-coverage.md)
 
-Ejecutado bajo autorización de alcance de Julián (2026-08-07). La aprobación de
-arquitectura de Nicolás continúa pendiente.
+Ejecutado bajo autorización de Julián (2026-08-07), aprobador único de la iniciativa.
 
 ## Definition of Done
 

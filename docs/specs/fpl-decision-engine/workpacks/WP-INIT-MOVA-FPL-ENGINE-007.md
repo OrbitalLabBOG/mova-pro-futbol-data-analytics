@@ -3,7 +3,7 @@ work_key: WP-INIT-MOVA-FPL-ENGINE-007
 title: "Operacion GW1 2026/27 - decision en vivo, acta y reconciliacion"
 work_type: workpack
 spec_version: 1
-spec_status: draft
+spec_status: approved
 priority: critical
 estimated_hours: 8
 parent_key: null

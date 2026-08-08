@@ -3,7 +3,7 @@ work_key: WP-INIT-MOVA-FPL-ENGINE-003
 title: "Walking skeleton - harness replay walk-forward ciego, baselines y traza"
 work_type: workpack
 spec_version: 1
-spec_status: draft
+spec_status: approved
 priority: critical
 estimated_hours: 14
 parent_key: null
