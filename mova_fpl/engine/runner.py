@@ -15,6 +15,8 @@ from mova_fpl.engine.state import Decision, State
 @dataclass(frozen=True, slots=True)
 class Config:
     policy: str = "greedy-stub"
+    projector: str = "naive"          # naive (WP-003) | minutes (WP-004)
+    model_version: str = "1.0.0"
     horizon: int = 1
     seed: int = 42
     chip_policy: str = "none"

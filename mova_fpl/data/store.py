@@ -122,7 +122,7 @@ class Store:
         return df
 
     #: columnas conocidas ANTES del cierre de la jornada
-    ROSTER_COLS = ("season", "gw", "element", "name", "position", "team", "value",
+    ROSTER_COLS = ("season", "gw", "element", "player_key", "name", "position", "team", "value",
                    "opponent_team", "was_home", "fixture", "kickoff_time")
 
     def roster(self, season: str, gw: int) -> pd.DataFrame:

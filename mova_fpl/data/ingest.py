@@ -13,11 +13,12 @@ from pathlib import Path
 
 import pandas as pd
 
+from mova_fpl.data.identity import player_key
 from mova_fpl.data.schema import ALL_COLUMNS, DROPPED, KEY, RENAME, SEASONS
 from mova_fpl.data.sources import RAW, fetch_season_csv
 from mova_fpl.data.store import DEFAULT_DB, TABLE
 
-NUMERIC_EXCLUDE = {"season", "name", "position", "team", "kickoff_time"}
+NUMERIC_EXCLUDE = {"season", "name", "player_key", "position", "team", "kickoff_time"}
 
 
 def load_season_csv(season: str, raw_dir: Path = RAW) -> pd.DataFrame:
@@ -31,6 +32,9 @@ def load_season_csv(season: str, raw_dir: Path = RAW) -> pd.DataFrame:
 
     for col in DROPPED:
         df = df.drop(columns=[col], errors="ignore")
+
+    # identidad estable entre temporadas (element se reasigna cada anio)
+    df["player_key"] = df["name"].map(player_key)
 
     # columnas ausentes en esta temporada -> NA explicito, jamas 0
     for col in ALL_COLUMNS:

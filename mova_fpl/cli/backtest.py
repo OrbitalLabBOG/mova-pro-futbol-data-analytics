@@ -12,6 +12,7 @@ def main() -> None:
     ap.add_argument("--season", default="2025-26")
     ap.add_argument("--mode", default="anonymized", choices=["named", "anonymized"])
     ap.add_argument("--policy", default="greedy-stub")
+    ap.add_argument("--projector", default="naive", choices=["naive", "minutes"])
     ap.add_argument("--horizon", type=int, default=1)
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--max-gw", type=int, default=38)
@@ -21,8 +22,8 @@ def main() -> None:
     ap.add_argument("--quiet", action="store_true")
     args = ap.parse_args()
 
-    cfg = Config(policy=args.policy, horizon=args.horizon, seed=args.seed)
-    print(f"Backtest {args.season} · politica {args.policy} · modo {args.mode} · semilla {args.seed}\n")
+    cfg = Config(policy=args.policy, projector=args.projector, horizon=args.horizon, seed=args.seed)
+    print(f"Backtest {args.season} · politica {args.policy} · proyector {args.projector} · modo {args.mode} · semilla {args.seed}\n")
     report = replay(args.season, args.mode, cfg, run_id=args.run_id, resume=args.resume,
                     max_gw=args.max_gw, verbose=not args.quiet)
 

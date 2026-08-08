@@ -11,6 +11,10 @@ from __future__ import annotations
 # duplicado. Verificado en 2025-26 GW26 (Raya: fixtures 252 y 310).
 KEY = ("season", "gw", "element", "fixture")
 
+#: Columna DERIVADA, no viene del origen. Identidad estable de jugador entre
+#: temporadas: `element` se reasigna cada anio (ver data/identity.py).
+DERIVED = ["player_key"]
+
 # Presentes en las 10 temporadas (2016-17 .. 2025-26)
 CORE = [
     "name", "opponent_team", "was_home", "kickoff_time", "round",
@@ -79,7 +83,7 @@ DROPPED = {
     "mng_win": "activo 'manager', solo 2024-25; fuera de alcance v1",
 }
 
-ALL_COLUMNS = list(KEY) + CORE + list(OPTIONAL)
+ALL_COLUMNS = list(KEY) + DERIVED + CORE + list(OPTIONAL)
 assert len(ALL_COLUMNS) == len(set(ALL_COLUMNS)), (
     "columnas duplicadas en el esquema: "
     f"{sorted({c for c in ALL_COLUMNS if ALL_COLUMNS.count(c) > 1})}"

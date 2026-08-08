@@ -90,6 +90,25 @@ pytest tests/test_minutes_calibration.py tests/test_minutes_causality.py -v
 
 Borrar `mova_fpl/models/minutes.py` y sus artefactos. El harness vuelve a la política stub.
 
+## Resultado de ejecución — 2026-08-07
+
+**6/6 criterios en `pass`.** ECE de P(60+) **0,0106** (umbral 0,05) frente a 0,0416 del
+baseline; Brier **0,0820** frente a 0,1087. 390 pruebas verdes en la suite completa.
+
+El efecto en el harness quedó medido y produjo un diagnóstico que reordena la hoja de
+ruta: el modelo aporta **+28 puntos** cuando la política puede expresarlo, pero **−4**
+bajo la política actual. La brecha de política (−633) es **seis veces** la de proyección
+(−108). WP-006 pasa a ser el workpack de mayor retorno esperado.
+
+Dos hallazgos de datos durante la ejecución, ambos de correctitud:
+- `element` **se reasigna cada temporada** (el 1 es Ospina en 2016-17 y Raya en 2025-26).
+  Agrupar historial por `element` empalmaba jugadores distintos. Se añadió `player_key`.
+- El formato de `name` cambió tres veces y las transiciones 2017-18→2018-19 y
+  2019-20→2020-21 compartían **cero** jugadores. Con `player_key`: 418 y 451.
+- Un off-by-one en `racha_ceros`, atrapado por su propio test.
+
+Evidencia: [`evidence/WP-004-calibracion.md`](../evidence/WP-004-calibracion.md)
+
 ## Definition of Done
 
 - [ ] Todos los criterios requeridos tienen evidencia `pass`.

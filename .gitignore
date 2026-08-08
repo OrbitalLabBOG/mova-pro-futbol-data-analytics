@@ -38,3 +38,6 @@ models/**/*.joblib
 outputs/*.md
 outputs/*.png
 data/club-odds-mirror/
+
+# artefactos de modelo (regenerables con python -m mova_fpl.cli.train_minutes)
+models/minutes/*.joblib

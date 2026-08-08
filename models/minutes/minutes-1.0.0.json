@@ -1,0 +1,16 @@
+{
+  "name": "minutes",
+  "version": "1.0.0",
+  "git_sha": "eada2ce",
+  "trained_at": "2026-08-08T03:49:43+00:00",
+  "train_rows": 196538,
+  "artifact": "models/minutes/minutes-1.0.0.joblib",
+  "metrics": {
+    "n": 29747,
+    "ece_p60": 0.010586581144531995,
+    "ece_p60_baseline": 0.04163103558948879,
+    "brier_p60": 0.08202910470390554,
+    "brier_p60_baseline": 0.10871045850023238,
+    "log_loss_3c": 0.4641101721658351
+  }
+}

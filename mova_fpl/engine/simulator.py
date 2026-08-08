@@ -15,6 +15,7 @@ from mova_fpl.data.store import Store
 from mova_fpl.engine.baselines import all_baselines
 from mova_fpl.engine.evaluate import score_decision
 from mova_fpl.engine.naive import naive_projection
+from mova_fpl.engine.projection import minutes_projection
 from mova_fpl.engine.runner import Config, decide
 from mova_fpl.engine.state import Candidate, State
 from mova_fpl.rules import get as get_rules
@@ -119,6 +120,13 @@ def replay(season: str, mode: str = "named", config: Config | None = None,
     trace = trace or TraceWriter()
     run_id = run_id or f"{season}-{config.policy}-{mode}-{uuid.uuid4().hex[:8]}"
 
+    modelo_min = None
+    if config.projector == "minutes":
+        from mova_fpl.models.registry import load
+        modelo_min = load("minutes", config.model_version)
+    elif config.projector != "naive":
+        raise ValueError(f"proyector desconocido: {config.projector}")
+
     rules_mod = get_rules(season)
     rules = rules_mod.SQUAD
     ya_hechas = trace.completed_gws(run_id) if resume else set()
@@ -142,7 +150,8 @@ def replay(season: str, mode: str = "named", config: Config | None = None,
         if mode == "anonymized":
             roster = _anonymize(roster)
 
-        xp = naive_projection(historia, roster)
+        xp = (minutes_projection(historia, roster, modelo_min)
+              if modelo_min is not None else naive_projection(historia, roster))
         candidatos = _candidates(roster, xp)
         if len(candidatos) < rules["size"]:
             continue

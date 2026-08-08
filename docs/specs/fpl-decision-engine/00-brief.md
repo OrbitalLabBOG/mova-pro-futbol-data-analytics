@@ -58,6 +58,9 @@ Todos verificados por inspección directa el 2026-08-07.
 | H-21 | El dinero debe manejarse en **décimas enteras**: en float, `95.8 + 4.2 = 100.00000000000001` supera el presupuesto y rechaza plantillas válidas | backtest WP-003 |
 | H-22 | Las **jornadas en blanco** existen: un jugador cuyo equipo no juega no tiene fila en el catálogo pero sigue en la plantilla y puntúa 0 | backtest WP-003 |
 | H-23 | El **precio correlaciona 0,32** con los puntos de la GW1 de 2025/26. Es información pre-deadline y el mejor prior disponible en cold start | backtest WP-003 |
+| H-25 | El campo `element` de FPL **se reasigna cada temporada**: el elemento 1 es Ospina en 2016-17 y Raya en 2025-26. Agrupar historial por `element` entre temporadas empalma jugadores distintos | WP-004 |
+| H-26 | El formato de `name` cambió tres veces (`David_Ospina` → `Petr_Cech_1` → `David Raya Martín`). Las transiciones 2017-18→2018-19 y 2019-20→2020-21 compartían **cero** jugadores; con `player_key` normalizado comparten 418 y 451 | WP-004 |
+| H-27 | La brecha de **política** (−633 pts) es seis veces la de **proyección** (−108 pts frente al template). El límite de una transferencia por jornada con horizonte 1 domina el resultado | WP-004 |
 | H-24 | El promedio real del mánager (`average_entry_score`) **no está** en el dataset histórico de vaastav; sólo se expone en el bootstrap de la temporada en curso | baselines WP-003 |
 
 ### Inferencias
