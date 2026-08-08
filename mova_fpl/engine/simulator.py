@@ -15,7 +15,7 @@ from mova_fpl.data.store import Store
 from mova_fpl.engine.baselines import all_baselines
 from mova_fpl.engine.evaluate import score_decision
 from mova_fpl.engine.naive import naive_projection
-from mova_fpl.engine.projection import minutes_projection
+from mova_fpl.engine.projection import minutes_projection, points_projection
 from mova_fpl.engine.runner import Config, decide
 from mova_fpl.engine.state import Candidate, State
 from mova_fpl.optimizer.horizon import build_xp_matrix, fixture_counts
@@ -148,10 +148,14 @@ def replay(season: str, mode: str = "named", config: Config | None = None,
     trace = trace or TraceWriter()
     run_id = run_id or f"{season}-{config.policy}-{mode}-{uuid.uuid4().hex[:8]}"
 
-    modelo_min = None
+    modelo_min, modelos = None, None
     if config.projector == "minutes":
         from mova_fpl.models.registry import load
         modelo_min = load("minutes", config.model_version)
+    elif config.projector == "points":
+        from mova_fpl.models.registry import load
+        modelos = {"minutes": load("minutes", "1.0.0"),
+                   "points": load("points", config.model_version)}
     elif config.projector != "naive":
         raise ValueError(f"proyector desconocido: {config.projector}")
 
@@ -179,8 +183,12 @@ def replay(season: str, mode: str = "named", config: Config | None = None,
         if mode == "anonymized":
             roster = _anonymize(roster, alias)
 
-        xp = (minutes_projection(historia, roster, modelo_min)
-              if modelo_min is not None else naive_projection(historia, roster))
+        if modelos is not None:
+            xp = points_projection(historia, roster, modelos, season)
+        elif modelo_min is not None:
+            xp = minutes_projection(historia, roster, modelo_min)
+        else:
+            xp = naive_projection(historia, roster)
         candidatos = _candidates(roster, xp)
         if len(candidatos) < rules["size"]:
             continue

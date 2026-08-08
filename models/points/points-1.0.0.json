@@ -1,0 +1,25 @@
+{
+  "name": "points",
+  "version": "1.0.0",
+  "git_sha": "8f67d99",
+  "trained_at": "2026-08-08T05:30:51+00:00",
+  "train_rows": 224143,
+  "artifact": "models/points/points-1.0.0.joblib",
+  "metrics": {
+    "filas_ajuste": 224143,
+    "holdout": "2025-26",
+    "definicion": {
+      "GKP": 1.0,
+      "DEF": 0.9212436929790969,
+      "MID": 1.1355612718794434,
+      "FWD": 1.099372177325043
+    },
+    "creacion": {
+      "GKP": 1.0,
+      "DEF": 1.316316760776894,
+      "MID": 1.5156750053840038,
+      "FWD": 2.4695090053843014
+    },
+    "defcon_sin_datos": true
+  }
+}

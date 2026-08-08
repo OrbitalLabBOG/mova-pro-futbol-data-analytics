@@ -12,7 +12,7 @@ def main() -> None:
     ap.add_argument("--season", default="2025-26")
     ap.add_argument("--mode", default="anonymized", choices=["named", "anonymized"])
     ap.add_argument("--policy", default="greedy-stub")
-    ap.add_argument("--projector", default="naive", choices=["naive", "minutes"])
+    ap.add_argument("--projector", default="naive", choices=["naive", "minutes", "points"])
     ap.add_argument("--horizon", type=int, default=1)
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--max-gw", type=int, default=38)

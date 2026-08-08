@@ -90,13 +90,20 @@ def test_rules_es_puro_cuando_exista():
             assert raiz not in prohibidas, f"{path.name} importa '{imp}': rules debe ser puro"
 
 
-def test_solo_el_simulador_usa_results():
-    """`Store.results()` es el oraculo del entorno: no puede filtrarse al agente.
+#: Modulos autorizados a leer el oraculo. Son ENTORNO y MEDICION, nunca decision:
+#: el simulador puntua lo ya decidido y la CLI de evaluacion contrasta un modelo
+#: contra lo que paso. Ninguno alimenta a `decide()`. La lista es corta a
+#: proposito y cada entrada tiene que justificarse aqui antes de anadirse.
+ORACULO_PERMITIDO = {"simulator.py", "eval_points.py"}
 
-    Cualquier modulo distinto de engine/simulator.py que lo invoque estaria
-    leyendo el futuro por una puerta lateral.
+
+def test_el_oraculo_no_se_filtra_a_quien_decide():
+    """`Store.results()` es el oraculo del entorno: no puede llegar al agente.
+
+    Cualquier modulo fuera de la lista que lo invoque estaria leyendo el futuro
+    por una puerta lateral.
     """
-    permitidos = {"simulator.py"}
+    permitidos = ORACULO_PERMITIDO
     for path in _modules():
         if path.name in permitidos or path.name == "store.py":
             continue
@@ -106,6 +113,19 @@ def test_solo_el_simulador_usa_results():
                 assert node.func.attr != "results", (
                     f"{path.relative_to(ROOT)} llama .results(): solo el simulador puede"
                 )
+
+
+def test_ningun_modulo_de_decision_esta_en_la_lista_del_oraculo():
+    """La lista de excepciones no puede crecer hacia el lado que decide.
+
+    Si manana alguien mete `policies.py` o un modulo de `models/` en
+    ORACULO_PERMITIDO, el backtest deja de ser ciego y esta prueba lo dice.
+    """
+    prohibidos = {"policies.py", "runner.py", "greedy.py", "naive.py", "projection.py",
+                  "milp.py", "horizon.py", "heuristics.py", "points.py", "minutes.py",
+                  "defcon.py", "goals.py", "cleansheet.py", "bonus.py"}
+    assert not (ORACULO_PERMITIDO & prohibidos), (
+        f"modulos de decision con acceso al oraculo: {sorted(ORACULO_PERMITIDO & prohibidos)}")
 
 
 def test_roster_no_expone_columnas_de_resultado():
