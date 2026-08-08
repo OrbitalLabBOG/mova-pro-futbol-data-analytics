@@ -1,0 +1,31 @@
+{
+  "schema_version": "orbital-spec-v1",
+  "initiative_id": "INIT-MOVA-FPL-ENGINE",
+  "slug": "fpl-decision-engine",
+  "title": "Motor de decision FPL 2026/27 - modelos, reglas y harness de backtest blind",
+  "version": 1,
+  "status": "draft",
+  "risk_tier": "standard",
+  "created": "2026-08-07",
+  "updated": "2026-08-07",
+  "owners": {
+    "business": "Julian Zuluaga",
+    "technical": "Nicolas Buitrago"
+  },
+  "repositories": [
+    "https://github.com/OrbitalLabBOG/mova-pro-futbol-data-analytics"
+  ],
+  "artifacts": {
+    "brief": "00-brief.md",
+    "requirements": "01-requirements.md",
+    "architecture": "02-architecture.md",
+    "readiness": "03-readiness.md",
+    "convergence": "04-convergence.md",
+    "decisions": "decisions/",
+    "workpacks": "workpacks/"
+  },
+  "supabase": {
+    "project_record_id": null,
+    "workflow_version": "spec_v1"
+  }
+}
