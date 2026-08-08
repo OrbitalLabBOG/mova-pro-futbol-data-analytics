@@ -166,6 +166,29 @@ class Store:
         with self._connect() as con:
             return pd.read_sql_query(sql, con, params=(season, int(gw_from), int(gw_to)))
 
+    def team_schedule(self, season: str, gw_from: int, gw_to: int) -> pd.DataFrame:
+        """Partidos por equipo y jornada. Calendario, no resultados.
+
+        Es lo que necesita el horizonte rodante: cuantas veces juega cada club en
+        cada jornada. Dos filas = doble jornada; ausencia = jornada en blanco.
+
+        No pasa por `as_of` por la misma razon que `roster`: el calendario esta
+        publicado antes de decidir. La salvedad esta escrita en optimizer/horizon.py
+        (L-01): al leerse de datos ya ingeridos incorpora reprogramaciones que en su
+        momento podian no estar anunciadas.
+        """
+        sql = (f"SELECT season, gw, team, COUNT(DISTINCT fixture) AS n_fixtures "
+               f"FROM {TABLE} WHERE season = ? AND gw BETWEEN ? AND ? AND team IS NOT NULL "
+               f"GROUP BY season, gw, team ORDER BY gw, team")
+        with self._connect() as con:
+            return pd.read_sql_query(sql, con, params=(season, int(gw_from), int(gw_to)))
+
+    def teams(self, season: str) -> list[str]:
+        """Clubes de la temporada. Metadato de calendario, sin ventana temporal."""
+        sql = f"SELECT DISTINCT team FROM {TABLE} WHERE season = ? AND team IS NOT NULL ORDER BY team"
+        with self._connect() as con:
+            return pd.read_sql_query(sql, con, params=(season,))["team"].tolist()
+
     # ------------------------------------------------------------- metadatos
 
     def coverage(self) -> pd.DataFrame:

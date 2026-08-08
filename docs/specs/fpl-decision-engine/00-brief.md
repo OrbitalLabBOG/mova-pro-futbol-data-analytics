@@ -78,9 +78,10 @@ Todos verificados por inspección directa el 2026-08-07.
 | # | Pregunta | ¿Bloquea? | Owner |
 | --- | --- | --- | --- |
 | Q-01 | ¿Cuál es el `entry_id` del equipo FPL 2026/27 de Julián, para leer estado real (banco, FTs, chips) en producción? | **Sí para WP-007**; no para el resto | Julián |
-| Q-02 | ¿Objetivo declarado de la temporada: rank global, mini-liga específica, o ambos? Define la función objetivo (maximizar puntos vs maximizar rank ajustado por ownership) | **Sí para WP-006** | Julián |
+| Q-02 | ¿Objetivo declarado de la temporada: rank global, mini-liga específica, o ambos? Define la función objetivo (maximizar puntos vs maximizar rank ajustado por ownership) | ~~Sí para WP-006~~ → **No** desde 2026-08-07: ADR-007 la convirtió en un coeficiente (`risk_lambda`), no en una formulación. Sigue abierta como configuración | Julián |
 | Q-03 | ¿Se completan los 89 partidos Opta faltantes de 2025/26 antes de GW1? | No — sólo afecta el stretch de BPS 2026/27 | Julián |
 | Q-04 | ¿Se acepta que la política de chips en v1 sea heurística y no optimizada? | No — asumido `sí` en este brief | Julián |
+| Q-05 | ¿Qué horizonte N usar en producción? Medido en 2025/26: h=1 → 2.014, h=3 → 2.010, h=5 → 2.131, h=8 → 2.080. **No es monótono** y con una sola temporada la diferencia no es separable del ruido | No para WP-006; **sí para WP-007** | Julián / evidencia |
 
 ## Actores y necesidades
 

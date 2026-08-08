@@ -13,9 +13,12 @@ status: draft
 
 ## Veredicto
 
-**CONCERNS** — Paquete aprobado y en ejecución. Queda **una decisión de producto abierta**
-(Q-02) que bloquea exclusivamente a WP-006, y una dependencia menor (Q-01) que sólo muerde
-desde GW2. Los riesgos R-01 a R-04 están aceptados por su owner.
+**CONCERNS** — Paquete aprobado y en ejecución. Queda una dependencia menor (Q-01) que sólo
+muerde desde GW2. Los riesgos R-01 a R-04 están aceptados por su owner.
+
+> **Actualización 2026-08-07 (tras WP-006).** Q-02 ya no bloquea: ADR-007 la reformuló como
+> un coeficiente de la función objetivo en vez de una decisión de arquitectura. Sigue abierta
+> como decisión de producto, pero su respuesta no cambia una línea de estructura.
 
 Desglose por workpack, porque el veredicto no es uniforme:
 
@@ -26,7 +29,7 @@ Desglose por workpack, porque el veredicto no es uniforme:
 | WP-003 Walking skeleton | **Listo para ejecutar** | Depende sólo de 001 y 002 |
 | WP-004 Modelo de minutos | **Listo para ejecutar** | Depende sólo de 001 y 003 |
 | WP-005 Puntos y DefCon | **Listo para ejecutar** | Riesgo R-03 declarado y acotado |
-| WP-006 Optimizador | **Bloqueado** | Q-02 sin responder define la función objetivo |
+| WP-006 Optimizador | ~~Bloqueado~~ → **Terminado** (2026-08-07) | Desbloqueado por ADR-007. 2.131 pts en 2025/26 con h=5, primer resultado del proyecto que supera al baseline `template` |
 | WP-007 Operación GW1 | **Parcial** | Ejecutable para GW1; desde GW2 requiere Q-01 |
 
 ## Evidencia revisada
@@ -62,7 +65,7 @@ Desglose por workpack, porque el veredicto no es uniforme:
 
 | Severidad | Hallazgo | Owner | Resolución/aceptación |
 | --- | --- | --- | --- |
-| **blocker** | Q-02: sin definir si el objetivo es rank global o mini-liga, la función objetivo de WP-006 queda indeterminada. Default asumido: maximizar puntos esperados | Julián | open — bloquea aprobación de WP-006, no de WP-001..005 |
+| ~~blocker~~ **minor** | Q-02: sin definir si el objetivo es rank global o mini-liga, la función objetivo de WP-006 queda indeterminada. Default asumido: maximizar puntos esperados | Julián | **degradado 2026-08-07 por ADR-007** — la respuesta activa un término (`risk_lambda`) que ya existe. Ya no bloquea nada |
 | **major** | Q-01: falta el `entry_id` del equipo FPL para leer estado real. No afecta GW1 (estado inicial trivial), sí desde GW2 | Julián | open — resolver antes del 21-ago |
 | **major** | R-01: el plan estimado suma 80 h en 14 días calendario contra un deadline que no se mueve | Julián | Mitigado por walking skeleton (WP-003) y por el corte declarado del 18-ago: si WP-006 no está, se juega GW1 con la heurística de WP-003. Requiere aceptación explícita |
 | **major** | R-02 / C-01: `rules_2026_27` no es validable contra ground truth porque la temporada no ha ocurrido. Sólo `rules_2025_26` tiene golden test | Julián | **aceptado** — el diff automático aísla los cuatro cambios de BPS y quedó verificado contra la fuente oficial |
@@ -77,15 +80,22 @@ Julián es el **aprobador único** de esta iniciativa: alcance, arquitectura y r
 2026-08-07 aprobó el paquete y autorizó la implementación, aceptando el corte de
 cronograma de R-01 y las mitigaciones de R-02, R-03 y R-04.
 
-El paquete queda en `approved`. **WP-006 continúa bloqueado por Q-02**, que no es un tema
-de aprobación sino una decisión de producto sin resolver: la función objetivo del
-optimizador cambia según si se persigue rank global o una mini-liga.
+El paquete queda en `approved`.
+
+> **Actualización 2026-08-07.** WP-006 se ejecutó adelantándose a WP-005, porque el
+> diagnóstico de WP-004 midió que su retorno esperado era seis veces mayor (brecha de
+> política −633 puntos contra brecha de proyección −108). El resultado confirmó el
+> diagnóstico: +716 puntos cambiando sólo la política, con el mismo proyector.
 
 ## Acciones pendientes
 
-1. **Julián responde Q-02** — única acción que desbloquea WP-006.
+1. ~~Julián responde Q-02~~ → resuelto por diseño en ADR-007. Sigue abierta como
+   configuración; responderla activa `risk_lambda`, no desbloquea nada.
 2. Julián aporta el `entry_id` del equipo FPL (Q-01), necesario desde GW2.
-3. Continuar la ejecución por WP-004.
+3. **Q-05 — elegir el horizonte de producción.** Medido pero no concluyente con una sola
+   temporada. Decidir antes de WP-007.
+4. Continuar la ejecución por WP-005 (modelo de puntos), que vuelve a ser el punto de mayor
+   retorno ahora que la brecha de política está cerrada.
 
 ## Aprobaciones
 

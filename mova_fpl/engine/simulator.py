@@ -18,6 +18,7 @@ from mova_fpl.engine.naive import naive_projection
 from mova_fpl.engine.projection import minutes_projection
 from mova_fpl.engine.runner import Config, decide
 from mova_fpl.engine.state import Candidate, State
+from mova_fpl.optimizer.horizon import build_xp_matrix, fixture_counts
 from mova_fpl.rules import get as get_rules
 from mova_fpl.rules.base import Position, Squad, SquadPlayer
 from mova_fpl.rules.market import accumulate_free_transfers
@@ -67,17 +68,44 @@ class RunReport:
         return "\n".join(out)
 
 
-def _anonymize(roster: pd.DataFrame) -> pd.DataFrame:
+def _alias_equipos(store: Store, season: str) -> dict:
+    """Mapa club -> pseudonimo, ESTABLE en toda la temporada.
+
+    Construirlo por jornada era un error latente: en una jornada en blanco faltan
+    clubes, los indices se corren y `CLUB_03` deja de ser el mismo equipo entre
+    jornadas. Como la cuota de tres por club se evalua contra esa etiqueta, la
+    restriccion se estaba aplicando sobre identidades inconsistentes.
+    """
+    return {t: f"CLUB_{i:02d}" for i, t in enumerate(store.teams(season))}
+
+
+def _anonymize(roster: pd.DataFrame, alias: dict) -> pd.DataFrame:
     """Sustituye identidades por pseudonimos estables.
 
     Para el motor determinista es indiferente (no lee nombres). La capacidad
     existe para medir la contaminacion cuando entre un agente LLM, que si los lee.
     """
     df = roster.copy()
-    equipos = {t: f"CLUB_{i:02d}" for i, t in enumerate(sorted(df["team"].dropna().unique()))}
-    df["team"] = df["team"].map(equipos)
+    df["team"] = df["team"].map(lambda t: alias.get(t, t))
     df["name"] = df.apply(lambda r: f"{r['position']}_{int(r['element']):04d}", axis=1)
     return df
+
+
+def _horizonte(store: Store, season: str, gw: int, candidatos, config, alias: dict,
+               max_gw: int) -> dict:
+    """Matriz xp del horizonte. La construye el ENTORNO, no la politica.
+
+    Asi `State` sigue siendo un valor y `decide()` sigue sin tocar la base de datos
+    (ADR-004). Lo unico que se lee es el CALENDARIO, que esta publicado.
+    """
+    if config.horizon <= 1 and config.policy != "milp":
+        return {}
+    hasta = min(max_gw, gw + config.horizon - 1)
+    sched = store.team_schedule(season, gw, hasta)
+    if alias:
+        sched = sched.assign(team=sched["team"].map(lambda t: alias.get(t, t)))
+    conteo = fixture_counts(sched.to_dict("records"))
+    return build_xp_matrix(candidatos, conteo, gw, hasta - gw + 1, decay=config.decay)
 
 
 def _candidates(roster: pd.DataFrame, xp: pd.Series) -> tuple[Candidate, ...]:
@@ -133,6 +161,7 @@ def replay(season: str, mode: str = "named", config: Config | None = None,
     trace.start_run(run_id, season, mode, config.policy, config.horizon, config.seed,
                     {"season": season, "mode": mode, "max_gw": max_gw})
 
+    alias = _alias_equipos(store, season) if mode == "anonymized" else {}
     report = RunReport(run_id=run_id, season=season, mode=mode, policy=config.policy)
     conocidos: dict = {}          # catalogo acumulado: sobrevive a jornadas en blanco
     squad: Squad | None = None
@@ -148,7 +177,7 @@ def replay(season: str, mode: str = "named", config: Config | None = None,
         if roster.empty:
             continue
         if mode == "anonymized":
-            roster = _anonymize(roster)
+            roster = _anonymize(roster, alias)
 
         xp = (minutes_projection(historia, roster, modelo_min)
               if modelo_min is not None else naive_projection(historia, roster))
@@ -156,8 +185,10 @@ def replay(season: str, mode: str = "named", config: Config | None = None,
         if len(candidatos) < rules["size"]:
             continue
 
+        horizon_xp = _horizonte(store, season, gw, candidatos, config, alias, max_gw)
         state = State(season=season, gw=gw, candidates=candidatos, squad=squad,
-                      free_transfers=free_transfers, bank=bank, rules=rules)
+                      free_transfers=free_transfers, bank=bank, rules=rules,
+                      horizon_xp=horizon_xp)
         decision = decide(gw, state, config)
 
         conocidos.update({c.element: {"position": c.position, "team": c.team, "price": c.price}
@@ -179,8 +210,12 @@ def replay(season: str, mode: str = "named", config: Config | None = None,
         for k, v in bases.items():
             acum_baselines[k] = acum_baselines.get(k, 0) + v
 
+        arranque_en_frio = squad is None
         squad = _squad_from(decision, conocidos, bank)
-        free_transfers = accumulate_free_transfers(
+        # Tras armar la plantilla inicial se llega a la GW2 con UNA transferencia
+        # libre, no con dos: la plantilla de arranque no consume ninguna, pero
+        # tampoco acumula. `accumulate_free_transfers` daba 2 y regalaba un cambio.
+        free_transfers = 1 if arranque_en_frio else accumulate_free_transfers(
             free_transfers, len(decision.transfers_in), rules["max_free_transfers"])
         bank = decision.bank_after
 

@@ -2,12 +2,12 @@
 work_key: WP-INIT-MOVA-FPL-ENGINE-006
 title: "Optimizador MILP con horizonte rodante multi-gameweek"
 work_type: workpack
-spec_version: 1
+spec_version: 2
 spec_status: approved
 priority: high
 estimated_hours: 12
 parent_key: null
-depends_on_keys: [WP-INIT-MOVA-FPL-ENGINE-002, WP-INIT-MOVA-FPL-ENGINE-005]
+depends_on_keys: [WP-INIT-MOVA-FPL-ENGINE-002]
 ---
 
 # WP-006 — Optimizador con horizonte multi-gameweek
@@ -30,10 +30,15 @@ REQ-F-006
 
 ## Precondiciones y dependencias
 
-- WP-002 (restricciones) y WP-005 (proyecciones) terminados.
-- **BLOQUEO Q-02:** la función objetivo depende de si el objetivo es rank global o
-  mini-liga. Por defecto se asume maximizar puntos esperados. Requiere decisión de Julián
-  antes de cerrar este workpack.
+- WP-002 (restricciones) terminado.
+- ~~WP-005 (proyecciones)~~ — **dependencia levantada en v2 (2026-08-07).** El diagnóstico de
+  WP-004 midió una brecha de política de −633 puntos frente a una de proyección de −108. Con
+  el retorno esperado seis veces mayor y catorce días hasta la GW1, este workpack se adelanta
+  y usa el proyector de minutos de WP-004. WP-005 lo mejorará después sin tocar el optimizador.
+- ~~**BLOQUEO Q-02**~~ — **desbloqueado en v2 por ADR-007.** La función objetivo de v1 es
+  maximizar puntos esperados. La respuesta a Q-02 cambia **un término lineal** sobre las
+  mismas variables (`risk_lambda`, declarado y en cero), no la formulación. Q-02 sigue
+  abierta como decisión de configuración; ya no bloquea la implementación.
 
 ## Superficie permitida
 
@@ -83,15 +88,15 @@ python -m mova_fpl.cli.backtest --season 2025-26 --horizon 3 --seed 42
 
 ## Evidencia requerida
 
-| Criterio | Tipo | Evidencia esperada |
-| --- | --- | --- |
-| AC-WP006-001 | test | pytest `test_optimizer_constraints.py` sobre 38 jornadas |
-| AC-WP006-002 | reporte | Comparación de xP acumulado: horizonte 1 frente a horizonte 3 |
-| AC-WP006-003 | test | pytest — banco de dinero y precio de venta respetados |
-| AC-WP006-004 | test | pytest — acumulación de transferencias libres y costo de hits |
-| AC-WP006-005 | test | pytest — error explícito con restricciones violadas |
-| AC-WP006-006 | reporte | Documento del criterio de pre-filtro y su efecto medido |
-| AC-WP006-007 | reporte | `RunReport` comparado contra el resultado de WP-005 |
+| Criterio | Tipo | Evidencia esperada | Entregada |
+| --- | --- | --- | --- |
+| AC-WP006-001 | test | pytest `test_optimizer_constraints.py` sobre 38 jornadas | `evidence/WP-006-restricciones.md` · `test_temporada_completa_sin_una_sola_violacion` (marca `slow`) |
+| AC-WP006-002 | reporte | Comparación de xP acumulado: horizonte 1 frente a horizonte 3 | `evidence/WP-006-horizonte.md` — 141.2 contra 137.2 |
+| AC-WP006-003 | test | pytest — banco de dinero y precio de venta respetados | `evidence/WP-006-restricciones.md` — tres pruebas |
+| AC-WP006-004 | test | pytest — acumulación de transferencias libres y costo de hits | `evidence/WP-006-restricciones.md` — cuatro pruebas |
+| AC-WP006-005 | test | pytest — error explícito con restricciones violadas | `evidence/WP-006-restricciones.md` — cuatro pruebas |
+| AC-WP006-006 | reporte | Documento del criterio de pre-filtro y su efecto medido | `evidence/WP-006-prefiltro.md` — brecha 0.000% en 5 de 6 jornadas |
+| AC-WP006-007 | reporte | `RunReport` comparado contra el resultado de WP-005 | `evidence/WP-006-backtest.md` — comparado contra WP-004, que es el mejor resultado previo del proyecto. WP-005 aún no existe |
 
 ## Rollback
 
@@ -100,6 +105,15 @@ y sirve para operar GW1 si hace falta (corte de R-01).
 
 ## Definition of Done
 
-- [ ] Todos los criterios requeridos tienen evidencia `pass`.
-- [ ] Q-02 respondida por Julián y la función objetivo documentada.
-- [ ] La ganancia del horizonte multi-GW está medida, no supuesta.
+- [x] Todos los criterios requeridos tienen evidencia `pass`.
+- [x] ~~Q-02 respondida por Julián~~ → función objetivo documentada en **ADR-007**, con el
+      término de riesgo declarado y en cero. Q-02 permanece abierta como configuración.
+- [x] La ganancia del horizonte multi-GW está medida, no supuesta:
+      `evidence/WP-006-horizonte.md`. Incluye el resultado incómodo — los puntos realizados
+      **no son monótonos** en el horizonte y con una sola temporada la diferencia entre
+      h=1 y h=5 no es separable del ruido (Q-05).
+
+## Cambio de versión
+
+**v1 → v2 (2026-08-07).** Se levanta la dependencia de WP-005 y se desbloquea Q-02 vía
+ADR-007. Los criterios de aceptación no cambian: son los mismos siete de v1.

@@ -172,9 +172,28 @@ def test_reanudacion_no_recomputa(tmp_path):
 
 
 def test_modo_anonimo_oculta_identidades():
-    from mova_fpl.engine.simulator import _anonymize
-    r = Store().roster("2025-26", 5)
-    a = _anonymize(r)
+    from mova_fpl.engine.simulator import _alias_equipos, _anonymize
+    store = Store()
+    alias = _alias_equipos(store, "2025-26")
+    r = store.roster("2025-26", 5)
+    a = _anonymize(r, alias)
     assert not set(a["team"]) & set(r["team"])
     assert a["team"].str.startswith("CLUB_").all()
     assert set(a["element"]) == set(r["element"]), "los ids deben ser estables"
+
+
+def test_el_alias_de_club_es_estable_en_toda_la_temporada():
+    """Un mapa por jornada corria los indices en jornadas incompletas y `CLUB_03`
+    dejaba de ser el mismo equipo. La cuota de tres por club se evaluaba entonces
+    sobre identidades distintas segun la jornada."""
+    from mova_fpl.engine.simulator import _alias_equipos, _anonymize
+    store = Store()
+    alias = _alias_equipos(store, "2025-26")
+    pares = {}
+    for gw in (1, 5, 20, 38):
+        r = store.roster("2025-26", gw)
+        if r.empty:
+            continue
+        a = _anonymize(r, alias)
+        for real, falso in zip(r["team"], a["team"]):
+            assert pares.setdefault(real, falso) == falso, f"{real} cambio de alias en GW{gw}"

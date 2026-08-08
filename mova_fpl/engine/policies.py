@@ -141,3 +141,72 @@ def _mejor_transferencia(actuales, state: State, rules: dict):
 
 
 POLICIES = {"greedy-stub": greedy_policy}
+
+
+# --------------------------------------------------------------- WP-006: MILP
+
+def milp_policy(state: State, config) -> Decision:
+    """Optimizador exacto sobre un horizonte de N jornadas.
+
+    A diferencia de la voraz, no decide "la mejor transferencia de esta semana":
+    decide la mejor SECUENCIA de plantillas para el horizonte y ejecuta solo el
+    primer paso. Eso es lo que permite ahorrar transferencias para una doble
+    jornada o vender antes de una en blanco.
+    """
+    from mova_fpl.optimizer import OptimizerConfig, solve
+    from mova_fpl.optimizer.horizon import summarize
+
+    gw = state.gw
+    xp = state.horizon_xp or {gw: {c.element: c.xp for c in state.candidates}}
+    ocfg = OptimizerConfig(
+        horizon=len(xp), decay=getattr(config, "decay", 0.84),
+        bench_weight=getattr(config, "bench_weight", 0.12),
+        top_k=getattr(config, "top_k", 30),
+        max_hits_per_gw=getattr(config, "max_hits", 2),
+        time_limit=getattr(config, "time_limit", 30),
+    )
+    sol = solve(state, xp, ocfg)
+
+    fila = xp[gw]
+    atributos = {c.element: c for c in state.candidates}
+    for p in (state.squad.players if state.squad else ()):
+        atributos.setdefault(p.element, Candidate(element=p.element, position=p.position,
+                                                  team=p.team, price=p.price, xp=0.0))
+
+    squad = [atributos[i] for i in sol.squad[gw]]
+    xi = sorted(sol.starters[gw], key=lambda i: -fila.get(i, 0.0))
+    cap = sol.captain[gw]
+    vice = next((i for i in xi if i != cap), None)
+
+    en_xi = set(xi)
+    banca_gk = [i for i in sol.squad[gw] if i not in en_xi
+                and atributos[i].position is Position.GKP]
+    banca_campo = sorted((i for i in sol.squad[gw] if i not in en_xi
+                          and atributos[i].position is not Position.GKP),
+                         key=lambda i: -fila.get(i, 0.0))
+
+    coste = to_millions(sum(to_tenths(atributos[i].price) for i in sol.squad[gw]))
+    esperado = sum(fila.get(i, 0.0) for i in xi) + fila.get(cap, 0.0) - sol.hits[gw]
+
+    notas = [str(sol.shortlist), f"horizonte {sorted(xp)} xp_total={summarize(xp)}"]
+    futuras = {g: len(sol.buys[g]) for g in sorted(xp)[1:] if sol.buys[g]}
+    if futuras:
+        notas.append(f"plan de transferencias futuras (no ejecutado): {futuras}")
+    if state.squad is None:
+        notas.append("cold start: plantilla construida desde cero")
+
+    return Decision(
+        season=state.season, gw=gw,
+        squad_15=tuple(c.element for c in squad),
+        starters=tuple(xi), captain=cap, vice_captain=vice,
+        bench_order=tuple(banca_gk + banca_campo),
+        transfers_in=() if state.squad is None else tuple(sorted(sol.buys[gw])),
+        transfers_out=() if state.squad is None else tuple(sorted(sol.sells[gw])),
+        hits=sol.hits[gw],
+        expected_points=round(esperado, 2), total_cost=coste,
+        bank_after=to_millions(sol.bank[gw]),
+        policy="milp", notes=tuple(notas),
+    )
+
+
+POLICIES["milp"] = milp_policy

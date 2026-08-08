@@ -33,6 +33,11 @@ class State:
     chips_used: frozenset = frozenset()
     bank: float = 0.0
     rules: dict = field(default_factory=dict)
+    #: xp proyectado por jornada para el horizonte: {gw: {element: xp}}. La jornada
+    #: actual incluida. Vacio = solo se decide con `candidates` (horizonte 1).
+    #: Lo llena el proveedor de estado (simulador o runner en vivo), nunca la politica:
+    #: State sigue siendo un VALOR y decide() sigue sin tocar la base de datos.
+    horizon_xp: dict = field(default_factory=dict)
 
     @property
     def is_cold_start(self) -> bool:

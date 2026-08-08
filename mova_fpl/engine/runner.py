@@ -20,6 +20,12 @@ class Config:
     horizon: int = 1
     seed: int = 42
     chip_policy: str = "none"
+    # --- mandos del optimizador (WP-006). Solo los lee la politica `milp`.
+    decay: float = 0.84               # descuento por jornada futura
+    bench_weight: float = 0.12        # valor del banquillo en el objetivo
+    top_k: int = 30                   # recorte de mercado por posicion (0 = sin recorte)
+    max_hits: int = 2                 # tope de transferencias pagadas por jornada
+    time_limit: int = 30              # segundos por jornada antes de rendirse
 
 
 def decide(gw: int, state: State, config: Config | None = None) -> Decision:

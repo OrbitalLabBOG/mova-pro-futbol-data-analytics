@@ -81,8 +81,9 @@ servicio. Ver "Fuera de alcance" en el brief.
 
 Paquete nuevo `mova_fpl/` (ADR-001) con acceso a datos por contrato `as_of` (ADR-002), xP
 descompuesto por componente (ADR-003), una única función `decide()` compartida por backtest
-y producción (ADR-004), traza en SQLite local (ADR-005) y alcance v1 sin agente LLM ni
-escritura externa (ADR-006).
+y producción (ADR-004), traza en SQLite local (ADR-005), alcance v1 sin agente LLM ni
+escritura externa (ADR-006) y función objetivo neutral al riesgo con el término de mini-liga
+declarado y desactivado (ADR-007).
 
 ## C4 — Contexto y contenedores
 
@@ -296,4 +297,4 @@ Sin alertas ni dashboards en v1: no hay servicio desplegado.
 | R-05 Cold start en GW1: sin datos de 2026/27, la primera decisión es la más débil | Mal arranque de temporada | El backtest mide exactamente este caso (GW1 ciego) y da una expectativa honesta antes del 21-ago | Julián | open |
 | R-06 `vaastav` deja de actualizar durante la temporada (S-01) | Sin datos frescos | Fallback a la API oficial de FPL, que sirve la gameweek en curso | Julián | open |
 | R-07 Red inestable en la descarga de fuentes | Ingesta incompleta | Descarga idempotente con reintentos y validación de cabecera; ya observado en la práctica | Julián | mitigado |
-| R-08 Q-02 sin responder deja abierta la función objetivo (C-04) | El optimizador puede optimizar lo que no es | **Bloqueo declarado para WP-006.** Default: maximizar puntos esperados | Julián | open |
+| R-08 Q-02 sin responder deja abierta la función objetivo (C-04) | El optimizador puede optimizar lo que no es | **Cerrado por ADR-007 (2026-08-07).** v1 maximiza puntos esperados; el caso mini-liga es el término `risk_lambda`, declarado y en cero. El riesgo residual es acotado: en las primeras jornadas las plantillas de rank global y mini-liga coinciden casi por completo | Julián | closed |
