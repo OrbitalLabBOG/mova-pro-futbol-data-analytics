@@ -53,6 +53,12 @@ Todos verificados por inspección directa el 2026-08-07.
 | H-16 | Las **dobles jornadas** son reales y frecuentes: 9.114 pares jugador-gameweek con dos partidos a lo largo de las 10 temporadas (2.217 sólo en 2021-22). Verificado con Raya en 2025-26 GW26, fixtures 252 y 310 | ingesta WP-001 |
 | H-17 | La temporada **2019-20 (COVID)** numera gameweeks hasta la **47** en el origen: 6.004 filas por encima de la 38 | ingesta WP-001 |
 | H-18 | El CSV de 2025-26 trae 10 filas byte-idénticas duplicadas; es un artefacto del origen | ingesta WP-001 |
+| H-19 | El motor de reglas reproduce **el 100,000%** de las 29.747 actuaciones de 2025/26 (`total_points` recomputado desde estadísticas crudas), cero discrepancias | golden test WP-002 |
+| H-20 | La única diferencia entre las reglas 2025/26 y 2026/27 son **cuatro parámetros del BPS**. La matriz de puntuación base, los umbrales de DefCon, la composición de plantilla y los chips son idénticos | diff WP-002 |
+| H-21 | El dinero debe manejarse en **décimas enteras**: en float, `95.8 + 4.2 = 100.00000000000001` supera el presupuesto y rechaza plantillas válidas | backtest WP-003 |
+| H-22 | Las **jornadas en blanco** existen: un jugador cuyo equipo no juega no tiene fila en el catálogo pero sigue en la plantilla y puntúa 0 | backtest WP-003 |
+| H-23 | El **precio correlaciona 0,32** con los puntos de la GW1 de 2025/26. Es información pre-deadline y el mejor prior disponible en cold start | backtest WP-003 |
+| H-24 | El promedio real del mánager (`average_entry_score`) **no está** en el dataset histórico de vaastav; sólo se expone en el bootstrap de la temporada en curso | baselines WP-003 |
 
 ### Inferencias
 

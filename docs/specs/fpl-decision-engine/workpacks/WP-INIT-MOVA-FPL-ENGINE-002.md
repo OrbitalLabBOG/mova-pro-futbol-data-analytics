@@ -92,6 +92,18 @@ python -m mova_fpl.rules.diff --from 2025_26 --to 2026_27
 
 Borrar `mova_fpl/rules/`. Ningún otro componente depende de él todavía.
 
+## Resultado de ejecución — 2026-08-07
+
+**6/6 criterios en `pass`.** Fidelidad **100,000%**: las 29.747 actuaciones de 2025/26
+recomputadas exactas, cero discrepancias (umbral exigido: 99%).
+
+El diff entre versiones aísla exactamente los cuatro cambios oficiales de BPS; la matriz
+de puntuación base, los umbrales de DefCon, la plantilla y los chips no cambian. Eso es
+lo que hace revisable el riesgo R-02.
+
+Evidencia: [`evidence/WP-002-golden.md`](../evidence/WP-002-golden.md) ·
+[`evidence/WP-002-rules-diff.md`](../evidence/WP-002-rules-diff.md)
+
 ## Definition of Done
 
 - [ ] Todos los criterios requeridos tienen evidencia `pass`.

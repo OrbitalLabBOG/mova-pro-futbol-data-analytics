@@ -88,3 +88,28 @@ def test_rules_es_puro_cuando_exista():
         for imp in _imports(path):
             raiz = imp.split(".")[0]
             assert raiz not in prohibidas, f"{path.name} importa '{imp}': rules debe ser puro"
+
+
+def test_solo_el_simulador_usa_results():
+    """`Store.results()` es el oraculo del entorno: no puede filtrarse al agente.
+
+    Cualquier modulo distinto de engine/simulator.py que lo invoque estaria
+    leyendo el futuro por una puerta lateral.
+    """
+    permitidos = {"simulator.py"}
+    for path in _modules():
+        if path.name in permitidos or path.name == "store.py":
+            continue
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
+                assert node.func.attr != "results", (
+                    f"{path.relative_to(ROOT)} llama .results(): solo el simulador puede"
+                )
+
+
+def test_roster_no_expone_columnas_de_resultado():
+    """El catalogo pre-deadline no puede incluir rendimiento (leakage disfrazado)."""
+    from mova_fpl.data.schema import FORBIDDEN_AS_FEATURE
+    from mova_fpl.data.store import Store
+    assert not (set(Store.ROSTER_COLS) & FORBIDDEN_AS_FEATURE)

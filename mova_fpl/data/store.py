@@ -96,28 +96,66 @@ class Store:
     def multi_season_as_of(self, season: str, gw: int, columns=None) -> pd.DataFrame:
         """Historico completo de temporadas ANTERIORES + lo transcurrido de `season`.
 
-        Es lo que necesita un modelo que entrena con 9 temporadas cerradas mas
-        las jornadas ya jugadas de la actual.
+        Es lo que necesita un modelo que entrena con las temporadas cerradas mas
+        las jornadas ya jugadas de la actual. Se resuelve en UNA consulta para no
+        concatenar frames con dtypes distintos.
         """
-        idx = SEASONS.index(season)
-        past = SEASONS[:idx]
+        if season not in SEASONS:
+            raise ValueError(f"temporada desconocida: {season}. Validas: {SEASONS}")
+        if not isinstance(gw, int) or isinstance(gw, bool) or gw < 1:
+            raise ValueError(f"gw debe ser entero >= 1, recibido {gw!r}")
+
+        past = SEASONS[: SEASONS.index(season)]
         cols = self._resolve_columns(columns)
-        frames = []
+        where = "(season = ? AND gw < ?)"
+        params: list = [season, int(gw)]
         if past:
-            ph = ",".join("?" * len(past))
-            sql = f"SELECT {', '.join(cols)} FROM {TABLE} WHERE season IN ({ph}) ORDER BY season, gw, element"
-            with self._connect() as con:
-                frames.append(pd.read_sql_query(sql, con, params=past))
-        current = self.as_of(season, gw, columns)
-        if not current.empty:
-            frames.append(current)
-        frames = [f for f in frames if not f.empty]
-        if not frames:
-            return pd.DataFrame(columns=cols)
-        out = frames[0] if len(frames) == 1 else pd.concat(frames, ignore_index=True)
-        # la ventana de la temporada objetivo ya fue verificada por as_of
-        assert_causal(out[out["season"] == season], season, gw)
-        return out
+            where = f"season IN ({','.join('?' * len(past))}) OR " + where
+            params = list(past) + params
+
+        sql = (f"SELECT {', '.join(cols)} FROM {TABLE} WHERE {where} "
+               f"ORDER BY season, gw, element")
+        with self._connect() as con:
+            df = pd.read_sql_query(sql, con, params=params)
+
+        assert_causal(df[df["season"] == season], season, gw)
+        return df
+
+    #: columnas conocidas ANTES del cierre de la jornada
+    ROSTER_COLS = ("season", "gw", "element", "name", "position", "team", "value",
+                   "opponent_team", "was_home", "fixture", "kickoff_time")
+
+    def roster(self, season: str, gw: int) -> pd.DataFrame:
+        """Quien existe, en que posicion, en que club y a que precio, en esa jornada.
+
+        Es informacion PRE-deadline: el manager la ve antes de decidir. Por eso no
+        pasa por `as_of`. Devuelve solo columnas del catalogo, jamas rendimiento:
+        si una columna de resultado se colara aqui, seria leakage disfrazado.
+        """
+        prohibidas = set(self.ROSTER_COLS) & FORBIDDEN_AS_FEATURE
+        if prohibidas:
+            raise RuntimeError(f"ROSTER_COLS contiene columnas de resultado: {prohibidas}")
+        cols = ", ".join(self.ROSTER_COLS)
+        sql = f"SELECT {cols} FROM {TABLE} WHERE season = ? AND gw = ? ORDER BY element"
+        with self._connect() as con:
+            df = pd.read_sql_query(sql, con, params=(season, int(gw)))
+        # una fila por jugador: en doble jornada nos quedamos con el primer partido
+        return df.drop_duplicates(subset=["element"], keep="first")
+
+    def results(self, season: str, gw: int) -> pd.DataFrame:
+        """ORACULO DEL ENTORNO. Resultados reales de una gameweek YA jugada.
+
+        Esta es la unica lectura del paquete que no respeta la ventana `as_of`,
+        y existe por una razon acotada: el simulador necesita puntuar la decision
+        contra lo que de verdad paso. Es el rol del entorno, no del agente.
+
+        PROHIBIDO usarla para features o entrenamiento. La restriccion se verifica
+        en tests/test_architecture_boundaries.py::test_solo_el_simulador_usa_results,
+        que falla si la llama cualquier modulo distinto de engine/simulator.py.
+        """
+        sql = f"SELECT * FROM {TABLE} WHERE season = ? AND gw = ? ORDER BY element"
+        with self._connect() as con:
+            return pd.read_sql_query(sql, con, params=(season, int(gw)))
 
     def fixtures(self, season: str, gw_from: int, gw_to: int) -> pd.DataFrame:
         """Calendario. NO contiene resultados: es informacion conocida antes de jugar."""

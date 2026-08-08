@@ -58,8 +58,11 @@ En modo `anonymized`, nombres de jugador y equipo se sustituyen por identificado
 estables antes de llegar a la política. Para el motor determinista es indiferente; la
 capacidad existe para medir contaminación cuando llegue el agente LLM.
 
-Baselines obligatorios: template (más seleccionados), promedio real de la jornada
-(presente en los datos), y selección aleatoria válida con semilla.
+Baselines obligatorios: template (más seleccionados), **techo con información perfecta**, y
+selección aleatoria válida con semilla.
+
+> **Señal de cambio (2026-08-07).** El promedio real del mánager no está en el histórico
+> (H-24). Se sustituye por el techo, que mide qué fracción de lo alcanzable se capturó.
 
 Cold start: `as_of(season, 1)` devuelve vacío. La política debe manejarlo explícitamente.
 
@@ -70,7 +73,7 @@ Cold start: `as_of(season, 1)` devuelve vacío. La política debe manejarlo expl
 | AC-WP003-001 | REQ-F-008 | `replay("2025-26")` completa las 38 jornadas y reporta puntos por jornada y acumulados |
 | AC-WP003-002 | REQ-F-008 | Durante toda la corrida, ninguna llamada de entrenamiento recibe filas con `GW >= T`; verificado por la instrumentación de WP-001 |
 | AC-WP003-003 | REQ-F-008 | GW1 se resuelve en cold start sin excepción y sin acceder a datos de 2025/26 |
-| AC-WP003-004 | REQ-F-009 | El reporte incluye los tres baselines; un reporte sin baselines es rechazado por el propio harness |
+| AC-WP003-004 | REQ-F-009 | El reporte incluye los tres baselines (template, techo, aleatorio) y ninguno resulta cero por fallo de construcción |
 | AC-WP003-005 | REQ-F-007 | Mismo `State` sintético produce `Decision` idéntico invocado desde el simulador y desde el runner en vivo |
 | AC-WP003-006 | REQ-Q-005 | Dos corridas con la misma semilla y git sha producen traza idéntica salvo timestamps |
 | AC-WP003-007 | REQ-F-010 | Consultando sólo la traza se responde: "en qué jornadas el motor difirió del template y quién ganó" |
@@ -101,6 +104,26 @@ pytest tests/test_decide_identity.py tests/test_replay_no_future_access.py \
 ## Rollback
 
 Borrar `mova_fpl/engine/`, `mova_fpl/trace/` y `data/processed/trace.db`.
+
+## Resultado de ejecución — 2026-08-07
+
+**8/8 criterios en `pass`.** 332 pruebas verdes en la suite completa.
+
+Backtest ciego 2025/26, 38 jornadas, política stub:
+
+| Serie | Puntos | vs motor |
+|---|---:|---:|
+| **Motor (greedy-stub)** | **1.302** | — |
+| template | 2.043 | −741 |
+| aleatorio | 533 | +769 |
+| techo (información perfecta) | 5.871 | −4.569 |
+
+Captura del techo: **22,2%**. El motor gana 2 de 38 jornadas contra el template.
+**Es un piso, no un logro**: la política es deliberadamente tonta y el número existe
+para que WP-004 y WP-005 tengan contra qué medirse.
+
+Cinco bugs encontrados y corregidos durante la ejecución, detallados en
+[`evidence/WP-003-backtest-2025-26.md`](../evidence/WP-003-backtest-2025-26.md).
 
 ## Definition of Done
 

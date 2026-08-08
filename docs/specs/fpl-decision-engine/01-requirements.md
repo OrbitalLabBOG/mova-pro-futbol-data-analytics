@@ -129,7 +129,13 @@ status: draft
 - Fuente: H-14 — los resultados previos no eran comparables contra nada
 - Enunciado: El harness debe calcular, sobre la misma temporada y con las mismas reglas, al
   menos tres baselines: (a) plantilla template formada por los jugadores más seleccionados,
-  (b) promedio real de la gameweek presente en los datos, (c) selección aleatoria válida.
+  (b) techo con información perfecta, (c) selección aleatoria válida.
+- **Señal de cambio (2026-08-07).** El baseline (b) era originalmente "promedio real de la
+  gameweek presente en los datos". Al implementarlo se verificó que `average_entry_score`
+  **no existe** en el histórico de vaastav; sólo se expone en el bootstrap de la temporada
+  en curso (H-24). Se sustituye por el **techo con información perfecta**, que además es
+  más informativo: dice qué fracción de lo alcanzable se capturó, en vez de compararse
+  contra una media que cualquier motor competente supera trivialmente.
 - Escenario: Dado el resultado de un `replay()`, cuando se emita el reporte, entonces debe
   incluir los tres baselines junto al resultado del motor; un reporte sin baselines debe
   considerarse inválido.
