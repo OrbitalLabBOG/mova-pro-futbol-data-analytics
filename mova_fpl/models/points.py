@@ -111,11 +111,16 @@ class PointsModel:
     # -------------------------------------------------------------- proyeccion
 
     def project(self, history: pd.DataFrame, roster: pd.DataFrame,
-                minutes_proba: np.ndarray, scoring, umbrales: dict) -> pd.DataFrame:
+                minutes_proba: np.ndarray, scoring, umbrales: dict,
+                equipos: dict | None = None) -> pd.DataFrame:
         """Desglose por componente para cada fila del catalogo (AC-WP005-002).
 
         `history` viene de `as_of`: nunca contiene la jornada objetivo.
         `minutes_proba` es la salida del modelo de WP-004, columnas [p0, p1, p60].
+        `equipos` traduce el id numerico de rival a nombre de club. Se pasa cuando la
+        numeracion del catalogo NO coincide con la del historico — que es justo el caso
+        de una temporada nueva: FPL reasigna los ids de equipo cada anio igual que los
+        de jugador. Sin el, el ajuste por rival se aplicaria contra el club equivocado.
         """
         n = len(roster)
         if n == 0:
@@ -132,7 +137,7 @@ class PointsModel:
         if self.defcon.sin_datos and "defensive_contribution" in history.columns:
             self.defcon.fit(history)
 
-        mult, lam_enc = self._contexto_partido(roster, fuerza)
+        mult, lam_enc = self._contexto_partido(roster, fuerza, equipos)
         p = np.asarray(minutes_proba, dtype=float)
         p1, p60 = p[:, 1], p[:, 2]
 
@@ -188,9 +193,9 @@ class PointsModel:
         encogido["n90"] = crudo["n90"]
         return encogido
 
-    def _contexto_partido(self, roster, fuerza) -> tuple[np.ndarray, np.ndarray]:
+    def _contexto_partido(self, roster, fuerza, equipos=None) -> tuple[np.ndarray, np.ndarray]:
         """Multiplicador ofensivo y goles esperados en contra, por fila."""
-        id_a_nombre = fuerza.get("id_a_nombre", {})
+        id_a_nombre = equipos if equipos else fuerza.get("id_a_nombre", {})
         mult, lam = [], []
         for _, r in roster.iterrows():
             equipo = str(r.get("team", ""))

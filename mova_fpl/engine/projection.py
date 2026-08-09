@@ -88,7 +88,8 @@ def _proba_minutos(history: pd.DataFrame, roster: pd.DataFrame, model) -> np.nda
 
 
 def points_projection(history: pd.DataFrame, roster: pd.DataFrame, modelos: dict,
-                      season: str, con_desglose: bool = False):
+                      season: str, con_desglose: bool = False, equipos: dict | None = None,
+                      disponibilidad=None):
     """xP por componentes (WP-005). Devuelve la serie de xp, o (serie, desglose).
 
     `modelos` trae el de minutos y el de puntos. El primero decide si juega, el
@@ -97,9 +98,12 @@ def points_projection(history: pd.DataFrame, roster: pd.DataFrame, modelos: dict
     from mova_fpl.rules import get as get_rules
 
     proba = _proba_minutos(history, roster, modelos["minutes"])
+    if disponibilidad is not None:
+        from mova_fpl.data.live import aplicar_disponibilidad
+        proba = aplicar_disponibilidad(proba, disponibilidad)
     scoring = get_rules(season).SCORING
     desglose = modelos["points"].project(history, roster, proba, scoring,
-                                         scoring.defcon_thresholds)
+                                         scoring.defcon_thresholds, equipos=equipos)
     xp = pd.Series(desglose["xp"].to_numpy(dtype=float), dtype=float)
     return (xp, desglose) if con_desglose else xp
 

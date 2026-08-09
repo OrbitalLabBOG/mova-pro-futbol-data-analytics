@@ -163,12 +163,20 @@ def apply_priors(rates: pd.DataFrame, priors: dict, posiciones: pd.Series,
 
 # ----------------------------------------------------------------- por equipo
 
-def team_strength(history: pd.DataFrame, k: float = K_EQUIPO) -> dict:
+def team_strength(history: pd.DataFrame, k: float = K_EQUIPO,
+                  temporadas: int = 1) -> dict:
     """Ataque y defensa multiplicativos por equipo, mas el factor de localia.
 
     Se calcula sobre filas EQUIPO-PARTIDO, no jugador-partido: un partido cuenta
     una vez, no quince. Los goles salen del marcador, que es exacto, no de
     `goals_conceded` por jugador, que depende de los minutos que estuvo en campo.
+
+    `temporadas` acota la ventana a las N mas recientes. El defecto es 1 porque la
+    fuerza de un club es una propiedad del presente: promediar diez temporadas
+    mezcla plantillas, entrenadores y divisiones distintas, y le asigna a un
+    recien ascendido el rendimiento que tuvo la ultima vez que estuvo arriba.
+    En el backtest es inocuo —el historico ya viene acotado a la temporada en
+    curso— pero en la decision en vivo cambia el resultado.
     """
     vacio = {"ataque": {}, "defensa": {}, "media": 1.35, "factor_local": 1.0,
              "factor_visitante": 1.0, "id_a_nombre": {}, "partidos": {}}
@@ -177,6 +185,11 @@ def team_strength(history: pd.DataFrame, k: float = K_EQUIPO) -> dict:
         return vacio
 
     d = history.dropna(subset=["team", "fixture"]).copy()
+    if temporadas and "season" in d.columns:
+        vigentes = sorted(d["season"].dropna().unique())[-int(temporadas):]
+        d = d[d["season"].isin(vigentes)]
+        if d.empty:
+            return vacio
     d["was_home"] = pd.to_numeric(d["was_home"], errors="coerce")
     partidos = d.drop_duplicates(subset=["season", "gw", "fixture", "team"]).copy()
     if partidos.empty:
