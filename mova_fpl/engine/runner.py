@@ -19,7 +19,11 @@ class Config:
     model_version: str = "1.0.0"
     horizon: int = 1
     seed: int = 42
+    #: "none" = no se juegan chips (comportamiento de v1, reproduce los 2.217).
+    #: "planner" = el planificador de engine/planner.py autoriza jornada a jornada.
     chip_policy: str = "none"
+    #: jornadas de calendario que el planificador considera anunciadas. Ver L-01.
+    structure_lookahead: int = 6
     # --- mandos del optimizador (WP-006). Solo los lee la politica `milp`.
     decay: float = 0.84               # descuento por jornada futura
     bench_weight: float = 0.12        # valor del banquillo en el objetivo

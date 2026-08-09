@@ -8,6 +8,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from mova_fpl.rules.base import Position, Squad
+from mova_fpl.rules.chips import ChipCatalogue, ChipUse
 
 
 @dataclass(frozen=True, slots=True)
@@ -30,9 +31,27 @@ class State:
     candidates: tuple[Candidate, ...]
     squad: Squad | None = None            # None en GW1: no hay plantilla previa
     free_transfers: int = 1
-    chips_used: frozenset = frozenset()
     bank: float = 0.0
     rules: dict = field(default_factory=dict)
+    #: historia de chips ya gastados, con su jornada. Define inventario y ventana.
+    chips_used: tuple[ChipUse, ...] = ()
+    #: reglas de chips de la temporada. None = los chips no se modelan en esta corrida.
+    chips: ChipCatalogue | None = None
+    #: chips AUTORIZADOS por jornada del horizonte: {gw: frozenset(nombres)}.
+    #: Lo llena el planificador (o un agente); el optimizador decide si le conviene
+    #: usarlos. Vacio = el optimizador no puede jugar ningun chip. Autorizar no es
+    #: obligar: la separacion entre "puedes" y "debes" es lo que mantiene medible
+    #: la intervencion de quien autoriza.
+    chips_allowed: dict = field(default_factory=dict)
+    #: restricciones blandas que un agente puede imponer sobre la jornada actual.
+    #: `lock_in`: jugadores que no se pueden vender (p. ej. sube de precio manana).
+    #: `lock_out`: jugadores que no se pueden tener (p. ej. lesion no confirmada aun).
+    lock_in: frozenset = frozenset()
+    lock_out: frozenset = frozenset()
+    #: calendario VISIBLE: {(equipo, gw): n_partidos}. Lo llena el entorno, capado
+    #: al lookahead declarado, no a la temporada entera: cuanta estructura se
+    #: considera anunciada es una decision de honestidad, no de conveniencia (L-01).
+    schedule: dict = field(default_factory=dict)
     #: xp proyectado por jornada para el horizonte: {gw: {element: xp}}. La jornada
     #: actual incluida. Vacio = solo se decide con `candidates` (horizonte 1).
     #: Lo llena el proveedor de estado (simulador o runner en vivo), nunca la politica:
@@ -42,6 +61,17 @@ class State:
     @property
     def is_cold_start(self) -> bool:
         return self.squad is None
+
+    def chips_available(self, gw: int | None = None) -> frozenset:
+        """Chips legalmente jugables en `gw` segun catalogo e inventario.
+
+        Es distinto de `chips_allowed`: esto es lo que las REGLAS permiten; aquello
+        es lo que el planificador decidio poner sobre la mesa.
+        """
+        if self.chips is None:
+            return frozenset()
+        from mova_fpl.rules.chips import available
+        return available(gw if gw is not None else self.gw, self.chips_used, self.chips)
 
     def by_id(self) -> dict:
         return {c.element: c for c in self.candidates}

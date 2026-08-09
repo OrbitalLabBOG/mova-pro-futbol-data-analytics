@@ -36,6 +36,11 @@ El acta queda en `outputs/fpl/2026-27/gwNN_decision.md`. Tarda unos **5 segundos
 | `--policy` | `milp` u `greedy-stub` | `milp`; la voraz es el plan B |
 | `--dry-run` | No escribe en la traza | Para ensayar |
 
+> ⚠️ **Los chips todavía NO están activos en la operación en vivo.** Están
+> modelados y medidos contra 2025-26 (`--chips` en el backtest), pero la CLI en
+> vivo aún no los propone: falta el `entry_id` para saber qué chips quedan de
+> verdad. Ver §9.
+
 ## 2. Cuándo correrla
 
 | Momento | Qué hacer |
@@ -109,6 +114,9 @@ Reentrenar (§3). Toma menos de dos minutos.
 | 5 | **2.131** | 2.207 |
 | 8 | 2.080 | — |
 
+> Cifras medidas antes de ADR-008; con la corrección de las transferencias libres, h=3
+> pasa de 2.217 a 2.220. El **orden** entre horizontes no se volvió a medir.
+
 El orden **se invirtió** al mejorar el proyector: con un modelo, ganaba 5 y perdía 3; con el
 otro, al revés. Diferencias que cambian de orden al tocar otra pieza del sistema están dentro
 del ruido de una sola temporada. Es la pregunta abierta **Q-05**.
@@ -119,14 +127,43 @@ y está en el medio del rango, que es donde conviene estar cuando no se sabe.
 ## 6. Verificar que todo sigue en pie
 
 ```bash
-pytest -q                                     # 509 pruebas
+pytest -q                                     # 600 pruebas
 pytest -m slow -q                             # temporada completa, ~3 min
 pytest tests/test_readonly_http.py -v         # solo GET contra FPL
 python -m mova_fpl.cli.backtest --season 2025-26 --policy milp --projector points --horizon 3
 ```
 
-El backtest completo tarda unos dos minutos y debe dar **2.217** puntos con la semilla 42. Si
-da otra cosa, algo cambió y hay que averiguar qué antes de operar.
+El backtest completo tarda unos dos minutos y debe dar **2.220** puntos con la semilla 42
+(**2.303** con `--chips`). Si da otra cosa, algo cambió y hay que averiguar qué antes de
+operar.
+
+> La cifra de referencia fue 2.217 hasta agosto de 2026. Subió a 2.220 al cerrarse un fallo
+> en la linealización de las transferencias libres, verificado por A/B sobre la temporada
+> completa (ADR-008).
+
+## 6.b Los chips
+
+Ocho por temporada: dos juegos completos —wildcard, free hit, bench boost, triple captain—
+y el primero **caduca en el deadline de la GW19**. No se arrastra. Un chip sin usar al
+cerrar su ventana es valor quemado.
+
+```bash
+# backtest con el planificador de chips activo
+python -m mova_fpl.cli.backtest --season 2025-26 --policy milp --projector points \
+    --horizon 3 --chips --lookahead 6
+```
+
+El reporte trae la atribución **medida** de cada chip: para cada uno que se jugó, se puntúa
+también la decisión que se habría tomado sin él, contra los mismos resultados. La resta es
+su valor real, no una estimación.
+
+| Mando | Qué hace |
+|---|---|
+| `--chips` | Activa el planificador. Sin él, ningún chip se juega |
+| `--lookahead N` | Jornadas de calendario que el planificador considera **anunciadas** |
+
+`--lookahead` es una decisión de honestidad, no de rendimiento: mirar la temporada entera
+le daría al motor información que un manager no tenía cuando decidió. Por defecto 6.
 
 ## 7. Consultar lo ya decidido
 
@@ -139,7 +176,24 @@ decisions("2026-27-live-milp-h3")             # decisiones de la corrida en vivo
 La traza vive en `data/processed/trace.db`. Cada decisión guarda su huella
 (`fingerprint`), que permite comprobar si dos corridas decidieron lo mismo.
 
-## 8. Desde la GW2
+## 8. La bitácora de intervenciones
+
+Cada vez que alguien mueve una entrada del sistema —el planificador de chips, un agente,
+Julián a mano— queda registrado en `trace.interventions` con su motivo, lo que prometía y
+lo que acabó entregando.
+
+```python
+import sqlite3, pandas as pd
+con = sqlite3.connect("data/processed/trace.db")
+pd.read_sql_query("SELECT gw, author, rationale, expected_delta, realized_delta "
+                  "FROM interventions WHERE run_id=? ORDER BY gw", con, params=(run_id,))
+```
+
+Los dos números no son lo mismo y no hay que confundirlos: `expected_delta` es lo que el
+modelo **creía**, `realized_delta` lo que **pasó**. La brecha media entre ambos es la
+calibración de quien interviene, y es la cifra que de verdad lo retrata.
+
+## 9. Desde la GW2
 
 Hace falta el **`entry_id`** del equipo de Julián para leer el estado real: plantilla
 vigente, banco, transferencias libres acumuladas y chips ya gastados (pregunta abierta

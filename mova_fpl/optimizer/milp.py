@@ -16,9 +16,20 @@ SI: composicion 2/5/5/3, presupuesto real (banco + precio de venta, no 100M fijo
 maximo tres por club, formaciones validas, capitan, transferencias con acumulacion
 de libres y coste de hits, dobles jornadas y jornadas en blanco.
 
-NO: chips (heuristica aparte, Q-04), precio futuro de los jugadores, vicecapitan
-(solo importa si el capitan no juega; se asigna despues por xp), y sustituciones
-automaticas (el banquillo entra al objetivo con un peso, no como decision).
+SI (chips): wildcard, bench boost y triple captain como variables binarias, solo
+en las jornadas que el planificador AUTORICE via `state.chips_allowed`. Autorizar
+no es obligar: el optimizador los juega si le convienen. Con la autorizacion vacia
+el modelo es identico al de v1, byte a byte.
+
+NO: free hit — su semantica (la plantilla revierte a la jornada siguiente) rompe
+la restriccion de enlace s[i,g+1] = s[i,g] + buy - sell, y modelarlo exigiria
+duplicar las variables de plantilla. Se resuelve fuera, por descomposicion, en
+`optimizer/freehit.py`: una jornada desacoplada se calcula exacto con un solve
+aparte. Es mas simple Y mas correcto que meterlo al modelo grande.
+
+NO: precio futuro de los jugadores, vicecapitan (solo importa si el capitan no
+juega; se asigna despues por xp), y sustituciones automaticas (el banquillo entra
+al objetivo con un peso, no como decision).
 
 Si el problema es infactible falla ruidosamente con el diagnostico. Nunca relaja
 una restriccion en silencio.
@@ -38,6 +49,9 @@ from mova_fpl.rules.money import to_millions, to_tenths
 
 #: transferencias libres nominales en el arranque en frio: la plantilla es gratis
 COLD_START_FT = 15
+
+#: chips que el MILP sabe modelar. El free hit se resuelve por descomposicion.
+CHIPS_MODELADOS = ("wildcard", "bench_boost", "triple_captain")
 
 
 class Infeasible(RuntimeError):
@@ -61,6 +75,10 @@ class OptimizerConfig:
     time_limit: int = 30
     risk_lambda: float = 0.0          # Q-02: 0 = rank global, neutral al riesgo
     tie_break: float = 1e-6           # a igual xp, prefiere plantilla mas barata
+    #: penalizacion simbolica por jugar un chip. Evita que el modelo queme un chip
+    #: que no aporta nada: ante empate, prefiere guardarlo. No expresa su coste de
+    #: oportunidad real — eso vive en el planificador, que si ve la temporada entera.
+    chip_epsilon: float = 1e-3
     solver_msg: bool = False
 
 
@@ -74,6 +92,7 @@ class Solution:
     sells: dict            # gw -> tuple[element]
     hits: dict             # gw -> int
     bank: dict             # gw -> decimas enteras
+    chips: dict            # gw -> nombre del chip jugado, o None
     objective: float
     status: str
     shortlist: object
@@ -126,6 +145,8 @@ def solve(state, xp_matrix: dict, config: OptimizerConfig | None = None) -> Solu
         hits[g] = pulp.LpVariable(f"h_{g}", lowBound=0, upBound=config.max_hits_per_gw, cat="Integer")
         bank[g] = pulp.LpVariable(f"bank_{g}", lowBound=0, cat="Continuous")
 
+    chip = _chip_vars(prob, gws, state)
+
     # Las transferencias libres de la jornada que se decide son un DATO. Solo las
     # de las jornadas futuras son variables, porque dependen de lo que se decida hoy.
     for g in gws[1:]:
@@ -150,10 +171,13 @@ def solve(state, xp_matrix: dict, config: OptimizerConfig | None = None) -> Solu
 
         usadas = pulp.lpSum(buy[i, g] for i in ids)
         libres = libres_hoy if idx == 0 else ft[g]
+        # Con wildcard las transferencias son gratis e ilimitadas: la cota de hits
+        # deja de restringir cuantas se pueden hacer.
+        indulto = rules["size"] * chip.get(("wildcard", g), 0)
         if idx == 0 and frio:
             prob += hits[g] == 0, f"sinhits_{g}"
         else:
-            prob += hits[g] >= usadas - libres, f"hits_{g}"
+            prob += hits[g] >= usadas - libres - indulto, f"hits_{g}"
 
         if idx + 1 < len(gws):
             sig = gws[idx + 1]
@@ -161,14 +185,20 @@ def solve(state, xp_matrix: dict, config: OptimizerConfig | None = None) -> Solu
                 # tras armar la plantilla se arranca con una transferencia libre
                 prob += ft[sig] == 1, f"ftdin_{sig}"
             else:
+                # El wildcard NO destruye las libres acumuladas: se conservan y suman
+                # una. Sin wildcard esta cota es redundante (la de abajo es mas
+                # ajustada); con wildcard es exactamente la regla oficial.
+                prob += ft[sig] <= libres + 1, f"ftmax_{sig}"
                 # Sobrante exacto en el optimo: hits[g] toma su cota inferior porque
                 # esta penalizado, asi que libres - usadas + hits = max(0, libres - usadas).
                 # Inflar hits para ganar una transferencia libre cuesta cuatro puntos y
                 # ahorra como mucho cuatro: nunca es estrictamente mejor, no hay
                 # incentivo espurio que rompa la equivalencia.
-                prob += ft[sig] <= libres - usadas + hits[g] + 1, f"ftdin_{sig}"
+                prob += (ft[sig] <= libres - usadas + hits[g] + 1 + indulto,
+                         f"ftdin_{sig}")
 
-    prob += _objetivo(ids, gws, xp_matrix, s, e, cap, hits, precio, rules, config)
+    _restricciones_agente(prob, ids, gws, state, s, sell, en_plantilla)
+    prob += _objetivo(prob, ids, gws, xp_matrix, s, e, cap, hits, chip, precio, rules, config)
 
     solver = pulp.PULP_CBC_CMD(msg=1 if config.solver_msg else 0,
                                timeLimit=config.time_limit, threads=1)
@@ -177,7 +207,66 @@ def solve(state, xp_matrix: dict, config: OptimizerConfig | None = None) -> Solu
     if estado not in ("Optimal",):
         raise Infeasible(_diagnose(state, pool, rules, banco0, estado))
 
-    return _extract(prob, ids, gws, s, e, cap, buy, sell, hits, bank, estado, informe)
+    return _extract(prob, ids, gws, s, e, cap, buy, sell, hits, bank, chip, estado, informe)
+
+
+def _chip_vars(prob, gws, state) -> dict:
+    """Binarias de chip, solo donde el planificador autorizo. {(chip, gw): var}.
+
+    Sin autorizaciones no crea ni una variable: el modelo queda identico al de v1.
+    Esa equivalencia es la que permite verificar por regresion que meter chips no
+    movio nada de lo anterior.
+    """
+    permitido = getattr(state, "chips_allowed", None) or {}
+    if not permitido:
+        return {}
+
+    chip: dict = {}
+    for g in gws:
+        for c in sorted(set(permitido.get(g, ())) & set(CHIPS_MODELADOS)):
+            chip[c, g] = pulp.LpVariable(f"chip_{c}_{g}", cat="Binary")
+
+    for g in gws:                                    # un solo chip por jornada
+        del_gw = [v for (c, gg), v in chip.items() if gg == g]
+        if len(del_gw) > 1:
+            prob += pulp.lpSum(del_gw) <= 1, f"unchip_{g}"
+
+    # Un ejemplar de cada chip por ventana. Se agrupa por ventana y no por horizonte
+    # porque un horizonte largo puede cruzar el corte de la GW19, y ahi el mismo
+    # chip vuelve a estar disponible legalmente.
+    catalogo = getattr(state, "chips", None)
+    for c in CHIPS_MODELADOS:
+        gws_c = [g for (cc, g) in chip if cc == c]
+        if len(gws_c) <= 1:
+            continue
+        grupos: dict = {}
+        for g in gws_c:
+            w = catalogo.window_for(g) if catalogo is not None else None
+            grupos.setdefault(w.name if w else "unica", []).append(g)
+        for nombre, gs in grupos.items():
+            if len(gs) > 1:
+                prob += (pulp.lpSum(chip[c, g] for g in gs) <= 1,
+                         f"invent_{c}_{_slug(nombre)}")
+    return chip
+
+
+def _restricciones_agente(prob, ids, gws, state, s, sell, en_plantilla) -> None:
+    """Vetos que un agente externo puede imponer sobre la plantilla.
+
+    `lock_in`  — no vender en la jornada que se decide (p. ej. sube de precio).
+    `lock_out` — no puede estar en plantilla en todo el horizonte (p. ej. lesion).
+
+    Son restricciones DURAS: si contradicen las reglas, el problema sale infactible
+    con su diagnostico. Un agente que se equivoca hace ruido, no dana en silencio.
+    """
+    dentro = frozenset(getattr(state, "lock_in", ()) or ())
+    fuera = frozenset(getattr(state, "lock_out", ()) or ())
+    g0 = gws[0]
+    for i in dentro & set(ids) & set(en_plantilla):
+        prob += sell[i, g0] == 0, f"lockin_{i}"
+    for i in fuera & set(ids):
+        for g in gws:
+            prob += s[i, g] == 0, f"lockout_{i}_{g}"
 
 
 def _restricciones_plantilla(prob, ids, pos, club, s, e, cap, rules, g) -> None:
@@ -201,10 +290,22 @@ def _restricciones_plantilla(prob, ids, pos, club, s, e, cap, rules, g) -> None:
                  f"club_{_slug(c)}_{g}")
 
 
-def _objetivo(ids, gws, xp_matrix, s, e, cap, hits, precio, rules, config):
+def _objetivo(prob, ids, gws, xp_matrix, s, e, cap, hits, chip, precio, rules, config):
+    """Puntos esperados del horizonte, descontados, menos el coste de los hits.
+
+    Los chips entran como productos de binarias, linealizados. Para el bench boost
+    y el triple captain basta con las cotas superiores del producto: el objetivo
+    los empuja hacia arriba (coeficiente positivo), asi que el optimo las satura.
+    La tercera desigualdad de la linealizacion clasica seria redundante aqui.
+
+    Recibe `prob` porque las variables auxiliares del producto necesitan colgar sus
+    restricciones del mismo problema.
+    """
     terminos = []
     for g in gws:
         fila = xp_matrix[g]
+        tc = chip.get(("triple_captain", g))
+        bb = chip.get(("bench_boost", g))
         for i in ids:
             v = float(fila.get(i, 0.0))
             if v == 0.0:
@@ -212,15 +313,33 @@ def _objetivo(ids, gws, xp_matrix, s, e, cap, hits, precio, rules, config):
             terminos.append(v * e[i, g])
             terminos.append(v * (rules["captain_multiplier"] - 1) * cap[i, g])
             terminos.append(config.bench_weight * v * (s[i, g] - e[i, g]))
+
+            if tc is not None:
+                # y = cap AND tc  ->  el capitan pasa de x2 a x3
+                y = pulp.LpVariable(f"tcx_{i}_{g}", lowBound=0, upBound=1)
+                prob += y <= cap[i, g], f"tcx_a_{i}_{g}"
+                prob += y <= tc, f"tcx_b_{i}_{g}"
+                terminos.append(v * y)
+            if bb is not None:
+                # z = bb AND (en plantilla, fuera del XI) -> el suplente puntua entero
+                z = pulp.LpVariable(f"bbx_{i}_{g}", lowBound=0, upBound=1)
+                prob += z <= bb, f"bbx_a_{i}_{g}"
+                prob += z <= s[i, g] - e[i, g], f"bbx_b_{i}_{g}"
+                terminos.append((1.0 - config.bench_weight) * v * z)
+
         terminos.append(-rules["hit_cost"] * hits[g])
+    # ante empate, guardar el chip antes que quemarlo
+    terminos += [-config.chip_epsilon * v for v in chip.values()]
     # desempate: a igual xp prefiere la plantilla mas barata, que deja banco
     g0 = gws[0]
     terminos += [-config.tie_break * precio[i] * s[i, g0] for i in ids]
     return pulp.lpSum(terminos)
 
 
-def _extract(prob, ids, gws, s, e, cap, buy, sell, hits, bank, estado, informe) -> Solution:
+def _extract(prob, ids, gws, s, e, cap, buy, sell, hits, bank, chip, estado, informe) -> Solution:
     on = lambda var: var.value() is not None and var.value() > 0.5
+    jugado = {g: next((c for (c, gg), v in chip.items() if gg == g and on(v)), None)
+              for g in gws}
     return Solution(
         squad={g: tuple(i for i in ids if on(s[i, g])) for g in gws},
         starters={g: tuple(i for i in ids if on(e[i, g])) for g in gws},
@@ -229,6 +348,7 @@ def _extract(prob, ids, gws, s, e, cap, buy, sell, hits, bank, estado, informe) 
         sells={g: tuple(i for i in ids if on(sell[i, g])) for g in gws},
         hits={g: int(round(hits[g].value() or 0)) for g in gws},
         bank={g: int(round(bank[g].value() or 0)) for g in gws},
+        chips=jugado,
         objective=float(pulp.value(prob.objective) or 0.0),
         status=estado, shortlist=informe,
     )

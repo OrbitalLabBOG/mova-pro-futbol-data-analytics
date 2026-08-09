@@ -2,6 +2,12 @@
 
 Es data de experimento, no de negocio. Nunca se edita retroactivamente: una
 correccion genera una corrida nueva.
+
+`interventions` es la BITACORA: cada vez que alguien —el planificador de chips,
+un agente de lenguaje, Julian a mano— mueve una entrada del sistema, queda ahi
+con su motivo, lo que prometia y lo que acabo entregando. Es la memoria sobre la
+que un agente puede releer su propia temporada y responder a "¿que me esta
+funcionando?" con datos y no con impresiones.
 """
 from __future__ import annotations
 
@@ -64,6 +70,24 @@ DDL = [
         metrics     TEXT,
         PRIMARY KEY (name, version)
     )""",
+    """
+    CREATE TABLE IF NOT EXISTS interventions (
+        run_id          TEXT NOT NULL,
+        gw              INTEGER NOT NULL,
+        seq             INTEGER NOT NULL,   -- varias por jornada: planificador, agente, humano
+        author          TEXT NOT NULL,
+        rationale       TEXT,
+        payload         TEXT NOT NULL,      -- la Intervention serializada, tal cual
+        changed         INTEGER,            -- 0/1: ¿movio la decision?
+        expected_delta  REAL,               -- lo que prometia
+        realized_delta  INTEGER,            -- lo que entrego. NULL hasta que se juega
+        points_with     INTEGER,
+        points_without  INTEGER,
+        detail          TEXT,
+        created_at      TEXT NOT NULL,
+        PRIMARY KEY (run_id, gw, seq)
+    )""",
     "CREATE INDEX IF NOT EXISTS idx_dec_run ON gw_decisions(run_id, gw)",
+    "CREATE INDEX IF NOT EXISTS idx_interv_run ON interventions(run_id, author)",
     "CREATE INDEX IF NOT EXISTS idx_bench_run ON benchmarks(run_id, baseline)",
 ]

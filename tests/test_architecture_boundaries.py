@@ -5,7 +5,8 @@ Grafo permitido (02-architecture.md):
     rules  -> (nadie)              puro: sin datos, sin modelos
     models -> data, rules
     opt    -> rules, models
-    engine -> data, rules, models, optimizer, trace
+    agent  -> rules                 solo el contrato: no decide, no optimiza
+    engine -> data, rules, models, optimizer, trace, agent
     cli    -> engine
 Y ningun modulo puede importar del legacy src/mova_data | src/mova_model.
 """
@@ -24,9 +25,14 @@ ALLOWED = {
     "rules": set(),
     "models": {"data", "rules"},
     "optimizer": {"rules", "models"},
-    "engine": {"data", "rules", "models", "optimizer", "trace"},
+    # `agent` es deliberadamente el subpaquete mas pobre del grafo. No importa
+    # `engine` ni `optimizer`: `measure()` recibe la funcion de decision como
+    # parametro. Un agente que pudiera llamar al optimizador por su cuenta podria
+    # saltarselo, y ahi se acaba la garantia de que solo mueve entradas.
+    "agent": {"rules"},
+    "engine": {"data", "rules", "models", "optimizer", "trace", "agent"},
     "trace": set(),
-    "cli": {"engine", "data", "rules", "models", "optimizer", "trace"},
+    "cli": {"engine", "data", "rules", "models", "optimizer", "trace", "agent"},
 }
 LEGACY = ("mova_data", "mova_model", "src.mova_data", "src.mova_model")
 

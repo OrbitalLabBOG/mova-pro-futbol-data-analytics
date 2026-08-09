@@ -71,11 +71,18 @@ que impide que producción y backtest diverjan.
 data/     ingesta + almacén. Store.as_of(season, gw) es la ÚNICA lectura pública
 rules/    reglas FPL puras y versionadas por temporada. Sin I/O, sin datos
 models/   minutos (3 clases) · puntos por componente · DefCon · bonus · goles · CS
-optimizer MILP con horizonte rodante (PuLP/CBC) + prefiltro de mercado
-engine/   decide(), proyección, políticas, simulador ciego, acta
-trace/    persistencia de corridas y decisiones (SQLite)
+optimizer MILP con horizonte rodante (PuLP/CBC) + prefiltro + free hit aparte
+agent/    contrato de intervención. NO decide: solo puede importar rules
+engine/   decide(), proyección, políticas, planificador de chips, simulador, acta
+trace/    corridas, decisiones y bitácora de intervenciones (SQLite)
 cli/      7 comandos, ninguna lógica propia
 ```
+
+**Dos fronteras que no son negociables**, ambas verificadas por prueba:
+
+- **Chips:** el planificador *autoriza*, el optimizador *ejecuta* (ADR-008).
+- **Agente:** mueve *entradas*, nunca la *salida* (ADR-009). No existe
+  `force_captain`; hay un test que falla si alguien lo añade.
 
 Flujo: `Store.as_of` → proyección de minutos → xP por componente → matriz de xP por
 horizonte → MILP → `Decision` → acta en Markdown + fila en la traza.
@@ -91,6 +98,7 @@ y no se saltan:
 | `test_architecture_boundaries.py` | El grafo de importaciones respeta las capas y solo el simulador y el evaluador ven el oráculo |
 | `test_store_as_of.py` | El contrato causal: ninguna lectura devuelve filas posteriores al `as_of` |
 | `test_no_secrets.py` | No hay credenciales ni PII en el paquete |
+| `test_agent_contract.py` | El agente no puede tocar plantilla, once ni capitán |
 
 **Anti-leakage.** Todo dato entra por `Store.as_of(season, gw)`, que verifica el resultado
 después de consultar, no antes. `assert_causal` está activa siempre, también en producción,
@@ -102,8 +110,10 @@ una persona a mano (ADR-006). Añadir un POST rompe REQ-S-002 y la prueba lo blo
 **Reentrenar.** `--holdout` es la temporada que NO entra al ajuste. Para operar 2026/27 el
 holdout es `2025-26`. Cambiarlo sin pensarlo mete leakage.
 
-**Determinismo.** El backtest con semilla 42 debe dar **2.217** puntos en 2025-26. Si da otra
-cosa, algo cambió: averiguar qué antes de operar.
+**Determinismo.** El backtest con semilla 42 debe dar **2.220** puntos en 2025-26, y
+**2.303** con `--chips`. Si da otra cosa, algo cambió: averiguar qué antes de operar.
+(Fue 2.217 hasta que ADR-008 cerró un fallo en la linealización de las transferencias
+libres, verificado por A/B.)
 
 **Git.** Rama `feat/fpl-agent-clean`. Los `.joblib` y las `.db` están en `.gitignore`: son
 regenerables y pesan. `outputs/*.md` también, salvo las actas bajo `outputs/fpl/`.
@@ -135,8 +145,8 @@ Repo indexado con CodeGraph (`.codegraph/`, auto-sync al guardar).
 
 ## Estado del código
 
-- **Sano:** todo `mova_fpl/`. 524 pruebas, 20/20 requisitos con evidencia, cero drift entre
-  spec, código y comportamiento.
+- **Sano:** todo `mova_fpl/`. 600 pruebas, cero drift entre spec, código y comportamiento.
+  Chips modelados y medidos (+83 pts); contrato de agente listo, sin agente todavía.
 - **Degradado:** el componente de bonus subestima ~18% (H-WP005-02). La concordancia exacta
   con las acciones defensivas de Opta es 70,2%, no el 90% que pedía el criterio, con la causa
   aislada en los remates bloqueados (H-WP005-01). Ambas declaradas, ninguna silenciosa.

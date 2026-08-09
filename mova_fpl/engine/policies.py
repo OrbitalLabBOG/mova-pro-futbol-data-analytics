@@ -145,6 +145,24 @@ POLICIES = {"greedy-stub": greedy_policy}
 
 # --------------------------------------------------------------- WP-006: MILP
 
+def optimizer_config(config, n_gws: int):
+    """Traduce la config del motor a la del optimizador.
+
+    Vive aqui, y no dentro de `milp_policy`, porque el planificador de chips
+    necesita EXACTAMENTE la misma configuracion para que sus solves hipoteticos
+    sean comparables con el solve real. Dos construcciones separadas se
+    desincronizan y el valor estimado de un chip deja de significar nada.
+    """
+    from mova_fpl.optimizer import OptimizerConfig
+    return OptimizerConfig(
+        horizon=n_gws, decay=getattr(config, "decay", 0.84),
+        bench_weight=getattr(config, "bench_weight", 0.12),
+        top_k=getattr(config, "top_k", 30),
+        max_hits_per_gw=getattr(config, "max_hits", 2),
+        time_limit=getattr(config, "time_limit", 30),
+    )
+
+
 def milp_policy(state: State, config) -> Decision:
     """Optimizador exacto sobre un horizonte de N jornadas.
 
@@ -158,13 +176,12 @@ def milp_policy(state: State, config) -> Decision:
 
     gw = state.gw
     xp = state.horizon_xp or {gw: {c.element: c.xp for c in state.candidates}}
-    ocfg = OptimizerConfig(
-        horizon=len(xp), decay=getattr(config, "decay", 0.84),
-        bench_weight=getattr(config, "bench_weight", 0.12),
-        top_k=getattr(config, "top_k", 30),
-        max_hits_per_gw=getattr(config, "max_hits", 2),
-        time_limit=getattr(config, "time_limit", 30),
-    )
+    ocfg = optimizer_config(config, len(xp))
+
+    # El free hit no pasa por el MILP: su plantilla revierte y se resuelve aparte.
+    if "free_hit" in (state.chips_allowed.get(gw) or ()):
+        return _decision_free_hit(state, xp, ocfg)
+
     sol = solve(state, xp, ocfg)
 
     fila = xp[gw]
@@ -188,7 +205,10 @@ def milp_policy(state: State, config) -> Decision:
     coste = to_millions(sum(to_tenths(atributos[i].price) for i in sol.squad[gw]))
     esperado = sum(fila.get(i, 0.0) for i in xi) + fila.get(cap, 0.0) - sol.hits[gw]
 
+    chip = sol.chips.get(gw)
     notas = [str(sol.shortlist), f"horizonte {sorted(xp)} xp_total={summarize(xp)}"]
+    if chip:
+        notas.append(f"chip jugado: {chip}")
     futuras = {g: len(sol.buys[g]) for g in sorted(xp)[1:] if sol.buys[g]}
     if futuras:
         notas.append(f"plan de transferencias futuras (no ejecutado): {futuras}")
@@ -202,10 +222,51 @@ def milp_policy(state: State, config) -> Decision:
         bench_order=tuple(banca_gk + banca_campo),
         transfers_in=() if state.squad is None else tuple(sorted(sol.buys[gw])),
         transfers_out=() if state.squad is None else tuple(sorted(sol.sells[gw])),
-        hits=sol.hits[gw],
+        hits=sol.hits[gw], chip=chip,
         expected_points=round(esperado, 2), total_cost=coste,
         bank_after=to_millions(sol.bank[gw]),
         policy="milp", notes=tuple(notas),
+    )
+
+
+def _decision_free_hit(state: State, xp: dict, ocfg) -> Decision:
+    """Plantilla de una sola jornada. El simulador la revierte al cierre siguiente.
+
+    `transfers_in/out` quedan VACIOS a proposito: un free hit no mueve la plantilla
+    real, y contarlos como transferencias corromperia el arrastre de libres.
+    """
+    from mova_fpl.optimizer.freehit import evaluate as evaluate_free_hit
+
+    gw = state.gw
+    plan = evaluate_free_hit(state, xp[gw], ocfg)
+    fila = xp[gw]
+    atributos = {c.element: c for c in state.candidates}
+    for p in (state.squad.players if state.squad else ()):
+        atributos.setdefault(p.element, Candidate(element=p.element, position=p.position,
+                                                  team=p.team, price=p.price, xp=0.0))
+
+    xi = sorted(plan.starters, key=lambda i: -fila.get(i, 0.0))
+    cap = plan.captain
+    vice = next((i for i in xi if i != cap), None)
+    en_xi = set(xi)
+    banca_gk = [i for i in plan.squad if i not in en_xi
+                and atributos[i].position is Position.GKP]
+    banca_campo = sorted((i for i in plan.squad if i not in en_xi
+                          and atributos[i].position is not Position.GKP),
+                         key=lambda i: -fila.get(i, 0.0))
+    coste = to_millions(sum(to_tenths(atributos[i].price) for i in plan.squad))
+    esperado = sum(fila.get(i, 0.0) for i in xi) + fila.get(cap, 0.0)
+
+    return Decision(
+        season=state.season, gw=gw,
+        squad_15=tuple(plan.squad), starters=tuple(xi), captain=cap, vice_captain=vice,
+        bench_order=tuple(banca_gk + banca_campo),
+        transfers_in=(), transfers_out=(), hits=0, chip="free_hit",
+        expected_points=round(esperado, 2), total_cost=coste,
+        bank_after=round(plan.budget - coste, 1),
+        policy="milp",
+        notes=(f"free hit: plantilla de una jornada con {plan.budget:.1f}M "
+               f"(+{plan.value:.1f} xp sobre no jugarlo); revierte al cierre siguiente",),
     )
 
 

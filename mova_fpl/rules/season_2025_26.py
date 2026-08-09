@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from mova_fpl.rules.base import Position, ScoringTable
 from mova_fpl.rules.bps import BPS_2025_26
+from mova_fpl.rules.chips import CHIP_NAMES, ChipCatalogue, ChipWindow
 
 SEASON = "2025-26"
 
@@ -25,4 +26,10 @@ SQUAD = dict(
     max_free_transfers=5, hit_cost=4, captain_multiplier=2,
 )
 
-CHIPS = ("wildcard", "free_hit", "bench_boost", "triple_captain")
+# Reforma 2025/26: DOS juegos completos de chips, uno por mitad. El primero
+# caduca en el deadline de la GW19 y no se arrastra a la segunda vuelta.
+CHIPS = ChipCatalogue(
+    chips=CHIP_NAMES,
+    windows=(ChipWindow("H1", 1, 19), ChipWindow("H2", 20, 38)),
+    per_window=1,
+)

@@ -26,9 +26,28 @@ def compute(a: str, b: str) -> dict:
     for k in sorted(set(ra.SQUAD) | set(rb.SQUAD)):
         if ra.SQUAD.get(k) != rb.SQUAD.get(k):
             out["squad"].append(f"{k}: {ra.SQUAD.get(k)} -> {rb.SQUAD.get(k)}")
-    if set(ra.CHIPS) != set(rb.CHIPS):
-        out["chips"].append(f"{ra.CHIPS} -> {rb.CHIPS}")
+    out["chips"] += _diff_chips(ra.CHIPS, rb.CHIPS)
     return out
+
+
+def _diff_chips(ca, cb) -> list[str]:
+    """Catalogo de chips: nombres, ventanas y ejemplares por ventana.
+
+    Las ventanas importan tanto como los nombres: la reforma de 2025/26 no anadio
+    chips nuevos, duplico los que ya habia partiendo la temporada en dos.
+    """
+    fuera: list[str] = []
+    if set(ca.chips) != set(cb.chips):
+        fuera.append(f"tipos: {sorted(ca.chips)} -> {sorted(cb.chips)}")
+    va = [(w.name, w.first_gw, w.last_gw) for w in ca.windows]
+    vb = [(w.name, w.first_gw, w.last_gw) for w in cb.windows]
+    if va != vb:
+        fuera.append(f"ventanas: {va} -> {vb}")
+    if ca.per_window != cb.per_window:
+        fuera.append(f"ejemplares por ventana: {ca.per_window} -> {cb.per_window}")
+    if ca.total() != cb.total():
+        fuera.append(f"total de chips por temporada: {ca.total()} -> {cb.total()}")
+    return fuera
 
 
 def render(a: str, b: str) -> str:

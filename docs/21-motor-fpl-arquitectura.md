@@ -50,12 +50,21 @@ política no actúa sobre él.
                     └──────────────────┬───────────────────────────┘
                                        │
                     ┌──────────────────▼───────────────────────────┐
+                    │  planner.plan → ¿qué chips van sobre la mesa?│  autoriza, no obliga
+                    └──────────────────┬───────────────────────────┘
+                                       │ chips_allowed
+                    ┌──────────────────▼───────────────────────────┐
+                    │  agent.apply → intervenciones (opcional)     │  mueve ENTRADAS
+                    └──────────────────┬───────────────────────────┘
+                                       │
+                    ┌──────────────────▼───────────────────────────┐
                     │  shortlist (opcional) → recorte de mercado   │
                     └──────────────────┬───────────────────────────┘
                                        │
                     ┌──────────────────▼───────────────────────────┐
                     │  solve() MILP · PuLP/CBC                     │
                     │  plantilla · once · capitán · compras/ventas │
+                    │  + wildcard · bench boost · triple captain   │
                     └──────────────────┬───────────────────────────┘
                                        │ Decision
                     ┌──────────────────▼───────────────────────────┐
@@ -81,8 +90,9 @@ backtest deje de decir algo sobre producción.
 | `data/` | 1.009 | Ingesta idempotente, identidad estable de jugador, `Store` | No decide, no proyecta |
 | `rules/` | 615 | Reglas FPL puras versionadas por temporada | **No lee datos.** Ni un import de `data/` |
 | `models/` | 1.262 | Minutos, puntos por componente, DefCon, bonus, goles, portería a cero | No ve resultados futuros |
-| `optimizer/` | 497 | MILP, horizonte rodante, prefiltro | No sabe qué es un jugador; opera sobre números |
-| `engine/` | 1.208 | `decide()`, proyección, políticas, simulador, acta | — |
+| `optimizer/` | ~700 | MILP, horizonte rodante, prefiltro, free hit | No sabe qué es un jugador; opera sobre números |
+| `agent/` | ~330 | Contrato de intervención y su medición | **No decide, no optimiza.** Solo puede importar `rules` |
+| `engine/` | ~1.500 | `decide()`, proyección, políticas, planificador de chips, simulador, acta | — |
 | `trace/` | 220 | Persistencia de corridas y decisiones | — |
 | `cli/` | 505 | Siete comandos | **Ninguna lógica propia.** Solo cablean |
 
@@ -209,6 +219,82 @@ jornadas —si cambiara, el motor perdería el rastro de su propia plantilla—.
 
 El **acta** (`report.render`) se marca sola como **borrador** si se emite a más de dos días
 del cierre. A esa distancia los precios y el parte médico todavía se mueven.
+
+### 3.6 Chips — dos niveles
+
+Desde 2025/26 hay **ocho chips**: dos juegos completos, uno por mitad de
+temporada, y el primero **caduca en el deadline de la GW19**. 2026/27 mantiene el
+mismo sistema, así que lo validado contra 2025-26 transfiere sin asterisco.
+
+Eso cambia la estrategia de raíz: un chip sin usar al cerrar su ventana no es
+prudencia, es **valor quemado**.
+
+El problema de diseño no es cómo modelar el efecto de un chip —eso es fácil— sino
+**dónde decidir cuándo usarlo**. El coste de oportunidad vive fuera de la ventana
+del optimizador: un triple captain gastado en la GW5 dentro de un horizonte de 3
+no puede saber que la GW14 era mejor. Metidos sin más al MILP, los chips son
+caramelo gratis y se queman en las primeras jornadas.
+
+De ahí la división, que es la misma que gobernará al agente:
+
+> **el planificador autoriza · el optimizador ejecuta**
+
+| Pieza | Qué ve | Qué decide |
+|---|---|---|
+| `engine/planner.py` | La temporada: ventanas, caducidad, calendario visible | Qué chips van **sobre la mesa** esta jornada |
+| `optimizer/milp.py` | La ventana de N jornadas | Si le **conviene** jugarlos, y cómo |
+
+Autorizar no es obligar. Esa separación es lo que mantiene medible la
+intervención de quien autoriza: basta resolver dos veces y restar.
+
+**Cómo entra cada chip.**
+
+| Chip | Formulación |
+|---|---|
+| Triple captain | `y = cap ∧ tc`, el capitán pasa de ×2 a ×3 |
+| Bench boost | `z = bb ∧ (en plantilla, fuera del XI)`, el banco pasa de pesar 0,12 a 1,0 |
+| Wildcard | Indulta el coste de los hits y conserva las transferencias libres |
+| **Free hit** | **Fuera del MILP** — por descomposición |
+
+Los dos productos de binarias se linealizan solo con las cotas superiores: como el
+objetivo los empuja hacia arriba, el óptimo las satura y la tercera desigualdad
+clásica sobra.
+
+**Por qué el free hit va aparte.** Su semántica —la plantilla revierte al cierre
+siguiente— rompe la restricción de enlace `s[i,g+1] = s[i,g] + buy − sell`.
+Modelarlo dentro exigiría duplicar variables de plantilla con big-M condicionales.
+Pero un free hit *es* una jornada desacoplada: no hereda restricciones del pasado
+ni se las impone al futuro. Se resuelve exacto con un solve aparte
+(`optimizer/freehit.py`) reutilizando el camino de arranque en frío que el modelo
+ya tenía. Más simple **y** más correcto que aproximarlo dentro.
+
+**El umbral del planificador** decae hacia cero al acercarse la caducidad: en la
+última jornada de la ventana, cualquier valor positivo justifica jugarlo. Y sube
+si hay una jornada estructuralmente mejor dentro del `structure_lookahead` — 6
+jornadas por defecto, una decisión de honestidad, no de eficiencia (L-01).
+
+### 3.7 La capa de agente
+
+`mova_fpl/agent/` no contiene ningún agente. Contiene el **contrato** con el que
+un agente —de lenguaje, humano o heurístico— se enchufa al motor:
+
+> **el agente mueve entradas, nunca la salida**
+
+Las palancas son exactamente cinco: `xp_multiplier` por jugador,
+`allow_chips`/`block_chips`, `lock_in`, `lock_out` y `risk_lambda`. No existe
+`force_captain` ni `force_squad`, y hay una prueba que falla si alguien los añade.
+
+Dos razones, no una:
+
+1. Un modelo de lenguaje es bueno leyendo el mundo y malo resolviendo un entero
+   mixto. El solver es al revés.
+2. **Sin esto no hay medición.** Como el agente solo mueve entradas, cada
+   intervención se evalúa resolviendo dos veces y restando marcadores reales.
+
+La bitácora (`trace.interventions`) guarda dos números distintos: `expected_delta`
+—lo que el modelo creía que iba a ganar— y `realized_delta` —lo que ganó—. Un
+agente puede inflar el primero a voluntad; la brecha entre ambos es su
+**calibración**, y es la métrica que lo retrata.
 
 ## 4. Resultados medidos
 

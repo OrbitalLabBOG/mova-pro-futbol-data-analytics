@@ -16,14 +16,22 @@ def main() -> None:
     ap.add_argument("--horizon", type=int, default=1)
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--max-gw", type=int, default=38)
+    ap.add_argument("--chips", action="store_true",
+                    help="habilita el planificador de chips (por defecto: sin chips)")
+    ap.add_argument("--lookahead", type=int, default=6,
+                    help="jornadas de calendario que el planificador considera anunciadas")
     ap.add_argument("--run-id", help="reutilizar para reanudar una corrida cortada")
     ap.add_argument("--resume", action="store_true")
     ap.add_argument("--out", help="escribir el reporte en Markdown")
     ap.add_argument("--quiet", action="store_true")
     args = ap.parse_args()
 
-    cfg = Config(policy=args.policy, projector=args.projector, horizon=args.horizon, seed=args.seed)
-    print(f"Backtest {args.season} · politica {args.policy} · proyector {args.projector} · modo {args.mode} · semilla {args.seed}\n")
+    cfg = Config(policy=args.policy, projector=args.projector, horizon=args.horizon,
+                 seed=args.seed, chip_policy="planner" if args.chips else "none",
+                 structure_lookahead=args.lookahead)
+    chips = f" · chips ON (lookahead {args.lookahead})" if args.chips else " · sin chips"
+    print(f"Backtest {args.season} · politica {args.policy} · proyector {args.projector} · "
+          f"modo {args.mode} · semilla {args.seed}{chips}\n")
     report = replay(args.season, args.mode, cfg, run_id=args.run_id, resume=args.resume,
                     max_gw=args.max_gw, verbose=not args.quiet)
 
@@ -34,6 +42,16 @@ def main() -> None:
     techo = report.baselines.get("ceiling", 0)
     if techo:
         print(f"  captura del techo: {100 * report.total / techo:.1f}%")
+    if report.chips:
+        total = sum(c["value"] for c in report.chips)
+        print(f"{'-' * 66}")
+        print(f"  chips jugados: {len(report.chips)} · valor medido {total:+,} pts")
+        for c in report.chips:
+            print(f"    GW{c['gw']:>2} {c['chip']:<15} real {c['points']:>3} vs "
+                  f"contrafactual {c['counterfactual']} = {c['value']:+d}")
+    if report.wasted_chips:
+        print(f"  chips caducados sin usar: "
+              f"{', '.join(f'{c} ({w})' for w, c in report.wasted_chips)}")
     print(f"{'=' * 66}")
     print(f"  run_id: {report.run_id}")
 

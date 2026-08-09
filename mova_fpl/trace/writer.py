@@ -84,3 +84,32 @@ class TraceWriter:
                 "SELECT gw FROM gw_decisions WHERE run_id=? AND actual_points IS NOT NULL", (run_id,)
             ).fetchall()
         return {r[0] for r in rows}
+
+    # ------------------------------------------------------------- bitacora
+
+    def record_intervention(self, run_id: str, gw: int, intervention, attribution=None,
+                            seq: int = 0) -> None:
+        """Anota una intervencion con lo que prometia. El resultado se liquida despues."""
+        with self._con() as con:
+            con.execute(
+                "INSERT OR REPLACE INTO interventions (run_id, gw, seq, author, rationale,"
+                " payload, changed, expected_delta, realized_delta, points_with,"
+                " points_without, detail, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (run_id, gw, seq, intervention.author, intervention.rationale,
+                 json.dumps(intervention.to_dict()),
+                 int(bool(attribution.changed)) if attribution else None,
+                 attribution.expected_delta if attribution else None,
+                 attribution.realized_delta if attribution else None,
+                 attribution.points_with if attribution else None,
+                 attribution.points_without if attribution else None,
+                 json.dumps(attribution.detail) if attribution else None,
+                 _now()))
+
+    def settle_intervention(self, run_id: str, gw: int, points_with: int,
+                            points_without: int, seq: int = 0) -> None:
+        """Cierra la ficha con puntos reales, una vez jugada la jornada."""
+        with self._con() as con:
+            con.execute(
+                "UPDATE interventions SET points_with = ?, points_without = ?,"
+                " realized_delta = ? WHERE run_id = ? AND gw = ? AND seq = ?",
+                (points_with, points_without, points_with - points_without, run_id, gw, seq))

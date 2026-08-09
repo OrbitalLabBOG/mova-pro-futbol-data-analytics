@@ -1,7 +1,7 @@
 """Reglas FPL 2026/27.
 
-Diferencia con 2025/26: la reforma del BPS. La tabla de puntuacion base y los
-umbrales de contribucion defensiva NO cambiaron.
+Diferencia con 2025/26: la reforma del BPS. La tabla de puntuacion base, los
+umbrales de contribucion defensiva y el sistema de chips NO cambiaron.
 
 Riesgo declarado R-02: esta version no es validable contra ground truth porque
 la temporada aun no ocurre. Se valida por diff explicito contra 2025/26 y por
@@ -27,4 +27,7 @@ BPS = BPS_2026_27
 
 SQUAD = dict(_prev.SQUAD)
 
+# Verificado contra la fuente oficial (premierleague.com, jul-2026): 2026/27
+# mantiene los dos juegos de chips y el corte en la GW19. Identico a 2025/26,
+# lo que hace que el backtest de chips sobre 2025-26 transfiera sin asterisco.
 CHIPS = _prev.CHIPS

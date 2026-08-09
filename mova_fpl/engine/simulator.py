@@ -7,7 +7,7 @@ paso. Es el unico modulo autorizado a usar `Store.results()`.
 from __future__ import annotations
 
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 import pandas as pd
 
@@ -15,12 +15,15 @@ from mova_fpl.data.store import Store
 from mova_fpl.engine.baselines import all_baselines
 from mova_fpl.engine.evaluate import score_decision
 from mova_fpl.engine.naive import naive_projection
+from mova_fpl.engine.planner import PlannerConfig, plan
+from mova_fpl.engine.policies import optimizer_config
 from mova_fpl.engine.projection import minutes_projection, points_projection
 from mova_fpl.engine.runner import Config, decide
 from mova_fpl.engine.state import Candidate, State
 from mova_fpl.optimizer.horizon import build_xp_matrix, fixture_counts
 from mova_fpl.rules import get as get_rules
 from mova_fpl.rules.base import Position, Squad, SquadPlayer
+from mova_fpl.rules.chips import ChipUse, wasted
 from mova_fpl.rules.market import accumulate_free_transfers
 from mova_fpl.trace import TraceWriter
 
@@ -35,6 +38,8 @@ class RunReport:
     policy: str
     gameweeks: list[dict] = field(default_factory=list)
     baselines: dict = field(default_factory=dict)
+    chips: list[dict] = field(default_factory=list)      # atribucion medida, chip a chip
+    wasted_chips: list = field(default_factory=list)     # caducados sin jugar
 
     @property
     def total(self) -> int:
@@ -65,7 +70,30 @@ class RunReport:
         if techo:
             out += ["", f"Captura del techo con informacion perfecta: "
                         f"**{100 * self.total / techo:.1f}%**"]
+        out += self._render_chips()
         return "\n".join(out)
+
+    def _render_chips(self) -> list[str]:
+        """Atribucion por chip: no estimada, MEDIDA contra el contrafactual.
+
+        Para cada chip jugado se puntua tambien la decision que se habria tomado
+        sin el, con los mismos resultados reales. La resta es su valor exacto.
+        """
+        if not self.chips:
+            return []
+        out = ["", "## Chips", "",
+               "| GW | Chip | Real | Contrafactual | Valor | xp esperado | Motivo |",
+               "|---:|---|---:|---:|---:|---:|---|"]
+        total = 0
+        for c in self.chips:
+            total += c["value"]
+            out.append(f"| {c['gw']} | {c['chip']} | {c['points']} | {c['counterfactual']} | "
+                       f"**{c['value']:+d}** | {c['expected']:+.1f} | {c['reason']} |")
+        out += ["", f"Valor medido de los chips: **{total:+d}** puntos."]
+        if self.wasted_chips:
+            perdidos = ", ".join(f"{c} ({w})" for w, c in self.wasted_chips)
+            out.append(f"\n⚠️ Chips caducados sin usar: {perdidos}")
+        return out
 
 
 def _alias_equipos(store: Store, season: str) -> dict:
@@ -91,8 +119,15 @@ def _anonymize(roster: pd.DataFrame, alias: dict) -> pd.DataFrame:
     return df
 
 
-def _horizonte(store: Store, season: str, gw: int, candidatos, config, alias: dict,
-               max_gw: int) -> dict:
+def _calendario(store: Store, season: str, gw: int, hasta: int, alias: dict) -> dict:
+    """{(equipo, gw): n_partidos} en un rango. Lo publicado, nada mas."""
+    sched = store.team_schedule(season, gw, hasta)
+    if alias:
+        sched = sched.assign(team=sched["team"].map(lambda t: alias.get(t, t)))
+    return fixture_counts(sched.to_dict("records"))
+
+
+def _horizonte(candidatos, conteo: dict, gw: int, config, max_gw: int) -> dict:
     """Matriz xp del horizonte. La construye el ENTORNO, no la politica.
 
     Asi `State` sigue siendo un valor y `decide()` sigue sin tocar la base de datos
@@ -101,10 +136,6 @@ def _horizonte(store: Store, season: str, gw: int, candidatos, config, alias: di
     if config.horizon <= 1 and config.policy != "milp":
         return {}
     hasta = min(max_gw, gw + config.horizon - 1)
-    sched = store.team_schedule(season, gw, hasta)
-    if alias:
-        sched = sched.assign(team=sched["team"].map(lambda t: alias.get(t, t)))
-    conteo = fixture_counts(sched.to_dict("records"))
     return build_xp_matrix(candidatos, conteo, gw, hasta - gw + 1, decay=config.decay)
 
 
@@ -161,6 +192,10 @@ def replay(season: str, mode: str = "named", config: Config | None = None,
 
     rules_mod = get_rules(season)
     rules = rules_mod.SQUAD
+    catalogo = rules_mod.CHIPS
+    con_chips = config.chip_policy == "planner"
+    pcfg = PlannerConfig(enabled=con_chips, structure_lookahead=config.structure_lookahead)
+    chips_used: list[ChipUse] = []
     ya_hechas = trace.completed_gws(run_id) if resume else set()
     trace.start_run(run_id, season, mode, config.policy, config.horizon, config.seed,
                     {"season": season, "mode": mode, "max_gw": max_gw})
@@ -193,10 +228,28 @@ def replay(season: str, mode: str = "named", config: Config | None = None,
         if len(candidatos) < rules["size"]:
             continue
 
-        horizon_xp = _horizonte(store, season, gw, candidatos, config, alias, max_gw)
+        # Un solo vistazo al calendario: el horizonte del optimizador y la
+        # estructura que ve el planificador salen del mismo rango consultado.
+        alcance = max(config.horizon, config.structure_lookahead + 1 if con_chips else 0)
+        conteo = _calendario(store, season, gw, min(max_gw, gw + alcance), alias)
+        horizon_xp = _horizonte(candidatos, conteo, gw, config, max_gw)
+
         state = State(season=season, gw=gw, candidates=candidatos, squad=squad,
                       free_transfers=free_transfers, bank=bank, rules=rules,
-                      horizon_xp=horizon_xp)
+                      horizon_xp=horizon_xp,
+                      chips=catalogo if con_chips else None,
+                      chips_used=tuple(chips_used),
+                      schedule=conteo if con_chips else {})
+
+        veredicto = None
+        if con_chips and not state.is_cold_start:
+            # En la GW1 no hay plantilla que arreglar: ningun chip tiene sentido.
+            veredicto = plan(state, horizon_xp or {gw: {c.element: c.xp for c in candidatos}},
+                             optimizer_config(config, len(horizon_xp) or 1), pcfg)
+            if veredicto.chip:
+                state = replace(state, chips_allowed={gw: frozenset({veredicto.chip})})
+
+        _libres_previas = free_transfers
         decision = decide(gw, state, config)
 
         conocidos.update({c.element: {"position": c.position, "team": c.team, "price": c.price}
@@ -213,19 +266,34 @@ def replay(season: str, mode: str = "named", config: Config | None = None,
             "gw": gw, "points": outcome.points, "expected": decision.expected_points,
             "captain_points": outcome.captain_points, "hits": decision.hits,
             "auto_subs": len(outcome.auto_subs), "train_rows": len(historia),
-            "transfers": len(decision.transfers_in), **bases,
+            "transfers": len(decision.transfers_in), "chip": decision.chip or "",
+            **bases,
         })
         for k, v in bases.items():
             acum_baselines[k] = acum_baselines.get(k, 0) + v
 
+        if decision.chip:
+            chips_used.append(ChipUse(gw=gw, chip=decision.chip))
+            report.chips.append(_atribuir(decision, outcome, state, config, resultados,
+                                          rules, conocidos, veredicto))
+
         arranque_en_frio = squad is None
-        squad = _squad_from(decision, conocidos, bank)
-        # Tras armar la plantilla inicial se llega a la GW2 con UNA transferencia
-        # libre, no con dos: la plantilla de arranque no consume ninguna, pero
-        # tampoco acumula. `accumulate_free_transfers` daba 2 y regalaba un cambio.
-        free_transfers = 1 if arranque_en_frio else accumulate_free_transfers(
-            free_transfers, len(decision.transfers_in), rules["max_free_transfers"])
-        bank = decision.bank_after
+        if decision.chip == "free_hit":
+            # La plantilla REVIERTE: el free hit no deja rastro en el equipo real.
+            # Tampoco consume transferencias, asi que las libres acumulan normal.
+            free_transfers = accumulate_free_transfers(free_transfers, 0,
+                                                       rules["max_free_transfers"])
+        else:
+            squad = _squad_from(decision, conocidos, bank)
+            # Tras armar la plantilla inicial se llega a la GW2 con UNA transferencia
+            # libre, no con dos: la plantilla de arranque no consume ninguna, pero
+            # tampoco acumula. `accumulate_free_transfers` daba 2 y regalaba un cambio.
+            free_transfers = 1 if arranque_en_frio else accumulate_free_transfers(
+                free_transfers, len(decision.transfers_in), rules["max_free_transfers"])
+            bank = decision.bank_after
+            if decision.chip == "wildcard":
+                # El wildcard no destruye las libres: se conservan y suman una.
+                free_transfers = min(rules["max_free_transfers"], _libres_previas + 1)
 
         if verbose:
             print(f"  GW{gw:>2}  {outcome.points:>3} pts  (esperado {decision.expected_points:>5.1f})"
@@ -233,5 +301,31 @@ def replay(season: str, mode: str = "named", config: Config | None = None,
                   f"  entrenado con {len(historia):>5} filas")
 
     report.baselines = acum_baselines
+    if con_chips:
+        report.wasted_chips = wasted(tuple(chips_used), catalogo, max_gw)
     trace.finish_run(run_id, report.total)
     return report
+
+
+def _atribuir(decision, outcome, state, config, resultados, rules, conocidos, veredicto) -> dict:
+    """Valor REAL de un chip: lo que se saco menos lo que se habria sacado sin el.
+
+    Se vuelve a decidir con la autorizacion retirada y se puntua esa decision
+    contra los mismos resultados. No es una estimacion del modelo: es la resta de
+    dos marcadores reales. La misma maquinaria medira despues al agente.
+    """
+    contrafactual = None
+    try:
+        sin_chip = decide(state.gw, replace(state, chips_allowed={}), config)
+        contrafactual = score_decision(sin_chip, resultados, rules, conocidos).points
+    except Exception as exc:                                   # noqa: BLE001
+        return {"gw": state.gw, "chip": decision.chip, "points": outcome.points,
+                "counterfactual": None, "value": 0,
+                "expected": veredicto.value if veredicto else 0.0,
+                "reason": f"contrafactual no calculable: {exc}"}
+    return {
+        "gw": state.gw, "chip": decision.chip, "points": outcome.points,
+        "counterfactual": contrafactual, "value": outcome.points - contrafactual,
+        "expected": veredicto.value if veredicto else 0.0,
+        "reason": veredicto.reason if veredicto else "",
+    }
