@@ -1,105 +1,185 @@
 # MOVA Pro Fútbol Data Analytics
 
-Modelo de analítica deportiva, predicción probabilística y procesador de event data (vertical **MOVA**).
+Analítica de fútbol de la vertical **MOVA** (Orbital Lab): datos de eventos, modelos
+probabilísticos y agentes de decisión.
 
-> **Estado: TORNEO TERMINADO — ciclo completo ✅** (2026-07-20). 🏆 **España campeón** (1-0 a Argentina). Datos completos: 104/104 partidos, 626K+ eventos. El modelo proyectó exactamente las dos semifinales reales (Francia-España, Argentina-Inglaterra) y el **pick de valor del pick sheet (España, leverage 1.31) fue el campeón**. Balance final y lecciones → **[docs/15-postmortem-final.md](docs/15-postmortem-final.md)**.
+El repositorio tiene **dos capítulos**. Uno está vivo y el otro cerrado.
 
-## Tesis del proyecto
+| | Capítulo | Estado |
+|---|---|---|
+| **1** | **Motor de decisión FPL** — juega la Fantasy Premier League 2026/27 | 🟢 **Vivo.** v1 cerrada, opera la GW1 |
+| 2 | Mundial 2026 y apuestas cuantitativas | ✅ Cerrado (jul-2026). Se conserva como registro |
 
-El formato de 48 equipos ha **subido la varianza** (más empates, más debutantes, calor y viajes castigando a favoritos). En polla con alta varianza conviene mezclar *chalk* (favoritos sólidos) con apuestas de valor controlado, no clavar todos los favoritos.
+---
 
-## Enfoque de modelamiento (planeado)
+# 1 · Motor de decisión FPL
 
-Stack inspirado en lo que la evidencia dice que funciona:
+Un sistema que, antes del cierre de cada jornada, lee el estado público de la liga, proyecta
+puntos esperados jugador por jugador y emite un **acta de decisión**: qué quince fichar, qué
+once alinear, a quién dar el brazalete, qué transferencias hacer y cuáles no valen el golpe.
 
-1. **Elo / Power Ratings** — el driver dominante (~80% del poder predictivo según comparativas de 10+ modelos).
-2. **Dixon-Coles** — modelo de goles (Poisson bivariado con corrección para marcadores bajos) → probabilidades por partido.
-3. **Ajuste por xG / suerte** — corregir sobre/sub-rendimiento de la fase de grupos (regresión a la media).
-4. **Ajustes de contexto** — ventaja local (anfitriones), calor, viajes entre sedes, descanso.
-5. **Monte Carlo del bracket** — simular la Ronda de 32 → final N veces para win-probabilities y bracket óptimo.
-6. **Calibración vs. mercado** — contrastar con Kalshi/Polymarket/Opta para detectar *value* y errores del modelo.
+El acta es un documento. **El motor no escribe en FPL y no puede hacerlo**: la única
+primitiva de red del paquete es un `GET`, y hay una prueba que lo verifica. El equipo lo
+introduce una persona.
+
+## Qué tan bueno es
+
+Backtest ciego de la temporada 2025-26 completa, con información estrictamente causal
+—en cada jornada el motor solo ve lo que existía antes del deadline— y con los nombres de
+jugadores y clubes anonimizados para que no pueda reconocer el año.
+
+| Configuración | Puntos | vs. copiar a la multitud |
+|---|---:|---:|
+| Punto de partida del proyecto | 1.302 | −741 |
+| \+ modelo de minutos | 1.298 | −745 |
+| \+ optimizador MILP | 2.131 | +88 |
+| **\+ modelo de puntos por componentes** | **2.217** | **+174** |
+| *Baseline* `template` (los 15 más elegidos) | 2.043 | — |
+| *Baseline* aleatorio | 533 | — |
+| Techo con información perfecta | 5.871 | — |
+
+Captura del techo: **37,8%**.
+
+**Lo que esto no dice:** que vaya a ganar la temporada 2026/27. Dice que en 2025-26, sin
+mirar el futuro, habría sacado 174 puntos más que copiar al rebaño. Una temporada es una
+muestra de una.
+
+## Cómo está hecho
+
+```
+Store.as_of(temporada, jornada)      ← única lectura de datos, verificada contra el futuro
+        ↓
+modelo de minutos {0, 1-59, 60+}     ← calibrado, ECE 0,0106
+        ↓
+xP por componente                    ← aparición, goles, asistencias, portería a cero,
+        ↓                              goles encajados, DefCon, bonus, tarjetas, paradas
+matriz de xP × horizonte             ← descuento 0,84^t, dobles ×2, blancos 0
+        ↓
+MILP (PuLP/CBC)                      ← plantilla, once, capitán, compras y ventas, golpes
+        ↓
+acta en Markdown + traza
+```
+
+Cinco decisiones que sostienen todo:
+
+1. **Un solo contrato de lectura.** Todo pasa por `as_of()`, que comprueba el resultado
+   después de consultar. El leakage deja de ser escribible; no es una convención que alguien
+   deba recordar en la revisión.
+2. **Una sola `decide()`.** El backtest y la operación en vivo son dos proveedores del mismo
+   estado. No pueden divergir.
+3. **Reglas puras y versionadas por temporada.** Las de 2026/27 no son las de 2025-26 —cambió
+   el BPS y entró DefCon—. Validadas contra 29.757 actuaciones reales: **100% exacto**.
+4. **xP descompuesto, no una regresión monolítica.** Cada componente con su distribución:
+   Poisson para goles y encajados, binomial negativa para DefCon, Bernoulli para portería a
+   cero. Descomponer no solo explica: destapó dos sesgos que el total ocultaba porque se
+   compensaban entre sí.
+5. **Fronteras verificadas por test.** El grafo de importaciones se comprueba, no se acuerda.
+
+## Correr
+
+```bash
+python -m mova_fpl.data.ingest --all                      # almacén canónico, idempotente
+python -m mova_fpl.cli.train_minutes --holdout 2025-26    # modelos (los .joblib no van en Git)
+python -m mova_fpl.cli.train_points  --holdout 2025-26
+
+python -m mova_fpl.cli.live --season 2026-27 --gw 1 --horizon 3 --top-k 0   # ← el acta, ~6 s
+```
+
+El acta queda en `outputs/fpl/2026-27/gw01_decision.md`.
+
+```bash
+python -m mova_fpl.cli.backtest --season 2025-26 --policy milp --projector points --horizon 3
+pytest -q                                                 # 524 pruebas
+```
+
+## Documentación
+
+| Doc | Para qué |
+|---|---|
+| **[docs/runbook-fpl.md](docs/runbook-fpl.md)** | **Operar una jornada**, incluso si algo se rompió. Empezar aquí |
+| [docs/21-motor-fpl-arquitectura.md](docs/21-motor-fpl-arquitectura.md) | Cómo funciona por dentro: módulos, modelos, decisiones |
+| [CLAUDE.md](CLAUDE.md) | Contexto técnico para trabajar en el repo |
+| [docs/specs/fpl-decision-engine/](docs/specs/fpl-decision-engine/) | Paquete de diseño: brief, requisitos, 7 ADRs, 7 workpacks, evidencia |
+| [docs/specs/fpl-decision-engine/04-convergence.md](docs/specs/fpl-decision-engine/04-convergence.md) | **Veredicto final**: qué quedó demostrado y qué no |
+
+## Lo que falta
+
+- **El `entry_id` del equipo.** Sin él, desde la GW2 el motor no sabe de qué plantilla parte.
+- **El horizonte de producción.** Se opera con 3 por defecto razonado, no demostrado.
+- **El agente de lenguaje** que lea alineaciones probables y ruedas de prensa. Es la
+  información que hoy falta y que ningún almacén histórico puede dar.
+- **Política de chips** y **cron**. Fuera del alcance de v1.
+
+---
+
+# 2 · Mundial 2026 y apuestas · cerrado
+
+> **Ciclo completo** (2026-07-20). 🏆 España campeón (1-0 a Argentina). Datos completos:
+> 104/104 partidos, 626K+ eventos. El modelo proyectó exactamente las dos semifinales reales
+> y el pick de valor del *pick sheet* (España, leverage 1.31) fue el campeón.
+
+Un pipeline que recolectó e interconectó siete fuentes públicas en una SQLite, un modelo
+Elo → Dixon-Coles anclado a mercado, y una investigación de apuestas cuantitativas cuyo
+veredicto fue negativo y está documentado como tal: **no se le gana al cierre de Pinnacle**
+(backtest sobre 80.000 partidos).
+
+| Doc | Contenido |
+|-----|-----------|
+| [00-estado.md](docs/00-estado.md) | Inventario, arquitectura y validación de la capa de datos |
+| [01-panorama.md](docs/01-panorama.md) | Fase de grupos, upsets, tabla xG/suerte |
+| [02-fuentes-datos.md](docs/02-fuentes-datos.md) | Disponibilidad de datos públicos, endpoints verificados |
+| [03-supermodelos-referencia.md](docs/03-supermodelos-referencia.md) | Opta/Kalshi/Polymarket/casas y divergencias |
+| [04-whoscored-collector.md](docs/04-whoscored-collector.md) · [05-…-data-dictionary.md](docs/05-whoscored-data-dictionary.md) | Event data: método, IDs, 39 eventos, 111 qualifiers |
+| [06-fuentes-contexto-exploracion.md](docs/06-fuentes-contexto-exploracion.md) · [07-oddsapi.md](docs/07-oddsapi.md) | Elo/Kalshi/ESPN/StatsBomb y The Odds API |
+| [08-marco-estadistico-y-modelo.md](docs/08-marco-estadistico-y-modelo.md) | ★ Marco estadístico y diseño del modelo |
+| [09-modelo-mvp-resultados.md](docs/09-modelo-mvp-resultados.md) · [10-backtest-y-critica.md](docs/10-backtest-y-critica.md) | Resultados y veredicto honesto |
+| [11-pronostico-y-operacion.md](docs/11-pronostico-y-operacion.md) | Pronóstico en vivo y cómo leer los picks |
+| [12-estrategia-apuestas-investigacion.md](docs/12-estrategia-apuestas-investigacion.md) | ★ EV/devig/CLV/Kelly, referentes, plan accionable |
+| [13-clv-backtest-resultados.md](docs/13-clv-backtest-resultados.md) | ★ **Prueba empírica de que no se le gana al cierre** |
+| [14-polymarket-estrategia.md](docs/14-polymarket-estrategia.md) | Microestructura: veredicto (saturado para operador pequeño) |
+| [15-postmortem-final.md](docs/15-postmortem-final.md) | ★ **Post-mortem: modelo vs. torneo real, lecciones** |
+| [16-unificacion-fantasy-mova.md](docs/16-unificacion-fantasy-mova.md) | Unificación del repo como plataforma MOVA |
+| [17](docs/17-fpl-engine-rules-and-strategy.md) · [18](docs/18-modelos-fpl-xp-e-inferencia.md) · [19](docs/19-motor-de-produccion-y-backtest-out-of-time.md) · [20](docs/20-aprendizaje-online-progresivo-y-sin-sesgo.md) | ⚠️ **Superados.** Documentan el intento previo de FPL, con leakage. Ver capítulo 1 |
+
+```bash
+python scripts/collect.py             # WhoScored: event data
+python scripts/collect_context.py     # Elo + Kalshi + Polymarket + ESPN
+python scripts/collect_odds.py        # The Odds API (credit-metered)
+python scripts/validate.py            # integridad (PASS/WARN/FAIL)
+python scripts/clv_backtest.py        # backtest CLV sobre 80K partidos
+```
+
+> ⚠️ `scripts/live_agent_runner.py`, `scripts/train_fpl_xp_v*.py` y `src/mova_model/fpl_*.py`
+> son el **motor FPL anterior**, con leakage estructural y resultados no reproducibles.
+> Están congelados como registro. El motor vigente es `mova_fpl/`.
+
+---
 
 ## Estructura
 
 ```
-mova-mundial-2026/
-├── docs/                   # 00-estado (cierre fase 1) + 01-07 investigación/fuentes
-├── src/mova_data/          # paquete del pipeline
-│   ├── config.py db.py teams.py matches_map.py
-│   ├── collectors/         # 1 por fuente (base.py = interfaz pluggable)
-│   └── loaders/            # JSON cache → SQLite
-├── scripts/                # collect*, build_aliases, build_match_map, validate, explore
-├── data/
-│   ├── raw/                # cache crudo por fuente (gitignored)
-│   └── mundial.db          # SQLite interconectada (gitignored, se regenera)
-├── notebooks/ models/ outputs/   # fase 2
-└── .env.local              # ODDS_API_KEY (gitignored; ver .env.local.example)
+mova-pro-futbol-data-analytics/
+├── mova_fpl/               # ★ motor FPL v1 — lo único vivo
+│   ├── data/               #   ingesta + Store.as_of (única lectura)
+│   ├── rules/              #   reglas FPL puras, versionadas por temporada
+│   ├── models/             #   minutos · puntos por componente · DefCon · bonus
+│   ├── optimizer/          #   MILP con horizonte rodante (PuLP/CBC)
+│   ├── engine/             #   decide(), proyección, políticas, simulador, acta
+│   ├── trace/              #   persistencia de corridas y decisiones
+│   └── cli/                #   live · backtest · train_* · eval_* · rules_diff
+├── tests/                  # 14 archivos, 524 pruebas + 2 `slow` (4 estructurales)
+├── docs/                   # 00-20 + runbook + specs/fpl-decision-engine/
+├── src/                    # ⚠️ legacy congelado (Mundial + FPL anterior)
+├── scripts/                # ⚠️ legacy congelado
+├── data/processed/         # fpl_canonical.db (254K filas, 10 temporadas) + trace.db
+├── models/{minutes,points}/# artefactos del motor (gitignored, se regeneran)
+└── outputs/fpl/            # actas de decisión por jornada
 ```
-
-Arquitectura, inventario de datos y plan de Fase 2 → **[docs/00-estado.md](docs/00-estado.md)**.
-
-## Documentación
-
-| Doc | Contenido |
-|-----|-----------|
-| [docs/00-estado.md](docs/00-estado.md) | **Cierre Fase 1: inventario, arquitectura, validación, plan Fase 2** |
-| [docs/01-panorama.md](docs/01-panorama.md) | Resultados fase grupos, upsets, tabla xG/suerte, modelos, mercados |
-| [docs/02-fuentes-datos.md](docs/02-fuentes-datos.md) | **Disponibilidad de datos públicos/gratis, endpoints verificados, stack recomendado** |
-| [docs/03-supermodelos-referencia.md](docs/03-supermodelos-referencia.md) | Probabilidades actuales de Opta/Kalshi/Polymarket/casas + divergencias = value |
-| [docs/04-whoscored-collector.md](docs/04-whoscored-collector.md) | **Collector de event data (mina de oro): método, IDs, endpoints, arquitectura** |
-| [docs/05-whoscored-data-dictionary.md](docs/05-whoscored-data-dictionary.md) | **Diccionario de datos WhoScored: campos, tipos, 39 eventos, 111 qualifiers, coords** |
-| [docs/06-fuentes-contexto-exploracion.md](docs/06-fuentes-contexto-exploracion.md) | **Exploración de Elo/Kalshi/ESPN/StatsBomb: campos reales + diseño de tablas** |
-| [docs/07-oddsapi.md](docs/07-oddsapi.md) | The Odds API: modelo de créditos, endpoints, tabla granular |
-| [docs/08-marco-estadistico-y-modelo.md](docs/08-marco-estadistico-y-modelo.md) | **★ Marco estadístico + diseño del modelo (Fase 2)** |
-| [docs/09-modelo-mvp-resultados.md](docs/09-modelo-mvp-resultados.md) | Resultados del MVP del modelo (E0-E4) |
-| [docs/10-backtest-y-critica.md](docs/10-backtest-y-critica.md) | **★ Backtest, experimentos y veredicto honesto (qué tan bueno es)** |
-| [docs/11-pronostico-y-operacion.md](docs/11-pronostico-y-operacion.md) | **★ Pronóstico en vivo, salidas, cómo regenerar y leer los picks** |
-| [docs/12-estrategia-apuestas-investigacion.md](docs/12-estrategia-apuestas-investigacion.md) | **★ Apuestas cuantitativas: matemática (EV/devig/CLV/Kelly), referentes, Polymarket, fuentes de datos, veredicto +EV y plan accionable** |
-| [docs/13-clv-backtest-resultados.md](docs/13-clv-backtest-resultados.md) | **★ Backtest de CLV sobre 80K partidos: prueba empírica de que NO se le gana al cierre de Pinnacle (mercados eficientes)** |
-| [docs/14-polymarket-estrategia.md](docs/14-polymarket-estrategia.md) | **★ Polymarket por microestructura (MM/arb/resolution-edge): medición en vivo + veredicto (saturado para operador pequeño)** |
-| [docs/15-postmortem-final.md](docs/15-postmortem-final.md) | **★ Post-mortem final: qué tan bueno fue el modelo vs el torneo real, por qué se desfasó el pick de campeón, lecciones** |
-| [docs/16-unificacion-fantasy-mova.md](docs/16-unificacion-fantasy-mova.md) | **★ Arquitectura unificada: Fantasy Premier League API, 600K+ eventos Opta, vista maestra y deprecación legacy** |
-| [docs/17-fpl-engine-rules-and-strategy.md](docs/17-fpl-engine-rules-and-strategy.md) | **★ Agente Autónomo FPL: Reglas 2025/2026, optimización MILP y evaluación contra Ground Truth** |
-| [docs/18-modelos-fpl-xp-e-inferencia.md](docs/18-modelos-fpl-xp-e-inferencia.md) | **★ Versionamiento de Modelos xP (v1, v2, v3 Ensemble) y API de Inferencia** |
-| [docs/19-motor-de-produccion-y-backtest-out-of-time.md](docs/19-motor-de-produccion-y-backtest-out-of-time.md) | **★ Guía Operativa: Validación Out-of-Time y Ejecutor en Producción (live_agent_runner.py)** |
-
-## Cómo correr el pipeline
-
-```bash
-# ── Operación en vivo en Producción (Arranque Liga en 2 semanas) ──
-python scripts/live_agent_runner.py --gameweek 1 --dry-run # ★ Recomendación oficial en vivo + informe MD
-
-# ── Datos (collectors, idempotentes) ──
-python scripts/collect.py            # WhoScored: event data (discover→fetch→load)
-python scripts/collect_fpl.py --all  # ★ Fantasy Premier League: bootstrap, fixtures, historial GW por GW
-python scripts/migrate_premier_data.py # ★ Migración de premier.db (525K eventos Opta + 19K FPL history)
-python scripts/collect_context.py    # Elo + Kalshi + Polymarket + ESPN (diario)
-python scripts/collect_odds.py       # The Odds API (credit-metered, ~4/día)
-python scripts/validate.py           # validar integridad (PASS/WARN/FAIL)
-
-# ── Modelos FPL & Predictivos (Fase 2) ──
-python scripts/train_fpl_xp_v3.py    # ★ Entrena y versiona v1, v2 y v3 (Ensemble RF+GB con 444K Opta)
-python scripts/evaluate_fpl_xp.py    # ★ Evaluación cuantitativa out-of-sample vs Ground Truth (MAE, RMSE, Spearman rho)
-# ── Apuestas / CLV (Fase betting) ──
-python scripts/collect_club_odds.py  # mirror football-data → data/betting.db (80K con cierre Pinnacle)
-python scripts/clv_backtest.py       # ★ backtest CLV: ¿le ganamos al cierre? (4 tests, ~34s)
-python scripts/poly_microstructure.py # ★ microestructura PM+Kalshi en vivo (sandbox OFF; curl_cffi)
-```
-
-Todo idempotente y source-agnostic (`source` en cada tabla). DB: `data/mundial.db`.
-Salidas del modelo: tabla `tournament_sim` (P avance/campeón) + `outputs/insight_latest.md`.
-
-## Stack de datos (gratis + permanente) — resumen
-
-> ⚠️ **Clave:** el 20-ene-2026 FBref perdió la licencia Opta y Stats Perform quedó como distribuidor **exclusivo** de datos WC2026 → **no hay event data crudo gratis del Mundial 2026**. Estrategia: entrenar con histórico gratis + alimentar WC2026 con xG agregado. Detalle en [docs/02-fuentes-datos.md](docs/02-fuentes-datos.md).
-
-- **Resultados/live**: ESPN hidden API + FIFA v3 (sin key, en vivo) + football-data.org (fallback).
-- **Event data (train)**: StatsBomb Open Data (`statsbombpy`, hasta WC2022).
-- **Event data (WC2026)**: Kaggle `mominullptr` (CC0, xG agregado diario).
-- **Ratings**: eloratings.net/World.tsv (sin key) — el gap de Elo es el predictor #1.
-- **Mercados**: Kalshi `KXMENWORLDCUP` (sin auth) + The Odds API (500/mes) + Polymarket Gamma.
-- **Open-source base**: github.com/Hicruben/world-cup-2026-prediction-model (Elo + Dixon-Coles + Monte Carlo).
 
 ## Entorno
 
-Python vía conda: `/home/jzuluaga/miniconda3/bin/python3` (3.13). Libs previstas: pandas, numpy, scipy, statsmodels, requests/httpx, matplotlib.
+Python 3.13.5 vía conda (`/home/jzuluaga/miniconda3/bin/python3`).
+
+```bash
+pip install -r requirements.txt
+```

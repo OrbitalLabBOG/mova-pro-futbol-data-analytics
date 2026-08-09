@@ -1,5 +1,16 @@
 # Guía Metodológica: Aprendizaje Online Progresivo y Cold-Start (`sim_progressive_online_learning.py`)
 
+> ⚠️ **DOCUMENTO SUPERADO — se conserva como registro histórico.**
+>
+> Describe el intento de motor FPL previo (`src/mova_model/fpl_*.py`,
+> `scripts/live_agent_runner.py`, `scripts/train_fpl_xp_v*.py`), que tiene **leakage
+> estructural** y reporta cifras que no son reproducibles. Ese código está congelado.
+>
+> El motor vigente es el paquete `mova_fpl/`. Ver
+> [21-motor-fpl-arquitectura.md](21-motor-fpl-arquitectura.md) y
+> [runbook-fpl.md](runbook-fpl.md).
+
+
 > **Metodología Oficial de Simulación Sin Sesgos v1.0**  
 > Proyecto: `mova-pro-futbol-data-analytics` | Operador: **Agente Autónomo MOVA**
 

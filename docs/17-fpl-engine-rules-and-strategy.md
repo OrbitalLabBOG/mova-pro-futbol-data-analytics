@@ -1,5 +1,16 @@
 # Especificación del Agente Autónomo de FPL: Reglas 2025/2026, Marco Estadístico y Entorno de Backtesting
 
+> ⚠️ **DOCUMENTO SUPERADO — se conserva como registro histórico.**
+>
+> Describe el intento de motor FPL previo (`src/mova_model/fpl_*.py`,
+> `scripts/live_agent_runner.py`, `scripts/train_fpl_xp_v*.py`), que tiene **leakage
+> estructural** y reporta cifras que no son reproducibles. Ese código está congelado.
+>
+> El motor vigente es el paquete `mova_fpl/`. Ver
+> [21-motor-fpl-arquitectura.md](21-motor-fpl-arquitectura.md) y
+> [runbook-fpl.md](runbook-fpl.md).
+
+
 > **Documento de Arquitectura y Estrategia FPL v1.0**  
 > Proyecto: `mova-pro-futbol-data-analytics` | Vertical: **MOVA** (Orbital Lab)
 

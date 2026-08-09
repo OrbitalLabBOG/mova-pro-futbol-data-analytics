@@ -1,87 +1,117 @@
 ---
 name: fpl-expert
-description: Especialista cuantitativo en reglas, estrategias, estimación de Expected Points (xP) y optimización MILP para la Fantasy Premier League (FPL 2025/2026).
+description: Reglas de la Fantasy Premier League 2026/27 (incluida la contribución defensiva y la reforma del BPS), estimación de puntos esperados y optimización MILP. Usar al trabajar sobre el motor de decisión FPL de este repo.
 metadata:
   vertical: mova
   type: skill
   repo: mova-pro-futbol-data-analytics
+  updated: 2026-08-09
 ---
 
-# FPL Expert Skill — Reglas, Optimización y Simulador Autómata
+# FPL Expert — reglas, xP y optimización
 
-Esta skill proporciona las reglas de negocio, matriz de puntuación, restricciones de optimización combinatoria y lógica de backtesting para construir agentes autónomos de Fantasy Premier League (FPL).
+> ⚠️ **El código manda sobre este documento.** Las reglas vivas están en
+> `mova_fpl/rules/season_2026_27.py` y se validaron reproduciendo el `total_points` real de
+> **29.757 actuaciones** con 100% de exactitud. Si algo aquí contradice al código, el código
+> tiene razón y este archivo está desactualizado. Arquitectura completa:
+> [docs/21-motor-fpl-arquitectura.md](../../../docs/21-motor-fpl-arquitectura.md).
 
----
+## 1. Puntuación 2026/27
 
-## 1. Matriz de Puntuación FPL (Fórmula Exacta)
+Por jugador y partido:
 
-$$\text{Points}_i = \text{MinPts}_i + \text{GoalPts}_i + \text{AstPts}_i + \text{CSPts}_i + \text{SavePts}_i + \text{PenSavPts}_i + \text{BPSBonus}_i - \text{CardPen}_i - \text{OwnGoalPen}_i - \text{ConcededPen}_i - \text{PenMissPen}_i$$
+| Concepto | Puntos |
+|---|---|
+| Aparición | +1 si 1 ≤ min < 60 · +2 si min ≥ 60 |
+| Gol | GKP/DEF +6 · MID +5 · FWD +4 |
+| Asistencia | +3 |
+| Portería a cero (solo si min ≥ 60) | GKP/DEF +4 · MID +1 · FWD 0 |
+| **Contribución defensiva (DefCon)** | **+2** al alcanzar el umbral |
+| Paradas | `+floor(paradas / 3)` — solo GKP |
+| Penalti atajado | +5 |
+| Penalti fallado | −2 |
+| Goles encajados | `−floor(encajados / 2)` — solo GKP/DEF |
+| Amarilla · roja | −1 · −3 |
+| Autogol | −2 |
+| Bonus | +3, +2, +1 por el ranking BPS del partido |
 
-Donde por cada jugador $i$ en la jornada $t$:
-- $\text{MinPts}$: 1 pt si $1 \le \text{min} < 60$; 2 pts si $\text{min} \ge 60$.
-- $\text{GoalPts}$: GKP/DEF = $6 \times \text{goles}$; MID = $5 \times \text{goles}$; FWD = $4 \times \text{goles}$.
-- $\text{AstPts}$: $3 \times \text{asistencias}$.
-- $\text{CSPts}$ (si $\text{min} \ge 60$ y equipo no encaja goles): GKP/DEF = +4 pts; MID = +1 pt.
-- $\text{SavePts}$: $\lfloor \text{atajadas} / 3 \rfloor$ (solo GKP).
-- $\text{PenSavPts}$: $+5$ pts por cada penalti detenido.
-- $\text{PenMissPen}$: $-2$ pts por cada penalti fallado.
-- $\text{ConcededPen}$ (solo GKP/DEF): $-\lfloor \text{goles\_concedidos} / 2 \rfloor$.
-- $\text{CardPen}$: $-1$ por Tarjeta Amarilla; $-3$ por Tarjeta Roja.
-- $\text{OwnGoalPen}$: $-2$ por Autogol.
-- $\text{BPSBonus}$: $+3, +2, +1$ segun posición relativa en el ranking BPS del partido.
+**DefCon**, la regla que abre ventaja porque el mercado todavía no la valora bien:
 
----
+| Posición | Umbral | Acciones que cuentan |
+|---|---:|---|
+| DEF | **10** | **CBIT** — despejes, bloqueos, intercepciones, entradas |
+| MID / FWD | **12** | **CBIRT** — lo anterior + recuperaciones |
+| GKP | — | No es elegible |
 
-## 2. Restricciones del Optimizador MILP (Mochila FPL)
+Se paga una sola vez por partido, no por cada acción sobre el umbral.
 
-Para cualquier ventana de planificación $T \dots T+k$:
+**Reforma del BPS.** La matriz de puntuación por acción de 2026/27 es idéntica a la de
+2025/26; lo que cambió es el reparto del BPS (`rules/bps.py::BPS_2026_27`). Consecuencia
+declarada como riesgo **R-04**: el componente de bonus queda sobreestimado para defensas y
+porteros hasta que haya datos de la temporada nueva.
+
+## 2. Plantilla, transferencias y chips
 
 ```python
-# Definición de variables MILP con PuLP / SciPy / OR-Tools
-# x[i] = 1 si jugador i está en plantilla (15)
-# s[i] = 1 si jugador i es titular (11)
-# c[i] = 1 si jugador i es capitán (2x / 3x con TC)
-
-budget_limit = 1000  # £100.0M en décimas
+budget = 100.0            # £, en décimas enteras dentro del optimizador
+size = 15                 # GKP 2 · DEF 5 · MID 5 · FWD 3
 max_per_club = 3
-squad_size = 15
-starters = 11
-
-pos_counts = {1: 2, 2: 5, 3: 5, 4: 3}  # GKP:2, DEF:5, MID:5, FWD:3
-min_starters = {1: 1, 2: 3, 3: 2, 4: 1}
-max_starters = {1: 1, 2: 5, 3: 5, 4: 3}
+starters = 11             # mínimos 1-3-2-1 · máximos 1-5-5-3
+max_free_transfers = 5    # se acumulan; wildcard y free hit NO las destruyen
+hit_cost = 4              # por transferencia extra
+captain_multiplier = 2    # 3 con triple captain
 ```
 
----
+Chips: `wildcard`, `free_hit`, `bench_boost`, `triple_captain`. **La política de chips está
+sin implementar** (Q-04): hoy la heurística es nula. Cualquier criterio de activación que se
+lea por ahí es opinión, no evidencia del sistema.
 
-## 3. Matriz de Decisión de Chips ("Poderes")
+## 3. Cómo se estima xP en este repo
 
-| Chip | Condición de Activación Óptima | Justificación Estadística |
-| :--- | :--- | :--- |
-| **Wildcard 1** | GW6–GW9 o reestructuración masiva tras ventana de transferencias | Maximizar acumulación de valor de plantilla (price rises). |
-| **Wildcard 2** | GW28–GW31 antes de las Double Gameweeks (DGW) | Configurar la plantilla para maximizar partidos dobles. |
-| **Free Hit** | Blank Gameweek (BGW) severa (jornadas recortadas por copas) | Evitar hits de -4 manteniendo la plantilla base intacta. |
-| **Bench Boost** | Big Double Gameweek (DGW34/DGW37) | Los 15 jugadores juegan 2 partidos (30 partidos jugados en 1 GW). |
-| **Triple Captain** | DGW de un activo elite ($xG+xA > 1.2/90$, ej. Haaland / Salah) | Multiplicar 3x en jornada de 2 partidos (esperado $\ge 15-20$ pts). |
+No es una regresión al `total_points`. Es una suma de componentes, cada uno con su
+distribución, calculada **por rama de minutos** y mezclada al final:
 
----
+| Componente | Distribución |
+|---|---|
+| Goles, asistencias, goles encajados | Poisson |
+| Conteo de acciones defensivas | Binomial negativa (sobredispersa) |
+| Portería a cero | Bernoulli, `P = e^(−λ_encajados)` |
+| Paradas, encajados → puntos | `E[floor(X/n)]` **exacto**, sumando la pmf |
 
-## 4. Reglas de Transferencias (FPL 2024–2026)
+Dos trampas que ya costaron caro:
 
-- **Transfer Free Transfers (FT):** Se otorga 1 FT por jornada.
-- **Límite de Acumulación:** Hasta **5 FTs gratis**.
-- **Conservación con Chips:** Activar Wildcard o Free Hit **NO destruye** las FTs acumuladas.
-- **Costo Extra:** Cada transferencia por encima del saldo de FTs resta **-4 puntos**.
+- **Nunca proyectar sobre los minutos esperados.** Las reglas no son lineales en los minutos
+  (la portería a cero solo paga desde el 60'). Hay que calcular en cada rama y mezclar.
+- **Nunca dividir la media para un `floor`.** `E[floor(X/3)] ≠ E[X]/3`. Ese error valía +43,5%
+  de sesgo en el componente de paradas.
 
----
+Y una tercera, más sutil: ajustar una transformación convexa por partido y aplicarla a
+promedios subestima (desigualdad de Jensen). Fue un sesgo de −44,8% en bonus.
 
-## 5. Endpoints de Ingesta y Vista Maestra (`v_master_player_gw`)
+## 4. El optimizador
 
-```sql
--- Consulta para alimentar el modelo de Expected Points (xP)
-SELECT 
-    player_id, player_name, position_name, team_short, 
-    cost_millions, gw_xg, gw_xa, ict_sum, total_points, current_form
-FROM v_master_player_gw
-WHERE gameweek = :target_gw;
-```
+MILP con PuLP/CBC sobre un horizonte rodante. Variables binarias por jugador y jornada:
+plantilla, once, capitán, comprado, vendido.
+
+Tres detalles que no son obvios:
+
+- **El dinero es conservación, no un tope.** `bank[t] = bank[t-1] + ventas − compras`, en
+  décimas enteras. Las ventas usan el `selling_price`, que no es el precio de mercado.
+- **Las transferencias libres se linealizan**: `ft[t+1] ≤ libres − usadas + golpes[t] + 1`.
+- **El arranque en frío necesita un caso aparte**: quince fichajes con la recursión normal dan
+  `5 − 15 + 1 = −9` y el problema sale infactible.
+
+Implementación: `mova_fpl/optimizer/milp.py`. No reimplementarlo en un script suelto.
+
+## 5. Reglas de trabajo sobre este motor
+
+1. **Todo dato entra por `Store.as_of(temporada, jornada)`.** No hay otra lectura pública. Si
+   necesitas algo que no pasa por ahí, el diseño está mal, no el contrato.
+2. **`Store.results()` es el oráculo.** Solo el simulador y el evaluador pueden llamarlo. Hay
+   una prueba que lo verifica y otra que impide que la lista permitida crezca.
+3. **El motor no escribe en FPL.** Un solo `GET` en todo el paquete. El acta la introduce una
+   persona a mano.
+4. **`pytest -q` antes de dar algo por terminado.** Y el backtest de 2025-26 con semilla 42
+   debe seguir dando **2.217** puntos.
+5. **No tocar `src/mova_model/fpl_*.py` ni `scripts/train_fpl_xp_v*.py`.** Es el motor
+   anterior, con leakage, congelado como registro.

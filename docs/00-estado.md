@@ -1,5 +1,13 @@
 # Estado del proyecto
 
+> 📍 **Este documento cubre el capítulo 1 del repo: Mundial 2026 y apuestas, cerrado.**
+> El capítulo vivo es el **motor de decisión FPL** (`mova_fpl/`), que arrancó en agosto de
+> 2026 y opera la temporada 2026/27. Su estado está en
+> [specs/fpl-decision-engine/04-convergence.md](specs/fpl-decision-engine/04-convergence.md);
+> cómo funciona, en [21-motor-fpl-arquitectura.md](21-motor-fpl-arquitectura.md); cómo se
+> opera, en [runbook-fpl.md](runbook-fpl.md).
+
+
 > **CICLO COMPLETO ✅** (2026-07-20). Torneo terminado: 🏆 España campeón. Datos finales cargados (104/104 partidos, validación TODO OK) y evaluación del modelo vs realidad en **[15-postmortem-final.md](15-postmortem-final.md)**.
 >
 > **Fase 1 (Datos) ✅ + Fase 2 (Modelo) ✅** (2026-06-28). Capa de datos multi-fuente validada + modelo Elo→Dixon-Coles anclado a mercado, backtesteado, con capas de insight y scouting. Fase 3 (estrategia de polla) ✅ — el pick de valor (España) fue el campeón.
