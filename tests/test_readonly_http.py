@@ -50,8 +50,78 @@ def test_la_unica_primitiva_de_red_es_get():
     assert src.count("urlopen") == 1, "solo debe existir un punto de salida a red"
 
 
+#: superficies de FPL que este paquete NO puede tocar nunca.
+#:   my-team   -> requiere autenticacion; devuelve precios de compra y venta
+#:   transfers -> POST: es como se gastan transferencias de verdad
+#:   login     -> autenticacion
+#: `entry` NO esta aqui, y es deliberado: /api/entry/{id}/ y sus sub-rutas son
+#: publicas y de lectura —lo que cualquiera ve al abrir el perfil de un equipo—.
+#: Se necesitan para leer la plantilla vigente y los chips ya gastados desde la
+#: GW2. La garantia de que no se puede escribir NO la da esta lista: la da que
+#: exista un solo `urlopen` en el paquete y que declare method="GET".
+SUPERFICIES_PROHIBIDAS = ("/api/my-team", "my-team", "/api/transfers", "login")
+
+
+def _literales_de_codigo(path: Path) -> list[str]:
+    """Cadenas que el modulo USA, sin docstrings ni comentarios.
+
+    La distincion importa: una URL solo puede llamarse si aparece como literal en
+    el codigo. Un comentario que explica *por que no* tocamos `my-team` es
+    documentacion util y prohibirlo empujaria a ofuscar el texto, que es
+    exactamente lo contrario de lo que busca esta prueba.
+    """
+    tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    docstrings = set()
+    for nodo in ast.walk(tree):
+        if isinstance(nodo, (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            cuerpo = getattr(nodo, "body", [])
+            if cuerpo and isinstance(cuerpo[0], ast.Expr) and isinstance(cuerpo[0].value, ast.Constant) \
+               and isinstance(cuerpo[0].value.value, str):
+                docstrings.add(id(cuerpo[0].value))
+    return [n.value for n in ast.walk(tree)
+            if isinstance(n, ast.Constant) and isinstance(n.value, str)
+            and id(n) not in docstrings]
+
+
 def test_ninguna_url_de_escritura_a_fpl():
+    """Ningun literal del codigo puede componer una ruta de escritura."""
     for path in _modules():
-        txt = path.read_text(encoding="utf-8")
-        for endpoint in ("/api/my-team", "/api/transfers", "/api/entry", "login"):
-            assert endpoint not in txt, f"{path.relative_to(ROOT)} referencia {endpoint}"
+        for cadena in _literales_de_codigo(path):
+            for endpoint in SUPERFICIES_PROHIBIDAS:
+                assert endpoint not in cadena, (
+                    f"{path.relative_to(ROOT)} usa el literal {cadena!r}, que compone "
+                    f"la superficie prohibida {endpoint}")
+
+
+def test_los_endpoints_de_equipo_solo_se_leen():
+    """Toda ruta /api/entry/ del paquete pasa por la primitiva GET, sin excepcion.
+
+    Es lo que sustituye a la prohibicion anterior. Antes bastaba con no nombrar
+    `entry`; ahora que hace falta leerlo, la garantia tiene que ser mas fuerte:
+    cada funcion que lo menciona devuelve `_get(...)` y nada mas.
+    """
+    src = (PKG / "data" / "sources.py").read_text(encoding="utf-8")
+    tree = ast.parse(src)
+    funciones = [n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)]
+    tocan_entry = [f for f in funciones if "entry" in ast.unparse(f)]
+    assert tocan_entry, "se esperaban funciones de lectura de equipo en sources.py"
+    for f in tocan_entry:
+        cuerpo = [n for n in f.body if not isinstance(n, ast.Expr)]   # sin docstring
+        assert len(cuerpo) == 1 and isinstance(cuerpo[0], ast.Return), (
+            f"{f.name}() debe ser un unico return; hace mas cosas")
+        llamada = cuerpo[0].value
+        assert isinstance(llamada, ast.Call) and getattr(llamada.func, "id", None) == "_get", (
+            f"{f.name}() no pasa por la primitiva GET")
+
+
+def test_ningun_modulo_fuera_de_sources_construye_urls_de_fpl():
+    """El resto del paquete pide datos por funcion, nunca componiendo una URL."""
+    for path in _modules():
+        if path.name == "sources.py":
+            continue
+        for cadena in _literales_de_codigo(path):
+            # con esquema: una URL invocable lo lleva. Una etiqueta de procedencia
+            # en el acta ("fantasy.premierleague.com/api ... solo GET") no.
+            assert not any(f"{esq}://fantasy.premierleague.com" in cadena
+                           for esq in ("http", "https")), (
+                f"{path.relative_to(ROOT)} compone una URL de FPL por su cuenta: {cadena!r}")

@@ -1,14 +1,14 @@
 # Acta de decisión · FPL 2026-27 · Gameweek 1
 
-**Emitida:** 2026-08-09T20:37:31+00:00  
+**Emitida:** 2026-08-09T22:59:43+00:00  
 **Deadline:** 2026-08-21T17:30:00Z  
 **Política:** `milp` · horizonte 3  
 **Modelos:** minutos `1.0.0` · puntos `1.0.0`  
-**git sha:** `a1bc287`  
+**git sha:** `fc9b77e`  
 **Fuente:** fantasy.premierleague.com/api (bootstrap-static + fixtures), solo GET
 
 
-> ⚠️ **Emitida 11.9 días antes del cierre: esto es un borrador.** Los precios se mueven a diario, el parte médico cambia y las alineaciones probables aún no existen. Volver a correr dentro de las 24 horas previas al deadline y usar esa acta, no esta.
+> ⚠️ **Emitida 11.8 días antes del cierre: esto es un borrador.** Los precios se mueven a diario, el parte médico cambia y las alineaciones probables aún no existen. Volver a correr dentro de las 24 horas previas al deadline y usar esa acta, no esta.
 
 ---
 
@@ -50,6 +50,13 @@ El orden importa: es la prioridad de las sustituciones automáticas.
 | Hits | −0 |
 | Capitán | Bruno Borges Fernandes |
 | Vicecapitán | Dango Ouattara |
+
+## Chips
+
+**Ninguno.** El planificador no corrio en esta jornada.
+
+Ventana **H1** (GW1–19): quedan **19 jornadas** para usarla.
+Sin gastar en esta ventana: `bench_boost`, `free_hit`, `triple_captain`, `wildcard`.
 
 ## Validación de reglas
 

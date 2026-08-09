@@ -36,10 +36,25 @@ El acta queda en `outputs/fpl/2026-27/gwNN_decision.md`. Tarda unos **5 segundos
 | `--policy` | `milp` u `greedy-stub` | `milp`; la voraz es el plan B |
 | `--dry-run` | No escribe en la traza | Para ensayar |
 
-> ⚠️ **Los chips todavía NO están activos en la operación en vivo.** Están
-> modelados y medidos contra 2025-26 (`--chips` en el backtest), pero la CLI en
-> vivo aún no los propone: falta el `entry_id` para saber qué chips quedan de
-> verdad. Ver §9.
+### Con el equipo real (desde la GW2)
+
+```bash
+export FPL_TEAM_ID=<tu id>     # el número de la URL /entry/<ID>/ en la web de FPL
+python -m mova_fpl.cli.live --season 2026-27 --gw 2 --horizon 3 --top-k 0 --chips
+```
+
+Con `--team-id` (o `FPL_TEAM_ID`) el motor lee de la API **pública** tu plantilla vigente,
+el banco, las transferencias libres acumuladas y **los chips que ya gastaste**. Tres GET
+más; la garantía de solo lectura no se toca.
+
+| Opción | Para qué |
+|---|---|
+| `--team-id N` | Decidir sobre tu equipo real en vez de desde cero |
+| `--chips` | Deja que el planificador proponga chips |
+| `--lookahead N` | Jornadas de calendario que considera anunciadas (6) |
+
+Sin `--team-id`, el motor arma desde cero y **avisa** de que no sabe qué chips te quedan.
+Para la GW1 da igual: no hay plantilla que arreglar y ningún chip tiene sentido.
 
 ## 2. Cuándo correrla
 
@@ -195,10 +210,22 @@ calibración de quien interviene, y es la cifra que de verdad lo retrata.
 
 ## 9. Desde la GW2
 
-Hace falta el **`entry_id`** del equipo de Julián para leer el estado real: plantilla
-vigente, banco, transferencias libres acumuladas y chips ya gastados (pregunta abierta
-**Q-01**). Sin él, de la GW2 en adelante el motor no sabe de qué plantilla parte y solo
-puede proponer un equipo desde cero, que no es la decisión que toca.
+Hace falta el **id del equipo** para leer el estado real. Se obtiene entrando a la web de
+FPL con la cuenta: el número aparece en la URL `/entry/<ID>/event/<GW>/`.
 
-Se obtiene entrando a la web de FPL con la cuenta: el número aparece en la URL de
-`/entry/<ID>/event/<GW>/`.
+```bash
+export FPL_TEAM_ID=<tu id>
+```
+
+Lo que el motor deriva de ahí, todo con GET públicos:
+
+| Dato | De dónde |
+|---|---|
+| Plantilla vigente | `picks` de la última jornada jugada |
+| Banco | `entry_history.bank` |
+| Chips gastados | `history.chips` |
+| Transferencias libres | **Derivadas**: la API pública no las expone, se replica la regla desde la GW1 |
+
+**Limitación declarada (H-LIVE-01):** el precio de *compra* solo lo da el endpoint
+autenticado, que no tocamos. Se asume el precio corriente, así que el presupuesto de venta
+queda algo sobreestimado para jugadores que subieron de precio.

@@ -72,3 +72,25 @@ def fetch_bootstrap() -> bytes:
 
 def fetch_fixtures() -> bytes:
     return _get(f"{FPL_API}/fixtures/")
+
+
+# ------------------------------------------------------- estado de un equipo
+# Los tres endpoints de abajo son PUBLICOS y de lectura: devuelven lo que
+# cualquiera ve al abrir el perfil de un equipo en la web. No son la superficie
+# de escritura de FPL —esa es `my-team` (autenticada) y `transfers` (POST)—, que
+# este paquete no toca ni puede tocar: `_get` es la unica salida a red y declara
+# method="GET". Ver tests/test_readonly_http.py.
+
+def fetch_team(team_id: int) -> bytes:
+    """Ficha publica de un equipo: nombre, valor, banco del ultimo deadline."""
+    return _get(f"{FPL_API}/entry/{int(team_id)}/")
+
+
+def fetch_team_history(team_id: int) -> bytes:
+    """Historial por jornada y chips ya gastados."""
+    return _get(f"{FPL_API}/entry/{int(team_id)}/history/")
+
+
+def fetch_team_picks(team_id: int, gw: int) -> bytes:
+    """Los quince de una jornada concreta, con banco y coste de transferencias."""
+    return _get(f"{FPL_API}/entry/{int(team_id)}/event/{int(gw)}/picks/")

@@ -145,8 +145,13 @@ def threshold(chip: str, gw: int, restantes: int, valor_ahora: float,
 
     # sin nada mejor a la vista, el piso se relaja segun se acerca la caducidad
     urgencia = min(1.0, (restantes - 1) / 8.0)
-    return piso * urgencia, (f"quedan {restantes} jornadas de ventana; "
-                             f"piso {piso:.1f} relajado a {piso * urgencia:.1f}")
+    exigido = piso * urgencia
+    if urgencia >= 1.0:
+        return exigido, (f"no se ve nada mejor en las proximas {config.structure_lookahead} "
+                         f"y quedan {restantes} jornadas de ventana: se aplica el piso "
+                         f"habitual de {piso:.1f}")
+    return exigido, (f"la ventana se cierra en {restantes} jornadas: el piso baja "
+                     f"de {piso:.1f} a {exigido:.1f} para no desperdiciar el chip")
 
 
 # ------------------------------------------------------------------ valoracion

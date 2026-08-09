@@ -1,7 +1,7 @@
 """WP-001 / AC-WP001-006: las fronteras del paquete se verifican, no se confian.
 
 Grafo permitido (02-architecture.md):
-    data   -> (nadie del paquete)
+    data   -> rules                vocabulario del dominio, nada mas
     rules  -> (nadie)              puro: sin datos, sin modelos
     models -> data, rules
     opt    -> rules, models
@@ -21,7 +21,13 @@ ROOT = Path(__file__).resolve().parents[1]
 PKG = ROOT / "mova_fpl"
 
 ALLOWED = {
-    "data": set(),
+    # `data` puede usar el VOCABULARIO del dominio (Position, Squad, ChipUse) para
+    # devolver los mismos objetos que devuelve el almacen. Se amplio al leer el
+    # estado real del equipo desde la API: `data/live.py` tiene que construir una
+    # `Squad`, y duplicar el tipo para no cruzar la frontera seria peor.
+    # No debilita nada: `rules` es una hoja pura sin dependencias —lo garantiza su
+    # propia prueba— asi que no puede aparecer un ciclo.
+    "data": {"rules"},
     "rules": set(),
     "models": {"data", "rules"},
     "optimizer": {"rules", "models"},

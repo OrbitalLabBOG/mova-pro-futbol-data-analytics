@@ -25,7 +25,8 @@ import json
 import pandas as pd
 
 from mova_fpl.data.identity import player_key
-from mova_fpl.data.sources import fetch_bootstrap, fetch_fixtures
+from mova_fpl.data.sources import (fetch_bootstrap, fetch_fixtures, fetch_team,
+                                   fetch_team_history, fetch_team_picks)
 
 POSICIONES = {1: "GKP", 2: "DEF", 3: "MID", 4: "FWD"}
 
@@ -139,3 +140,134 @@ def aplicar_disponibilidad(proba, factores) -> "pd.DataFrame":
     p[:, 1:] *= f
     p[:, 0] = 1.0 - p[:, 1:].sum(axis=1)
     return p
+
+
+# --------------------------------------------------------- estado del equipo
+
+#: nombres de chip en la API -> nombres del motor
+CHIP_API = {
+    "wildcard": "wildcard",
+    "freehit": "free_hit",
+    "bboost": "bench_boost",
+    "3xc": "triple_captain",
+}
+
+
+def team(team_id: int) -> dict:
+    return json.loads(fetch_team(team_id))
+
+
+def team_history(team_id: int) -> dict:
+    return json.loads(fetch_team_history(team_id))
+
+
+def team_picks(team_id: int, gw: int) -> dict:
+    return json.loads(fetch_team_picks(team_id, gw))
+
+
+def chips_used(history: dict) -> tuple:
+    """Chips ya gastados, con su jornada, en el formato del motor.
+
+    Los que la API reporta y el catalogo vigente no reconoce se ignoran en
+    silencio a proposito: el `assistant manager` de 2024/25 ya no existe y
+    tropezarse con el no debe romper una decision.
+    """
+    from mova_fpl.rules.chips import ChipUse
+    out = []
+    for c in history.get("chips") or ():
+        nombre = CHIP_API.get(str(c.get("name", "")).lower())
+        if nombre:
+            out.append(ChipUse(gw=int(c["event"]), chip=nombre))
+    return tuple(sorted(out, key=lambda u: u.gw))
+
+
+def free_transfers(history: dict, gw: int, rules: dict, usados: tuple) -> int:
+    """Transferencias libres al abrir `gw`, reconstruidas jornada a jornada.
+
+    La API publica no expone el saldo: solo `/api/my-team/`, que exige
+    autenticacion y este paquete no toca. Se deriva replicando la regla desde la
+    GW1 con el numero de transferencias de cada jornada, que si es publico.
+
+    Con wildcard o free hit las libres NO se consumen: el wildcard hace ilimitadas
+    las transferencias y el free hit no toca la plantilla real.
+    """
+    from mova_fpl.rules.market import accumulate_free_transfers
+    sin_coste = {u.gw for u in usados if u.chip in ("wildcard", "free_hit")}
+    libres = 1
+    for fila in history.get("current") or ():
+        g = int(fila.get("event", 0))
+        if g < 1 or g >= int(gw):
+            continue
+        if g == 1:
+            libres = 1                              # la plantilla inicial no consume
+            continue
+        hechas = 0 if g in sin_coste else int(fila.get("event_transfers", 0) or 0)
+        libres = accumulate_free_transfers(libres, hechas, rules["max_free_transfers"])
+    return max(1, min(int(libres), rules["max_free_transfers"]))
+
+
+def squad_from_picks(picks: dict, roster: "pd.DataFrame", boot: dict):
+    """Plantilla vigente a partir de los quince de la ultima jornada jugada.
+
+    Un jugador cuyo club NO disputa la jornada que se decide no tiene fila en el
+    `roster` —esa es la definicion de jornada en blanco— pero SIGUE en la
+    plantilla. Sus atributos se leen del bootstrap, que lista a todo el mundo
+    juegue o no. Descartarlo dejaria una plantilla de menos de quince y el
+    optimizador la reconstruiria como si el jugador no existiera.
+
+    Limitacion declarada (H-LIVE-01): el precio de COMPRA solo lo expone el
+    endpoint autenticado, asi que se asume el precio corriente. El presupuesto de
+    venta queda ligeramente sobreestimado para jugadores que subieron de precio.
+    """
+    from mova_fpl.rules.base import Position, Squad, SquadPlayer
+    por_id = {int(r["element"]): r for _, r in roster.iterrows()}
+    clubes = teams(boot)
+    catalogo = {int(e["id"]): e for e in boot["elements"]}
+
+    jugadores, en_blanco = [], []
+    for p in picks.get("picks") or ():
+        e = int(p["element"])
+        r = por_id.get(e)
+        if r is not None:
+            jugadores.append(SquadPlayer(element=e, position=Position.parse(r["position"]),
+                                         team=str(r["team"]), price=float(r["value"]) / 10.0))
+            continue
+        el = catalogo.get(e)
+        if el is None:                              # ni siquiera existe: dato corrupto
+            raise ValueError(f"el elemento {e} de la plantilla no esta en el bootstrap")
+        en_blanco.append(e)
+        jugadores.append(SquadPlayer(
+            element=e, position=Position.parse(POSICIONES[int(el["element_type"])]),
+            team=clubes.get(int(el["team"]), str(el["team"])),
+            price=float(el["now_cost"]) / 10.0))
+
+    hist = picks.get("entry_history") or {}
+    banco = float(hist.get("bank", 0) or 0) / 10.0
+    return Squad(players=tuple(jugadores), bank=banco), en_blanco
+
+
+def team_state(team_id: int, gw: int, roster: "pd.DataFrame", rules: dict,
+               boot: dict) -> dict:
+    """Todo lo que hace falta para decidir la `gw` con el equipo real.
+
+    Devuelve plantilla, banco, transferencias libres y chips gastados. Tres GET
+    publicos, ninguna escritura.
+    """
+    hist = team_history(team_id)
+    usados = chips_used(hist)
+    libres = free_transfers(hist, gw, rules, usados)
+
+    jugadas = [int(f["event"]) for f in (hist.get("current") or ())
+               if int(f.get("event", 0)) < int(gw)]
+    if not jugadas:
+        # equipo sin jornadas jugadas: es un arranque en frio de verdad
+        return {"squad": None, "bank": 0.0, "free_transfers": 1,
+                "chips_used": usados, "en_blanco": [], "ultima_gw": None}
+
+    ultima = max(jugadas)
+    squad, en_blanco = squad_from_picks(team_picks(team_id, ultima), roster, boot)
+    if len(squad.players) != rules["size"]:
+        raise ValueError(f"la plantilla leida tiene {len(squad.players)} jugadores, "
+                         f"se esperaban {rules['size']}")
+    return {"squad": squad, "bank": squad.bank, "free_transfers": libres,
+            "chips_used": usados, "en_blanco": en_blanco, "ultima_gw": ultima}

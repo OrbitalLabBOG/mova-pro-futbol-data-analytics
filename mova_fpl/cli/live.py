@@ -10,17 +10,21 @@ acta se entrega y una persona la introduce.
 from __future__ import annotations
 
 import argparse
+import os
 import time
 from datetime import datetime, timezone
 from pathlib import Path
 
 from mova_fpl.data import live
 from mova_fpl.data.store import Store
+from mova_fpl.engine.planner import PlannerConfig, plan
+from mova_fpl.engine.policies import optimizer_config
 from mova_fpl.engine.projection import points_projection
 from mova_fpl.engine.report import render
 from mova_fpl.engine.runner import Config, decide
 from mova_fpl.engine.simulator import _candidates
 from mova_fpl.engine.state import State
+from dataclasses import replace
 from mova_fpl.models.registry import git_sha, load
 from mova_fpl.optimizer.horizon import build_xp_matrix
 from mova_fpl.rules import get as get_rules
@@ -42,6 +46,35 @@ def _dias(deadline: str | None, ahora: datetime) -> float | None:
 HISTORICO_HASTA = "2025-26"
 
 
+def _fuente(team_id) -> str:
+    base = "fantasy.premierleague.com/api (bootstrap-static + fixtures)"
+    if team_id:
+        base += " + estado publico del equipo"
+    return base + ", solo GET"
+
+
+def _estado_equipo(args, boot, roster, rules) -> dict:
+    """Plantilla, banco, libres y chips reales. Sin `--team-id`, arranque en frio."""
+    team_id = args.team_id or os.environ.get("FPL_TEAM_ID")
+    if not team_id:
+        if args.chips:
+            print("      ⚠️  sin --team-id no se sabe que chips quedan: se asumen los ocho")
+        return {"squad": None, "bank": 0.0, "free_transfers": 1,
+                "chips_used": (), "en_blanco": [], "ultima_gw": None}
+
+    estado = live.team_state(int(team_id), args.gw, roster, rules, boot)
+    if estado["squad"] is None:
+        print(f"      equipo {team_id}: sin jornadas jugadas todavia (arranque en frio)")
+        return estado
+    gastados = ", ".join(f"{u.chip}@GW{u.gw}" for u in estado["chips_used"]) or "ninguno"
+    print(f"      equipo {team_id}: plantilla de la GW{estado['ultima_gw']} · "
+          f"banco £{estado['bank']:.1f}M · {estado['free_transfers']} libres")
+    print(f"      chips gastados: {gastados}")
+    if estado["en_blanco"]:
+        print(f"      {len(estado['en_blanco'])} jugadores en jornada en blanco")
+    return estado
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description="Decision en vivo de una gameweek FPL")
     ap.add_argument("--season", default="2026-27")
@@ -50,6 +83,14 @@ def main() -> None:
     ap.add_argument("--horizon", type=int, default=3)
     ap.add_argument("--top-k", type=int, default=0, help="0 = sin recorte de mercado")
     ap.add_argument("--version", default="1.0.0")
+    ap.add_argument("--team-id", type=int, default=None,
+                    help="numero del equipo (el de la URL /entry/<ID>/). "
+                         "Sin el, la decision se toma desde cero. "
+                         "Tambien se lee de la variable FPL_TEAM_ID")
+    ap.add_argument("--chips", action="store_true",
+                    help="deja que el planificador proponga chips (exige --team-id)")
+    ap.add_argument("--lookahead", type=int, default=6,
+                    help="jornadas de calendario que el planificador considera anunciadas")
     ap.add_argument("--dry-run", action="store_true",
                     help="no persiste la decision en la traza")
     ap.add_argument("--out", help="ruta del acta; por defecto outputs/fpl/{season}/gwNN_decision.md")
@@ -92,9 +133,29 @@ def main() -> None:
     rules_mod = get_rules(args.season)
     matriz = build_xp_matrix(candidatos, calendario, args.gw, tope - args.gw + 1)
     cfg = Config(policy=args.policy, projector="points", model_version=args.version,
-                 horizon=args.horizon, top_k=args.top_k, time_limit=600)
-    estado = State(season=args.season, gw=args.gw, candidates=candidatos, squad=None,
-                   free_transfers=1, bank=0.0, rules=rules_mod.SQUAD, horizon_xp=matriz)
+                 horizon=args.horizon, top_k=args.top_k, time_limit=600,
+                 chip_policy="planner" if args.chips else "none",
+                 structure_lookahead=args.lookahead)
+
+    equipo = _estado_equipo(args, boot, roster, rules_mod.SQUAD)
+    estado = State(season=args.season, gw=args.gw, candidates=candidatos,
+                   squad=equipo["squad"], free_transfers=equipo["free_transfers"],
+                   bank=equipo["bank"], rules=rules_mod.SQUAD, horizon_xp=matriz,
+                   chips=rules_mod.CHIPS if args.chips else None,
+                   chips_used=equipo["chips_used"],
+                   schedule=live.team_schedule(fx, boot, args.gw,
+                                               args.gw + args.lookahead) if args.chips else {})
+
+    veredicto = None
+    if args.chips and not estado.is_cold_start:
+        pcfg = PlannerConfig(enabled=True, structure_lookahead=args.lookahead)
+        veredicto = plan(estado, matriz, optimizer_config(cfg, len(matriz)), pcfg)
+        print(f"      {veredicto.as_note()}")
+        if veredicto.chip:
+            estado = replace(estado, chips_allowed={args.gw: frozenset({veredicto.chip})})
+    elif args.chips:
+        print("      chips: arranque en frio, ningun chip tiene sentido en la GW1")
+
     decision = decide(args.gw, estado, cfg)
 
     print(f"[5/5] Componiendo el acta...")
@@ -104,7 +165,10 @@ def main() -> None:
         "deadline": limite, "policy": args.policy, "horizon": args.horizon,
         "v_minutes": "1.0.0", "v_points": args.version, "git_sha": git_sha(),
         "rules": rules_mod.SQUAD, "dias_al_deadline": _dias(limite, emitida),
-        "fuente": "fantasy.premierleague.com/api (bootstrap-static + fixtures), solo GET",
+        "fuente": _fuente(args.team_id),
+        "chip_verdict": veredicto, "chips_used": equipo["chips_used"],
+        "catalogo_chips": rules_mod.CHIPS if args.chips else None,
+        "equipo": equipo,
     })
 
     destino = Path(args.out) if args.out else (
@@ -124,13 +188,18 @@ def main() -> None:
     print(f"\n{'=' * 68}")
     print(f"  ACTA {args.season} GW{args.gw} · {'VALIDA' if acta.valida else 'INVALIDA'}")
     print(f"  xP del once (con capitan): {decision.expected_points:.1f}")
+    if decision.chip:
+        print(f"  CHIP: {decision.chip}")
     print(f"  coste £{acta.total:.1f}M · banco £{acta.banco:.1f}M")
     if not acta.valida:
         for v in acta.violaciones:
             print(f"    !! {v.code}: {v.detail}")
     print(f"  ciclo completo: {seg:.1f} s")
     print(f"{'=' * 68}")
-    print(f"  {destino.relative_to(ROOT)}")
+    try:
+        print(f"  {destino.relative_to(ROOT)}")
+    except ValueError:                    # --out fuera del repo: se imprime entera
+        print(f"  {destino}")
 
 
 if __name__ == "__main__":

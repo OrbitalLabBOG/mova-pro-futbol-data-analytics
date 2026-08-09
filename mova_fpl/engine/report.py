@@ -64,6 +64,63 @@ def _vigencia(meta: dict) -> list:
                 "al deadline y usar esa acta, no esta.", ""]
 
 
+def _chips(decision, meta: dict) -> list:
+    """Que se hizo con los chips y por que. En prosa, no en jerga.
+
+    Un acta que dice "chip: None" no informa: no distingue entre "no habia
+    ninguno" y "habia cuatro y ninguno valia la pena". La diferencia es
+    justamente la decision.
+    """
+    catalogo = meta.get("catalogo_chips")
+    if catalogo is None:
+        return []
+
+    usados = meta.get("chips_used") or ()
+    veredicto = meta.get("chip_verdict")
+    gw = decision.gw
+    ventana = catalogo.window_for(gw)
+
+    out = ["", "## Chips", ""]
+    if decision.chip:
+        out.append(f"**Se juega el {decision.chip.replace('_', ' ').upper()} en esta jornada.**")
+        if veredicto:
+            out.append("")
+            out.append(f"Vale **+{veredicto.value:.1f} puntos esperados** frente a no jugarlo, "
+                       f"contra un umbral de {veredicto.threshold:.1f}. {veredicto.reason.capitalize()}.")
+    elif veredicto and veredicto.candidates:
+        detalle = " · ".join(f"`{c}` {v:+.1f}" for c, v in sorted(veredicto.candidates.items(),
+                                                                  key=lambda kv: -kv[1]))
+        out.append(f"**No se juega ninguno.** {veredicto.reason.capitalize()}.")
+        out += ["", f"Valorados esta jornada: {detalle}. "
+                    f"Ninguno supera su umbral ({veredicto.threshold:.1f})."]
+    elif veredicto:
+        out.append(f"**No hay chips disponibles.** {veredicto.reason.capitalize()}.")
+    else:
+        out.append("**Ninguno.** El planificador no corrio en esta jornada.")
+
+    if ventana is not None:
+        from mova_fpl.rules.chips import ChipUse, available
+        # el chip que se juega HOY ya no esta disponible: contarlo entre los que
+        # quedan haria que el acta se contradijera consigo misma.
+        tras_hoy = tuple(usados) + ((ChipUse(gw=gw, chip=decision.chip),) if decision.chip else ())
+        quedan = sorted(available(gw + 1, tras_hoy, catalogo)) if gw < ventana.last_gw else []
+        restantes = ventana.remaining(gw) - (1 if decision.chip else 0)
+        out += ["", f"Ventana **{ventana.name}** (GW{ventana.first_gw}–{ventana.last_gw}): "
+                    f"quedan **{max(0, restantes)} jornadas** para usarla."]
+        if quedan:
+            out.append(f"Sin gastar tras esta jornada: {', '.join(f'`{c}`' for c in quedan)}.")
+            if 0 < restantes <= 3:
+                out.append(f"\n> ⚠️ **Quedan {restantes} jornadas y {len(quedan)} chips sin usar.** "
+                           "Lo que no se juegue antes del cierre de la ventana se pierde: "
+                           "no se arrastra a la segunda vuelta.")
+        else:
+            out.append("Todos los de esta ventana ya se gastaron.")
+    if usados:
+        gastados = ", ".join(f"`{u.chip}` en la GW{u.gw}" for u in usados)
+        out += ["", f"Historial de la temporada: {gastados}."]
+    return out
+
+
 def render(decision, roster: pd.DataFrame, desglose: pd.DataFrame, meta: dict) -> Acta:
     """Compone el acta y valida la plantilla contra las reglas de la temporada."""
     por_id = {int(r["element"]): r for _, r in roster.iterrows()}
@@ -78,7 +135,13 @@ def render(decision, roster: pd.DataFrame, desglose: pd.DataFrame, meta: dict) -
     squad = Squad(players=jugadores, starters=decision.starters, captain=decision.captain,
                   vice_captain=decision.vice_captain, bench_order=decision.bench_order,
                   bank=decision.bank_after)
-    violaciones = tuple(validate_squad(squad, rules))
+    violaciones = list(validate_squad(squad, rules))
+    catalogo = meta.get("catalogo_chips")
+    if catalogo is not None and decision.chip:
+        from mova_fpl.rules.chips import validate_chip
+        violaciones += validate_chip(decision.chip, decision.gw,
+                                     meta.get("chips_used") or (), catalogo)
+    violaciones = tuple(violaciones)
 
     coste = sum(float(por_id[e]["value"]) / 10.0 for e in decision.squad_15)
     en_xi = list(decision.starters)
@@ -109,8 +172,10 @@ def render(decision, roster: pd.DataFrame, desglose: pd.DataFrame, meta: dict) -
         f"| xP del once (con capitán) | {decision.expected_points:.1f} |",
         f"| Transferencias | {len(decision.transfers_in)} |",
         f"| Hits | −{decision.hits} |",
+        *([f"| Chip | **{decision.chip}** |"] if decision.chip else []),
         f"| Capitán | {por_id[decision.captain]['name']} |",
-        f"| Vicecapitán | {por_id[decision.vice_captain]['name']} |", "",
+        f"| Vicecapitán | {por_id[decision.vice_captain]['name']} |",
+        *_chips(decision, meta), "",
         "## Validación de reglas", "",
     ]
     if violaciones:
