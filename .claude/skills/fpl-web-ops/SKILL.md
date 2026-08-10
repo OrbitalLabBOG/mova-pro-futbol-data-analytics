@@ -23,20 +23,56 @@ navegador es el medio para introducirla.
 
 ---
 
-## 0. Login — nunca automatizado
+## 0. Login — por Google sí se puede automatizar, por email/contraseña nunca
 
-FPL usa el login estándar de Premier League (email + contraseña, a veces con verificación
-adicional). **No teclear credenciales del usuario bajo ninguna circunstancia** — no es una
-limitación de la herramienta, es una regla dura. Patrón:
+FPL usa el login de Premier League Account (`account.premierleague.com`, Ping/Okta), que
+ofrece "Iniciar sesión con Google/Facebook/X/Apple" además del formulario de
+email+contraseña propio.
+
+**Regla dura, sin excepción:** nunca teclear una contraseña ni un código de verificación —
+ni en el formulario nativo de PL ni en ningún proveedor. No es una limitación de la
+herramienta, es una regla de seguridad.
+
+**Excepción verificada, no una regla nueva:** cuando el Chrome real del usuario **ya tiene
+una cuenta de Google autenticada** en su perfil (sesión persistente de
+`C:\Temp\chrome-mcp-profile`), el flujo "Iniciar sesión con Google" es enteramente clicks
+sobre un selector de cuentas — nunca se escribe ni se ve una contraseña porque Google ya
+resolvió esa autenticación de antemano. Ahí sí se puede operar sin pausar:
 
 ```bash
 agent-browser connect 9222                       # ANTES del primer open (evita headless trap)
 agent-browser open https://fantasy.premierleague.com/
-agent-browser snapshot -i -c                      # confirmar que se ve el login
+agent-browser snapshot -i -c                      # localizar "Iniciar sesión"
+agent-browser click @eN                            # abre account.premierleague.com
+agent-browser wait --load networkidle
+agent-browser snapshot -i -c | grep -i google      # localizar "Iniciar sesión con Google"
+agent-browser click @eN                            # navega a accounts.google.com/.../accountchooser
+agent-browser tab                                  # confirmar el salto de dominio real
+agent-browser snapshot -i -c                        # lista de cuentas precargadas del perfil
+agent-browser click @eN                             # cuenta correcta — verificar el email antes de clicar
 ```
 
-Y ahí parar: pedirle al usuario que inicie sesión él mismo en el Chrome real (visible), y
-esperar a que confirme ("ya inicié sesión") antes de continuar. Recién ahí re-snapshot.
+**Trampa observada**: el primer click sobre la fila de la cuenta en el *account chooser* de
+Google (`accounts.google.com/v3/signin/accountchooser?...`) solo la deja resaltada/en foco
+— no navega. Hace falta un **segundo click sobre el mismo ref** para que el chooser complete
+la selección y redirija (`account.premierleague.com/.../resumeLoginFirstFactor` →
+`fantasy.premierleague.com`). Si tras el primer click la URL no cambió, repetir el click
+antes de asumir que algo falló.
+
+**Cuándo SÍ pausar y pedirle al usuario que entre él mismo:**
+- El formulario es el nativo de PL (email+contraseña) y no hay atajo de Google/otro
+  proveedor visible.
+- El *account chooser* de Google no lista ninguna cuenta reconocible, o pide contraseña de
+  Google (perfil sin sesión persistente, o cuenta no cacheada).
+- Hay un paso de verificación en dos pasos (MFA) de cualquiera de los dos lados.
+
+En esos casos, parar, pedirle al usuario que complete el paso en el Chrome real (visible), y
+esperar a que confirme antes de continuar. Recién ahí re-snapshot.
+
+**Verificación de que el login cuajó**: buscar el texto `"Iniciaste sesión como <nombre>"`
+en el home de FPL (aparece justo debajo de la barra de navegación), no solo la presencia del
+link "Cerrar sesión" — ese link vive dentro de un contenedor que a veces persiste en el DOM
+entre estados.
 
 ---
 
@@ -206,7 +242,7 @@ necesariamente bloqueante, pero el usuario debe saberlo.
 ```bash
 agent-browser connect 9222
 agent-browser open https://fantasy.premierleague.com/
-# ... esperar login manual del usuario si hace falta ...
+# login: si hay cuenta de Google precargada en el perfil, es automatizable (§0) — si no, esperar al usuario
 agent-browser snapshot -i -c
 # por cada slot vacío: click slot -> buscar apellido -> Restablecer filtros si venía sucio -> fichar
 # capitán/vice: click nombre -> focus checkbox -> Space -> verificar en snapshot fresco
