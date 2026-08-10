@@ -39,7 +39,7 @@ El acta queda en `outputs/fpl/2026-27/gwNN_decision.md`. Tarda unos **5 segundos
 ### Con el equipo real (desde la GW2)
 
 ```bash
-export FPL_TEAM_ID=<tu id>     # el número de la URL /entry/<ID>/ en la web de FPL
+export FPL_TEAM_ID=3609854     # losmillosFPL — el número de la URL /entry/<ID>/ en la web de FPL
 python -m mova_fpl.cli.live --season 2026-27 --gw 2 --horizon 3 --top-k 0 --chips
 ```
 
@@ -213,8 +213,11 @@ calibración de quien interviene, y es la cifra que de verdad lo retrata.
 Hace falta el **id del equipo** para leer el estado real. Se obtiene entrando a la web de
 FPL con la cuenta: el número aparece en la URL `/entry/<ID>/event/<GW>/`.
 
+**Ya resuelto:** el equipo real es `losmillosFPL`, creado por browser automation el
+2026-08-09 (ver `.claude/skills/fpl-web-ops/SKILL.md`).
+
 ```bash
-export FPL_TEAM_ID=<tu id>
+export FPL_TEAM_ID=3609854
 ```
 
 Lo que el motor deriva de ahí, todo con GET públicos:

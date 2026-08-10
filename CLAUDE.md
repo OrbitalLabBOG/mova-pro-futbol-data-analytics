@@ -24,7 +24,8 @@ El código legacy de FPL (`src/mova_model/fpl_xp.py`, `scripts/live_agent_runner
 reproducibles. Está congelado a propósito. No importarlo, no extenderlo, no citar sus
 resultados. `tests/test_architecture_boundaries.py` impide que `mova_fpl` lo importe.
 
-La rama viva es **`feat/fpl-agent-clean`**, no `main`.
+La rama viva es **`main`** (el 2026-08-09 se hizo fast-forward merge de `feat/fpl-agent-clean`;
+esa rama sigue en GitHub pero ya está fusionada, no divergente).
 
 ## Stack
 
@@ -50,7 +51,7 @@ python -m mova_fpl.cli.train_points  --holdout 2025-26
 # 3. decisión en vivo → outputs/fpl/<temporada>/gwNN_decision.md  (~6 s)
 python -m mova_fpl.cli.live --season 2026-27 --gw 1 --horizon 3 --top-k 0
 #    desde la GW2, con equipo real y chips:
-FPL_TEAM_ID=<id> python -m mova_fpl.cli.live --season 2026-27 --gw 2 --horizon 3 \
+FPL_TEAM_ID=3609854 python -m mova_fpl.cli.live --season 2026-27 --gw 2 --horizon 3 \
     --top-k 0 --chips
 
 # 4. backtest ciego de una temporada completa (~2 min)
@@ -123,7 +124,7 @@ holdout es `2025-26`. Cambiarlo sin pensarlo mete leakage.
 (Fue 2.217 hasta que ADR-008 cerró un fallo en la linealización de las transferencias
 libres, verificado por A/B.)
 
-**Git.** Rama `feat/fpl-agent-clean`. Los `.joblib` y las `.db` están en `.gitignore`: son
+**Git.** Rama `main` (fusionada desde `feat/fpl-agent-clean` el 2026-08-09). Los `.joblib` y las `.db` están en `.gitignore`: son
 regenerables y pesan. `outputs/*.md` también, salvo las actas bajo `outputs/fpl/`.
 
 **Trampas conocidas.**
@@ -158,9 +159,11 @@ Repo indexado con CodeGraph (`.codegraph/`, auto-sync al guardar).
 - **Degradado:** el componente de bonus subestima ~18% (H-WP005-02). La concordancia exacta
   con las acciones defensivas de Opta es 70,2%, no el 90% que pedía el criterio, con la causa
   aislada en los remates bloqueados (H-WP005-01). Ambas declaradas, ninguna silenciosa.
-- **Pendiente de dato, no de código:** desde la GW2 hay que exportar `FPL_TEAM_ID` con el
-  id del equipo (el de la URL `/entry/<ID>/`). El camino de lectura ya está construido y
-  probado; sin el id, el motor arma desde cero y lo avisa.
+- **Dato ya resuelto:** el equipo real es `losmillosFPL`, `entry_id`/`FPL_TEAM_ID` =
+  **`3609854`** (creado por browser automation, GW1 2026/27 — ver
+  `.claude/skills/fpl-web-ops/SKILL.md`). Desde la GW2 hay que exportar
+  `FPL_TEAM_ID=3609854` antes de correr `mova_fpl.cli.live`. El camino de lectura ya está
+  construido y probado; sin el id, el motor arma desde cero y lo avisa.
 - **Roto / no usar:** `src/mova_model/fpl_xp.py`, `src/mova_model/fpl_optimizer.py`,
   `src/mova_model/out_of_time_xp.py`, `scripts/live_agent_runner.py`,
   `scripts/train_fpl_xp_v*.py`, `scripts/sim_*.py`. Leakage estructural y números no
