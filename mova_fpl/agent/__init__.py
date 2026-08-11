@@ -27,7 +27,7 @@ es lo unico que distingue una estrategia de una supersticion.
 """
 from mova_fpl.agent.contract import (Intervention, apply, describe, merge,
                                      validate)
-from mova_fpl.agent.attribution import Attribution, measure
+from mova_fpl.agent.attribution import Attribution, measure, settle, summarize
 
 __all__ = ["Intervention", "apply", "validate", "describe", "merge",
-           "Attribution", "measure"]
+           "Attribution", "measure", "settle", "summarize"]
