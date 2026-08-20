@@ -6,6 +6,7 @@ hace la CLI: `models/` no conoce el almacenamiento de experimentos.
 from __future__ import annotations
 
 import json
+import hashlib
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
@@ -30,12 +31,14 @@ def save(model, name: str, version: str, metrics: dict) -> dict:
     d.mkdir(parents=True, exist_ok=True)
     ruta = d / f"{name}-{version}.joblib"
     joblib.dump(model, ruta)
+    artifact_sha256 = hashlib.sha256(ruta.read_bytes()).hexdigest()
     limpio = {k: v for k, v in metrics.items() if not hasattr(v, "to_dict")}
     registro = {
         "name": name, "version": version, "git_sha": git_sha(),
         "trained_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "train_rows": int(model.metadata.get("filas_ajuste", 0)),
         "artifact": str(ruta.relative_to(ROOT)),
+        "artifact_sha256": artifact_sha256,
         "metrics": limpio,
     }
     (d / f"{name}-{version}.json").write_text(

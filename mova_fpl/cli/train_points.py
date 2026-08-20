@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 
+from mova_fpl.data.schema import SEASONS
 from mova_fpl.data.store import Store
 from mova_fpl.models.points import PointsModel
 from mova_fpl.models.registry import save
@@ -19,12 +20,21 @@ def main() -> None:
     ap = argparse.ArgumentParser(description="Entrena el modelo de puntos por componentes")
     ap.add_argument("--holdout", default="2025-26", help="temporada que NO entra al ajuste")
     ap.add_argument("--version", default="1.0.0")
+    ap.add_argument(
+        "--production",
+        action="store_true",
+        help="incluye todo el historico hasta --holdout para operar la temporada siguiente",
+    )
     args = ap.parse_args()
 
+    if args.holdout not in SEASONS:
+        raise SystemExit(f"temporada invalida: {args.holdout}")
+
     store = Store()
-    # gw=1 del holdout: por construccion, solo temporadas cerradas anteriores
-    df = store.multi_season_as_of(args.holdout, 1)
-    print(f"Entrenando con {len(df):,} filas anteriores a {args.holdout} gw1")
+    gw_corte = 39 if args.production else 1
+    df = store.multi_season_as_of(args.holdout, gw_corte)
+    modo = "produccion" if args.production else "benchmark"
+    print(f"Entrenando ({modo}) con {len(df):,} filas hasta {args.holdout} gw{gw_corte}")
 
     modelo = PointsModel(version=args.version).fit(df)
     meta = modelo.metadata
@@ -40,7 +50,9 @@ def main() -> None:
         print(f"  defcon           : {modelo.defcon.metadata.get('por_posicion')}")
 
     registro = save(modelo, "points", args.version, {
-        "filas_ajuste": meta["filas_ajuste"], "holdout": args.holdout,
+        "mode": modo, "filas_ajuste": meta["filas_ajuste"],
+        "holdout": None if args.production else args.holdout,
+        "fit_through": args.holdout if args.production else SEASONS[SEASONS.index(args.holdout) - 1],
         "definicion": modelo.goals.definicion, "creacion": modelo.goals.creacion,
         "defcon_sin_datos": modelo.defcon.sin_datos,
     })

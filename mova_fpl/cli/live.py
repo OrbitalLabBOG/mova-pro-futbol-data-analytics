@@ -46,8 +46,10 @@ def _dias(deadline: str | None, ahora: datetime) -> float | None:
 HISTORICO_HASTA = "2025-26"
 
 
-def _fuente(team_id) -> str:
+def _fuente(team_id, snapshot_dir: str | None = None) -> str:
     base = "fantasy.premierleague.com/api (bootstrap-static + fixtures)"
+    if snapshot_dir:
+        base += f" · snapshot {snapshot_dir}"
     if team_id:
         base += " + estado publico del equipo"
     return base + ", solo GET"
@@ -83,6 +85,11 @@ def main() -> None:
     ap.add_argument("--horizon", type=int, default=3)
     ap.add_argument("--top-k", type=int, default=0, help="0 = sin recorte de mercado")
     ap.add_argument("--version", default="1.0.0")
+    ap.add_argument("--minutes-version", default="1.0.0")
+    ap.add_argument(
+        "--snapshot-dir",
+        help="directorio inmutable creado por mova_fpl.cli.collect_live; evita drift de API",
+    )
     ap.add_argument("--team-id", type=int, default=None,
                     help="numero del equipo (el de la URL /entry/<ID>/). "
                          "Sin el, la decision se toma desde cero. "
@@ -100,7 +107,11 @@ def main() -> None:
     emitida = datetime.now(timezone.utc)
 
     print(f"[1/5] Leyendo estado publico de FPL (solo GET)...")
-    boot, fx = live.bootstrap(), live.fixtures()
+    if args.snapshot_dir:
+        from mova_fpl.cli.collect_live import load_snapshot
+        boot, fx, _ = load_snapshot(Path(args.snapshot_dir))
+    else:
+        boot, fx = live.bootstrap(), live.fixtures()
     tope = args.gw + max(1, args.horizon) - 1
     roster = live.roster(boot, fx, args.season, args.gw)
     calendario = live.team_schedule(fx, boot, args.gw, tope)
@@ -118,9 +129,12 @@ def main() -> None:
     # asi la decision en vivo se comporta como la que se midio. Las diez
     # temporadas si entran, pero en el AJUSTE del modelo, no en el estado.
     historia = store.as_of(HISTORICO_HASTA, 39)
-    modelos = {"minutes": load("minutes", "1.0.0"), "points": load("points", args.version)}
+    modelos = {"minutes": load("minutes", args.minutes_version),
+               "points": load("points", args.version)}
+    temporadas_modelo = sorted(set(modelos["minutes"].metadata.get("temporadas", ()))
+                               | set(modelos["points"].metadata.get("temporadas", ())))
     print(f"      {len(historia):,} filas de {HISTORICO_HASTA} · "
-          f"modelos ajustados con 9 temporadas anteriores")
+          f"modelos ajustados con {len(temporadas_modelo)} temporadas")
 
     print(f"[3/5] Proyectando xP por componentes...")
     xp, desglose = points_projection(historia, roster, modelos, args.season,
@@ -163,9 +177,9 @@ def main() -> None:
     acta = render(decision, roster, det.loc[list(decision.squad_15)].reset_index(drop=True), {
         "season": args.season, "emitida": emitida.isoformat(timespec="seconds"),
         "deadline": limite, "policy": args.policy, "horizon": args.horizon,
-        "v_minutes": "1.0.0", "v_points": args.version, "git_sha": git_sha(),
+        "v_minutes": args.minutes_version, "v_points": args.version, "git_sha": git_sha(),
         "rules": rules_mod.SQUAD, "dias_al_deadline": _dias(limite, emitida),
-        "fuente": _fuente(args.team_id),
+        "fuente": _fuente(args.team_id, args.snapshot_dir),
         "chip_verdict": veredicto, "chips_used": equipo["chips_used"],
         "catalogo_chips": rules_mod.CHIPS if args.chips else None,
         "equipo": equipo,

@@ -238,15 +238,18 @@ def test_temporada_completa_sin_una_sola_violacion():
 
     # la traza serializa las tuplas como JSON: sin parsear, set() cuenta caracteres
     lista = lambda v: json.loads(v) if isinstance(v, str) else list(v)
+    from collections import Counter
     catalogo = {}
-    for gw in range(1, 39):
-        for _, r in store.roster("2025-26", gw).iterrows():
+    for d in decisions(rep.run_id).itertuples():
+        # El club debe ser el conocido en ESA jornada. Construir un catalogo final
+        # con GW1..38 reasigna retroactivamente a los transferidos de enero (p.ej.
+        # Semenyo/Guéhi a Man City) y produce falsos positivos en jornadas previas.
+        # Se conserva el ultimo valor causal para jugadores en blank GW.
+        for _, r in store.roster("2025-26", int(d.gw)).iterrows():
             if r["position"] and r["team"]:
                 catalogo[int(r["element"])] = (Position.parse(r["position"]), str(r["team"]))
-
-    from collections import Counter
-    for d in decisions(rep.run_id).itertuples():
         squad, xi = lista(d.squad_15), lista(d.starters)
+        assert set(squad) <= set(catalogo), f"GW{d.gw}: jugadores sin catalogo causal"
         assert len(set(squad)) == RULES["size"], f"GW{d.gw}: plantilla de {len(set(squad))}"
         assert len(set(xi)) == RULES["starters"], f"GW{d.gw}: XI de {len(set(xi))}"
         assert set(xi) <= set(squad), f"GW{d.gw}: titulares fuera de la plantilla"
