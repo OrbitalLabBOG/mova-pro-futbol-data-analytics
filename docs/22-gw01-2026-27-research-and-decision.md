@@ -1,7 +1,7 @@
 ---
 title: "FPL 2026/27 GW1 — investigación, modelo y decisión inicial"
 date: 2026-08-20
-status: final-pre-deadline
+status: mounted-and-verified
 owner: MOVA Fantasy Fútbol Data Analytics
 season: 2026-27
 gameweek: 1
@@ -138,3 +138,13 @@ La decisión solo queda operativamente cerrada cuando se cumplen las cuatro cond
 - `validate_squad == []`, £100.0m y 2/5/5/3 por posición;
 - acta, spec y pantalla FPL coinciden en los 15 jugadores, XI, capitán, vice y banca;
 - captura visual posterior a **Enter Squad**, conservada con su SHA-256.
+
+## Cierre operativo
+
+Las cuatro condiciones quedaron cumplidas el `2026-08-20T15:20:28-05:00` en la cuenta
+`losmillosFPL` (entry `3609854`). FPL respondió **Equipo guardado** y una recarga posterior
+conservó el XI 3-4-3, Haaland capitán, Bruno vicecapitán y el orden Kinský, Sangaré, Rodon,
+Thomas. La pantalla confirmó £100.0m de valor, £0.0m en banco y ningún chip activado.
+
+La evidencia canónica es `outputs/fpl/2026-27/gw01_final_mounted.png`, con SHA-256
+`8573409eca1815bfa051157be9828f1017d0f1ea8dd9bc8aedc95b8e13becf6c`.

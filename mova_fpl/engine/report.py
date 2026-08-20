@@ -153,11 +153,11 @@ def render(decision, roster: pd.DataFrame, desglose: pd.DataFrame, meta: dict) -
            "|---|---|---|---:|---:|---:|---:|---|"]
     lineas = [
         f"# Acta de decisión · FPL {meta['season']} · Gameweek {decision.gw}", "",
-        f"**Emitida:** {meta['emitida']}  ",
-        f"**Deadline:** {meta['deadline']}  ",
-        f"**Política:** `{meta['policy']}` · horizonte {meta['horizon']}  ",
-        f"**Modelos:** minutos `{meta['v_minutes']}` · puntos `{meta['v_points']}`  ",
-        f"**git sha:** `{meta['git_sha']}`  ",
+        f"**Emitida:** {meta['emitida']}",
+        f"**Deadline:** {meta['deadline']}",
+        f"**Política:** `{meta['policy']}` · horizonte {meta['horizon']}",
+        f"**Modelos:** minutos `{meta['v_minutes']}` · puntos `{meta['v_points']}`",
+        f"**git sha:** `{meta['git_sha']}`",
         f"**Fuente:** {meta['fuente']}", "",
         *_vigencia(meta), "---", "", "## Once inicial", "", *cab,
         *[_fila(por_id[e], det, decision.captain, decision.vice_captain)
@@ -197,7 +197,7 @@ def render(decision, roster: pd.DataFrame, desglose: pd.DataFrame, meta: dict) -
         lineas += ["", "## Notas del motor", ""] + [f"- {n}" for n in decision.notes]
 
     lineas += ["", "---", "",
-               f"Huella de la decisión: `{decision.fingerprint()}`  ",
+               f"Huella de la decisión: `{decision.fingerprint()}`",
                "Este documento se introduce **a mano** en la web de FPL. El motor no "
                "escribe contra la API (ADR-006)."]
 
