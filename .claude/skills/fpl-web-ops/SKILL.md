@@ -1,251 +1,130 @@
 ---
 name: fpl-web-ops
-description: Cómo operar la interfaz web real de Fantasy Premier League (fantasy.premierleague.com) con agent-browser — armar/editar plantilla, capitán, formación, chips, login. Usar cuando haya que introducir el acta del motor en la cuenta real (crear equipo, hacer transferencias, activar un chip) o leer algo que la API pública no expone.
+description: "Operar rápidamente la cuenta real de Fantasy Premier League con agent-browser: crear o reemplazar la plantilla, ordenar titulares y banca, asignar capitán y vice, guardar y producir evidencia verificable. Usar solo para ejecutar en la web una decisión FPL ya aprobada o para leer estado privado no expuesto por la API pública."
 metadata:
   vertical: mova
   type: skill
   repo: mova-pro-futbol-data-analytics
-  updated: 2026-08-09
+  updated: 2026-08-20
 ---
 
-# FPL Web Ops — operar fantasy.premierleague.com con agent-browser
+# FPL Web Ops
 
-> Esta skill es específica del **sitio de FPL**. Para el puente WSL→Windows, el modelo de
-> refs/snapshots y los patrones genéricos de `agent-browser`, cargar primero
-> `agent-browser-orbital` (y la oficial `agent-browser`). Esta documenta solo lo que es
-> peculiar de la interfaz de FPL, aprendido armando la plantilla real de la cuenta de Julián
-> (equipo "losmillosFPL", GW1 2026/27, `entry_id=3609854`).
+Ejecuta el acta canónica en `fantasy.premierleague.com` con el Chrome real de Windows.
+Esta skill no decide jugadores: recibe una spec o acta aprobada, la monta sin improvisar y
+demuestra que quedó persistida.
 
-**Recordatorio de límite del motor:** `mova_fpl` solo lee (GET). Todo lo que este documento
-describe —clicks, formularios, guardar equipo— lo hace una persona a través del navegador
-real, nunca el código Python. El acta (`outputs/fpl/.../gwNN_decision.md`) es la guía; el
-navegador es el medio para introducirla.
+Cuenta conocida: `losmillosFPL`, `entry_id=3609854`.
 
----
+## Carga y autorización
 
-## 0. Login — por Google sí se puede automatizar, por email/contraseña nunca
+Antes de operar:
 
-FPL usa el login de Premier League Account (`account.premierleague.com`, Ping/Okta), que
-ofrece "Iniciar sesión con Google/Facebook/X/Apple" además del formulario de
-email+contraseña propio.
+1. Carga `agent-browser` y su core vigente: `agent-browser skills get core`.
+2. En Orbital/WSL carga también `agent-browser-orbital` para levantar el puente CDP.
+3. Lee [references/operations.md](references/operations.md) para crear, transferir o editar
+   el equipo.
+4. Lee [references/recovery.md](references/recovery.md) únicamente si falla CDP, el login,
+   una ref o el usuario cambia de pestaña.
+5. Obtén la fuente de verdad: spec/acta con 15 jugadores, XI, banca, capitán, vice y chip.
 
-**Regla dura, sin excepción:** nunca teclear una contraseña ni un código de verificación —
-ni en el formulario nativo de PL ni en ningún proveedor. No es una limitación de la
-herramienta, es una regla de seguridad.
+Montar o transferir jugadores modifica una cuenta externa: requiere que el usuario lo haya
+pedido. No actives chips, confirmes transferencias con coste ni cambies la decisión deportiva
+sin autorización explícita.
 
-**Excepción verificada, no una regla nueva:** cuando el Chrome real del usuario **ya tiene
-una cuenta de Google autenticada** en su perfil (sesión persistente de
-`C:\Temp\chrome-mcp-profile`), el flujo "Iniciar sesión con Google" es enteramente clicks
-sobre un selector de cuentas — nunca se escribe ni se ve una contraseña porque Google ya
-resolvió esa autenticación de antemano. Ahí sí se puede operar sin pausar:
+## Invariantes
+
+- `mova_fpl` es solo lectura. Toda mutación se hace visualmente en el navegador real.
+- Nunca escribas contraseña, OTP ni código MFA. El selector de una cuenta Google ya
+  autenticada sí puede clicarse; si pide secreto, pausa para el usuario.
+- No uses nombres recordados: compara cada jugador, orden y capitanía con la spec.
+- Las refs caducan con cualquier render, modal, navegación o cambio de pestaña.
+- Antes de cada interacción por ref: ancla la pestaña FPL y toma un snapshot fresco.
+- En la cancha dinámica, identifica jugadores por texto dentro de
+  `button[data-pitch-element=true]`; no dependas de una ref antigua.
+- Los checkboxes de capitán/vice se operan con `focus` + `Space` y se verifican.
+- Un cambio no existe en servidor hasta pulsar **Guardar equipo** o confirmar la plantilla.
+- El éxito exige: mensaje de guardado, recarga, segunda comparación y captura completa.
+
+## Ruta rápida
+
+### 1. Anclar la sesión
 
 ```bash
-agent-browser connect 9222                       # ANTES del primer open (evita headless trap)
-agent-browser open https://fantasy.premierleague.com/
-agent-browser snapshot -i -c                      # localizar "Iniciar sesión"
-agent-browser click @eN                            # abre account.premierleague.com
-agent-browser wait --load networkidle
-agent-browser snapshot -i -c | grep -i google      # localizar "Iniciar sesión con Google"
-agent-browser click @eN                            # navega a accounts.google.com/.../accountchooser
-agent-browser tab                                  # confirmar el salto de dominio real
-agent-browser snapshot -i -c                        # lista de cuentas precargadas del perfil
-agent-browser click @eN                             # cuenta correcta — verificar el email antes de clicar
+export PATH=/home/jzuluaga/.nvm/versions/node/v22.17.0/bin:$PATH
+agent-browser connect 9222
+agent-browser open https://fantasy.premierleague.com/es/my-team
+agent-browser tab
 ```
 
-**Trampa observada**: el primer click sobre la fila de la cuenta en el *account chooser* de
-Google (`accounts.google.com/v3/signin/accountchooser?...`) solo la deja resaltada/en foco
-— no navega. Hace falta un **segundo click sobre el mismo ref** para que el chooser complete
-la selección y redirija (`account.premierleague.com/.../resumeLoginFirstFactor` →
-`fantasy.premierleague.com`). Si tras el primer click la URL no cambió, repetir el click
-antes de asumir que algo falló.
-
-**Cuándo SÍ pausar y pedirle al usuario que entre él mismo:**
-- El formulario es el nativo de PL (email+contraseña) y no hay atajo de Google/otro
-  proveedor visible.
-- El *account chooser* de Google no lista ninguna cuenta reconocible, o pide contraseña de
-  Google (perfil sin sesión persistente, o cuenta no cacheada).
-- Hay un paso de verificación en dos pasos (MFA) de cualquiera de los dos lados.
-
-En esos casos, parar, pedirle al usuario que complete el paso en el Chrome real (visible), y
-esperar a que confirme antes de continuar. Recién ahí re-snapshot.
-
-**Verificación de que el login cuajó**: buscar el texto `"Iniciaste sesión como <nombre>"`
-en el home de FPL (aparece justo debajo de la barra de navegación), no solo la presencia del
-link "Cerrar sesión" — ese link vive dentro de un contenedor que a veces persiste en el DOM
-entre estados.
-
----
-
-## 1. El `entry_id` no existe hasta que se guarda la primera plantilla completa
-
-Antes de armar el equipo, `/api/me/` (endpoint autenticado, solo vía sesión del navegador,
-nunca desde nuestro código) devuelve `"entry": null`. Se puede verificar sin tocar
-credenciales:
+Registra el tab estable de FPL, por ejemplo `t1`. Desde ese momento, toda unidad de trabajo
+empieza así:
 
 ```bash
-agent-browser eval "fetch('/api/me/').then(r=>r.json()).then(d=>window.__me=d)"
-agent-browser eval "JSON.stringify(window.__me)"   # separar el await de la lectura (ver §6)
+agent-browser connect 9222 >/dev/null
+agent-browser tab t1 >/dev/null
+agent-browser snapshot -i
 ```
 
-El `entry_id` (el número que va en `/entry/<ID>/...` y en `FPL_TEAM_ID`) solo aparece
-**después** de completar los 15 jugadores y hacer clic en "Ingresar equipo" — ahí la URL
-cambia a `/my-team` y `/api/me/` empieza a devolver el entero. No hay atajo: si la cuenta es
-nueva, hay que construir la plantilla completa una vez para obtenerlo.
+No ejecutes `tab t1` y luego reutilices refs de un snapshot anterior: el cambio de pestaña
+las invalida.
 
-**Verificación cruzada recomendada** (no confiar solo en lo que muestra el navegador): una
-vez se tiene el `entry_id`, confirmarlo con el propio código de lectura del motor:
+### 2. Ejecutar por bloques verificables
+
+Orden recomendado:
+
+1. Plantilla o transferencias: completar los 15 y confirmar el modal solo después de comparar.
+2. XI y formación: hacer swaps banca↔campo.
+3. Orden de banca: portero, suplente 1, 2 y 3.
+4. Capitán y vicecapitán.
+5. Chip, únicamente si la spec lo ordena y está autorizado.
+6. Snapshot final contra la spec.
+7. **Guardar equipo**.
+
+Mantén cada bloque corto: interacción → espera específica → snapshot → comparación. No
+encadenes muchos clicks ciegos.
+
+### 3. Cerrar con evidencia
+
+Después de guardar:
+
+```bash
+agent-browser wait --text "Equipo guardado"
+agent-browser reload
+agent-browser wait --load domcontentloaded
+agent-browser snapshot -i > /tmp/fpl-persisted.txt
+agent-browser screenshot --full /ruta/absoluta/gwNN_final_mounted.png
+sha256sum /ruta/absoluta/gwNN_final_mounted.png
+```
+
+La recarga debe mostrar:
+
+- los 15 jugadores correctos;
+- XI y formación correctos;
+- badges de capitán y vice correctos;
+- banca en orden exacto;
+- presupuesto y banco esperados;
+- ningún botón **Guardar equipo** por cambios pendientes;
+- chip correcto o ninguno.
+
+Completa la evidencia con lecturas públicas, cuando estén disponibles:
 
 ```python
 from mova_fpl.data import live
-t = live.team(3609854)
-t["name"], t["player_first_name"], t["player_last_name"]   # nombre de equipo y dueño
-h = live.team_history(3609854)
-h["chips"], len(h["current"] or [])                          # [] y 0 antes de jugar GW1
+live.team(3609854)
+live.team_history(3609854)
 ```
 
----
+El endpoint público de picks puede devolver 404 antes del deadline; la verificación visual
+autenticada es entonces la evidencia canónica.
 
-## 2. Buscador de jugadores: usa el nombre de display de FPL, no el nombre completo
+## Criterio de parada
 
-El buscador del selector de plantilla **no** hace fuzzy match sobre nombre completo. Buscar
-"Bruno Fernandes" o "Nathan Collins" da cero resultados. FPL usa una convención de display
-propia (apellido solo, o abreviaturas tipo "B.Fernandes"):
+Detente y reporta antes de confirmar si:
 
-| Buscar | Encuentra |
-|---|---|
-| `Fernandes` | B.Fernandes |
-| `Pedro` | João Pedro |
-| `Dango` | O.Dango |
-| `Collins` | Nathan Collins |
-
-**Regla práctica**: buscar por apellido único. Si da cero resultados, probar solo el primer
-apellido o el nombre corto que usa la propia acta del motor (el acta ya usa nombres cortos
-por diseño — son los de la fuente de datos).
-
-## 3. Los filtros de posición/precio quedan pegados entre búsquedas
-
-Después de fichar a un jugador con el filtro de precio en, por ejemplo, "£12.0m
-seleccionadas", la siguiente búsqueda (otro precio) **devuelve cero resultados en
-silencio** — no hay error, solo lista vacía. Antes de cada búsqueda nueva:
-
-```bash
-agent-browser snapshot -i -c | grep -i "restablecer\|filtrar por"
-agent-browser click @eN     # "Restablecer filtros"
-```
-
-El filtro de **posición** también puede quedar mal heredado (p.ej. seguir en
-"Mediocampistas" al abrir un slot de delantero vacío). Verificar el estado de `Filtrar por`
-tras abrir cada slot nuevo y resetear si no coincide con la posición del hueco.
-
-## 4. Casillas (checkboxes) que no responden a `click`
-
-Los checkboxes de T&C, capitán y vicecapitán en FPL a veces no cambian de estado con
-`agent-browser click` sobre el label o su wrapper — el click se reporta `✓ Done` pero
-`checked` sigue en `false`. Patrón que sí funciona en todos los casos observados:
-
-```bash
-agent-browser focus @eN      # foco en el checkbox mismo, no en el label
-agent-browser press "Space"
-agent-browser snapshot -i -c   # verificar checked=true antes de seguir
-```
-
-Aplica a: aceptar términos y condiciones, marcar "Capitán"/"Subcapitán" dentro del modal
-"Perfil del jugador".
-
-## 5. Capitán y vicecapitán: vía el modal de perfil, no un badge directo en la cancha
-
-1. Click en el **nombre** del jugador en la cancha (no el escudo/jersey) → abre "Perfil del
-   jugador: <Nombre>".
-2. Dentro del modal: `focus` + `Space` sobre el checkbox `Capitán` o `Subcapitán` (§4).
-3. Cerrar el modal y **re-snapshot fresco** antes de dar por confirmado el cambio — un
-   snapshot reciclado puede mostrar el badge `C`/`V` sobre el jugador equivocado porque los
-   refs quedaron de un estado anterior. Confirmar contra el propio heading del modal
-   (`"Perfil del jugador: <Nombre esperado>"` + `checked=true`), no contra fragmentos de
-   snapshot viejos.
-
-## 6. Cambiar la formación (banca ↔ titular) es un flujo de DOS clics, no uno
-
-No existe un botón único "swap". Clicar directamente el nombre/jersey del titular objetivo
-**no** completa nada por sí solo — solo abre su propio perfil, sin relación con el
-suplente. El flujo real:
-
-1. Abrir el perfil del **suplente** que va a entrar (click en su nombre en la banca).
-2. Click en **"Suplente"** dentro de ese perfil → activa "modo selección" (señal visual:
-   pierde las etiquetas de precio, tinte verde sobre la cancha). El modal se cierra pero el
-   estado de selección queda activo.
-3. Localizar al **titular objetivo** que va a salir. En este punto, los clicks por `@ref`
-   estándar sobre su elemento en la cancha son poco confiables (a veces abren un perfil
-   viejo/equivocado por el estado dinámico de la cancha). Usar JS directo:
-   ```bash
-   agent-browser eval "(function(){
-     const btns = document.querySelectorAll('button[data-pitch-element=\"true\"]');
-     const target = Array.from(btns).find(b => b.textContent.includes('Thiaw'));
-     if (target) target.click();
-     return !!target;
-   })()"
-   ```
-   (Envolver siempre en IIFE — ver nota de `const` abajo.) Esto abre el perfil del titular
-   objetivo.
-4. Click en **"Suplente"** dentro de ESE perfil (el del titular objetivo) → recién ahí se
-   completa el intercambio. El botón "Cambiar jugador" que aparece al hacer hover NO
-   completa el swap por sí solo en la práctica — usar el flujo de dos perfiles descrito.
-5. Screenshot final para verificar visualmente la XI resultante contra el acta.
-
-## 7. `agent-browser eval` — dos trampas de JS
-
-- **`const`/`let` persisten entre llamadas** en el mismo contexto de página. Un segundo
-  `eval` que redeclare la misma variable (`const btns = ...`) lanza
-  `SyntaxError: Identifier 'btns' has already been declared`. Envolver cada snippet en una
-  IIFE: `(function(){ const x = ...; return x; })()`.
-- **`await` de nivel superior no funciona** (`SyntaxError: await is only valid in async
-  functions`). Para leer una respuesta `fetch`, encadenar `.then()` y guardar el resultado
-  en `window`, y leerlo en una llamada `eval` separada:
-  ```bash
-  agent-browser eval "fetch('/api/me/').then(r=>r.json()).then(d=>window.__me=d)"
-  agent-browser eval "JSON.stringify(window.__me)"
-  ```
-
-## 8. El endpoint de picks está bloqueado antes del deadline — es esperado, no un bug
-
-`GET /api/entry/{id}/event/{gw}/picks/` devuelve `{"detail":"Not found."}` cuando se
-consulta públicamente para la jornada **en curso**, antes de que cierre. FPL oculta a
-propósito las alineaciones de la jornada activa para que nadie copie plantillas ajenas antes
-del deadline. No es una falla de `data/sources.py` ni algo que reintentar — es el
-comportamiento correcto del sitio. Se puede seguir inspeccionando el estado vía la propia UI
-del navegador mientras tanto.
-
-## 9. Verificación final: comparar contra el acta, no contra la memoria
-
-Después de guardar ("Guardar equipo" / "Ingresar equipo"), no dar la tarea por cerrada solo
-con la confirmación visual del sitio. Cerrar cualquier modal promocional que aparezca (FPL
-suele ofrecer generadores de escudo u otras promos no relacionadas — ignorar, solo cerrar) y
-verificar dos veces:
-
-1. **Screenshot** de la cancha final, comparado campo a campo contra
-   `outputs/fpl/<temporada>/gwNN_decision.md` (formación, titulares, capitán, vice, banca en
-   orden).
-2. **Lectura de solo-GET del propio motor** (no solo lo que muestra el navegador):
-   ```python
-   from mova_fpl.data import live
-   live.team(entry_id)            # nombre, dueño
-   live.team_history(entry_id)    # chips (debe ser [] si es plantilla nueva sin jugar aún)
-   ```
-
-Si hay una discrepancia menor (p.ej. orden de banca no coincide exactamente con la
-prioridad de xP del acta), **declararla explícitamente** en vez de callarla — no es
-necesariamente bloqueante, pero el usuario debe saberlo.
-
----
-
-## Checklist rápido para armar/editar un equipo
-
-```bash
-agent-browser connect 9222
-agent-browser open https://fantasy.premierleague.com/
-# login: si hay cuenta de Google precargada en el perfil, es automatizable (§0) — si no, esperar al usuario
-agent-browser snapshot -i -c
-# por cada slot vacío: click slot -> buscar apellido -> Restablecer filtros si venía sucio -> fichar
-# capitán/vice: click nombre -> focus checkbox -> Space -> verificar en snapshot fresco
-# formación: perfil suplente -> "Suplente" -> JS click sobre titular objetivo -> "Suplente" en su perfil
-# Guardar equipo / Ingresar equipo -> cerrar promos -> screenshot + verificación de solo-lectura
-```
+- el modal no coincide exactamente con la spec;
+- aparece un coste en puntos no aprobado;
+- FPL cambió precio, disponibilidad o fixture de forma material;
+- se requiere contraseña/MFA;
+- falta un jugador o la plantilla viola presupuesto/club/posición;
+- no puedes demostrar persistencia tras recargar.
