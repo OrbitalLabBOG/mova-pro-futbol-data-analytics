@@ -1,4 +1,4 @@
-# MOVA Pro Fútbol Data Analytics
+# MOVA Fantasy Fútbol Data Analytics
 
 Analítica de fútbol de la vertical **MOVA** (Orbital Lab): datos de eventos, modelos
 probabilísticos y agentes de decisión.
@@ -79,8 +79,10 @@ Cinco decisiones que sostienen todo:
 
 ```bash
 python -m mova_fpl.data.ingest --all                      # almacén canónico, idempotente
-python -m mova_fpl.cli.train_minutes --holdout 2025-26    # modelos (los .joblib no van en Git)
-python -m mova_fpl.cli.train_points  --holdout 2025-26
+python -m mova_fpl.cli.train_minutes --production --version 1.1.0
+python -m mova_fpl.cli.train_points  --production --version 1.1.0
+
+python -m mova_fpl.cli.collect_live --season 2026-27 --gw 1  # snapshot sellado + hashes
 
 python -m mova_fpl.cli.live --season 2026-27 --gw 1 --horizon 3 --top-k 0   # ← el acta, ~6 s
 ```
@@ -89,7 +91,7 @@ El acta queda en `outputs/fpl/2026-27/gw01_decision.md`.
 
 ```bash
 python -m mova_fpl.cli.backtest --season 2025-26 --policy milp --projector points --horizon 3
-pytest -q                                                 # 524 pruebas
+pytest -q                                                 # suite rápida completa
 ```
 
 ## Documentación
@@ -104,7 +106,6 @@ pytest -q                                                 # 524 pruebas
 
 ## Lo que falta
 
-- **El `entry_id` del equipo.** Sin él, desde la GW2 el motor no sabe de qué plantilla parte.
 - **El horizonte de producción.** Se opera con 3 por defecto razonado, no demostrado.
 - **El agente de lenguaje** que lea alineaciones probables y ruedas de prensa. Es la
   información que hoy falta y que ningún almacén histórico puede dar.
@@ -167,7 +168,7 @@ mova-pro-futbol-data-analytics/
 │   ├── engine/             #   decide(), proyección, políticas, simulador, acta
 │   ├── trace/              #   persistencia de corridas y decisiones
 │   └── cli/                #   live · backtest · train_* · eval_* · rules_diff
-├── tests/                  # 14 archivos, 524 pruebas + 2 `slow` (4 estructurales)
+├── tests/                  # suite rápida + 2 pruebas `slow` de temporada completa
 ├── docs/                   # 00-20 + runbook + specs/fpl-decision-engine/
 ├── src/                    # ⚠️ legacy congelado (Mundial + FPL anterior)
 ├── scripts/                # ⚠️ legacy congelado

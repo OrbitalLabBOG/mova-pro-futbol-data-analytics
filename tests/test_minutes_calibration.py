@@ -89,7 +89,16 @@ def test_registrado_en_model_versions_con_git_sha():
     assert sha and sha != "unknown"
     # el ajuste base excluye la temporada reservada para calibrar
     assert filas_tr > 150_000
-    assert "ece_p60" in json.loads(met)
+    metrics = json.loads(met)
+    if metrics.get("mode") == "production":
+        # El artefacto operativo usa la ultima temporada cerrada para calibrar.
+        # Publicar un ECE sobre esa misma temporada seria presentarlo falsamente
+        # como held-out; las metricas de generalizacion viven en el benchmark.
+        assert metrics["held_out_metrics"] is False
+        assert metrics["calib_season"] == HOLDOUT
+        assert metrics["fit_through"] == HOLDOUT
+    else:
+        assert "ece_p60" in metrics
 
 
 def test_el_artefacto_quedo_versionado():

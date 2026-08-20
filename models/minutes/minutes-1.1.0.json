@@ -1,0 +1,15 @@
+{
+  "name": "minutes",
+  "version": "1.1.0",
+  "git_sha": "31a7aaa",
+  "trained_at": "2026-08-20T13:04:56+00:00",
+  "train_rows": 224143,
+  "artifact": "models/minutes/minutes-1.1.0.joblib",
+  "artifact_sha256": "6daf1bdf6b0e769d0fb05d2a80311c381d5770141411bbdd51e8c2a4f214d76b",
+  "metrics": {
+    "mode": "production",
+    "fit_through": "2025-26",
+    "calib_season": "2025-26",
+    "held_out_metrics": false
+  }
+}

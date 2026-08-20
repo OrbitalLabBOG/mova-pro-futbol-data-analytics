@@ -72,13 +72,22 @@ cuando entren datos nuevos:
 
 ```bash
 python -m mova_fpl.data.ingest --all          # almacén canónico, idempotente
-python -m mova_fpl.cli.train_minutes --holdout 2025-26
-python -m mova_fpl.cli.train_points  --holdout 2025-26
+python -m mova_fpl.cli.train_minutes --production --version 1.1.0
+python -m mova_fpl.cli.train_points  --production --version 1.1.0
 ```
 
-`--holdout` es la temporada que **no** entra al ajuste. Para operar 2026/27 el holdout es
-`2025-26`, lo que en la práctica significa: ajusta con las nueve temporadas anteriores y usa
-2025-26 como estado del jugador. Cambiarlo sin pensarlo mete leakage.
+En producción entran las diez temporadas cerradas hasta 2025-26. El modelo de minutos usa
+2025-26 para calibración temporal y el de puntos ajusta todos sus componentes con el histórico
+completo. Para evaluación y backtest se conserva `--holdout`; no confundir ese modo con el
+artefacto que decide 2026/27.
+
+Antes de emitir el acta final, sellar la API oficial para que datos, decisión y hashes sean
+reproducibles:
+
+```bash
+python -m mova_fpl.cli.collect_live --season 2026-27 --gw 1
+python -m mova_fpl.cli.live --season 2026-27 --gw 1 --snapshot-dir data/raw/fpl_live/2026-27/gw01/<captura> --dry-run
+```
 
 ## 4. Si algo falla antes del deadline
 

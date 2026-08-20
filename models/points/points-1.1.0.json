@@ -1,0 +1,28 @@
+{
+  "name": "points",
+  "version": "1.1.0",
+  "git_sha": "31a7aaa",
+  "trained_at": "2026-08-20T13:04:43+00:00",
+  "train_rows": 253890,
+  "artifact": "models/points/points-1.1.0.joblib",
+  "artifact_sha256": "65793fc352df3168002fca8eb9d85cec6c6439a1bcc38d553e75ff5f53d78bd9",
+  "metrics": {
+    "mode": "produccion",
+    "filas_ajuste": 253890,
+    "holdout": null,
+    "fit_through": "2025-26",
+    "definicion": {
+      "GKP": 1.0,
+      "DEF": 0.8723339294281851,
+      "MID": 1.0974263712285588,
+      "FWD": 1.0659996922680133
+    },
+    "creacion": {
+      "GKP": 1.0,
+      "DEF": 1.30941394704438,
+      "MID": 1.4653866719167032,
+      "FWD": 2.390566128270973
+    },
+    "defcon_sin_datos": false
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "season": "2026-27",
+  "gw": 1,
+  "horizon": 3,
+  "label": "gw01-research-reviewed-v1",
+  "squad": [
+    496,
+    109,
+    8,
+    11,
+    418,
+    329,
+    173,
+    426,
+    427,
+    557,
+    124,
+    565,
+    411,
+    165,
+    346
+  ],
+  "starters": [
+    109,
+    8,
+    11,
+    418,
+    426,
+    427,
+    557,
+    124,
+    411,
+    165,
+    346
+  ],
+  "captain": 411,
+  "vice_captain": 426,
+  "bench_order": [
+    496,
+    565,
+    329,
+    173
+  ],
+  "rationale": [
+    "Intervencion humana deliberada sobre la base MILP: el modelo no observa pretemporada, roles nuevos ni ruedas de prensa.",
+    "Nucleo de control de riesgo: Haaland, Bruno Fernandes, Mbeumo y Joao Pedro; capitan Haaland y vice Bruno Fernandes.",
+    "Triple Arsenal y triple Manchester United atacan rivales ascendidos en GW1; la banca permite cubrir el deterioro del calendario de Arsenal en GW2-GW3.",
+    "Calafiori y Mosquera sustituyen al costoso Gabriel para financiar a Calvert-Lewin y dos porteros titulares rotables.",
+    "Sin chip en GW1: se preservan Wildcard, Free Hit, Bench Boost y Triple Captain de la primera ventana.",
+    "La decision debe revalidarse contra un snapshot fresco y noticias de ultima hora antes del deadline; cualquier cambio exige nueva spec y nueva huella."
+  ]
+}
