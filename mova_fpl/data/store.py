@@ -10,6 +10,7 @@ No agregar aqui ningun metodo publico que devuelva filas sin ventana temporal.
 from __future__ import annotations
 
 import sqlite3
+import os
 from pathlib import Path
 
 import pandas as pd
@@ -58,8 +59,9 @@ def feature_columns(columns) -> list[str]:
 class Store:
     """Acceso de solo lectura al almacen canonico, con ventana temporal obligatoria."""
 
-    def __init__(self, db_path: Path | str = DEFAULT_DB):
-        self.db_path = Path(db_path)
+    def __init__(self, db_path: Path | str | None = None):
+        selected = db_path or os.environ.get("MOVA_CANONICAL_DB") or DEFAULT_DB
+        self.db_path = Path(selected)
         if not self.db_path.exists():
             raise FileNotFoundError(
                 f"no existe {self.db_path}. Correr: python -m mova_fpl.data.ingest --all"

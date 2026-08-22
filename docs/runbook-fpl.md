@@ -6,10 +6,9 @@ Para la persona que tiene que emitir el acta antes del cierre, incluso si algo s
 
 ## 0. Lo que hay que saber antes de tocar nada
 
-- **El motor no escribe en FPL y no puede.** La única primitiva de red del paquete es un
-  `GET` (`data/sources.py`), verificado por `tests/test_readonly_http.py`. El acta es un
-  documento; el equipo lo introduce una persona. Si el motor se equivoca, el daño máximo es
-  una recomendación mala, nunca una transferencia gastada.
+- **El motor de decisión no escribe en FPL.** Su única primitiva de red es un `GET`
+  (`data/sources.py`), verificado por `tests/test_readonly_http.py`. El browser del stack VPS
+  es otro runtime y permanece cerrado en `shadow/A0`; ver `runbook-fpl-vps.md`.
 - **La única acta que cuenta es la última.** Los precios se mueven a diario y el parte
   médico cambia hasta minutos antes del cierre. Un acta emitida con más de dos días de
   antelación se marca sola como borrador.
@@ -54,7 +53,7 @@ más; la garantía de solo lectura no se toca.
 | `--lookahead N` | Jornadas de calendario que considera anunciadas (6) |
 
 Sin `--team-id`, el motor arma desde cero y **avisa** de que no sabe qué chips te quedan.
-Para la GW1 da igual: no hay plantilla que arreglar y ningún chip tiene sentido.
+En GW1 puede evaluar Bench Boost y Triple Captain; Free Hit está legalmente bloqueado.
 
 ## 2. Cuándo correrla
 

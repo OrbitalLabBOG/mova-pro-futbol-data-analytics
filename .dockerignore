@@ -1,0 +1,17 @@
+.git
+.env*
+.pytest_cache
+**/__pycache__
+**/*.pyc
+.codegraph
+data
+models
+outputs
+experiments
+notebooks
+viz
+ig
+divulgacion
+src
+docs
+scripts

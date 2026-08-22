@@ -59,6 +59,23 @@ def test_validate_chip_rechaza_repetir_dentro_de_la_ventana():
     assert validate_chip("bench_boost", 25, usados, CATALOGO) == []
 
 
+def test_free_hit_no_esta_disponible_en_gw1():
+    assert "free_hit" not in available(1, (), CATALOGO)
+    assert "bench_boost" in available(1, (), CATALOGO)
+    assert "triple_captain" in available(1, (), CATALOGO)
+    assert [v.code for v in validate_chip("free_hit", 1, (), CATALOGO)] == [
+        "CHIP_UNAVAILABLE_GW"
+    ]
+
+
+def test_free_hit_no_se_puede_jugar_en_gw19_y_gw20():
+    usados = (ChipUse(gw=19, chip="free_hit"),)
+    assert "free_hit" not in available(20, usados, CATALOGO)
+    assert [v.code for v in validate_chip("free_hit", 20, usados, CATALOGO)] == [
+        "FREE_HIT_CONSECUTIVE"
+    ]
+
+
 # ------------------------------------------------------------ senal de calendario
 
 def test_la_doble_jornada_sube_el_factor_del_bench_boost():

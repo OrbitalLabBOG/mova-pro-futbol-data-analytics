@@ -32,4 +32,7 @@ CHIPS = ChipCatalogue(
     chips=CHIP_NAMES,
     windows=(ChipWindow("H1", 1, 19), ChipWindow("H2", 20, 38)),
     per_window=1,
+    # El Free Hit se habilita después de la primera jornada y tampoco puede
+    # encadenarse entre GW19 y GW20. La segunda regla vive en chips.available.
+    unavailable=(("free_hit", (1,)),),
 )

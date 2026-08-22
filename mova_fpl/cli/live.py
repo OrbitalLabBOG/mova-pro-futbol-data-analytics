@@ -161,14 +161,12 @@ def main() -> None:
                                                args.gw + args.lookahead) if args.chips else {})
 
     veredicto = None
-    if args.chips and not estado.is_cold_start:
+    if args.chips:
         pcfg = PlannerConfig(enabled=True, structure_lookahead=args.lookahead)
         veredicto = plan(estado, matriz, optimizer_config(cfg, len(matriz)), pcfg)
         print(f"      {veredicto.as_note()}")
         if veredicto.chip:
             estado = replace(estado, chips_allowed={args.gw: frozenset({veredicto.chip})})
-    elif args.chips:
-        print("      chips: arranque en frio, ningun chip tiene sentido en la GW1")
 
     decision = decide(args.gw, estado, cfg)
 

@@ -18,9 +18,9 @@ Un sistema que, antes del cierre de cada jornada, lee el estado público de la l
 puntos esperados jugador por jugador y emite un **acta de decisión**: qué quince fichar, qué
 once alinear, a quién dar el brazalete, qué transferencias hacer y cuáles no valen el golpe.
 
-El acta es un documento. **El motor no escribe en FPL y no puede hacerlo**: la única
-primitiva de red del paquete es un `GET`, y hay una prueba que lo verifica. El equipo lo
-introduce una persona.
+El acta es un documento. **El motor de decisión no escribe en FPL**: su única primitiva de
+red es un `GET`, verificado por pruebas. El stack autónomo incorpora un browser aislado para
+el rollout futuro, pero nace cerrado (`shadow / A0`, kill switch activo y writes en cero).
 
 ## Qué tan bueno es
 
@@ -99,17 +99,22 @@ pytest -q                                                 # suite rápida comple
 | Doc | Para qué |
 |---|---|
 | **[docs/runbook-fpl.md](docs/runbook-fpl.md)** | **Operar una jornada**, incluso si algo se rompió. Empezar aquí |
+| **[docs/runbook-fpl-vps.md](docs/runbook-fpl-vps.md)** | **Operar/deplegar el control plane VPS**, logs, métricas, backups y hard stop |
 | [docs/21-motor-fpl-arquitectura.md](docs/21-motor-fpl-arquitectura.md) | Cómo funciona por dentro: módulos, modelos, decisiones |
 | [CLAUDE.md](CLAUDE.md) | Contexto técnico para trabajar en el repo |
 | [docs/specs/fpl-decision-engine/](docs/specs/fpl-decision-engine/) | Paquete de diseño: brief, requisitos, 7 ADRs, 7 workpacks, evidencia |
 | [docs/specs/fpl-decision-engine/04-convergence.md](docs/specs/fpl-decision-engine/04-convergence.md) | **Veredicto final**: qué quedó demostrado y qué no |
+| [docs/specs/fpl-autonomous-operator/](docs/specs/fpl-autonomous-operator/) | Spec canónica de operación autónoma, observabilidad, VPS y rollout seguro |
 
 ## Lo que falta
 
 - **El horizonte de producción.** Se opera con 3 por defecto razonado, no demostrado.
 - **El agente de lenguaje** que lea alineaciones probables y ruedas de prensa. Es la
   información que hoy falta y que ningún almacén histórico puede dar.
-- **Política de chips** y **cron**. Fuera del alcance de v1.
+- **Calibración multi-season de la política de chips.** Ya existe el planner y la legalidad
+  2026/27; sus umbrales siguen siendo hipótesis hasta ampliar el backtest.
+- **Rollout de escritura browser.** El runtime está aislado, pero seguirá en A0 hasta pasar
+  compliance, login humano, verificación post-reload y shadow suficiente.
 
 ---
 
@@ -167,7 +172,10 @@ mova-pro-futbol-data-analytics/
 │   ├── optimizer/          #   MILP con horizonte rodante (PuLP/CBC)
 │   ├── engine/             #   decide(), proyección, políticas, simulador, acta
 │   ├── trace/              #   persistencia de corridas y decisiones
+│   ├── ops/                #   ledger, scheduler, observabilidad y backups del VPS
 │   └── cli/                #   live · backtest · train_* · eval_* · rules_diff
+├── deploy/                 # imágenes, systemd, bootstrap y restore drill
+├── compose.yaml            # API local + worker one-shot + browser aislado
 ├── tests/                  # suite rápida + 2 pruebas `slow` de temporada completa
 ├── docs/                   # 00-20 + runbook + specs/fpl-decision-engine/
 ├── src/                    # ⚠️ legacy congelado (Mundial + FPL anterior)

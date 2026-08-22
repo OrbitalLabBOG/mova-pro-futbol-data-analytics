@@ -1,0 +1,41 @@
+---
+type: workpack
+name: "WP-002 — Control plane SQLite y scheduler"
+created: 2026-08-21
+updated: 2026-08-21
+tags: [mova, fpl, workpack, sqlite, scheduler]
+status: proposed
+---
+
+# WP-002 — Control plane SQLite y scheduler
+
+## Objetivo
+
+Implementar `ops.db`, state machine, jobs, locks, gates, kill switches y outbox local.
+
+## Dependencias
+
+WP-001 para integración; el DDL/migration runner puede prepararse antes sin desplegarse.
+
+## Entregables
+
+- migraciones SQLite versionadas con checksum y rollback compatible;
+- WAL con SQLite ≥3.51.3, foreign keys, busy timeout, permisos y single-writer;
+- `tick`, `flock`, idempotency y compare-and-set;
+- CLI/API de pause, resume, mode y kill switch con auditoría;
+- outbox con retry y acuse.
+
+## Criterios de aceptación
+
+- `quick_check`, foreign key check e índices esperados pasan;
+- un test concurrente writer/reader/checkpoint pasa con la versión SQLite fijada;
+- backup y restore usan la imagen engine, nunca `/usr/bin/sqlite3` del host;
+- `ops.db` no tiene listener de red y solo el usuario/containers MOVA acceden al path;
+- dos ticks concurrentes producen un solo job lógico;
+- caída entre claim y persistencia se recupera sin duplicar;
+- ninguna llamada externa ocurre dentro de transacción;
+- cambios de gate/mode quedan en audit trail.
+
+## Rollback
+
+Desactivar timer, preservar `ops.db`/WAL, restaurar imagen y migration compatible anterior.

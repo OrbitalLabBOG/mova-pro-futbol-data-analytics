@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 import subprocess
 from datetime import datetime, timezone
@@ -9,7 +10,10 @@ from pathlib import Path
 
 from mova_fpl.trace.schema import DDL
 
-DEFAULT_TRACE = Path(__file__).resolve().parents[2] / "data" / "processed" / "trace.db"
+DEFAULT_TRACE = Path(os.environ.get(
+    "MOVA_TRACE_DB",
+    Path(__file__).resolve().parents[2] / "data" / "processed" / "trace.db",
+))
 
 
 def git_sha() -> str:

@@ -66,12 +66,16 @@ class ChipCatalogue:
     chips: tuple[str, ...]
     windows: tuple[ChipWindow, ...]
     per_window: int = 1
+    unavailable: tuple[tuple[str, tuple[int, ...]], ...] = ()
 
     def window_for(self, gw: int) -> ChipWindow | None:
         return next((w for w in self.windows if w.contains(gw)), None)
 
     def total(self) -> int:
         return len(self.chips) * len(self.windows) * self.per_window
+
+    def unavailable_gws(self, chip: str) -> frozenset[int]:
+        return frozenset(gw for name, gws in self.unavailable if name == chip for gw in gws)
 
 
 def effect(chip: str | None) -> ChipEffect:
@@ -101,7 +105,11 @@ def available(gw: int, chips_used, catalogue: ChipCatalogue) -> frozenset[str]:
         return frozenset()                       # solo un chip por jornada
     gastados = used_in_window(chips_used, ventana)
     return frozenset(c for c in catalogue.chips
-                     if gastados.get(c, 0) < catalogue.per_window)
+                     if gastados.get(c, 0) < catalogue.per_window
+                     and gw not in catalogue.unavailable_gws(c)
+                     and not (c == "free_hit" and any(
+                         u.chip == "free_hit" and u.gw == gw - 1 for u in chips_used or ()
+                     )))
 
 
 def validate_chip(chip: str | None, gw: int, chips_used, catalogue: ChipCatalogue) -> list[Violation]:
@@ -121,6 +129,16 @@ def validate_chip(chip: str | None, gw: int, chips_used, catalogue: ChipCatalogu
     if ventana is None:
         v.append(Violation("CHIP_OUT_OF_WINDOW", f"la GW{gw} no cae en ninguna ventana de chips"))
         return v
+
+    if gw in catalogue.unavailable_gws(chip):
+        v.append(Violation("CHIP_UNAVAILABLE_GW",
+                           f"{chip} no está disponible en la GW{gw}"))
+
+    if chip == "free_hit" and any(
+        u.chip == "free_hit" and u.gw == gw - 1 for u in chips_used or ()
+    ):
+        v.append(Violation("FREE_HIT_CONSECUTIVE",
+                           "el Free Hit no se puede jugar en jornadas consecutivas"))
 
     if any(u.gw == gw for u in chips_used or ()):
         ya = next(u.chip for u in chips_used if u.gw == gw)

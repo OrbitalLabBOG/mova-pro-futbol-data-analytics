@@ -1,0 +1,11 @@
+[Unit]
+Description=Schedule MOVA FPL daily verified backup
+
+[Timer]
+OnCalendar=*-*-* 04:17:00 America/Bogota
+RandomizedDelaySec=300s
+Persistent=true
+Unit=mova-fpl-backup.service
+
+[Install]
+WantedBy=timers.target

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import hashlib
+import os
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
@@ -14,10 +15,13 @@ from pathlib import Path
 import joblib
 
 ROOT = Path(__file__).resolve().parents[2]
-ARTIFACTS = ROOT / "models"
+ARTIFACTS = Path(os.environ.get("MOVA_MODEL_ROOT", ROOT / "models"))
 
 
 def git_sha() -> str:
+    explicit = os.environ.get("MOVA_GIT_SHA")
+    if explicit:
+        return explicit
     try:
         r = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT,
                            capture_output=True, text=True, timeout=5)
