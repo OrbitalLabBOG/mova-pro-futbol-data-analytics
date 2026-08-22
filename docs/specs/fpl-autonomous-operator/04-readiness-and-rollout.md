@@ -2,23 +2,28 @@
 type: project
 name: "MOVA FPL Autonomous Operator 2026/27 — Readiness and Rollout"
 created: 2026-08-21
-updated: 2026-08-21
+updated: 2026-08-22
 tags: [mova, fpl, readiness, rollout]
-status: proposed
+status: active-shadow
 ---
 
 # Readiness y rollout
 
 ## Veredicto
 
-**READY FOR SPEC REVIEW · NOT READY FOR AUTONOMOUS EXECUTION.**
+**SHADOW CONTROL PLANE ACTIVE · NOT READY FOR FPL WRITES.**
 
-El núcleo deportivo, datos históricos, collector y acceso VPS son bases sanas. Faltan el
-runtime reproducible remoto, plano de control, scheduler, research pipeline, ejecutor
-aislado, observabilidad y gates de seguridad. Además existe un riesgo contractual explícito
-que bloquea la activación automática externa hasta decisión registrada.
+El runtime reproducible, plano de control, scheduler, collector, modelos, auditoría,
+backup y ejecutor browser aislado ya corren en el VPS. Los gates permanecen cerrados en
+`shadow`, `A0`, `compliance=pending`, `kill_switch=true` y `browser_writes=false`.
+Faltan completar research/alerting, autenticar el perfil bajo supervisión y acumular
+evidencia antes de evaluar cualquier escritura externa.
 
-## Matriz actual
+La evidencia verificable del corte está en
+[07-deployment-evidence.md](07-deployment-evidence.md). La matriz inferior se conserva
+como baseline del diagnóstico previo al despliegue.
+
+## Matriz previa al despliegue (corte 2026-08-21)
 
 | Área | Evidencia | Estado |
 | --- | --- | --- |
@@ -167,7 +172,8 @@ confirmado. Esos efectos son del juego y se tratan como incidente/estado nuevo.
 - [ ] alerta P0 tiene ruta de acuse disponible;
 - [ ] kill switch probado y accesible.
 
-## Decisión pendiente
+## Decisión vigente
 
-Este documento no aprueba implementación ni ejecución. Al aprobarse la spec se deben
-autorizar workpacks por separado, comenzando por G1/G2 y shadow.
+La implementación y operación `shadow A0` están activas. Sigue sin estar autorizada la
+ejecución sobre FPL. Cualquier promoción requiere evidencia de los gates G3/G4, decisión
+registrada sobre compliance y aprobación explícita separada.

@@ -2,9 +2,9 @@
 type: project
 name: "MOVA FPL Autonomous Operator 2026/27 — Specification Index"
 created: 2026-08-21
-updated: 2026-08-21
+updated: 2026-08-22
 tags: [mova, fpl, autonomy, observability, specification]
-status: proposed
+status: active-shadow
 ---
 
 # MOVA FPL Autonomous Operator 2026/27
@@ -13,16 +13,17 @@ Especificación de la iniciativa sucesora del motor FPL v1. Define cómo operar 
 durante toda la temporada con ciclos autónomos, trazables y seguros, sin cambiar la lógica
 de decisión que ya vive en `mova_fpl/`.
 
-Este paquete es **solo diseño**. No autoriza despliegues, migraciones locales, cambios en
-la cuenta FPL ni activación de automatizaciones externas. Supabase queda fuera del runtime:
-solo conserva el seguimiento PM de construcción del proyecto.
+La especificación ya tiene una primera implementación desplegada en el VPS en modo
+**shadow A0**. Esto autoriza recolección, análisis, modelos y evidencia; no autoriza
+cambios en la cuenta FPL. Supabase queda fuera del runtime: solo conserva el seguimiento
+PM de construcción del proyecto.
 
 ## Estado
 
 | Campo | Valor |
 | --- | --- |
-| Versión | 0.1 |
-| Estado | `proposed` |
+| Versión | 0.2 |
+| Estado | `active-shadow` |
 | Riesgo | alto: cuenta externa, deadlines irreversibles y sesión autenticada |
 | Business owner | Julián Zuluaga |
 | Aprobación técnica | pendiente de Nicolás Buitrago |
@@ -41,8 +42,9 @@ solo conserva el seguimiento PM de construcción del proyecto.
 | [04-readiness-and-rollout.md](04-readiness-and-rollout.md) | readiness actual, gates y rollout por niveles |
 | [05-source-register.md](05-source-register.md) | reglas y referencias técnicas verificadas |
 | [06-traceability.md](06-traceability.md) | requisitos → decisiones → workpacks → evidencia esperada |
+| [07-deployment-evidence.md](07-deployment-evidence.md) | acta verificable del primer despliegue shadow en VPS |
 | [decisions/](decisions/) | decisiones arquitectónicas propuestas |
-| [workpacks/](workpacks/) | unidades de implementación futura; ninguna está autorizada aún |
+| [workpacks/](workpacks/) | unidades de implementación y criterios todavía pendientes |
 
 ## Principio rector
 
