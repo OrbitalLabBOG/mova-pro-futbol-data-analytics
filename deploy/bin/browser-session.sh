@@ -36,7 +36,7 @@ case "$action" in
   login)
     start_browser
     "${compose[@]}" exec -T browser \
-      agent-browser --session mova-fpl batch --bail \
+      agent-browser --headed --session mova-fpl batch --bail \
       'open https://fantasy.premierleague.com/' \
       'wait --load domcontentloaded' 'get url' 'get title'
     echo "Open a tunnel: ssh -N -L ${MOVA_NOVNC_PORT:-6080}:127.0.0.1:${MOVA_NOVNC_PORT:-6080} root@72.60.245.2"
@@ -44,7 +44,7 @@ case "$action" in
     ;;
   read)
     "${compose[@]}" exec -T browser \
-      agent-browser --session mova-fpl batch --bail \
+      agent-browser --headed --session mova-fpl batch --bail \
       'open https://fantasy.premierleague.com/en/my-team' \
       'wait --load domcontentloaded' 'get url' 'get title' 'snapshot -i'
     ;;

@@ -73,6 +73,7 @@ services:
     restart: unless-stopped
     init: true
     environment:
+      AGENT_BROWSER_HEADED: "true"
       MOVA_ENABLE_BROWSER_WRITES: "0"
     security_opt:
       - no-new-privileges:true
