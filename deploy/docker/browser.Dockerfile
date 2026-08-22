@@ -18,8 +18,11 @@ RUN apt-get update \
  && npm cache clean --force \
  && agent-browser --version
 COPY deploy/docker/supervisord-browser.conf /etc/supervisor/conf.d/mova-browser.conf
+COPY deploy/docker/browser-entrypoint.sh /usr/local/bin/mova-browser-entrypoint
 RUN mkdir -p /var/lib/mova-fpl/browser-profile /var/log/supervisor \
- && chown -R node:node /var/lib/mova-fpl /var/log/supervisor
+ && chown -R node:node /var/lib/mova-fpl /var/log/supervisor \
+ && chmod 0755 /usr/local/bin/mova-browser-entrypoint
 USER node
 EXPOSE 6080
+ENTRYPOINT ["/usr/local/bin/mova-browser-entrypoint"]
 CMD ["/usr/bin/supervisord","-n","-c","/etc/supervisor/conf.d/mova-browser.conf"]
