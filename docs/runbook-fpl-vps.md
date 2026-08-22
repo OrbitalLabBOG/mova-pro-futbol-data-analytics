@@ -118,13 +118,25 @@ stack normal. Cuando llegue el rollout supervisado:
 ```bash
 sudo deploy/bin/browser-login.sh
 # desde el PC del operador
-ssh -L 6080:127.0.0.1:6080 root@72.60.245.2
+ssh -N -L 6080:127.0.0.1:6080 root@72.60.245.2
 ```
 
 Abrir `http://127.0.0.1:6080/vnc.html`; Julián completa login y MFA manualmente. No copiar
 cookies, OTP, HTML autenticado ni el perfil a logs, Git, `ops.db` o backups. Tras cualquier
 cambio de página, el executor debe tomar snapshot nuevo y verificar el estado después de
 recargar. CDP no se publica.
+
+La operación repetible usa `deploy/bin/browser-session.sh`:
+
+```bash
+sudo deploy/bin/browser-session.sh status
+sudo deploy/bin/browser-session.sh read   # lectura interactiva; no persistir la salida
+sudo deploy/bin/browser-session.sh stop
+```
+
+La skill canónica `.claude/skills/fpl-web-ops/SKILL.md` define los gates, la secuencia de
+snapshots y el procedimiento de ejecución. Mientras los controles estén en `shadow A0`, el
+browser sólo se usa para login y lectura; no se permiten clicks que muten la cuenta.
 
 ## Rollback y recuperación
 

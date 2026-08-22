@@ -15,6 +15,8 @@ RAW = ROOT / "data" / "raw" / "fpl_seasons"
 
 VAASTAV = "https://raw.githubusercontent.com/vaastav/Fantasy-Premier-League/master/data"
 FPL_API = "https://fantasy.premierleague.com/api"
+FPL_BOOTSTRAP_URL = f"{FPL_API}/bootstrap-static/"
+FPL_FIXTURES_URL = f"{FPL_API}/fixtures/"
 
 USER_AGENT = "mova-fpl/0.1 (analytics; contacto: Orbital Lab)"
 TIMEOUT = 100
@@ -67,11 +69,11 @@ def fetch_season_meta(season: str, name: str, dest_dir: Path = RAW) -> Path:
 
 def fetch_bootstrap() -> bytes:
     """Estado de la temporada en curso desde la API oficial. Solo GET."""
-    return _get(f"{FPL_API}/bootstrap-static/")
+    return _get(FPL_BOOTSTRAP_URL)
 
 
 def fetch_fixtures() -> bytes:
-    return _get(f"{FPL_API}/fixtures/")
+    return _get(FPL_FIXTURES_URL)
 
 
 # ------------------------------------------------------- estado de un equipo

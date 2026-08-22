@@ -11,7 +11,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from mova_fpl.data import live
-from mova_fpl.data.sources import fetch_bootstrap, fetch_fixtures
+from mova_fpl.data.sources import (
+    FPL_BOOTSTRAP_URL,
+    FPL_FIXTURES_URL,
+    fetch_bootstrap,
+    fetch_fixtures,
+)
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -99,9 +104,9 @@ def capture_bytes(season: str, gw: int, out_root: Path, boot_raw: bytes,
         "captured_at": captured,
         "source": "fantasy.premierleague.com/api (solo GET via data.sources)",
         "endpoints": [
-            {"url": "https://fantasy.premierleague.com/api/bootstrap-static/",
+            {"url": FPL_BOOTSTRAP_URL,
              "method": "GET", "http_status": 200, "parser": "snapshot-v1"},
-            {"url": "https://fantasy.premierleague.com/api/fixtures/",
+            {"url": FPL_FIXTURES_URL,
              "method": "GET", "http_status": 200, "parser": "snapshot-v1"},
         ],
         "git_sha": _git_sha(),
