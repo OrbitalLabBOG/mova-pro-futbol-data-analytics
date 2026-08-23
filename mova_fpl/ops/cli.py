@@ -12,6 +12,7 @@ from mova_fpl.ops.backup import create_backup
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB, new_id, sha256_json
 from mova_fpl.ops.logging import configure_logging
+from mova_fpl.ops.operator import build_doctor, build_status, render_doctor, render_status
 from mova_fpl.ops.tick import LockBusy, TickRunner
 
 
@@ -23,6 +24,12 @@ def parser() -> argparse.ArgumentParser:
     commands.add_parser("tick")
     commands.add_parser("serve")
     commands.add_parser("check")
+    status = commands.add_parser("status", help="estado operativo consolidado")
+    status.add_argument("--json", action="store_true", dest="as_json")
+    doctor = commands.add_parser("doctor", help="diagnóstico verificable del runtime")
+    doctor.add_argument("--json", action="store_true", dest="as_json")
+    doctor.add_argument("--no-network", action="store_true",
+                        help="omite el GET de salud contra la API pública FPL")
     team_state = commands.add_parser("ingest-team-state")
     team_state.add_argument("--file", default="-", help="JSON sanitizado; '-' lee stdin")
     team_state.add_argument("--trigger", choices=("scheduled", "forced"),
@@ -44,7 +51,8 @@ def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     configure_logging(args.log_level)
     config = RuntimeConfig.from_env()
-    config.validate()
+    if args.command != "doctor":
+        config.validate()
     db = OpsDB(config.ops_db, minimum_version=config.sqlite_min_version)
     if args.command == "migrate":
         print(json.dumps({"applied": db.migrate(), "sqlite_version": db.sqlite_version}))
@@ -59,6 +67,15 @@ def main(argv: list[str] | None = None) -> int:
     elif args.command == "check":
         print(json.dumps({"integrity": db.quick_check(), "status": db.status()},
                          ensure_ascii=False, default=str))
+    elif args.command == "status":
+        payload = build_status(config, db)
+        print(json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str)
+              if args.as_json else render_status(payload))
+    elif args.command == "doctor":
+        payload = build_doctor(config, db, network=not args.no_network)
+        print(json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str)
+              if args.as_json else render_doctor(payload))
+        return 1 if payload["summary"]["required_failures"] else 0
     elif args.command == "ingest-team-state":
         from pathlib import Path
         from mova_fpl.ops.team_state import ingest

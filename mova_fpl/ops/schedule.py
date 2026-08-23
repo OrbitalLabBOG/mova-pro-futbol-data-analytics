@@ -5,6 +5,19 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 
+PUBLIC_CADENCE_SECONDS = {
+    "baseline": 6 * 3600,
+    "research": 3 * 3600,
+    "refresh": 3600,
+    "preflight": 15 * 60,
+    "freeze": 5 * 60,
+    "execution_window": 5 * 60,
+    "verification_window": 5 * 60,
+    "hard_stop": 5 * 60,
+    "settlement": 6 * 3600,
+}
+
+
 def select_event(boot: dict, now: datetime | None = None) -> dict:
     """Selecciona el próximo ciclo operable desde el bootstrap oficial."""
     now = now or datetime.now(timezone.utc)
@@ -63,3 +76,8 @@ def private_state_cadence_seconds(deadline: str, now: datetime | None = None) ->
     if 0 < seconds <= 24 * 3600:
         return 3600
     return 6 * 3600
+
+
+def public_state_cadence_seconds(deadline: str, now: datetime | None = None) -> int:
+    """Cadencia del snapshot público para la fase efectiva de la jornada."""
+    return PUBLIC_CADENCE_SECONDS[phase_for(deadline, now)]

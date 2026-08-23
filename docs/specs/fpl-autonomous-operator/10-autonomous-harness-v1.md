@@ -280,7 +280,7 @@ Un único CLI estable, con salida humana y `--json`:
 
 ```text
 mova status [--json]
-mova doctor
+mova doctor [--json] [--no-network]
 mova collect [public|private|all] [--force --reason ...]
 mova data inspect|freshness|coverage
 mova model train|predict|explain|score

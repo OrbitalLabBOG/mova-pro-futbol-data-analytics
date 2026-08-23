@@ -3,6 +3,7 @@ set -euo pipefail
 
 install -d -m 0750 -o 10001 -g 10001 /var/lib/mova-fpl /var/lib/mova-fpl/db
 install -d -m 0750 -o 10001 -g 10001 \
+  /var/lib/mova-fpl/runtime \
   /var/lib/mova-fpl/artifacts /var/lib/mova-fpl/artifacts/sources \
   /var/lib/mova-fpl/artifacts/models /var/lib/mova-fpl/artifacts/decisions \
   /var/lib/mova-fpl/artifacts/evidence

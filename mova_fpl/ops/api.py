@@ -11,6 +11,7 @@ from urllib.parse import parse_qs, urlparse
 
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB
+from mova_fpl.ops.operator import build_status
 
 LOG = logging.getLogger(__name__)
 
@@ -20,14 +21,14 @@ def _json_bytes(value) -> bytes:
 
 
 def _dashboard(status: dict) -> bytes:
-    cycle = status.get("cycle") or {}
-    tick = status.get("latest_tick") or {}
-    controls = status.get("controls") or {}
-    team_state = status.get("latest_team_state") or {}
+    cycle = status.get("gameweek") or {}
+    operations = status.get("operations") or {}
+    tick = operations.get("latest_tick") or {}
+    controls = (status.get("runtime") or {}).get("controls") or {}
+    team_state = (status.get("data") or {}).get("team_state") or {}
     control_rows = "".join(
-        f"<tr><td>{html.escape(key)}</td><td><code>{html.escape(json.dumps(item['value']))}</code></td>"
-        f"<td>{html.escape(item['actor'])}</td></tr>"
-        for key, item in controls.items()
+        f"<tr><td>{html.escape(key)}</td><td><code>{html.escape(json.dumps(value))}</code></td></tr>"
+        for key, value in controls.items()
     )
     body = f"""<!doctype html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
@@ -45,17 +46,19 @@ a {{ color:#72a7ff }}
 <div class="grid">
 <div class="card"><div class="muted">Jornada</div><div class="value">GW {html.escape(str(cycle.get('gw','—')))}</div><div>{html.escape(str(cycle.get('phase','sin ciclo')))}</div></div>
 <div class="card"><div class="muted">Último tick</div><div class="value">{html.escape(str(tick.get('status','sin datos')))}</div><div>{html.escape(str(tick.get('started_at','')))}</div></div>
-<div class="card"><div class="muted">Incidentes abiertos</div><div class="value">{sum(status.get('open_incidents',{}).values())}</div><div>{html.escape(json.dumps(status.get('open_incidents',{})))}</div></div>
-<div class="card"><div class="muted">Alertas pendientes</div><div class="value">{status.get('outbox_pending',0)}</div><div>SQLite {html.escape(status.get('sqlite_version',''))}</div></div>
-<div class="card"><div class="muted">Estado privado</div><div class="value">{html.escape(str(team_state.get('quality_status','sin datos')))}</div><div>{html.escape(str(team_state.get('observed_at','')))} · FT {html.escape(str(team_state.get('free_transfers','—')))}</div></div>
+<div class="card"><div class="muted">Incidentes abiertos</div><div class="value">{len(operations.get('open_incidents',[]))}</div><div>{html.escape(status.get('overall_status','unknown'))}</div></div>
+<div class="card"><div class="muted">Alertas pendientes</div><div class="value">{operations.get('outbox_pending',0)}</div><div>SQLite {html.escape(str((status.get('runtime') or {}).get('sqlite_version','')))}</div></div>
+<div class="card"><div class="muted">Estado privado</div><div class="value">{html.escape(str(team_state.get('quality','sin datos')))}</div><div>{html.escape(str(team_state.get('observed_at','')))} · FT {html.escape(str(team_state.get('free_transfers','—')))}</div></div>
 </div>
-<h2>Controles efectivos</h2><table><thead><tr><th>Control</th><th>Valor</th><th>Actor</th></tr></thead><tbody>{control_rows}</tbody></table>
+<h2>Controles efectivos</h2><table><thead><tr><th>Control</th><th>Valor</th></tr></thead><tbody>{control_rows}</tbody></table>
 <p><a href="/api/v1/status">status JSON</a> · <a href="/metrics">métricas</a> · <a href="/api/v1/audit">auditoría</a> · <a href="/api/v1/jobs">jobs</a></p>
 </body></html>"""
     return body.encode("utf-8")
 
 
-def make_handler(db: OpsDB):
+def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
+    runtime = config or RuntimeConfig()
+
     class Handler(BaseHTTPRequestHandler):
         server_version = "MOVAOps/1.0"
 
@@ -88,7 +91,8 @@ def make_handler(db: OpsDB):
                                "text/plain; version=0.0.4; charset=utf-8")
                     return
                 if parsed.path in {"/", "/dashboard"}:
-                    self._send(HTTPStatus.OK, _dashboard(db.status()), "text/html; charset=utf-8")
+                    self._send(HTTPStatus.OK, _dashboard(build_status(runtime, db)),
+                               "text/html; charset=utf-8")
                     return
                 routes = {
                     "/api/v1/status": None,
@@ -105,7 +109,7 @@ def make_handler(db: OpsDB):
                     self._send(HTTPStatus.NOT_FOUND, b'{"error":"not_found"}', "application/json")
                     return
                 if routes[parsed.path] is None:
-                    payload = db.status()
+                    payload = build_status(runtime, db)
                 else:
                     raw = parse_qs(parsed.query).get("limit", ["50"])[0]
                     limit = max(1, min(int(raw), 500))
@@ -130,7 +134,7 @@ def make_handler(db: OpsDB):
 
 def serve(config: RuntimeConfig, db: OpsDB) -> None:
     db.quick_check()
-    server = ThreadingHTTPServer((config.api_host, config.api_port), make_handler(db))
+    server = ThreadingHTTPServer((config.api_host, config.api_port), make_handler(db, config))
     LOG.info("api_started", extra={"event": "api_started", "detail": {
         "host": config.api_host, "port": config.api_port,
     }})

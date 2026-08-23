@@ -58,7 +58,12 @@ Antes de activar el primer tick, colocar por canal seguro —no Git—:
 ## Operación diaria
 
 ```bash
-# Vista ejecutiva; abrir túnel ssh -L 8787:127.0.0.1:8787 root@72.60.245.2
+# Contrato estable: el wrapper incorpora checks sanitizados del host
+mova status
+mova status --json
+mova doctor --json
+
+# Vista HTTP; abrir túnel ssh -L 8787:127.0.0.1:8787 root@72.60.245.2
 curl -s http://127.0.0.1:8787/api/v1/status | python -m json.tool
 curl -s http://127.0.0.1:8787/metrics
 
@@ -79,6 +84,10 @@ docker compose logs --tail=100 api
 Los logs de containers rotan a 5 × 10 MiB por servicio. Los timers y fallos conservan su
 diagnóstico en journald. Cada tick sella bytes fuente y hashes; `ops.db` conserva jobs,
 pasos, fuentes, decisiones, controles, salud, incidentes y outbox.
+
+`mova status` no llama la red ni escribe el ledger. `mova doctor` hace un GET público acotado y
+retorna código 1 ante un `FAIL` requerido. El probe del host no lee env, cookies, logs ni HTML;
+ver [contrato del operador](operator.md).
 
 ## Estado privado del equipo — API-first
 

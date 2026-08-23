@@ -8,6 +8,7 @@ Este repositorio es la fuente técnica del operador FPL de MOVA. Su única super
 - Arquitectura vigente: `docs/architecture/decision-engine.md`.
 - Operación por jornada: `docs/operations/gameweek.md`.
 - Control plane del VPS: `docs/operations/vps.md`.
+- Contrato del operador: `docs/operations/operator.md`.
 - Hoja de ruta del harness: `docs/specs/fpl-autonomous-operator/10-autonomous-harness-v1.md`.
 - Decisiones de temporada: `decisions/fpl/<season>/`.
 
@@ -41,6 +42,10 @@ gate hermético completo.
 
 El deploy usa `compose.yaml`, `deploy/docker/` y `deploy/systemd/`. No edites secretos ni
 perfiles autenticados; los ejemplos de entorno son contratos, no valores productivos.
+
+Para una inspección ordinaria usa `mova status --json`; ante degradación usa
+`mova doctor --json`. No abras `ops.db` directamente ni montes Docker/D-Bus dentro del engine
+para obtener observabilidad del host.
 
 ## Legado
 

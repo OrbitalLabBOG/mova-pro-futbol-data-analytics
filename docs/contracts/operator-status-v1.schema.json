@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mova.orbitallab.ai/contracts/operator-status-v1.schema.json",
+  "title": "MOVA FPL operator status v1",
+  "type": "object",
+  "required": [
+    "schema", "schema_version", "command", "generated_at", "overall_status",
+    "status_reasons", "runtime", "gameweek", "data", "models", "research",
+    "decision", "projection", "execution", "operations", "host"
+  ],
+  "properties": {
+    "schema": {"const": "mova-fpl-operator-v1"},
+    "schema_version": {"const": "1.0"},
+    "command": {"const": "status"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "overall_status": {"enum": ["healthy", "degraded", "critical"]},
+    "status_reasons": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "runtime": {"type": "object"},
+    "gameweek": {"type": "object"},
+    "data": {"type": "object"},
+    "models": {
+      "type": "object",
+      "required": ["registered", "artifacts"],
+      "properties": {
+        "registered": {"type": "array", "items": {"type": "object"}},
+        "artifacts": {"type": "array", "items": {"type": "object"}}
+      }
+    },
+    "research": {"type": "object"},
+    "decision": {"type": ["object", "null"]},
+    "projection": {"type": ["object", "null"]},
+    "execution": {"type": ["object", "null"]},
+    "operations": {"type": "object"},
+    "host": {"type": "object"}
+  },
+  "additionalProperties": false
+}
