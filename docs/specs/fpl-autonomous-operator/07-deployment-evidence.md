@@ -191,3 +191,28 @@ final. El release siguiente instala un gate adaptativo: su evaluación liviana o
 cinco minutos, pero Chromium sólo se inicia cuando vence el umbral de la fase o ante una
 captura pre/post acción forzada. La validación y el despliegue efectivo de ese release se
 registran en una adenda separada para no reescribir la evidencia histórica.
+
+### Adenda de cadencia adaptativa — 23 de agosto de 2026
+
+| Evidencia | Resultado |
+| --- | --- |
+| Runtime Git / etiquetas OCI | `684e5da` / `684e5da` en engine y browser |
+| Timer evaluador | activo; `OnCalendar=*:2/5` |
+| Gate baseline real | `due=false`, `snapshot_fresh`, cadencia 21.600 s, edad 155 s |
+| Duración observada del gate | aproximadamente 2 s, sin iniciar Chromium |
+| Captura forzada de commissioning | `teamstate_de1cd64c33624155bb208a5dbdca8b77` |
+| Auditoría del bypass | `team_state_capture_trigger`, payload `{"trigger":"forced"}` |
+| Estado después del smoke | sólo API activa; browser detenido; `ops.db integrity=ok` |
+
+La configuración efectiva elevó `MOVA_PRIVATE_STATE_MAX_AGE_SECONDS` de 900 a 21.600 como
+techo absoluto. Collector y motor comparten la misma política: 6 horas normalmente, 1 hora
+en las últimas 24 horas, 15 minutos en las últimas 3 horas y 5 minutos en los últimos 30
+minutos. El motor usa el menor valor entre fase y techo, por lo que la relajación baseline no
+debilita la frescura cerca del deadline.
+
+El smoke forzado hizo únicamente el GET autenticado y produjo el mismo fingerprint
+`fc790ac5...`: no hubo cambio de equipo. El evento `forced`, el job y el snapshot quedaron
+correlacionados en el ledger. Los timers `tick`, `private-state`, `watchdog` y `backup`
+quedaron activos; API `/readyz` respondió `ready`, no había incidentes ni outbox pendiente.
+Los controles siguieron en `shadow`, `A0`, `compliance_gate=pending`, `kill_switch=true` y
+`browser_writes=false`.
