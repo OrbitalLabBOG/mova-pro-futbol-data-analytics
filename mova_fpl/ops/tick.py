@@ -183,10 +183,13 @@ class TickRunner:
                             **resource_state,
                         }
 
-        source = harness.call(
-            "fetch_official_sources",
-            lambda: {"bootstrap": fetch_bootstrap(), "fixtures": fetch_fixtures()},
-        )
+        # Keep the two endpoints as separate audited steps. The bootstrap carries
+        # events/player state while fixtures has a different latency and change
+        # profile; combining them made a slow source impossible to identify.
+        source = {
+            "bootstrap": harness.call("fetch_fpl_bootstrap_events", fetch_bootstrap),
+            "fixtures": harness.call("fetch_fpl_fixtures", fetch_fixtures),
+        }
         boot = json.loads(source["bootstrap"])
         event = select_event(boot, now)
         gw, deadline = int(event["id"]), str(event["deadline_time"])

@@ -51,7 +51,7 @@ a {{ color:#72a7ff }}
 <div class="card"><div class="muted">Estado privado</div><div class="value">{html.escape(str(team_state.get('quality','sin datos')))}</div><div>{html.escape(str(team_state.get('observed_at','')))} · FT {html.escape(str(team_state.get('free_transfers','—')))}</div></div>
 </div>
 <h2>Controles efectivos</h2><table><thead><tr><th>Control</th><th>Valor</th></tr></thead><tbody>{control_rows}</tbody></table>
-<p><a href="/api/v1/status">status JSON</a> · <a href="/metrics">métricas</a> · <a href="/api/v1/audit">auditoría</a> · <a href="/api/v1/jobs">jobs</a></p>
+<p><a href="/api/v1/status">status JSON</a> · <a href="/metrics">métricas</a> · <a href="/api/v1/audit">auditoría</a> · <a href="/api/v1/jobs">jobs</a> · <a href="/api/v1/steps">steps</a></p>
 </body></html>"""
     return body.encode("utf-8")
 
@@ -97,6 +97,7 @@ def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
                 routes = {
                     "/api/v1/status": None,
                     "/api/v1/jobs": "job_runs",
+                    "/api/v1/steps": "job_steps",
                     "/api/v1/audit": "audit_events",
                     "/api/v1/incidents": "incidents",
                     "/api/v1/health": "health_samples",

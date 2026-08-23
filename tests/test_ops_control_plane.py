@@ -128,6 +128,12 @@ def test_tick_sella_fuentes_y_es_idempotente(tmp_path, monkeypatch):
     assert third["work"] == "skipped_cadence"
     assert db.status()["latest_tick"]["status"] == "completed"
     assert len(db.recent("source_snapshots")) == 1
+    step_names = {row["step_name"] for row in db.recent("job_steps", 20)}
+    assert "fetch_fpl_bootstrap_events" in step_names
+    assert "fetch_fpl_fixtures" in step_names
+    metrics = db.prometheus()
+    assert "mova_tick_last_duration_seconds" in metrics
+    assert 'mova_collector_step_duration_ms{step="fetch_fpl_bootstrap_events"' in metrics
 
 
 def test_tick_forzado_omite_cadencia_y_deja_auditoria(tmp_path, monkeypatch):
