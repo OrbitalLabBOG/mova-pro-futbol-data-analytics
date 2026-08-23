@@ -38,6 +38,11 @@ class RuntimeConfig:
     tick_bucket_seconds: int = 300
     decision_timeout_seconds: int = 600
     private_state_max_age_seconds: int = 21600
+    postgres_host: str = "postgres"
+    postgres_port: int = 5432
+    postgres_db: str = "mova"
+    postgres_user: str = "mova_owner"
+    postgres_credential_file: Path = Path("/run/secrets/postgres_password")
     git_sha: str = "unknown"
 
     @classmethod
@@ -69,6 +74,13 @@ class RuntimeConfig:
             private_state_max_age_seconds=int(
                 os.environ.get("MOVA_PRIVATE_STATE_MAX_AGE_SECONDS", "21600")
             ),
+            postgres_host=os.environ.get("MOVA_POSTGRES_HOST", "postgres"),
+            postgres_port=int(os.environ.get("MOVA_POSTGRES_PORT", "5432")),
+            postgres_db=os.environ.get("MOVA_POSTGRES_DB", "mova"),
+            postgres_user=os.environ.get("MOVA_POSTGRES_USER", "mova_owner"),
+            postgres_credential_file=Path(os.environ.get(
+                "MOVA_POSTGRES_CREDENTIAL_FILE", "/run/secrets/postgres_password"
+            )),
             git_sha=os.environ.get("MOVA_GIT_SHA", "unknown"),
         )
 
@@ -90,3 +102,12 @@ class RuntimeConfig:
                 raise ValueError(f"path operativo debe ser absoluto: {path}")
         if self.private_state_max_age_seconds <= 0:
             raise ValueError("MOVA_PRIVATE_STATE_MAX_AGE_SECONDS debe ser positivo")
+
+    def validate_postgres(self) -> None:
+        """Valida solo la configuración del store shadow, sin abrir red."""
+        if not self.postgres_host or not self.postgres_db or not self.postgres_user:
+            raise ValueError("configuración PostgreSQL incompleta")
+        if not 1 <= self.postgres_port <= 65535:
+            raise ValueError("MOVA_POSTGRES_PORT fuera de rango")
+        if not self.postgres_credential_file.is_absolute():
+            raise ValueError("MOVA_POSTGRES_CREDENTIAL_FILE debe ser absoluto")

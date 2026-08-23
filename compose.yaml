@@ -15,6 +15,11 @@ x-engine: &engine
     MOVA_CANONICAL_DB: /var/lib/mova-fpl/db/fpl_canonical.db
     MOVA_TRACE_DB: /var/lib/mova-fpl/db/trace.db
     MOVA_MODEL_ROOT: /var/lib/mova-fpl/artifacts/models
+    MOVA_POSTGRES_HOST: postgres
+    MOVA_POSTGRES_PORT: "5432"
+    MOVA_POSTGRES_DB: ${MOVA_POSTGRES_DB:-mova}
+    MOVA_POSTGRES_USER: ${MOVA_POSTGRES_USER:-mova_owner}
+    MOVA_POSTGRES_CREDENTIAL_FILE: /run/secrets/postgres_password
   security_opt:
     - no-new-privileges:true
   cap_drop:
@@ -28,6 +33,49 @@ x-engine: &engine
       max-file: "5"
 
 services:
+  postgres:
+    image: postgres:17.11-bookworm@sha256:07edf880f0cf3f742c990d23faf92cb19e84923a8bce30f7d8e1a8ab63cae7b3
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${MOVA_POSTGRES_DB:-mova}
+      POSTGRES_USER: ${MOVA_POSTGRES_USER:-mova_owner}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+      PGDATA: /var/lib/postgresql/data/pgdata
+    command:
+      - postgres
+      - -c
+      - max_connections=30
+      - -c
+      - shared_buffers=128MB
+      - -c
+      - work_mem=4MB
+      - -c
+      - maintenance_work_mem=64MB
+      - -c
+      - idle_in_transaction_session_timeout=60s
+      - -c
+      - log_min_duration_statement=1000
+    secrets:
+      - postgres_password
+    volumes:
+      - ${MOVA_DATA_ROOT:-/var/lib/mova-fpl}/postgres:/var/lib/postgresql/data
+    networks:
+      - data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    mem_limit: 768m
+    cpus: 0.50
+    pids_limit: 128
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "5"
+
   api:
     <<: *engine
     command: ["python", "-m", "mova_fpl.ops.cli", "serve"]
@@ -62,6 +110,9 @@ services:
     restart: "no"
     networks:
       - worker_egress
+      - data
+    secrets:
+      - postgres_password
     volumes:
       - ${MOVA_DATA_ROOT:-/var/lib/mova-fpl}:/var/lib/mova-fpl
       - ${MOVA_BACKUP_ROOT:-/opt/orbital/backups/mova-fpl}:/opt/orbital/backups/mova-fpl
@@ -112,3 +163,9 @@ networks:
   control: {}
   worker_egress: {}
   browser_egress: {}
+  data:
+    internal: true
+
+secrets:
+  postgres_password:
+    file: ${MOVA_POSTGRES_PASSWORD_FILE:-/etc/mova-fpl/postgres-password}

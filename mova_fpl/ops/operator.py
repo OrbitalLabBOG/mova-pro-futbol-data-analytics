@@ -429,6 +429,35 @@ def build_doctor(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
             checks.append(_check(name, "FAIL", "database is missing or unreadable",
                                  detail={"path": str(path), "error": type(exc).__name__}))
 
+    if config.postgres_credential_file.is_file():
+        try:
+            from mova_fpl.postgres.store import latest_version, status as postgres_status
+
+            pg_status = postgres_status(config)
+            applied = [int(item["version"]) for item in pg_status["migrations"]]
+            current_schema = bool(applied) and applied[-1] == latest_version()
+            pg_ok = pg_status["status"] == "healthy" and current_schema
+            checks.append(_check(
+                "postgres_shadow", "PASS" if pg_ok else "WARN",
+                "PostgreSQL shadow is reachable and current" if pg_ok
+                else "PostgreSQL shadow needs attention",
+                required=False,
+                detail={
+                    "server_version": pg_status.get("server_version"),
+                    "migrations": applied,
+                    "expected_latest": latest_version(),
+                    "latest_import_status": (pg_status.get("latest_import") or {}).get("status"),
+                    "writer": pg_status.get("writer"),
+                    "role": pg_status.get("postgres_role"),
+                },
+            ))
+        except Exception as exc:  # noqa: BLE001
+            checks.append(_check(
+                "postgres_shadow", "WARN", "PostgreSQL shadow is unavailable",
+                required=False,
+                detail={"error": type(exc).__name__, "message": str(exc)[:300]},
+            ))
+
     model_root = config.artifact_root / "models"
     model_files = sorted(model_root.rglob("*.joblib")) if model_root.is_dir() else []
     model_families = {path.parent.name for path in model_files}
@@ -485,6 +514,17 @@ def build_doctor(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
         checks.append(_check("api_container", "PASS" if api.get("ready") else "FAIL",
                              "API is ready" if api.get("ready") else "API is not ready",
                              detail={"container_state": api.get("container_state")}))
+        if "postgres" in host:
+            postgres = host.get("postgres") or {}
+            postgres_ok = (postgres.get("container_state") == "running"
+                           and postgres.get("container_health") == "healthy"
+                           and postgres.get("published_ports") is False)
+            checks.append(_check(
+                "postgres_container", "PASS" if postgres_ok else "WARN",
+                "PostgreSQL shadow is healthy and private" if postgres_ok
+                else "PostgreSQL shadow container needs attention",
+                required=False, detail=postgres,
+            ))
         revisions = host.get("revisions") or {}
         aligned = revisions.get("checkout") and revisions.get("checkout") == revisions.get("image")
         checks.append(_check("deployment_revision", "PASS" if aligned else "WARN",

@@ -72,6 +72,7 @@ Documentos principales:
 - [Operar una jornada](docs/operations/gameweek.md)
 - [Contrato `mova` y diagnóstico](docs/operations/operator.md)
 - [Operar el VPS](docs/operations/vps.md)
+- [PostgreSQL shadow](docs/operations/postgres-shadow.md)
 - [Arquitectura del motor](docs/architecture/decision-engine.md)
 - [Autonomous Harness v1](docs/specs/fpl-autonomous-operator/10-autonomous-harness-v1.md)
 

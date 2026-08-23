@@ -17,16 +17,19 @@ operativos y Supabase únicamente como seguimiento PM.
 
 - Python 3.13.5, pandas, NumPy, SciPy, scikit-learn, PuLP/CBC y joblib.
 - Imagen Docker reproducible en el VPS.
-- Control plane local: SQLite `ops.db`; almacenes analíticos actuales:
+- Writer oficial: SQLite `ops.db`; almacenes analíticos actuales:
   `fpl_canonical.db` y `trace.db`.
+- PostgreSQL 17 corre en shadow privado, con imports puntuales verificados. No
+  tratarlo como writer ni hacer cutover sin los gates de HV1-02.
 - API loopback, timers systemd, backups, collector público y collector privado
   autenticado de solo lectura.
 - Browser separado con perfil persistente. Por defecto está detenido y sin
   escrituras: `shadow`, `A0`, `kill_switch=true`, `browser_writes=false`.
 - Equipo real: `losmillosFPL`, `team_id=3609854`.
 
-La hoja de ruta migra los datos analíticos y operativos a PostgreSQL local al
-VPS. Supabase no es runtime ni almacén FPL.
+La hoja de ruta migra gradualmente los datos analíticos y operativos a
+PostgreSQL local al VPS. Consultar `docs/operations/postgres-shadow.md` antes de
+operarlo. Supabase no es runtime ni almacén FPL.
 
 ## Interfaz operativa
 
@@ -37,6 +40,8 @@ mova status
 mova status --json
 mova doctor
 mova doctor --json --no-network
+mova postgres status
+mova postgres verify
 ```
 
 Consultar primero `docs/operations/operator.md` y la skill

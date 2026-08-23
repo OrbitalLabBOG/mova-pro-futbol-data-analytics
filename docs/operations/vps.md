@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — operación del stack VPS"
 created: 2026-08-22
-updated: 2026-08-22
+updated: 2026-08-23
 tags: [mova, fpl, vps, docker, systemd, observability]
 status: active
 ---
@@ -25,6 +25,7 @@ VPS. Supabase se reserva para seguimiento externo de construcción del proyecto.
 | checkout aprobado | `/opt/orbital/services/mova-fpl` |
 | configuración | `/etc/mova-fpl/runtime.env` |
 | control plane | `/var/lib/mova-fpl/db/ops.db` |
+| PostgreSQL shadow | `/var/lib/mova-fpl/postgres/` (red Docker interna, sin puerto host) |
 | datos/modelos/traza | `/var/lib/mova-fpl/db/` y `/var/lib/mova-fpl/artifacts/` |
 | perfil browser | `/var/lib/mova-fpl/browser-profile` (`0700`, sin backup general) |
 | backups | `/opt/orbital/backups/mova-fpl/<UTC>/` |
@@ -42,8 +43,10 @@ sudo deploy/bin/bootstrap-host.sh
 export MOVA_GIT_SHA="$(git rev-parse --short HEAD)"
 export MOVA_IMAGE_TAG="$MOVA_GIT_SHA"
 sudo sed -i "s/^MOVA_GIT_SHA=.*/MOVA_GIT_SHA=$MOVA_GIT_SHA/; s/^MOVA_IMAGE_TAG=.*/MOVA_IMAGE_TAG=$MOVA_IMAGE_TAG/" /etc/mova-fpl/deploy.env
-docker compose build api
+docker compose build api worker
 docker compose --profile jobs run --rm --no-deps worker python -m mova_fpl.ops.cli migrate
+docker compose up -d --wait postgres
+mova postgres migrate
 docker compose up -d api
 curl --fail http://127.0.0.1:8787/readyz
 sudo deploy/bin/install-systemd.sh /opt/orbital/services/mova-fpl
@@ -164,11 +167,19 @@ y compliance aprobado; el rollout exige además shadow suficiente y prueba de ve
 sudo systemctl start mova-fpl-backup.service
 latest="$(find /opt/orbital/backups/mova-fpl -mindepth 1 -maxdepth 1 -type d | sort | tail -1)"
 sudo deploy/bin/restore-drill.sh "$latest"
+
+# PostgreSQL shadow: dump custom + restauración en DB temporal
+pg_latest="$(find /opt/orbital/backups/mova-fpl/postgres -mindepth 1 -maxdepth 1 -type d | sort | tail -1)"
+sudo deploy/bin/postgres-shadow-restore-drill.sh "$pg_latest"
 ```
 
 El backup usa SQLite Online Backup API y ejecuta `quick_check`; nunca hace `cp` de una base
-viva ignorando WAL. El manifest contiene SHA-256 y versión SQLite. Retención local: 35 días.
+viva ignorando WAL. PostgreSQL usa `pg_dump -Fc`, valida el catálogo del dump y conserva un
+manifest SHA-256. El timer diario ejecuta ambos. Retención local: 35 días.
 La copia off-host cifrada sigue siendo una decisión pendiente.
+
+El import y la verificación PostgreSQL se describen en el
+[runbook shadow](postgres-shadow.md). SQLite continúa como writer oficial.
 
 ## Browser y login humano
 

@@ -49,6 +49,15 @@ def parser() -> argparse.ArgumentParser:
     control.add_argument("value", help="valor JSON, por ejemplo false o \"shadow\"")
     control.add_argument("--actor", required=True)
     control.add_argument("--reason", required=True)
+    postgres = commands.add_parser("postgres", help="store PostgreSQL shadow HV1-02")
+    postgres_commands = postgres.add_subparsers(dest="postgres_command", required=True)
+    postgres_commands.add_parser("migrate", help="aplica migraciones inmutables")
+    pg_import = postgres_commands.add_parser("import", help="importa snapshots SQLite")
+    pg_import.add_argument("--actor", required=True)
+    pg_import.add_argument("--reason", required=True)
+    pg_import.add_argument("--idempotency-key", required=True)
+    postgres_commands.add_parser("status", help="estado del store shadow")
+    postgres_commands.add_parser("verify", help="revalida artefactos y conteos")
     return root
 
 
@@ -58,6 +67,26 @@ def main(argv: list[str] | None = None) -> int:
     config = RuntimeConfig.from_env()
     if args.command != "doctor":
         config.validate()
+    if args.command == "postgres":
+        from mova_fpl.postgres.importer import import_shadow, verify_shadow
+        from mova_fpl.postgres.store import migrate as postgres_migrate
+        from mova_fpl.postgres.store import status as postgres_status
+
+        config.validate_postgres()
+        if args.postgres_command == "migrate":
+            payload = postgres_migrate(config)
+        elif args.postgres_command == "import":
+            payload = import_shadow(
+                config, actor=args.actor, reason=args.reason,
+                idempotency_key=args.idempotency_key,
+            )
+        elif args.postgres_command == "status":
+            payload = postgres_status(config)
+        else:
+            payload = verify_shadow(config)
+        print(json.dumps(payload, ensure_ascii=False, default=str))
+        return 1 if payload.get("status") in {"fail", "failed", "degraded"} else 0
+
     db = OpsDB(config.ops_db, minimum_version=config.sqlite_min_version)
     if args.command == "migrate":
         print(json.dumps({"applied": db.migrate(), "sqlite_version": db.sqlite_version}))
