@@ -1,9 +1,7 @@
-# CLAUDE.md — MOVA Fantasy Fútbol
+# Compatibilidad de instrucciones
 
-La fuente canónica de instrucciones técnicas es [AGENTS.md](AGENTS.md).
+La fuente canónica del repositorio es [`AGENTS.md`](AGENTS.md), diseñada para
+Codex. Lee ese archivo completo antes de operar este proyecto.
 
-@AGENTS.md
-
-Contexto PM: proyecto `MOVA Fantasy Fútbol Data Analytics`, id
-`cbd36dc4-0c1a-45ad-9134-1019e99639e4`. Supabase es solo seguimiento de construcción;
-ningún dato operativo del equipo vive allí.
+Este puente existe únicamente para herramientas heredadas que todavía descubren
+`CLAUDE.md`. No dupliques instrucciones aquí.

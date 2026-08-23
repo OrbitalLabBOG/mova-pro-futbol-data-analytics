@@ -63,6 +63,45 @@ def load_snapshot(path: Path) -> tuple[dict, list, dict]:
     return json.loads(boot_raw), json.loads(fixtures_raw), manifest
 
 
+def event_context(boot: dict, fixtures: list, target_gw: int) -> dict:
+    """Explica si la jornada objetivo se proyecta sobre una GW ya asentada.
+
+    FPL publica ``is_next`` antes de terminar la jornada en curso. Eso es útil
+    para preparar la siguiente decisión, pero no convierte la información en
+    definitiva. El contrato conserva ambas verdades para que una propuesta de
+    chip no parezca madura mientras aún faltan partidos o el score no ha sido
+    validado por FPL.
+    """
+    events = {int(event["id"]): event for event in boot.get("events", ())
+              if event.get("id") is not None}
+    target = events.get(int(target_gw)) or {}
+    current = next((event for event in boot.get("events", ())
+                    if event.get("is_current")), None)
+    prior = events.get(int(target_gw) - 1)
+    prior_fixtures = [fixture for fixture in fixtures
+                      if fixture.get("event") == int(target_gw) - 1]
+    unstarted = sum(not bool(fixture.get("started")) for fixture in prior_fixtures)
+    unsettled = sum(not bool(fixture.get("finished")) for fixture in prior_fixtures)
+    prior_settled = bool(prior and prior.get("finished") and prior.get("data_checked"))
+    preliminary = bool(prior and not prior_settled)
+    reasons = ["prior_gameweek_unsettled"] if preliminary else []
+    if unstarted:
+        reasons.append("prior_gameweek_has_unstarted_fixtures")
+    return {
+        "target_gw": int(target_gw),
+        "target_is_next": bool(target.get("is_next")),
+        "current_gw": int(current["id"]) if current else None,
+        "prior_gw": int(prior["id"]) if prior else None,
+        "prior_finished": bool(prior.get("finished")) if prior else None,
+        "prior_data_checked": bool(prior.get("data_checked")) if prior else None,
+        "prior_settled": prior_settled if prior else None,
+        "prior_unstarted_fixtures": int(unstarted),
+        "prior_unsettled_fixtures": int(unsettled),
+        "preliminary": preliminary,
+        "readiness_reasons": reasons,
+    }
+
+
 def validate(boot: dict, fixtures: list, season: str, gw: int) -> dict:
     event = next((e for e in boot.get("events", []) if int(e.get("id", -1)) == gw), None)
     if not event or not event.get("deadline_time"):
@@ -90,6 +129,7 @@ def validate(boot: dict, fixtures: list, season: str, gw: int) -> dict:
         "availability_lt_1": int((roster["disponibilidad"] < 1).sum()),
         "availability_eq_0": int((roster["disponibilidad"] == 0).sum()),
         "status_counts": dict(sorted(estados.items())),
+        "event_context": event_context(boot, fixtures, gw),
     }
 
 

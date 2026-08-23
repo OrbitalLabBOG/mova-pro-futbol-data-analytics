@@ -52,6 +52,15 @@ revisión desplegada, perfil browser y un GET público a FPL. Retorna 1 cuando e
 o fuente pública vencidos y fallos recientes. Un incidente P0/P1 abierto lo vuelve crítico. Los
 motivos se enumeran en `status_reasons`, sin obligar al consumidor a inferirlos de texto humano.
 
+`gameweek.readiness` es independiente de la salud técnica. Vale `preliminary` cuando la jornada
+anterior todavía no está `finished` y `data_checked`; en ese estado se puede investigar y comparar
+escenarios, pero no promover chips ni transferencias. `prior_unstarted_fixtures` hace visible si
+incluso quedan partidos por comenzar.
+
+Las actas muestran por separado todos los jugadores que salen y entran y expresan el coste de hits
+en puntos. Una cifra como `1 hit` nunca debe confundirse con `−1 punto`: bajo las reglas vigentes
+equivale a `−4 puntos`.
+
 ## Semántica de `doctor`
 
 Cada check tiene:

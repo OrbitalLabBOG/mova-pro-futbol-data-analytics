@@ -130,6 +130,40 @@ def test_tick_sella_fuentes_y_es_idempotente(tmp_path, monkeypatch):
     assert len(db.recent("source_snapshots")) == 1
 
 
+def test_tick_forzado_omite_cadencia_y_deja_auditoria(tmp_path, monkeypatch):
+    boot_raw, fixtures_raw = _official_sources()
+    monkeypatch.setattr("mova_fpl.ops.tick.fetch_bootstrap", lambda: boot_raw)
+    monkeypatch.setattr("mova_fpl.ops.tick.fetch_fixtures", lambda: fixtures_raw)
+
+    config = _config(tmp_path)
+    db = _db(config)
+    runner = TickRunner(config, db)
+    now = datetime(2026, 8, 20, 21, 30, tzinfo=timezone.utc)
+    runner.run(now=now)
+    forced = runner.run(
+        now=now + timedelta(minutes=1), force=True, actor="test-operator",
+        reason="validar fuentes antes de GW", idempotency_key="force:test-gw1",
+    )
+    reused = runner.run(
+        now=now + timedelta(minutes=2), force=True, actor="test-operator",
+        reason="validar fuentes antes de GW", idempotency_key="force:test-gw1",
+    )
+
+    assert forced["status"] == "completed"
+    assert "work" not in forced
+    assert reused["status"] == "reused"
+    # Los bytes idénticos conservan una sola fuente sellada; el job y la
+    # auditoría sí prueban que el refresco excepcional se ejecutó.
+    assert len(db.recent("source_snapshots")) == 1
+    with db.connect(readonly=True) as con:
+        audit = con.execute(
+            "SELECT actor,payload_json FROM audit_events "
+            "WHERE event_type='forced_tick_requested'"
+        ).fetchone()
+    assert audit["actor"] == "test-operator"
+    assert json.loads(audit["payload_json"])["reason"] == "validar fuentes antes de GW"
+
+
 def test_backup_online_es_restaurable(tmp_path):
     config = _config(tmp_path)
     db = _db(config)

@@ -21,7 +21,12 @@ def parser() -> argparse.ArgumentParser:
     root.add_argument("--log-level", default="INFO")
     commands = root.add_subparsers(dest="command", required=True)
     commands.add_parser("migrate")
-    commands.add_parser("tick")
+    tick = commands.add_parser("tick")
+    tick.add_argument("--force", action="store_true",
+                      help="omite sólo la cadencia; conserva locks, gates y auditoría")
+    tick.add_argument("--actor")
+    tick.add_argument("--reason")
+    tick.add_argument("--idempotency-key")
     commands.add_parser("serve")
     commands.add_parser("check")
     status = commands.add_parser("status", help="estado operativo consolidado")
@@ -57,8 +62,15 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "migrate":
         print(json.dumps({"applied": db.migrate(), "sqlite_version": db.sqlite_version}))
     elif args.command == "tick":
+        if args.force and not all((args.actor, args.reason, args.idempotency_key)):
+            raise SystemExit(
+                "tick --force exige --actor, --reason y --idempotency-key"
+            )
         try:
-            print(json.dumps(TickRunner(config, db).run(), ensure_ascii=False, default=str))
+            print(json.dumps(TickRunner(config, db).run(
+                force=args.force, actor=args.actor or "mova-ops", reason=args.reason,
+                idempotency_key=args.idempotency_key,
+            ), ensure_ascii=False, default=str))
         except LockBusy as exc:
             print(json.dumps({"status": "skipped", "reason": str(exc)}))
             return 75

@@ -42,7 +42,11 @@ def _seed(tmp_path: Path) -> tuple[RuntimeConfig, OpsDB, datetime]:
         job_id=job, cycle_id=cycle, source_name="fpl_official",
         captured_at=now.isoformat(), artifact_path=str(config.artifact_root / "source"),
         manifest_sha256="a" * 64, payload_sha256="b" * 64, freshness_seconds=0,
-        quality_status="valid", quality={"schema": "test"},
+        quality_status="valid", quality={"schema": "test", "event_context": {
+            "current_gw": 1, "prior_gw": 1, "prior_settled": False,
+            "prior_unstarted_fixtures": 1, "preliminary": True,
+            "readiness_reasons": ["prior_gameweek_unsettled"],
+        }},
     )
     db.add_team_state(
         job_id=job, cycle_id=cycle, observed_at=now.isoformat(),
@@ -91,6 +95,8 @@ def test_status_contract_is_versioned_and_sanitized(tmp_path):
     assert payload["schema_version"] == "1.0"
     assert payload["overall_status"] == "healthy"
     assert payload["gameweek"]["gw"] == 2
+    assert payload["gameweek"]["readiness"] == "preliminary"
+    assert payload["gameweek"]["prior_gameweek_settled"] is False
     assert payload["data"]["team_state"]["squad_size"] == 15
     assert payload["data"]["team_state"]["free_transfers"] == 1
     assert payload["runtime"]["controls"]["browser_writes"] is False
