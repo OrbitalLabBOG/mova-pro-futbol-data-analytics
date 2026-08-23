@@ -44,6 +44,14 @@ Ya existe y se conserva:
 - controles `shadow`, `A0`, `kill_switch=true`, `browser_writes=false`;
 - contratos de intervención y backtest pareado del agente.
 
+La base de desarrollo también quedó saneada antes de iniciar el harness:
+
+- `main` contiene solo el producto FPL; legado y binarios quedaron en el tag
+  `archive/pre-harness-cleanup-2026-08-23`;
+- `AGENTS.md`, `pyproject.toml`, CLI instalable y CI definen una entrada reproducible;
+- `pytest -q` es hermético y las pruebas con datos externos están marcadas explícitamente;
+- un contrato de higiene bloquea carpetas legacy y artefactos pesados en Git.
+
 Verificación viva del corte:
 
 - API healthy, cinco timers activos y cero incidentes abiertos;
@@ -361,7 +369,8 @@ no borra evidencia previa y nunca amplía autonomía.
 
 | Workstream | Entrega | Estimación | Dependencia |
 | --- | --- | ---: | --- |
-| HV1-01 | contrato `mova`, status/doctor y skill del operador | 6–8 h | baseline actual |
+| HV1-00 ✅ | reset del repo, archivo de legado, packaging y CI hermético | completado | baseline actual |
+| HV1-01 | contrato `mova`, status/doctor y skill del operador | 6–8 h | HV1-00 |
 | HV1-02 | PostgreSQL, migrations, import y cutover verificado | 10–14 h | HV1-01 |
 | HV1-03 | collector/data quality + interfaz uniforme de modelos | 8–12 h | HV1-02 |
 | HV1-04 | team state, season plan y memoria explícita | 6–8 h | HV1-02 |

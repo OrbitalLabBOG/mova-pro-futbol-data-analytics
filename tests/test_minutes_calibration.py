@@ -29,6 +29,7 @@ def entrenado():
 
 # --------------------------------------------------- AC-WP004-001
 
+@pytest.mark.integration_data
 def test_tres_probabilidades_que_suman_uno(entrenado):
     modelo, evalua, _ = entrenado
     p = modelo.predict_proba(evalua)
@@ -39,11 +40,13 @@ def test_tres_probabilidades_que_suman_uno(entrenado):
 
 # --------------------------------------------------- AC-WP004-002
 
+@pytest.mark.integration_data
 def test_calibracion_dentro_del_umbral(entrenado):
     _, _, m = entrenado
     assert m["ece_p60"] <= UMBRAL_ECE, f"ECE {m['ece_p60']:.4f} > {UMBRAL_ECE}"
 
 
+@pytest.mark.integration_data
 def test_calibra_mejor_que_el_baseline(entrenado):
     _, _, m = entrenado
     assert m["ece_p60"] < m["ece_p60_baseline"]
@@ -51,6 +54,7 @@ def test_calibra_mejor_que_el_baseline(entrenado):
 
 # --------------------------------------------------- AC-WP004-003
 
+@pytest.mark.integration_data
 def test_brier_mejor_que_la_frecuencia_historica(entrenado):
     _, _, m = entrenado
     assert m["brier_p60"] < m["brier_p60_baseline"], (
@@ -59,6 +63,7 @@ def test_brier_mejor_que_la_frecuencia_historica(entrenado):
 
 # --------------------------------------------------- AC-WP004-005
 
+@pytest.mark.integration_data
 def test_la_curva_de_calibracion_se_puede_publicar(entrenado):
     _, _, m = entrenado
     t = m["tabla_calibracion"]
@@ -77,6 +82,7 @@ def test_el_reporte_de_calibracion_existe():
 
 # --------------------------------------------------- AC-WP004-006
 
+@pytest.mark.integration_data
 def test_registrado_en_model_versions_con_git_sha():
     if not Path(DEFAULT_TRACE).exists():
         pytest.skip("aun no hay traza local")
@@ -101,6 +107,7 @@ def test_registrado_en_model_versions_con_git_sha():
         assert "ece_p60" in metrics
 
 
+@pytest.mark.integration_data
 def test_el_artefacto_quedo_versionado():
     assert list((ARTIFACTS / "minutes").glob("minutes-*.joblib"))
 

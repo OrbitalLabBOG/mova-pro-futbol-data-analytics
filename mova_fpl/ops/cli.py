@@ -16,7 +16,7 @@ from mova_fpl.ops.tick import LockBusy, TickRunner
 
 
 def parser() -> argparse.ArgumentParser:
-    root = argparse.ArgumentParser(prog="mova-ops")
+    root = argparse.ArgumentParser(prog="mova")
     root.add_argument("--log-level", default="INFO")
     commands = root.add_subparsers(dest="command", required=True)
     commands.add_parser("migrate")

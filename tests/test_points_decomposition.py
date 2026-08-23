@@ -78,6 +78,7 @@ def test_la_suma_de_componentes_es_el_total(modelo):
     assert np.allclose(suma, out["xp"], atol=1e-9)
 
 
+@pytest.mark.integration_data
 def test_la_suma_cuadra_tambien_con_datos_reales():
     from mova_fpl.data.store import Store
     from mova_fpl.engine.projection import _proba_minutos

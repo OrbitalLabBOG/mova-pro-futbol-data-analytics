@@ -1,43 +1,29 @@
 # Python
 __pycache__/
 *.py[cod]
+.pytest_cache/
 .venv/
 venv/
-.ipynb_checkpoints/
 *.egg-info/
 
-# Datos pesados / privados (versionar solo lo procesado y ligero si aplica)
-data/raw/*
-!data/raw/.gitkeep
-data/historical_fpl/*.csv
-models/*.pkl
-models/*.joblib
-
-# Entorno
+# Entorno y editor
 .env
 .env.local
-
-# OS / editor
 .DS_Store
 *:Zone.Identifier
 .vscode/
+.codegraph/
 
-# DB y cache de datos (se regeneran con el collector)
+# Estado operativo y datos regenerables
 *.db
 *.db-wal
 *.db-shm
-
-# StatsBomb training cache (pesado, se regenera)
-data/raw/statsbomb/
-data/raw/_explore/
-
-# Artefactos de modelo (se regeneran)
-models/xg/*.joblib
+data/raw/*
+!data/raw/.gitkeep
+data/historical_fpl/
 models/**/*.joblib
+outputs/
+artifacts/
 
-outputs/*.md
-outputs/*.png
-data/club-odds-mirror/
-
-# artefactos de modelo (regenerables con python -m mova_fpl.cli.train_minutes)
-models/minutes/*.joblib
+# Resultados locales de evaluación
+agent_backtest/

@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mova-fpl"
+version = "0.2.0"
+description = "Motor analítico y operativo de MOVA para Fantasy Premier League"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+  "joblib>=1.5.0",
+  "numpy>=2.0.0",
+  "pandas>=2.3.0",
+  "pulp>=3.3.0,<4",
+  "scikit-learn>=1.7.0",
+  "scipy>=1.16.0",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8.4,<9"]
+
+[project.scripts]
+mova = "mova_fpl.ops.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["mova_fpl*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-m 'not slow and not integration_data'"
+markers = [
+  "integration_data: requiere dataset canónico o artefactos de modelo externos a Git",
+  "slow: recorre una temporada completa y se ejecuta de forma explícita",
+]
+filterwarnings = [
+  "ignore:Constructing LpVariable.*:DeprecationWarning",
+  "ignore:PULP_CBC_CMD is deprecated.*:DeprecationWarning",
+]

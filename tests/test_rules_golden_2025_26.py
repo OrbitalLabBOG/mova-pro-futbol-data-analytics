@@ -44,6 +44,7 @@ def resultado():
     return filas, exactas, fallos
 
 
+@pytest.mark.integration_data
 def test_fidelidad_supera_umbral(resultado):
     filas, exactas, fallos = resultado
     ratio = exactas / filas
@@ -52,6 +53,7 @@ def test_fidelidad_supera_umbral(resultado):
     )
 
 
+@pytest.mark.integration_data
 def test_discrepancias_estan_explicadas(resultado):
     """AC-WP002-002: una discrepancia sin causa identificada es un bloqueo."""
     _, _, fallos = resultado
@@ -64,6 +66,7 @@ def test_discrepancias_estan_explicadas(resultado):
     )
 
 
+@pytest.mark.integration_data
 def test_desglose_suma_el_total(resultado):
     df = pd.read_csv(CSV, low_memory=False, encoding_errors="replace").drop_duplicates().head(2000)
     for row in df.itertuples(index=False):

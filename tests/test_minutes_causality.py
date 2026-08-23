@@ -58,6 +58,7 @@ def test_la_racha_de_ceros_es_causal():
     assert list(build(df)["racha_ceros"]) == [0.0, 0.0, 1.0, 2.0, 3.0]
 
 
+@pytest.mark.integration_data
 def test_el_historial_cruza_temporadas_por_player_key(store: Store):
     """element se reasigna cada anio; player_key es la identidad estable."""
     df = store.multi_season_as_of("2025-26", 39, ["player_key", "element", "season", "gw",
@@ -68,6 +69,7 @@ def test_el_historial_cruza_temporadas_por_player_key(store: Store):
     assert len(veteranos) > 100, "los veteranos deben llegar a la GW1 con historial acumulado"
 
 
+@pytest.mark.integration_data
 def test_el_entrenamiento_no_toca_la_temporada_holdout(store: Store):
     """as_of(holdout, 1) devuelve cero filas de esa temporada."""
     entrena = store.multi_season_as_of("2025-26", 1)

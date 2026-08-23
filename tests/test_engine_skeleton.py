@@ -83,18 +83,21 @@ def corrida(tmp_path_factory):
     return rep, trace
 
 
+@pytest.mark.integration_data
 def test_replay_recorre_las_jornadas(corrida):
     rep, _ = corrida
     assert [g["gw"] for g in rep.gameweeks] == [1, 2, 3, 4, 5, 6]
     assert rep.total > 0
 
 
+@pytest.mark.integration_data
 def test_gw1_es_cold_start_sin_datos(corrida):
     rep, _ = corrida
     assert rep.gameweeks[0]["train_rows"] == 0, "GW1 no puede tener filas de entrenamiento"
     assert all(g["train_rows"] > 0 for g in rep.gameweeks[1:])
 
 
+@pytest.mark.integration_data
 def test_las_filas_de_entrenamiento_crecen(corrida):
     rep, _ = corrida
     filas = [g["train_rows"] for g in rep.gameweeks]
@@ -103,18 +106,21 @@ def test_las_filas_de_entrenamiento_crecen(corrida):
 
 # ------------------------------------------------ AC-WP003-004: baselines
 
+@pytest.mark.integration_data
 def test_el_reporte_trae_los_tres_baselines(corrida):
     rep, _ = corrida
     assert set(rep.baselines) == {"template", "random", "ceiling"}
     assert all(v > 0 for v in rep.baselines.values())
 
 
+@pytest.mark.integration_data
 def test_el_techo_acota_por_arriba(corrida):
     rep, _ = corrida
     assert rep.baselines["ceiling"] >= rep.total
     assert rep.baselines["ceiling"] >= rep.baselines["template"]
 
 
+@pytest.mark.integration_data
 def test_template_nunca_es_cero(corrida):
     """Regresion: el error de punto flotante lo dejaba en 0 en 14 de 38 jornadas."""
     rep, _ = corrida
@@ -123,6 +129,7 @@ def test_template_nunca_es_cero(corrida):
 
 # ------------------------------------------------ AC-WP003-006/007: traza
 
+@pytest.mark.integration_data
 def test_la_traza_registra_cada_jornada(corrida):
     rep, trace = corrida
     d = decisions("test-run", trace.db_path)
@@ -131,6 +138,7 @@ def test_la_traza_registra_cada_jornada(corrida):
     assert (d["state"] == "reconciled").all()
 
 
+@pytest.mark.integration_data
 def test_la_traza_responde_quien_gano(corrida):
     """AC-WP003-007: la pregunta que justifica tener traza."""
     _, trace = corrida
@@ -140,6 +148,7 @@ def test_la_traza_responde_quien_gano(corrida):
     assert (cmp["motor"] - cmp["baseline"] == cmp["delta"]).all()
 
 
+@pytest.mark.integration_data
 def test_resumen_de_corrida(corrida):
     rep, trace = corrida
     s = summary("test-run", trace.db_path)
@@ -147,6 +156,7 @@ def test_resumen_de_corrida(corrida):
     assert set(s["baselines"]) == {"template", "random", "ceiling"}
 
 
+@pytest.mark.integration_data
 def test_reproducibilidad_con_la_misma_semilla(tmp_path):
     """AC-WP003-006."""
     huellas = []
@@ -158,6 +168,7 @@ def test_reproducibilidad_con_la_misma_semilla(tmp_path):
     assert huellas[0] == huellas[1]
 
 
+@pytest.mark.integration_data
 def test_reanudacion_no_recomputa(tmp_path):
     """AC-WP003-008."""
     tr = TraceWriter(tmp_path / "t.db")
@@ -171,6 +182,7 @@ def test_reanudacion_no_recomputa(tmp_path):
     assert list(antes["fingerprint"]) == list(despues["fingerprint"][:3])
 
 
+@pytest.mark.integration_data
 def test_modo_anonimo_oculta_identidades():
     from mova_fpl.engine.simulator import _alias_equipos, _anonymize
     store = Store()
@@ -182,6 +194,7 @@ def test_modo_anonimo_oculta_identidades():
     assert set(a["element"]) == set(r["element"]), "los ids deben ser estables"
 
 
+@pytest.mark.integration_data
 def test_el_alias_de_club_es_estable_en_toda_la_temporada():
     """Un mapa por jornada corria los indices en jornadas incompletas y `CLUB_03`
     dejaba de ser el mismo equipo. La cuota de tres por club se evaluaba entonces

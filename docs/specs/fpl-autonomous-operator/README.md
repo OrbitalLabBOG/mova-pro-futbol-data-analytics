@@ -22,7 +22,7 @@ PM de construcción del proyecto.
 
 | Campo | Valor |
 | --- | --- |
-| Versión | 0.6 |
+| Versión | 0.7 |
 | Estado | `active-shadow` |
 | Riesgo | alto: cuenta externa, deadlines irreversibles y sesión autenticada |
 | Business owner | Julián Zuluaga |

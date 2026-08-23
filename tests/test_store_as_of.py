@@ -21,6 +21,7 @@ def store() -> Store:
 
 # -------------------------------------------------- AC-WP001-001
 
+@pytest.mark.integration_data
 def test_volumen_y_temporadas(store: Store):
     assert store.row_count() >= 250_000, f"solo {store.row_count():,} filas"
     assert store.seasons() == SEASONS
@@ -28,11 +29,13 @@ def test_volumen_y_temporadas(store: Store):
 
 # -------------------------------------------------- AC-WP001-003
 
+@pytest.mark.integration_data
 def test_as_of_ventana_exacta(store: Store):
     df = store.as_of("2025-26", 17)
     assert int(df["gw"].max()) == 16
 
 
+@pytest.mark.integration_data
 @pytest.mark.parametrize("gw", range(1, 39))
 def test_as_of_para_cada_gameweek(store: Store, gw: int):
     df = store.as_of("2025-26", gw)
@@ -42,14 +45,17 @@ def test_as_of_para_cada_gameweek(store: Store, gw: int):
         assert int(df["gw"].max()) == gw - 1
 
 
+@pytest.mark.integration_data
 def test_gw1_es_cold_start(store: Store):
     assert store.as_of("2025-26", 1).empty
 
 
+@pytest.mark.integration_data
 def test_as_of_no_mezcla_temporadas(store: Store):
     assert set(store.as_of("2022-23", 20)["season"].unique()) == {"2022-23"}
 
 
+@pytest.mark.integration_data
 def test_as_of_rechaza_entrada_invalida(store: Store):
     with pytest.raises(ValueError):
         store.as_of("2099-00", 5)
@@ -57,6 +63,7 @@ def test_as_of_rechaza_entrada_invalida(store: Store):
         store.as_of("2025-26", 0)
 
 
+@pytest.mark.integration_data
 def test_multi_season_respeta_ventana(store: Store):
     df = store.multi_season_as_of("2025-26", 10)
     actual = df[df["season"] == "2025-26"]
@@ -89,6 +96,7 @@ def test_instrumentacion_exige_columna_gw():
         assert_causal(pd.DataFrame({"element": [1]}), "2025-26", 6)
 
 
+@pytest.mark.integration_data
 def test_sql_y_verificacion_son_independientes(store: Store, monkeypatch):
     """Si alguien rompe el WHERE del SQL, la verificacion del resultado lo atrapa."""
     original = pd.read_sql_query
@@ -103,6 +111,7 @@ def test_sql_y_verificacion_son_independientes(store: Store, monkeypatch):
 
 # -------------------------------------------------- AC-WP001-005
 
+@pytest.mark.integration_data
 def test_ingesta_es_idempotente(tmp_path: Path):
     db = tmp_path / "t.db"
     a = build(["2024-25"], db_path=db)
@@ -112,6 +121,7 @@ def test_ingesta_es_idempotente(tmp_path: Path):
     assert a == b and n1 == n2
 
 
+@pytest.mark.integration_data
 def test_clave_primaria_unica():
     """La clave incluye fixture: las dobles jornadas son observaciones distintas."""
     con = sqlite3.connect(ROOT / "data" / "processed" / "fpl_canonical.db")
@@ -124,6 +134,7 @@ def test_clave_primaria_unica():
     assert int(dup) == 0
 
 
+@pytest.mark.integration_data
 def test_dobles_jornadas_preservadas(store: Store):
     """Regresion: la clave (season, gw, element) colapsaba DGWs reales."""
     df = store.as_of("2025-26", 30)
@@ -133,6 +144,7 @@ def test_dobles_jornadas_preservadas(store: Store):
 
 # -------------------------------------------------- AC-WP001-002
 
+@pytest.mark.integration_data
 def test_cobertura_reproduce_patron_conocido(store: Store):
     cov = store.coverage()
     nn = lambda season, col: int(cov.loc[season, col])  # noqa: E731
@@ -161,6 +173,7 @@ def test_cobertura_reproduce_patron_conocido(store: Store):
         assert nn(s, "position") > 0, s
 
 
+@pytest.mark.integration_data
 def test_columnas_ausentes_son_null_no_cero():
     """Inventar un cero es inventar una observacion."""
     df = load_season_csv("2019-20")
@@ -168,6 +181,7 @@ def test_columnas_ausentes_son_null_no_cero():
     assert df["expected_goals"].isna().all()
 
 
+@pytest.mark.integration_data
 def test_temporada_covid_conserva_gameweeks_extra(store: Store):
     """2019-20 llega a gw 47 en la numeracion del origen; son filas reales."""
     df = store.as_of("2019-20", 48)
