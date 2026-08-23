@@ -17,7 +17,8 @@ idempotentes. El cutover, dual-read y retiro de SQLite no forman parte de esta f
 
 - imagen fijada a PostgreSQL 17.11 Bookworm por digest `amd64`;
 - red Docker `data` interna, sin puerto publicado en el host;
-- secreto en `/etc/mova-fpl/postgres-password`, `0600`, nunca en Git ni stdout;
+- secreto en `/etc/mova-fpl/postgres-password`, `root:10001` y `0640`: root lo entrega al
+  contenedor PostgreSQL y el grupo del worker puede leerlo; nunca entra en Git ni stdout;
 - `mova_owner` aplica migraciones/imports; los roles `mova_app` y `mova_readonly` son grupos
   `NOLOGIN` con mínimos privilegios;
 - migraciones SQL inmutables con checksum y advisory lock;
