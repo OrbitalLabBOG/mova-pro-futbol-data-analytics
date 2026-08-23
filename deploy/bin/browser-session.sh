@@ -61,6 +61,12 @@ case "$action" in
     "${compose[@]}" exec -T browser \
       agent-browser --session mova-fpl --cdp "$cdp_port" \
       open https://fantasy.premierleague.com/ >/dev/null
+    "${compose[@]}" exec -T browser \
+      agent-browser --session mova-fpl --cdp "$cdp_port" \
+      wait --load domcontentloaded >/dev/null
+    "${compose[@]}" exec -T browser \
+      agent-browser --session mova-fpl --cdp "$cdp_port" \
+      wait --fn "location.origin === 'https://fantasy.premierleague.com'" >/dev/null
     "${compose[@]}" exec -T browser sh -c \
       "sed 's/__MOVA_TEAM_ID__/$team_id/' /opt/mova/private-team-state.js | \
        agent-browser --session mova-fpl --cdp '$cdp_port' eval --stdin"

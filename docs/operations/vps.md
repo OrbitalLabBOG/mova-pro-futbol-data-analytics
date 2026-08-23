@@ -143,6 +143,9 @@ el fallback público. El fallo de autenticación queda aislado:
 no borra el último snapshot, no habilita writes y no toca el perfil. Para reautenticar,
 usar el procedimiento de login humano de la sección siguiente.
 
+En un arranque en frío el wrapper espera explícitamente `DOMContentLoaded` y el origin FPL,
+valida schema/15 picks y reintenta hasta tres veces. Una salida vacía nunca llega al ingestor.
+
 ## Controles y hard stop
 
 Los controles son append-only y cada modificación genera un evento de auditoría.

@@ -51,7 +51,31 @@ cleanup() {
 }
 trap cleanup EXIT
 
-"$repo_dir/deploy/bin/browser-session.sh" collect >"$private_input"
+collected=0
+for attempt in 1 2 3; do
+  if "$repo_dir/deploy/bin/browser-session.sh" collect >"$private_input" \
+    && python3 - "$private_input" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as handle:
+    payload = json.load(handle)
+if payload.get("schema") != "mova-fpl-private-team-state-v1":
+    raise SystemExit("unexpected private team-state schema")
+if len(payload.get("picks") or ()) != 15:
+    raise SystemExit("private team-state does not contain 15 picks")
+PY
+  then
+    collected=1
+    break
+  fi
+  printf 'private team-state capture attempt %s/3 failed\n' "$attempt" >&2
+  sleep 2
+done
+if [[ "$collected" != "1" ]]; then
+  echo "private team-state capture failed after 3 attempts" >&2
+  exit 1
+fi
 docker compose --profile jobs run --rm --no-deps -T worker \
   python -m mova_fpl.ops.cli ingest-team-state --file - \
   --trigger "$trigger" <"$private_input"
