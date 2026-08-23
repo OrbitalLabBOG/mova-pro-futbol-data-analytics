@@ -36,6 +36,10 @@ services:
       # SQLite WAL readers need to create/open the shared-memory sidecar. The
       # API itself opens query_only; only the DB directory is writable here.
       - ${MOVA_DATA_ROOT:-/var/lib/mova-fpl}/db:/var/lib/mova-fpl/db
+      # El contrato HTTP debe observar los mismos artefactos/probe que el CLI,
+      # sin obtener escritura sobre ninguno de los dos.
+      - ${MOVA_DATA_ROOT:-/var/lib/mova-fpl}/artifacts:/var/lib/mova-fpl/artifacts:ro
+      - ${MOVA_DATA_ROOT:-/var/lib/mova-fpl}/runtime:/var/lib/mova-fpl/runtime:ro
     ports:
       - "127.0.0.1:${MOVA_API_PORT:-8787}:8787"
     healthcheck:
