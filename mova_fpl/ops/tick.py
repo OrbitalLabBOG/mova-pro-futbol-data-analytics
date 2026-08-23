@@ -19,23 +19,15 @@ from mova_fpl.data.sources import fetch_bootstrap, fetch_fixtures
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB, canonical_json, new_id, sha256_json, utcnow
 from mova_fpl.ops.harness import Harness
-from mova_fpl.ops.schedule import phase_for, private_state_cadence_seconds, select_event
+from mova_fpl.ops.schedule import (
+    phase_for,
+    private_state_cadence_seconds,
+    public_state_cadence_seconds,
+    select_event,
+)
 
 LOG = logging.getLogger(__name__)
 ROOT = Path(__file__).resolve().parents[2]
-
-CADENCE_SECONDS = {
-    "baseline": 6 * 3600,
-    "research": 3 * 3600,
-    "refresh": 3600,
-    "preflight": 15 * 60,
-    "freeze": 5 * 60,
-    "execution_window": 5 * 60,
-    "verification_window": 5 * 60,
-    "hard_stop": 5 * 60,
-    "settlement": 6 * 3600,
-}
-
 
 class LockBusy(RuntimeError):
     pass
@@ -163,7 +155,7 @@ class TickRunner:
                         str(previous["captured_at"]).replace("Z", "+00:00")
                     )
                     age = max(0, int((now - observed).total_seconds()))
-                    cadence = CADENCE_SECONDS[phase]
+                    cadence = public_state_cadence_seconds(str(known["deadline_at"]), now)
                     if age < cadence:
                         self.db.record_health(
                             "mova-worker", "ok",

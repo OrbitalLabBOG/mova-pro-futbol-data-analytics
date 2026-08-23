@@ -12,6 +12,7 @@ tags: [mova, fpl, documentation]
 | --- | --- |
 | Entender el motor | [Arquitectura](architecture/decision-engine.md) |
 | Operar una jornada | [Runbook de jornada](operations/gameweek.md) |
+| Consultar `mova status/doctor` | [Contrato del operador](operations/operator.md) |
 | Diagnosticar o desplegar el VPS | [Runbook VPS](operations/vps.md) |
 | Consultar la decisión GW1 | [Research y decisión](decisions/2026-27/gw01-research-and-decision.md) |
 | Implementar el harness | [Autonomous Harness v1](specs/fpl-autonomous-operator/10-autonomous-harness-v1.md) |

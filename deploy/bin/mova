@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_dir=${MOVA_REPO_DIR:-/opt/orbital/services/mova-fpl}
+deploy_env=${MOVA_DEPLOY_ENV:-/etc/mova-fpl/deploy.env}
+data_root=${MOVA_DATA_ROOT:-/var/lib/mova-fpl}
+browser_profile=${MOVA_BROWSER_PROFILE:-/var/lib/mova-fpl/browser-profile}
+
+if [[ -r "$deploy_env" ]]; then
+  set -a
+  # shellcheck disable=SC1090
+  source "$deploy_env"
+  set +a
+  data_root=${MOVA_DATA_ROOT:-$data_root}
+  browser_profile=${MOVA_BROWSER_PROFILE:-$browser_profile}
+fi
+
+cd "$repo_dir"
+if [[ "${1:-}" == "status" || "${1:-}" == "doctor" ]]; then
+  install -d -m 0750 -o 10001 -g 10001 "$data_root/runtime"
+  python3 deploy/bin/host-probe.py \
+    --repo "$repo_dir" \
+    --output "$data_root/runtime/host-probe.json" \
+    --browser-profile "$browser_profile" \
+    --api-port "${MOVA_API_PORT:-8787}" >/dev/null
+fi
+
+exec docker compose --profile jobs run --rm --no-deps -T worker \
+  python -m mova_fpl.ops.cli "$@"

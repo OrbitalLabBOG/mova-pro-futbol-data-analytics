@@ -28,6 +28,7 @@ class RuntimeConfig:
     canonical_db: Path = Path("/var/lib/mova-fpl/db/fpl_canonical.db")
     artifact_root: Path = Path("/var/lib/mova-fpl/artifacts")
     backup_root: Path = Path("/opt/orbital/backups/mova-fpl")
+    host_probe_path: Path = Path("/var/lib/mova-fpl/runtime/host-probe.json")
     lock_path: Path = Path("/var/lib/mova-fpl/mova-fpl.lock")
     sqlite_min_version: str = "3.51.3"
     memory_gate_bytes: int = 2_684_354_560
@@ -54,6 +55,9 @@ class RuntimeConfig:
             canonical_db=Path(os.environ.get("MOVA_CANONICAL_DB", "/var/lib/mova-fpl/db/fpl_canonical.db")),
             artifact_root=Path(os.environ.get("MOVA_ARTIFACT_ROOT", "/var/lib/mova-fpl/artifacts")),
             backup_root=Path(os.environ.get("MOVA_BACKUP_ROOT", "/opt/orbital/backups/mova-fpl")),
+            host_probe_path=Path(os.environ.get(
+                "MOVA_HOST_PROBE_PATH", "/var/lib/mova-fpl/runtime/host-probe.json"
+            )),
             lock_path=Path(os.environ.get("MOVA_LOCK_PATH", "/var/lib/mova-fpl/mova-fpl.lock")),
             sqlite_min_version=os.environ.get("MOVA_SQLITE_MIN_VERSION", "3.51.3"),
             memory_gate_bytes=int(os.environ.get("MOVA_MEMORY_GATE_BYTES", "2684354560")),
@@ -81,7 +85,7 @@ class RuntimeConfig:
             raise ValueError(
                 "browser writes exige mode guarded/autonomous, action level A1+ y compliance approved"
             )
-        for path in (self.ops_db.parent, self.artifact_root):
+        for path in (self.ops_db.parent, self.artifact_root, self.host_probe_path):
             if not path.is_absolute():
                 raise ValueError(f"path operativo debe ser absoluto: {path}")
         if self.private_state_max_age_seconds <= 0:

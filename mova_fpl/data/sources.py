@@ -23,21 +23,21 @@ TIMEOUT = 100
 RETRIES = 5
 
 
-def _get(url: str) -> bytes:
+def _get(url: str, *, timeout: int = TIMEOUT, retries: int = RETRIES) -> bytes:
     """Unica primitiva de red del paquete. GET, nada mas."""
     last = None
-    for attempt in range(1, RETRIES + 1):
+    for attempt in range(1, retries + 1):
         try:
             req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT}, method="GET")
-            with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
                 if resp.status != 200:
                     raise OSError(f"HTTP {resp.status}")
                 return resp.read()
         except Exception as exc:                      # noqa: BLE001
             last = exc
-            if attempt < RETRIES:
+            if attempt < retries:
                 time.sleep(2 ** attempt * 0.5)
-    raise OSError(f"fallo GET tras {RETRIES} intentos: {url} ({last})")
+    raise OSError(f"fallo GET tras {retries} intentos: {url} ({last})")
 
 
 def fetch_season_csv(season: str, dest_dir: Path = RAW) -> Path:
@@ -67,9 +67,9 @@ def fetch_season_meta(season: str, name: str, dest_dir: Path = RAW) -> Path:
     return out
 
 
-def fetch_bootstrap() -> bytes:
+def fetch_bootstrap(*, timeout: int = TIMEOUT, retries: int = RETRIES) -> bytes:
     """Estado de la temporada en curso desde la API oficial. Solo GET."""
-    return _get(FPL_BOOTSTRAP_URL)
+    return _get(FPL_BOOTSTRAP_URL, timeout=timeout, retries=retries)
 
 
 def fetch_fixtures() -> bytes:

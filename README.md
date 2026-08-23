@@ -31,8 +31,9 @@ pytest -m slow -q
 ## Operación
 
 ```bash
-# inspección del control plane local/VPS
-mova check
+# estado consolidado y diagnóstico del control plane local/VPS
+mova status
+mova doctor
 
 # collector público sellado
 python -m mova_fpl.cli.collect_live --season 2026-27 --gw 2
@@ -69,6 +70,7 @@ Documentos principales:
 
 - [Índice técnico](docs/README.md)
 - [Operar una jornada](docs/operations/gameweek.md)
+- [Contrato `mova` y diagnóstico](docs/operations/operator.md)
 - [Operar el VPS](docs/operations/vps.md)
 - [Arquitectura del motor](docs/architecture/decision-engine.md)
 - [Autonomous Harness v1](docs/specs/fpl-autonomous-operator/10-autonomous-harness-v1.md)
