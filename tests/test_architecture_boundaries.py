@@ -41,7 +41,8 @@ ALLOWED = {
     "cli": {"engine", "data", "rules", "models", "optimizer", "trace", "agent"},
     # Plano operativo: coordina fuentes y ejecuta el motor por subprocess para
     # que el dominio no dependa de scheduler, DB de control ni browser.
-    "ops": {"data"},
+    "postgres": set(),
+    "ops": {"data", "postgres"},
 }
 LEGACY = ("mova_data", "mova_model", "src.mova_data", "src.mova_model")
 

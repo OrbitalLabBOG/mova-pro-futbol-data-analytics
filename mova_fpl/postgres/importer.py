@@ -1,0 +1,444 @@
+"""Import reproducible SQLite -> PostgreSQL para el store shadow HV1-02."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import math
+import os
+import shutil
+import sqlite3
+import uuid
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Protocol
+
+from psycopg import sql
+from psycopg.types.json import Jsonb
+
+from mova_fpl.postgres.store import PostgresConfig, connect
+
+
+class ImportConfig(PostgresConfig, Protocol):
+    ops_db: Path
+    canonical_db: Path
+    trace_db: Path
+    artifact_root: Path
+    git_sha: str
+
+
+@dataclass(frozen=True, slots=True)
+class TableSpec:
+    source_db: str
+    source_table: str
+    target_table: str
+    renames: dict[str, str] = field(default_factory=dict)
+    json_columns: frozenset[str] = frozenset()
+    bool_columns: frozenset[str] = frozenset()
+    include_rowid: bool = False
+
+
+TABLES = (
+    TableSpec("canonical", "player_gameweek", "analytics.player_gameweek",
+              bool_columns=frozenset({"was_home"}), include_rowid=True),
+    TableSpec("trace", "agent_runs", "agent.legacy_agent_runs",
+              renames={"config_json": "config"}, json_columns=frozenset({"config_json"})),
+    TableSpec("trace", "gw_decisions", "agent.legacy_gw_decisions",
+              json_columns=frozenset({"squad_15", "starters", "bench_order",
+                                      "transfers_in", "transfers_out", "auto_subs"})),
+    TableSpec("trace", "benchmarks", "agent.legacy_benchmarks"),
+    TableSpec("trace", "model_versions", "analytics.legacy_model_versions",
+              json_columns=frozenset({"metrics"})),
+    TableSpec("trace", "interventions", "agent.legacy_interventions",
+              json_columns=frozenset({"payload", "detail"}),
+              bool_columns=frozenset({"changed"})),
+    TableSpec("ops", "seasons", "game.seasons"),
+    TableSpec("ops", "gameweek_cycles", "game.cycles"),
+    TableSpec("ops", "runtime_controls", "ops.runtime_controls",
+              renames={"value_json": "value"}, json_columns=frozenset({"value_json"})),
+    TableSpec("ops", "schema_migrations", "ops.sqlite_schema_migrations"),
+    TableSpec("ops", "job_runs", "ops.job_runs",
+              renames={"metrics_json": "metrics"}, json_columns=frozenset({"metrics_json"})),
+    TableSpec("ops", "job_steps", "ops.job_steps",
+              renames={"detail_json": "detail"}, json_columns=frozenset({"detail_json"})),
+    TableSpec("ops", "source_snapshots", "raw.source_snapshots",
+              renames={"quality_json": "quality"}, json_columns=frozenset({"quality_json"})),
+    TableSpec("ops", "team_state_snapshots", "game.team_snapshots",
+              renames={"squad_json": "squad", "chips_json": "chips"},
+              json_columns=frozenset({"squad_json", "chips_json"})),
+    TableSpec("ops", "research_signals", "research.signals"),
+    TableSpec("ops", "dataset_releases", "analytics.dataset_releases",
+              renames={"leakage_audit_json": "leakage_audit"},
+              json_columns=frozenset({"leakage_audit_json"})),
+    TableSpec("ops", "model_releases", "analytics.model_releases",
+              renames={"metrics_json": "metrics"}, json_columns=frozenset({"metrics_json"})),
+    TableSpec("ops", "projection_runs", "analytics.projection_runs",
+              renames={"model_manifest_json": "model_manifest"},
+              json_columns=frozenset({"model_manifest_json"})),
+    TableSpec("ops", "intervention_runs", "agent.intervention_runs",
+              renames={"payload_json": "payload"}, json_columns=frozenset({"payload_json"})),
+    TableSpec("ops", "decision_runs", "agent.decision_runs"),
+    TableSpec("ops", "decision_players", "agent.decision_players",
+              bool_columns=frozenset({"is_captain", "is_vice_captain"})),
+    TableSpec("ops", "chip_strategy_runs", "agent.chip_strategy_runs",
+              renames={"inventory_json": "inventory"},
+              json_columns=frozenset({"inventory_json"})),
+    TableSpec("ops", "chip_candidates", "agent.chip_candidates"),
+    TableSpec("ops", "web_executions", "agent.web_executions"),
+    TableSpec("ops", "verification_checks", "agent.verification_checks",
+              renames={"expected_json": "expected", "observed_json": "observed"},
+              json_columns=frozenset({"expected_json", "observed_json"}),
+              bool_columns=frozenset({"passed"})),
+    TableSpec("ops", "health_samples", "ops.health_samples",
+              renames={"detail_json": "detail"}, json_columns=frozenset({"detail_json"})),
+    TableSpec("ops", "audit_events", "ops.audit_events",
+              renames={"payload_json": "payload"}, json_columns=frozenset({"payload_json"})),
+    TableSpec("ops", "incidents", "ops.incidents",
+              renames={"detail_json": "detail"}, json_columns=frozenset({"detail_json"})),
+    TableSpec("ops", "outbox_events", "ops.outbox_events",
+              renames={"payload_json": "payload"}, json_columns=frozenset({"payload_json"})),
+)
+
+TARGETS = tuple(dict.fromkeys(spec.target_table for spec in TABLES))
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _online_backup(source: Path, destination: Path) -> None:
+    if not source.is_file():
+        raise FileNotFoundError(source)
+    src = sqlite3.connect(f"file:{source}?mode=ro", uri=True)
+    dst = sqlite3.connect(destination)
+    try:
+        src.backup(dst)
+    finally:
+        dst.close()
+        src.close()
+    check = sqlite3.connect(f"file:{destination}?mode=ro", uri=True)
+    try:
+        result = check.execute("pragma quick_check").fetchone()[0]
+    finally:
+        check.close()
+    if result != "ok":
+        raise RuntimeError(f"snapshot SQLite inválido: {source.name}: {result}")
+
+
+def _json_value(value):
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        return Jsonb(value)
+    try:
+        return Jsonb(json.loads(value))
+    except json.JSONDecodeError:
+        return Jsonb(value)
+
+
+def _value(spec: TableSpec, column: str, value):
+    if column in spec.json_columns:
+        return _json_value(value)
+    if column in spec.bool_columns:
+        return None if value is None else bool(value)
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    return value
+
+
+def _source_columns(con: sqlite3.Connection, spec: TableSpec) -> list[str]:
+    columns = [str(row[1]) for row in con.execute(
+        f"pragma table_info([{spec.source_table}])"
+    )]
+    if not columns:
+        raise RuntimeError(f"tabla SQLite ausente: {spec.source_db}.{spec.source_table}")
+    return (["source_row_id"] if spec.include_rowid else []) + columns
+
+
+def _copy_table(pg, source_path: Path, spec: TableSpec) -> tuple[int, int]:
+    source = sqlite3.connect(f"file:{source_path}?mode=ro", uri=True)
+    source.row_factory = sqlite3.Row
+    try:
+        columns = _source_columns(source, spec)
+        target_columns = [spec.renames.get(column, column) for column in columns]
+        select = (f"select rowid as source_row_id,* from [{spec.source_table}]"
+                  if spec.include_rowid else f"select * from [{spec.source_table}]")
+        schema_name, table_name = spec.target_table.split(".", 1)
+        statement = sql.SQL("copy {} ({}) from stdin").format(
+            sql.Identifier(schema_name, table_name),
+            sql.SQL(",").join(sql.Identifier(column) for column in target_columns),
+        )
+        source_rows = 0
+        with pg.cursor() as cursor, cursor.copy(statement) as copy:
+            for row in source.execute(select):
+                values = []
+                for column in columns:
+                    raw = row[column]
+                    values.append(_value(spec, column, raw))
+                copy.write_row(values)
+                source_rows += 1
+        target_rows = int(pg.execute(
+            sql.SQL("select count(*) as n from {}").format(
+                sql.Identifier(schema_name, table_name)
+            )
+        ).fetchone()["n"])
+        return source_rows, target_rows
+    finally:
+        source.close()
+
+
+def _publish_sources(config: ImportConfig, import_run_id: str) -> tuple[Path, dict]:
+    root = config.artifact_root / "postgres-imports"
+    root.mkdir(parents=True, exist_ok=True)
+    destination = root / import_run_id
+    tmp = root / f".{import_run_id}.{os.getpid()}.tmp"
+    tmp.mkdir(parents=False, exist_ok=False)
+    source_paths = {
+        "ops": config.ops_db,
+        "canonical": config.canonical_db,
+        "trace": config.trace_db,
+    }
+    try:
+        files = {}
+        for name, source in source_paths.items():
+            target = tmp / source.name
+            _online_backup(source, target)
+            files[name] = {
+                "name": source.name,
+                "bytes": target.stat().st_size,
+                "sha256": _sha256(target),
+            }
+        manifest = {
+            "schema": "mova-postgres-import-source-v1",
+            "import_run_id": import_run_id,
+            "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "git_sha": config.git_sha,
+            "files": files,
+        }
+        manifest_path = tmp / "manifest.json"
+        manifest_path.write_text(
+            json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        manifest["manifest_sha256"] = _sha256(manifest_path)
+        tmp.replace(destination)
+        return destination, manifest
+    except Exception:
+        shutil.rmtree(tmp, ignore_errors=True)
+        raise
+
+
+def _invariants(sqlite_paths: dict[str, Path], pg) -> dict:
+    canonical = sqlite3.connect(f"file:{sqlite_paths['canonical']}?mode=ro", uri=True)
+    trace = sqlite3.connect(f"file:{sqlite_paths['trace']}?mode=ro", uri=True)
+    try:
+        source_canonical = canonical.execute(
+            "select count(*),coalesce(sum(total_points),0),coalesce(sum(minutes),0),"
+            "min(season),max(season) from player_gameweek"
+        ).fetchone()
+        source_trace = trace.execute(
+            "select count(*),coalesce(sum(total_points),0) from agent_runs"
+        ).fetchone()
+    finally:
+        canonical.close()
+        trace.close()
+    target_canonical = pg.execute(
+        "select count(*) as n,coalesce(sum(total_points),0) as points,"
+        "coalesce(sum(minutes),0) as minutes,min(season) as first_season,"
+        "max(season) as last_season from analytics.player_gameweek"
+    ).fetchone()
+    target_trace = pg.execute(
+        "select count(*) as n,coalesce(sum(total_points),0) as points "
+        "from agent.legacy_agent_runs"
+    ).fetchone()
+    expected = {
+        "canonical": list(source_canonical),
+        "trace_agent_runs": list(source_trace),
+    }
+    observed = {
+        "canonical": [target_canonical["n"], target_canonical["points"],
+                      target_canonical["minutes"], target_canonical["first_season"],
+                      target_canonical["last_season"]],
+        "trace_agent_runs": [target_trace["n"], target_trace["points"]],
+    }
+    return {"status": "pass" if expected == observed else "fail",
+            "expected": expected, "observed": observed}
+
+
+def import_shadow(config: ImportConfig, *, actor: str, reason: str,
+                  idempotency_key: str) -> dict:
+    if not actor.strip() or not reason.strip() or not idempotency_key.strip():
+        raise ValueError("actor, reason e idempotency_key son obligatorios")
+    with connect(config, autocommit=True) as pg:
+        existing = pg.execute(
+            "select import_run_id,status from mova_meta.import_runs where idempotency_key=%s",
+            (idempotency_key,),
+        ).fetchone()
+        if existing:
+            return {**existing, "import_status": existing["status"], "status": "reused"}
+
+    import_run_id = f"pgimport_{uuid.uuid4().hex}"
+    artifact_path, manifest = _publish_sources(config, import_run_id)
+    sqlite_paths = {
+        "ops": artifact_path / config.ops_db.name,
+        "canonical": artifact_path / config.canonical_db.name,
+        "trace": artifact_path / config.trace_db.name,
+    }
+    files = manifest["files"]
+
+    with connect(config, autocommit=True) as pg:
+        pg.execute(
+            """
+            insert into mova_meta.import_runs(
+              import_run_id,idempotency_key,actor,reason,status,git_sha,
+              ops_sha256,canonical_sha256,trace_sha256,artifact_path,manifest_sha256
+            ) values(%s,%s,%s,%s,'running',%s,%s,%s,%s,%s,%s)
+            """,
+            (import_run_id, idempotency_key, actor, reason, config.git_sha,
+             files["ops"]["sha256"], files["canonical"]["sha256"],
+             files["trace"]["sha256"], str(artifact_path), manifest["manifest_sha256"]),
+        )
+        try:
+            with pg.transaction():
+                pg.execute("select pg_advisory_xact_lock(%s)", (0x4D4F5642,))
+                identifiers = [sql.Identifier(*target.split(".", 1)) for target in TARGETS]
+                pg.execute(sql.SQL("truncate {} restart identity cascade").format(
+                    sql.SQL(",").join(identifiers)
+                ))
+                checks = []
+                for spec in TABLES:
+                    source_rows, target_rows = _copy_table(
+                        pg, sqlite_paths[spec.source_db], spec
+                    )
+                    check_status = "pass" if source_rows == target_rows else "fail"
+                    pg.execute(
+                        """
+                        insert into mova_meta.import_table_checks(
+                          import_run_id,source_db,source_table,target_table,
+                          source_rows,target_rows,status
+                        ) values(%s,%s,%s,%s,%s,%s,%s)
+                        """,
+                        (import_run_id, spec.source_db, spec.source_table, spec.target_table,
+                         source_rows, target_rows, check_status),
+                    )
+                    checks.append({"source": f"{spec.source_db}.{spec.source_table}",
+                                   "target": spec.target_table, "source_rows": source_rows,
+                                   "target_rows": target_rows, "status": check_status})
+                invariants = _invariants(sqlite_paths, pg)
+                if invariants["status"] != "pass" or any(
+                    item["status"] != "pass" for item in checks
+                ):
+                    raise RuntimeError("verificación del import PostgreSQL falló")
+            pg.execute(
+                "update mova_meta.import_runs set status='completed',finished_at=now() "
+                "where import_run_id=%s", (import_run_id,),
+            )
+        except Exception as exc:
+            pg.execute(
+                "update mova_meta.import_runs set status='failed',finished_at=now(),"
+                "error_detail=%s where import_run_id=%s",
+                (str(exc)[:2000], import_run_id),
+            )
+            raise
+    return {"status": "completed", "import_run_id": import_run_id,
+            "artifact_path": str(artifact_path), "checks": checks,
+            "invariants": invariants}
+
+
+def _verify_manifest(artifact_path: Path, expected_sha256: str) -> dict:
+    manifest_path = artifact_path / "manifest.json"
+    if not manifest_path.is_file():
+        return {"status": "fail", "reason": "manifest_missing", "path": str(manifest_path)}
+    observed_manifest_sha = _sha256(manifest_path)
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return {"status": "fail", "reason": "manifest_invalid",
+                "error": type(exc).__name__}
+    files = manifest.get("files") if isinstance(manifest, dict) else None
+    if observed_manifest_sha != expected_sha256 or not isinstance(files, dict):
+        return {"status": "fail", "reason": "manifest_checksum_mismatch",
+                "expected": expected_sha256, "observed": observed_manifest_sha}
+    file_checks = {}
+    for source_db in ("ops", "canonical", "trace"):
+        item = files.get(source_db)
+        if not isinstance(item, dict) or not isinstance(item.get("name"), str):
+            file_checks[source_db] = {"status": "fail", "reason": "entry_missing"}
+            continue
+        path = artifact_path / item["name"]
+        if not path.is_file():
+            file_checks[source_db] = {"status": "fail", "reason": "file_missing"}
+            continue
+        observed = _sha256(path)
+        integrity = None
+        try:
+            con = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+            try:
+                integrity = con.execute("pragma quick_check").fetchone()[0]
+            finally:
+                con.close()
+        except sqlite3.Error:
+            integrity = "error"
+        passed = observed == item.get("sha256") and integrity == "ok"
+        file_checks[source_db] = {
+            "status": "pass" if passed else "fail",
+            "bytes": path.stat().st_size,
+            "sha256": observed,
+            "integrity": integrity,
+        }
+    passed = all(item["status"] == "pass" for item in file_checks.values())
+    return {"status": "pass" if passed else "fail", "files": file_checks,
+            "manifest_sha256": observed_manifest_sha}
+
+
+def verify_shadow(config: ImportConfig) -> dict:
+    """Revalida el último import contra artefactos y conteos persistidos."""
+    with connect(config, autocommit=True) as pg:
+        latest = pg.execute(
+            "select import_run_id,status,artifact_path,manifest_sha256 "
+            "from mova_meta.import_runs where status='completed' "
+            "order by finished_at desc limit 1"
+        ).fetchone()
+        if not latest:
+            return {"status": "fail", "reason": "completed_import_missing"}
+        stored_checks = pg.execute(
+            "select source_db,source_table,target_table,source_rows,target_rows,status "
+            "from mova_meta.import_table_checks where import_run_id=%s "
+            "order by source_db,source_table",
+            (latest["import_run_id"],),
+        ).fetchall()
+        count_checks = []
+        for stored in stored_checks:
+            schema_name, table_name = stored["target_table"].split(".", 1)
+            observed = int(pg.execute(
+                sql.SQL("select count(*) as n from {}").format(
+                    sql.Identifier(schema_name, table_name)
+                )
+            ).fetchone()["n"])
+            expected = int(stored["target_rows"])
+            count_checks.append({
+                "target": stored["target_table"],
+                "expected_rows": expected,
+                "observed_rows": observed,
+                "status": "pass" if observed == expected else "fail",
+            })
+        artifact_check = _verify_manifest(
+            Path(latest["artifact_path"]), latest["manifest_sha256"].strip()
+        )
+    all_targets_checked = len(count_checks) == len(TABLES)
+    passed = (all_targets_checked and artifact_check["status"] == "pass"
+              and all(item["status"] == "pass" for item in count_checks))
+    return {
+        "status": "pass" if passed else "fail",
+        "import_run_id": latest["import_run_id"],
+        "writer": "sqlite",
+        "postgres_role": "shadow",
+        "all_targets_checked": all_targets_checked,
+        "artifact": artifact_check,
+        "tables": count_checks,
+    }

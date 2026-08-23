@@ -9,8 +9,8 @@ Type=oneshot
 RemainAfterExit=yes
 WorkingDirectory=@@REPO_DIR@@
 EnvironmentFile=-/etc/mova-fpl/deploy.env
-ExecStart=/usr/bin/docker compose up -d --remove-orphans api
-ExecStop=/usr/bin/docker compose stop api
+ExecStart=/usr/bin/docker compose up -d --remove-orphans postgres api
+ExecStop=/usr/bin/docker compose stop api postgres
 TimeoutStartSec=300
 TimeoutStopSec=60
 

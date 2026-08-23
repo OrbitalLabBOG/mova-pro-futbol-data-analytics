@@ -112,6 +112,12 @@ def main() -> int:
             "container_state": (services.get("api") or {}).get("state"),
             "container_health": (services.get("api") or {}).get("health"),
         },
+        "postgres": {
+            "container_state": (services.get("postgres") or {}).get("state"),
+            "container_health": (services.get("postgres") or {}).get("health"),
+            "published_ports": False,
+            "role": "shadow",
+        },
         "browser": {
             "container_state": (services.get("browser") or {}).get("state", "stopped"),
             "container_health": (services.get("browser") or {}).get("health"),

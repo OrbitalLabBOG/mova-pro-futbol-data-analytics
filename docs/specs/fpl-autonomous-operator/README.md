@@ -48,6 +48,7 @@ PM de construcción del proyecto.
 | [10-autonomous-harness-v1.md](10-autonomous-harness-v1.md) | **hoja de ruta canónica**: Postgres, CLI/skill, roles, memoria, costos, ejecución y mejora continua |
 | [11-hv1-01-deployment-evidence.md](11-hv1-01-deployment-evidence.md) | cierre verificable del contrato `mova`, skill y rollout VPS |
 | [12-gw2-preliminary-review.md](12-gw2-preliminary-review.md) | preliminar GW2, señales de modelo y guardrail de settlement |
+| [13-hv1-02a-postgres-shadow-evidence.md](13-hv1-02a-postgres-shadow-evidence.md) | evidencia de schema, import, backup y restore del store shadow |
 | [contracts/](contracts/) | JSON Schemas máquina para request, result y signal |
 | [decisions/](decisions/) | decisiones arquitectónicas propuestas |
 | [workpacks/](workpacks/) | unidades de implementación y criterios todavía pendientes |

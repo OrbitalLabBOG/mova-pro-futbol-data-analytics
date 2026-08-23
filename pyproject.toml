@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mova-fpl"
-version = "0.3.0"
+version = "0.4.0"
 description = "Motor analítico y operativo de MOVA para Fantasy Premier League"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -13,6 +13,7 @@ dependencies = [
   "numpy>=2.0.0",
   "pandas>=2.3.0",
   "pulp>=3.3.0,<4",
+  "psycopg[binary]>=3.3.4,<3.4",
   "scikit-learn>=1.7.0",
   "scipy>=1.16.0",
 ]
@@ -25,6 +26,9 @@ mova = "mova_fpl.ops.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["mova_fpl*"]
+
+[tool.setuptools.package-data]
+"mova_fpl.postgres" = ["migrations/*.sql"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

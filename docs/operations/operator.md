@@ -31,7 +31,7 @@ normal si no existe un probe; no se monta el socket Docker ni D-Bus dentro del e
 
 `status` siempre es observación y no llama la red. `doctor` tampoco migra ni repara: valida
 configuración, SQLite, heartbeat, estado privado, datos/modelos, recursos, backup, servicios,
-revisión desplegada, perfil browser y un GET público a FPL. Retorna 1 cuando existe al menos un
+revisión desplegada, PostgreSQL shadow cuando está configurado, perfil browser y un GET público a FPL. Retorna 1 cuando existe al menos un
 `FAIL` requerido; los `WARN` no cambian el exit code.
 
 ## Semántica de `status`
@@ -84,7 +84,7 @@ Los schemas completos están en [status v1](../contracts/operator-status-v1.sche
 
 ## Probe del host
 
-`deploy/bin/host-probe.py` registra exclusivamente estados de unidades, salud del API, presencia
+`deploy/bin/host-probe.py` registra exclusivamente estados de unidades, salud de API/PostgreSQL, presencia
 del perfil browser y revisiones de checkout/imagen. No lee env, cookies, HTML, logs, argumentos de
 procesos ni secretos. Su salida atómica vive en
 `/var/lib/mova-fpl/runtime/host-probe.json`, es consumida como solo lectura por el engine y vence a
