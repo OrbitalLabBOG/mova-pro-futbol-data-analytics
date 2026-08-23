@@ -16,22 +16,22 @@ LOG = logging.getLogger(__name__)
 
 def _safe_detail(value, *, depth: int = 0):
     """Reduce resultados para el ledger sin persistir payloads ni secretos."""
-    if depth > 3:
-        return {"type": type(value).__name__}
     if isinstance(value, bytes):
         return {"type": "bytes", "size": len(value),
                 "sha256": hashlib.sha256(value).hexdigest()}
     if isinstance(value, Path):
         return str(value)
+    if isinstance(value, str):
+        return value if len(value) <= 1000 else value[:1000] + "…"
+    if value is None or isinstance(value, (bool, int, float)):
+        return value
+    if depth > 3:
+        return {"type": type(value).__name__}
     if isinstance(value, dict):
         return {str(key): _safe_detail(item, depth=depth + 1)
                 for key, item in list(value.items())[:50]}
     if isinstance(value, (list, tuple)):
         return [_safe_detail(item, depth=depth + 1) for item in value[:50]]
-    if isinstance(value, str):
-        return value if len(value) <= 1000 else value[:1000] + "…"
-    if value is None or isinstance(value, (bool, int, float)):
-        return value
     return {"type": type(value).__name__}
 
 
@@ -78,7 +78,8 @@ class Harness:
         LOG.info(name, extra={"event": "step_completed", "job_id": self.job_id,
                               "cycle_id": self.cycle_id,
                               "correlation_id": self.correlation_id, "phase": name,
-                              "duration_ms": int((time.monotonic() - started) * 1000)})
+                              "duration_ms": int((time.monotonic() - started) * 1000),
+                              "detail": detail})
         return value
 
     def command(self, name: str, argv: list[str], *, timeout: int,

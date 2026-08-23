@@ -510,6 +510,27 @@ class OpsDB:
                 ).timestamp()
             except ValueError:
                 pass
+        tick_duration_seconds = 0.0
+        if tick.get("started_at") and tick.get("finished_at"):
+            try:
+                tick_duration_seconds = max(0.0, (
+                    datetime.fromisoformat(tick["finished_at"])
+                    - datetime.fromisoformat(tick["started_at"])
+                ).total_seconds())
+            except ValueError:
+                pass
+        step_rows = []
+        with self.connect(readonly=True) as con:
+            collector_job = con.execute(
+                "SELECT job_id FROM job_steps "
+                "WHERE step_name IN ('fetch_fpl_bootstrap_events','fetch_official_sources') "
+                "AND status='completed' ORDER BY started_at DESC LIMIT 1"
+            ).fetchone()
+            if collector_job:
+                step_rows = con.execute(
+                    "SELECT step_name,status,duration_ms FROM job_steps "
+                    "WHERE job_id=? ORDER BY started_at", (collector_job["job_id"],)
+                ).fetchall()
         lines = [
             "# HELP mova_up Whether ops.db is readable.",
             "# TYPE mova_up gauge",
@@ -520,6 +541,11 @@ class OpsDB:
             "# HELP mova_tick_last_finished_timestamp_seconds Unix time of latest finished tick.",
             "# TYPE mova_tick_last_finished_timestamp_seconds gauge",
             f"mova_tick_last_finished_timestamp_seconds {last_tick_epoch:.3f}",
+            "# HELP mova_tick_last_duration_seconds Wall time of the latest tick.",
+            "# TYPE mova_tick_last_duration_seconds gauge",
+            f"mova_tick_last_duration_seconds {tick_duration_seconds:.3f}",
+            "# HELP mova_collector_step_duration_ms Duration of each audited step in the latest collector run.",
+            "# TYPE mova_collector_step_duration_ms gauge",
             "# HELP mova_current_gameweek Current tracked gameweek.",
             "# TYPE mova_current_gameweek gauge",
             f"mova_current_gameweek {int(cycle.get('gw') or 0)}",
@@ -532,6 +558,14 @@ class OpsDB:
             "# HELP mova_open_incidents Open incidents by severity.",
             "# TYPE mova_open_incidents gauge",
         ]
+        for row in step_rows:
+            step = str(row["step_name"]).replace("\\", "\\\\").replace('"', '\\"')
+            step_status = str(row["status"]).replace("\\", "\\\\").replace('"', '\\"')
+            duration_ms = int(row["duration_ms"] or 0)
+            lines.append(
+                f'mova_collector_step_duration_ms{{step="{step}",status="{step_status}"}} '
+                f'{duration_ms}'
+            )
         for severity in ("P0", "P1", "P2", "P3"):
             lines.append(f'mova_open_incidents{{severity="{severity}"}} {int(incidents.get(severity, 0))}')
         lines += [

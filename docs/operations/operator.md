@@ -82,6 +82,24 @@ Cada check tiene:
 Los schemas completos están en [status v1](../contracts/operator-status-v1.schema.json) y
 [doctor v1](../contracts/operator-doctor-v1.schema.json).
 
+## Tiempos del collector
+
+Cada refresh público registra `fetch_fpl_bootstrap_events` y `fetch_fpl_fixtures` como pasos
+separados. El primero contiene el resumen de eventos y el estado dinámico de jugadores; el
+segundo contiene el calendario y estado de los partidos. Ambos conservan duración, tamaño y
+SHA-256 sin guardar el payload en logs.
+
+```bash
+curl -s 'http://127.0.0.1:8787/api/v1/steps?limit=50' | python -m json.tool
+curl -s http://127.0.0.1:8787/metrics | grep -E '^mova_(tick_last|collector_step).*duration'
+```
+
+`mova_tick_last_duration_seconds` mide el wall time del último tick y
+`mova_collector_step_duration_ms{step,status}` conserva los pasos de la última corrida que sí
+refrescó, aunque ticks posteriores se omitan por cadencia. Permite separar red, sellado y modelos. Los
+mismos pasos salen en journald como JSON con `job_id`, `correlation_id`, `duration_ms` y detalle
+sanitizado.
+
 ## Probe del host
 
 `deploy/bin/host-probe.py` registra exclusivamente estados de unidades, salud de API/PostgreSQL, presencia

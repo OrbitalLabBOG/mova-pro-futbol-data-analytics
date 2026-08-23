@@ -94,6 +94,7 @@ mova tick --force --actor julian --reason "revisión preliminar GW2" \
 
 # Evidencia por correlación
 curl -s 'http://127.0.0.1:8787/api/v1/jobs?limit=10' | python -m json.tool
+curl -s 'http://127.0.0.1:8787/api/v1/steps?limit=50' | python -m json.tool
 curl -s 'http://127.0.0.1:8787/api/v1/audit?limit=50' | python -m json.tool
 
 # Timers y salud
@@ -105,6 +106,11 @@ docker compose logs --tail=100 api
 Los logs de containers rotan a 5 × 10 MiB por servicio. Los timers y fallos conservan su
 diagnóstico en journald. Cada tick sella bytes fuente y hashes; `ops.db` conserva jobs,
 pasos, fuentes, decisiones, controles, salud, incidentes y outbox.
+
+Los pasos `fetch_fpl_bootstrap_events` y `fetch_fpl_fixtures` separan las dos llamadas públicas.
+`/metrics` expone la duración total del último tick y la de cada paso de la última corrida que sí
+refrescó; esto evita atribuir a la API FPL el tiempo consumido posteriormente por proyección y
+optimización.
 
 `--force` omite únicamente el control de cadencia: no evita el lock, los resource gates,
 la validación ni el modo shadow. Exige actor, razón y una clave idempotente explícitos.
