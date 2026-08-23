@@ -3,6 +3,7 @@ import json
 import pytest
 
 from mova_fpl.cli.collect_live import load_snapshot, validate
+from mova_fpl.data.snapshot import event_context
 
 
 def sample():
@@ -39,6 +40,28 @@ def test_validate_rejects_incomplete_fixture_list():
     boot, fixtures = sample()
     with pytest.raises(ValueError, match="10 partidos"):
         validate(boot, fixtures[:-1], "2026-27", 1)
+
+
+def test_event_context_marks_next_gw_preliminary_while_prior_has_pending_match():
+    boot, fixtures = sample()
+    for fixture in fixtures:
+        fixture.update({"started": True, "finished": False})
+    boot["events"] = [
+        {"id": 1, "deadline_time": "2026-08-21T17:30:00Z", "is_current": True,
+         "finished": False, "data_checked": False},
+        {"id": 2, "deadline_time": "2026-08-28T17:30:00Z", "is_next": True,
+         "finished": False, "data_checked": False},
+    ]
+    fixtures.append({"id": 11, "event": 1, "team_h": 1, "team_a": 2,
+                     "started": False, "finished": False})
+    context = event_context(boot, fixtures, 2)
+    assert context["current_gw"] == 1
+    assert context["prior_settled"] is False
+    assert context["prior_unstarted_fixtures"] == 1
+    assert context["preliminary"] is True
+    assert context["readiness_reasons"] == [
+        "prior_gameweek_unsettled", "prior_gameweek_has_unstarted_fixtures"
+    ]
 
 
 def test_load_snapshot_verifies_hashes(tmp_path):

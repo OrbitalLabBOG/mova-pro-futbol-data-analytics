@@ -97,8 +97,12 @@ class TickRunner:
         self.config = config
         self.db = db
 
-    def run(self, *, now: datetime | None = None) -> dict:
+    def run(self, *, now: datetime | None = None, force: bool = False,
+            actor: str = "mova-ops", reason: str | None = None,
+            idempotency_key: str | None = None) -> dict:
         now = now or datetime.now(timezone.utc)
+        if force and (not reason or not idempotency_key):
+            raise ValueError("un tick forzado exige reason e idempotency_key")
         self.config.validate()
         self.db.migrate()
         self.db.ensure_defaults(
@@ -108,17 +112,22 @@ class TickRunner:
         )
         bucket = int(now.timestamp()) // self.config.tick_bucket_seconds
         correlation_id = new_id("corr")
-        idempotency_key = f"tick:{bucket}"
+        job_key = idempotency_key if force else f"tick:{bucket}"
 
         with exclusive_lock(self.config.lock_path):
-            job_id, reused = self.db.start_job("tick", idempotency_key, correlation_id)
+            job_id, reused = self.db.start_job("tick", job_key, correlation_id)
             if reused:
-                existing = self.db.get_job_by_key(idempotency_key)
+                existing = self.db.get_job_by_key(job_key)
                 return {"status": "reused", "job_id": job_id,
                         "existing_status": existing.get("status") if existing else None}
+            if force:
+                self.db.append_audit(
+                    "forced_tick_requested", actor=actor, correlation_id=correlation_id,
+                    job_id=job_id, payload={"reason": reason, "idempotency_key": job_key},
+                )
             harness = Harness(self.db, job_id, correlation_id=correlation_id)
             try:
-                result = self._run(job_id, correlation_id, harness, now)
+                result = self._run(job_id, correlation_id, harness, now, force=force)
             except Exception as exc:
                 self.db.finish_job(
                     job_id, "failed", error_code=type(exc).__name__,
@@ -135,7 +144,7 @@ class TickRunner:
             return {"job_id": job_id, "correlation_id": correlation_id, **result}
 
     def _run(self, job_id: str, correlation_id: str, harness: Harness,
-             now: datetime) -> dict:
+             now: datetime, *, force: bool = False) -> dict:
         resource_state = harness.call("resource_gate", lambda: resources(self.config.artifact_root))
         disk_ok = resource_state["disk_free_bytes"] >= self.config.disk_gate_bytes
         if not disk_ok:
@@ -156,7 +165,7 @@ class TickRunner:
                     )
                     age = max(0, int((now - observed).total_seconds()))
                     cadence = public_state_cadence_seconds(str(known["deadline_at"]), now)
-                    if age < cadence:
+                    if age < cadence and not force:
                         self.db.record_health(
                             "mova-worker", "ok",
                             memory_available_bytes=resource_state["memory_available_bytes"],

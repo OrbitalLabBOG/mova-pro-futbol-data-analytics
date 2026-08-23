@@ -85,6 +85,10 @@ curl -s http://127.0.0.1:8787/metrics
 sudo systemctl start mova-fpl-tick.service
 sudo journalctl -u mova-fpl-tick.service -n 100 --no-pager
 
+# Refresco excepcional sin esperar la cadencia (auditado e idempotente)
+mova tick --force --actor julian --reason "revisión preliminar GW2" \
+  --idempotency-key "force:gw2-prelim:2026-08-23"
+
 # Evidencia por correlación
 curl -s 'http://127.0.0.1:8787/api/v1/jobs?limit=10' | python -m json.tool
 curl -s 'http://127.0.0.1:8787/api/v1/audit?limit=50' | python -m json.tool
@@ -98,6 +102,9 @@ docker compose logs --tail=100 api
 Los logs de containers rotan a 5 × 10 MiB por servicio. Los timers y fallos conservan su
 diagnóstico en journald. Cada tick sella bytes fuente y hashes; `ops.db` conserva jobs,
 pasos, fuentes, decisiones, controles, salud, incidentes y outbox.
+
+`--force` omite únicamente el control de cadencia: no evita el lock, los resource gates,
+la validación ni el modo shadow. Exige actor, razón y una clave idempotente explícitos.
 
 `mova status` no llama la red ni escribe el ledger. `mova doctor` hace un GET público acotado y
 retorna código 1 ante un `FAIL` requerido. El probe del host no lee env, cookies, logs ni HTML;

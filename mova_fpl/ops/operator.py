@@ -186,6 +186,7 @@ def build_status(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
     source_max_age = public_state_cadence_seconds(str(deadline), current) if deadline else None
     for source in state["sources"]:
         source_age = _age(source["captured_at"], current)
+        quality = _json(source.get("quality_json"), {}) or {}
         sources.append({
             "name": source["source_name"],
             "captured_at": source["captured_at"],
@@ -196,7 +197,11 @@ def build_status(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
             "quality": source["quality_status"],
             "artifact_path": source["artifact_path"],
             "manifest_sha256": source["manifest_sha256"],
+            "event_context": quality.get("event_context"),
         })
+
+    event_context = next((source.get("event_context") for source in sources
+                          if source.get("event_context")), {}) or {}
 
     controls = _controls(state["controls"], config)
     tick = state["latest_tick"] or {}
@@ -264,6 +269,12 @@ def build_status(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
             "seconds_to_deadline": deadline_seconds,
             "phase": effective_phase,
             "recorded_phase": cycle.get("phase"),
+            "readiness": "preliminary" if event_context.get("preliminary") else "ready",
+            "readiness_reasons": event_context.get("readiness_reasons") or [],
+            "current_gw": event_context.get("current_gw"),
+            "prior_gw": event_context.get("prior_gw"),
+            "prior_gameweek_settled": event_context.get("prior_settled"),
+            "prior_unstarted_fixtures": event_context.get("prior_unstarted_fixtures"),
         },
         "data": {
             "sources": sources,
@@ -532,7 +543,7 @@ def render_status(payload: dict) -> str:
     host = payload["host"]
     return "\n".join((
         f"MOVA FPL · {payload['overall_status'].upper()} · {payload['generated_at']}",
-        f"GW {gw.get('gw') or '—'} · {gw.get('phase') or 'sin ciclo'} · deadline {gw.get('deadline_at') or '—'}",
+        f"GW {gw.get('gw') or '—'} · {gw.get('phase') or 'sin ciclo'} · {gw.get('readiness') or 'sin readiness'} · deadline {gw.get('deadline_at') or '—'}",
         f"Equipo: {team.get('squad_size') or 0}/15 · FT {team.get('free_transfers') if team.get('free_transfers') is not None else '—'} · banco £{(team.get('bank_tenths') or 0) / 10:.1f}m · estado {team.get('quality') or 'ausente'}",
         f"Último tick: {tick.get('status') or 'ausente'} · edad {payload['operations'].get('latest_tick_age_seconds')}s",
         f"Controles: {controls['mode']} / {controls['action_level']} · compliance {controls['compliance_gate']} · kill_switch={str(controls['kill_switch']).lower()} · browser_writes={str(controls['browser_writes']).lower()}",

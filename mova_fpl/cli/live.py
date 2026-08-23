@@ -186,6 +186,7 @@ def main() -> None:
 
     print(f"[5/5] Componiendo el acta...")
     det = desglose.set_index("element", drop=False)
+    from mova_fpl.data.snapshot import event_context
     acta = render(decision, roster, det.loc[list(decision.squad_15)].reset_index(drop=True), {
         "season": args.season, "emitida": emitida.isoformat(timespec="seconds"),
         "deadline": limite, "policy": args.policy, "horizon": args.horizon,
@@ -195,6 +196,7 @@ def main() -> None:
         "chip_verdict": veredicto, "chips_used": equipo["chips_used"],
         "catalogo_chips": rules_mod.CHIPS if args.chips else None,
         "equipo": equipo,
+        "event_context": event_context(boot, fx, args.gw),
     })
 
     destino = Path(args.out) if args.out else (

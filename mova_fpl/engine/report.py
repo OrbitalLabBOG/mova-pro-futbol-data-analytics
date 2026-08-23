@@ -55,13 +55,43 @@ def _vigencia(meta: dict) -> list:
     medico cambia y las alineaciones probables todavia no existen. Vale para
     planear, no para introducir. La unica que cuenta es la ultima.
     """
+    avisos = []
+    contexto = meta.get("event_context") or {}
+    if contexto.get("preliminary"):
+        prior = contexto.get("prior_gw") or "anterior"
+        faltan = int(contexto.get("prior_unstarted_fixtures") or 0)
+        detalle = (f" y todavía faltan {faltan} partido(s) por comenzar" if faltan else "")
+        avisos += [
+            "",
+            f"> ⚠️ **Preliminar: la GW{prior} no está asentada{detalle}.** "
+            "No promover chips ni transferencias a decisión final hasta que FPL marque "
+            "la jornada como terminada y data_checked.",
+            "",
+        ]
     dias = meta.get("dias_al_deadline")
-    if dias is None or dias <= 2:
-        return []
-    return ["", f"> ⚠️ **Emitida {dias:.1f} días antes del cierre: esto es un borrador.** "
-                "Los precios se mueven a diario, el parte médico cambia y las alineaciones "
-                "probables aún no existen. Volver a correr dentro de las 24 horas previas "
-                "al deadline y usar esa acta, no esta.", ""]
+    if dias is not None and dias > 2:
+        avisos += ["", f"> ⚠️ **Emitida {dias:.1f} días antes del cierre: esto es un borrador.** "
+                    "Los precios se mueven a diario, el parte médico cambia y las alineaciones "
+                    "probables aún no existen. Volver a correr dentro de las 24 horas previas "
+                    "al deadline y usar esa acta, no esta.", ""]
+    return avisos
+
+
+def _transferencias(decision, por_id: dict, rules: dict) -> list:
+    """Lista las operaciones propuestas sin inventar emparejamientos uno-a-uno."""
+    entradas = [por_id[e]["name"] for e in decision.transfers_in]
+    salidas = [por_id[e]["name"] for e in decision.transfers_out]
+    if not entradas and not salidas:
+        return ["", "## Transferencias propuestas", "", "**Ninguna.**"]
+    coste = int(decision.hits) * int(rules.get("hit_cost", 4))
+    return [
+        "", "## Transferencias propuestas", "",
+        f"**Salen ({len(salidas)}):** {', '.join(salidas) or '—'}.",
+        f"**Entran ({len(entradas)}):** {', '.join(entradas) or '—'}.",
+        "",
+        f"Impacto: {decision.hits} hit(s), **−{coste} puntos**. "
+        "Las listas no representan emparejamientos uno-a-uno.",
+    ]
 
 
 def _chips(decision, meta: dict) -> list:
@@ -171,10 +201,11 @@ def render(decision, roster: pd.DataFrame, desglose: pd.DataFrame, meta: dict) -
         f"| Banco | £{decision.bank_after:.1f}M |",
         f"| xP del once (con capitán) | {decision.expected_points:.1f} |",
         f"| Transferencias | {len(decision.transfers_in)} |",
-        f"| Hits | −{decision.hits} |",
+        f"| Hits | {decision.hits} (−{int(decision.hits) * int(rules.get('hit_cost', 4))} pts) |",
         *([f"| Chip | **{decision.chip}** |"] if decision.chip else []),
         f"| Capitán | {por_id[decision.captain]['name']} |",
         f"| Vicecapitán | {por_id[decision.vice_captain]['name']} |",
+        *_transferencias(decision, por_id, rules),
         *_chips(decision, meta), "",
         "## Validación de reglas", "",
     ]

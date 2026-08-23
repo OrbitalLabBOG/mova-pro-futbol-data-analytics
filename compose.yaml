@@ -12,6 +12,9 @@ x-engine: &engine
       required: false
   environment:
     MOVA_GIT_SHA: ${MOVA_GIT_SHA:-unknown}
+    MOVA_CANONICAL_DB: /var/lib/mova-fpl/db/fpl_canonical.db
+    MOVA_TRACE_DB: /var/lib/mova-fpl/db/trace.db
+    MOVA_MODEL_ROOT: /var/lib/mova-fpl/artifacts/models
   security_opt:
     - no-new-privileges:true
   cap_drop:
