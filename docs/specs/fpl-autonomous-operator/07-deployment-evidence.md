@@ -2,7 +2,7 @@
 type: project
 name: "MOVA FPL Autonomous Operator 2026/27 — Deployment Evidence"
 created: 2026-08-22
-updated: 2026-08-22
+updated: 2026-08-23
 tags: [mova, fpl, deployment, vps, observability, audit]
 status: active-shadow
 ---
@@ -51,6 +51,33 @@ por un único Chromium normal, visible y supervisado; agent-browser se adjunta p
 por CDP en `127.0.0.1:9222` dentro del contenedor. Esto evita una segunda instancia sobre el
 perfil y conserva la compatibilidad con OAuth. No se exportaron contraseñas, cookies,
 storage ni archivos de estado.
+
+### Adenda API-first del estado privado — 23 de agosto de 2026
+
+| Evidencia | Valor |
+| --- | --- |
+| Runtime Git / etiquetas OCI | `0c6a566` / `0c6a566` |
+| Migraciones operativas | `schema_migrations=3` bajo SQLite 3.53.4 |
+| Fuente de verdad del equipo | `/api/my-team/3609854/` autenticada dentro del browser aislado |
+| Última observación validada | `2026-08-23T00:49:17.823Z` |
+| Fingerprint de estado | `fc790ac5...` |
+| Estado observado | GW2; 15 jugadores; banco £0.0M; valor £100.0M; 1 transferencia libre; 0 realizadas |
+| Chips disponibles | Triple Captain, Bench Boost, Free Hit y Wildcard |
+
+El collector privado ejecuta el request dentro de la sesión ya autenticada y sólo devuelve
+un allowlist estricto de plantilla, precios, banco, transferencias, chips y deadline. No
+extrae cookies, local storage, tokens, credenciales, perfil Google ni PII. Cada captura se
+sella con manifest y hashes antes de importarse a la base operativa.
+
+Dos observaciones sucesivas (`00:44:44.375Z` y `00:49:17.823Z`) produjeron el mismo
+fingerprint porque el equipo no cambió, pero quedaron almacenadas como capturas distintas.
+Esto valida simultáneamente detección de no-cambio y frescura real del dato. La migración 3
+elimina la deduplicación temporal que antes podía ocultar una observación reciente.
+
+El dry-run posterior consumió explícitamente este estado autenticado, construyó una decisión
+válida de 54.7 xP y volvió a proponer Wildcard con una mejora estimada de 16.1 xP. Esa salida
+es sólo una hipótesis del modelo: no fue aprobada ni ejecutada y debe contrastarse con
+noticias, minutos esperados, estrategia de chips y horizonte de varias jornadas.
 
 ## Controles efectivos
 
@@ -127,6 +154,7 @@ chips antes del deadline. Los gates actuales hacen imposible que el tick la ejec
 | --- | --- |
 | `mova-fpl-stack.service` | mantiene API local |
 | `mova-fpl-tick.timer` | dispara tick idempotente cada 5 minutos |
+| `mova-fpl-private-state.timer` | captura y valida estado privado cada 10 minutos |
 | `mova-fpl-backup.timer` | backup diario verificado, 35 días de retención |
 | `mova-fpl-watchdog.timer` | integridad y frescura cada 15 minutos |
 
@@ -152,3 +180,8 @@ repetir el collector ni los modelos cada cinco minutos.
 
 Este acta certifica readiness de **G1, base de G2 y el prerrequisito de identidad browser de
 G4**. No declara cumplidos G3–G6 ni autoriza escrituras FPL.
+
+La adenda API-first amplía la base de G2 con estado privado exacto y auditable. Al finalizar
+la validación, el browser quedó detenido; el timer lo inicia únicamente para capturar,
+consulta la API y lo vuelve a detener. Los controles permanecen en `shadow`, `A0`,
+`compliance_gate=pending`, `kill_switch=true` y `browser_writes=false`.
