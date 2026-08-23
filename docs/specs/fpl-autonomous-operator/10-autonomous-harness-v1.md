@@ -370,7 +370,7 @@ no borra evidencia previa y nunca amplía autonomía.
 | Workstream | Entrega | Estimación | Dependencia |
 | --- | --- | ---: | --- |
 | HV1-00 ✅ | reset del repo, archivo de legado, packaging y CI hermético | completado | baseline actual |
-| HV1-01 | contrato `mova`, status/doctor y skill del operador | 6–8 h | HV1-00 |
+| HV1-01 ✅ | contrato `mova`, status/doctor y skill del operador | completado | HV1-00 |
 | HV1-02 | PostgreSQL, migrations, import y cutover verificado | 10–14 h | HV1-01 |
 | HV1-03 | collector/data quality + interfaz uniforme de modelos | 8–12 h | HV1-02 |
 | HV1-04 | team state, season plan y memoria explícita | 6–8 h | HV1-02 |

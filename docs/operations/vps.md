@@ -49,6 +49,20 @@ curl --fail http://127.0.0.1:8787/readyz
 sudo deploy/bin/install-systemd.sh /opt/orbital/services/mova-fpl
 ```
 
+Cuando el tag ya está escrito en `/etc/mova-fpl/deploy.env` y se opera Compose manualmente,
+cargarlo antes de `build`, `up` o `run`:
+
+```bash
+set -a
+source /etc/mova-fpl/deploy.env
+set +a
+docker compose up -d --no-deps --force-recreate api
+```
+
+El `env_file` del servicio configura el proceso dentro del contenedor, pero no interpola
+`MOVA_IMAGE_TAG` ni `MOVA_GIT_SHA` para el CLI de Compose. Omitir este paso puede levantar la
+etiqueta `local/unknown`; `mova doctor` lo detecta como `deployment_revision WARN`.
+
 Antes de activar el primer tick, colocar por canal seguro —no Git—:
 
 - `fpl_canonical.db` en `/var/lib/mova-fpl/db/`;
