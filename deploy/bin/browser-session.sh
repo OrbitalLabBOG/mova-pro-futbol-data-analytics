@@ -14,11 +14,14 @@ if [[ -r "$deploy_env" ]]; then
 fi
 
 compose=(docker compose --profile browser)
+cdp_port=${MOVA_BROWSER_CDP_PORT:-9222}
 
 start_browser() {
   "${compose[@]}" up -d browser
   for _ in $(seq 1 45); do
-    if curl -fsS http://127.0.0.1:${MOVA_NOVNC_PORT:-6080}/vnc.html >/dev/null 2>&1; then
+    if curl -fsS http://127.0.0.1:${MOVA_NOVNC_PORT:-6080}/vnc.html >/dev/null 2>&1 \
+      && "${compose[@]}" exec -T browser \
+        curl -fsS "http://127.0.0.1:${cdp_port}/json/version" >/dev/null 2>&1; then
       return 0
     fi
     sleep 1
@@ -36,22 +39,27 @@ case "$action" in
   login)
     start_browser
     "${compose[@]}" exec -T browser \
-      agent-browser --headed --session mova-fpl batch --bail \
+      agent-browser --session mova-fpl --cdp "$cdp_port" batch --bail \
       'open https://fantasy.premierleague.com/' \
-      'wait --load domcontentloaded' 'get url' 'get title'
+      'get url' 'get title'
     echo "Open a tunnel: ssh -N -L ${MOVA_NOVNC_PORT:-6080}:127.0.0.1:${MOVA_NOVNC_PORT:-6080} root@72.60.245.2"
     echo "Then visit http://127.0.0.1:${MOVA_NOVNC_PORT:-6080}/vnc.html and complete login/MFA manually."
     ;;
   read)
     "${compose[@]}" exec -T browser \
-      agent-browser --headed --session mova-fpl batch --bail \
+      agent-browser --session mova-fpl --cdp "$cdp_port" batch --bail \
       'open https://fantasy.premierleague.com/en/my-team' \
-      'wait --load domcontentloaded' 'get url' 'get title' 'snapshot -i'
+      'get url' 'get title'
     ;;
   status)
     "${compose[@]}" ps -a browser
     if curl -fsS http://127.0.0.1:${MOVA_NOVNC_PORT:-6080}/vnc.html >/dev/null 2>&1; then
-      echo "noVNC=ready listener=127.0.0.1:${MOVA_NOVNC_PORT:-6080}"
+      if "${compose[@]}" exec -T browser \
+        curl -fsS "http://127.0.0.1:${cdp_port}/json/version" >/dev/null 2>&1; then
+        echo "noVNC=ready cdp=ready listeners=127.0.0.1:${MOVA_NOVNC_PORT:-6080},container:${cdp_port}"
+      else
+        echo "noVNC=ready cdp=stopped"
+      fi
     else
       echo "noVNC=stopped"
     fi

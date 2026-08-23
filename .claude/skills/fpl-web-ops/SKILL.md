@@ -38,9 +38,12 @@ chips, confirmes transferencias con coste ni cambies la decisión deportiva por 
 ## Entorno y gates
 
 El modo principal es `vps`; usa el Compose bajo `/opt/orbital/services/mova-fpl`, sesión
-`mova-fpl` y perfil persistente `/var/lib/mova-fpl/browser-profile`. Ese perfil no entra en
-Git, `ops.db` ni backups generales. noVNC sólo escucha en loopback y se abre mediante túnel
-SSH temporal. El contenedor browser no monta la base operativa.
+`mova-fpl` y perfil persistente `/var/lib/mova-fpl/browser-profile`. Supervisord lanza un
+único Chromium visible y normal; `agent-browser` se adjunta después por CDP interno `9222`.
+Nunca dejes que agent-browser lance una segunda instancia: Google puede rechazarla y el
+perfil puede bloquearse. El perfil no entra en Git, `ops.db` ni backups generales. noVNC
+sólo escucha en loopback y se abre mediante túnel SSH temporal. CDP no se publica y el
+contenedor browser no monta la base operativa.
 
 Antes de cualquier click que pueda mutar FPL, lee `/api/v1/status` desde el host y detente
 salvo que todos los controles permitan exactamente la acción:
@@ -78,9 +81,9 @@ snapshot y verificación. No uses `docker exec` directo para eludir un gate.
 cd /opt/orbital/services/mova-fpl
 deploy/bin/browser-session.sh start
 docker compose --profile browser exec -T browser \
-  agent-browser --session mova-fpl batch --bail \
+  agent-browser --session mova-fpl --cdp 9222 batch --bail \
   'open https://fantasy.premierleague.com/en/my-team' \
-  'wait --load domcontentloaded' 'get url' 'get title' 'snapshot -i'
+  'get url' 'get title'
 ```
 
 La salida debe corresponder a FPL. Si aparece login, usa el flujo humano de `vps.md` y no
@@ -89,7 +92,7 @@ frescos dentro de la misma sesión:
 
 ```bash
 docker compose --profile browser exec -T browser \
-  agent-browser --session mova-fpl batch --bail \
+  agent-browser --session mova-fpl --cdp 9222 batch --bail \
   'get url' 'snapshot -i'
 ```
 
@@ -117,9 +120,9 @@ Después de guardar:
 
 ```bash
 docker compose --profile browser exec -T browser \
-  agent-browser --session mova-fpl wait --text "Equipo guardado"
+  agent-browser --session mova-fpl --cdp 9222 wait --text "Equipo guardado"
 docker compose --profile browser exec -T browser \
-  agent-browser --session mova-fpl batch --bail \
+  agent-browser --session mova-fpl --cdp 9222 batch --bail \
   'reload' 'wait --load domcontentloaded' 'snapshot -i' \
   'screenshot --full /tmp/gwNN_final_mounted.png'
 ```

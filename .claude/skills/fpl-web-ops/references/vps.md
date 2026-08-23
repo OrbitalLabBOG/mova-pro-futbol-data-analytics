@@ -13,6 +13,7 @@ red y perfil; no comparte el runtime del engine ni monta `ops.db`.
 | Sesión agent-browser | `mova-fpl` |
 | Perfil persistente | `/var/lib/mova-fpl/browser-profile` |
 | noVNC | `127.0.0.1:6080` del VPS |
+| CDP | `127.0.0.1:9222` sólo dentro del contenedor |
 
 Ejecuta `agent-browser skills get core --full` dentro del contenedor cuando cambie la imagen;
 la documentación debe corresponder a la versión instalada, actualmente 0.26.0.
@@ -33,8 +34,9 @@ ssh -N -L 6080:127.0.0.1:6080 root@72.60.245.2
 ```
 
 Abre `http://127.0.0.1:6080/vnc.html`. Julián completa cualquier email, contraseña, OTP,
-MFA o consentimiento en la ventana visible. El agente puede esperar y luego verificar, pero
-nunca pide, recibe ni escribe esos secretos.
+MFA o consentimiento en la ventana visible. El Chromium lo inicia supervisord como navegador
+normal para que Google OAuth no reciba las señales del launcher automatizado. El agente puede
+esperar y luego verificar, pero nunca pide, recibe ni escribe esos secretos.
 
 ## Verificación de sesión
 
@@ -54,8 +56,13 @@ Para operaciones agent-browser adicionales usa siempre la imagen:
 
 ```bash
 docker compose --profile browser exec -T browser \
-  agent-browser --session mova-fpl snapshot -i
+  agent-browser --session mova-fpl --cdp 9222 snapshot -i
 ```
+
+El flag `--cdp 9222` es obligatorio: omitirlo puede lanzar otro Chromium y bloquear el perfil.
+La sesión persiste porque cookies, IndexedDB y tokens permanecen en el volumen del perfil. No
+exportes `state`, cookies ni storage. Un logout impuesto por Google o FPL requiere repetir el
+login humano; no se intenta eludir esa política.
 
 Agrupa navegación y lectura con `batch --bail`; para clicks dinámicos conserva el ciclo
 snapshot → interacción → wait específica → snapshot. No reutilices refs después de render,

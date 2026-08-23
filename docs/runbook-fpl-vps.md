@@ -124,7 +124,9 @@ ssh -N -L 6080:127.0.0.1:6080 root@72.60.245.2
 Abrir `http://127.0.0.1:6080/vnc.html`; Julián completa login y MFA manualmente. No copiar
 cookies, OTP, HTML autenticado ni el perfil a logs, Git, `ops.db` o backups. Tras cualquier
 cambio de página, el executor debe tomar snapshot nuevo y verificar el estado después de
-recargar. CDP no se publica.
+recargar. Supervisord mantiene un único Chromium normal sobre el perfil persistente y el
+executor se adjunta con `--cdp 9222`; CDP no se publica. Esto conserva la sesión tras recrear
+el contenedor, salvo expiración o revocación decidida por Google/FPL.
 
 La operación repetible usa `deploy/bin/browser-session.sh`:
 

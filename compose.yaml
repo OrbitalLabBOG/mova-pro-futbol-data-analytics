@@ -73,7 +73,6 @@ services:
     restart: unless-stopped
     init: true
     environment:
-      AGENT_BROWSER_HEADED: "true"
       MOVA_ENABLE_BROWSER_WRITES: "0"
     security_opt:
       - no-new-privileges:true
@@ -88,7 +87,11 @@ services:
     networks:
       - browser_egress
     healthcheck:
-      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:6080/vnc.html"]
+      test:
+        [
+          "CMD-SHELL",
+          "curl --fail --silent http://127.0.0.1:6080/vnc.html >/dev/null && curl --fail --silent http://127.0.0.1:9222/json/version >/dev/null",
+        ]
       interval: 30s
       timeout: 5s
       retries: 5
