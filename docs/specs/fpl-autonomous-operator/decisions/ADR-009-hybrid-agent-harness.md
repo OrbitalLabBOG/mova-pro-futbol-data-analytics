@@ -23,9 +23,10 @@ Construir un coordinador exterior delgado y agnóstico al proveedor. Usar Pydant
 `codex exec` como job agéntico autocontenido para discovery profundo y crítica. El
 orquestador determinista conserva deadline, idempotencia, policy, decisión y ejecución.
 
-El worker de investigación corre en proceso/container separado, recibe un request package inmutable y
-devuelve un result package validado. No accede a `ops.db`, browser profile, cookies FPL,
-Docker socket ni executor.
+Los workers de investigación corren en procesos/containers separados, reciben un request
+package inmutable y devuelven un result package validado. OpenRouter y Codex usan imágenes y
+secret mounts distintos. Ninguno accede a `ops.db`, browser profile, cookies FPL, Docker
+socket ni executor.
 
 Pydantic AI aporta provider OpenRouter nativo, outputs Pydantic, tools acotadas, retries,
 usage limits y OpenTelemetry; evita implementar a mano un loop de tools. No se adopta el
@@ -59,6 +60,8 @@ agente persistente requiere una ADR nueva.
 - se implementan interfaces pequeñas `ResearchBackend`, `DiscoveryAdapter` y `FetchAdapter`;
 - `PydanticAIResearchBackend` queda como backend rutinario y `CodexExecBackend` como
   especialista;
+- discovery produce candidates; solo safe fetch + evidence locator puede respaldar una
+  señal importable, según ADR-010;
 - modelo/proveedor se eligen por task policy versionada;
 - se añaden ledger, schemas, quotas, artifacts e incidentes agénticos;
 - Codex auth se trata como secreto renovable y su fallo no detiene el motor base;

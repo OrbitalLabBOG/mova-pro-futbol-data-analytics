@@ -2,7 +2,7 @@
 type: project
 name: "MOVA FPL Autonomous Operator 2026/27 — Data and Observability"
 created: 2026-08-21
-updated: 2026-08-23
+updated: 2026-08-22
 tags: [mova, fpl, sqlite, vps, observability]
 status: proposed
 ---
@@ -109,6 +109,7 @@ foreign keys activas y estados protegidos por `CHECK`.
 | `source_snapshots` | metadata de entradas inmutables | source+sha unique; URI; freshness/quality |
 | `research_signals` | claims citados, TTL y conflicto | player/claim/source/observed versionado |
 | `agent_runs` | task/backend/model y consumo de cada corrida | run+attempt unique; hashes y status |
+| `agent_run_steps` | estados interiores resumidos | run+step+attempt unique; sin contenido/prompt |
 | `research_queries` | queries ejecutadas y discovery | run+query hash unique |
 | `research_documents` | evidencia web normalizada | canonical URL+hash; tier/TTL/storage policy |
 | `research_signal_sources` | corroboración many-to-many | signal+document unique |
@@ -263,7 +264,7 @@ Campos mínimos:
 
 `timestamp`, `severity`, `service`, `run_id`, `cycle_id`, `job_id`, `season`, `gw`, `phase`,
 `event`, `status`, `duration_ms`, `snapshot_sha`, `model_version`,
-`decision_fingerprint`, `error_code`.
+`decision_fingerprint`, `error_code`, `cost_known`.
 
 Docker rota `json-file` por servicio; journald conserva diagnóstico del timer/watchdog. Los
 eventos críticos también se guardan en `audit_events`/`incidents`, porque el journal actual
@@ -271,6 +272,8 @@ solo retiene siete días.
 
 Nunca registrar cookies, tokens, HTML completo, passwords, OTP/MFA ni profile paths
 exportables.
+La instrumentación agéntica deshabilita explícitamente captura de prompt, response, tool
+args y contenido binario; Codex JSONL crudo se filtra antes de persistir.
 
 ### Métricas
 

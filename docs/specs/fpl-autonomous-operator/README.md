@@ -22,7 +22,7 @@ PM de construcción del proyecto.
 
 | Campo | Valor |
 | --- | --- |
-| Versión | 0.4 |
+| Versión | 0.5 |
 | Estado | `active-shadow` |
 | Riesgo | alto: cuenta externa, deadlines irreversibles y sesión autenticada |
 | Business owner | Julián Zuluaga |
@@ -44,6 +44,8 @@ PM de construcción del proyecto.
 | [06-traceability.md](06-traceability.md) | requisitos → decisiones → workpacks → evidencia esperada |
 | [07-deployment-evidence.md](07-deployment-evidence.md) | acta verificable del primer despliegue shadow en VPS |
 | [08-agentic-research-harness.md](08-agentic-research-harness.md) | coordinador de investigación, backends, contratos, persistencia y roadmap |
+| [09-agent-harness-implementation-spec.md](09-agent-harness-implementation-spec.md) | implementación exacta del harness, workers, budgets, seguridad, evals y despliegue |
+| [contracts/](contracts/) | JSON Schemas máquina para request, result y signal |
 | [decisions/](decisions/) | decisiones arquitectónicas propuestas |
 | [workpacks/](workpacks/) | unidades de implementación y criterios todavía pendientes |
 

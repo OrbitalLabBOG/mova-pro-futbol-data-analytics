@@ -50,6 +50,15 @@ revalidarlas y sellar el bootstrap en vez de asumir que esta lista seguirá vige
 | [Pydantic AI OpenRouter](https://pydantic.dev/docs/ai/models/openrouter/) | provider OpenRouter nativo, web search configurable, outputs tipados y citas. |
 | [Pydantic AI Harness](https://pydantic.dev/docs/ai/harness/) | capacidades de research/guardrails/budgets/persistencia; paquete 0.x reservado a spikes. |
 | [Pydantic AI version policy](https://pydantic.dev/docs/ai/project/version-policy/) | core 2.x estable; beta/experimental puede cambiar y debe excluirse o fijarse explícitamente. |
+| [Pydantic AI retry layers](https://pydantic.dev/docs/ai/core-concepts/retries/) | transport, model fallback, tool, output y hooks tienen presupuestos distintos; fallback no es retry. |
+| [Pydantic AI timeouts](https://pydantic.dev/docs/ai/core-concepts/timeouts/) | no hay wall timeout total integrado; el run completo debe envolverse con timeout/cancelación exterior. |
+| [Pydantic AI instrumentation](https://pydantic.dev/docs/ai/capabilities/instrumentation/) | OTel por run/model/tool; content capture debe deshabilitarse explícitamente en MOVA. |
+| [Pydantic AI testing](https://pydantic.dev/docs/ai/testing/) | `TestModel`, `FunctionModel`, overrides y `ALLOW_MODEL_REQUESTS=false` para unit tests sin gasto. |
+| [Pydantic Evals](https://pydantic.dev/docs/ai/evals/) | Dataset/Case/Experiment y evaluadores deterministas/span-based para gold evals. |
+| [OpenRouter web search](https://openrouter.ai/docs/guides/features/plugins/web-search) | engine, max results, filtros y annotations; garantías varían en search nativo. |
+| [OpenRouter provider routing](https://openrouter.ai/docs/guides/routing/provider-selection) | fallback, parameters, data policy, ZDR y max price se fijan por provider policy. |
+| [OWASP Prompt Injection](https://genai.owasp.org/llmrisk/llm01-prompt-injection/) | contenido web es vector de injection indirecta; separar datos, aplicar least privilege y aprobación para acciones. |
+| [OWASP SSRF Prevention](https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html) | validar protocolo/dominio/IP, bloquear redes privadas/metadata y revalidar redirects/DNS. |
 | Playbook Orbital Firecrawl | adapter de search/scrape disponible localmente; credencial VPS aún no verificada y `agent` fuera del MVP. |
 
 ## Referentes analíticos y de automatización

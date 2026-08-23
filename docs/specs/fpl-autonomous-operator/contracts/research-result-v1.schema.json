@@ -1,0 +1,388 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "research-result-v1.schema.json",
+  "title": "MOVA ResearchResult v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "request_id",
+    "agent_run_id",
+    "attempt",
+    "request_sha256",
+    "backend",
+    "task_version",
+    "prompt_sha256",
+    "output_schema_sha256",
+    "status",
+    "started_at",
+    "finished_at",
+    "steps",
+    "usage",
+    "discovery",
+    "documents",
+    "signals",
+    "conflicts",
+    "findings",
+    "brief",
+    "safety",
+    "limitations",
+    "artifacts",
+    "errors",
+    "integrity"
+  ],
+  "properties": {
+    "schema_version": {"const": "mova-research-result-v1"},
+    "request_id": {"type": "string", "pattern": "^rr_[A-Za-z0-9_-]{8,80}$"},
+    "agent_run_id": {"type": "string", "pattern": "^ar_[A-Za-z0-9_-]{8,80}$"},
+    "attempt": {"type": "integer", "minimum": 1, "maximum": 10},
+    "request_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "backend": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "provider", "model_requested", "model_resolved", "provider_route", "fallback_used"],
+      "properties": {
+        "name": {"enum": ["pydantic_ai_openrouter", "codex_cli", "none"]},
+        "provider": {"enum": ["openrouter", "openai_chatgpt", "none"]},
+        "model_requested": {
+          "oneOf": [
+            {"type": "string", "minLength": 1, "maxLength": 160},
+            {"type": "null"}
+          ]
+        },
+        "model_resolved": {
+          "oneOf": [
+            {"type": "string", "minLength": 1, "maxLength": 160},
+            {"type": "null"}
+          ]
+        },
+        "provider_route": {
+          "oneOf": [
+            {"type": "string", "minLength": 1, "maxLength": 160},
+            {"type": "null"}
+          ]
+        },
+        "fallback_used": {"type": "boolean"}
+      }
+    },
+    "task_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "prompt_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "output_schema_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "status": {"enum": ["completed", "degraded", "quarantined", "failed", "cancelled"]},
+    "started_at": {"type": "string", "format": "date-time", "pattern": "Z$"},
+    "finished_at": {"type": "string", "format": "date-time", "pattern": "Z$"},
+    "steps": {
+      "type": "array",
+      "maxItems": 30,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "status", "started_at", "finished_at", "duration_ms", "counts", "output_sha256", "error_code"],
+        "properties": {
+          "name": {
+            "enum": [
+              "validating_request",
+              "planning",
+              "discovering",
+              "fetching",
+              "extracting",
+              "reconciling",
+              "validating_result",
+              "sealing"
+            ]
+          },
+          "status": {"enum": ["completed", "degraded", "quarantined", "failed", "cancelled", "skipped"]},
+          "started_at": {"type": "string", "format": "date-time", "pattern": "Z$"},
+          "finished_at": {
+            "oneOf": [
+              {"type": "string", "format": "date-time", "pattern": "Z$"},
+              {"type": "null"}
+            ]
+          },
+          "duration_ms": {"type": "integer", "minimum": 0},
+          "counts": {
+            "type": "object",
+            "additionalProperties": {"type": "integer", "minimum": 0}
+          },
+          "output_sha256": {
+            "oneOf": [
+              {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+              {"type": "null"}
+            ]
+          },
+          "error_code": {
+            "oneOf": [
+              {"type": "string", "minLength": 1, "maxLength": 80},
+              {"type": "null"}
+            ]
+          }
+        }
+      }
+    },
+    "usage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model_requests",
+        "transport_attempts",
+        "tool_calls",
+        "search_requests",
+        "search_results",
+        "documents_fetched",
+        "bytes_fetched",
+        "input_tokens",
+        "cached_input_tokens",
+        "output_tokens",
+        "total_tokens",
+        "cost_usd",
+        "cost_known"
+      ],
+      "properties": {
+        "model_requests": {"type": "integer", "minimum": 0},
+        "transport_attempts": {"type": "integer", "minimum": 0},
+        "tool_calls": {"type": "integer", "minimum": 0},
+        "search_requests": {"type": "integer", "minimum": 0},
+        "search_results": {"type": "integer", "minimum": 0},
+        "documents_fetched": {"type": "integer", "minimum": 0},
+        "bytes_fetched": {"type": "integer", "minimum": 0},
+        "input_tokens": {"type": "integer", "minimum": 0},
+        "cached_input_tokens": {"type": "integer", "minimum": 0},
+        "output_tokens": {"type": "integer", "minimum": 0},
+        "total_tokens": {"type": "integer", "minimum": 0},
+        "cost_usd": {
+          "oneOf": [
+            {"type": "number", "minimum": 0},
+            {"type": "null"}
+          ]
+        },
+        "cost_known": {"type": "boolean"}
+      }
+    },
+    "discovery": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["candidate_id", "url", "title", "publisher", "query_id", "discovered_by", "rank", "discovered_at", "citation_excerpt"],
+        "properties": {
+          "candidate_id": {"type": "string", "pattern": "^cand_[A-Za-z0-9_-]{8,80}$"},
+          "url": {"type": "string", "format": "uri", "maxLength": 2048},
+          "title": {"type": "string", "maxLength": 500},
+          "publisher": {"type": "string", "maxLength": 200},
+          "query_id": {"type": "string", "pattern": "^query_[A-Za-z0-9_-]{8,80}$"},
+          "discovered_by": {"enum": ["openrouter_web", "codex_search", "source_registry"]},
+          "rank": {"type": "integer", "minimum": 1, "maximum": 100},
+          "discovered_at": {"type": "string", "format": "date-time", "pattern": "Z$"},
+          "citation_excerpt": {
+            "oneOf": [
+              {"type": "string", "maxLength": 2000},
+              {"type": "null"}
+            ]
+          }
+        }
+      }
+    },
+    "documents": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "document_id",
+          "canonical_url",
+          "publisher",
+          "fetch_method",
+          "http_status",
+          "mime_type",
+          "retrieved_at",
+          "published_at",
+          "payload_sha256",
+          "normalized_sha256",
+          "storage_mode",
+          "artifact_ref",
+          "source_tier",
+          "prompt_injection_status"
+        ],
+        "properties": {
+          "document_id": {"type": "string", "pattern": "^doc_[A-Za-z0-9_-]{8,80}$"},
+          "canonical_url": {"type": "string", "format": "uri", "maxLength": 2048},
+          "publisher": {"type": "string", "maxLength": 200},
+          "fetch_method": {"enum": ["direct_http", "firecrawl", "openrouter_annotation", "codex_citation"]},
+          "http_status": {
+            "oneOf": [
+              {"type": "integer", "minimum": 100, "maximum": 599},
+              {"type": "null"}
+            ]
+          },
+          "mime_type": {"type": "string", "minLength": 1, "maxLength": 120},
+          "retrieved_at": {"type": "string", "format": "date-time", "pattern": "Z$"},
+          "published_at": {
+            "oneOf": [
+              {"type": "string", "format": "date-time", "pattern": "Z$"},
+              {"type": "null"}
+            ]
+          },
+          "payload_sha256": {
+            "oneOf": [
+              {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+              {"type": "null"}
+            ]
+          },
+          "normalized_sha256": {
+            "oneOf": [
+              {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+              {"type": "null"}
+            ]
+          },
+          "storage_mode": {"enum": ["metadata_only", "excerpt", "full_licensed"]},
+          "artifact_ref": {
+            "oneOf": [
+              {"type": "string", "pattern": "^(?!/)(?!.*\\.\\.).{1,500}$"},
+              {"type": "null"}
+            ]
+          },
+          "source_tier": {"enum": ["T1", "T2", "T3", "T4", "T5", "unknown"]},
+          "prompt_injection_status": {"enum": ["clean", "suspected", "quarantined", "not_scanned"]}
+        }
+      }
+    },
+    "signals": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {"$ref": "research-signal-v2.schema.json"}
+    },
+    "conflicts": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["conflict_id", "claim_type", "severity", "signal_refs", "status", "reason"],
+        "properties": {
+          "conflict_id": {"type": "string", "pattern": "^conf_[A-Za-z0-9_-]{8,80}$"},
+          "claim_type": {"type": "string", "minLength": 1, "maxLength": 80},
+          "severity": {"enum": ["low", "medium", "high", "critical"]},
+          "signal_refs": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 20,
+            "uniqueItems": true,
+            "items": {"type": "string", "pattern": "^sig_[A-Za-z0-9_-]{8,80}$"}
+          },
+          "status": {"enum": ["open", "resolved", "superseded"]},
+          "reason": {"type": "string", "minLength": 1, "maxLength": 1200}
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["finding_id", "category", "severity", "subject_ref", "statement", "evidence_refs", "recommendation", "advisory_only"],
+        "properties": {
+          "finding_id": {"type": "string", "pattern": "^finding_[A-Za-z0-9_-]{8,80}$"},
+          "category": {"enum": ["availability", "data_quality", "decision_risk", "model_assumption", "operational", "security", "other"]},
+          "severity": {"enum": ["info", "warning", "material", "critical"]},
+          "subject_ref": {
+            "oneOf": [
+              {"type": "string", "minLength": 1, "maxLength": 160},
+              {"type": "null"}
+            ]
+          },
+          "statement": {"type": "string", "minLength": 1, "maxLength": 1600},
+          "evidence_refs": {
+            "type": "array",
+            "maxItems": 20,
+            "uniqueItems": true,
+            "items": {"type": "string", "pattern": "^doc_[A-Za-z0-9_-]{8,80}$"}
+          },
+          "recommendation": {"type": "string", "maxLength": 1200},
+          "advisory_only": {"const": true}
+        }
+      }
+    },
+    "brief": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["artifact_ref", "sha256", "summary", "citation_refs"],
+          "properties": {
+            "artifact_ref": {"type": "string", "pattern": "^(?!/)(?!.*\\.\\.).{1,500}$"},
+            "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+            "summary": {"type": "string", "minLength": 1, "maxLength": 1200},
+            "citation_refs": {
+              "type": "array",
+              "maxItems": 50,
+              "uniqueItems": true,
+              "items": {"type": "string", "pattern": "^doc_[A-Za-z0-9_-]{8,80}$"}
+            }
+          }
+        },
+        {"type": "null"}
+      ]
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["secret_scan_passed", "ssrf_blocks", "injection_flags", "policy_violations", "content_capture_enabled"],
+      "properties": {
+        "secret_scan_passed": {"type": "boolean"},
+        "ssrf_blocks": {"type": "integer", "minimum": 0},
+        "injection_flags": {"type": "integer", "minimum": 0},
+        "policy_violations": {"type": "integer", "minimum": 0},
+        "content_capture_enabled": {"const": false}
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {"type": "string", "minLength": 1, "maxLength": 1000}
+    },
+    "artifacts": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "path", "sha256", "bytes", "retention_class"],
+        "properties": {
+          "name": {"type": "string", "minLength": 1, "maxLength": 120},
+          "path": {"type": "string", "pattern": "^(?!/)(?!.*\\.\\.).{1,500}$"},
+          "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "bytes": {"type": "integer", "minimum": 0},
+          "retention_class": {"enum": ["ephemeral", "research", "decisive", "incident"]}
+        }
+      }
+    },
+    "errors": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "stage", "retryable", "message"],
+        "properties": {
+          "code": {"type": "string", "minLength": 1, "maxLength": 80},
+          "stage": {"type": "string", "minLength": 1, "maxLength": 80},
+          "retryable": {"type": "boolean"},
+          "message": {"type": "string", "minLength": 1, "maxLength": 1000}
+        }
+      }
+    },
+    "integrity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["canonicalization", "result_body_sha256", "artifact_manifest_sha256"],
+      "properties": {
+        "canonicalization": {"const": "json-sort-keys-utf8-v1"},
+        "result_body_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "artifact_manifest_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    }
+  }
+}

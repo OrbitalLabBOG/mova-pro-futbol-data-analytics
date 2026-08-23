@@ -30,6 +30,9 @@ La autoridad final sigue siendo:
 
 `datos validados → policy determinista → mova_fpl.engine.runner.decide() → gates → executor`.
 
+El diseño implementable, schemas, budgets, threat model, workers y tests se especifican en
+[09-agent-harness-implementation-spec.md](09-agent-harness-implementation-spec.md).
+
 ## Objetivos
 
 1. Investigar noticias de forma dirigida por plantilla, candidatos, clubs y horizonte.
@@ -74,7 +77,7 @@ flowchart LR
   tick["tick determinista"] --> context["build research context"]
   context --> inbox[("request package\ninbox")]
 
-  subgraph agent["mova-research · one-shot · sin ops.db"]
+  subgraph agent["research workers · one-shot · sin ops.db"]
     inbox --> plan["plan acotado"]
     plan --> official["official discovery"]
     plan --> web["web discovery"]
@@ -172,7 +175,7 @@ que justifique su runtime. Ninguna reevaluación cambia la autoridad exterior de
 
 | Task | Backend preferido | Entrada | Salida | Autoridad |
 | --- | --- | --- | --- | --- |
-| `news_discovery` | Codex search | roster, clubs, queries, cutoff | URLs candidatas | advisory |
+| `news_discovery` | OpenRouter web acotado; Codex especialista | roster, clubs, queries, cutoff | URLs candidatas | advisory |
 | `source_extract` | Pydantic AI + OpenRouter | excerpt/documento + identities | candidates estructurados | advisory |
 | `signal_reconcile` | Pydantic AI + OpenRouter | candidates + source tiers | conflictos y consenso | advisory |
 | `deadline_brief` | Codex | facts + señales + conflictos | brief citado | advisory |
@@ -266,8 +269,9 @@ señal continúa fresca.
 | 1 | collector/API oficial | hechos estructurados | snapshot inmutable |
 | 2 | HTTP/RSS directo | páginas estáticas y feeds | metadata + excerpt + hash |
 | 3 | Firecrawl `scrape` | extracción difícil de URL conocida | metadata + extract acotado |
-| 4 | Codex `--search` | discovery/síntesis profunda | queries, URLs, resultado JSON |
-| 5 | browser read-only | JS/auth excepcionales | evidencia redactada |
+| 4 | OpenRouter web con engine fijado | discovery rutinario | citations candidatas; nunca evidencia final |
+| 5 | Codex `--search` | discovery/síntesis profunda | queries, URLs, resultado JSON |
+| 6 | browser read-only | JS/auth excepcionales | evidencia redactada |
 
 Firecrawl `search` MAY ser un backend alterno de discovery. Firecrawl `agent` queda fuera
 del MVP porque duplica el planner agéntico, consume créditos variables y reduce control.
@@ -278,7 +282,9 @@ adapter directo, no tumbar el ciclo.
 
 ### `ResearchRequest` v1
 
-Artefacto canónico que el engine deja en el inbox:
+Artefacto canónico que el engine deja en el inbox. Este es un extracto legible; el
+contrato ejecutable completo es
+[research-request-v1.schema.json](contracts/research-request-v1.schema.json):
 
 ```json
 {
@@ -286,12 +292,14 @@ Artefacto canónico que el engine deja en el inbox:
   "request_id": "rr_...",
   "agent_run_id": "ar_...",
   "correlation_id": "corr_...",
+  "created_at": "...Z",
+  "cutoff_at": "...Z",
   "cycle": {
+    "cycle_id": "cycle_...",
     "season": "2026-27",
     "gw": 2,
     "phase": "refresh",
-    "deadline_at": "2026-08-28T17:30:00Z",
-    "cutoff_at": "...Z"
+    "deadline_at": "2026-08-28T17:30:00Z"
   },
   "task": {
     "name": "news_discovery",
@@ -305,13 +313,29 @@ Artefacto canónico que el engine deja en el inbox:
     "clubs": [3]
   },
   "official_facts": [],
+  "input_artifacts": [],
   "previous_signal_refs": [],
   "source_policy_version": "fpl-research-sources-v1",
+  "provider_policy_version": "openrouter-research-v1",
+  "capabilities": ["web_search", "http_fetch", "read_bundle"],
+  "search_policy": {
+    "engine": "exa",
+    "allowed_domains": [],
+    "blocked_domains": [],
+    "query_templates": []
+  },
   "budgets": {
-    "timeout_seconds": 240,
-    "max_queries": 5,
-    "max_documents": 30,
-    "max_output_tokens": 4000
+    "wall_seconds": 240,
+    "model_request_limit": 1,
+    "transport_retry_limit": 1,
+    "tool_call_limit": 1,
+    "search_request_limit": 1,
+    "search_result_limit": 10,
+    "document_limit": 30,
+    "input_bytes_limit": 1048576,
+    "output_tokens_limit": 4000,
+    "total_tokens_limit": 30000,
+    "max_cost_usd": null
   },
   "input_manifest_sha256": "..."
 }
@@ -350,7 +374,8 @@ robots/terms disposition y `prompt_injection_status`.
 ### `ResearchSignal` v2
 
 La tabla actual soporta una sola URL por señal y no representa bien corroboración. El
-contrato nuevo separa señal de fuentes:
+contrato nuevo separa señal de fuentes. El siguiente extracto destaca la semántica; la
+validación usa [research-signal-v2.schema.json](contracts/research-signal-v2.schema.json):
 
 ```json
 {
@@ -371,6 +396,14 @@ contrato nuevo separa señal de fuentes:
   "expires_at": "...Z",
   "confidence": 0.78,
   "source_refs": ["doc_1", "doc_2"],
+  "evidence_refs": [
+    {
+      "document_id": "doc_1",
+      "locator_type": "normalized_char_range",
+      "locator": "120:286",
+      "excerpt_sha256": "..."
+    }
+  ],
   "corroboration": {
     "independent_sources": 2,
     "highest_tier": "T1",
@@ -398,35 +431,68 @@ El LLM solo puede emitir `candidate`. La policy determinista cambia a `accepted`
 
 ### `ResearchResult` v1
 
-Envelope final de la corrida:
+Envelope final de la corrida. El extracto omite detalle interno de colecciones vacías; el
+contrato normativo es
+[research-result-v1.schema.json](contracts/research-result-v1.schema.json):
 
 ```json
 {
   "schema_version": "mova-research-result-v1",
+  "request_id": "rr_...",
   "agent_run_id": "ar_...",
+  "attempt": 1,
   "request_sha256": "...",
-  "backend": "codex_cli",
-  "provider": "openai_chatgpt",
-  "model": "recorded-at-runtime",
+  "backend": {
+    "name": "codex_cli",
+    "provider": "openai_chatgpt",
+    "model_requested": null,
+    "model_resolved": "recorded-at-runtime",
+    "provider_route": null,
+    "fallback_used": false
+  },
   "task_version": "1.0.0",
   "prompt_sha256": "...",
   "output_schema_sha256": "...",
   "status": "completed",
   "started_at": "...Z",
   "finished_at": "...Z",
+  "steps": [],
   "usage": {
+    "model_requests": 1,
+    "transport_attempts": 1,
+    "tool_calls": 0,
+    "search_requests": 0,
+    "search_results": 0,
+    "documents_fetched": 0,
+    "bytes_fetched": 0,
     "input_tokens": 0,
     "cached_input_tokens": 0,
     "output_tokens": 0,
-    "search_calls": 0,
-    "estimated_cost": null,
-    "currency": null
+    "total_tokens": 0,
+    "cost_usd": null,
+    "cost_known": false
   },
+  "discovery": [],
   "documents": [],
   "signals": [],
   "conflicts": [],
+  "findings": [],
+  "brief": null,
+  "safety": {
+    "secret_scan_passed": true,
+    "ssrf_blocks": 0,
+    "injection_flags": 0,
+    "policy_violations": 0,
+    "content_capture_enabled": false
+  },
   "limitations": [],
-  "output_sha256": "..."
+  "artifacts": [],
+  "errors": [],
+  "integrity": {
+    "canonicalization": "json-sort-keys-utf8-v1",
+    "result_body_sha256": "...",
+    "artifact_manifest_sha256": "..."
+  }
 }
 ```
 
@@ -479,7 +545,7 @@ integración noticias → intervención permanece en shadow.
         ├── source-manifest.json
         ├── result.json
         ├── validation.json
-        ├── events.jsonl
+        ├── events.redacted.jsonl
         └── brief.md
 ```
 
@@ -504,7 +570,9 @@ engine importa el result package después de validar schema, hashes y request li
 
 ## Ejecución en el VPS
 
-Tercera imagen propuesta: `mova-research`.
+Dos imágenes one-shot de research propuestas: `mova-research-openrouter` y
+`mova-research-codex`. Separarlas impide montar OpenRouter key y Codex auth en un mismo
+runtime y evita incluir Node/Codex en el worker Python.
 
 - proceso one-shot y usuario sin privilegios, sin daemon agéntico residente;
 - filesystem root read-only;
@@ -517,7 +585,7 @@ Tercera imagen propuesta: `mova-research`.
 El unit de tick puede ejecutar secuencialmente:
 
 1. `mova-worker tick` crea requests pendientes;
-2. `mova-research drain --max-jobs=1` procesa un request;
+2. `mova-worker dispatch-research --max-jobs=1` lanza el worker allowlisted;
 3. `mova-worker import-agent-results` valida/importa outputs.
 
 Una caída entre pasos es recuperable porque inbox/outbox usan rename atómico y hashes. Un
@@ -528,7 +596,7 @@ ningún contenedor.
 
 | Credencial | Ubicación formal | Backup | Consumidor |
 | --- | --- | --- | --- |
-| OpenRouter API key | `/etc/mova-fpl/secrets/openrouter_api_key` 0600 | secret store autorizado | `mova-research` |
+| OpenRouter API key | `/etc/mova-fpl/secrets/openrouter_api_key` 0600 | secret store autorizado | `mova-research-openrouter` |
 | Codex `auth.json` | `/var/lib/mova-fpl/agent/codex-home/auth.json` 0600 | excluido por defecto | solo task Codex |
 | Firecrawl key | `/etc/mova-fpl/secrets/firecrawl_api_key` 0600 | opcional | adapter Firecrawl |
 | perfil FPL | `/var/lib/mova-fpl/browser-profile` 0700 | excluido | solo browser |
@@ -551,6 +619,9 @@ Controles MUST:
 8. ningún secreto, token, cookie o path sensible en request, prompt, events o result;
 9. logs y artefactos con `0600`, directorios `0700` y hashes antes de importar;
 10. no seguir acciones sugeridas por una página, aunque diga ser oficial.
+
+Codex JSONL se filtra en streaming: reasoning/prompt/stdout libre se descarta y solo se
+conserva metadata allowlisted. Pydantic AI configura OTel con content capture deshabilitado.
 
 ## Idempotencia
 
@@ -667,10 +738,12 @@ Un backend puede aprobarse para `source_extract` y seguir prohibido para
 - inbox/outbox atómico e importer;
 - adapters fake y replay sin red;
 - fixtures gold, schemas y pruebas de seguridad.
+- implementar primero los contratos máquina de [contracts/](contracts/) y la frontera de
+  packages definida en la spec 09.
 
 ### AR-2 — Pydantic AI + OpenRouter shadow
 
-- fijar `pydantic-ai-slim[openrouter]` 2.x en la imagen `mova-research`;
+- fijar `pydantic-ai-slim[openrouter]` 2.x en `mova-research-openrouter`;
 - implementar `PydanticAIResearchBackend` con schemas, provider y tools allowlisted;
 - uso, request/tool/token/search limits, timeout, retry y circuit breaker;
 - cap externo OpenRouter y alerta cuando el costo local sea desconocido;
@@ -685,7 +758,7 @@ Un backend puede aprobarse para `source_extract` y seguir prohibido para
 
 ### AR-4 — Codex specialist
 
-- formalizar el POC en `mova-research` sin root;
+- formalizar el POC en `mova-research-codex` sin root;
 - `CODEX_HOME` dedicado y health/auth status;
 - tasks `news_discovery`, `deadline_brief`, `decision_critic`;
 - cuotas y observabilidad de searches/tokens.
@@ -711,7 +784,7 @@ Nada en AR-0..AR-6 habilita browser writes; eso permanece bajo G4+ y ADR-004.
 | --- | --- | --- |
 | D-AR-01 | outer FSM propio; subflujo agéntico sin autoridad | respaldada por ADR existentes |
 | D-AR-02 | Pydantic AI core + OpenRouter rutinario; Codex especialista | propuesta |
-| D-AR-03 | `mova-research` one-shot separado, no plataforma compartida prematura | propuesta |
+| D-AR-03 | workers OpenRouter/Codex one-shot separados, sin plataforma compartida prematura | propuesta |
 | D-AR-04 | `ops.db` exterior + Pydantic AI core interior; sin LangGraph/Graph/Workflow | decidida |
 | D-AR-05 | metadata+excerpt+hash; no artículos completos por defecto | propuesta |
 | D-AR-06 | Codex máximo T-24h, T-90m y emergencia | propuesta |
@@ -748,3 +821,9 @@ inicial de fuentes; acordar cuota monetaria/tokens por GW y canal de alertas.
 - [Pydantic AI — OpenRouter provider](https://pydantic.dev/docs/ai/models/openrouter/)
 - [Pydantic AI — Harness](https://pydantic.dev/docs/ai/harness/)
 - [Pydantic AI — version policy](https://pydantic.dev/docs/ai/project/version-policy/)
+- [Pydantic AI — retries](https://pydantic.dev/docs/ai/core-concepts/retries/)
+- [Pydantic AI — timeouts](https://pydantic.dev/docs/ai/core-concepts/timeouts/)
+- [Pydantic AI — testing](https://pydantic.dev/docs/ai/testing/)
+- [OpenRouter — web search plugin](https://openrouter.ai/docs/guides/features/plugins/web-search)
+- [OWASP — Prompt Injection](https://genai.owasp.org/llmrisk/llm01-prompt-injection/)
+- [OWASP — SSRF Prevention](https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html)

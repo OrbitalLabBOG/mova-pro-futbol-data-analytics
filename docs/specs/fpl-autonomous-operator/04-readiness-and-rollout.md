@@ -100,6 +100,9 @@ No se modificó el host durante esta inspección.
 - mínimo 3 GWs completas o equivalente de rehearsals con todos los estados;
 - cero jobs huérfanos, decisiones irreproducibles o alertas perdidas;
 - research signals y atribución funcionan, pero LLM no altera producción;
+- search citations se refetchean y sellan; ningún claim aceptado depende solo de metadata
+  del provider;
+- budgets, retry layers, wall timeout, redaction y `cost_known` pasan drills;
 - deadline drill acelerado demuestra freeze, hard stop y recuperación.
 
 ### G4 — Supervised execution

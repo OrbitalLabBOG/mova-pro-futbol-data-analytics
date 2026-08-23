@@ -2,7 +2,7 @@
 type: workpack
 name: "WP-004 — Investigación y señales de noticias"
 created: 2026-08-21
-updated: 2026-08-21
+updated: 2026-08-22
 tags: [mova, fpl, workpack, research, llm]
 status: proposed
 ---
@@ -21,20 +21,40 @@ WP-002 y WP-003.
 ## Entregables
 
 - registry de fuentes/tier/TTL y adaptadores;
-- schema `ResearchSignal` y entity resolution a `element`;
+- JSON Schemas `ResearchRequest` v1, `ResearchResult` v1 y `ResearchSignal` v2 más modelos
+  Pydantic strict;
+- workers one-shot separados para Pydantic AI/OpenRouter y Codex;
+- inbox/processing/outbox/quarantine atómicos e importer fail-closed;
+- discovery OpenRouter acotado, safe fetch, artifacts/hash y evidence locator;
+- entity resolution exacta a `element`;
 - conflict resolver y policy de evidencia;
 - extractor LLM con prompt/version/hash y fixtures gold;
+- budgets por capa, wall timeout, usage/cost-known, redaction y telemetría sin contenido;
 - transformador determinista hacia `Intervention` con límites productivos.
 
 ## Criterios de aceptación
 
 - toda señal tiene URL, published/observed, hash, confianza, TTL y claim;
+- toda señal importable tiene `SourceDocument` recuperado y locator; citation metadata sola
+  no cuenta como evidencia;
 - nombres ambiguos no se resuelven sin club/identidad suficiente;
 - rumor único no crea lock/hit/chip;
 - ausencia confirmada puede mapearse a disponibilidad cero con rationale;
 - contradicciones permanecen visibles;
 - el extractor no puede producir `Decision` ni llamar executor.
+- TestModel/FunctionModel no pueden hacer requests reales durante unit tests;
+- corpus SSRF/injection y replay de provider pasan;
+- raw Codex JSONL, prompts y responses no aparecen en logs/OTel/artifacts generales;
+- todo fallback crea attempt y los límites de transport/output/job se observan por separado.
 
 ## Rollout
 
 Solo shadow hasta cumplir la política de promoción de la readiness.
+
+## Plan de entrega
+
+`HN-0 contratos → HN-1 queue/importer → HN-2 Pydantic offline/shadow → HN-3 web evidence →
+HN-4 Codex specialist → HN-5 shadow completo`.
+
+La implementación exacta está en
+[../09-agent-harness-implementation-spec.md](../09-agent-harness-implementation-spec.md).

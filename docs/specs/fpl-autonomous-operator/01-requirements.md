@@ -39,6 +39,8 @@ status: proposed
 | REQ-F-022 | MUST | Seleccionar OpenRouter, Codex u otro backend por una policy versionada y auditable; ningún prompt elige o cambia proveedor durante la corrida. |
 | REQ-F-023 | MUST | Mapear señales aceptadas a intervención mediante policy determinista; `effect_hint` del LLM nunca es una modificación directa de xP/minutos. |
 | REQ-F-024 | MUST | Permitir que collectors, modelos y replay sigan funcionando cuando todos los backends agénticos estén degradados. |
+| REQ-F-025 | MUST | Tratar resultados de web search solo como discovery; ninguna cita se acepta como evidencia hasta recuperar/sellar un `SourceDocument` y verificar un locator. |
+| REQ-F-026 | MUST | Ejecutar OpenRouter y Codex en workers one-shot separados que nunca compartan credenciales, DB, browser profile ni filesystem de resultados previos. |
 
 ## Calidad y tiempo
 
@@ -56,6 +58,8 @@ status: proposed
 | REQ-Q-010 | SHOULD | El sistema puede reconstruirse en un VPS limpio desde Git y artefactos versionados sin depender del Python o SQLite del host. |
 | REQ-Q-011 | MUST | Toda conexión productiva a `ops.db`, incluidos backup y checkpoint, usa SQLite ≥3.51.3; el arranque registra la versión y falla cerrado si no cumple. |
 | REQ-Q-012 | MUST | Cada corrida agéntica tiene timeout, límites de queries/documentos/tokens/costo, máximo de concurrencia y circuit breaker por backend. |
+| REQ-Q-013 | MUST | Contabilizar por separado transport retries, output/tool retries, model requests y outer attempts; todo fallback de modelo/backend crea un attempt nuevo. |
+| REQ-Q-014 | MUST | Aplicar wall timeout exterior al agent run; los timeouts por request/tool no se consideran límite total de la corrida. |
 
 ## Seguridad, cumplimiento y privacidad
 
@@ -71,8 +75,10 @@ status: proposed
 | REQ-S-008 | MUST | El servicio browser no expone CDP ni puertos públicos y corre separado de otras identidades. |
 | REQ-S-009 | MUST | Ningún dato de rumor de baja confianza puede producir `lock_out`, chip o hit por sí solo. |
 | REQ-S-010 | MUST | El runtime no importa SDK de Supabase ni conoce su URL/keys. Supabase recibe únicamente seguimiento PM por un flujo externo y separado. |
-| REQ-S-011 | MUST | `mova-research` no monta `ops.db`, canonical DB, browser profile, cookies FPL, Docker socket, SSH keys ni credenciales de un backend distinto al invocado. |
+| REQ-S-011 | MUST | Los research workers no montan `ops.db`, canonical DB, browser profile, cookies FPL, Docker socket, SSH keys ni credenciales de un backend distinto al invocado. |
 | REQ-S-012 | MUST | Tratar contenido recuperado como datos no confiables, bloquear SSRF/red privada, detectar prompt injection y poner en cuarentena cualquier salida materialmente influida. |
+| REQ-S-013 | MUST | Deshabilitar captura de prompts, respuestas, tool args y contenido binario en OTel/logs; conservar solo eventos y metadata allowlisted. |
+| REQ-S-014 | MUST | No persistir JSONL Codex crudo ni chain-of-thought; filtrar eventos streaming antes de escribir artifacts. |
 
 ## Observabilidad y operación
 
@@ -89,6 +95,7 @@ status: proposed
 | REQ-O-009 | SHOULD | Calcular drift de esquema, población, predicción, calibración, disponibilidad y efecto de intervenciones. |
 | REQ-O-010 | SHOULD | Producir postmortem automático de GW con resultado, contrafactuales y cambios de estrategia propuestos, nunca auto-promovidos. |
 | REQ-O-011 | MUST | Registrar por corrida task/backend/model, prompts/schemas hashes, searches, documentos, señales, conflictos, tokens, costo, fallback, latencia y status sin guardar chain-of-thought. |
+| REQ-O-012 | MUST | Registrar `cost_known`; si es falso, el costo local es advisory y mandan límites duros de requests/tools/tokens/searches y el cap externo del provider. |
 
 ## Restricciones de autonomía por acción
 

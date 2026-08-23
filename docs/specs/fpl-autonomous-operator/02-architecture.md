@@ -14,14 +14,15 @@ status: proposed
 Un temporizador `systemd` ejecuta cada cinco minutos un comando idempotente `tick`. El
 orquestador obtiene un `flock` del host y una transacción `BEGIN IMMEDIATE` en SQLite,
 calcula la próxima transición desde el deadline oficial y delega jobs. La arquitectura
-objetivo usa tres imágenes para aislar responsabilidades:
+objetivo usa cuatro roles de imagen para aislar responsabilidades:
 
 - `mova-engine`: Python 3.13, CBC, collector, coordinador, modelos y optimizador. La
   misma imagen sirve al worker one-shot y a la API local de control/observabilidad. Incluye
   SQLite ≥3.51.3; no usa el 3.45.1 del host;
-- `mova-research`: one-shot sin acceso a DB/browser/FPL secrets; ejecuta HTTP/Firecrawl,
-  Pydantic AI core sobre OpenRouter o `codex exec` contra request packages sellados y
-  devuelve JSON;
+- `mova-research-openrouter`: one-shot Python sin acceso a DB/browser/FPL secrets; ejecuta
+  HTTP/Firecrawl y Pydantic AI core sobre OpenRouter contra request packages sellados;
+- `mova-research-codex`: one-shot Codex CLI, con auth dedicada y sin OpenRouter key, DB,
+  browser o repo MOVA montado; devuelve un result package filtrado y validable;
 - `mova-browser`: un único Chromium normal y headed, supervisado sobre display virtual y
   perfil persistente exclusivo. `agent-browser` se adjunta por CDP interno después del
   arranque; el acceso interactivo existe sólo por túnel SSH cuando se requiere login.
@@ -46,8 +47,9 @@ flowchart LR
     metrics["/health /ready /metrics"]
   end
 
-  subgraph research["mova-research · one-shot"]
-    agent["direct fetch · Pydantic AI/OpenRouter · codex exec"]
+  subgraph research["research workers · one-shot"]
+    agent["Pydantic AI/OpenRouter · fetch"]
+    specialist["Codex specialist"]
   end
 
   subgraph browser["mova-browser · red privada"]
@@ -58,8 +60,11 @@ flowchart LR
 
   collector --> fpl["FPL / PL sources"]
   research_request --> agent
+  research_request --> specialist
   agent --> web["noticias y clubes"]
+  specialist --> web
   agent --> research_request
+  specialist --> research_request
   decision --> executor
   executor --> fplui["FPL UI"]
   verify --> executor
@@ -77,6 +82,8 @@ permiten. En `shadow`, el executor es `disabled`.
 El diseño detallado del coordinador, contratos y selección de backend está en
 [08-agentic-research-harness.md](08-agentic-research-harness.md). No se usa LangGraph: la
 máquina exterior y el ledger actuales ya cubren persistencia, routing y reintentos.
+La spec de implementación y los schemas máquina están en
+[09-agent-harness-implementation-spec.md](09-agent-harness-implementation-spec.md).
 
 ## Fronteras
 
@@ -276,6 +283,8 @@ es:
 | `mova-api` | 0.25 | 384 MiB | residente |
 | `mova-browser` | 0.75 | 1.25 GiB | residente o detenido fuera de ventanas |
 | `mova-worker` | 1.00 | 1.5 GiB | one-shot |
+| `mova-research-openrouter` | 0.50 | 512 MiB | one-shot |
+| `mova-research-codex` | 1.00 | 1 GiB | one-shot |
 
 El host rechaza un job pesado si `MemAvailable <2.5 GiB` o disco libre `<20 GiB`, registra
 el gate y alerta. Training/backtest exhaustivo nunca corre dentro de la ventana de deadline
