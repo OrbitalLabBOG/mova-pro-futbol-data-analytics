@@ -16,12 +16,23 @@ status: active-shadow
 El runtime reproducible, plano de control, scheduler, collector, modelos, auditoría,
 backup y ejecutor browser aislado ya corren en el VPS. Los gates permanecen cerrados en
 `shadow`, `A0`, `compliance=pending`, `kill_switch=true` y `browser_writes=false`.
-Faltan completar research/alerting, autenticar el perfil bajo supervisión y acumular
-evidencia antes de evaluar cualquier escritura externa.
+El perfil fue autenticado bajo supervisión, corresponde a `losmillosFPL` / `entry_id=3609854`
+y sobrevivió una recreación controlada del contenedor. Faltan completar research/alerting y
+acumular evidencia antes de evaluar cualquier escritura externa.
 
 La evidencia verificable del corte está en
 [07-deployment-evidence.md](07-deployment-evidence.md). La matriz inferior se conserva
 como baseline del diagnóstico previo al despliegue.
+
+## Checkpoint vigente — 2026-08-22
+
+| Área | Evidencia | Estado |
+| --- | --- | --- |
+| Browser dedicado | Chromium normal supervisado; agent-browser se adjunta por CDP interno | ready para lectura |
+| Identidad FPL | `/en/my-team` contiene `losmillosFPL` y `entry_id=3609854` | verified |
+| Persistencia auth | recreación de contenedor conservó acceso autenticado | verified |
+| Exposición | noVNC sólo `127.0.0.1:6080`; CDP sólo loopback del contenedor | verified |
+| Escritura FPL | shadow A0, compliance pendiente, kill switch activo | blocked por diseño |
 
 ## Matriz previa al despliegue (corte 2026-08-21)
 

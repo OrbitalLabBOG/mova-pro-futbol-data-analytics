@@ -19,8 +19,9 @@ responsabilidades:
 - `mova-engine`: Python 3.13, CBC, collector, research adapters, modelos y optimizador. La
   misma imagen sirve al worker one-shot y a la API local de control/observabilidad. Incluye
   SQLite ≥3.51.3; no usa el 3.45.1 del host;
-- `mova-browser`: `agent-browser`, Chromium headed sobre display virtual y perfil
-  persistente exclusivo, con acceso interactivo solo por túnel SSH cuando se requiera login.
+- `mova-browser`: un único Chromium normal y headed, supervisado sobre display virtual y
+  perfil persistente exclusivo. `agent-browser` se adjunta por CDP interno después del
+  arranque; el acceso interactivo existe sólo por túnel SSH cuando se requiere login.
 
 Tres SQLite locales separan almacén canónico, experimentos y operación. Volúmenes del VPS
 conservan snapshots, modelos y evidencia por hash. Supabase no forma parte de este diagrama:
@@ -243,7 +244,9 @@ DOM grabados. El perfil no se comparte con WhatsApp, OpenClaw ni navegación per
 - systemd administra el stack, el `tick`, backups y un watchdog independiente. No se usa
   el crontab de root como fuente de verdad.
 - El perfil browser vive en volumen `0700`, queda excluido del backup general y no expone
-  CDP/noVNC públicamente. La autenticación humana usa túnel SSH temporal.
+  CDP/noVNC públicamente. noVNC escucha en loopback del host y CDP en loopback interno del
+  contenedor. La autenticación humana usa túnel SSH temporal y el adapter nunca lanza una
+  segunda instancia sobre el perfil.
 - El servicio existente `premier-league-api` solo puede entrar como fuente histórica
   explícitamente versionada después de corregir partición de temporada y health semantics.
 - No se expone UI pública. Acceso operativo por Tailscale/SSH o proxy autenticado existente.

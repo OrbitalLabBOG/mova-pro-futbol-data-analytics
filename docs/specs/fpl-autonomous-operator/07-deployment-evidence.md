@@ -7,14 +7,16 @@ tags: [mova, fpl, deployment, vps, observability, audit]
 status: active-shadow
 ---
 
-# Acta del primer despliegue shadow
+# Acta del despliegue shadow y autenticación supervisada
 
 ## Resultado
 
 El control plane MOVA FPL quedó desplegado en el VPS y operativo contra la temporada
 2026/27. El collector oficial, snapshot, motor de decisión, persistencia, API local,
 métricas, auditoría, backup verificado, watchdog y browser aislado pasaron sus smokes.
-No se ejecutó ninguna escritura ni autenticación en FPL.
+El corte inicial no autenticó ni escribió en FPL. La adenda del 22 de agosto autenticó el
+perfil manualmente, verificó la cuenta y demostró persistencia tras recrear el contenedor;
+no ejecutó ninguna escritura sobre el equipo.
 
 ## Identidad del release
 
@@ -33,6 +35,23 @@ Las etiquetas OCI de ambas imágenes reportaron `org.opencontainers.image.revisi
 El host conserva SQLite 3.45.1, pero no opera las bases: todos los jobs pasan por el gate
 del contenedor.
 
+### Adenda de browser persistente
+
+| Evidencia | Valor |
+| --- | --- |
+| Git / etiquetas OCI | `26dc084797974c5329b4d19adda0111d7da39093` / `26dc084` |
+| Engine image | `sha256:e3f967c88a4f67dcc762775b27e028d4aeb981e303d17bd2acebb457fc72f523` |
+| Browser image | `sha256:3e384243a1c6768173307e067c87332e60d94e31500968a47a817f7e8a37a63f` |
+| Browser | Chromium 151 + agent-browser 0.26.0 |
+| Perfil | `/var/lib/mova-fpl/browser-profile` |
+| Cuenta verificada | `losmillosFPL`, `entry_id=3609854` |
+
+El login Google se completó manualmente por noVNC. El launcher automatizado fue sustituido
+por un único Chromium normal, visible y supervisado; agent-browser se adjunta posteriormente
+por CDP en `127.0.0.1:9222` dentro del contenedor. Esto evita una segunda instancia sobre el
+perfil y conserva la compatibilidad con OAuth. No se exportaron contraseñas, cookies,
+storage ni archivos de estado.
+
 ## Controles efectivos
 
 | Control | Valor | Consecuencia |
@@ -45,7 +64,8 @@ del contenedor.
 
 Los cinco valores fueron persistidos como `runtime_control_changed`, con actor, razón,
 timestamp, payload hash y audit ID. El browser no monta `ops.db`, no expone CDP y sólo
-publica noVNC en loopback mientras está encendido.
+publica noVNC en loopback mientras está encendido. CDP escucha sólo en loopback interno del
+contenedor y no tiene mapping al host.
 
 ## Pruebas y evidencia operativa
 
@@ -90,12 +110,16 @@ chips antes del deadline. Los gates actuales hacen imposible que el tick la ejec
 
 ### Browser y red
 
-- Browser aislado abrió `https://fantasy.premierleague.com/en/` y obtuvo el snapshot
-  interactivo de la página oficial pública.
-- No hubo login, MFA, cookie importada, navegación privada ni click de escritura.
-- Tras el smoke el contenedor browser quedó detenido.
-- El único listener MOVA permanente observado fue `127.0.0.1:8787`; no hubo listener
-  en `6080`, `9222` ni `9223` después de apagar el browser.
+- El smoke inicial abrió la página oficial pública sin autenticación ni escritura.
+- En la sesión supervisada, Julián completó Google OAuth manualmente; ORBIX no recibió ni
+  escribió credenciales o MFA.
+- `/en/my-team` devolvió `Pick Your Fantasy Football Team` y una lectura acotada del DOM
+  confirmó simultáneamente `losmillosFPL` y `3609854`.
+- Chromium cerró de forma controlada, el contenedor fue recreado con la imagen `26dc084` y
+  `/en/my-team` volvió a abrir autenticado sobre el mismo perfil.
+- API y browser quedaron `healthy`; noVNC escucha en `127.0.0.1:6080` del host y CDP sólo en
+  `127.0.0.1:9222` del contenedor. No existe CDP público.
+- Los timers `tick`, `watchdog` y `backup` continuaron activos después del despliegue.
 
 ## Automatización instalada
 
@@ -117,8 +141,8 @@ repetir el collector ni los modelos cada cinco minutos.
 
 ## Límites y siguientes gates
 
-- Falta autenticar el perfil persistente con MFA manual y verificar que corresponde a
-  `entry_id=3609854`; esto no se hará sin una sesión supervisada.
+- El perfil persistente ya está autenticado y verificado para `entry_id=3609854`. Google o
+  FPL pueden expirar/revocar la sesión; cualquier reautenticación vuelve a ser humana.
 - Research/news tiene esquema y puertos de integración, pero aún no tiene el pipeline
   completo ni autorización para alterar decisiones.
 - Alerting conserva outbox/incidentes, pero falta una ruta externa con acuse y pruebas P0/P1.
@@ -126,4 +150,5 @@ repetir el collector ni los modelos cada cinco minutos.
 - Falta acumular shadow por varias jornadas, deadline drills y pruebas de reboot/caos.
 - No se habilitan `A1+`, writes ni cambios de chip/equipo hasta nueva aprobación explícita.
 
-Este acta certifica readiness de **G1 y base de G2 en shadow**; no declara cumplidos G3–G6.
+Este acta certifica readiness de **G1, base de G2 y el prerrequisito de identidad browser de
+G4**. No declara cumplidos G3–G6 ni autoriza escrituras FPL.
