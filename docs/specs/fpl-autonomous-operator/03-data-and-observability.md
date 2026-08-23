@@ -58,12 +58,19 @@ esa misma familia de binarios/librería; ningún unit invoca `/usr/bin/sqlite3` 
 │   ├── fpl_canonical.db              # read-only para runtime
 │   ├── trace.db                      # laboratorio/settlement
 │   └── ops.db                        # control plane WAL
+├── agent/
+│   ├── inbox/                        # ResearchRequest sellados
+│   ├── processing/                   # claims atómicos
+│   ├── outbox/                       # ResearchResult sellados
+│   ├── quarantine/                   # outputs rechazados
+│   └── codex-home/                   # 0700; fuera de backup general
 ├── artifacts/
 │   ├── sources/
 │   ├── datasets/
 │   ├── projections/
 │   ├── models/
 │   ├── decisions/
+│   ├── research/
 │   └── evidence/
 └── browser-profile/                  # 0700; fuera de backup general
 /opt/orbital/backups/mova-fpl/        # backups consistentes + checksums
@@ -101,16 +108,21 @@ foreign keys activas y estados protegidos por `CHECK`.
 | --- | --- | --- |
 | `source_snapshots` | metadata de entradas inmutables | source+sha unique; URI; freshness/quality |
 | `research_signals` | claims citados, TTL y conflicto | player/claim/source/observed versionado |
+| `agent_runs` | task/backend/model y consumo de cada corrida | run+attempt unique; hashes y status |
+| `research_queries` | queries ejecutadas y discovery | run+query hash unique |
+| `research_documents` | evidencia web normalizada | canonical URL+hash; tier/TTL/storage policy |
+| `research_signal_sources` | corroboración many-to-many | signal+document unique |
+| `research_conflicts` | claims incompatibles | group/severity/status/resolution versionados |
 | `team_state_snapshots` | squad, XI, PP/SP/CP, FT, chips | fingerprint + source + observed_at |
+| `dataset_releases` | dataset entrenable sellado | sha, as_of cutoff, leakage audit |
+| `model_releases` | artifacts de modelo | model+version unique; dataset, metrics y sha |
+| `projection_runs` | metadata de matrices xP | manifest/hash; detalle en Parquet/SQLite artifact |
 
 Implementación: el adapter browser produce `mova-fpl-private-team-state-v1` con allowlist
 exacta. El engine rechaza claves adicionales, valida identidad/cuotas/rangos, persiste un
 artefacto inmutable y registra su path, SHA-256 y estado de calidad. El fingerprint excluye
 `observed_at` para detectar que el estado no cambió, mientras cada captura conserva una
 observación propia para que frescura y disponibilidad sigan siendo medibles.
-| `dataset_releases` | dataset entrenable sellado | sha, as_of cutoff, leakage audit |
-| `model_releases` | artifacts de modelo | model+version unique; dataset, metrics y sha |
-| `projection_runs` | metadata de matrices xP | manifest/hash; detalle en Parquet/SQLite artifact |
 
 ### Decisión y ejecución
 

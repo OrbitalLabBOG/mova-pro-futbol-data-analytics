@@ -2,7 +2,7 @@
 type: project
 name: "MOVA FPL Autonomous Operator 2026/27 — Traceability"
 created: 2026-08-21
-updated: 2026-08-21
+updated: 2026-08-22
 tags: [mova, fpl, traceability, workpacks]
 status: proposed
 ---
@@ -21,6 +21,7 @@ status: proposed
 | F-004, F-014..017, S-003..004, O-004 | ADR-006 almacenamiento dividido |
 | O-001..010 | ADR-007 observabilidad local + ledger |
 | F-012..016, Q-003..004, S-006 | ADR-008 exactly-once observable y hard stop |
+| F-019..024, Q-012, S-011..012, O-011 | ADR-009 coordinador delgado con backends híbridos |
 
 ## Requisitos a workpacks
 
@@ -29,7 +30,7 @@ status: proposed
 | WP-001 Runtime/deploy | Q-005, Q-008, Q-010..011, S-007..008 | image digest, versions, tests, restore/reboot drill |
 | WP-002 Control plane | F-001, F-017, Q-001..002, Q-011, S-003..004, O-004 | SQLite migration, concurrency, integrity/backup e idempotency tests |
 | WP-003 Data quality | F-002..004, Q-004, Q-007 | snapshot manifest, drift fixtures, stale-source drill |
-| WP-004 Research | F-005..006, S-009, O-009 | gold claims, provenance/conflict/TTL tests |
+| WP-004 Research | F-005..006, F-019..024, Q-012, S-009, S-011..012, O-009, O-011 | schemas, gold claims, provenance/conflict/TTL/injection tests, provider replay y budgets |
 | WP-005 Decision lifecycle | F-007..010, F-014..015, Q-006 | replay, model registry, shadow attribution |
 | WP-006 Browser executor | F-011..013, S-001..002, S-006, S-008 | DOM contracts, ambiguous-save drill, evidence hash |
 | WP-007 Observability | O-001..010 | dashboards, alert fire/ack, correlation continuity |

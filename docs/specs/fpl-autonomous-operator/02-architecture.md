@@ -2,7 +2,7 @@
 type: project
 name: "MOVA FPL Autonomous Operator 2026/27 — Architecture"
 created: 2026-08-21
-updated: 2026-08-21
+updated: 2026-08-22
 tags: [mova, fpl, architecture, autonomous-agent]
 status: proposed
 ---
@@ -13,12 +13,14 @@ status: proposed
 
 Un temporizador `systemd` ejecuta cada cinco minutos un comando idempotente `tick`. El
 orquestador obtiene un `flock` del host y una transacción `BEGIN IMMEDIATE` en SQLite,
-calcula la próxima transición desde el deadline oficial y delega jobs. Dos imágenes aíslan
-responsabilidades:
+calcula la próxima transición desde el deadline oficial y delega jobs. La arquitectura
+objetivo usa tres imágenes para aislar responsabilidades:
 
-- `mova-engine`: Python 3.13, CBC, collector, research adapters, modelos y optimizador. La
+- `mova-engine`: Python 3.13, CBC, collector, coordinador, modelos y optimizador. La
   misma imagen sirve al worker one-shot y a la API local de control/observabilidad. Incluye
   SQLite ≥3.51.3; no usa el 3.45.1 del host;
+- `mova-research`: one-shot sin acceso a DB/browser/FPL secrets; ejecuta HTTP/Firecrawl,
+  inferencia OpenRouter o `codex exec` contra request packages sellados y devuelve JSON;
 - `mova-browser`: un único Chromium normal y headed, supervisado sobre display virtual y
   perfil persistente exclusivo. `agent-browser` se adjunta por CDP interno después del
   arranque; el acceso interactivo existe sólo por túnel SSH cuando se requiere login.
@@ -37,10 +39,14 @@ flowchart LR
 
   subgraph engine["mova-engine · Python 3.13"]
     tick --> collector[collector]
-    tick --> research[research pipeline]
+    tick --> research_request[coordinador de investigación]
     tick --> decision["mova_fpl.decide"]
     tick --> verify[validator / reconciler]
     metrics["/health /ready /metrics"]
+  end
+
+  subgraph research["mova-research · one-shot"]
+    agent["direct fetch · OpenRouter · codex exec"]
   end
 
   subgraph browser["mova-browser · red privada"]
@@ -50,7 +56,9 @@ flowchart LR
   end
 
   collector --> fpl["FPL / PL sources"]
-  research --> web["noticias y clubes"]
+  research_request --> agent
+  agent --> web["noticias y clubes"]
+  agent --> research_request
   decision --> executor
   executor --> fplui["FPL UI"]
   verify --> executor
@@ -65,12 +73,17 @@ flowchart LR
 La flecha `decision → executor` solo se habilita cuando modo, nivel y compliance gate lo
 permiten. En `shadow`, el executor es `disabled`.
 
+El diseño detallado del coordinador, contratos y selección de backend está en
+[08-agentic-research-harness.md](08-agentic-research-harness.md). No se usa LangGraph: la
+máquina exterior y el ledger actuales ya cubren persistencia, routing y reintentos.
+
 ## Fronteras
 
 | Componente | Puede | No puede |
 | --- | --- | --- |
 | Collector | GET, validar, sellar snapshots | decidir o mutar FPL |
 | Research | crear `ResearchSignal` citado | fabricar una `Decision` |
+| Research backend | devolver `ResearchResult` contra schema | abrir `ops.db`, decidir fase o invocar executor |
 | Intervention policy | convertir señales en `Intervention` válida | forzar salida del optimizador |
 | `mova_fpl` | proyectar, optimizar, validar reglas | importar browser, scheduler, secretos u operación |
 | Orchestrator | transicionar estado y aplicar gates | alterar la decisión deportiva |

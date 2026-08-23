@@ -2,14 +2,14 @@
 type: project
 name: "MOVA FPL Autonomous Operator 2026/27 — Source Register"
 created: 2026-08-21
-updated: 2026-08-21
+updated: 2026-08-22
 tags: [mova, fpl, research, sources]
 status: proposed
 ---
 
 # Registro de fuentes
 
-Última verificación: 2026-08-21. Las reglas cambian por temporada; el collector debe
+Última verificación: 2026-08-22. Las reglas cambian por temporada; el collector debe
 revalidarlas y sellar el bootstrap en vez de asumir que esta lista seguirá vigente.
 
 ## Reglas y operación FPL 2026/27
@@ -42,6 +42,9 @@ revalidarlas y sellar el bootstrap en vez de asumir que esta lista seguirá vige
 | [Docker Compose services](https://docs.docker.com/reference/compose-file/services/) | healthcheck, resource limits, restart, secrets, read-only y dependencia por salud. |
 | [systemd.timer](https://www.freedesktop.org/software/systemd/man/latest/systemd.timer.html) | Temporizadores persistentes y administrables; página devolvió 403 al crawler, se debe validar en el man local al implementar. |
 | [agent-browser](https://github.com/vercel-labs/agent-browser) | perfiles persistentes y sesiones aisladas; no resuelve por sí solo cumplimiento ni idempotencia. |
+| [Codex non-interactive mode](https://learn.chatgpt.com/docs/non-interactive-mode) | `codex exec`, JSONL, output schema y auth reutilizable para jobs acotados. |
+| [Codex as a platform](https://learn.chatgpt.com/blog/codex-as-a-platform) | la aplicación conserva contexto/reglas/controles; `codex exec` encaja en scripts/background jobs. |
+| Playbook Orbital Firecrawl | adapter de search/scrape disponible localmente; credencial VPS aún no verificada y `agent` fuera del MVP. |
 
 ## Referentes analíticos y de automatización
 

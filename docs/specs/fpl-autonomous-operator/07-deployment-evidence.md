@@ -216,3 +216,28 @@ correlacionados en el ledger. Los timers `tick`, `private-state`, `watchdog` y `
 quedaron activos; API `/readyz` respondió `ready`, no había incidentes ni outbox pendiente.
 Los controles siguieron en `shadow`, `A0`, `compliance_gate=pending`, `kill_switch=true` y
 `browser_writes=false`.
+
+### POC Codex web research — 22 de agosto de 2026 (Bogotá)
+
+Se probó Codex fuera del stack formal, en `/tmp/orbital-codex-poc-20260822` del VPS. No se
+modificó Compose, systemd, `ops.db`, el perfil FPL ni el checkout desplegado.
+
+| Evidencia | Resultado |
+| --- | --- |
+| Codex CLI | `0.144.6`, instalación aislada bajo `/tmp` |
+| Autenticación | sesión ChatGPT local reutilizada; `auth.json` remoto `0600` |
+| Ejecución | `codex exec --search --ephemeral --sandbox read-only` |
+| Contrato | JSON Schema estricto, output y JSONL de eventos `0600` |
+| Búsqueda observada | cinco eventos `web_search` completos |
+| Resultado | 8 findings, 7 fuentes y referencias internamente consistentes |
+| Duración | aproximadamente 72 segundos |
+| Uso | 183.658 input, 140.032 cached input, 2.295 output, 326 reasoning tokens |
+| Cierre | exit 0; ningún `codex exec` quedó activo |
+
+La prueba confirmó viabilidad técnica, no readiness productivo. También mostró por qué
+Codex no debe correr en cada tick: el consumo de contexto fue alto y la investigación no
+extrajo el deadline exacto aunque el bootstrap oficial sí devolvía
+`2026-08-28T17:30:00Z`. La arquitectura resultante mantiene hechos estructurados en
+collectors deterministas y usa `codex exec` solo como job especializado detrás de schemas,
+cuotas y policy. El POC temporal no es un release y su credencial debe migrarse a un
+`CODEX_HOME` formal o eliminarse cuando termine el hardening.

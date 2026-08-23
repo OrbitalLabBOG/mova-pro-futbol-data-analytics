@@ -2,7 +2,7 @@
 type: project
 name: "MOVA FPL Autonomous Operator 2026/27 — Requirements"
 created: 2026-08-21
-updated: 2026-08-21
+updated: 2026-08-22
 tags: [mova, fpl, requirements, autonomy]
 status: proposed
 ---
@@ -33,6 +33,12 @@ status: proposed
 | REQ-F-016 | MUST | Implementar `pause`, kill switch y circuit breaker globales y por nivel de acción. |
 | REQ-F-017 | MUST | Ejecutar una sola máquina de estados idempotente por `(season, gw)`; ticks concurrentes no duplican trabajo. |
 | REQ-F-018 | SHOULD | Generar un acta legible con cambio vs decisión anterior, incertidumbre, fuentes decisivas, escenarios y razones de no actuar. |
+| REQ-F-019 | MUST | Integrar backends de investigación mediante `ResearchRequest` y `ResearchResult` versionados; ningún backend conoce `Decision` ni el executor. |
+| REQ-F-020 | MUST | Sellar request/result packages con schema, hashes, cutoff, task/prompt/provider policy version e idempotency key antes de importar una salida. |
+| REQ-F-021 | MUST | Modelar corroboración many-to-many y conflictos explícitos entre señales y documentos; concordancia de modelos no equivale a independencia de fuentes. |
+| REQ-F-022 | MUST | Seleccionar OpenRouter, Codex u otro backend por una policy versionada y auditable; ningún prompt elige o cambia proveedor durante la corrida. |
+| REQ-F-023 | MUST | Mapear señales aceptadas a intervención mediante policy determinista; `effect_hint` del LLM nunca es una modificación directa de xP/minutos. |
+| REQ-F-024 | MUST | Permitir que collectors, modelos y replay sigan funcionando cuando todos los backends agénticos estén degradados. |
 
 ## Calidad y tiempo
 
@@ -49,6 +55,7 @@ status: proposed
 | REQ-Q-009 | SHOULD | Tests de contrato reproducen fixtures y DOM grabados sin tocar FPL. |
 | REQ-Q-010 | SHOULD | El sistema puede reconstruirse en un VPS limpio desde Git y artefactos versionados sin depender del Python o SQLite del host. |
 | REQ-Q-011 | MUST | Toda conexión productiva a `ops.db`, incluidos backup y checkpoint, usa SQLite ≥3.51.3; el arranque registra la versión y falla cerrado si no cumple. |
+| REQ-Q-012 | MUST | Cada corrida agéntica tiene timeout, límites de queries/documentos/tokens/costo, máximo de concurrencia y circuit breaker por backend. |
 
 ## Seguridad, cumplimiento y privacidad
 
@@ -64,6 +71,8 @@ status: proposed
 | REQ-S-008 | MUST | El servicio browser no expone CDP ni puertos públicos y corre separado de otras identidades. |
 | REQ-S-009 | MUST | Ningún dato de rumor de baja confianza puede producir `lock_out`, chip o hit por sí solo. |
 | REQ-S-010 | MUST | El runtime no importa SDK de Supabase ni conoce su URL/keys. Supabase recibe únicamente seguimiento PM por un flujo externo y separado. |
+| REQ-S-011 | MUST | `mova-research` no monta `ops.db`, canonical DB, browser profile, cookies FPL, Docker socket, SSH keys ni credenciales de un backend distinto al invocado. |
+| REQ-S-012 | MUST | Tratar contenido recuperado como datos no confiables, bloquear SSRF/red privada, detectar prompt injection y poner en cuarentena cualquier salida materialmente influida. |
 
 ## Observabilidad y operación
 
@@ -79,6 +88,7 @@ status: proposed
 | REQ-O-008 | SHOULD | Exponer métricas Prometheus-compatible e IDs de correlación sin depender de un backend externo; cualquier exporter futuro será opcional y reemplazable. |
 | REQ-O-009 | SHOULD | Calcular drift de esquema, población, predicción, calibración, disponibilidad y efecto de intervenciones. |
 | REQ-O-010 | SHOULD | Producir postmortem automático de GW con resultado, contrafactuales y cambios de estrategia propuestos, nunca auto-promovidos. |
+| REQ-O-011 | MUST | Registrar por corrida task/backend/model, prompts/schemas hashes, searches, documentos, señales, conflictos, tokens, costo, fallback, latencia y status sin guardar chain-of-thought. |
 
 ## Restricciones de autonomía por acción
 
