@@ -459,6 +459,17 @@ class OpsDB:
             ).fetchone()
         return dict(row) if row else None
 
+    def latest_team_state_for_event(self, season: str, gw: int) -> dict | None:
+        with self.connect(readonly=True) as con:
+            row = con.execute(
+                "SELECT t.* FROM team_state_snapshots t "
+                "JOIN gameweek_cycles c ON c.cycle_id=t.cycle_id "
+                "WHERE c.season=? AND c.gw=? "
+                "ORDER BY t.observed_at DESC LIMIT 1",
+                (season, int(gw)),
+            ).fetchone()
+        return dict(row) if row else None
+
     def recent(self, table: str, limit: int = 50) -> list[dict]:
         allowed = {"job_runs", "job_steps", "audit_events", "incidents", "health_samples",
                    "source_snapshots", "team_state_snapshots", "decision_runs",

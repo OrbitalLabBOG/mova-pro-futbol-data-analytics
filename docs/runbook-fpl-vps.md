@@ -89,17 +89,24 @@ cuotas, rangos, capitán/vice, claves exactas y `team_id`, sella payload + manif
 `team_state_snapshots`. Cookies, local storage, HTML y perfil nunca salen del contenedor.
 
 ```bash
-# captura/import manual; no modifica FPL y detiene el browser al finalizar
+# captura normal: primero aplica el gate adaptativo
 sudo deploy/bin/collect-private-team-state.sh
+
+# captura obligatoria pre/post acción; sigue siendo GET y no modifica FPL
+sudo deploy/bin/collect-private-team-state.sh --force
 
 # evidencia estructurada
 curl -s 'http://127.0.0.1:8787/api/v1/audit?limit=20' | python -m json.tool
 sudo journalctl -u mova-fpl-private-state.service -n 100 --no-pager
 ```
 
-`mova-fpl-private-state.timer` refresca cada diez minutos. Una decisión usa el snapshot
-privado solo si es válido, corresponde al ciclo y tiene como máximo 15 minutos; de lo
-contrario usa el fallback público ya existente. El fallo de autenticación queda aislado:
+`mova-fpl-private-state.timer` evalúa el gate cada cinco minutos sin encender Chromium si el
+snapshot sigue fresco. La captura efectiva ocurre cada 6 horas en operación normal, cada
+hora durante las últimas 24 horas, cada 15 minutos durante las últimas 3 horas y cada 5
+minutos durante los últimos 30 minutos. Una captura `--force` es obligatoria inmediatamente
+antes y después de cualquier acción futura. El motor aplica el mismo límite dinámico de
+frescura y el techo absoluto `MOVA_PRIVATE_STATE_MAX_AGE_SECONDS=21600`; si no se cumple usa
+el fallback público. El fallo de autenticación queda aislado:
 no borra el último snapshot, no habilita writes y no toca el perfil. Para reautenticar,
 usar el procedimiento de login humano de la sección siguiente.
 

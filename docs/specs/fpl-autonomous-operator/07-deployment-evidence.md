@@ -154,7 +154,7 @@ chips antes del deadline. Los gates actuales hacen imposible que el tick la ejec
 | --- | --- |
 | `mova-fpl-stack.service` | mantiene API local |
 | `mova-fpl-tick.timer` | dispara tick idempotente cada 5 minutos |
-| `mova-fpl-private-state.timer` | captura y valida estado privado cada 10 minutos |
+| `mova-fpl-private-state.timer` | evalúa cada 5 min; captura adaptativa 6 h → 1 h → 15 min → 5 min |
 | `mova-fpl-backup.timer` | backup diario verificado, 35 días de retención |
 | `mova-fpl-watchdog.timer` | integridad y frescura cada 15 minutos |
 
@@ -185,3 +185,9 @@ La adenda API-first amplía la base de G2 con estado privado exacto y auditable.
 la validación, el browser quedó detenido; el timer lo inicia únicamente para capturar,
 consulta la API y lo vuelve a detener. Los controles permanecen en `shadow`, `A0`,
 `compliance_gate=pending`, `kill_switch=true` y `browser_writes=false`.
+
+La cadencia fija inicial de diez minutos se considera evidencia de commissioning, no diseño
+final. El release siguiente instala un gate adaptativo: su evaluación liviana ocurre cada
+cinco minutos, pero Chromium sólo se inicia cuando vence el umbral de la fase o ante una
+captura pre/post acción forzada. La validación y el despliegue efectivo de ese release se
+registran en una adenda separada para no reescribir la evidencia histórica.

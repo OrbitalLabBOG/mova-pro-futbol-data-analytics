@@ -2,7 +2,7 @@
 type: project
 name: "MOVA FPL Autonomous Operator 2026/27 — Data and Observability"
 created: 2026-08-21
-updated: 2026-08-21
+updated: 2026-08-23
 tags: [mova, fpl, sqlite, vps, observability]
 status: proposed
 ---
@@ -225,6 +225,25 @@ no tiene hoy esa plataforma y ya ejecuta once contenedores. La primera versión 
 
 El endpoint `/metrics` es Prometheus-compatible para conectar un backend después sin cambiar
 el dominio.
+
+### Cadencia adaptativa del estado privado
+
+El timer despierta cada cinco minutos, pero el gate consulta únicamente el bootstrap público
+y no inicia el browser mientras la última observación autenticada siga fresca. La política
+comparte una sola función entre collector y motor de decisión:
+
+| Distancia al deadline | Captura privada máxima |
+| --- | ---: |
+| Más de 24 horas o settlement | 6 horas |
+| Últimas 24 horas | 1 hora |
+| Últimas 3 horas | 15 minutos |
+| Últimos 30 minutos | 5 minutos |
+
+La observación debe corresponder a la misma temporada y GW y tener calidad `valid`. Una
+captura inmediata `--force` se ejecuta antes y después de cualquier acción, sin depender del
+reloj. Evaluar el gate no abre Chromium; una captura debida inicia el browser aislado, hace
+el GET autenticado, importa el artefacto y lo detiene. El techo configurable de 6 horas es
+fail-safe y el motor usa siempre el menor valor entre ese techo y la cadencia de la fase.
 
 ### Logs
 

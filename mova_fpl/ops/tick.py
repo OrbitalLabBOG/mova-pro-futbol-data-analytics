@@ -19,6 +19,7 @@ from mova_fpl.data.sources import fetch_bootstrap, fetch_fixtures
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB, canonical_json, new_id, sha256_json, utcnow
 from mova_fpl.ops.harness import Harness
+from mova_fpl.ops.schedule import phase_for, private_state_cadence_seconds, select_event
 
 LOG = logging.getLogger(__name__)
 ROOT = Path(__file__).resolve().parents[2]
@@ -77,51 +78,6 @@ def resources(path: Path) -> dict:
         "disk_free_bytes": usage.free,
         "load_1m": round(float(load), 3),
     }
-
-
-def select_event(boot: dict, now: datetime | None = None) -> dict:
-    now = now or datetime.now(timezone.utc)
-    events = list(boot.get("events") or ())
-    explicit = next((e for e in events if e.get("is_next")), None)
-    if explicit:
-        return explicit
-    future = []
-    for event in events:
-        deadline = event.get("deadline_time")
-        if not deadline:
-            continue
-        parsed = datetime.fromisoformat(deadline.replace("Z", "+00:00"))
-        if parsed > now:
-            future.append((parsed, event))
-    if future:
-        return min(future, key=lambda item: item[0])[1]
-    current = next((e for e in events if e.get("is_current")), None)
-    if current:
-        return current
-    raise ValueError("bootstrap sin jornada current/next ni deadline futuro")
-
-
-def phase_for(deadline: str, now: datetime | None = None) -> str:
-    now = now or datetime.now(timezone.utc)
-    target = datetime.fromisoformat(deadline.replace("Z", "+00:00"))
-    hours = (target - now).total_seconds() / 3600
-    if hours > 48:
-        return "baseline"
-    if hours > 24:
-        return "research"
-    if hours > 6:
-        return "refresh"
-    if hours > 1.5:
-        return "preflight"
-    if hours > 1:
-        return "freeze"
-    if hours > 0.5:
-        return "execution_window"
-    if hours > 0.25:
-        return "verification_window"
-    if hours > 0:
-        return "hard_stop"
-    return "settlement"
 
 
 def _sha_file(path: Path) -> str:
@@ -262,7 +218,8 @@ class TickRunner:
         degraded = not memory_ok
         if self.config.enable_shadow_decision and memory_ok:
             decision = self._shadow_decision(
-                harness, job_id, cycle_id, gw, Path(snapshot["path"]), correlation_id,
+                harness, job_id, cycle_id, gw, deadline, now, Path(snapshot["path"]),
+                correlation_id,
             )
             degraded = degraded or decision.get("status") != "completed"
         elif self.config.enable_shadow_decision:
@@ -286,7 +243,8 @@ class TickRunner:
         }
 
     def _shadow_decision(self, harness: Harness, job_id: str, cycle_id: str, gw: int,
-                         snapshot_dir: Path, correlation_id: str) -> dict:
+                         deadline: str, now: datetime, snapshot_dir: Path,
+                         correlation_id: str) -> dict:
         decisions = self.config.artifact_root / "decisions" / self.config.season
         decisions.mkdir(parents=True, exist_ok=True)
         stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
@@ -312,14 +270,17 @@ class TickRunner:
             observed = datetime.fromisoformat(
                 str(private_state["observed_at"]).replace("Z", "+00:00")
             )
-            age = max(0, int((datetime.now(timezone.utc) - observed).total_seconds()))
-            if (age <= self.config.private_state_max_age_seconds
+            age = max(0, int((now - observed).total_seconds()))
+            phase_max_age = private_state_cadence_seconds(deadline, now)
+            max_age = min(self.config.private_state_max_age_seconds, phase_max_age)
+            if (age <= max_age
                     and private_state.get("quality_status") == "valid"):
                 argv.extend(["--private-team-state", str(private_state["artifact_path"])])
                 private_state_used = {
                     "team_state_id": private_state["team_state_id"],
                     "fingerprint": private_state["fingerprint"],
                     "age_seconds": age,
+                    "max_age_seconds": max_age,
                 }
         result = harness.command(
             "shadow_decision", argv, timeout=self.config.decision_timeout_seconds,

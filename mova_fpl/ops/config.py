@@ -36,7 +36,7 @@ class RuntimeConfig:
     api_port: int = 8787
     tick_bucket_seconds: int = 300
     decision_timeout_seconds: int = 600
-    private_state_max_age_seconds: int = 900
+    private_state_max_age_seconds: int = 21600
     git_sha: str = "unknown"
 
     @classmethod
@@ -63,7 +63,7 @@ class RuntimeConfig:
             tick_bucket_seconds=int(os.environ.get("MOVA_TICK_BUCKET_SECONDS", "300")),
             decision_timeout_seconds=int(os.environ.get("MOVA_DECISION_TIMEOUT_SECONDS", "600")),
             private_state_max_age_seconds=int(
-                os.environ.get("MOVA_PRIVATE_STATE_MAX_AGE_SECONDS", "900")
+                os.environ.get("MOVA_PRIVATE_STATE_MAX_AGE_SECONDS", "21600")
             ),
             git_sha=os.environ.get("MOVA_GIT_SHA", "unknown"),
         )

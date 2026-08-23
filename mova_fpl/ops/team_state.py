@@ -7,10 +7,13 @@ from datetime import datetime, timezone
 from mova_fpl.data.private_state import seal, validate
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB, new_id, sha256_json
-from mova_fpl.ops.tick import phase_for
+from mova_fpl.ops.schedule import phase_for
 
 
-def ingest(config: RuntimeConfig, db: OpsDB, payload: dict) -> dict:
+def ingest(config: RuntimeConfig, db: OpsDB, payload: dict, *,
+           trigger: str = "scheduled") -> dict:
+    if trigger not in {"scheduled", "forced"}:
+        raise ValueError(f"trigger privado inválido: {trigger}")
     normalized, quality = validate(payload, expected_team_id=config.team_id)
     gw = int(normalized["event"]["id"])
     deadline = str(normalized["event"]["deadline_time"])
@@ -52,6 +55,11 @@ def ingest(config: RuntimeConfig, db: OpsDB, payload: dict) -> dict:
             artifact_path=str(dest),
             manifest_sha256=manifest_sha,
         )
+        db.append_audit(
+            "team_state_capture_trigger", correlation_id=correlation_id,
+            cycle_id=cycle_id, job_id=job_id, subject_type="team_state",
+            subject_id=team_state_id, payload={"trigger": trigger},
+        )
     except Exception as exc:
         db.finish_job(job_id, "failed", error_code=type(exc).__name__,
                       error_detail=str(exc)[:2000])
@@ -59,7 +67,7 @@ def ingest(config: RuntimeConfig, db: OpsDB, payload: dict) -> dict:
     result = {
         "status": "completed", "job_id": job_id, "cycle_id": cycle_id,
         "team_state_id": team_state_id, "artifact_path": str(dest),
-        "manifest_sha256": manifest_sha, **quality,
+        "manifest_sha256": manifest_sha, "trigger": trigger, **quality,
     }
     db.finish_job(job_id, "completed", output_sha256=manifest_sha, metrics=result)
     return result

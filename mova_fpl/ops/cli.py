@@ -25,6 +25,9 @@ def parser() -> argparse.ArgumentParser:
     commands.add_parser("check")
     team_state = commands.add_parser("ingest-team-state")
     team_state.add_argument("--file", default="-", help="JSON sanitizado; '-' lee stdin")
+    team_state.add_argument("--trigger", choices=("scheduled", "forced"),
+                            default="scheduled")
+    commands.add_parser("private-state-due")
     watchdog = commands.add_parser("watchdog")
     watchdog.add_argument("--max-age-seconds", type=int, default=1200)
     backup = commands.add_parser("backup")
@@ -64,7 +67,16 @@ def main(argv: list[str] | None = None) -> int:
             sys.stdin.read() if args.file == "-" else Path(args.file).read_text(encoding="utf-8")
         )
         db.migrate()
-        print(json.dumps(ingest(config, db, payload), ensure_ascii=False, default=str))
+        print(json.dumps(ingest(config, db, payload, trigger=args.trigger),
+                         ensure_ascii=False, default=str))
+    elif args.command == "private-state-due":
+        from mova_fpl.ops.private_schedule import assess
+
+        db.migrate()
+        result = assess(config, db)
+        print(json.dumps(result, ensure_ascii=False, default=str))
+        if not result["due"]:
+            return 75
     elif args.command == "watchdog":
         db.quick_check()
         status = db.status()

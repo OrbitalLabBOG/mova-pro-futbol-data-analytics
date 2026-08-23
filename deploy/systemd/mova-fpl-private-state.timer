@@ -1,11 +1,10 @@
 [Unit]
-Description=Refresh MOVA FPL private team state every ten minutes
+Description=Evaluate adaptive MOVA FPL private team-state cadence every five minutes
 
 [Timer]
-OnBootSec=3min
-OnUnitActiveSec=10min
+OnCalendar=*:2/5
 AccuracySec=20s
-RandomizedDelaySec=20s
+RandomizedDelaySec=10s
 Persistent=true
 Unit=mova-fpl-private-state.service
 

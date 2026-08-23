@@ -23,6 +23,8 @@ red es un `GET`, verificado por pruebas. El stack autónomo incorpora un browser
 lee el estado privado mediante un GET autenticado y entrega al motor únicamente una allowlist
 sanitizada; cookies y sesión nunca cruzan esa frontera. El rollout sigue cerrado
 (`shadow / A0`, kill switch activo y writes en cero).
+La captura privada usa cadencia adaptativa según la distancia al deadline (6 h, 1 h,
+15 min o 5 min) y sólo enciende el browser cuando el estado vence ese umbral.
 
 ## Qué tan bueno es
 
