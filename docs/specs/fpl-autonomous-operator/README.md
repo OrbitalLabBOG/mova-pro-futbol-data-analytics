@@ -2,7 +2,7 @@
 type: project
 name: "MOVA FPL Autonomous Operator 2026/27 — Specification Index"
 created: 2026-08-21
-updated: 2026-08-22
+updated: 2026-08-23
 tags: [mova, fpl, autonomy, observability, specification]
 status: active-shadow
 ---
@@ -22,7 +22,7 @@ PM de construcción del proyecto.
 
 | Campo | Valor |
 | --- | --- |
-| Versión | 0.5 |
+| Versión | 0.6 |
 | Estado | `active-shadow` |
 | Riesgo | alto: cuenta externa, deadlines irreversibles y sesión autenticada |
 | Business owner | Julián Zuluaga |
@@ -45,6 +45,7 @@ PM de construcción del proyecto.
 | [07-deployment-evidence.md](07-deployment-evidence.md) | acta verificable del primer despliegue shadow en VPS |
 | [08-agentic-research-harness.md](08-agentic-research-harness.md) | coordinador de investigación, backends, contratos, persistencia y roadmap |
 | [09-agent-harness-implementation-spec.md](09-agent-harness-implementation-spec.md) | implementación exacta del harness, workers, budgets, seguridad, evals y despliegue |
+| [10-autonomous-harness-v1.md](10-autonomous-harness-v1.md) | **hoja de ruta canónica**: Postgres, CLI/skill, roles, memoria, costos, ejecución y mejora continua |
 | [contracts/](contracts/) | JSON Schemas máquina para request, result y signal |
 | [decisions/](decisions/) | decisiones arquitectónicas propuestas |
 | [workpacks/](workpacks/) | unidades de implementación y criterios todavía pendientes |
@@ -53,4 +54,7 @@ PM de construcción del proyecto.
 
 La autonomía no significa libertad para improvisar. Significa que cada jornada puede
 avanzar sin intervención rutinaria porque las fuentes, decisiones, límites, reintentos,
-verificaciones y criterios de parada están codificados y son observables.
+verificaciones y criterios de parada están codificados y son observables. Para ejecución,
+priorización y tareas nuevas manda
+[Autonomous Harness v1](10-autonomous-harness-v1.md); 08 y 09 son referencias de diseño y
+hardening diferido.

@@ -4,10 +4,15 @@ name: "MOVA FPL Autonomous Operator 2026/27 — Agent Harness Implementation Spe
 created: 2026-08-22
 updated: 2026-08-22
 tags: [mova, fpl, agentic, harness, pydantic-ai, openrouter, codex, security]
-status: proposed
+status: reference-deferred
 ---
 
 # Spec de implementación del harness agéntico
+
+> **Estado desde 2026-08-23:** referencia de hardening. La hoja de ruta ejecutable y
+> deliberadamente más simple es
+> [10-autonomous-harness-v1.md](10-autonomous-harness-v1.md). Este documento no debe
+> convertirse completo en backlog salvo que evidencia operativa justifique sus controles.
 
 ## 1. Decisión ejecutiva
 
