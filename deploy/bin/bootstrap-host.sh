@@ -21,8 +21,11 @@ fi
 if [[ ! -e /etc/mova-fpl/postgres-password ]]; then
   umask 077
   openssl rand -hex 32 > /etc/mova-fpl/postgres-password
-  chown root:root /etc/mova-fpl/postgres-password
+  chown root:10001 /etc/mova-fpl/postgres-password
+  chmod 0640 /etc/mova-fpl/postgres-password
   echo "created /etc/mova-fpl/postgres-password (content not displayed)"
 fi
+chown root:10001 /etc/mova-fpl/postgres-password
+chmod 0640 /etc/mova-fpl/postgres-password
 
 echo "host directories ready; existing runtime.env/deploy.env were preserved"
