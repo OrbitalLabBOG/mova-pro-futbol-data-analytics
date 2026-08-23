@@ -19,8 +19,10 @@ puntos esperados jugador por jugador y emite un **acta de decisión**: qué quin
 once alinear, a quién dar el brazalete, qué transferencias hacer y cuáles no valen el golpe.
 
 El acta es un documento. **El motor de decisión no escribe en FPL**: su única primitiva de
-red es un `GET`, verificado por pruebas. El stack autónomo incorpora un browser aislado para
-el rollout futuro, pero nace cerrado (`shadow / A0`, kill switch activo y writes en cero).
+red es un `GET`, verificado por pruebas. El stack autónomo incorpora un browser aislado que
+lee el estado privado mediante un GET autenticado y entrega al motor únicamente una allowlist
+sanitizada; cookies y sesión nunca cruzan esa frontera. El rollout sigue cerrado
+(`shadow / A0`, kill switch activo y writes en cero).
 
 ## Qué tan bueno es
 

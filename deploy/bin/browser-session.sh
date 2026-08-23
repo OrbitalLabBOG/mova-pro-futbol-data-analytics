@@ -51,6 +51,20 @@ case "$action" in
       'open https://fantasy.premierleague.com/en/my-team' \
       'get url' 'get title'
     ;;
+  collect)
+    team_id=${MOVA_TEAM_ID:-3609854}
+    if [[ ! "$team_id" =~ ^[1-9][0-9]*$ ]]; then
+      echo "invalid MOVA_TEAM_ID" >&2
+      exit 2
+    fi
+    start_browser
+    "${compose[@]}" exec -T browser \
+      agent-browser --session mova-fpl --cdp "$cdp_port" \
+      open https://fantasy.premierleague.com/ >/dev/null
+    "${compose[@]}" exec -T browser sh -c \
+      "sed 's/__MOVA_TEAM_ID__/$team_id/' /opt/mova/private-team-state.js | \
+       agent-browser --session mova-fpl --cdp '$cdp_port' eval --stdin"
+    ;;
   status)
     "${compose[@]}" ps -a browser
     if curl -fsS http://127.0.0.1:${MOVA_NOVNC_PORT:-6080}/vnc.html >/dev/null 2>&1; then
@@ -68,7 +82,7 @@ case "$action" in
     "${compose[@]}" stop browser
     ;;
   *)
-    echo "usage: $0 {start|login|read|status|stop}" >&2
+    echo "usage: $0 {start|login|read|collect|status|stop}" >&2
     exit 2
     ;;
 esac

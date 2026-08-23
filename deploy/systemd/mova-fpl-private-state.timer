@@ -1,0 +1,13 @@
+[Unit]
+Description=Refresh MOVA FPL private team state every ten minutes
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=10min
+AccuracySec=20s
+RandomizedDelaySec=20s
+Persistent=true
+Unit=mova-fpl-private-state.service
+
+[Install]
+WantedBy=timers.target

@@ -33,10 +33,28 @@ def _db(config: RuntimeConfig) -> OpsDB:
     return OpsDB(config.ops_db, enforce_version=False)
 
 
+def _official_sources() -> tuple[bytes, bytes]:
+    teams = [{"id": i, "name": f"T{i}"} for i in range(1, 21)]
+    elements = [
+        {"id": i, "element_type": 3, "team": i, "first_name": "Player",
+         "second_name": str(i), "web_name": str(i), "now_cost": 50,
+         "status": "a", "news": "", "selected_by_percent": "0"}
+        for i in range(1, 21)
+    ]
+    boot = {"events": [{"id": 1, "deadline_time": "2026-08-21T17:30:00Z",
+                         "is_next": True}], "teams": teams, "elements": elements}
+    fixtures = [
+        {"id": i, "event": 1, "team_h": i, "team_a": i + 10,
+         "kickoff_time": "2026-08-22T14:00:00Z"}
+        for i in range(1, 11)
+    ]
+    return json.dumps(boot).encode(), json.dumps(fixtures).encode()
+
+
 def test_schema_controls_jobs_y_auditoria(tmp_path):
     config = _config(tmp_path)
     db = _db(config)
-    assert db.migrate() == [1]
+    assert db.migrate() == [1, 2]
     assert db.migrate() == []
     db.ensure_defaults(mode="shadow", action_level="A0", compliance_gate="pending",
                        browser_writes=False)
@@ -50,6 +68,12 @@ def test_schema_controls_jobs_y_auditoria(tmp_path):
     db.bind_job_cycle(job, cycle)
     harness = Harness(db, job, correlation_id="corr_test", cycle_id=cycle)
     assert harness.call("bytes_are_summarized", lambda: {"payload": b"private bytes"})
+    db.add_team_state(
+        job_id=job, cycle_id=cycle, observed_at="2026-08-21T12:00:00Z",
+        source_name="fpl_authenticated_api", squad=[{"element": i} for i in range(1, 16)],
+        free_transfers=1, bank_tenths=0, chips=[], fingerprint="f" * 64,
+        artifact_path=str(tmp_path / "team-state"), manifest_sha256="a" * 64,
+    )
     db.finish_job(job, "completed", metrics={"gw": 1})
     assert db.start_job("tick", "tick:1", "other") == (job, True)
     assert db.quick_check() == "ok"
@@ -64,6 +88,8 @@ def test_schema_controls_jobs_y_auditoria(tmp_path):
     assert detail["payload"]["size"] == len(b"private bytes")
     assert "private bytes" not in json.dumps(detail)
     assert "job_started" in audits and "job_completed" in audits
+    assert db.status()["latest_team_state"]["free_transfers"] == 1
+    assert len(db.recent("team_state_snapshots")) == 1
 
 
 def test_browser_write_gate_fails_closed(tmp_path):
@@ -77,9 +103,7 @@ def test_browser_write_gate_fails_closed(tmp_path):
 
 
 def test_tick_sella_fuentes_y_es_idempotente(tmp_path, monkeypatch):
-    source = Path("data/raw/fpl_live/2026-27/gw01/20260820T211322Z")
-    boot_raw = (source / "bootstrap-static.json").read_bytes()
-    fixtures_raw = (source / "fixtures.json").read_bytes()
+    boot_raw, fixtures_raw = _official_sources()
     monkeypatch.setattr("mova_fpl.ops.tick.fetch_bootstrap", lambda: boot_raw)
     monkeypatch.setattr("mova_fpl.ops.tick.fetch_fixtures", lambda: fixtures_raw)
 

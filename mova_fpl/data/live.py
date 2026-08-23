@@ -246,6 +246,67 @@ def squad_from_picks(picks: dict, roster: "pd.DataFrame", boot: dict):
     return Squad(players=tuple(jugadores), bank=banco), en_blanco
 
 
+def squad_from_private(payload: dict, roster: "pd.DataFrame", boot: dict):
+    """Plantilla pre-deadline con precio de compra real del estado autenticado."""
+    from mova_fpl.rules.base import Position, Squad, SquadPlayer
+
+    por_id = {int(r["element"]): r for _, r in roster.iterrows()}
+    clubes = teams(boot)
+    catalogo = {int(e["id"]): e for e in boot["elements"]}
+    jugadores, en_blanco = [], []
+    for pick in payload.get("picks") or ():
+        element = int(pick["element"])
+        row = por_id.get(element)
+        item = catalogo.get(element)
+        if item is None:
+            raise ValueError(f"el elemento {element} privado no está en bootstrap")
+        if row is None:
+            en_blanco.append(element)
+            position = POSICIONES[int(item["element_type"])]
+            team_name = clubes.get(int(item["team"]), str(item["team"]))
+            current_price = int(item["now_cost"])
+        else:
+            position = str(row["position"])
+            team_name = str(row["team"])
+            current_price = int(row["value"])
+        jugadores.append(SquadPlayer(
+            element=element,
+            position=Position.parse(position),
+            team=team_name,
+            price=current_price / 10.0,
+            purchase_price=int(pick["purchase_price"]) / 10.0,
+        ))
+    bank = int(payload["transfers"]["bank"]) / 10.0
+    return Squad(players=tuple(jugadores), bank=bank), en_blanco
+
+
+def private_team_state(payload: dict, team_id: int, gw: int, roster: "pd.DataFrame",
+                       rules: dict, boot: dict) -> dict:
+    """Estado exacto pre-deadline; el historial público conserva chips ya usados."""
+    from mova_fpl.data.private_state import validate as validate_private
+
+    normalized, quality = validate_private(payload, expected_team_id=team_id)
+    if int(normalized["event"]["id"]) != int(gw):
+        raise ValueError(
+            f"snapshot privado es GW{normalized['event']['id']}; se solicitó GW{gw}"
+        )
+    squad, en_blanco = squad_from_private(normalized, roster, boot)
+    if len(squad.players) != rules["size"]:
+        raise ValueError(f"la plantilla privada tiene {len(squad.players)} jugadores")
+    usados = chips_used(team_history(team_id))
+    return {
+        "squad": squad,
+        "bank": squad.bank,
+        "free_transfers": quality["free_transfers"],
+        "chips_used": usados,
+        "chips_available": tuple(quality["available_chips"]),
+        "en_blanco": en_blanco,
+        "ultima_gw": gw,
+        "source": "authenticated_api",
+        "fingerprint": quality["fingerprint"],
+    }
+
+
 def team_state(team_id: int, gw: int, roster: "pd.DataFrame", rules: dict,
                boot: dict) -> dict:
     """Todo lo que hace falta para decidir la `gw` con el equipo real.

@@ -1,0 +1,12 @@
+[Unit]
+Description=MOVA FPL authenticated read-only team-state collector
+Requires=docker.service
+After=docker.service network-online.target mova-fpl-stack.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=@@REPO_DIR@@
+EnvironmentFile=-/etc/mova-fpl/deploy.env
+ExecStart=@@REPO_DIR@@/deploy/bin/collect-private-team-state.sh
+TimeoutStartSec=180
+Nice=10

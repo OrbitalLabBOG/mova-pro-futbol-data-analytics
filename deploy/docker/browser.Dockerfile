@@ -19,8 +19,10 @@ RUN apt-get update \
  && agent-browser --version
 COPY deploy/docker/supervisord-browser.conf /etc/supervisor/conf.d/mova-browser.conf
 COPY deploy/docker/browser-entrypoint.sh /usr/local/bin/mova-browser-entrypoint
+COPY deploy/browser/private-team-state.js /opt/mova/private-team-state.js
 RUN mkdir -p /var/lib/mova-fpl/browser-profile /var/log/supervisor \
  && chown -R node:node /var/lib/mova-fpl /var/log/supervisor \
+ && chmod 0444 /opt/mova/private-team-state.js \
  && chmod 0755 /usr/local/bin/mova-browser-entrypoint
 USER node
 EXPOSE 6080

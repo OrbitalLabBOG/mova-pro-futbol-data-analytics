@@ -102,6 +102,11 @@ foreign keys activas y estados protegidos por `CHECK`.
 | `source_snapshots` | metadata de entradas inmutables | source+sha unique; URI; freshness/quality |
 | `research_signals` | claims citados, TTL y conflicto | player/claim/source/observed versionado |
 | `team_state_snapshots` | squad, XI, PP/SP/CP, FT, chips | fingerprint + source + observed_at |
+
+Implementación: el adapter browser produce `mova-fpl-private-team-state-v1` con allowlist
+exacta. El engine rechaza claves adicionales, valida identidad/cuotas/rangos, persiste un
+artefacto inmutable y registra su path, SHA-256 y estado de calidad. El fingerprint excluye
+`observed_at`, por lo que una relectura idéntica es idempotente sin perder procedencia.
 | `dataset_releases` | dataset entrenable sellado | sha, as_of cutoff, leakage audit |
 | `model_releases` | artifacts de modelo | model+version unique; dataset, metrics y sha |
 | `projection_runs` | metadata de matrices xP | manifest/hash; detalle en Parquet/SQLite artifact |

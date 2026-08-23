@@ -34,7 +34,8 @@ esa rama sigue en GitHub pero ya está fusionada, no divergente).
 - Almacenamiento: **SQLite**. Nada de servidor, nada de credenciales.
   - `data/processed/fpl_canonical.db` — 253.890 filas, 10 temporadas (2016-17 … 2025-26), 61 columnas
   - `data/processed/trace.db` — traza de corridas y decisiones
-- Sin deploy. Corre en local, a mano, antes de cada deadline. No hay cron todavía.
+- Deploy shadow activo en el VPS bajo Docker + systemd. La API local, tick, watchdog,
+  backup y lectura privada autenticada tienen timers y ledger en `ops.db`.
 
 ## Cómo correr
 
@@ -111,10 +112,11 @@ no solo bajo test. Si necesitas datos y no pasan por ahí, el diseño está mal,
 **Solo lectura hacia afuera.** El motor nunca escribe en la API de FPL. El acta la introduce
 una persona a mano (ADR-006). Añadir un POST rompe REQ-S-002 y la prueba lo bloquea.
 
-Los endpoints `/api/entry/{id}/…` **sí** se leen (plantilla, banco, chips gastados): son
-públicos y GET. Las superficies prohibidas siguen siendo `my-team` (autenticada),
-`transfers` (POST) y `login`. La garantía no la da la lista negra sino que exista **un solo
-`urlopen`** en el paquete y que declare `method="GET"`.
+Los endpoints `/api/entry/{id}/…` **sí** se leen desde el paquete (historial y fallback
+público). El estado privado se obtiene fuera del engine mediante el adapter JS del browser,
+que hace un GET autenticado, aplica allowlist y entrega JSON sin sesión ni PII. Dentro de
+`mova_fpl/` siguen prohibidos la ruta autenticada, `transfers` y `login`; permanece un solo
+`urlopen`, siempre `GET`. Los writes browser continúan deshabilitados por controles A0.
 
 **Reentrenar.** `--holdout` es la temporada que NO entra al ajuste. Para operar 2026/27 el
 holdout es `2025-26`. Cambiarlo sin pensarlo mete leakage.
@@ -162,8 +164,9 @@ Repo indexado con CodeGraph (`.codegraph/`, auto-sync al guardar).
 - **Dato ya resuelto:** el equipo real es `losmillosFPL`, `entry_id`/`FPL_TEAM_ID` =
   **`3609854`** (creado por browser automation, GW1 2026/27 — ver
   `.claude/skills/fpl-web-ops/SKILL.md`). Desde la GW2 hay que exportar
-  `FPL_TEAM_ID=3609854` antes de correr `mova_fpl.cli.live`. El camino de lectura ya está
-  construido y probado; sin el id, el motor arma desde cero y lo avisa.
+  `FPL_TEAM_ID=3609854`. El VPS conserva la sesión en un perfil dedicado y sella snapshots
+  privados con plantilla, PP/SP, banco, FTs y chips; si falta o está viejo, el motor cae al
+  fallback público y lo declara, sin inventar datos.
 - **Roto / no usar:** `src/mova_model/fpl_xp.py`, `src/mova_model/fpl_optimizer.py`,
   `src/mova_model/out_of_time_xp.py`, `scripts/live_agent_runner.py`,
   `scripts/train_fpl_xp_v*.py`, `scripts/sim_*.py`. Leakage estructural y números no

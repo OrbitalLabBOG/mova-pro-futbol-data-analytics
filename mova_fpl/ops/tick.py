@@ -306,6 +306,21 @@ class TickRunner:
             "--snapshot-dir", str(snapshot_dir), "--team-id", str(self.config.team_id),
             "--chips", "--lookahead", "6", "--dry-run", "--out", str(out),
         ]
+        private_state = self.db.latest_team_state(cycle_id)
+        private_state_used = None
+        if private_state and private_state.get("artifact_path"):
+            observed = datetime.fromisoformat(
+                str(private_state["observed_at"]).replace("Z", "+00:00")
+            )
+            age = max(0, int((datetime.now(timezone.utc) - observed).total_seconds()))
+            if (age <= self.config.private_state_max_age_seconds
+                    and private_state.get("quality_status") == "valid"):
+                argv.extend(["--private-team-state", str(private_state["artifact_path"])])
+                private_state_used = {
+                    "team_state_id": private_state["team_state_id"],
+                    "fingerprint": private_state["fingerprint"],
+                    "age_seconds": age,
+                }
         result = harness.command(
             "shadow_decision", argv, timeout=self.config.decision_timeout_seconds,
             env=env, cwd=ROOT,
@@ -329,4 +344,5 @@ class TickRunner:
             manifest_sha256=artifact_sha, artifact_path=str(out),
         )
         return {"status": "completed", "decision_id": decision_id, "artifact": str(out),
-                "artifact_sha256": artifact_sha, **parsed}
+                "artifact_sha256": artifact_sha, "private_team_state": private_state_used,
+                **parsed}

@@ -12,5 +12,6 @@ for unit in deploy/systemd/*.service deploy/systemd/*.timer; do
 done
 systemctl daemon-reload
 systemctl enable --now mova-fpl-stack.service
-systemctl enable --now mova-fpl-tick.timer mova-fpl-backup.timer mova-fpl-watchdog.timer
+systemctl enable --now mova-fpl-tick.timer mova-fpl-private-state.timer \
+  mova-fpl-backup.timer mova-fpl-watchdog.timer
 systemctl list-timers --all 'mova-fpl-*' --no-pager

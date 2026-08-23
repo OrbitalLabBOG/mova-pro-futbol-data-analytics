@@ -46,12 +46,15 @@ def _dias(deadline: str | None, ahora: datetime) -> float | None:
 HISTORICO_HASTA = "2025-26"
 
 
-def _fuente(team_id, snapshot_dir: str | None = None) -> str:
+def _fuente(team_id, snapshot_dir: str | None = None,
+            private_team_state: str | None = None) -> str:
     base = "fantasy.premierleague.com/api (bootstrap-static + fixtures)"
     if snapshot_dir:
         base += f" · snapshot {snapshot_dir}"
     if team_id:
         base += " + estado publico del equipo"
+    if private_team_state:
+        base += " + estado autenticado sanitizado"
     return base + ", solo GET"
 
 
@@ -64,12 +67,19 @@ def _estado_equipo(args, boot, roster, rules) -> dict:
         return {"squad": None, "bank": 0.0, "free_transfers": 1,
                 "chips_used": (), "en_blanco": [], "ultima_gw": None}
 
-    estado = live.team_state(int(team_id), args.gw, roster, rules, boot)
+    if args.private_team_state:
+        from mova_fpl.data.private_state import load as load_private
+
+        payload, _ = load_private(Path(args.private_team_state), expected_team_id=int(team_id))
+        estado = live.private_team_state(payload, int(team_id), args.gw, roster, rules, boot)
+    else:
+        estado = live.team_state(int(team_id), args.gw, roster, rules, boot)
     if estado["squad"] is None:
         print(f"      equipo {team_id}: sin jornadas jugadas todavia (arranque en frio)")
         return estado
     gastados = ", ".join(f"{u.chip}@GW{u.gw}" for u in estado["chips_used"]) or "ninguno"
-    print(f"      equipo {team_id}: plantilla de la GW{estado['ultima_gw']} · "
+    source = "API autenticada" if estado.get("source") == "authenticated_api" else "API pública"
+    print(f"      equipo {team_id}: plantilla de la GW{estado['ultima_gw']} ({source}) · "
           f"banco £{estado['bank']:.1f}M · {estado['free_transfers']} libres")
     print(f"      chips gastados: {gastados}")
     if estado["en_blanco"]:
@@ -94,6 +104,10 @@ def main() -> None:
                     help="numero del equipo (el de la URL /entry/<ID>/). "
                          "Sin el, la decision se toma desde cero. "
                          "Tambien se lee de la variable FPL_TEAM_ID")
+    ap.add_argument(
+        "--private-team-state",
+        help="directorio de snapshot autenticado sanitizado; prevalece sobre reconstrucción pública",
+    )
     ap.add_argument("--chips", action="store_true",
                     help="deja que el planificador proponga chips (exige --team-id)")
     ap.add_argument("--lookahead", type=int, default=6,
@@ -177,7 +191,7 @@ def main() -> None:
         "deadline": limite, "policy": args.policy, "horizon": args.horizon,
         "v_minutes": args.minutes_version, "v_points": args.version, "git_sha": git_sha(),
         "rules": rules_mod.SQUAD, "dias_al_deadline": _dias(limite, emitida),
-        "fuente": _fuente(args.team_id, args.snapshot_dir),
+        "fuente": _fuente(args.team_id, args.snapshot_dir, args.private_team_state),
         "chip_verdict": veredicto, "chips_used": equipo["chips_used"],
         "catalogo_chips": rules_mod.CHIPS if args.chips else None,
         "equipo": equipo,

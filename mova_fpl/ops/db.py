@@ -324,6 +324,34 @@ class OpsDB:
             )
         return snapshot_id
 
+    def add_team_state(self, *, job_id: str, cycle_id: str, observed_at: str,
+                       source_name: str, squad: list, free_transfers: int,
+                       bank_tenths: int, chips: list, fingerprint: str,
+                       artifact_path: str, manifest_sha256: str,
+                       quality_status: str = "valid") -> str:
+        team_state_id = new_id("teamstate")
+        with self.transaction() as con:
+            con.execute(
+                """
+                INSERT OR IGNORE INTO team_state_snapshots(team_state_id,job_id,cycle_id,
+                  observed_at,source_name,squad_json,free_transfers,bank_tenths,chips_json,
+                  fingerprint,artifact_path,manifest_sha256,quality_status)
+                VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)
+                """,
+                (team_state_id, job_id, cycle_id, observed_at, source_name,
+                 canonical_json(squad), int(free_transfers), int(bank_tenths),
+                 canonical_json(chips), fingerprint, artifact_path, manifest_sha256,
+                 quality_status),
+            )
+            self.append_audit(
+                "team_state_captured", correlation_id=None, cycle_id=cycle_id, job_id=job_id,
+                subject_type="team_state", subject_id=team_state_id,
+                payload={"source_name": source_name, "fingerprint": fingerprint,
+                         "free_transfers": free_transfers,
+                         "quality_status": quality_status}, con=con,
+            )
+        return team_state_id
+
     def record_decision(self, *, job_id: str, cycle_id: str, mode: str, status: str,
                         policy_version: str, expected_points: float | None,
                         chip: str | None, fingerprint: str | None,
@@ -394,6 +422,11 @@ class OpsDB:
             tick = con.execute(
                 "SELECT * FROM job_runs WHERE job_type='tick' ORDER BY started_at DESC LIMIT 1"
             ).fetchone()
+            team_state = con.execute(
+                "SELECT team_state_id,cycle_id,observed_at,source_name,free_transfers,"
+                "bank_tenths,fingerprint,quality_status FROM team_state_snapshots "
+                "ORDER BY observed_at DESC LIMIT 1"
+            ).fetchone()
             incidents = con.execute(
                 "SELECT severity,COUNT(*) AS n FROM incidents WHERE status!='resolved' GROUP BY severity"
             ).fetchall()
@@ -404,6 +437,7 @@ class OpsDB:
             "sqlite_version": self.sqlite_version,
             "cycle": dict(cycle) if cycle else None,
             "latest_tick": dict(tick) if tick else None,
+            "latest_team_state": dict(team_state) if team_state else None,
             "open_incidents": {r["severity"]: r["n"] for r in incidents},
             "outbox_pending": int(pending),
             "controls": self.controls(),
@@ -417,15 +451,25 @@ class OpsDB:
             ).fetchone()
         return dict(row) if row else None
 
+    def latest_team_state(self, cycle_id: str) -> dict | None:
+        with self.connect(readonly=True) as con:
+            row = con.execute(
+                "SELECT * FROM team_state_snapshots WHERE cycle_id=? "
+                "ORDER BY observed_at DESC LIMIT 1", (cycle_id,),
+            ).fetchone()
+        return dict(row) if row else None
+
     def recent(self, table: str, limit: int = 50) -> list[dict]:
         allowed = {"job_runs", "job_steps", "audit_events", "incidents", "health_samples",
-                   "source_snapshots", "decision_runs", "outbox_events", "chip_strategy_runs"}
+                   "source_snapshots", "team_state_snapshots", "decision_runs",
+                   "outbox_events", "chip_strategy_runs"}
         if table not in allowed:
             raise ValueError(f"tabla no permitida: {table}")
         order = {
             "job_runs": "started_at", "job_steps": "started_at", "audit_events": "occurred_at",
             "incidents": "opened_at", "health_samples": "observed_at",
             "source_snapshots": "captured_at", "decision_runs": "created_at",
+            "team_state_snapshots": "observed_at",
             "outbox_events": "created_at", "chip_strategy_runs": "created_at",
         }[table]
         with self.connect(readonly=True) as con:
@@ -441,9 +485,18 @@ class OpsDB:
         cycle = status["cycle"] or {}
         incidents = status["open_incidents"]
         last_tick_epoch = 0.0
+        team_state = status["latest_team_state"] or {}
+        team_state_epoch = 0.0
         if tick.get("finished_at"):
             try:
                 last_tick_epoch = datetime.fromisoformat(tick["finished_at"]).timestamp()
+            except ValueError:
+                pass
+        if team_state.get("observed_at"):
+            try:
+                team_state_epoch = datetime.fromisoformat(
+                    str(team_state["observed_at"]).replace("Z", "+00:00")
+                ).timestamp()
             except ValueError:
                 pass
         lines = [
@@ -459,6 +512,12 @@ class OpsDB:
             "# HELP mova_current_gameweek Current tracked gameweek.",
             "# TYPE mova_current_gameweek gauge",
             f"mova_current_gameweek {int(cycle.get('gw') or 0)}",
+            "# HELP mova_team_state_last_observed_timestamp_seconds Unix time of latest private team state.",
+            "# TYPE mova_team_state_last_observed_timestamp_seconds gauge",
+            f"mova_team_state_last_observed_timestamp_seconds {team_state_epoch:.3f}",
+            "# HELP mova_team_state_free_transfers Latest exact free-transfer balance.",
+            "# TYPE mova_team_state_free_transfers gauge",
+            f"mova_team_state_free_transfers {int(team_state.get('free_transfers') or 0)}",
             "# HELP mova_open_incidents Open incidents by severity.",
             "# TYPE mova_open_incidents gauge",
         ]

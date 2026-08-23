@@ -80,6 +80,29 @@ Los logs de containers rotan a 5 × 10 MiB por servicio. Los timers y fallos con
 diagnóstico en journald. Cada tick sella bytes fuente y hashes; `ops.db` conserva jobs,
 pasos, fuentes, decisiones, controles, salud, incidentes y outbox.
 
+## Estado privado del equipo — API-first
+
+El browser no raspa el DOM para conocer la plantilla. Con la sesión humana persistente hace
+un GET autenticado, reduce la respuesta a una allowlist (IDs, posiciones, PP/SP, banco,
+valor, FTs y chips) y la pasa por `stdin` al engine. El engine vuelve a validar 15 jugadores,
+cuotas, rangos, capitán/vice, claves exactas y `team_id`, sella payload + manifest y registra
+`team_state_snapshots`. Cookies, local storage, HTML y perfil nunca salen del contenedor.
+
+```bash
+# captura/import manual; no modifica FPL y detiene el browser al finalizar
+sudo deploy/bin/collect-private-team-state.sh
+
+# evidencia estructurada
+curl -s 'http://127.0.0.1:8787/api/v1/audit?limit=20' | python -m json.tool
+sudo journalctl -u mova-fpl-private-state.service -n 100 --no-pager
+```
+
+`mova-fpl-private-state.timer` refresca cada diez minutos. Una decisión usa el snapshot
+privado solo si es válido, corresponde al ciclo y tiene como máximo 15 minutos; de lo
+contrario usa el fallback público ya existente. El fallo de autenticación queda aislado:
+no borra el último snapshot, no habilita writes y no toca el perfil. Para reautenticar,
+usar el procedimiento de login humano de la sección siguiente.
+
 ## Controles y hard stop
 
 Los controles son append-only y cada modificación genera un evento de auditoría.
@@ -133,6 +156,7 @@ La operación repetible usa `deploy/bin/browser-session.sh`:
 ```bash
 sudo deploy/bin/browser-session.sh status
 sudo deploy/bin/browser-session.sh read   # lectura interactiva; no persistir la salida
+sudo deploy/bin/browser-session.sh collect # JSON sanitizado por stdout; normalmente usar el wrapper
 sudo deploy/bin/browser-session.sh stop
 ```
 

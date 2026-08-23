@@ -4,7 +4,7 @@ name: "WP-006 — Executor browser y verificación"
 created: 2026-08-21
 updated: 2026-08-21
 tags: [mova, fpl, workpack, agent-browser, verification]
-status: proposed
+status: in_progress
 ---
 
 # WP-006 — Executor browser y verificación

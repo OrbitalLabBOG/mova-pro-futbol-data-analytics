@@ -350,4 +350,14 @@ MIGRATION_001 = (
     """,
 )
 
-MIGRATIONS = ((1, "initial_ops_schema", MIGRATION_001),)
+MIGRATION_002 = (
+    "ALTER TABLE team_state_snapshots ADD COLUMN artifact_path TEXT",
+    "ALTER TABLE team_state_snapshots ADD COLUMN manifest_sha256 TEXT",
+    "ALTER TABLE team_state_snapshots ADD COLUMN quality_status TEXT "
+    "CHECK (quality_status IN ('valid','degraded','quarantined'))",
+)
+
+MIGRATIONS = (
+    (1, "initial_ops_schema", MIGRATION_001),
+    (2, "team_state_artifact_provenance", MIGRATION_002),
+)

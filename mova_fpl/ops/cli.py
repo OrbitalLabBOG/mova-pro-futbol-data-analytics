@@ -23,6 +23,8 @@ def parser() -> argparse.ArgumentParser:
     commands.add_parser("tick")
     commands.add_parser("serve")
     commands.add_parser("check")
+    team_state = commands.add_parser("ingest-team-state")
+    team_state.add_argument("--file", default="-", help="JSON sanitizado; '-' lee stdin")
     watchdog = commands.add_parser("watchdog")
     watchdog.add_argument("--max-age-seconds", type=int, default=1200)
     backup = commands.add_parser("backup")
@@ -54,6 +56,15 @@ def main(argv: list[str] | None = None) -> int:
     elif args.command == "check":
         print(json.dumps({"integrity": db.quick_check(), "status": db.status()},
                          ensure_ascii=False, default=str))
+    elif args.command == "ingest-team-state":
+        from pathlib import Path
+        from mova_fpl.ops.team_state import ingest
+
+        payload = json.loads(
+            sys.stdin.read() if args.file == "-" else Path(args.file).read_text(encoding="utf-8")
+        )
+        db.migrate()
+        print(json.dumps(ingest(config, db, payload), ensure_ascii=False, default=str))
     elif args.command == "watchdog":
         db.quick_check()
         status = db.status()

@@ -4,7 +4,7 @@ name: "WP-003 — Collector vivo, snapshots y reconciliación"
 created: 2026-08-21
 updated: 2026-08-21
 tags: [mova, fpl, workpack, collector, data-quality]
-status: proposed
+status: in_progress
 ---
 
 # WP-003 — Collector vivo, snapshots y reconciliación

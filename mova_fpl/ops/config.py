@@ -36,6 +36,7 @@ class RuntimeConfig:
     api_port: int = 8787
     tick_bucket_seconds: int = 300
     decision_timeout_seconds: int = 600
+    private_state_max_age_seconds: int = 900
     git_sha: str = "unknown"
 
     @classmethod
@@ -61,6 +62,9 @@ class RuntimeConfig:
             api_port=int(os.environ.get("MOVA_API_PORT", "8787")),
             tick_bucket_seconds=int(os.environ.get("MOVA_TICK_BUCKET_SECONDS", "300")),
             decision_timeout_seconds=int(os.environ.get("MOVA_DECISION_TIMEOUT_SECONDS", "600")),
+            private_state_max_age_seconds=int(
+                os.environ.get("MOVA_PRIVATE_STATE_MAX_AGE_SECONDS", "900")
+            ),
             git_sha=os.environ.get("MOVA_GIT_SHA", "unknown"),
         )
 
@@ -80,3 +84,5 @@ class RuntimeConfig:
         for path in (self.ops_db.parent, self.artifact_root):
             if not path.is_absolute():
                 raise ValueError(f"path operativo debe ser absoluto: {path}")
+        if self.private_state_max_age_seconds <= 0:
+            raise ValueError("MOVA_PRIVATE_STATE_MAX_AGE_SECONDS debe ser positivo")

@@ -23,6 +23,7 @@ def _dashboard(status: dict) -> bytes:
     cycle = status.get("cycle") or {}
     tick = status.get("latest_tick") or {}
     controls = status.get("controls") or {}
+    team_state = status.get("latest_team_state") or {}
     control_rows = "".join(
         f"<tr><td>{html.escape(key)}</td><td><code>{html.escape(json.dumps(item['value']))}</code></td>"
         f"<td>{html.escape(item['actor'])}</td></tr>"
@@ -46,6 +47,7 @@ a {{ color:#72a7ff }}
 <div class="card"><div class="muted">Último tick</div><div class="value">{html.escape(str(tick.get('status','sin datos')))}</div><div>{html.escape(str(tick.get('started_at','')))}</div></div>
 <div class="card"><div class="muted">Incidentes abiertos</div><div class="value">{sum(status.get('open_incidents',{}).values())}</div><div>{html.escape(json.dumps(status.get('open_incidents',{})))}</div></div>
 <div class="card"><div class="muted">Alertas pendientes</div><div class="value">{status.get('outbox_pending',0)}</div><div>SQLite {html.escape(status.get('sqlite_version',''))}</div></div>
+<div class="card"><div class="muted">Estado privado</div><div class="value">{html.escape(str(team_state.get('quality_status','sin datos')))}</div><div>{html.escape(str(team_state.get('observed_at','')))} · FT {html.escape(str(team_state.get('free_transfers','—')))}</div></div>
 </div>
 <h2>Controles efectivos</h2><table><thead><tr><th>Control</th><th>Valor</th><th>Actor</th></tr></thead><tbody>{control_rows}</tbody></table>
 <p><a href="/api/v1/status">status JSON</a> · <a href="/metrics">métricas</a> · <a href="/api/v1/audit">auditoría</a> · <a href="/api/v1/jobs">jobs</a></p>
@@ -95,6 +97,7 @@ def make_handler(db: OpsDB):
                     "/api/v1/incidents": "incidents",
                     "/api/v1/health": "health_samples",
                     "/api/v1/snapshots": "source_snapshots",
+                    "/api/v1/team-state": "team_state_snapshots",
                     "/api/v1/decisions": "decision_runs",
                     "/api/v1/outbox": "outbox_events",
                 }
