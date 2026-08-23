@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 
 from mova_fpl.data.private_state import seal, validate
 from mova_fpl.ops.config import RuntimeConfig
-from mova_fpl.ops.db import OpsDB, new_id
+from mova_fpl.ops.db import OpsDB, new_id, sha256_json
 from mova_fpl.ops.tick import phase_for
 
 
@@ -19,13 +19,14 @@ def ingest(config: RuntimeConfig, db: OpsDB, payload: dict) -> dict:
         phase=phase_for(deadline, datetime.now(timezone.utc)),
     )
     fingerprint = quality["fingerprint"]
+    observation_sha = sha256_json(normalized)
     correlation_id = new_id("corr")
     job_id, reused = db.start_job(
         "private_team_state",
-        f"private-team-state:{config.season}:{gw}:{fingerprint}",
+        f"private-team-state:{config.season}:{gw}:{observation_sha}",
         correlation_id,
         cycle_id=cycle_id,
-        input_sha256=fingerprint,
+        input_sha256=observation_sha,
     )
     if reused:
         return {"status": "reused", "job_id": job_id, "cycle_id": cycle_id,

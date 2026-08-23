@@ -54,7 +54,7 @@ def _official_sources() -> tuple[bytes, bytes]:
 def test_schema_controls_jobs_y_auditoria(tmp_path):
     config = _config(tmp_path)
     db = _db(config)
-    assert db.migrate() == [1, 2]
+    assert db.migrate() == [1, 2, 3]
     assert db.migrate() == []
     db.ensure_defaults(mode="shadow", action_level="A0", compliance_gate="pending",
                        browser_writes=False)
@@ -74,6 +74,12 @@ def test_schema_controls_jobs_y_auditoria(tmp_path):
         free_transfers=1, bank_tenths=0, chips=[], fingerprint="f" * 64,
         artifact_path=str(tmp_path / "team-state"), manifest_sha256="a" * 64,
     )
+    db.add_team_state(
+        job_id=job, cycle_id=cycle, observed_at="2026-08-21T12:10:00Z",
+        source_name="fpl_authenticated_api", squad=[{"element": i} for i in range(1, 16)],
+        free_transfers=1, bank_tenths=0, chips=[], fingerprint="f" * 64,
+        artifact_path=str(tmp_path / "team-state-2"), manifest_sha256="b" * 64,
+    )
     db.finish_job(job, "completed", metrics={"gw": 1})
     assert db.start_job("tick", "tick:1", "other") == (job, True)
     assert db.quick_check() == "ok"
@@ -89,7 +95,7 @@ def test_schema_controls_jobs_y_auditoria(tmp_path):
     assert "private bytes" not in json.dumps(detail)
     assert "job_started" in audits and "job_completed" in audits
     assert db.status()["latest_team_state"]["free_transfers"] == 1
-    assert len(db.recent("team_state_snapshots")) == 1
+    assert len(db.recent("team_state_snapshots")) == 2
 
 
 def test_browser_write_gate_fails_closed(tmp_path):

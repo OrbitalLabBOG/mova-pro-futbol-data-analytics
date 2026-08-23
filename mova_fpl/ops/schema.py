@@ -357,7 +357,43 @@ MIGRATION_002 = (
     "CHECK (quality_status IN ('valid','degraded','quarantined'))",
 )
 
+MIGRATION_003 = (
+    "ALTER TABLE team_state_snapshots RENAME TO team_state_snapshots_v1",
+    """
+    CREATE TABLE team_state_snapshots (
+        team_state_id TEXT PRIMARY KEY,
+        job_id TEXT REFERENCES job_runs(job_id),
+        cycle_id TEXT NOT NULL REFERENCES gameweek_cycles(cycle_id),
+        observed_at TEXT NOT NULL,
+        source_name TEXT NOT NULL,
+        squad_json TEXT NOT NULL CHECK (json_valid(squad_json)),
+        free_transfers INTEGER NOT NULL CHECK (free_transfers BETWEEN 0 AND 5),
+        bank_tenths INTEGER NOT NULL,
+        chips_json TEXT NOT NULL CHECK (json_valid(chips_json)),
+        fingerprint TEXT NOT NULL,
+        artifact_path TEXT,
+        manifest_sha256 TEXT,
+        quality_status TEXT CHECK (quality_status IN ('valid','degraded','quarantined')),
+        UNIQUE (cycle_id, source_name, observed_at)
+    ) STRICT
+    """,
+    """
+    INSERT INTO team_state_snapshots(team_state_id,job_id,cycle_id,observed_at,source_name,
+      squad_json,free_transfers,bank_tenths,chips_json,fingerprint,artifact_path,
+      manifest_sha256,quality_status)
+    SELECT team_state_id,job_id,cycle_id,observed_at,source_name,squad_json,free_transfers,
+      bank_tenths,chips_json,fingerprint,artifact_path,manifest_sha256,quality_status
+    FROM team_state_snapshots_v1
+    """,
+    "DROP TABLE team_state_snapshots_v1",
+    "CREATE INDEX idx_team_state_cycle_observed "
+    "ON team_state_snapshots(cycle_id, observed_at DESC)",
+    "CREATE INDEX idx_team_state_fingerprint "
+    "ON team_state_snapshots(cycle_id, fingerprint, observed_at DESC)",
+)
+
 MIGRATIONS = (
     (1, "initial_ops_schema", MIGRATION_001),
     (2, "team_state_artifact_provenance", MIGRATION_002),
+    (3, "team_state_observation_freshness", MIGRATION_003),
 )

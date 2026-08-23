@@ -106,7 +106,8 @@ foreign keys activas y estados protegidos por `CHECK`.
 Implementación: el adapter browser produce `mova-fpl-private-team-state-v1` con allowlist
 exacta. El engine rechaza claves adicionales, valida identidad/cuotas/rangos, persiste un
 artefacto inmutable y registra su path, SHA-256 y estado de calidad. El fingerprint excluye
-`observed_at`, por lo que una relectura idéntica es idempotente sin perder procedencia.
+`observed_at` para detectar que el estado no cambió, mientras cada captura conserva una
+observación propia para que frescura y disponibilidad sigan siendo medibles.
 | `dataset_releases` | dataset entrenable sellado | sha, as_of cutoff, leakage audit |
 | `model_releases` | artifacts de modelo | model+version unique; dataset, metrics y sha |
 | `projection_runs` | metadata de matrices xP | manifest/hash; detalle en Parquet/SQLite artifact |
