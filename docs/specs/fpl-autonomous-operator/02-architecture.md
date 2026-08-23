@@ -20,7 +20,8 @@ objetivo usa tres imágenes para aislar responsabilidades:
   misma imagen sirve al worker one-shot y a la API local de control/observabilidad. Incluye
   SQLite ≥3.51.3; no usa el 3.45.1 del host;
 - `mova-research`: one-shot sin acceso a DB/browser/FPL secrets; ejecuta HTTP/Firecrawl,
-  inferencia OpenRouter o `codex exec` contra request packages sellados y devuelve JSON;
+  Pydantic AI core sobre OpenRouter o `codex exec` contra request packages sellados y
+  devuelve JSON;
 - `mova-browser`: un único Chromium normal y headed, supervisado sobre display virtual y
   perfil persistente exclusivo. `agent-browser` se adjunta por CDP interno después del
   arranque; el acceso interactivo existe sólo por túnel SSH cuando se requiere login.
@@ -46,7 +47,7 @@ flowchart LR
   end
 
   subgraph research["mova-research · one-shot"]
-    agent["direct fetch · OpenRouter · codex exec"]
+    agent["direct fetch · Pydantic AI/OpenRouter · codex exec"]
   end
 
   subgraph browser["mova-browser · red privada"]

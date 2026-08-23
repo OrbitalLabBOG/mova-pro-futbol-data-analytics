@@ -44,6 +44,12 @@ revalidarlas y sellar el bootstrap en vez de asumir que esta lista seguirá vige
 | [agent-browser](https://github.com/vercel-labs/agent-browser) | perfiles persistentes y sesiones aisladas; no resuelve por sí solo cumplimiento ni idempotencia. |
 | [Codex non-interactive mode](https://learn.chatgpt.com/docs/non-interactive-mode) | `codex exec`, JSONL, output schema y auth reutilizable para jobs acotados. |
 | [Codex as a platform](https://learn.chatgpt.com/blog/codex-as-a-platform) | la aplicación conserva contexto/reglas/controles; `codex exec` encaja en scripts/background jobs. |
+| [OpenAI Agents SDK](https://developers.openai.com/api/docs/guides/agents) | runner Python/TypeScript con tools, guardrails, handoffs, sessions y tracing; suficiente, no seleccionado para el backend OpenRouter actual. |
+| [OpenAI Agents providers](https://developers.openai.com/api/docs/guides/agents/models) | proveedores no OpenAI se integran por adapter; ciertas capacidades dependen del path OpenAI Responses. |
+| [Vercel AI SDK 7](https://vercel.com/blog/ai-sdk-7) | agentes, approvals, telemetría y workflows durables; completo pero implica runtime TypeScript redundante para MOVA. |
+| [Pydantic AI OpenRouter](https://pydantic.dev/docs/ai/models/openrouter/) | provider OpenRouter nativo, web search configurable, outputs tipados y citas. |
+| [Pydantic AI Harness](https://pydantic.dev/docs/ai/harness/) | capacidades de research/guardrails/budgets/persistencia; paquete 0.x reservado a spikes. |
+| [Pydantic AI version policy](https://pydantic.dev/docs/ai/project/version-policy/) | core 2.x estable; beta/experimental puede cambiar y debe excluirse o fijarse explícitamente. |
 | Playbook Orbital Firecrawl | adapter de search/scrape disponible localmente; credencial VPS aún no verificada y `agent` fuera del MVP. |
 
 ## Referentes analíticos y de automatización

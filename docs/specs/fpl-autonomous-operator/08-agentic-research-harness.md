@@ -3,7 +3,7 @@ type: project
 name: "MOVA FPL Autonomous Operator 2026/27 — Research Coordinator"
 created: 2026-08-22
 updated: 2026-08-22
-tags: [mova, fpl, agentic, research, news, codex, openrouter]
+tags: [mova, fpl, agentic, research, news, codex, openrouter, pydantic-ai]
 status: proposed
 ---
 
@@ -19,8 +19,8 @@ no controla el calendario.
 La estrategia de proveedores es híbrida:
 
 - collectors deterministas para API FPL, fixtures, estado privado y fuentes estructuradas;
-- OpenRouter como inferencia estructurada habitual para extracción, clasificación y crítica
-  con costos y modelos configurables, sin construir otro agent loop;
+- Pydantic AI core fijado por versión como runner interior Python, usando su provider nativo
+  de OpenRouter, outputs Pydantic y tools acotadas para el trabajo rutinario;
 - `codex exec --search` como job agéntico autocontenido para discovery profundo,
   contradicciones y revisiones cercanas al deadline;
 - HTTP directo como extractor preferido, Firecrawl como adapter opcional cuando una página
@@ -81,7 +81,7 @@ flowchart LR
     web --> codex["Codex --search"]
     official --> fetch["direct / Firecrawl adapter"]
     codex --> fetch
-    fetch --> extract["OpenRouter / Codex extractor"]
+    fetch --> extract["Pydantic AI + OpenRouter / Codex"]
     extract --> reconcile["dedupe · identity · conflict · critic"]
     reconcile --> outbox[("result package\noutbox")]
   end
@@ -132,25 +132,51 @@ output anterior.
 
 ### Decisión de framework
 
-La pipeline será Python async explícito sobre el `Harness`, `job_runs`, `job_steps` y
-`ops.db` que ya existen. **LangGraph queda fuera de esta iniciativa**: duplicaría máquina de
-estados, checkpointer, retries y autoridad sin resolver un problema actual.
+La pipeline exterior será Python async explícito sobre el `Harness`, `job_runs`,
+`job_steps` y `ops.db` existentes. El loop interior rutinario sí usa
+`pydantic-ai-slim[openrouter]` 2.x fijado por lockfile: elimina el loop LLM artesanal y
+aporta provider OpenRouter nativo, tools, output tipado, retries, usage limits e
+instrumentación OpenTelemetry sin crear otra autoridad de workflow.
+
+**LangGraph, Pydantic Graph, Pydantic AI StepPersistence y Vercel Workflow quedan fuera del
+MVP**: duplicarían la máquina de estados, persistencia y retries que ya resuelve `ops.db`.
+El paquete completo `pydantic-ai-harness` queda como experimento, no como dependencia de
+producción inicial, porque su API continúa en serie 0.x y sus capacidades exceden este job
+one-shot. La selección es Pydantic AI **core estable 2.x**, no el Harness completo.
 
 Tampoco se reconstruye el agent loop de Codex. `CodexExecBackend` invoca
-`codex exec --ephemeral --json --output-schema` como un job finito y consume sus eventos.
-`OpenRouterInferenceBackend` hace una llamada estructurada sin autonomía ni tools. Si en el
-futuro se requieren conversaciones persistentes o aprobaciones dentro del propio agente,
+`codex exec --ephemeral --json --output-schema` como job finito y consume sus eventos. Si
+en el futuro se requieren conversaciones persistentes, handoffs o aprobaciones internas,
 eso exigirá una ADR nueva; no es una evolución implícita de esta spec.
+
+### Revisión de stacks frontera — 2026-08-22
+
+Todos los candidatos principales son técnicamente suficientes; la selección se hace por
+encaje con MOVA, no por falta de capacidad:
+
+| Stack | Lo que resuelve bien | Desencaje actual | Veredicto |
+| --- | --- | --- | --- |
+| OpenAI Agents SDK | runner, tools, guardrails, handoffs, sessions, tracing y evals | la operación rutinaria usa OpenRouter y no dispone de OpenAI API como control plane; varias capacidades alojadas dependen del path Responses | suficiente, segunda opción Python |
+| Vercel AI SDK 7 | providers, agentes, approvals, telemetría y workflows durables | introduce Node/TypeScript y su durabilidad duplica `ops.db` en un repo Python | excelente si MOVA migra a TS/UI; no para este worker |
+| OpenRouter Agent SDK | integración nativa y tools | SDK TypeScript joven; añade otro sidecar | no seleccionado |
+| Pydantic AI core 2.x | Python, OpenRouter nativo, outputs Pydantic, tools, límites y OTel | el costo OpenRouter no siempre es calculable localmente | **seleccionado para rutina** |
+| Pydantic AI Harness 0.x | research, web, guardrails, spend y persistencia prearmados | API pre-1.0 y superficie mayor de la necesaria | spike solamente |
+| LangGraph | grafos, checkpoints y workflows largos | segunda state machine y segunda persistencia | fuera del MVP |
+| loop HTTP propio | mínima dependencia | reconstruye validación, tools, retries, usage e instrumentación | descartado |
+
+El OpenAI Agents SDK se reevalúa si se adopta OpenAI API/Responses como proveedor primario.
+Vercel AI SDK se reevalúa si aparece un servicio TypeScript compartido o una UI agéntica
+que justifique su runtime. Ninguna reevaluación cambia la autoridad exterior de `ops.db`.
 
 ## Catálogo inicial de tareas
 
 | Task | Backend preferido | Entrada | Salida | Autoridad |
 | --- | --- | --- | --- | --- |
 | `news_discovery` | Codex search | roster, clubs, queries, cutoff | URLs candidatas | advisory |
-| `source_extract` | OpenRouter | excerpt/documento + identities | candidates estructurados | advisory |
-| `signal_reconcile` | OpenRouter | candidates + source tiers | conflictos y consenso | advisory |
+| `source_extract` | Pydantic AI + OpenRouter | excerpt/documento + identities | candidates estructurados | advisory |
+| `signal_reconcile` | Pydantic AI + OpenRouter | candidates + source tiers | conflictos y consenso | advisory |
 | `deadline_brief` | Codex | facts + señales + conflictos | brief citado | advisory |
-| `decision_critic` | Codex u OpenRouter fuerte | decisión + supuestos + señales | objeciones/checks | advisory |
+| `decision_critic` | Codex o Pydantic AI + OpenRouter fuerte | decisión + supuestos + señales | objeciones/checks | advisory |
 | `log_diagnosis` | Codex read-only | logs redactados | diagnóstico | operativo, sin write |
 
 No se implementa un `fpl_manager` end-to-end.
@@ -161,12 +187,14 @@ No se implementa un `fpl_manager` end-to-end.
 class ResearchBackend(Protocol):
     def run(self, request: ResearchRequest) -> ResearchResult: ...
 
-class CodexExecBackend: ...          # agent loop ya provisto por Codex
-class OpenRouterInferenceBackend: ... # structured inference stateless
+class PydanticAIResearchBackend: ...  # runner tipado + OpenRouter + tools allowlisted
+class CodexExecBackend: ...           # agent loop ya provisto por Codex
 ```
 
-El coordinador de MOVA no ofrece tools genéricas al modelo ni permite que este elija el
-siguiente estado. Construye un contexto cerrado, llama un backend y valida el resultado.
+El coordinador de MOVA no ofrece shell, browser ni tools genéricas al modelo y no permite
+que este elija el siguiente estado. Construye un contexto cerrado, expone solo tools
+allowlisted con límites duros, llama un backend y vuelve a validar el resultado fuera del
+runner.
 
 ## Política de selección de backend
 
@@ -184,7 +212,7 @@ Policy inicial propuesta:
 | Fase | Trabajo rutinario | Codex search | Límite recomendado |
 | --- | --- | --- | --- |
 | `baseline` | fuentes oficiales + diff | no | cero si no hay cambio |
-| T-48h/T-24h | extracción OpenRouter | una investigación amplia | 1 corrida |
+| T-48h/T-24h | Pydantic AI + OpenRouter | una investigación amplia | 1 corrida |
 | T-6h | refresco dirigido | solo conflicto/materialidad | 0–1 corrida |
 | T-90m | extracción final | deadline brief | 1 corrida |
 | T-60m a T-15m | solo delta crítico | emergencia aprobada por policy | máximo 1 |
@@ -193,6 +221,28 @@ Policy inicial propuesta:
 El POC del 2026-08-22 consumió 183.658 tokens de entrada —140.032 cacheados— y cinco
 búsquedas para una sola consulta. Por eso cada corrida Codex MUST tener timeout, contador
 de búsquedas observado, cuota por GW y circuit breaker de uso.
+
+### Evidencia del spike Pydantic AI/OpenRouter
+
+Se ejecutó un spike local aislado en `/tmp`, con Python 3.13,
+`pydantic-ai-slim[openrouter]==2.33.0` y la credencial OpenRouter ya provisionada; no se
+modificó el repo ni el VPS.
+
+- la instalación resolvió 20 paquetes y aproximadamente 65 MB en el virtualenv aislado;
+- el primer run con `openai/gpt-5.4-mini` fue rechazado por Pydantic al no cumplir el
+  schema de citas: evidencia de fail-closed, no un resultado aceptable;
+- el segundo run con `openai/gpt-5.6-luna`, una única web search restringida a dominios
+  FPL y output tipado, produjo temporada `2026/27`, GW2 y deadline
+  `2026-08-28T17:30:00Z`;
+- el deadline fue contrastado fuera del LLM contra
+  `https://fantasy.premierleague.com/api/events/`, con HTTP 200 y el mismo valor exacto;
+- `result.usage` es una propiedad en esta versión, no un método;
+- `UsageLimits` sí limita requests, tool calls y tokens, pero el límite monetario emitió
+  `CostNotFoundWarning` porque el runner no conocía el precio de esa ruta OpenRouter.
+
+Por tanto, `cost_limit` local es advisory para OpenRouter hasta probar pricing end-to-end.
+Los controles obligatorios son `request_limit`, `tool_calls_limit`, límites de tokens y
+búsquedas, timeout, concurrencia, circuit breaker y cap de gasto de la key/cuenta.
 
 ## Planificación de búsqueda
 
@@ -496,7 +546,7 @@ Controles MUST:
 3. límite de tamaño, MIME, tiempo, redirects y profundidad de fetch;
 4. retrieved content delimitado como untrusted data;
 5. detector de prompt injection con cuarentena para instrucciones materiales;
-6. ninguna herramienta de shell/browser disponible al extractor OpenRouter;
+6. ninguna herramienta de shell/browser disponible al runner Pydantic AI/OpenRouter;
 7. Codex en sandbox read-only, `--ephemeral`, sin rules/config del usuario y output schema;
 8. ningún secreto, token, cookie o path sensible en request, prompt, events o result;
 9. logs y artefactos con `0600`, directorios `0700` y hashes antes de importar;
@@ -618,12 +668,13 @@ Un backend puede aprobarse para `source_extract` y seguir prohibido para
 - adapters fake y replay sin red;
 - fixtures gold, schemas y pruebas de seguridad.
 
-### AR-2 — OpenRouter shadow
+### AR-2 — Pydantic AI + OpenRouter shadow
 
-- adapter HTTP con modelo configurable;
-- extracción/clasificación de documentos ya recuperados;
-- uso, costo, timeout, retry y circuit breaker;
-- ninguna búsqueda ni intervención productiva.
+- fijar `pydantic-ai-slim[openrouter]` 2.x en la imagen `mova-research`;
+- implementar `PydanticAIResearchBackend` con schemas, provider y tools allowlisted;
+- uso, request/tool/token/search limits, timeout, retry y circuit breaker;
+- cap externo OpenRouter y alerta cuando el costo local sea desconocido;
+- ninguna búsqueda sin policy ni intervención productiva.
 
 ### AR-3 — Discovery y extracción web
 
@@ -659,17 +710,17 @@ Nada en AR-0..AR-6 habilita browser writes; eso permanece bajo G4+ y ADR-004.
 | ID | Recomendación | Estado |
 | --- | --- | --- |
 | D-AR-01 | outer FSM propio; subflujo agéntico sin autoridad | respaldada por ADR existentes |
-| D-AR-02 | OpenRouter rutinario + Codex especialista | propuesta |
+| D-AR-02 | Pydantic AI core + OpenRouter rutinario; Codex especialista | propuesta |
 | D-AR-03 | `mova-research` one-shot separado, no plataforma compartida prematura | propuesta |
-| D-AR-04 | Python async explícito; LangGraph fuera de la iniciativa | decidida |
+| D-AR-04 | `ops.db` exterior + Pydantic AI core interior; sin LangGraph/Graph/Workflow | decidida |
 | D-AR-05 | metadata+excerpt+hash; no artículos completos por defecto | propuesta |
 | D-AR-06 | Codex máximo T-24h, T-90m y emergencia | propuesta |
 | D-AR-07 | Firecrawl adapter opcional; `agent` fuera del MVP | propuesta |
 | D-AR-08 | noticias no afectan producción antes de `Intervention v2` | blocker técnico |
 
 Pendiente después de aprobar arquitectura: seleccionar modelos concretos de OpenRouter con
-un benchmark local; verificar credencial Firecrawl en VPS; fijar allowlist inicial de
-fuentes; acordar cuota monetaria/tokens por GW y canal de alertas.
+un benchmark local más amplio; verificar credencial Firecrawl en VPS; fijar allowlist
+inicial de fuentes; acordar cuota monetaria/tokens por GW y canal de alertas.
 
 ## Definition of done del bloque agéntico
 
@@ -691,3 +742,9 @@ fuentes; acordar cuota monetaria/tokens por GW y canal de alertas.
 - [OpenAI Docs — authentication](https://learn.chatgpt.com/docs/auth)
 - playbook Orbital `.claude/commands/firecrawl.md`
 - [OpenAI — Codex as a platform](https://learn.chatgpt.com/blog/codex-as-a-platform)
+- [OpenAI — Agents SDK](https://developers.openai.com/api/docs/guides/agents)
+- [OpenAI — Agents SDK models and providers](https://developers.openai.com/api/docs/guides/agents/models)
+- [Vercel — AI SDK 7](https://vercel.com/blog/ai-sdk-7)
+- [Pydantic AI — OpenRouter provider](https://pydantic.dev/docs/ai/models/openrouter/)
+- [Pydantic AI — Harness](https://pydantic.dev/docs/ai/harness/)
+- [Pydantic AI — version policy](https://pydantic.dev/docs/ai/project/version-policy/)
