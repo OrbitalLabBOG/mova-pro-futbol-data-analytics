@@ -51,6 +51,14 @@ class CollectorStore:
             ).fetchone()
         return cursor_is_due(row, cadence_seconds, now=now, force=force), row
 
+    def set_cadence(self, source: str, cadence_seconds: int) -> None:
+        """Alinea el umbral de health con una cadencia adaptativa ya planeada."""
+        with connect(self.config) as con:
+            con.execute(
+                "update raw.source_cursors set cadence_seconds=%s where source_name=%s",
+                (cadence_seconds, source),
+            )
+
     def start(self, source: str, job_id: str) -> str:
         run_id = _id("ingest")
         with connect(self.config, autocommit=True) as con:
