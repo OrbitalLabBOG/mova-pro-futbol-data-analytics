@@ -373,7 +373,7 @@ no borra evidencia previa y nunca amplía autonomía.
 | HV1-01 ✅ | contrato `mova`, status/doctor y skill del operador | completado | HV1-00 |
 | HV1-02 🟡 | PostgreSQL shadow, import y verificación; luego adapter/cutover | 10–14 h | HV1-01 |
 | HV1-03a ✅ | collector/data quality autónomo | completado | HV1-02 |
-| HV1-03b 🟡 | proyección/evaluación uniforme, scorecard y drift implementados; falta deploy vivo | 4–6 h | HV1-03a |
+| HV1-03b ✅ | proyección/evaluación uniforme, scorecard, drift y servicio desplegado | completado | HV1-03a |
 | HV1-04 | team state, season plan y memoria explícita | 6–8 h | HV1-02 |
 | HV1-05 | research con evidencia y acta | 8–12 h | HV1-02/03 |
 | HV1-06 | Strategist + Critic + Validator + DecisionEnvelope | 10–14 h | HV1-03/04/05 |
@@ -399,6 +399,11 @@ Odds permanece como señal shadow no promovida y WhoScored como research-only: e
 versionado encontró información defensiva parcial, pero no mejora end-to-end suficiente. Este
 corte cierra observabilidad y feedback del modelo; no declara terminado el reviewer estratégico,
 el reentrenamiento ni la promoción automática.
+
+El rollout vivo quedó aprobado en la revisión `85f8873`: PostgreSQL 17 aplicó la migración 005,
+la API y los seis timers quedaron saludables, y baseline + odds shadow produjeron 609
+proyecciones causales para GW2. La evidencia, cobertura y criterio de rollback están en el
+[acta de rollout](../../decisions/2026-27/analytics-service-rollout.md).
 
 ## 11. Definition of Done del harness v1
 
