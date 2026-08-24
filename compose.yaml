@@ -20,6 +20,7 @@ x-engine: &engine
     MOVA_POSTGRES_DB: ${MOVA_POSTGRES_DB:-mova}
     MOVA_POSTGRES_USER: ${MOVA_POSTGRES_USER:-mova_owner}
     MOVA_POSTGRES_CREDENTIAL_FILE: /run/secrets/postgres_password
+    MOVA_ODDS_API_CREDENTIAL_FILE: /run/secrets/odds_api_key
     MOVA_COLLECTOR_BROWSER_PATH: /usr/bin/chromium
   security_opt:
     - no-new-privileges:true
@@ -114,6 +115,7 @@ services:
       - data
     secrets:
       - postgres_password
+      - odds_api_key
     volumes:
       - ${MOVA_DATA_ROOT:-/var/lib/mova-fpl}:/var/lib/mova-fpl
       - ${MOVA_BACKUP_ROOT:-/opt/orbital/backups/mova-fpl}:/opt/orbital/backups/mova-fpl
@@ -170,3 +172,5 @@ networks:
 secrets:
   postgres_password:
     file: ${MOVA_POSTGRES_PASSWORD_FILE:-/etc/mova-fpl/postgres-password}
+  odds_api_key:
+    file: ${MOVA_ODDS_API_KEY_FILE:-/etc/mova-fpl/odds-api-key}

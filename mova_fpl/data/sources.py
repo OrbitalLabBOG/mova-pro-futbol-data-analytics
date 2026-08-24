@@ -7,7 +7,10 @@ transferencias ni hits reales.
 from __future__ import annotations
 
 import time
+import urllib.error
+import urllib.parse
 import urllib.request
+from collections.abc import Mapping
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -18,27 +21,40 @@ FPL_API = "https://fantasy.premierleague.com/api"
 FPL_BOOTSTRAP_URL = f"{FPL_API}/bootstrap-static/"
 FPL_FIXTURES_URL = f"{FPL_API}/fixtures/"
 FOOTBALL_DATA = "https://www.football-data.co.uk/mmz4281"
+THE_ODDS_API = "https://api.the-odds-api.com/v4/sports/soccer_epl/odds"
 
 USER_AGENT = "mova-fpl/0.1 (analytics; contacto: Orbital Lab)"
 TIMEOUT = 100
 RETRIES = 5
 
 
-def _get(url: str, *, timeout: int = TIMEOUT, retries: int = RETRIES) -> bytes:
+def _get(url: str, *, timeout: int = TIMEOUT, retries: int = RETRIES,
+         safe_url: str | None = None, include_headers: bool = False):
     """Unica primitiva de red del paquete. GET, nada mas."""
-    last = None
+    last = "unknown error"
     for attempt in range(1, retries + 1):
         try:
             req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT}, method="GET")
             with urllib.request.urlopen(req, timeout=timeout) as resp:
                 if resp.status != 200:
                     raise OSError(f"HTTP {resp.status}")
-                return resp.read()
+                payload = resp.read()
+                if include_headers:
+                    return payload, {str(key).lower(): str(value)
+                                     for key, value in resp.headers.items()}
+                return payload
         except Exception as exc:                      # noqa: BLE001
-            last = exc
+            # Nunca interpolar ``exc``: HTTPError puede contener la URL completa
+            # y The Odds API autentica con apiKey en query string.
+            if isinstance(exc, urllib.error.HTTPError):
+                last = f"HTTP {exc.code}"
+            elif isinstance(exc, urllib.error.URLError):
+                last = f"URLError/{type(exc.reason).__name__}"
+            else:
+                last = type(exc).__name__
             if attempt < retries:
                 time.sleep(2 ** attempt * 0.5)
-    raise OSError(f"fallo GET tras {retries} intentos: {url} ({last})")
+    raise OSError(f"fallo GET tras {retries} intentos: {safe_url or url} ({last})")
 
 
 def fetch_season_csv(season: str, dest_dir: Path = RAW) -> Path:
@@ -88,6 +104,22 @@ def football_data_url(season: str) -> str:
 def fetch_football_data_odds(season: str) -> bytes:
     """Resultados y odds publicados por football-data.co.uk (solo GET)."""
     return _get(football_data_url(season), timeout=45, retries=3)
+
+
+def fetch_market_odds(api_key: str, *, regions: str = "uk,eu",
+                      markets: str = "h2h,totals") -> tuple[bytes, Mapping[str, str]]:
+    """Odds pre-partido EPL desde The Odds API; la credencial nunca se registra."""
+    query = urllib.parse.urlencode({
+        "apiKey": api_key,
+        "regions": regions,
+        "markets": markets,
+        "oddsFormat": "decimal",
+        "dateFormat": "iso",
+    })
+    return _get(
+        f"{THE_ODDS_API}?{query}", timeout=45, retries=3,
+        safe_url=THE_ODDS_API, include_headers=True,
+    )
 
 
 # ------------------------------------------------------- estado de un equipo

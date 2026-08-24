@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 import json
+import urllib.error
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
 
+from mova_fpl.data import sources
 from mova_fpl.ops.cli import parser
 from mova_fpl.ops.collector.fpl import validate_bundle
-from mova_fpl.ops.collector.odds import parse_csv
+from mova_fpl.ops.collector.odds import parse_payload
 from mova_fpl.ops.collector.whoscored import (
     calendar_months,
     normalize_schedule_rows,
@@ -45,18 +47,61 @@ def test_fpl_bundle_rejects_partial_fixture_payload():
         validate_bundle(boot, fixtures[:-1], entry, history, 99)
 
 
-def test_odds_csv_requires_matches_and_real_odds():
-    raw = ("Div,Date,Time,HomeTeam,AwayTeam,FTHG,FTAG,FTR,B365H,B365D,B365A\n"
-           "E0,22/08/2026,15:00,Arsenal,Chelsea,2,1,H,1.80,3.60,4.50\n").encode()
-    rows, quality, checks = parse_csv(raw)
-    assert rows[0]["HomeTeam"] == "Arsenal"
-    assert quality["matches_with_odds"] == 1
+def _odds_payload() -> bytes:
+    markets = [
+        {"key": "h2h", "last_update": "2026-08-23T10:00:00Z", "outcomes": [
+            {"name": "Arsenal", "price": 1.8}, {"name": "Draw", "price": 3.6},
+            {"name": "Chelsea", "price": 4.5},
+        ]},
+        {"key": "totals", "last_update": "2026-08-23T10:00:00Z", "outcomes": [
+            {"name": "Over", "price": 1.91, "point": 2.5},
+            {"name": "Under", "price": 1.95, "point": 2.5},
+        ]},
+    ]
+    return json.dumps([{
+        "id": "event-1", "sport_key": "soccer_epl",
+        "commence_time": "2026-08-24T19:00:00Z",
+        "home_team": "Arsenal", "away_team": "Chelsea",
+        "bookmakers": [
+            {"key": f"book-{index}", "title": f"Book {index}",
+             "last_update": "2026-08-23T10:00:00Z", "markets": markets}
+            for index in range(5)
+        ],
+    }]).encode()
+
+
+def test_market_odds_preserve_every_book_market_outcome():
+    headers = {"x-requests-used": "8", "x-requests-remaining": "492",
+               "x-requests-last": "4"}
+    rows, quality, checks = parse_payload(_odds_payload(), headers)
+    assert len(rows) == 25
+    assert len({row["observation_key"] for row in rows}) == 25
+    assert rows[0]["home_team"] == "Arsenal"
+    assert quality["bookmakers"] == 5
+    assert quality["h2h_coverage_ratio"] == 1.0
+    assert quality["quota"] == {"used": 8, "remaining": 492, "last_cost": 4}
     assert all(item["passed"] for item in checks)
 
 
-def test_odds_html_or_header_drift_is_quarantined():
-    with pytest.raises(ValueError, match="sin columnas"):
-        parse_csv(b"<html>300 Multiple Choices</html>")
+def test_market_odds_error_payload_is_quarantined():
+    with pytest.raises(ValueError, match="no devolvió JSON"):
+        parse_payload(b"<html>upstream error</html>")
+    with pytest.raises(ValueError, match="objeto de error"):
+        parse_payload(b'{"message":"OUT_OF_USAGE_CREDITS"}')
+
+
+def test_market_odds_network_error_never_exposes_api_key(monkeypatch):
+    secret = "test-secret-that-must-never-appear"
+
+    def fail(request, timeout):
+        raise urllib.error.HTTPError(request.full_url, 401, "Unauthorized", {}, None)
+
+    monkeypatch.setattr(sources.urllib.request, "urlopen", fail)
+    monkeypatch.setattr(sources.time, "sleep", lambda _: None)
+    with pytest.raises(OSError) as error:
+        sources.fetch_market_odds(secret)
+    assert secret not in str(error.value)
+    assert "apiKey" not in str(error.value)
 
 
 def _event(event_id: int, local_id: int) -> dict:
@@ -129,6 +174,17 @@ def test_collector_config_rejects_unbounded_event_batch(tmp_path: Path):
         ).validate()
 
 
+def test_collector_config_caps_odds_request_cost(tmp_path: Path):
+    with pytest.raises(ValueError, match="4 créditos"):
+        RuntimeConfig(
+            odds_api_regions="uk,eu,us", odds_api_markets="h2h,totals",
+            ops_db=tmp_path / "ops.db", artifact_root=tmp_path / "artifacts",
+            host_probe_path=tmp_path / "probe.json", lock_path=tmp_path / "tick.lock",
+            collector_lock_path=tmp_path / "collector.lock",
+            collector_root=tmp_path / "collector", collector_browser_path=tmp_path / "chrome",
+        ).validate()
+
+
 def test_failed_source_respects_cadence_from_last_attempt():
     now = datetime(2026, 8, 24, tzinfo=timezone.utc)
     failed = {
@@ -142,19 +198,20 @@ def test_failed_source_respects_cadence_from_last_attempt():
 
 
 def test_postgres_data_service_migration_has_queryable_contract():
-    assert latest_version() == 2
-    sql = (MIGRATIONS / "002_autonomous_data_service.sql").read_text().lower()
+    assert latest_version() == 3
+    sql = "\n".join(path.read_text().lower() for path in sorted(MIGRATIONS.glob("*.sql")))
     for table in (
         "raw.ingestion_runs", "raw.source_cursors", "raw.source_artifacts",
         "analytics.fpl_player_observations", "analytics.fpl_fixture_observations",
         "analytics.match_odds_observations", "analytics.whoscored_matches",
-        "analytics.whoscored_events", "ops.v_data_source_health",
+        "analytics.market_odds_observations", "analytics.whoscored_events",
+        "ops.v_data_source_health",
     ):
         assert table in sql
 
 
 def test_data_artifacts_never_contain_secrets_in_contract():
-    migration = (MIGRATIONS / "002_autonomous_data_service.sql").read_text().lower()
+    migration = "\n".join(path.read_text().lower() for path in sorted(MIGRATIONS.glob("*.sql")))
     assert "cookie" not in migration
     assert "password" not in migration
     assert "authorization" not in migration
