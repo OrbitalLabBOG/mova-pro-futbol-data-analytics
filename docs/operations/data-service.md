@@ -18,7 +18,7 @@ fallo no impide que las demás fuentes avancen.
 | Adapter | Contenido | Cadencia normal | Gate principal |
 | --- | --- | ---: | --- |
 | `fpl_official` | bootstrap, 380 fixtures, perfil/historia del team id y últimos picks públicos | 6 h | 20 clubes, 38 GWs, 500–800 jugadores, 380 fixtures |
-| `market_odds` | próximas fechas EPL, `h2h` y totales por bookmaker | 8 h | 1–380 eventos, ≥5 casas, cobertura `h2h=1`, totales y cuota observable |
+| `market_odds` | próximas fechas EPL, `h2h` y totales por bookmaker | adaptativa 24/12/6 h + checkpoint | eventos vigentes, ≥5 casas, cobertura `h2h=1`, totales y cuota observable |
 | `whoscored_schedule` | 380 IDs y estado de partidos | 24 h | 380 IDs únicos |
 | `whoscored_events` | evento a evento de partidos finalizados | 30 min | status 6, 1.000–2.500 eventos, par `(id,eventId)` único |
 
@@ -26,12 +26,19 @@ El batch WhoScored está limitado a 10 partidos por corrida. El siguiente tick c
 backlog. Reutilizar `id` dentro de un partido es válido si `eventId` es distinto; la clave en
 PostgreSQL es `(ws_match_id, ws_event_id, event_id)`.
 
-`market_odds` usa The Odds API en plan gratuito. Una consulta normal solicita dos regiones
-(`uk,eu`) y dos mercados (`h2h,totals`): cuesta 4 créditos. La cadencia de 8 horas consume como
-máximo unos 372 créditos en un mes de 31 días y deja margen para replay; el runtime bloquea una
-configuración que supere 4 créditos por consulta. Los headers `used`, `remaining` y `last_cost`
-quedan en calidad y métricas. El histórico gratuito se construye desde nuestros snapshots; el
-endpoint histórico comercial del proveedor no forma parte de este contrato.
+`market_odds` usa The Odds API en plan gratuito. El planner lee el siguiente deadline desde
+`analytics.fpl_event_observations`; no consulta si no existe un deadline futuro. A más de 72 h
+muestrea cada 24 h, entre 72–24 h cada 12 h y entre 24–6 h cada 6 h, siempre con región `uk` y
+mercados `h2h,totals` (2 créditos). En las últimas 6 h toma una sola observación ampliada
+`uk,eu` (4 créditos). La estimación normal es ~110–120 créditos/mes, no 372.
+
+Los headers `used`, `remaining` y `last_cost` son la autoridad del presupuesto. Por debajo de
+150 créditos solo se consulta dentro de 24 h del deadline; por debajo de 75, únicamente en la
+última hora. Cuota insuficiente bloquea incluso `--force`. El reset del proveedor se detecta por
+el aumento de `remaining`, sin calendario local. La decisión completa queda en
+`quality.policy`, logs, manifests y `/api/v1/data`; `mova_data_odds_quota_*` expone el saldo.
+El histórico gratuito se construye desde nuestros snapshots; el endpoint histórico comercial
+del proveedor no forma parte de este contrato.
 
 El adapter anterior de `football-data.co.uk` queda como histórico legado. Sus filas, si existen,
 permanecen en `analytics.match_odds_observations`, pero ya no es una fuente live ni mantiene un
@@ -53,6 +60,7 @@ mova collect events --force --actor julian --reason "replay de cobertura" \
 systemctl status mova-fpl-collector.timer
 journalctl -u mova-fpl-collector.service -n 200 --no-pager
 curl -s http://127.0.0.1:8787/api/v1/data | python -m json.tool
+curl -s http://127.0.0.1:8787/api/v1/data/coverage | python -m json.tool
 curl -s http://127.0.0.1:8787/metrics | grep '^mova_data_'
 ```
 
@@ -71,7 +79,8 @@ un hash ya registrado no vuelve a cargar filas.
 PostgreSQL conserva:
 
 - `raw.ingestion_runs`, `raw.source_cursors`, `raw.source_artifacts` y `raw.quality_checks`;
-- observaciones FPL en `analytics.fpl_player_observations` y
+- observaciones FPL en `analytics.fpl_team_observations`,
+  `analytics.fpl_event_observations`, `analytics.fpl_player_observations` y
   `analytics.fpl_fixture_observations`;
 - perfil/historia/picks públicos en `game.fpl_entry_observations` y
   `game.fpl_pick_observations`;
@@ -109,7 +118,7 @@ endpoints mensuales de WhoScored desde un Chromium headless efímero, sin Seleni
 `soccerdata`. No monta el perfil autenticado; el browser persistente de FPL continúa aislado.
 
 Antes del deploy: backup/restore drill vigente, tests, `docker compose config`, migraciones
-PostgreSQL hasta `003` y una corrida forzada por fuente. Para rollback, deshabilitar el timer,
+PostgreSQL hasta `004` y una corrida validada por fuente. Para rollback, deshabilitar el timer,
 volver al checkout/imagen anterior y conservar las migraciones: son aditivas y no alteran el path
 de decisión.
 Los dumps diarios de PostgreSQL incluyen filas normalizadas; los artefactos raw permanecen en el

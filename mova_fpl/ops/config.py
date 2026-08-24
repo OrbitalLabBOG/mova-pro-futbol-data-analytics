@@ -41,14 +41,19 @@ class RuntimeConfig:
     collector_lock_path: Path = Path("/var/lib/mova-fpl/mova-fpl-collector.lock")
     collector_root: Path = Path("/var/lib/mova-fpl/artifacts/data-service")
     collector_fpl_cadence_seconds: int = 6 * 3600
-    collector_odds_cadence_seconds: int = 8 * 3600
+    # Máxima edad operativa de odds. La cadencia efectiva la decide el
+    # deadline FPL y la cuota observada del proveedor.
+    collector_odds_cadence_seconds: int = 24 * 3600
     collector_events_cadence_seconds: int = 30 * 60
     collector_schedule_cadence_seconds: int = 24 * 3600
     collector_event_batch_size: int = 10
     collector_browser_path: Path = Path("/usr/bin/chromium")
     odds_api_credential_file: Path = Path("/run/secrets/odds_api_key")
     odds_api_regions: str = "uk,eu"
+    odds_api_regular_regions: str = "uk"
     odds_api_markets: str = "h2h,totals"
+    odds_api_reserve_credits: int = 150
+    odds_api_hard_reserve_credits: int = 75
     postgres_host: str = "postgres"
     postgres_port: int = 5432
     postgres_db: str = "mova"
@@ -95,7 +100,7 @@ class RuntimeConfig:
                 "MOVA_COLLECTOR_FPL_CADENCE_SECONDS", str(6 * 3600)
             )),
             collector_odds_cadence_seconds=int(os.environ.get(
-                "MOVA_COLLECTOR_ODDS_CADENCE_SECONDS", str(8 * 3600)
+                "MOVA_COLLECTOR_ODDS_CADENCE_SECONDS", str(24 * 3600)
             )),
             collector_events_cadence_seconds=int(os.environ.get(
                 "MOVA_COLLECTOR_EVENTS_CADENCE_SECONDS", str(30 * 60)
@@ -113,7 +118,16 @@ class RuntimeConfig:
                 "MOVA_ODDS_API_CREDENTIAL_FILE", "/run/secrets/odds_api_key"
             )),
             odds_api_regions=os.environ.get("MOVA_ODDS_API_REGIONS", "uk,eu"),
+            odds_api_regular_regions=os.environ.get(
+                "MOVA_ODDS_API_REGULAR_REGIONS", "uk"
+            ),
             odds_api_markets=os.environ.get("MOVA_ODDS_API_MARKETS", "h2h,totals"),
+            odds_api_reserve_credits=int(os.environ.get(
+                "MOVA_ODDS_API_RESERVE_CREDITS", "150"
+            )),
+            odds_api_hard_reserve_credits=int(os.environ.get(
+                "MOVA_ODDS_API_HARD_RESERVE_CREDITS", "75"
+            )),
             postgres_host=os.environ.get("MOVA_POSTGRES_HOST", "postgres"),
             postgres_port=int(os.environ.get("MOVA_POSTGRES_PORT", "5432")),
             postgres_db=os.environ.get("MOVA_POSTGRES_DB", "mova"),
@@ -155,11 +169,18 @@ class RuntimeConfig:
         if not self.odds_api_credential_file.is_absolute():
             raise ValueError("MOVA_ODDS_API_CREDENTIAL_FILE debe ser absoluto")
         regions = tuple(filter(None, (item.strip() for item in self.odds_api_regions.split(","))))
+        regular_regions = tuple(filter(None, (
+            item.strip() for item in self.odds_api_regular_regions.split(",")
+        )))
         markets = tuple(filter(None, (item.strip() for item in self.odds_api_markets.split(","))))
-        if not regions or not markets or not set(markets) <= {"h2h", "totals"}:
+        if (not regions or not regular_regions or not markets
+                or not set(regular_regions) <= set(regions)
+                or not set(markets) <= {"h2h", "totals"}):
             raise ValueError("configuración de mercados The Odds API inválida")
         if len(set(regions)) * len(set(markets)) > 4:
             raise ValueError("consulta The Odds API excede el guardrail de 4 créditos")
+        if not 0 < self.odds_api_hard_reserve_credits < self.odds_api_reserve_credits:
+            raise ValueError("reservas de cuota The Odds API inválidas")
 
     def validate_postgres(self) -> None:
         """Valida solo la configuración del store shadow, sin abrir red."""

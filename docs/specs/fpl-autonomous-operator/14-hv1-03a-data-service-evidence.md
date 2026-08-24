@@ -67,10 +67,10 @@ La primera consulta costó 4 créditos; el saldo observado quedó en 492 de 500.
 | Check | Resultado |
 | --- | --- |
 | Timer | activo y habilitado; evalúa cada 15 min |
-| Cadencia FPL / odds | 6 h / 8 h |
+| Cadencia FPL / odds | 6 h / adaptativa 24–12–6 h + checkpoint final |
 | Cadencia schedule / events | 24 h / 30 min |
 | Batch de eventos | máximo 10 partidos por corrida; backlog reanudable |
-| Cuota odds | máximo 4 créditos por consulta; ~372/mes y margen de ~128 en el plan gratuito |
+| Cuota odds | 2 créditos normales, 4 en un checkpoint pre-deadline; ~110–120/mes, reservas 150/75 |
 | API | `/healthz`, `/api/v1/data` y `/metrics` responden `200` |
 | Doctor | 20 PASS, 0 WARN, 0 FAIL, 0 required failures |
 | Repositorio VPS | limpio en `52acb40` |

@@ -139,12 +139,13 @@ def _credential(config) -> str:
     return key
 
 
-def collect(config, store, run_id: str, *, now: datetime | None = None) -> SourceOutput:
+def collect(config, store, run_id: str, *, plan, now: datetime | None = None) -> SourceOutput:
     observed_at = (now or datetime.now(timezone.utc)).isoformat(timespec="milliseconds")
     payload, headers = fetch_market_odds(
-        _credential(config), regions=config.odds_api_regions, markets=config.odds_api_markets
+        _credential(config), regions=plan.regions, markets=plan.markets
     )
     rows, quality, checks = parse_payload(payload, dict(headers))
+    quality["policy"] = plan.as_dict()
     payload_sha = sha256_bytes(payload)
     stamp = observed_at.replace("-", "").replace(":", "").replace("+00:00", "Z")
     directory = config.collector_root / "raw" / "odds" / config.season / stamp
@@ -153,8 +154,9 @@ def collect(config, store, run_id: str, *, now: datetime | None = None) -> Sourc
         "schema": "mova-data-source-v1", "source": SOURCE, "provider": PROVIDER,
         "season": config.season, "observed_at": observed_at, "method": "GET",
         "url": THE_ODDS_API, "sport": "soccer_epl",
-        "regions": config.odds_api_regions.split(","),
-        "markets": config.odds_api_markets.split(","),
+        "regions": plan.regions.split(","),
+        "markets": plan.markets.split(","),
+        "policy": plan.as_dict(),
         "payload_sha256": payload_sha, "bytes": len(payload), "quality": quality,
         "quota": quality["quota"],
         "note": "snapshot pre-match; one row per bookmaker/market/outcome/line",

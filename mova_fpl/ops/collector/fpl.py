@@ -99,10 +99,13 @@ def collect(config, store, run_id: str, *, now: datetime | None = None) -> Sourc
         quality_status="valid", quality=quality,
     )
     store.record_checks(run_id, "fpl_official", checks)
-    rows = ({"players": 0, "fixtures": 0, "history": 0, "picks": 0}
-            if reused else store.load_fpl(
-                artifact_id, config.season, observed_at, boot, fixtures, entry, history, picks
-            ))
+    if reused:
+        rows = {**store.load_fpl_surface(artifact_id, config.season, observed_at, boot),
+                "players": 0, "fixtures": 0, "history": 0, "picks": 0}
+    else:
+        rows = store.load_fpl(
+            artifact_id, config.season, observed_at, boot, fixtures, entry, history, picks
+        )
     return SourceOutput(
         source="fpl_official", status="completed", artifact_path=directory,
         payload_sha256=payload_sha, manifest_sha256=manifest_sha, quality=quality,

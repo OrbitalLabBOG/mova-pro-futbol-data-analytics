@@ -86,6 +86,7 @@ mova collect all
 # Vista HTTP; abrir túnel ssh -L 8787:127.0.0.1:8787 root@72.60.245.2
 curl -s http://127.0.0.1:8787/api/v1/status | python -m json.tool
 curl -s http://127.0.0.1:8787/metrics
+curl -s http://127.0.0.1:8787/api/v1/data/coverage | python -m json.tool
 
 # Un tick manual, serializado e idempotente
 sudo systemctl start mova-fpl-tick.service

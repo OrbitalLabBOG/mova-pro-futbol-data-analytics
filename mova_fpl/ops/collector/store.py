@@ -133,9 +133,37 @@ class CollectorStore:
                     "passed,expected,observed) values(%s,%s,%s,%s,%s,%s,%s)", rows,
                 )
 
+    def load_fpl_surface(self, artifact_id: str, season: str, observed_at: str,
+                         boot: dict) -> dict:
+        """Backfill idempotente de clubes/GWs, incluso para un artifact ya visto."""
+        teams = [(
+            artifact_id, season, observed_at, int(item["id"]),
+            str(item.get("name") or ""), str(item.get("short_name") or ""),
+            _number(item.get("strength"), int), Jsonb(item),
+        ) for item in boot["teams"]]
+        events = [(
+            artifact_id, season, observed_at, int(item["id"]),
+            str(item.get("name") or ""), item["deadline_time"],
+            bool(item.get("finished")), bool(item.get("data_checked")),
+            bool(item.get("is_previous")), bool(item.get("is_current")),
+            bool(item.get("is_next")), Jsonb(item),
+        ) for item in boot["events"]]
+        with connect(self.config) as con:
+            with con.cursor() as cur:
+                cur.executemany(
+                    """insert into analytics.fpl_team_observations values(
+                    %s,%s,%s,%s,%s,%s,%s,%s) on conflict do nothing""", teams,
+                )
+                cur.executemany(
+                    """insert into analytics.fpl_event_observations values(
+                    %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) on conflict do nothing""", events,
+                )
+        return {"teams": len(teams), "events": len(events)}
+
     def load_fpl(self, artifact_id: str, season: str, observed_at: str,
                  boot: dict, fixtures: list, entry: dict, history: dict,
                  picks: dict | None) -> dict:
+        surface = self.load_fpl_surface(artifact_id, season, observed_at, boot)
         players = []
         for item in boot["elements"]:
             players.append((
@@ -194,8 +222,28 @@ class CollectorStore:
                         """insert into game.fpl_pick_observations values(
                         %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""", pick_rows,
                     )
-        return {"players": len(players), "fixtures": len(fixture_rows),
+        return {**surface,
+                "players": len(players), "fixtures": len(fixture_rows),
                 "history": len(current), "picks": len(pick_rows)}
+
+    def odds_context(self, *, now: datetime) -> tuple[dict | None, dict | None]:
+        """Cursor de cuota y primer deadline futuro del último snapshot FPL."""
+        with connect(self.config, autocommit=True) as con:
+            cursor = con.execute(
+                "select * from raw.source_cursors where source_name='market_odds'"
+            ).fetchone()
+            deadline = con.execute(
+                """
+                with latest as (
+                  select artifact_id from raw.source_artifacts
+                  where source_name='fpl_official' order by observed_at desc limit 1
+                )
+                select event_id,deadline_time from analytics.fpl_event_observations
+                where artifact_id=(select artifact_id from latest) and deadline_time>%s
+                order by deadline_time limit 1
+                """, (now,),
+            ).fetchone()
+        return cursor, deadline
 
     def load_odds(self, artifact_id: str, season: str, observed_at: str,
                   rows: list[dict]) -> dict:
@@ -328,6 +376,8 @@ class CollectorStore:
             ).fetchall()
             counts = con.execute(
                 """select
+                (select count(*) from analytics.fpl_team_observations) as fpl_teams,
+                (select count(*) from analytics.fpl_event_observations) as fpl_gameweeks,
                 (select count(*) from analytics.fpl_player_observations) as fpl_players,
                 (select count(*) from analytics.fpl_fixture_observations) as fpl_fixtures,
                 (select count(*) from analytics.match_odds_observations) as legacy_odds_matches,
@@ -356,6 +406,94 @@ class CollectorStore:
             health = "degraded"
         return {"schema": "mova-data-service-status-v1", "status": health,
                 "sources": sources, "counts": counts, "latest_runs": latest_runs}
+
+    def coverage(self) -> dict:
+        """Prueba cerrada sobre el último snapshot de cada fuente y su cruce."""
+        with connect(self.config, autocommit=True) as con:
+            row = con.execute(
+                """
+                with latest_fpl as (
+                  select artifact_id from raw.source_artifacts where source_name='fpl_official'
+                  order by observed_at desc limit 1
+                ), latest_schedule as (
+                  select artifact_id from raw.source_artifacts
+                  where source_name='whoscored_schedule' order by observed_at desc limit 1
+                ), latest_odds as (
+                  select artifact_id from raw.source_artifacts where source_name='market_odds'
+                  order by observed_at desc limit 1
+                ), completed as (
+                  select ws_match_id from analytics.whoscored_schedule_observations
+                  where artifact_id=(select artifact_id from latest_schedule) and status='6'
+                )
+                select
+                  (select count(*) from analytics.fpl_team_observations
+                   where artifact_id=(select artifact_id from latest_fpl)) as fpl_teams,
+                  (select count(*) from analytics.fpl_event_observations
+                   where artifact_id=(select artifact_id from latest_fpl)) as fpl_gameweeks,
+                  (select count(*) from analytics.fpl_player_observations
+                   where artifact_id=(select artifact_id from latest_fpl)) as fpl_players,
+                  (select count(*) from analytics.fpl_fixture_observations
+                   where artifact_id=(select artifact_id from latest_fpl)) as fpl_fixtures,
+                  (select count(*) from analytics.whoscored_schedule_observations
+                   where artifact_id=(select artifact_id from latest_schedule)) as schedule_matches,
+                  (select count(*) from completed) as completed_matches,
+                  (select count(*) from completed c left join analytics.whoscored_matches m
+                   on m.ws_match_id=c.ws_match_id where m.ws_match_id is null) as missing_events,
+                  (select count(*) from analytics.whoscored_matches
+                   where season=%s and event_count not between 1000 and 2500) as invalid_event_matches,
+                  (select count(distinct provider_event_id)
+                   from analytics.market_odds_observations
+                   where artifact_id=(select artifact_id from latest_odds)) as odds_events,
+                  (select count(distinct provider_event_id)
+                   from analytics.market_odds_observations
+                   where artifact_id=(select artifact_id from latest_odds)
+                     and market_key='h2h') as odds_h2h_events,
+                  (select count(distinct provider_event_id)
+                   from analytics.market_odds_observations
+                   where artifact_id=(select artifact_id from latest_odds)
+                     and market_key='totals') as odds_totals_events,
+                  (select count(distinct bookmaker_key)
+                   from analytics.market_odds_observations
+                   where artifact_id=(select artifact_id from latest_odds)) as odds_bookmakers,
+                  (select count(*) from raw.quality_checks q join raw.ingestion_runs r
+                   on r.run_id=q.run_id where not q.passed and r.started_at > now()-interval '7 days')
+                    as failed_quality_checks
+                """, (self.config.season,),
+            ).fetchone()
+        specs = [
+            ("fpl_teams", row["fpl_teams"] == 20, 20),
+            ("fpl_gameweeks", row["fpl_gameweeks"] == 38, 38),
+            ("fpl_players", 500 <= row["fpl_players"] <= 800, "500..800"),
+            ("fpl_fixtures", row["fpl_fixtures"] == 380, 380),
+            ("whoscored_schedule", row["schedule_matches"] == 380, 380),
+            ("completed_event_coverage", row["missing_events"] == 0, 0),
+            ("event_volume_contract", row["invalid_event_matches"] == 0, 0),
+            ("odds_present", row["odds_events"] > 0, ">0"),
+            ("odds_h2h_coverage", row["odds_h2h_events"] == row["odds_events"],
+             row["odds_events"]),
+            ("odds_totals_coverage", row["odds_totals_events"] == row["odds_events"],
+             row["odds_events"]),
+            ("odds_bookmakers", row["odds_bookmakers"] >= 5, ">=5"),
+            ("quality_checks", row["failed_quality_checks"] == 0, 0),
+        ]
+        observed_keys = {
+            "whoscored_schedule": "schedule_matches",
+            "completed_event_coverage": "missing_events",
+            "event_volume_contract": "invalid_event_matches",
+            "odds_present": "odds_events",
+            "odds_h2h_coverage": "odds_h2h_events",
+            "odds_totals_coverage": "odds_totals_events",
+            "quality_checks": "failed_quality_checks",
+        }
+        checks = [{"name": name, "passed": passed, "expected": expected,
+                   "observed": row.get(observed_keys.get(name, name))}
+                  for name, passed, expected in specs]
+        return {
+            "schema": "mova-data-service-coverage-v1",
+            "status": "complete" if all(item["passed"] for item in checks) else "incomplete",
+            "checked_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "summary": dict(row), "checks": checks,
+        }
 
     def prometheus(self) -> str:
         return prometheus(self.status())
@@ -391,6 +529,12 @@ def prometheus(state: dict) -> str:
                      f'{int(row["age_seconds"] or 0)}')
         lines.append(f'mova_data_source_consecutive_failures{{source="{name}"}} '
                      f'{int(row["consecutive_failures"] or 0)}')
+        if row["source_name"] == "market_odds":
+            quota = ((row.get("detail") or {}).get("quality") or {}).get("quota") or {}
+            if quota.get("remaining") is not None:
+                lines.append(f'mova_data_odds_quota_remaining {int(quota["remaining"])}')
+            if quota.get("used") is not None:
+                lines.append(f'mova_data_odds_quota_used {int(quota["used"])}')
     for key, value in state["counts"].items():
         metric = str(key).replace("-", "_")
         lines.append(f"mova_data_rows{{dataset=\"{metric}\"}} {int(value or 0)}")
