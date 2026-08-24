@@ -424,6 +424,21 @@ class CollectorStore:
                 ), completed as (
                   select ws_match_id from analytics.whoscored_schedule_observations
                   where artifact_id=(select artifact_id from latest_schedule) and status='6'
+                ), next_event as (
+                  select event_id from analytics.fpl_event_observations
+                  where artifact_id=(select artifact_id from latest_fpl)
+                    and deadline_time>now() order by deadline_time limit 1
+                ), next_fixture_slots as (
+                  select kickoff_time,count(*) as fixtures
+                  from analytics.fpl_fixture_observations
+                  where artifact_id=(select artifact_id from latest_fpl)
+                    and event=(select event_id from next_event)
+                  group by kickoff_time
+                ), odds_slots as (
+                  select commence_time,count(distinct provider_event_id) as events
+                  from analytics.market_odds_observations
+                  where artifact_id=(select artifact_id from latest_odds)
+                  group by commence_time
                 )
                 select
                   (select count(*) from analytics.fpl_team_observations
@@ -455,6 +470,11 @@ class CollectorStore:
                   (select count(distinct bookmaker_key)
                    from analytics.market_odds_observations
                    where artifact_id=(select artifact_id from latest_odds)) as odds_bookmakers,
+                  (select coalesce(sum(fixtures),0) from next_fixture_slots)
+                    as next_gw_fixtures,
+                  (select coalesce(sum(least(f.fixtures,coalesce(o.events,0))),0)
+                   from next_fixture_slots f left join odds_slots o
+                   on o.commence_time=f.kickoff_time) as next_gw_odds_covered,
                   (select count(*) from raw.quality_checks q join raw.ingestion_runs r
                    on r.run_id=q.run_id where not q.passed and r.started_at > now()-interval '7 days')
                     as failed_quality_checks
@@ -474,6 +494,9 @@ class CollectorStore:
             ("odds_totals_coverage", row["odds_totals_events"] == row["odds_events"],
              row["odds_events"]),
             ("odds_bookmakers", row["odds_bookmakers"] >= 5, ">=5"),
+            ("next_gw_odds_coverage",
+             row["next_gw_odds_covered"] == row["next_gw_fixtures"],
+             row["next_gw_fixtures"]),
             ("quality_checks", row["failed_quality_checks"] == 0, 0),
         ]
         observed_keys = {
@@ -483,6 +506,7 @@ class CollectorStore:
             "odds_present": "odds_events",
             "odds_h2h_coverage": "odds_h2h_events",
             "odds_totals_coverage": "odds_totals_events",
+            "next_gw_odds_coverage": "next_gw_odds_covered",
             "quality_checks": "failed_quality_checks",
         }
         checks = [{"name": name, "passed": passed, "expected": expected,
