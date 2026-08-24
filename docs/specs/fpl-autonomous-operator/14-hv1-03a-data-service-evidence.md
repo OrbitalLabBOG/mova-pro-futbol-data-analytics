@@ -2,7 +2,7 @@
 type: evidence
 name: "HV1-03a — Servicio autónomo de datos"
 created: 2026-08-23
-updated: 2026-08-23
+updated: 2026-08-24
 tags: [mova, fpl, hv1-03, collector, data-quality, whoscored, odds]
 status: deployed-shadow
 ---
@@ -23,10 +23,10 @@ scorecard reproducibles.
 
 | Campo | Valor |
 | --- | --- |
-| Revisión desplegada | `52acb403dd4f9c16da0e90b1ae6012d57ad75d21` |
-| Imagen | `mova-fpl-engine:52acb40` |
-| Migración | PostgreSQL `003` |
-| Pull requests | `#9` data service, `#10` backoff, `#11` cache de build, `#13` odds live |
+| Revisión desplegada | `main` de los PR `#15`–`#17`; el SHA exacto lo verifica `deployment_revision` |
+| Imagen | `mova-fpl-engine:<deployment_revision>`; tag y checkout deben coincidir |
+| Migración | PostgreSQL `004` |
+| Pull requests | `#9`–`#11` base, `#13` odds live, `#15` planner/cobertura, `#16` snapshot API, `#17` certificación |
 | Runtime | `/opt/orbital/services/mova-fpl` |
 | Estado | `healthy`: cuatro fuentes activas y sin warnings |
 
@@ -37,6 +37,7 @@ scorecard reproducibles.
 - runs, quality checks, filas normalizadas, jobs, steps, incidentes y outbox en PostgreSQL;
 - CLI `mova collect`, `mova data status|coverage` y replay forzado auditable;
 - `/api/v1/data`, health derivado y métricas Prometheus `mova_data_*`;
+- `/api/v1/data/coverage` servido por snapshot read-only sin entregar el secreto PostgreSQL al API;
 - timer systemd cada 15 minutos con cadencias por fuente;
 - fallos aislados: una fuente degradada no bloquea las demás;
 - logs JSON correlacionados en journald sin payloads ni secretos;
@@ -61,6 +62,8 @@ El adapter live de `football-data.co.uk` fue retirado sin borrar su evidencia. T
 conserva cada bookmaker, mercado, outcome y línea en
 `analytics.market_odds_observations`: 1.905 filas `h2h` de 43 casas y 490 de totales de 20 casas.
 La primera consulta costó 4 créditos; el saldo observado quedó en 492 de 500.
+El planner posterior no consumió cuota: detectó GW2 (`2026-08-28T17:30:00Z`) a 109,69 h,
+seleccionó `baseline`, región `uk`, costo futuro 2 y devolvió `adaptive_cadence`.
 
 ## Autonomía y observabilidad
 
@@ -71,30 +74,30 @@ La primera consulta costó 4 créditos; el saldo observado quedó en 492 de 500.
 | Cadencia schedule / events | 24 h / 30 min |
 | Batch de eventos | máximo 10 partidos por corrida; backlog reanudable |
 | Cuota odds | 2 créditos normales, 4 en un checkpoint pre-deadline; ~110–120/mes, reservas 150/75 |
-| API | `/healthz`, `/api/v1/data` y `/metrics` responden `200` |
+| API | `/healthz`, `/api/v1/data`, `/api/v1/data/coverage` y `/metrics` responden `200` |
 | Doctor | 20 PASS, 0 WARN, 0 FAIL, 0 required failures |
-| Repositorio VPS | limpio en `52acb40` |
+| Repositorio VPS | limpio y `deployment_revision` confirma checkout = imagen |
 | Contenedor API | running y healthy |
 | Disco | 37 GiB libres, 62 % usado |
 
-La corrida natural de las 01:45 UTC evaluó las cuatro fuentes y terminó en `completed`:
-todas fueron `skipped/cadence_not_due`. Esto prueba que el timer observa frecuentemente sin
-repetir descargas ni martillar una fuente fallida.
+Corridas naturales entre 02:45 y 03:45 UTC evaluaron las cuatro fuentes y terminaron en
+`completed`; descargaron eventos solo al vencer su cursor y omitieron las demás por cadencia.
+Esto prueba que el timer observa frecuentemente sin repetir descargas ni martillar una fuente.
 
 ## Verificación y recuperación
 
 | Check | Resultado |
 | --- | --- |
-| Suite hermética final | `733 passed, 1 skipped, 79 deselected` |
+| Suite hermética final | `743 passed, 1 skipped, 79 deselected` antes de la certificación live |
 | CI | verde en los tres pull requests del corte |
 | Compose | configuración válida |
 | Dedupe FPL | segunda carga idéntica insertó 0 filas nuevas |
 | Integración PostgreSQL | FPL, odds fixture, schedule y 1.000 eventos cargados y consultados |
 | Backup SQLite | `/opt/orbital/backups/mova-fpl/20260824T012817Z` |
-| Backup PostgreSQL pre-migración | `/opt/orbital/backups/mova-fpl/postgres/20260824T030047Z` |
+| Backup PostgreSQL pre-migración `004` | `/opt/orbital/backups/mova-fpl/postgres/20260824T034752Z` |
 | Restore drill | dump restaurado y verificado en base temporal; base eliminada al finalizar |
 
-Las migraciones `002` y `003` son aditivas. El rollback consiste en detener el timer, volver a la imagen
+Las migraciones `002`–`004` son aditivas. El rollback consiste en detener el timer, volver a la imagen
 anterior y conservar tanto las tablas como los artefactos capturados para auditoría.
 
 ## Gates conservados
