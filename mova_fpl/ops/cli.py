@@ -99,11 +99,13 @@ def main(argv: list[str] | None = None) -> int:
         return 1 if payload.get("status") in {"fail", "failed", "degraded"} else 0
 
     if args.command == "data":
-        from mova_fpl.ops.collector.store import CollectorStore
+        from mova_fpl.ops.collector.store import CollectorStore, publish_coverage
 
         config.validate_postgres()
         store = CollectorStore(config)
         payload = (store.coverage() if args.data_command == "coverage" else store.status())
+        if args.data_command == "coverage":
+            publish_coverage(config, payload)
         print(json.dumps(payload, ensure_ascii=False, default=str))
         return 2 if payload.get("status") in {"degraded", "incomplete"} else 0
 

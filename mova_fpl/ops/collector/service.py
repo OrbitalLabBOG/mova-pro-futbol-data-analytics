@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 
 from mova_fpl.ops.collector import fpl, odds, whoscored
 from mova_fpl.ops.collector.odds_policy import plan_collection
-from mova_fpl.ops.collector.store import CollectorStore, publish_status
+from mova_fpl.ops.collector.store import CollectorStore, publish_coverage, publish_status
 from mova_fpl.ops.db import new_id, sha256_json
 from mova_fpl.ops.harness import Harness
 from mova_fpl.ops.tick import exclusive_lock
@@ -173,4 +173,5 @@ class CollectorService:
         snapshot["generated_at"] = now.isoformat(timespec="milliseconds")
         snapshot["last_collection"] = result
         publish_status(self.config, snapshot)
+        publish_coverage(self.config, self.store.coverage())
         return result

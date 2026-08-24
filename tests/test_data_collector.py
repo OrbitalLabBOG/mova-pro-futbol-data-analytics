@@ -19,7 +19,7 @@ from mova_fpl.ops.collector.whoscored import (
     validate_schedule,
 )
 from mova_fpl.ops.config import RuntimeConfig
-from mova_fpl.ops.collector.store import cursor_is_due
+from mova_fpl.ops.collector.store import cursor_is_due, publish_coverage, read_coverage
 from mova_fpl.postgres.store import MIGRATIONS, latest_version
 
 
@@ -271,6 +271,13 @@ def test_data_artifacts_never_contain_secrets_in_contract():
     assert "cookie" not in migration
     assert "password" not in migration
     assert "authorization" not in migration
+
+
+def test_coverage_snapshot_is_available_to_unprivileged_api(tmp_path: Path):
+    config = RuntimeConfig(collector_root=tmp_path / "collector")
+    payload = {"schema": "mova-data-service-coverage-v1", "status": "complete"}
+    publish_coverage(config, payload)
+    assert read_coverage(config) == payload
 
 
 def test_release_sha_does_not_invalidate_engine_dependency_layers():
