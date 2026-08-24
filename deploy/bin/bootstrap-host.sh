@@ -27,5 +27,11 @@ if [[ ! -e /etc/mova-fpl/postgres-password ]]; then
 fi
 chown root:10001 /etc/mova-fpl/postgres-password
 chmod 0640 /etc/mova-fpl/postgres-password
+if [[ -e /etc/mova-fpl/odds-api-key ]]; then
+  chown root:10001 /etc/mova-fpl/odds-api-key
+  chmod 0640 /etc/mova-fpl/odds-api-key
+else
+  echo "warning: /etc/mova-fpl/odds-api-key is absent; market_odds will remain degraded"
+fi
 
 echo "host directories ready; existing runtime.env/deploy.env were preserved"

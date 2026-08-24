@@ -18,7 +18,7 @@ fallo no impide que las demás fuentes avancen.
 | Adapter | Contenido | Cadencia normal | Gate principal |
 | --- | --- | ---: | --- |
 | `fpl_official` | bootstrap, 380 fixtures, perfil/historia del team id y últimos picks públicos | 6 h | 20 clubes, 38 GWs, 500–800 jugadores, 380 fixtures |
-| `football_data_odds` | resultados, stats, odds de apertura/cierre disponibles | 6 h | CSV, columnas mínimas, 1–380 partidos y odds presentes |
+| `market_odds` | próximas fechas EPL, `h2h` y totales por bookmaker | 8 h | 1–380 eventos, ≥5 casas, cobertura `h2h=1`, totales y cuota observable |
 | `whoscored_schedule` | 380 IDs y estado de partidos | 24 h | 380 IDs únicos |
 | `whoscored_events` | evento a evento de partidos finalizados | 30 min | status 6, 1.000–2.500 eventos, par `(id,eventId)` único |
 
@@ -26,10 +26,16 @@ El batch WhoScored está limitado a 10 partidos por corrida. El siguiente tick c
 backlog. Reutilizar `id` dentro de un partido es válido si `eventId` es distinto; la clave en
 PostgreSQL es `(ws_match_id, ws_event_id, event_id)`.
 
-`football-data.co.uk` puede publicar la división `E0` después de iniciada la temporada. HTTP
-300/404, HTML en vez de CSV o ausencia de odds dejan esa fuente en `failed/degraded`, conservan
-la última captura válida y abren un solo incidente activo. Nunca se convierte HTML en cero filas
-ni se presenta cobertura inexistente como saludable.
+`market_odds` usa The Odds API en plan gratuito. Una consulta normal solicita dos regiones
+(`uk,eu`) y dos mercados (`h2h,totals`): cuesta 4 créditos. La cadencia de 8 horas consume como
+máximo unos 372 créditos en un mes de 31 días y deja margen para replay; el runtime bloquea una
+configuración que supere 4 créditos por consulta. Los headers `used`, `remaining` y `last_cost`
+quedan en calidad y métricas. El histórico gratuito se construye desde nuestros snapshots; el
+endpoint histórico comercial del proveedor no forma parte de este contrato.
+
+El adapter anterior de `football-data.co.uk` queda como histórico legado. Sus filas, si existen,
+permanecen en `analytics.match_odds_observations`, pero ya no es una fuente live ni mantiene un
+cursor de salud.
 
 ## Operación
 
@@ -69,11 +75,15 @@ PostgreSQL conserva:
   `analytics.fpl_fixture_observations`;
 - perfil/historia/picks públicos en `game.fpl_entry_observations` y
   `game.fpl_pick_observations`;
-- odds en `analytics.match_odds_observations`;
+- snapshots completos de mercado en `analytics.market_odds_observations`; el CSV legado queda
+  en `analytics.match_odds_observations`;
 - calendario, partidos y eventos en `analytics.whoscored_*`;
 - salud derivada en `ops.v_data_source_health`.
 
-Los logs no contienen payloads: registran tamaños, hashes, filas, duración, job, step y
+La clave de The Odds API vive en `/etc/mova-fpl/odds-api-key` (`root:10001`, `0640`) y Docker
+la monta solamente en el worker como `/run/secrets/odds_api_key`. No vive en `runtime.env`, Git,
+manifests ni PostgreSQL. Los logs no contienen payloads: registran tamaños, hashes, filas,
+duración, job, step y
 correlation id. Los JSON completos se consultan por artifact ref. Cookies, credenciales, HTML
 autenticado y secretos no entran en esta capa.
 
@@ -98,8 +108,9 @@ El engine instala Chromium y Playwright. El collector consulta directamente `wsC
 endpoints mensuales de WhoScored desde un Chromium headless efímero, sin Selenium, Xvfb ni
 `soccerdata`. No monta el perfil autenticado; el browser persistente de FPL continúa aislado.
 
-Antes del deploy: backup/restore drill vigente, tests, `docker compose config`, migración
-PostgreSQL 002 y una corrida forzada por fuente. Para rollback, deshabilitar el timer, volver al
-checkout/imagen anterior y conservar la migración 002: es aditiva y no altera el path de decisión.
+Antes del deploy: backup/restore drill vigente, tests, `docker compose config`, migraciones
+PostgreSQL hasta `003` y una corrida forzada por fuente. Para rollback, deshabilitar el timer,
+volver al checkout/imagen anterior y conservar las migraciones: son aditivas y no alteran el path
+de decisión.
 Los dumps diarios de PostgreSQL incluyen filas normalizadas; los artefactos raw permanecen en el
 volumen del VPS.

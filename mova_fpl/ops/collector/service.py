@@ -84,7 +84,7 @@ class CollectorService:
                 "events": self.config.collector_events_cadence_seconds,
             }[name]
             source_name = {
-                "fpl": "fpl_official", "odds": "football_data_odds",
+                "fpl": "fpl_official", "odds": "market_odds",
                 "schedule": "whoscored_schedule", "events": "whoscored_events",
             }[name]
             due, cursor = self.store.is_due(source_name, cadence, now=now, force=force)
@@ -101,7 +101,7 @@ class CollectorService:
                         self.config, self.store, run_id, now=now
                     ))
                 elif name == "odds":
-                    output = harness.call("collect_football_data_odds", lambda: odds.collect(
+                    output = harness.call("collect_market_odds", lambda: odds.collect(
                         self.config, self.store, run_id, now=now
                     ))
                 elif name == "schedule":
@@ -122,6 +122,11 @@ class CollectorService:
                     self.db.resolve_incidents(
                         incident_title, resolution=f"fuente recuperada en {run_id}"
                     )
+                    if source_name == "market_odds":
+                        self.db.resolve_incidents(
+                            "Collector football_data_odds degradado",
+                            resolution=f"adapter sustituido por market_odds en {run_id}",
+                        )
                 elif output.status == "degraded":
                     self.db.open_incident_once(
                         "P2", incident_title, correlation_id=correlation_id, job_id=job_id,

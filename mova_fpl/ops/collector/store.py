@@ -19,6 +19,10 @@ def _id(prefix: str) -> str:
 def _number(value, cast=float):
     if value in (None, ""):
         return None
+    try:
+        return cast(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def cursor_is_due(row: dict | None, cadence_seconds: int, *, now: datetime,
@@ -33,10 +37,6 @@ def cursor_is_due(row: dict | None, cadence_seconds: int, *, now: datetime,
     if observed.tzinfo is None:
         observed = observed.replace(tzinfo=timezone.utc)
     return (now - observed).total_seconds() >= cadence_seconds
-    try:
-        return cast(value)
-    except (TypeError, ValueError):
-        return None
 
 
 class CollectorStore:
@@ -223,6 +223,27 @@ class CollectorStore:
                 )
         return {"matches": len(values)}
 
+    def load_market_odds(self, artifact_id: str, season: str, observed_at: str,
+                         rows: list[dict]) -> dict:
+        values = [(
+            artifact_id, row["observation_key"], "the_odds_api",
+            row["provider_event_id"], season, observed_at, row["sport_key"],
+            row["commence_time"], row["home_team"], row["away_team"],
+            row["bookmaker_key"], row["bookmaker_title"],
+            row.get("bookmaker_last_update"), row["market_key"],
+            row.get("market_last_update"), row["outcome_name"],
+            row.get("outcome_description"), row["price"], row.get("point"), Jsonb(row),
+        ) for row in rows]
+        with connect(self.config) as con:
+            with con.cursor() as cur:
+                cur.executemany(
+                    """insert into analytics.market_odds_observations values(
+                    %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                    values,
+                )
+        return {"events": len({row["provider_event_id"] for row in rows}),
+                "market_rows": len(values)}
+
     def load_schedule(self, artifact_id: str, season: str, observed_at: str,
                       rows: list[dict]) -> dict:
         values = []
@@ -303,7 +324,10 @@ class CollectorStore:
                 """select
                 (select count(*) from analytics.fpl_player_observations) as fpl_players,
                 (select count(*) from analytics.fpl_fixture_observations) as fpl_fixtures,
-                (select count(*) from analytics.match_odds_observations) as odds_matches,
+                (select count(*) from analytics.match_odds_observations) as legacy_odds_matches,
+                (select count(distinct provider_event_id)
+                   from analytics.market_odds_observations) as odds_events,
+                (select count(*) from analytics.market_odds_observations) as odds_market_rows,
                 (select count(*) from analytics.whoscored_matches) as event_matches,
                 (select count(*) from analytics.whoscored_events) as events"""
             ).fetchone()
@@ -314,7 +338,7 @@ class CollectorStore:
             ).fetchall()
         expected = {
             "fpl_official": self.config.collector_fpl_cadence_seconds,
-            "football_data_odds": self.config.collector_odds_cadence_seconds,
+            "market_odds": self.config.collector_odds_cadence_seconds,
             "whoscored_schedule": self.config.collector_schedule_cadence_seconds,
             "whoscored_events": self.config.collector_events_cadence_seconds,
         }

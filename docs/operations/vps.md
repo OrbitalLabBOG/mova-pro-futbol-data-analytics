@@ -119,6 +119,12 @@ optimización.
 calendario y eventos. La operación, tablas, calidad y recuperación están en
 [servicio autónomo de datos](data-service.md).
 
+La credencial de odds no pertenece a `runtime.env`. Se instala como
+`/etc/mova-fpl/odds-api-key`, propietario `root`, grupo del worker `10001`, modo `0640`, y Compose
+la monta como secreto únicamente en jobs. La configuración canónica usa
+`MOVA_ODDS_API_CREDENTIAL_FILE=/run/secrets/odds_api_key`; nunca imprimir la clave para
+diagnosticarla. La salud y el saldo se verifican con `mova data status` o `/metrics`.
+
 `--force` omite únicamente el control de cadencia: no evita el lock, los resource gates,
 la validación ni el modo shadow. Exige actor, razón y una clave idempotente explícitos.
 
