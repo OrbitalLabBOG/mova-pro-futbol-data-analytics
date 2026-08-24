@@ -96,6 +96,7 @@ class CollectorService:
                 )
                 due = odds_plan.due
                 cadence = odds_plan.cadence_seconds
+                self.store.set_cadence(source_name, cadence)
             else:
                 due, cursor = self.store.is_due(
                     source_name, cadence, now=now, force=force
