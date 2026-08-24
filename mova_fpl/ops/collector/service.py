@@ -6,6 +6,7 @@ import hashlib
 from datetime import datetime, timezone
 
 from mova_fpl.ops.collector import fpl, odds, whoscored
+from mova_fpl.ops.collector.odds_policy import plan_collection
 from mova_fpl.ops.collector.store import CollectorStore, publish_status
 from mova_fpl.ops.db import new_id, sha256_json
 from mova_fpl.ops.harness import Harness
@@ -87,12 +88,25 @@ class CollectorService:
                 "fpl": "fpl_official", "odds": "market_odds",
                 "schedule": "whoscored_schedule", "events": "whoscored_events",
             }[name]
-            due, cursor = self.store.is_due(source_name, cadence, now=now, force=force)
+            odds_plan = None
+            if name == "odds":
+                cursor, deadline = self.store.odds_context(now=now)
+                odds_plan = plan_collection(
+                    self.config, now=now, deadline=deadline, cursor=cursor, force=force
+                )
+                due = odds_plan.due
+                cadence = odds_plan.cadence_seconds
+            else:
+                due, cursor = self.store.is_due(
+                    source_name, cadence, now=now, force=force
+                )
             if not due:
                 results.append({"source": source_name, "status": "skipped",
-                                "reason": "cadence_not_due",
+                                "reason": (odds_plan.reason if odds_plan
+                                           else "cadence_not_due"),
                                 "last_success_at": str(cursor.get("last_success_at"))
-                                if cursor else None, "cadence_seconds": cadence})
+                                if cursor else None, "cadence_seconds": cadence,
+                                **({"policy": odds_plan.as_dict()} if odds_plan else {})})
                 continue
             run_id = self.store.start(source_name, job_id)
             try:
@@ -102,7 +116,7 @@ class CollectorService:
                     ))
                 elif name == "odds":
                     output = harness.call("collect_market_odds", lambda: odds.collect(
-                        self.config, self.store, run_id, now=now
+                        self.config, self.store, run_id, plan=odds_plan, now=now
                     ))
                 elif name == "schedule":
                     output = harness.call("collect_whoscored_schedule", lambda: (

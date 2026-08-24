@@ -102,9 +102,10 @@ def main(argv: list[str] | None = None) -> int:
         from mova_fpl.ops.collector.store import CollectorStore
 
         config.validate_postgres()
-        payload = CollectorStore(config).status()
+        store = CollectorStore(config)
+        payload = (store.coverage() if args.data_command == "coverage" else store.status())
         print(json.dumps(payload, ensure_ascii=False, default=str))
-        return 2 if payload.get("status") == "degraded" else 0
+        return 2 if payload.get("status") in {"degraded", "incomplete"} else 0
 
     db = OpsDB(config.ops_db, minimum_version=config.sqlite_min_version)
     if args.command == "migrate":

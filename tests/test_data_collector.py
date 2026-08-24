@@ -11,6 +11,7 @@ from mova_fpl.data import sources
 from mova_fpl.ops.cli import parser
 from mova_fpl.ops.collector.fpl import validate_bundle
 from mova_fpl.ops.collector.odds import parse_payload
+from mova_fpl.ops.collector.odds_policy import plan_collection
 from mova_fpl.ops.collector.whoscored import (
     calendar_months,
     normalize_schedule_rows,
@@ -197,12 +198,67 @@ def test_failed_source_respects_cadence_from_last_attempt():
     assert cursor_is_due(failed, 6 * 3600, now=now, force=True) is True
 
 
+def test_odds_policy_spends_two_credits_far_from_deadline():
+    now = datetime(2026, 8, 24, tzinfo=timezone.utc)
+    plan = plan_collection(
+        RuntimeConfig(), now=now,
+        deadline={"event_id": 2, "deadline_time": now + timedelta(days=5)},
+        cursor=None,
+    )
+    assert plan.due is True
+    assert plan.tier == "baseline"
+    assert plan.regions == "uk"
+    assert plan.planned_cost == 2
+    assert plan.cadence_seconds == 24 * 3600
+
+
+def test_odds_policy_takes_one_full_checkpoint_and_preserves_reserves():
+    now = datetime(2026, 8, 24, tzinfo=timezone.utc)
+    deadline = {"event_id": 2, "deadline_time": now + timedelta(hours=5)}
+    initial = plan_collection(RuntimeConfig(), now=now, deadline=deadline, cursor=None)
+    assert initial.due is True
+    assert initial.tier == "deadline"
+    assert initial.regions == "uk,eu"
+    assert initial.planned_cost == 4
+
+    cursor = {
+        "last_status": "completed", "last_success_at": now - timedelta(days=1),
+        "detail": {"quality": {"quota": {"remaining": 492},
+                               "policy": initial.as_dict()}},
+    }
+    duplicate = plan_collection(RuntimeConfig(), now=now, deadline=deadline, cursor=cursor)
+    assert duplicate.due is False
+    assert duplicate.reason == "deadline_checkpoint_already_collected"
+
+    low = {"last_status": "completed", "last_success_at": now - timedelta(days=2),
+           "detail": {"quality": {"quota": {"remaining": 74}}}}
+    guarded = plan_collection(
+        RuntimeConfig(), now=now,
+        deadline={"event_id": 3, "deadline_time": now + timedelta(hours=2)}, cursor=low,
+    )
+    assert guarded.due is False
+    assert guarded.reason == "hard_reserve_final_hour_only"
+
+
+def test_odds_policy_force_never_bypasses_quota_guard():
+    now = datetime(2026, 8, 24, tzinfo=timezone.utc)
+    cursor = {"detail": {"quality": {"quota": {"remaining": 1}}}}
+    plan = plan_collection(
+        RuntimeConfig(), now=now,
+        deadline={"event_id": 2, "deadline_time": now + timedelta(minutes=30)},
+        cursor=cursor, force=True,
+    )
+    assert plan.due is False
+    assert plan.reason == "insufficient_provider_quota"
+
+
 def test_postgres_data_service_migration_has_queryable_contract():
-    assert latest_version() == 3
+    assert latest_version() == 4
     sql = "\n".join(path.read_text().lower() for path in sorted(MIGRATIONS.glob("*.sql")))
     for table in (
         "raw.ingestion_runs", "raw.source_cursors", "raw.source_artifacts",
         "analytics.fpl_player_observations", "analytics.fpl_fixture_observations",
+        "analytics.fpl_team_observations", "analytics.fpl_event_observations",
         "analytics.match_odds_observations", "analytics.whoscored_matches",
         "analytics.market_odds_observations", "analytics.whoscored_events",
         "ops.v_data_source_health",

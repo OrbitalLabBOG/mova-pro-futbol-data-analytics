@@ -113,6 +113,13 @@ def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
                     self._send(HTTPStatus.OK, _json_bytes(payload),
                                "application/json; charset=utf-8")
                     return
+                if parsed.path == "/api/v1/data/coverage":
+                    from mova_fpl.ops.collector.store import CollectorStore
+                    payload = CollectorStore(runtime).coverage()
+                    self._send(HTTPStatus.OK if payload["status"] == "complete"
+                               else HTTPStatus.SERVICE_UNAVAILABLE,
+                               _json_bytes(payload), "application/json; charset=utf-8")
+                    return
                 routes = {
                     "/api/v1/status": None,
                     "/api/v1/jobs": "job_runs",
