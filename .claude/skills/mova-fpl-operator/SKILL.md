@@ -23,6 +23,8 @@ consulta ordinaria: `mova` y `/api/v1/status` son el contrato estable.
 4. Lee [docs/operations/operator.md](../../../docs/operations/operator.md) para interpretar
    el contrato y [docs/operations/vps.md](../../../docs/operations/vps.md) solo si hay que
    desplegar, revisar systemd, backups o browser.
+5. Para recolectar, revisar cobertura o diagnosticar FPL/odds/WhoScored, lee
+   [docs/operations/data-service.md](../../../docs/operations/data-service.md).
 
 `status` no prueba red ni muta estado. `doctor` hace checks acotados y un único GET público a
 FPL; usa `--no-network` cuando la ejecución deba ser hermética. Un `FAIL` requerido devuelve
@@ -54,6 +56,9 @@ pendiente o `browser_writes=false`, limita el browser a login y lecturas.
 ## Diagnóstico por síntoma
 
 - `scheduler_heartbeat FAIL`: revisar timer, service y journald antes de lanzar otro tick.
+- `autonomous_data_service FAIL/WARN`: ejecutar `mova data status`; aislar
+  `fpl_official`, `football_data_odds`, `whoscored_schedule` o `whoscored_events` y revisar su
+  último run. No fuerces `all` cuando basta reintentar una fuente.
 - `private_team_state WARN`: refrescar por el collector autenticado; no sustituirlo por datos
   inventados ni tocar el perfil.
 - `canonical_database`, `trace_database` o `model_artifacts FAIL`: bloquear una decisión basada
@@ -63,6 +68,11 @@ pendiente o `browser_writes=false`, limita el browser a login y lecturas.
 - `host_probe WARN`: usar el wrapper del host; no montar Docker socket o D-Bus dentro del engine.
 - API FPL `FAIL`: conservar la última evidencia, declarar la pérdida de frescura y no forzar una
   corrida que parezca vigente.
+
+`mova collect <fuente> --force` es una mutación del ledger y exige `--actor`, `--reason` e
+`--idempotency-key`. El collector sólo lee fuentes externas; no concede autoridad para clicks o
+escrituras en FPL. Código 2 significa corrida degradada y código 75 lock/cadencia conocida, no
+éxito pleno.
 
 Después de un cambio ejecuta la prueba cercana, `pytest -q`, smoke de Docker y nuevamente
 `mova doctor --json`. Actualiza Supabase solo con evidencia ya verificada.

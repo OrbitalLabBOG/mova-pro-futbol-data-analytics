@@ -1,3 +1,3 @@
 """Motor analítico y operativo de MOVA para Fantasy Premier League."""
 
-__version__ = "0.4.0"
+__version__ = "0.5.0"

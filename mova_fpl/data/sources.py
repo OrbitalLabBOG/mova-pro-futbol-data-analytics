@@ -17,6 +17,7 @@ VAASTAV = "https://raw.githubusercontent.com/vaastav/Fantasy-Premier-League/mast
 FPL_API = "https://fantasy.premierleague.com/api"
 FPL_BOOTSTRAP_URL = f"{FPL_API}/bootstrap-static/"
 FPL_FIXTURES_URL = f"{FPL_API}/fixtures/"
+FOOTBALL_DATA = "https://www.football-data.co.uk/mmz4281"
 
 USER_AGENT = "mova-fpl/0.1 (analytics; contacto: Orbital Lab)"
 TIMEOUT = 100
@@ -74,6 +75,19 @@ def fetch_bootstrap(*, timeout: int = TIMEOUT, retries: int = RETRIES) -> bytes:
 
 def fetch_fixtures() -> bytes:
     return _get(FPL_FIXTURES_URL)
+
+
+def football_data_url(season: str) -> str:
+    """URL canónica de Premier League para ``YYYY-YY``."""
+    start, end = season.split("-", 1)
+    if len(start) != 4 or len(end) != 2 or not (start + end).isdigit():
+        raise ValueError(f"temporada inválida: {season}")
+    return f"{FOOTBALL_DATA}/{start[2:]}{end}/E0.csv"
+
+
+def fetch_football_data_odds(season: str) -> bytes:
+    """Resultados y odds publicados por football-data.co.uk (solo GET)."""
+    return _get(football_data_url(season), timeout=45, retries=3)
 
 
 # ------------------------------------------------------- estado de un equipo

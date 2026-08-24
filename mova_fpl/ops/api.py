@@ -87,12 +87,31 @@ def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
                     self._send(HTTPStatus.OK, b'{"status":"ready"}', "application/json")
                     return
                 if parsed.path == "/metrics":
-                    self._send(HTTPStatus.OK, db.prometheus().encode(),
+                    metrics = db.prometheus()
+                    try:
+                        from mova_fpl.ops.collector.store import (
+                            CollectorStore, prometheus, read_status,
+                        )
+                        state = (CollectorStore(runtime).status()
+                                 if runtime.postgres_credential_file.is_file()
+                                 else read_status(runtime))
+                        metrics += prometheus(state)
+                    except Exception:  # data service puede no estar inicializado aún
+                        metrics += "mova_data_service_up 0\n"
+                    self._send(HTTPStatus.OK, metrics.encode(),
                                "text/plain; version=0.0.4; charset=utf-8")
                     return
                 if parsed.path in {"/", "/dashboard"}:
                     self._send(HTTPStatus.OK, _dashboard(build_status(runtime, db)),
                                "text/html; charset=utf-8")
+                    return
+                if parsed.path == "/api/v1/data":
+                    from mova_fpl.ops.collector.store import CollectorStore, read_status
+                    payload = (CollectorStore(runtime).status()
+                               if runtime.postgres_credential_file.is_file()
+                               else read_status(runtime))
+                    self._send(HTTPStatus.OK, _json_bytes(payload),
+                               "application/json; charset=utf-8")
                     return
                 routes = {
                     "/api/v1/status": None,

@@ -12,8 +12,8 @@ status: active
 ## Estado seguro por defecto
 
 El despliegue inicial corre en `shadow`, nivel `A0`, `compliance=pending`, con
-`MOVA_ENABLE_BROWSER_WRITES=0` y el `kill_switch=true` en `ops.db`. El collector usa solo
-GET públicos. Levantar el stack o habilitar timers **no autoriza cambios en el equipo FPL**.
+`MOVA_ENABLE_BROWSER_WRITES=0` y el `kill_switch=true` en `ops.db`. Los collectors usan GET o
+lectura browser pública. Levantar el stack o habilitar timers **no autoriza cambios en el equipo FPL**.
 
 Supabase no participa del runtime: la operación, evidencia, alertas y auditoría viven en el
 VPS. Supabase se reserva para seguimiento externo de construcción del proyecto.
@@ -27,6 +27,7 @@ VPS. Supabase se reserva para seguimiento externo de construcción del proyecto.
 | control plane | `/var/lib/mova-fpl/db/ops.db` |
 | PostgreSQL shadow | `/var/lib/mova-fpl/postgres/` (red Docker interna, sin puerto host) |
 | datos/modelos/traza | `/var/lib/mova-fpl/db/` y `/var/lib/mova-fpl/artifacts/` |
+| data service raw | `/var/lib/mova-fpl/artifacts/data-service/` |
 | perfil browser | `/var/lib/mova-fpl/browser-profile` (`0700`, sin backup general) |
 | backups | `/opt/orbital/backups/mova-fpl/<UTC>/` |
 | dashboard | `127.0.0.1:8787` del VPS |
@@ -79,6 +80,8 @@ Antes de activar el primer tick, colocar por canal seguro —no Git—:
 mova status
 mova status --json
 mova doctor --json
+mova data status
+mova collect all
 
 # Vista HTTP; abrir túnel ssh -L 8787:127.0.0.1:8787 root@72.60.245.2
 curl -s http://127.0.0.1:8787/api/v1/status | python -m json.tool
@@ -111,6 +114,10 @@ Los pasos `fetch_fpl_bootstrap_events` y `fetch_fpl_fixtures` separan las dos ll
 `/metrics` expone la duración total del último tick y la de cada paso de la última corrida que sí
 refrescó; esto evita atribuir a la API FPL el tiempo consumido posteriormente por proyección y
 optimización.
+
+`mova-fpl-collector.timer` evalúa cada 15 minutos cadencias separadas para FPL, odds,
+calendario y eventos. La operación, tablas, calidad y recuperación están en
+[servicio autónomo de datos](data-service.md).
 
 `--force` omite únicamente el control de cadencia: no evita el lock, los resource gates,
 la validación ni el modo shadow. Exige actor, razón y una clave idempotente explícitos.

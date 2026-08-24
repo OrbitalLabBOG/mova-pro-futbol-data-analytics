@@ -29,6 +29,17 @@ def parser() -> argparse.ArgumentParser:
     tick.add_argument("--idempotency-key")
     commands.add_parser("serve")
     commands.add_parser("check")
+    collect = commands.add_parser("collect", help="servicio autónomo de datos")
+    collect.add_argument("source", choices=("all", "fpl", "odds", "schedule", "events"),
+                         default="all", nargs="?")
+    collect.add_argument("--force", action="store_true")
+    collect.add_argument("--actor")
+    collect.add_argument("--reason")
+    collect.add_argument("--idempotency-key")
+    data = commands.add_parser("data", help="estado y cobertura del data plane")
+    data_commands = data.add_subparsers(dest="data_command", required=True)
+    data_commands.add_parser("status")
+    data_commands.add_parser("coverage")
     status = commands.add_parser("status", help="estado operativo consolidado")
     status.add_argument("--json", action="store_true", dest="as_json")
     doctor = commands.add_parser("doctor", help="diagnóstico verificable del runtime")
@@ -87,6 +98,14 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(payload, ensure_ascii=False, default=str))
         return 1 if payload.get("status") in {"fail", "failed", "degraded"} else 0
 
+    if args.command == "data":
+        from mova_fpl.ops.collector.store import CollectorStore
+
+        config.validate_postgres()
+        payload = CollectorStore(config).status()
+        print(json.dumps(payload, ensure_ascii=False, default=str))
+        return 2 if payload.get("status") == "degraded" else 0
+
     db = OpsDB(config.ops_db, minimum_version=config.sqlite_min_version)
     if args.command == "migrate":
         print(json.dumps({"applied": db.migrate(), "sqlite_version": db.sqlite_version}))
@@ -100,6 +119,23 @@ def main(argv: list[str] | None = None) -> int:
                 force=args.force, actor=args.actor or "mova-ops", reason=args.reason,
                 idempotency_key=args.idempotency_key,
             ), ensure_ascii=False, default=str))
+        except LockBusy as exc:
+            print(json.dumps({"status": "skipped", "reason": str(exc)}))
+            return 75
+    elif args.command == "collect":
+        from mova_fpl.ops.collector.service import CollectorService
+
+        if args.force and not all((args.actor, args.reason, args.idempotency_key)):
+            raise SystemExit(
+                "collect --force exige --actor, --reason y --idempotency-key"
+            )
+        try:
+            payload = CollectorService(config, db).run(
+                args.source, force=args.force, actor=args.actor or "mova-collector",
+                reason=args.reason, idempotency_key=args.idempotency_key,
+            )
+            print(json.dumps(payload, ensure_ascii=False, default=str))
+            return 2 if payload.get("status") == "degraded" else 0
         except LockBusy as exc:
             print(json.dumps({"status": "skipped", "reason": str(exc)}))
             return 75

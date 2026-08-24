@@ -18,5 +18,5 @@ fi
 ln -sfn "$repo_dir/deploy/bin/mova" /usr/local/bin/mova
 systemctl enable --now mova-fpl-stack.service
 systemctl enable --now mova-fpl-tick.timer mova-fpl-private-state.timer \
-  mova-fpl-backup.timer mova-fpl-watchdog.timer
+  mova-fpl-backup.timer mova-fpl-watchdog.timer mova-fpl-collector.timer
 systemctl list-timers --all 'mova-fpl-*' --no-pager
