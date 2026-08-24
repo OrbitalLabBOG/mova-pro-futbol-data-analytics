@@ -35,6 +35,10 @@ pytest -m slow -q
 mova status
 mova doctor
 
+# servicio autónomo: API FPL + odds + WhoScored
+mova collect all
+mova data status
+
 # collector público sellado
 python -m mova_fpl.cli.collect_live --season 2026-27 --gw 2
 
@@ -71,6 +75,7 @@ Documentos principales:
 - [Índice técnico](docs/README.md)
 - [Operar una jornada](docs/operations/gameweek.md)
 - [Contrato `mova` y diagnóstico](docs/operations/operator.md)
+- [Servicio autónomo de datos](docs/operations/data-service.md)
 - [Operar el VPS](docs/operations/vps.md)
 - [PostgreSQL shadow](docs/operations/postgres-shadow.md)
 - [Arquitectura del motor](docs/architecture/decision-engine.md)

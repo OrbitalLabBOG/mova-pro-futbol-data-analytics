@@ -9,7 +9,7 @@ status: active
 
 # Contrato del operador MOVA FPL
 
-HV1-01 expone el runtime mediante dos comandos de solo lectura. La salida JSON usa
+HV1-01 expone el runtime mediante comandos versionados. La salida JSON usa
 `schema=mova-fpl-operator-v1` y `schema_version=1.0`; los consumidores deben rechazar una major
 desconocida y tolerar campos adicionales dentro de la misma versión.
 
@@ -24,6 +24,8 @@ mova status --json
 mova doctor
 mova doctor --json
 mova doctor --json --no-network
+mova data status
+mova data coverage
 ```
 
 En desarrollo, `mova` es el console script de `pyproject.toml`. Allí `host.available=false` es
@@ -40,7 +42,7 @@ revisión desplegada, PostgreSQL shadow cuando está configurado, perfil browser
 | --- | --- |
 | `runtime` | temporada, team id, SHA, SQLite y controles efectivos |
 | `gameweek` | GW, deadline, segundos restantes y fase recalculada |
-| `data` | fuentes con edad/techo/calidad, team state, FTs, banco, chips y datasets |
+| `data` | fuentes, data service PostgreSQL, cobertura, team state, FTs, banco, chips y datasets |
 | `models` | releases registrados, versión, estado y hash |
 | `research` | señales y conflictos vigentes del ciclo |
 | `decision` | última decisión sellada, política, estado, xP y fingerprint |
@@ -99,6 +101,10 @@ curl -s http://127.0.0.1:8787/metrics | grep -E '^mova_(tick_last|collector_step
 refrescó, aunque ticks posteriores se omitan por cadencia. Permite separar red, sellado y modelos. Los
 mismos pasos salen en journald como JSON con `job_id`, `correlation_id`, `duration_ms` y detalle
 sanitizado.
+
+El servicio ampliado FPL/odds/WhoScored se opera con `mova collect` y expone salud en
+`data.service`, `/api/v1/data` y métricas `mova_data_*`. Su contrato y diagnóstico están en el
+[runbook del data service](data-service.md).
 
 ## Probe del host
 

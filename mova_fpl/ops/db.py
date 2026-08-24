@@ -414,6 +414,31 @@ class OpsDB:
             )
         return incident_id
 
+    def open_incident_once(self, severity: str, title: str, *,
+                           correlation_id: str | None = None,
+                           cycle_id: str | None = None, job_id: str | None = None,
+                           detail: dict | None = None) -> str:
+        """Abre como máximo un incidente activo por título."""
+        with self.connect(readonly=True) as con:
+            row = con.execute(
+                "SELECT incident_id FROM incidents WHERE title=? AND status!='resolved' "
+                "ORDER BY opened_at DESC LIMIT 1", (title,),
+            ).fetchone()
+        if row:
+            return str(row["incident_id"])
+        return self.open_incident(
+            severity, title, correlation_id=correlation_id, cycle_id=cycle_id,
+            job_id=job_id, detail=detail,
+        )
+
+    def resolve_incidents(self, title: str, *, resolution: str) -> int:
+        with self.transaction() as con:
+            cur = con.execute(
+                "UPDATE incidents SET status='resolved',closed_at=?,resolution=? "
+                "WHERE title=? AND status!='resolved'", (utcnow(), resolution, title),
+            )
+        return int(cur.rowcount)
+
     def status(self) -> dict:
         with self.connect(readonly=True) as con:
             cycle = con.execute(

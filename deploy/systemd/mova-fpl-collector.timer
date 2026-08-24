@@ -1,0 +1,12 @@
+[Unit]
+Description=Evaluate MOVA FPL data-source cadences every 15 minutes
+
+[Timer]
+OnCalendar=*:0/15
+Persistent=true
+RandomizedDelaySec=45
+AccuracySec=15s
+Unit=mova-fpl-collector.service
+
+[Install]
+WantedBy=timers.target

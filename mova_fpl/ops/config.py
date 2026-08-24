@@ -38,6 +38,14 @@ class RuntimeConfig:
     tick_bucket_seconds: int = 300
     decision_timeout_seconds: int = 600
     private_state_max_age_seconds: int = 21600
+    collector_lock_path: Path = Path("/var/lib/mova-fpl/mova-fpl-collector.lock")
+    collector_root: Path = Path("/var/lib/mova-fpl/artifacts/data-service")
+    collector_fpl_cadence_seconds: int = 6 * 3600
+    collector_odds_cadence_seconds: int = 6 * 3600
+    collector_events_cadence_seconds: int = 30 * 60
+    collector_schedule_cadence_seconds: int = 24 * 3600
+    collector_event_batch_size: int = 10
+    collector_browser_path: Path = Path("/usr/bin/chromium")
     postgres_host: str = "postgres"
     postgres_port: int = 5432
     postgres_db: str = "mova"
@@ -74,6 +82,30 @@ class RuntimeConfig:
             private_state_max_age_seconds=int(
                 os.environ.get("MOVA_PRIVATE_STATE_MAX_AGE_SECONDS", "21600")
             ),
+            collector_lock_path=Path(os.environ.get(
+                "MOVA_COLLECTOR_LOCK_PATH", "/var/lib/mova-fpl/mova-fpl-collector.lock"
+            )),
+            collector_root=Path(os.environ.get(
+                "MOVA_COLLECTOR_ROOT", "/var/lib/mova-fpl/artifacts/data-service"
+            )),
+            collector_fpl_cadence_seconds=int(os.environ.get(
+                "MOVA_COLLECTOR_FPL_CADENCE_SECONDS", str(6 * 3600)
+            )),
+            collector_odds_cadence_seconds=int(os.environ.get(
+                "MOVA_COLLECTOR_ODDS_CADENCE_SECONDS", str(6 * 3600)
+            )),
+            collector_events_cadence_seconds=int(os.environ.get(
+                "MOVA_COLLECTOR_EVENTS_CADENCE_SECONDS", str(30 * 60)
+            )),
+            collector_schedule_cadence_seconds=int(os.environ.get(
+                "MOVA_COLLECTOR_SCHEDULE_CADENCE_SECONDS", str(24 * 3600)
+            )),
+            collector_event_batch_size=int(os.environ.get(
+                "MOVA_COLLECTOR_EVENT_BATCH_SIZE", "10"
+            )),
+            collector_browser_path=Path(os.environ.get(
+                "MOVA_COLLECTOR_BROWSER_PATH", "/usr/bin/chromium"
+            )),
             postgres_host=os.environ.get("MOVA_POSTGRES_HOST", "postgres"),
             postgres_port=int(os.environ.get("MOVA_POSTGRES_PORT", "5432")),
             postgres_db=os.environ.get("MOVA_POSTGRES_DB", "mova"),
@@ -97,11 +129,21 @@ class RuntimeConfig:
             raise ValueError(
                 "browser writes exige mode guarded/autonomous, action level A1+ y compliance approved"
             )
-        for path in (self.ops_db.parent, self.artifact_root, self.host_probe_path):
+        for path in (self.ops_db.parent, self.artifact_root, self.host_probe_path,
+                     self.collector_lock_path, self.collector_root,
+                     self.collector_browser_path):
             if not path.is_absolute():
                 raise ValueError(f"path operativo debe ser absoluto: {path}")
         if self.private_state_max_age_seconds <= 0:
             raise ValueError("MOVA_PRIVATE_STATE_MAX_AGE_SECONDS debe ser positivo")
+        cadences = (
+            self.collector_fpl_cadence_seconds, self.collector_odds_cadence_seconds,
+            self.collector_events_cadence_seconds, self.collector_schedule_cadence_seconds,
+        )
+        if any(value <= 0 for value in cadences):
+            raise ValueError("cadencias del collector deben ser positivas")
+        if not 1 <= self.collector_event_batch_size <= 50:
+            raise ValueError("MOVA_COLLECTOR_EVENT_BATCH_SIZE debe estar entre 1 y 50")
 
     def validate_postgres(self) -> None:
         """Valida solo la configuración del store shadow, sin abrir red."""

@@ -226,6 +226,19 @@ def build_status(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
                 ).isoformat(timespec="seconds"),
             })
 
+    data_service = {"status": "unavailable", "sources": [], "counts": {},
+                    "latest_runs": []}
+    try:
+        if config.postgres_credential_file.is_file():
+            from mova_fpl.ops.collector.store import CollectorStore
+            data_service = CollectorStore(config).status()
+        else:
+            from mova_fpl.ops.collector.store import read_status
+            data_service = read_status(config)
+    except Exception as exc:  # noqa: BLE001 - status debe seguir disponible
+        data_service = {"status": "unavailable", "sources": [], "counts": {},
+                        "latest_runs": [], "error": type(exc).__name__}
+
     severity = "healthy"
     reasons: list[str] = []
     if any(item["severity"] in {"P0", "P1"} for item in state["incidents"]):
@@ -245,6 +258,8 @@ def build_status(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
             reasons.append("public_source_stale_or_invalid")
         if active_failures:
             reasons.append("failed_jobs_last_24h")
+        if data_service.get("status") == "degraded":
+            reasons.append("data_service_degraded")
         if reasons:
             severity = "degraded"
 
@@ -278,6 +293,7 @@ def build_status(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
         },
         "data": {
             "sources": sources,
+            "service": data_service,
             "team_state": {
                 "observed_at": team.get("observed_at"),
                 "age_seconds": team_age,
@@ -458,6 +474,35 @@ def build_doctor(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
                 detail={"error": type(exc).__name__, "message": str(exc)[:300]},
             ))
 
+        try:
+            from mova_fpl.ops.collector.store import CollectorStore
+
+            collector = CollectorStore(config).status()
+            sources = {row["source_name"]: row for row in collector["sources"]}
+            fpl_ok = (sources.get("fpl_official") or {}).get("health") == "healthy"
+            other_bad = [name for name, row in sources.items()
+                         if name != "fpl_official" and row.get("health") != "healthy"]
+            collector_status = "PASS" if fpl_ok and not other_bad else (
+                "WARN" if fpl_ok else "FAIL"
+            )
+            checks.append(_check(
+                "autonomous_data_service", collector_status,
+                "all data sources are healthy" if collector_status == "PASS"
+                else "one or more data sources need attention",
+                required=not fpl_ok,
+                detail={"counts": collector["counts"],
+                        "sources": [{key: row.get(key) for key in (
+                            "source_name", "health", "last_status", "age_seconds",
+                            "consecutive_failures"
+                        )} for row in collector["sources"]], "non_fpl_issues": other_bad},
+            ))
+        except Exception as exc:  # noqa: BLE001
+            checks.append(_check(
+                "autonomous_data_service", "WARN", "data service not initialized",
+                required=False, detail={"error": type(exc).__name__,
+                                        "message": str(exc)[:300]},
+            ))
+
     model_root = config.artifact_root / "models"
     model_files = sorted(model_root.rglob("*.joblib")) if model_root.is_dir() else []
     model_families = {path.parent.name for path in model_files}
@@ -510,6 +555,16 @@ def build_doctor(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
         checks.append(_check("systemd_units", "PASS" if not bad_units else "FAIL",
                              "required units are active" if not bad_units else "required units are inactive",
                              detail={"inactive": bad_units}))
+        if "mova-fpl-collector.timer" in units:
+            collector_timer_ok = (
+                (units.get("mova-fpl-collector.timer") or {}).get("active_state") == "active"
+            )
+            checks.append(_check(
+                "data_collector_timer", "PASS" if collector_timer_ok else "WARN",
+                "data collector timer is active" if collector_timer_ok
+                else "data collector timer is inactive",
+                required=False, detail=units.get("mova-fpl-collector.timer") or {},
+            ))
         api = host.get("api") or {}
         checks.append(_check("api_container", "PASS" if api.get("ready") else "FAIL",
                              "API is ready" if api.get("ready") else "API is not ready",

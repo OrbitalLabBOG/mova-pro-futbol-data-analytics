@@ -19,6 +19,7 @@ UNITS = (
     "mova-fpl-private-state.timer",
     "mova-fpl-backup.timer",
     "mova-fpl-watchdog.timer",
+    "mova-fpl-collector.timer",
 )
 
 

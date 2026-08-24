@@ -19,8 +19,9 @@ operativos y Supabase únicamente como seguimiento PM.
 - Imagen Docker reproducible en el VPS.
 - Writer oficial: SQLite `ops.db`; almacenes analíticos actuales:
   `fpl_canonical.db` y `trace.db`.
-- PostgreSQL 17 corre en shadow privado, con imports puntuales verificados. No
-  tratarlo como writer ni hacer cutover sin los gates de HV1-02.
+- PostgreSQL 17 corre privado. Sigue en shadow para el path de decisión, pero es
+  writer autorizado del data service FPL/odds/WhoScored. No hacer cutover del
+  resto del harness sin los gates de HV1-02.
 - API loopback, timers systemd, backups, collector público y collector privado
   autenticado de solo lectura.
 - Browser separado con perfil persistente. Por defecto está detenido y sin
@@ -42,6 +43,8 @@ mova doctor
 mova doctor --json --no-network
 mova postgres status
 mova postgres verify
+mova data status
+mova collect all
 ```
 
 Consultar primero `docs/operations/operator.md` y la skill
