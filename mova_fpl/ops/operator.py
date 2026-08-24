@@ -238,6 +238,18 @@ def build_status(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
     except Exception as exc:  # noqa: BLE001 - status debe seguir disponible
         data_service = {"status": "unavailable", "sources": [], "counts": {},
                         "latest_runs": [], "error": type(exc).__name__}
+    analytics_service = {"status": "unavailable", "latest_scorecards": [],
+                         "latest_projection_batches": []}
+    try:
+        if config.postgres_credential_file.is_file():
+            from mova_fpl.ops.analytics_store import AnalyticsStore
+            analytics_service = AnalyticsStore(config).status()
+        else:
+            from mova_fpl.ops.analytics_store import read_status as read_analytics_status
+            analytics_service = read_analytics_status(config)
+    except Exception as exc:  # noqa: BLE001 - status consolidado sigue disponible
+        analytics_service = {"status": "unavailable", "latest_scorecards": [],
+                             "latest_projection_batches": [], "error": type(exc).__name__}
 
     severity = "healthy"
     reasons: list[str] = []
@@ -260,6 +272,8 @@ def build_status(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
             reasons.append("failed_jobs_last_24h")
         if data_service.get("status") == "degraded":
             reasons.append("data_service_degraded")
+        if analytics_service.get("status") == "alert":
+            reasons.append("model_drift_alert")
         if reasons:
             severity = "degraded"
 
@@ -318,6 +332,7 @@ def build_status(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
             )} for row in state["models"]],
             "artifacts": model_artifacts,
         },
+        "analytics": analytics_service,
         "research": state["research"],
         "decision": ({key: state["decision"].get(key) for key in (
             "decision_id", "cycle_id", "revision", "mode", "policy_version", "status",
@@ -503,6 +518,26 @@ def build_doctor(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
                                         "message": str(exc)[:300]},
             ))
 
+        try:
+            from mova_fpl.ops.analytics_store import AnalyticsStore
+
+            analytics = AnalyticsStore(config).status()
+            latest = (analytics.get("latest_scorecards") or [None])[0]
+            analytics_status = "WARN" if analytics["status"] == "alert" else "PASS"
+            checks.append(_check(
+                "model_analytics_service", analytics_status,
+                "model analytics is queryable" if analytics_status == "PASS"
+                else "latest model scorecard reports drift",
+                required=False, detail={"counts": analytics.get("counts"),
+                                        "latest_scorecard": latest},
+            ))
+        except Exception as exc:  # noqa: BLE001
+            checks.append(_check(
+                "model_analytics_service", "WARN", "analytics service not initialized",
+                required=False, detail={"error": type(exc).__name__,
+                                        "message": str(exc)[:300]},
+            ))
+
     model_root = config.artifact_root / "models"
     model_files = sorted(model_root.rglob("*.joblib")) if model_root.is_dir() else []
     model_families = {path.parent.name for path in model_files}
@@ -545,6 +580,7 @@ def build_doctor(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
             "mova-fpl-stack.service", "mova-fpl-tick.timer",
             "mova-fpl-private-state.timer", "mova-fpl-backup.timer",
             "mova-fpl-watchdog.timer",
+            "mova-fpl-analytics.timer",
         )
         bad_units = [name for name in expected_units
                      if (units.get(name) or {}).get("active_state") != "active"]
@@ -636,6 +672,7 @@ def render_status(payload: dict) -> str:
     tick = payload["operations"]["latest_tick"] or {}
     incidents = payload["operations"]["open_incidents"]
     host = payload["host"]
+    scorecard = (payload.get("analytics", {}).get("latest_scorecards") or [{}])[0]
     return "\n".join((
         f"MOVA FPL · {payload['overall_status'].upper()} · {payload['generated_at']}",
         f"GW {gw.get('gw') or '—'} · {gw.get('phase') or 'sin ciclo'} · {gw.get('readiness') or 'sin readiness'} · deadline {gw.get('deadline_at') or '—'}",
@@ -643,6 +680,7 @@ def render_status(payload: dict) -> str:
         f"Último tick: {tick.get('status') or 'ausente'} · edad {payload['operations'].get('latest_tick_age_seconds')}s",
         f"Controles: {controls['mode']} / {controls['action_level']} · compliance {controls['compliance_gate']} · kill_switch={str(controls['kill_switch']).lower()} · browser_writes={str(controls['browser_writes']).lower()}",
         f"Fuentes {len(payload['data']['sources'])} · modelos {len(payload['models']['artifacts'])} artefactos/{len(payload['models']['registered'])} registrados · research {payload['research']['signals']} · incidentes {len(incidents)} · outbox {payload['operations']['outbox_pending']}",
+        f"Analytics: GW {scorecard.get('gw') or '—'} · {scorecard.get('variant') or 'sin variante'} · drift {scorecard.get('drift_status') or 'sin scorecard'}",
         f"Host: {'observable' if host.get('available') else 'no observable'} · git {payload['runtime']['git_sha']}",
     ))
 

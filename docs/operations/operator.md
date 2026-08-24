@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — contrato del operador"
 created: 2026-08-23
-updated: 2026-08-23
+updated: 2026-08-24
 tags: [mova, fpl, operator, cli, observability, contract]
 status: active
 ---
@@ -26,6 +26,8 @@ mova doctor --json
 mova doctor --json --no-network
 mova data status
 mova data coverage
+mova analytics status
+mova analytics run
 ```
 
 En desarrollo, `mova` es el console script de `pyproject.toml`. Allí `host.available=false` es
@@ -105,6 +107,13 @@ sanitizado.
 El servicio ampliado FPL/odds/WhoScored se opera con `mova collect` y expone salud en
 `data.service`, `/api/v1/data` y métricas `mova_data_*`. Su contrato y diagnóstico están en el
 [runbook del data service](data-service.md).
+
+La capa de modelo se opera exclusivamente con `mova analytics`: `project` sella la última
+proyección causal antes del deadline, `reconcile` evalúa GWs oficiales con `data_checked`, y
+`run` hace ambas de forma idempotente. El contrato read-only vive en `/api/v1/analytics`,
+`/api/v1/analytics/scorecards`, `/api/v1/analytics/gw/<GW>` y métricas `mova_model_*`.
+Interpretación, umbrales y recuperación están en el
+[runbook analítico](analytics-service.md).
 
 ## Probe del host
 

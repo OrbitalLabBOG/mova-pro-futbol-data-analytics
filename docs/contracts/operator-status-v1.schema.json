@@ -26,6 +26,7 @@
         "artifacts": {"type": "array", "items": {"type": "object"}}
       }
     },
+    "analytics": {"type": "object"},
     "research": {"type": "object"},
     "decision": {"type": ["object", "null"]},
     "projection": {"type": ["object", "null"]},

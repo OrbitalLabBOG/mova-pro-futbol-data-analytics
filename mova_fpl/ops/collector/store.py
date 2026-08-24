@@ -51,6 +51,14 @@ class CollectorStore:
             ).fetchone()
         return cursor_is_due(row, cadence_seconds, now=now, force=force), row
 
+    def covered_fpl_live_events(self, season: str) -> set[int]:
+        with connect(self.config, autocommit=True) as con:
+            rows = con.execute(
+                "select distinct event from analytics.fpl_event_live_observations "
+                "where season=%s", (season,),
+            ).fetchall()
+        return {int(row["event"]) for row in rows}
+
     def set_cadence(self, source: str, cadence_seconds: int) -> None:
         """Alinea el umbral de health con una cadencia adaptativa ya planeada."""
         with connect(self.config) as con:
@@ -167,6 +175,29 @@ class CollectorStore:
                     %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) on conflict do nothing""", events,
                 )
         return {"teams": len(teams), "events": len(events)}
+
+    def load_fpl_event_live(self, artifact_id: str, season: str, observed_at: str,
+                            events: dict[int, dict]) -> int:
+        rows = []
+        for event, payload in events.items():
+            for item in payload.get("elements") or []:
+                stats = item.get("stats") or {}
+                rows.append((
+                    artifact_id, season, observed_at, int(event), int(item["id"]),
+                    _number(stats.get("total_points"), int) or 0,
+                    _number(stats.get("minutes"), int) or 0,
+                    Jsonb(stats), Jsonb(item.get("explain") or []), Jsonb(item),
+                ))
+        if rows:
+            with connect(self.config) as con:
+                with con.cursor() as cur:
+                    cur.executemany(
+                        """insert into analytics.fpl_event_live_observations(
+                        artifact_id,season,observed_at,event,element,total_points,minutes,
+                        stats,explain,payload) values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                        on conflict do nothing""", rows,
+                    )
+        return len(rows)
 
     def load_fpl(self, artifact_id: str, season: str, observed_at: str,
                  boot: dict, fixtures: list, entry: dict, history: dict,
@@ -388,6 +419,7 @@ class CollectorStore:
                 (select count(*) from analytics.fpl_event_observations) as fpl_gameweeks,
                 (select count(*) from analytics.fpl_player_observations) as fpl_players,
                 (select count(*) from analytics.fpl_fixture_observations) as fpl_fixtures,
+                (select count(*) from analytics.fpl_event_live_observations) as fpl_live_rows,
                 (select count(*) from analytics.match_odds_observations) as legacy_odds_matches,
                 (select count(distinct provider_event_id)
                    from analytics.market_odds_observations) as odds_events,

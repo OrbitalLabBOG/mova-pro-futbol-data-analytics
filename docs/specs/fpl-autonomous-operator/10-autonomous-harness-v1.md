@@ -2,7 +2,7 @@
 type: project
 name: "MOVA FPL — Autonomous Harness v1"
 created: 2026-08-23
-updated: 2026-08-23
+updated: 2026-08-24
 tags: [mova, fpl, autonomy, postgres, agents, observability, continuous-improvement]
 status: active-design
 ---
@@ -67,8 +67,8 @@ Gaps reales:
 2. no existe una interfaz completa y estable para operar todo el sistema;
 3. research/noticias no está conectado de punta a punta;
 4. no existe todavía un ciclo multirol de estrategia, crítica y revisión;
-5. el reviewer post-GW y la promoción de mejoras no están implementados;
-6. costos y calidad no se pueden consultar como una sola scorecard;
+5. ya existe scorecard técnico post-GW; falta atribución de decisiones y promoción de mejoras;
+6. calidad de modelos ya es consultable; falta unir costos y calidad del harness completo;
 7. el browser sabe leer, pero la ejecución autónoma sigue bloqueada.
 
 ## 3. Decisiones de arquitectura
@@ -373,12 +373,12 @@ no borra evidencia previa y nunca amplía autonomía.
 | HV1-01 ✅ | contrato `mova`, status/doctor y skill del operador | completado | HV1-00 |
 | HV1-02 🟡 | PostgreSQL shadow, import y verificación; luego adapter/cutover | 10–14 h | HV1-01 |
 | HV1-03a ✅ | collector/data quality autónomo | completado | HV1-02 |
-| HV1-03b | interfaz uniforme de modelos | 4–6 h | HV1-03a |
+| HV1-03b 🟡 | proyección/evaluación uniforme, scorecard y drift implementados; falta deploy vivo | 4–6 h | HV1-03a |
 | HV1-04 | team state, season plan y memoria explícita | 6–8 h | HV1-02 |
 | HV1-05 | research con evidencia y acta | 8–12 h | HV1-02/03 |
 | HV1-06 | Strategist + Critic + Validator + DecisionEnvelope | 10–14 h | HV1-03/04/05 |
 | HV1-07 | executor/verifier y autonomía por riesgo | 8–12 h | HV1-06 |
-| HV1-08 | reviewer, scorecard, costos y promoción de mejoras | 8–12 h | HV1-03/06 |
+| HV1-08 🟡 | scorecard/drift técnico implementado; faltan reviewer causal, costos y promoción | 8–12 h | HV1-03/06 |
 
 No es necesario completar 64–92 horas antes de obtener valor. Cortes de entrega:
 
@@ -387,6 +387,18 @@ No es necesario completar 64–92 horas antes de obtener valor. Cortes de entreg
 3. **Strategic shadow** — HV1-05..06: actas, opciones y validación multirol;
 4. **Guarded execution** — HV1-07: browser verificable según riesgo;
 5. **Learning system** — HV1-08: scorecard y mejora continua controlada.
+
+### Corte analítico implementado — 24 de agosto de 2026
+
+La migración `005_model_analytics` añade reales oficiales por jugador, batches de proyección,
+predicciones descompuestas y evaluaciones finales. `mova analytics project|reconcile|run|status`,
+la API read-only, Prometheus y el timer de 30 minutos forman el contrato operativo. Cada GW mide
+puntos, minutos, CS y diez componentes; drift exige seis referencias del mismo modelo/variante.
+
+Odds permanece como señal shadow no promovida y WhoScored como research-only: el experimento
+versionado encontró información defensiva parcial, pero no mejora end-to-end suficiente. Este
+corte cierra observabilidad y feedback del modelo; no declara terminado el reviewer estratégico,
+el reentrenamiento ni la promoción automática.
 
 ## 11. Definition of Done del harness v1
 

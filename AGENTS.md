@@ -45,6 +45,8 @@ mova postgres status
 mova postgres verify
 mova data status
 mova collect all
+mova analytics status
+mova analytics run
 ```
 
 Consultar primero `docs/operations/operator.md` y la skill

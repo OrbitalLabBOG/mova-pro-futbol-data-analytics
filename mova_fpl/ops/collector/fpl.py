@@ -9,8 +9,10 @@ from pathlib import Path
 from mova_fpl.data.sources import (
     FPL_BOOTSTRAP_URL,
     FPL_FIXTURES_URL,
+    FPL_EVENT_LIVE_URL,
     fetch_bootstrap,
     fetch_fixtures,
+    fetch_event_live,
     fetch_team,
     fetch_team_history,
     fetch_team_picks,
@@ -74,6 +76,20 @@ def collect(config, store, run_id: str, *, now: datetime | None = None) -> Sourc
         raw[f"picks-gw{latest_gw:02d}.json"] = fetch_team_picks(config.team_id, latest_gw)
         picks = json.loads(raw[f"picks-gw{latest_gw:02d}.json"])
 
+    checked = sorted(int(item["id"]) for item in boot.get("events", [])
+                     if item.get("data_checked"))
+    covered = store.covered_fpl_live_events(config.season)
+    live_targets = [gw for gw in checked if gw not in covered]
+    # La última jornada se vuelve a leer: FPL puede corregir puntos después de
+    # marcarla revisada. Las anteriores quedan inmutables y no gastan red.
+    if checked and checked[-1] not in live_targets:
+        live_targets.append(checked[-1])
+    live_events = {}
+    for gw in live_targets:
+        name = f"event-live-gw{gw:02d}.json"
+        raw[name] = fetch_event_live(gw)
+        live_events[gw] = json.loads(raw[name])
+
     quality, checks = validate_bundle(boot, fixtures, entry, history, config.team_id)
     payload_sha = sha256_bytes(b"\n".join(raw[name] for name in sorted(raw)))
     stamp = observed_at.replace("-", "").replace(":", "").replace("+00:00", "Z")
@@ -84,7 +100,8 @@ def collect(config, store, run_id: str, *, now: datetime | None = None) -> Sourc
         "schema": "mova-data-source-v1", "source": "fpl_official",
         "season": config.season, "observed_at": observed_at,
         "team_id": config.team_id, "method": "GET",
-        "endpoints": [FPL_BOOTSTRAP_URL, FPL_FIXTURES_URL],
+        "endpoints": [FPL_BOOTSTRAP_URL, FPL_FIXTURES_URL,
+                      FPL_EVENT_LIVE_URL.format(gw="{gw}")],
         "team_resources": ["public profile", "public history", "latest public picks"],
         "files": {name: {"bytes": len(payload), "sha256": sha256_bytes(payload)}
                   for name, payload in raw.items()},
@@ -106,9 +123,13 @@ def collect(config, store, run_id: str, *, now: datetime | None = None) -> Sourc
         rows = store.load_fpl(
             artifact_id, config.season, observed_at, boot, fixtures, entry, history, picks
         )
+    rows["event_live"] = store.load_fpl_event_live(
+        artifact_id, config.season, observed_at, live_events
+    )
     return SourceOutput(
         source="fpl_official", status="completed", artifact_path=directory,
         payload_sha256=payload_sha, manifest_sha256=manifest_sha, quality=quality,
         metrics={"bytes": sum(map(len, raw.values())), "latest_public_picks_gw": latest_gw,
+                 "event_live_targets": live_targets,
                  "payload_unchanged": reused}, rows=rows,
     )
