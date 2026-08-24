@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -15,6 +16,7 @@ from mova_fpl.ops.collector.whoscored import (
     validate_schedule,
 )
 from mova_fpl.ops.config import RuntimeConfig
+from mova_fpl.ops.collector.store import cursor_is_due
 from mova_fpl.postgres.store import MIGRATIONS, latest_version
 
 
@@ -125,6 +127,18 @@ def test_collector_config_rejects_unbounded_event_batch(tmp_path: Path):
             collector_lock_path=tmp_path / "collector.lock",
             collector_root=tmp_path / "collector", collector_browser_path=tmp_path / "chrome",
         ).validate()
+
+
+def test_failed_source_respects_cadence_from_last_attempt():
+    now = datetime(2026, 8, 24, tzinfo=timezone.utc)
+    failed = {
+        "last_status": "failed", "last_success_at": None,
+        "last_attempt_at": now - timedelta(minutes=15),
+    }
+    assert cursor_is_due(failed, 6 * 3600, now=now) is False
+    failed["last_attempt_at"] = now - timedelta(hours=6)
+    assert cursor_is_due(failed, 6 * 3600, now=now) is True
+    assert cursor_is_due(failed, 6 * 3600, now=now, force=True) is True
 
 
 def test_postgres_data_service_migration_has_queryable_contract():

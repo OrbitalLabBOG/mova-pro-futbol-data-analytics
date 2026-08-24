@@ -19,6 +19,20 @@ def _id(prefix: str) -> str:
 def _number(value, cast=float):
     if value in (None, ""):
         return None
+
+
+def cursor_is_due(row: dict | None, cadence_seconds: int, *, now: datetime,
+                  force: bool = False) -> bool:
+    """Respeta cadencia desde el último intento fallido o último éxito."""
+    if force or not row:
+        return True
+    observed = (row.get("last_attempt_at") if row.get("last_status") == "failed"
+                else row.get("last_success_at"))
+    if observed is None:
+        return True
+    if observed.tzinfo is None:
+        observed = observed.replace(tzinfo=timezone.utc)
+    return (now - observed).total_seconds() >= cadence_seconds
     try:
         return cast(value)
     except (TypeError, ValueError):
@@ -35,12 +49,7 @@ class CollectorStore:
             row = con.execute(
                 "select * from raw.source_cursors where source_name=%s", (source,)
             ).fetchone()
-        if force or not row or not row["last_success_at"]:
-            return True, row
-        observed = row["last_success_at"]
-        if observed.tzinfo is None:
-            observed = observed.replace(tzinfo=timezone.utc)
-        return (now - observed).total_seconds() >= cadence_seconds, row
+        return cursor_is_due(row, cadence_seconds, now=now, force=force), row
 
     def start(self, source: str, job_id: str) -> str:
         run_id = _id("ingest")

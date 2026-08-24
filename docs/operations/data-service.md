@@ -88,8 +88,9 @@ autenticado y secretos no entran en esta capa.
    partidos se descargan y validan individualmente usando la cache resultante.
 
 Una fuente se recupera cuando una corrida validada actualiza su cursor; el incidente homónimo se
-cierra automáticamente. Un adapter degradado no autoriza usar datos stale para ejecutar cambios
-en FPL.
+cierra automáticamente. Tras un fallo, el próximo intento respeta la cadencia desde
+`last_attempt_at`; el timer de 15 minutos evalúa, pero no martilla el proveedor. Un adapter
+degradado no autoriza usar datos stale para ejecutar cambios en FPL.
 
 ## Deploy y rollback
 
