@@ -18,14 +18,11 @@ RUN curl --fail --show-error --location --retry 3 \
  && make install
 
 FROM ${PYTHON_IMAGE} AS runtime
-ARG MOVA_GIT_SHA=unknown
-LABEL org.opencontainers.image.title="MOVA FPL engine" \
-      org.opencontainers.image.revision="${MOVA_GIT_SHA}"
+LABEL org.opencontainers.image.title="MOVA FPL engine"
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app \
-    LD_LIBRARY_PATH=/usr/local/lib \
-    MOVA_GIT_SHA=${MOVA_GIT_SHA}
+    LD_LIBRARY_PATH=/usr/local/lib
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
       ca-certificates chromium coinor-cbc curl fonts-liberation tini \
@@ -43,7 +40,10 @@ COPY mova_fpl /app/mova_fpl
 COPY deploy/docker/engine-entrypoint.sh /usr/local/bin/mova-entrypoint
 RUN chmod 0755 /usr/local/bin/mova-entrypoint \
  && python -c "import sqlite3; assert tuple(map(int, sqlite3.sqlite_version.split('.'))) >= (3,51,3), sqlite3.sqlite_version"
-ENV HOME=/var/lib/mova-fpl
+ARG MOVA_GIT_SHA=unknown
+LABEL org.opencontainers.image.revision="${MOVA_GIT_SHA}"
+ENV MOVA_GIT_SHA=${MOVA_GIT_SHA} \
+    HOME=/var/lib/mova-fpl
 RUN install -d -m 0750 -o 10001 -g 10001 /var/lib/mova-fpl
 USER 10001:10001
 ENTRYPOINT ["/usr/bin/tini","--","/usr/local/bin/mova-entrypoint"]

@@ -158,3 +158,10 @@ def test_data_artifacts_never_contain_secrets_in_contract():
     assert "cookie" not in migration
     assert "password" not in migration
     assert "authorization" not in migration
+
+
+def test_release_sha_does_not_invalidate_engine_dependency_layers():
+    dockerfile = Path("deploy/docker/engine.Dockerfile").read_text()
+    assert dockerfile.index("RUN python -m pip install") < dockerfile.index(
+        "ARG MOVA_GIT_SHA=unknown"
+    )
