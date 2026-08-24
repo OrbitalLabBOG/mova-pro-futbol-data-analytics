@@ -5,7 +5,7 @@ metadata:
   vertical: mova
   type: skill
   repo: mova-pro-futbol-data-analytics
-  updated: 2026-08-23
+  updated: 2026-08-24
 ---
 
 # FPL Expert
@@ -18,6 +18,8 @@ fuente de verdad; no copies cifras de backtests o supuestos de temporadas anteri
 - Reglas y scoring: `mova_fpl/rules/` y sus golden tests.
 - Datos y causalidad: `mova_fpl/data/`, especialmente `Store.as_of`.
 - Minutos y xP: `mova_fpl/models/` y `mova_fpl/engine/projection.py`.
+- Scorecards y drift por GW: `mova_fpl/analytics/` y
+  `docs/operations/analytics-service.md`.
 - Plantilla, transferencias y horizonte: `mova_fpl/optimizer/`.
 - Autorización de chips: `mova_fpl/engine/planner.py`.
 - Decisión común de vivo/backtest: `mova_fpl/engine/runner.py`.

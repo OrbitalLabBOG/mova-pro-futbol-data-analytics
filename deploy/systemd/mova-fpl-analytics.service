@@ -1,0 +1,15 @@
+[Unit]
+Description=MOVA FPL model projection, scorecard and drift service
+Requires=mova-fpl-stack.service
+After=mova-fpl-stack.service mova-fpl-collector.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=@@REPO_DIR@@
+ExecStart=/usr/bin/flock -n /run/lock/mova-fpl-analytics-host.lock /usr/local/bin/mova analytics run
+SuccessExitStatus=2 75
+TimeoutStartSec=15min
+Nice=10
+
+[Install]
+WantedBy=multi-user.target

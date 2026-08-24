@@ -40,6 +40,11 @@ class RuntimeConfig:
     private_state_max_age_seconds: int = 21600
     collector_lock_path: Path = Path("/var/lib/mova-fpl/mova-fpl-collector.lock")
     collector_root: Path = Path("/var/lib/mova-fpl/artifacts/data-service")
+    analytics_root: Path = Path("/var/lib/mova-fpl/artifacts/analytics-service")
+    analytics_lock_path: Path = Path("/var/lib/mova-fpl/mova-fpl-analytics.lock")
+    analytics_minutes_version: str = "1.0.0"
+    analytics_points_version: str = "1.0.0"
+    analytics_reference_gameweeks: int = 6
     collector_fpl_cadence_seconds: int = 6 * 3600
     # Máxima edad operativa de odds. La cadencia efectiva la decide el
     # deadline FPL y la cuota observada del proveedor.
@@ -96,6 +101,17 @@ class RuntimeConfig:
             collector_root=Path(os.environ.get(
                 "MOVA_COLLECTOR_ROOT", "/var/lib/mova-fpl/artifacts/data-service"
             )),
+            analytics_root=Path(os.environ.get(
+                "MOVA_ANALYTICS_ROOT", "/var/lib/mova-fpl/artifacts/analytics-service"
+            )),
+            analytics_lock_path=Path(os.environ.get(
+                "MOVA_ANALYTICS_LOCK_PATH", "/var/lib/mova-fpl/mova-fpl-analytics.lock"
+            )),
+            analytics_minutes_version=os.environ.get("MOVA_MINUTES_MODEL_VERSION", "1.0.0"),
+            analytics_points_version=os.environ.get("MOVA_POINTS_MODEL_VERSION", "1.0.0"),
+            analytics_reference_gameweeks=int(os.environ.get(
+                "MOVA_ANALYTICS_REFERENCE_GAMEWEEKS", "6"
+            )),
             collector_fpl_cadence_seconds=int(os.environ.get(
                 "MOVA_COLLECTOR_FPL_CADENCE_SECONDS", str(6 * 3600)
             )),
@@ -151,13 +167,17 @@ class RuntimeConfig:
             raise ValueError(
                 "browser writes exige mode guarded/autonomous, action level A1+ y compliance approved"
             )
-        for path in (self.ops_db.parent, self.artifact_root, self.host_probe_path,
+        for path in (self.ops_db.parent, self.artifact_root, self.analytics_root,
+                     self.analytics_lock_path,
+                     self.host_probe_path,
                      self.collector_lock_path, self.collector_root,
                      self.collector_browser_path):
             if not path.is_absolute():
                 raise ValueError(f"path operativo debe ser absoluto: {path}")
         if self.private_state_max_age_seconds <= 0:
             raise ValueError("MOVA_PRIVATE_STATE_MAX_AGE_SECONDS debe ser positivo")
+        if not 3 <= self.analytics_reference_gameweeks <= 20:
+            raise ValueError("MOVA_ANALYTICS_REFERENCE_GAMEWEEKS debe estar entre 3 y 20")
         cadences = (
             self.collector_fpl_cadence_seconds, self.collector_odds_cadence_seconds,
             self.collector_events_cadence_seconds, self.collector_schedule_cadence_seconds,

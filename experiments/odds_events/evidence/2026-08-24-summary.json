@@ -1,0 +1,64 @@
+{
+  "schema_version": "mova-odds-events-decision-v1",
+  "date": "2026-08-24",
+  "branch": "experiment/fpl-odds-events-20260823",
+  "base_commit": "099cdc1",
+  "decision": {
+    "market_signal": "accepted_for_next_experiment",
+    "event_features": "rejected",
+    "production_promotion": "rejected"
+  },
+  "coverage": {
+    "fpl_matches": 2280,
+    "opening_odds_matches": 2280,
+    "opening_odds_join_rate": 1.0,
+    "whoscored_matches_2025_26": 291,
+    "whoscored_last_gameweek": 29,
+    "whoscored_raw_events": 444252
+  },
+  "selection": {
+    "market_train_seasons": ["2020-21", "2021-22", "2022-23", "2023-24"],
+    "market_weight": 0.95,
+    "event_validation_window": "2025-26 GW10-19",
+    "event_selection": {"feature_set": "shots", "exponent": 0.1},
+    "combined_selection": {"feature_set": "shots", "exponent": 0.0}
+  },
+  "match_holdouts": {
+    "2024-25": {
+      "baseline": {"poisson_deviance": 1.1227, "cs_brier": 0.1741, "cs_logloss": 0.5280, "rps_1x2": 0.2051},
+      "odds": {"poisson_deviance": 1.0589, "cs_brier": 0.1707, "cs_logloss": 0.5182, "rps_1x2": 0.1973}
+    },
+    "2025-26": {
+      "baseline": {"poisson_deviance": 1.1268, "cs_brier": 0.1859, "cs_logloss": 0.5562, "rps_1x2": 0.2138},
+      "odds": {"poisson_deviance": 1.0493, "cs_brier": 0.1777, "cs_logloss": 0.5341, "rps_1x2": 0.2054}
+    }
+  },
+  "untouched_event_test_gw20_29": {
+    "odds_poisson_delta_ci95": [-0.101366, -0.013239],
+    "odds_cs_brier_delta_ci95": [-0.015170, -0.002730],
+    "events_poisson_delta_ci95": [-0.002069, 0.002537],
+    "events_cs_brier_delta_ci95": [-0.000517, 0.000106]
+  },
+  "player_xp_gw20_38": {
+    "baseline": {"mae": 0.9459, "rmse": 1.8880, "pearson": 0.5901, "spearman": 0.7207, "clean_sheet_bias": 0.0809},
+    "odds_cs": {"mae": 0.9394, "rmse": 1.8819, "pearson": 0.5939, "spearman": 0.7218, "clean_sheet_bias": 0.0283},
+    "odds_full": {"mae": 0.9418, "rmse": 1.8778, "pearson": 0.5961, "spearman": 0.7219, "clean_sheet_bias": 0.0283},
+    "events": {"mae": 0.9469, "rmse": 1.8897, "pearson": 0.5891, "spearman": 0.7204, "clean_sheet_bias": 0.0965}
+  },
+  "independent_weekly_rebuild_2025_26": {
+    "baseline": {"points": 2300},
+    "odds_full": {"points": 2395, "delta": 95, "wins": 19, "ties": 3, "delta_ci95": [-21, 223], "bootstrap_p_le_zero": 0.05755},
+    "odds_cs": {"points": 2387, "delta": 87, "wins": 24, "ties": 4, "delta_ci95": [15, 159], "bootstrap_p_le_zero": 0.00885},
+    "odds_attack": {"points": 2330, "delta": 30, "wins": 17, "ties": 7, "delta_ci95": [-67, 127], "bootstrap_p_le_zero": 0.27070}
+  },
+  "legal_named_h3_replay_2025_26": {
+    "baseline": {"points": 2168, "hits": 9, "transfers": 46, "captain_points": 264},
+    "odds_cs": {"points": 2130, "delta": -38, "hits": 13, "transfers": 50, "captain_points": 260}
+  },
+  "promotion_gates": [
+    "build fixture-specific xP for every future gameweek instead of repeating current-GW xP",
+    "define a transfer-stability or minimum-edge rule without fitting on the final holdout",
+    "rerun causal named h1/h3 replays and require no regression versus baseline",
+    "keep event features out until broader historical coverage or a different player-level target proves incremental value"
+  ]
+}

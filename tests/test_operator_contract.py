@@ -75,6 +75,7 @@ def _host_probe(config: RuntimeConfig, now: datetime) -> None:
             "mova-fpl-stack.service", "mova-fpl-tick.timer",
             "mova-fpl-private-state.timer", "mova-fpl-backup.timer",
             "mova-fpl-watchdog.timer",
+            "mova-fpl-analytics.timer",
         )
     }
     config.host_probe_path.write_text(json.dumps({

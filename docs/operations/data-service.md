@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — servicio autónomo de datos"
 created: 2026-08-23
-updated: 2026-08-23
+updated: 2026-08-24
 tags: [mova, fpl, collector, postgres, whoscored, odds, observability]
 status: active
 ---
@@ -17,7 +17,7 @@ fallo no impide que las demás fuentes avancen.
 
 | Adapter | Contenido | Cadencia normal | Gate principal |
 | --- | --- | ---: | --- |
-| `fpl_official` | bootstrap, 380 fixtures, perfil/historia del team id y últimos picks públicos | 6 h | 20 clubes, 38 GWs, 500–800 jugadores, 380 fixtures |
+| `fpl_official` | bootstrap, 380 fixtures, perfil/historia/picks y `event/{gw}/live` de GWs revisadas | 6 h | 20 clubes, 38 GWs, 500–800 jugadores, 380 fixtures |
 | `market_odds` | próximas fechas EPL, `h2h` y totales por bookmaker | adaptativa 24/12/6 h + checkpoint | eventos vigentes, ≥5 casas, cobertura `h2h=1`, totales y cuota observable |
 | `whoscored_schedule` | 380 IDs y estado de partidos | 24 h | 380 IDs únicos |
 | `whoscored_events` | evento a evento de partidos finalizados | 30 min | status 6, 1.000–2.500 eventos, par `(id,eventId)` único |
@@ -81,7 +81,8 @@ PostgreSQL conserva:
 - `raw.ingestion_runs`, `raw.source_cursors`, `raw.source_artifacts` y `raw.quality_checks`;
 - observaciones FPL en `analytics.fpl_team_observations`,
   `analytics.fpl_event_observations`, `analytics.fpl_player_observations` y
-  `analytics.fpl_fixture_observations`;
+  `analytics.fpl_fixture_observations`; los puntos, minutos, componentes y `explain`
+  oficiales por GW quedan en `analytics.fpl_event_live_observations`;
 - perfil/historia/picks públicos en `game.fpl_entry_observations` y
   `game.fpl_pick_observations`;
 - snapshots completos de mercado en `analytics.market_odds_observations`; el CSV legado queda
@@ -118,7 +119,7 @@ endpoints mensuales de WhoScored desde un Chromium headless efímero, sin Seleni
 `soccerdata`. No monta el perfil autenticado; el browser persistente de FPL continúa aislado.
 
 Antes del deploy: backup/restore drill vigente, tests, `docker compose config`, migraciones
-PostgreSQL hasta `004` y una corrida validada por fuente. Para rollback, deshabilitar el timer,
+PostgreSQL hasta `005` y una corrida validada por fuente. Para rollback, deshabilitar el timer,
 volver al checkout/imagen anterior y conservar las migraciones: son aditivas y no alteran el path
 de decisión.
 Los dumps diarios de PostgreSQL incluyen filas normalizadas; los artefactos raw permanecen en el

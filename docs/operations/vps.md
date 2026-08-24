@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — operación del stack VPS"
 created: 2026-08-22
-updated: 2026-08-23
+updated: 2026-08-24
 tags: [mova, fpl, vps, docker, systemd, observability]
 status: active
 ---
@@ -28,6 +28,7 @@ VPS. Supabase se reserva para seguimiento externo de construcción del proyecto.
 | PostgreSQL shadow | `/var/lib/mova-fpl/postgres/` (red Docker interna, sin puerto host) |
 | datos/modelos/traza | `/var/lib/mova-fpl/db/` y `/var/lib/mova-fpl/artifacts/` |
 | data service raw | `/var/lib/mova-fpl/artifacts/data-service/` |
+| analytics service | `/var/lib/mova-fpl/artifacts/analytics-service/` |
 | perfil browser | `/var/lib/mova-fpl/browser-profile` (`0700`, sin backup general) |
 | backups | `/opt/orbital/backups/mova-fpl/<UTC>/` |
 | dashboard | `127.0.0.1:8787` del VPS |
@@ -82,11 +83,14 @@ mova status --json
 mova doctor --json
 mova data status
 mova collect all
+mova analytics status
+mova analytics run
 
 # Vista HTTP; abrir túnel ssh -L 8787:127.0.0.1:8787 root@72.60.245.2
 curl -s http://127.0.0.1:8787/api/v1/status | python -m json.tool
 curl -s http://127.0.0.1:8787/metrics
 curl -s http://127.0.0.1:8787/api/v1/data/coverage | python -m json.tool
+curl -s http://127.0.0.1:8787/api/v1/analytics | python -m json.tool
 
 # Un tick manual, serializado e idempotente
 sudo systemctl start mova-fpl-tick.service
@@ -119,6 +123,11 @@ optimización.
 `mova-fpl-collector.timer` evalúa cada 15 minutos cadencias separadas para FPL, odds,
 calendario y eventos. La operación, tablas, calidad y recuperación están en
 [servicio autónomo de datos](data-service.md).
+
+`mova-fpl-analytics.timer` corre cada 30 minutos. No vuelve a proyectar si el artifact y las
+versiones ya fueron sellados; tampoco evalúa hasta que la API oficial marque `data_checked`.
+Cada ejecución queda como job `model_analytics`, con pasos, duración, hashes e incidentes. Ver
+[servicio analítico](analytics-service.md).
 
 La credencial de odds no pertenece a `runtime.env`. Se instala como
 `/etc/mova-fpl/odds-api-key`, propietario `root`, grupo del worker `10001`, modo `0640`, y Compose

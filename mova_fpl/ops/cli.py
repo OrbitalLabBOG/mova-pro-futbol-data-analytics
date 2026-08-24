@@ -40,6 +40,13 @@ def parser() -> argparse.ArgumentParser:
     data_commands = data.add_subparsers(dest="data_command", required=True)
     data_commands.add_parser("status")
     data_commands.add_parser("coverage")
+    analytics = commands.add_parser("analytics", help="proyección, scorecards y drift")
+    analytics_commands = analytics.add_subparsers(dest="analytics_command", required=True)
+    analytics_commands.add_parser("run", help="proyecta y reconcilia jornadas cerradas")
+    analytics_commands.add_parser("project", help="sella proyección pre-deadline")
+    analytics_commands.add_parser("reconcile", help="evalúa GWs con data_checked")
+    analytics_status = analytics_commands.add_parser("status", help="estado y scorecards")
+    analytics_status.add_argument("--limit", type=int, default=20)
     status = commands.add_parser("status", help="estado operativo consolidado")
     status.add_argument("--json", action="store_true", dest="as_json")
     doctor = commands.add_parser("doctor", help="diagnóstico verificable del runtime")
@@ -108,6 +115,24 @@ def main(argv: list[str] | None = None) -> int:
             publish_coverage(config, payload)
         print(json.dumps(payload, ensure_ascii=False, default=str))
         return 2 if payload.get("status") in {"degraded", "incomplete"} else 0
+
+    if args.command == "analytics":
+        from mova_fpl.ops.analytics_service import AnalyticsService
+        from mova_fpl.ops.analytics_store import AnalyticsStore, publish_status
+
+        config.validate_postgres()
+        if args.analytics_command == "status":
+            full = AnalyticsStore(config).status(limit=100)
+            publish_status(config, full)
+            payload = {**full,
+                       "latest_scorecards": full["latest_scorecards"][:max(1, min(args.limit, 100))],
+                       "latest_projection_batches": full["latest_projection_batches"][
+                           :max(1, min(args.limit, 100))]}
+        else:
+            db = OpsDB(config.ops_db, minimum_version=config.sqlite_min_version)
+            payload = AnalyticsService(config, db).run(args.analytics_command)
+        print(json.dumps(payload, ensure_ascii=False, default=str))
+        return 2 if payload.get("status") in {"degraded", "alert"} else 0
 
     db = OpsDB(config.ops_db, minimum_version=config.sqlite_min_version)
     if args.command == "migrate":

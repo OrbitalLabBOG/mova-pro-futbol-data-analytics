@@ -5,7 +5,7 @@ metadata:
   vertical: mova
   type: skill
   repo: mova-pro-futbol-data-analytics
-  updated: 2026-08-23
+  updated: 2026-08-24
 ---
 
 # MOVA FPL Operator
@@ -25,6 +25,8 @@ consulta ordinaria: `mova` y `/api/v1/status` son el contrato estable.
    desplegar, revisar systemd, backups o browser.
 5. Para recolectar, revisar cobertura o diagnosticar FPL/odds/WhoScored, lee
    [docs/operations/data-service.md](../../../docs/operations/data-service.md).
+6. Para proyectar, reconciliar una GW o interpretar scorecards/drift, lee
+   [docs/operations/analytics-service.md](../../../docs/operations/analytics-service.md).
 
 `status` no prueba red ni muta estado. `doctor` hace checks acotados y un único GET público a
 FPL; usa `--no-network` cuando la ejecución deba ser hermética. Un `FAIL` requerido devuelve
@@ -63,6 +65,10 @@ pendiente o `browser_writes=false`, limita el browser a login y lecturas.
   inventados ni tocar el perfil.
 - `canonical_database`, `trace_database` o `model_artifacts FAIL`: bloquear una decisión basada
   en modelos hasta restaurar y verificar el componente.
+- `analytics` sin scorecard: ejecutar `mova analytics status`; si la GW no está `data_checked`,
+  esperar. `insufficient` durante las primeras seis referencias no es drift. Ante `alert`, leer
+  `drift.reasons` y componentes antes de proponer reentrenamiento; no promover automáticamente
+  una variante shadow.
 - `deployment_revision WARN`: no asumir qué código corre; comparar checkout, imagen y SHA
   aprobado antes de reconstruir.
 - `host_probe WARN`: usar el wrapper del host; no montar Docker socket o D-Bus dentro del engine.

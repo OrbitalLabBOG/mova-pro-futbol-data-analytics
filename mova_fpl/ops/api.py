@@ -26,6 +26,7 @@ def _dashboard(status: dict) -> bytes:
     tick = operations.get("latest_tick") or {}
     controls = (status.get("runtime") or {}).get("controls") or {}
     team_state = (status.get("data") or {}).get("team_state") or {}
+    scorecard = ((status.get("analytics") or {}).get("latest_scorecards") or [{}])[0]
     control_rows = "".join(
         f"<tr><td>{html.escape(key)}</td><td><code>{html.escape(json.dumps(value))}</code></td></tr>"
         for key, value in controls.items()
@@ -49,9 +50,10 @@ a {{ color:#72a7ff }}
 <div class="card"><div class="muted">Incidentes abiertos</div><div class="value">{len(operations.get('open_incidents',[]))}</div><div>{html.escape(status.get('overall_status','unknown'))}</div></div>
 <div class="card"><div class="muted">Alertas pendientes</div><div class="value">{operations.get('outbox_pending',0)}</div><div>SQLite {html.escape(str((status.get('runtime') or {}).get('sqlite_version','')))}</div></div>
 <div class="card"><div class="muted">Estado privado</div><div class="value">{html.escape(str(team_state.get('quality','sin datos')))}</div><div>{html.escape(str(team_state.get('observed_at','')))} · FT {html.escape(str(team_state.get('free_transfers','—')))}</div></div>
+<div class="card"><div class="muted">Drift del modelo</div><div class="value">{html.escape(str(scorecard.get('drift_status','sin scorecard')))}</div><div>GW {html.escape(str(scorecard.get('gw','—')))} · {html.escape(str(scorecard.get('variant','')))}</div></div>
 </div>
 <h2>Controles efectivos</h2><table><thead><tr><th>Control</th><th>Valor</th></tr></thead><tbody>{control_rows}</tbody></table>
-<p><a href="/api/v1/status">status JSON</a> · <a href="/metrics">métricas</a> · <a href="/api/v1/audit">auditoría</a> · <a href="/api/v1/jobs">jobs</a> · <a href="/api/v1/steps">steps</a></p>
+<p><a href="/api/v1/status">status JSON</a> · <a href="/api/v1/analytics">analytics</a> · <a href="/metrics">métricas</a> · <a href="/api/v1/audit">auditoría</a> · <a href="/api/v1/jobs">jobs</a> · <a href="/api/v1/steps">steps</a></p>
 </body></html>"""
     return body.encode("utf-8")
 
@@ -98,6 +100,17 @@ def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
                         metrics += prometheus(state)
                     except Exception:  # data service puede no estar inicializado aún
                         metrics += "mova_data_service_up 0\n"
+                    try:
+                        from mova_fpl.ops.analytics_store import (
+                            AnalyticsStore, prometheus as analytics_prometheus,
+                            read_status as read_analytics_status,
+                        )
+                        analytics = (AnalyticsStore(runtime).status()
+                                     if runtime.postgres_credential_file.is_file()
+                                     else read_analytics_status(runtime))
+                        metrics += analytics_prometheus(analytics)
+                    except Exception:
+                        metrics += "mova_analytics_service_up 0\n"
                     self._send(HTTPStatus.OK, metrics.encode(),
                                "text/plain; version=0.0.4; charset=utf-8")
                     return
@@ -123,6 +136,37 @@ def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
                     self._send(HTTPStatus.OK if payload["status"] == "complete"
                                else HTTPStatus.SERVICE_UNAVAILABLE,
                                _json_bytes(payload), "application/json; charset=utf-8")
+                    return
+                if parsed.path in {"/api/v1/analytics", "/api/v1/analytics/scorecards"}:
+                    from mova_fpl.ops.analytics_store import AnalyticsStore, read_status
+                    payload = (AnalyticsStore(runtime).status()
+                               if runtime.postgres_credential_file.is_file()
+                               else read_status(runtime))
+                    if parsed.path.endswith("/scorecards"):
+                        raw = parse_qs(parsed.query).get("limit", ["20"])[0]
+                        limit = max(1, min(int(raw), 100))
+                        payload = {"schema": "mova-model-scorecards-v1", "limit": limit,
+                                   "items": payload.get("latest_scorecards", [])[:limit]}
+                    self._send(HTTPStatus.OK, _json_bytes(payload),
+                               "application/json; charset=utf-8")
+                    return
+                if parsed.path.startswith("/api/v1/analytics/gw/"):
+                    from mova_fpl.ops.analytics_store import AnalyticsStore, read_status
+                    try:
+                        gw = int(parsed.path.rsplit("/", 1)[-1])
+                    except ValueError as exc:
+                        raise ValueError("gw inválida") from exc
+                    if not 1 <= gw <= 38:
+                        raise ValueError("gw debe estar entre 1 y 38")
+                    state = (AnalyticsStore(runtime).status(limit=100)
+                             if runtime.postgres_credential_file.is_file()
+                             else read_status(runtime))
+                    items = [item for item in state.get("latest_scorecards", [])
+                             if int(item["gw"]) == gw]
+                    self._send(HTTPStatus.OK if items else HTTPStatus.NOT_FOUND,
+                               _json_bytes({"schema": "mova-model-scorecards-v1",
+                                            "gw": gw, "items": items}),
+                               "application/json; charset=utf-8")
                     return
                 routes = {
                     "/api/v1/status": None,

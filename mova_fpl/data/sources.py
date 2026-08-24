@@ -20,6 +20,7 @@ VAASTAV = "https://raw.githubusercontent.com/vaastav/Fantasy-Premier-League/mast
 FPL_API = "https://fantasy.premierleague.com/api"
 FPL_BOOTSTRAP_URL = f"{FPL_API}/bootstrap-static/"
 FPL_FIXTURES_URL = f"{FPL_API}/fixtures/"
+FPL_EVENT_LIVE_URL = f"{FPL_API}/event/{{gw}}/live/"
 FOOTBALL_DATA = "https://www.football-data.co.uk/mmz4281"
 THE_ODDS_API = "https://api.the-odds-api.com/v4/sports/soccer_epl/odds"
 
@@ -91,6 +92,14 @@ def fetch_bootstrap(*, timeout: int = TIMEOUT, retries: int = RETRIES) -> bytes:
 
 def fetch_fixtures() -> bytes:
     return _get(FPL_FIXTURES_URL)
+
+
+def fetch_event_live(gw: int) -> bytes:
+    """Estadísticas oficiales por jugador de una jornada (solo GET)."""
+    event = int(gw)
+    if not 1 <= event <= 38:
+        raise ValueError("gw debe estar entre 1 y 38")
+    return _get(FPL_EVENT_LIVE_URL.format(gw=event))
 
 
 def football_data_url(season: str) -> str:

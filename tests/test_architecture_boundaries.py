@@ -30,6 +30,9 @@ ALLOWED = {
     "data": {"rules"},
     "rules": set(),
     "models": {"data", "rules"},
+    # Medición post-GW: compone el mismo proyector causal y reglas, pero no
+    # importa ops ni optimizer y nunca llama Store.results().
+    "analytics": {"data", "rules", "models", "engine"},
     "optimizer": {"rules", "models"},
     # `agent` es deliberadamente el subpaquete mas pobre del grafo. No importa
     # `engine` ni `optimizer`: `measure()` recibe la funcion de decision como
@@ -42,7 +45,7 @@ ALLOWED = {
     # Plano operativo: coordina fuentes y ejecuta el motor por subprocess para
     # que el dominio no dependa de scheduler, DB de control ni browser.
     "postgres": set(),
-    "ops": {"data", "postgres"},
+    "ops": {"data", "postgres", "analytics"},
 }
 LEGACY = ("mova_data", "mova_model", "src.mova_data", "src.mova_model")
 

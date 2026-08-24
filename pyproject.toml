@@ -33,6 +33,7 @@ include = ["mova_fpl*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]
 addopts = "-m 'not slow and not integration_data'"
 markers = [
   "integration_data: requiere dataset canónico o artefactos de modelo externos a Git",
