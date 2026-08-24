@@ -503,11 +503,23 @@ def publish_status(config, state: dict) -> None:
     write_atomic(config.collector_root / "status.json", canonical_bytes(state))
 
 
+def publish_coverage(config, state: dict) -> None:
+    write_atomic(config.collector_root / "coverage.json", canonical_bytes(state))
+
+
 def read_status(config) -> dict:
     path = config.collector_root / "status.json"
     payload = json.loads(path.read_text(encoding="utf-8"))
     if payload.get("schema") != "mova-data-service-status-v1":
         raise ValueError("snapshot de estado del data service inválido")
+    return payload
+
+
+def read_coverage(config) -> dict:
+    path = config.collector_root / "coverage.json"
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if payload.get("schema") != "mova-data-service-coverage-v1":
+        raise ValueError("snapshot de cobertura del data service inválido")
     return payload
 
 

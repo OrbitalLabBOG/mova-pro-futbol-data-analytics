@@ -114,8 +114,12 @@ def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
                                "application/json; charset=utf-8")
                     return
                 if parsed.path == "/api/v1/data/coverage":
-                    from mova_fpl.ops.collector.store import CollectorStore
-                    payload = CollectorStore(runtime).coverage()
+                    from mova_fpl.ops.collector.store import (
+                        CollectorStore, read_coverage,
+                    )
+                    payload = (CollectorStore(runtime).coverage()
+                               if runtime.postgres_credential_file.is_file()
+                               else read_coverage(runtime))
                     self._send(HTTPStatus.OK if payload["status"] == "complete"
                                else HTTPStatus.SERVICE_UNAVAILABLE,
                                _json_bytes(payload), "application/json; charset=utf-8")
