@@ -98,3 +98,9 @@ Un fallo deja job, step, `error_code`, correlación y stack trace en journald. C
 volver a ejecutar `mova analytics run`; las claves idempotentes evitan duplicados. Las migraciones
 son aditivas. En rollback se puede deshabilitar `mova-fpl-analytics.timer` sin detener collectors,
 API, tick ni browser; se preservan PostgreSQL y artifacts para auditoría.
+
+## Último rollout verificado
+
+La evidencia del despliegue del 24 de agosto de 2026, incluidas cobertura, proyecciones shadow,
+pruebas y rollback, está en el
+[acta del servicio analítico](../decisions/2026-27/analytics-service-rollout.md).
