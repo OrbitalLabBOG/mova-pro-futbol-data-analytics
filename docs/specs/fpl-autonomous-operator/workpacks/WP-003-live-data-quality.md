@@ -37,10 +37,10 @@ WP-001 y WP-002.
 
 ## Cierre
 
-Completado por HV1-03a en la revisión `f2b68a7`. FPL oficial, odds, calendario y eventos
+Completado por HV1-03a y consolidado en la revisión `52acb40`. FPL oficial, odds, calendario y eventos
 operan como fuentes independientes con artifacts sellados, calidad, frescura, incidentes,
-API, métricas y scheduling autónomo. La degradación real de odds 2026/27 queda visible y no
-contamina las demás fuentes.
+API, métricas y scheduling autónomo. The Odds API dejó la capa completa en estado saludable y
+preserva 2.395 líneas por casa/mercado en su primer snapshot.
 
 Evidencia: [14-hv1-03a-data-service-evidence.md](../14-hv1-03a-data-service-evidence.md).
 

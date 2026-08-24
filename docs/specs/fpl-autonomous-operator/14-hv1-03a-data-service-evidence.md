@@ -23,12 +23,12 @@ scorecard reproducibles.
 
 | Campo | Valor |
 | --- | --- |
-| Revisión desplegada | `f2b68a70438081449b8f30d40ac250cb76a91b52` |
-| Imagen | `mova-fpl-engine:f2b68a7` |
-| Migración | PostgreSQL `002` |
-| Pull requests | `#9` data service, `#10` backoff, `#11` cache de build |
+| Revisión desplegada | `52acb403dd4f9c16da0e90b1ae6012d57ad75d21` |
+| Imagen | `mova-fpl-engine:52acb40` |
+| Migración | PostgreSQL `003` |
+| Pull requests | `#9` data service, `#10` backoff, `#11` cache de build, `#13` odds live |
 | Runtime | `/opt/orbital/services/mova-fpl` |
-| Estado | `degraded` controlado: solo falta el archivo de odds 2026/27 |
+| Estado | `healthy`: cuatro fuentes activas y sin warnings |
 
 ## Contrato entregado
 
@@ -51,28 +51,29 @@ Corridas forzadas verificadas en el VPS el 2026-08-24 UTC:
 | FPL oficial | healthy | 609 jugadores, 380 fixtures, 20 equipos, 38 GWs, entry `3609854`, 15 picks de GW1 | 1,65 s |
 | WhoScored schedule | healthy | 380 IDs únicos, 9 partidos finalizados | 14,16 s |
 | WhoScored events | healthy | 9/9 partidos, 13.744 eventos, cobertura `1.0`, 0 fallos | 75,75 s |
-| football-data odds | missing/degraded | 0 filas; `2627/E0.csv` responde HTTP 300 y no entrega CSV | 3 intentos acotados |
+| The Odds API | healthy | 21 partidos, 43 casas, 2.395 líneas; `h2h` y totales con cobertura `1.0` | 1,60 s |
 
 El partido de integración `1983546` produjo 1.495 eventos válidos dentro de un contenedor
 sin privilegios, con todas las capabilities removidas. PostgreSQL conserva 13.744 eventos
 con clave compuesta `(ws_match_id, ws_event_id, event_id)`.
 
-La ausencia de odds no se reemplazó con ceros, datos de otra temporada ni una fuente no
-aprobada. El cursor queda `missing`, el incidente permanece visible y el resto del pipeline
-continúa saludable.
+El adapter live de `football-data.co.uk` fue retirado sin borrar su evidencia. The Odds API
+conserva cada bookmaker, mercado, outcome y línea en
+`analytics.market_odds_observations`: 1.905 filas `h2h` de 43 casas y 490 de totales de 20 casas.
+La primera consulta costó 4 créditos; el saldo observado quedó en 492 de 500.
 
 ## Autonomía y observabilidad
 
 | Check | Resultado |
 | --- | --- |
 | Timer | activo y habilitado; evalúa cada 15 min |
-| Cadencia FPL / odds | 6 h / 6 h |
+| Cadencia FPL / odds | 6 h / 8 h |
 | Cadencia schedule / events | 24 h / 30 min |
 | Batch de eventos | máximo 10 partidos por corrida; backlog reanudable |
-| Backoff | un fallo de odds usa `last_attempt_at`; el siguiente tick omitió la fuente por cadencia |
+| Cuota odds | máximo 4 créditos por consulta; ~372/mes y margen de ~128 en el plan gratuito |
 | API | `/healthz`, `/api/v1/data` y `/metrics` responden `200` |
-| Doctor | 19 PASS, 1 WARN, 0 FAIL, 0 required failures |
-| Repositorio VPS | limpio en `f2b68a7` |
+| Doctor | 20 PASS, 0 WARN, 0 FAIL, 0 required failures |
+| Repositorio VPS | limpio en `52acb40` |
 | Contenedor API | running y healthy |
 | Disco | 37 GiB libres, 62 % usado |
 
@@ -84,16 +85,16 @@ repetir descargas ni martillar una fuente fallida.
 
 | Check | Resultado |
 | --- | --- |
-| Suite hermética final | `730 passed, 1 skipped, 79 deselected` |
+| Suite hermética final | `733 passed, 1 skipped, 79 deselected` |
 | CI | verde en los tres pull requests del corte |
 | Compose | configuración válida |
 | Dedupe FPL | segunda carga idéntica insertó 0 filas nuevas |
 | Integración PostgreSQL | FPL, odds fixture, schedule y 1.000 eventos cargados y consultados |
 | Backup SQLite | `/opt/orbital/backups/mova-fpl/20260824T012817Z` |
-| Backup PostgreSQL | `/opt/orbital/backups/mova-fpl/postgres/20260824T012817Z` |
+| Backup PostgreSQL pre-migración | `/opt/orbital/backups/mova-fpl/postgres/20260824T030047Z` |
 | Restore drill | dump restaurado y verificado en base temporal; base eliminada al finalizar |
 
-La migración `002` es aditiva. El rollback consiste en detener el timer, volver a la imagen
+Las migraciones `002` y `003` son aditivas. El rollback consiste en detener el timer, volver a la imagen
 anterior y conservar tanto las tablas como los artefactos capturados para auditoría.
 
 ## Gates conservados
@@ -108,5 +109,4 @@ anterior y conservar tanto las tablas como los artefactos capturados para audito
 WP-003 y HV1-03a quedan completos. Permanecen abiertos:
 
 1. HV1-03b: contrato uniforme `train/predict/explain/evaluate` y releases de modelos;
-2. recuperar odds cuando `E0.csv` 2026/27 exista o aprobar explícitamente otro proveedor;
-3. HV1-04: estado de equipo y memoria estratégica sobre el store durable.
+2. HV1-04: estado de equipo y memoria estratégica sobre el store durable.

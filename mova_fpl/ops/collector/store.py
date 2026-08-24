@@ -316,6 +316,12 @@ class CollectorStore:
         return {"matches": 1, "events": len(values)}
 
     def status(self) -> dict:
+        expected = {
+            "fpl_official": self.config.collector_fpl_cadence_seconds,
+            "market_odds": self.config.collector_odds_cadence_seconds,
+            "whoscored_schedule": self.config.collector_schedule_cadence_seconds,
+            "whoscored_events": self.config.collector_events_cadence_seconds,
+        }
         with connect(self.config, autocommit=True) as con:
             sources = con.execute(
                 "select * from ops.v_data_source_health order by source_name"
@@ -334,14 +340,9 @@ class CollectorStore:
             latest_runs = con.execute(
                 """select distinct on(source_name) source_name,status,started_at,finished_at,
                 error_code,error_detail,metrics,quality from raw.ingestion_runs
-                order by source_name,started_at desc"""
+                where source_name = any(%s)
+                order by source_name,started_at desc""", (list(expected),)
             ).fetchall()
-        expected = {
-            "fpl_official": self.config.collector_fpl_cadence_seconds,
-            "market_odds": self.config.collector_odds_cadence_seconds,
-            "whoscored_schedule": self.config.collector_schedule_cadence_seconds,
-            "whoscored_events": self.config.collector_events_cadence_seconds,
-        }
         observed = {row["source_name"] for row in sources}
         sources = list(sources) + [
             {"source_name": name, "last_status": "never", "last_attempt_at": None,
