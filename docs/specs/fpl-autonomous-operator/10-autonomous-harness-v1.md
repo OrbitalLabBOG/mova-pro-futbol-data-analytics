@@ -148,7 +148,7 @@ flowchart LR
 
 - API pública, fixtures, histórico y estado privado tienen adapters separados;
 - toda captura lleva `observed_at`, cutoff, source, hash, calidad y artifact ref;
-- el tick evalúa cada cinco minutos, pero cada collector usa cadencia por fase;
+- el tick evalúa cada quince minutos, pero cada collector usa cadencia por fuente y fase;
 - no-cambio se registra como observación fresca sin recomputar modelos;
 - schema drift, stale data, cobertura anómala o temporada incorrecta abren incidente;
 - entrenamiento e inferencia son jobs distintos.
@@ -361,7 +361,7 @@ observe
   → propose improvements
 ```
 
-El tick descubre trabajos vencidos; no ejecuta el ciclo completo cada cinco minutos. Cada
+El tick descubre trabajos vencidos; no ejecuta el ciclo completo cada quince minutos. Cada
 paso es idempotente, reanudable y tiene input/output hash. Un fallo detiene dependientes,
 no borra evidencia previa y nunca amplía autonomía.
 
@@ -372,7 +372,8 @@ no borra evidencia previa y nunca amplía autonomía.
 | HV1-00 ✅ | reset del repo, archivo de legado, packaging y CI hermético | completado | baseline actual |
 | HV1-01 ✅ | contrato `mova`, status/doctor y skill del operador | completado | HV1-00 |
 | HV1-02 🟡 | PostgreSQL shadow, import y verificación; luego adapter/cutover | 10–14 h | HV1-01 |
-| HV1-03 | collector/data quality + interfaz uniforme de modelos | 8–12 h | HV1-02 |
+| HV1-03a ✅ | collector/data quality autónomo | completado | HV1-02 |
+| HV1-03b | interfaz uniforme de modelos | 4–6 h | HV1-03a |
 | HV1-04 | team state, season plan y memoria explícita | 6–8 h | HV1-02 |
 | HV1-05 | research con evidencia y acta | 8–12 h | HV1-02/03 |
 | HV1-06 | Strategist + Critic + Validator + DecisionEnvelope | 10–14 h | HV1-03/04/05 |
