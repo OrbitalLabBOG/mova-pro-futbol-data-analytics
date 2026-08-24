@@ -22,6 +22,7 @@ _ALIASES = {
     "wolverhampton": "wolverhampton wanderers", "nott m forest": "nottingham forest",
     "newcastle": "newcastle united", "west ham": "west ham united",
     "brighton": "brighton and hove albion",
+    "leeds": "leeds united",
 }
 
 

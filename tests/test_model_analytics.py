@@ -10,7 +10,7 @@ import pandas as pd
 
 from mova_fpl.analytics.drift import assess_drift
 from mova_fpl.analytics.metrics import COMPONENTS, evaluate_gameweek
-from mova_fpl.analytics.market import build_context
+from mova_fpl.analytics.market import build_context, canonical_team
 from mova_fpl.ops.analytics_store import prometheus, publish_status, read_status
 from mova_fpl.ops.api import make_handler
 from mova_fpl.ops.cli import parser
@@ -85,6 +85,7 @@ def test_analytics_cli_is_agent_operable():
 
 
 def test_market_context_requires_and_preserves_bookmaker_consensus():
+    assert canonical_team("Leeds") == canonical_team("Leeds United")
     fixtures = [{"fixture": 42, "kickoff_time": "2026-08-29T14:00:00Z",
                  "home_team": "Man City", "away_team": "Arsenal"}]
     rows = []
