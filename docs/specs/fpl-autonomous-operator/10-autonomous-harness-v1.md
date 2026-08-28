@@ -405,6 +405,15 @@ la API y los seis timers quedaron saludables, y baseline + odds shadow produjero
 proyecciones causales para GW2. La evidencia, cobertura y criterio de rollback están en el
 [acta de rollout](../../decisions/2026-27/analytics-service-rollout.md).
 
+### Corte manual de settlement — GW1
+
+La migración SQLite `004` y PostgreSQL `006` implementan la base mínima del Reviewer sin crear un
+agente adicional: settlement factual, review con estado causal, resultados por jugador/escenario y
+propuestas no autopromovibles. `mova review gw` valida la API oficial, publica artifact, exporta a
+trace y deja audit/job/steps. GW1 se registró como retrospectiva porque no tuvo batch predeadline;
+el scorecard causal comienza en GW2. Evidencia en
+[GW1 closeout](../../decisions/2026-27/gw01-closeout.md).
+
 ## 11. Definition of Done del harness v1
 
 - un ciclo completo puede ejecutarse, reanudarse y explicarse desde `mova`;

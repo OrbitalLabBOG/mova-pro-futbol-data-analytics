@@ -198,6 +198,38 @@ runs()                                        # todas las corridas
 decisions("2026-27-live-milp-h3")             # decisiones de la corrida en vivo
 ```
 
+## 8. Cerrar una jornada asentada
+
+El settlement solo corre cuando la API oficial marca la jornada `finished + data_checked`. El
+package manual versionado contiene la decisión, el comparador y la evidencia predeadline; los
+puntos, minutos, picks y rank se vuelven a leer de PostgreSQL. Una jornada sin batch predeadline
+produce un review `retrospective`, nunca un scorecard causal fabricado.
+
+```bash
+mova review gw \
+  --package /app/decisions/fpl/2026-27/gw01_closeout.json \
+  --actor julian \
+  --reason "cerrar GW1 antes de decidir GW2" \
+  --idempotency-key "2026-27:gw01:manual-closeout:v1"
+```
+
+El job valida los 15 picks, recalcula autosubs/capitán con las reglas de la temporada, compara el
+resultado oficial con el engine, publica un artifact inmutable, exporta la atribución a `trace.db`
+y persiste settlement, review, jugadores y propuestas en `ops.db`. Después de backup y con la GW
+cerrada se puede ejecutar un nuevo `mova postgres import` para reflejar la fotografía completa en
+el store shadow; nunca hacer ese import durante el deadline.
+
+Verificación mínima:
+
+```bash
+mova status --json
+mova doctor --json --no-network
+mova review status --gw 1
+```
+
+El último comando expone settlement, métricas, outcomes por jugador y propuestas desde el
+SQLite soportado dentro del contenedor. No abrir `ops.db` con el `sqlite3` del host.
+
 La traza vive en `data/processed/trace.db`. Cada decisión guarda su huella
 (`fingerprint`), que permite comprobar si dos corridas decidieron lo mismo.
 

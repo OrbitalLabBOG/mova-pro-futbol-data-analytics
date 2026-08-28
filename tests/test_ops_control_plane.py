@@ -54,7 +54,7 @@ def _official_sources() -> tuple[bytes, bytes]:
 def test_schema_controls_jobs_y_auditoria(tmp_path):
     config = _config(tmp_path)
     db = _db(config)
-    assert db.migrate() == [1, 2, 3]
+    assert db.migrate() == [1, 2, 3, 4]
     assert db.migrate() == []
     db.ensure_defaults(mode="shadow", action_level="A0", compliance_gate="pending",
                        browser_writes=False)
@@ -96,6 +96,12 @@ def test_schema_controls_jobs_y_auditoria(tmp_path):
     assert "job_started" in audits and "job_completed" in audits
     assert db.status()["latest_team_state"]["free_transfers"] == 1
     assert len(db.recent("team_state_snapshots")) == 2
+    with db.connect(readonly=True) as con:
+        tables = {row[0] for row in con.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'"
+        )}
+    assert {"gameweek_settlements", "gameweek_reviews", "review_player_outcomes",
+            "change_proposals"} <= tables
 
 
 def test_browser_write_gate_fails_closed(tmp_path):

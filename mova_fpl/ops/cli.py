@@ -47,6 +47,18 @@ def parser() -> argparse.ArgumentParser:
     analytics_commands.add_parser("reconcile", help="evalúa GWs con data_checked")
     analytics_status = analytics_commands.add_parser("status", help="estado y scorecards")
     analytics_status.add_argument("--limit", type=int, default=20)
+    review = commands.add_parser("review", help="settlement y feedback por gameweek")
+    review_commands = review.add_subparsers(dest="review_command", required=True)
+    review_gw = review_commands.add_parser("gw", help="cierra una GW asentada")
+    review_gw.add_argument("--package", required=True, help="package manual versionado")
+    review_gw.add_argument("--actor", required=True)
+    review_gw.add_argument("--reason", required=True)
+    review_gw.add_argument("--idempotency-key", required=True)
+    review_status = review_commands.add_parser(
+        "status", help="consulta settlement, feedback y propuestas"
+    )
+    review_status.add_argument("--gw", type=int, required=True)
+    review_status.add_argument("--season")
     status = commands.add_parser("status", help="estado operativo consolidado")
     status.add_argument("--json", action="store_true", dest="as_json")
     doctor = commands.add_parser("doctor", help="diagnóstico verificable del runtime")
@@ -133,6 +145,22 @@ def main(argv: list[str] | None = None) -> int:
             payload = AnalyticsService(config, db).run(args.analytics_command)
         print(json.dumps(payload, ensure_ascii=False, default=str))
         return 2 if payload.get("status") in {"degraded", "alert"} else 0
+
+    if args.command == "review":
+        db = OpsDB(config.ops_db, minimum_version=config.sqlite_min_version)
+        if args.review_command == "status":
+            payload = db.gameweek_review_status(args.season or config.season, args.gw)
+        else:
+            from pathlib import Path
+            from mova_fpl.ops.review import GameweekReviewService
+
+            config.validate_postgres()
+            payload = GameweekReviewService(config, db).run(
+                package_path=Path(args.package), actor=args.actor, reason=args.reason,
+                idempotency_key=args.idempotency_key,
+            )
+        print(json.dumps(payload, ensure_ascii=False, default=str))
+        return 0
 
     db = OpsDB(config.ops_db, minimum_version=config.sqlite_min_version)
     if args.command == "migrate":

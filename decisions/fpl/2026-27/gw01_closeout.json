@@ -1,0 +1,126 @@
+{
+  "schema": "mova-fpl-manual-closeout-v1",
+  "season": "2026-27",
+  "gw": 1,
+  "entry_id": 3609854,
+  "deadline_at": "2026-08-21T17:30:00Z",
+  "reviewed_at": "2026-08-20T13:28:12Z",
+  "mounted_at": "2026-08-20T20:20:28Z",
+  "trace_run_id": "2026-27-live-human-reviewed-h3",
+  "decision_acta_path": "docs/decisions/2026-27/gw01-research-and-decision.md",
+  "mount_evidence_path": "archive/pre-harness-cleanup-2026-08-23:outputs/fpl/2026-27/gw01_final_mounted.png",
+  "mount_evidence_sha256": "8573409eca1815bfa051157be9828f1017d0f1ea8dd9bc8aedc95b8e13becf6c",
+  "chip_inventory": [
+    {"name": "wildcard", "window": "H1", "status": "available"},
+    {"name": "free_hit", "window": "H1", "status": "available_from_gw2"},
+    {"name": "bench_boost", "window": "H1", "status": "available"},
+    {"name": "triple_captain", "window": "H1", "status": "available"}
+  ],
+  "selected": {
+    "label": "gw01-research-reviewed-v1",
+    "policy_version": "human-reviewed-points-1.1.0",
+    "expected_points": 38.5,
+    "total_cost": 100.0,
+    "bank_after": 0.0,
+    "captain": 411,
+    "vice_captain": 426,
+    "bench_order": [496, 565, 329, 173],
+    "players": [
+      {"element": 109, "name": "Verbruggen", "team": "Brighton", "position": "GKP", "price": 4.5, "role": "starter", "expected_points": 2.81, "p60": 0.76},
+      {"element": 8, "name": "Calafiori", "team": "Arsenal", "position": "DEF", "price": 5.5, "role": "starter", "expected_points": 2.89, "p60": 0.56},
+      {"element": 418, "name": "Maguire", "team": "Man Utd", "position": "DEF", "price": 5.0, "role": "starter", "expected_points": 2.47, "p60": 0.72},
+      {"element": 11, "name": "Mosquera", "team": "Arsenal", "position": "DEF", "price": 5.5, "role": "starter", "expected_points": 2.27, "p60": 0.47},
+      {"element": 557, "name": "Tzolis", "team": "Arsenal", "position": "MID", "price": 6.5, "role": "starter", "expected_points": 2.19, "p60": 0.45},
+      {"element": 426, "name": "B.Fernandes", "team": "Man Utd", "position": "MID", "price": 12.0, "role": "starter", "expected_points": 3.52, "p60": 0.54},
+      {"element": 427, "name": "Mbeumo", "team": "Man Utd", "position": "MID", "price": 8.0, "role": "starter", "expected_points": 3.69, "p60": 0.74},
+      {"element": 124, "name": "Groß", "team": "Brighton", "position": "MID", "price": 5.5, "role": "starter", "expected_points": 3.86, "p60": 0.93},
+      {"element": 346, "name": "Calvert-Lewin", "team": "Leeds", "position": "FWD", "price": 6.0, "role": "starter", "expected_points": 3.83, "p60": 0.89},
+      {"element": 165, "name": "João Pedro", "team": "Chelsea", "position": "FWD", "price": 7.5, "role": "starter", "expected_points": 4.12, "p60": 0.86},
+      {"element": 411, "name": "Haaland", "team": "Man City", "position": "FWD", "price": 15.5, "role": "starter", "expected_points": 3.43, "p60": 0.50},
+      {"element": 496, "name": "Kinsky", "team": "Spurs", "position": "GKP", "price": 4.5, "role": "bench", "expected_points": 1.80, "p60": 0.72},
+      {"element": 565, "name": "M.Sangaré", "team": "Brentford", "position": "MID", "price": 5.5, "role": "bench", "expected_points": 2.07, "p60": 0.43},
+      {"element": 329, "name": "Rodon", "team": "Leeds", "position": "DEF", "price": 4.5, "role": "bench", "expected_points": 2.99, "p60": 0.89},
+      {"element": 173, "name": "Thomas", "team": "Coventry City", "position": "DEF", "price": 4.0, "role": "bench", "expected_points": 0.74, "p60": 0.29}
+    ]
+  },
+  "comparator": {
+    "label": "pure-milp-points-1.1.0-h3",
+    "policy_version": "milp-points-1.1.0",
+    "expected_points": 50.83,
+    "total_cost": 98.0,
+    "bank_after": 2.0,
+    "captain": 480,
+    "vice_captain": 229,
+    "bench_order": [1, 346, 469, 445],
+    "players": [
+      {"element": 226, "name": "Pickford", "team": "Everton", "position": "GKP", "price": 5.5, "role": "starter", "expected_points": 3.81, "p60": 0.92},
+      {"element": 229, "name": "Tarkowski", "team": "Everton", "position": "DEF", "price": 6.0, "role": "starter", "expected_points": 4.47, "p60": 0.90},
+      {"element": 4, "name": "Gabriel", "team": "Arsenal", "position": "DEF", "price": 8.0, "role": "starter", "expected_points": 4.46, "p60": 0.73},
+      {"element": 84, "name": "Collins", "team": "Brentford", "position": "DEF", "price": 5.5, "role": "starter", "expected_points": 4.04, "p60": 0.93},
+      {"element": 480, "name": "Gibbs-White", "team": "Nott'm Forest", "position": "MID", "price": 8.0, "role": "starter", "expected_points": 4.50, "p60": 0.88},
+      {"element": 95, "name": "O.Dango", "team": "Brentford", "position": "MID", "price": 6.5, "role": "starter", "expected_points": 4.35, "p60": 0.81},
+      {"element": 236, "name": "Dewsbury-Hall", "team": "Everton", "position": "MID", "price": 6.5, "role": "starter", "expected_points": 4.21, "p60": 0.91},
+      {"element": 155, "name": "Enzo", "team": "Chelsea", "position": "MID", "price": 7.0, "role": "starter", "expected_points": 4.10, "p60": 0.90},
+      {"element": 399, "name": "Cherki", "team": "Man City", "position": "MID", "price": 7.5, "role": "starter", "expected_points": 4.10, "p60": 0.64},
+      {"element": 106, "name": "Thiago", "team": "Brentford", "position": "FWD", "price": 8.0, "role": "starter", "expected_points": 4.13, "p60": 0.73},
+      {"element": 165, "name": "João Pedro", "team": "Chelsea", "position": "FWD", "price": 7.5, "role": "starter", "expected_points": 4.12, "p60": 0.86},
+      {"element": 1, "name": "Raya", "team": "Arsenal", "position": "GKP", "price": 6.0, "role": "bench", "expected_points": 3.26, "p60": 0.74},
+      {"element": 346, "name": "Calvert-Lewin", "team": "Leeds", "position": "FWD", "price": 6.0, "role": "bench", "expected_points": 3.83, "p60": 0.89},
+      {"element": 469, "name": "N.Williams", "team": "Nott'm Forest", "position": "DEF", "price": 5.0, "role": "bench", "expected_points": 3.79, "p60": 0.90},
+      {"element": 445, "name": "Thiaw", "team": "Newcastle", "position": "DEF", "price": 5.0, "role": "bench", "expected_points": 3.69, "p60": 0.90}
+    ]
+  },
+  "intervention": {
+    "schema": "mova-manual-decision-intervention-v1",
+    "author": "julian+orbix",
+    "rationale": "Intervención humana documentada para incorporar pretemporada, roles nuevos, riesgo de capitán y evidencia externa no observada por el modelo.",
+    "base_fingerprint": "5861fea0ff28ae86",
+    "selected_fingerprint": "5e39cc0f12c84566"
+  },
+  "mount_verification": {
+    "squad": [109, 8, 418, 11, 557, 426, 427, 124, 346, 165, 411, 496, 565, 329, 173],
+    "xi": [109, 8, 418, 11, 557, 426, 427, 124, 346, 165, 411],
+    "captain": 411,
+    "vice_captain": 426,
+    "bench_order": [496, 565, 329, 173],
+    "budget": {"total_cost": 100.0, "bank": 0.0},
+    "no_chip": true
+  },
+  "research_signals": [
+    {"player_element": 411, "claim_type": "early_season_ceiling", "claim_text": "Haaland había liderado la puntuación tras seis jornadas en sus cuatro temporadas previas con City.", "source_url": "https://www.premierleague.com/en/news/4681709/the-scouts-must-haves-for-start-of-202627-fpl", "source_tier": "official", "confidence": 0.9},
+    {"player_element": 426, "claim_type": "role_and_form", "claim_text": "Bruno produjo 129 puntos en 17 partidos con Carrick y era una pieza esencial del Scout.", "source_url": "https://www.premierleague.com/en/news/4681709/the-scouts-must-haves-for-start-of-202627-fpl", "source_tier": "official", "confidence": 0.9},
+    {"player_element": 165, "claim_type": "preseason_form", "claim_text": "João Pedro llegó como máximo goleador de la pretemporada y fue incluido entre los esenciales.", "source_url": "https://www.premierleague.com/en/news/4681709/the-scouts-must-haves-for-start-of-202627-fpl", "source_tier": "official", "confidence": 0.9},
+    {"player_element": 427, "claim_type": "role_change", "claim_text": "Mbeumo actuó de nueve y produjo tres goles y una asistencia en sus tres últimas titularidades de verano.", "source_url": "https://www.premierleague.com/en/news/4681112/scout-selection-the-best-fantasy-squad-for-202627", "source_tier": "official", "confidence": 0.85},
+    {"player_element": 346, "claim_type": "minutes_and_set_pieces", "claim_text": "El panel respaldó los minutos, penaltis y calendario inicial de Calvert-Lewin.", "source_url": "https://www.premierleague.com/en/news/4688971/experts-answer-10-key-fpl-questions", "source_tier": "official", "confidence": 0.8},
+    {"player_element": 565, "claim_type": "squad_consensus", "claim_text": "Sangaré formó parte de la selección final publicada por el Scout oficial.", "source_url": "https://www.premierleague.com/en/news/4681112/scout-selection-the-best-fantasy-squad-for-202627", "source_tier": "official", "confidence": 0.75}
+  ],
+  "proposals": [
+    {
+      "category": "model",
+      "change_level": "C2",
+      "priority": "P1",
+      "status": "proposed",
+      "title": "Calibrar minutos de cold start al inicio de temporada",
+      "hypothesis": "Un prior jerárquico que combine rol confirmado, titularidad reciente y señal de pretemporada reducirá el Brier de P60 sin degradar jornadas maduras.",
+      "acceptance": {"experiment": "shadow_first_3_gws", "metric": "p60_brier", "requires_backtest": true, "auto_promote": false}
+    },
+    {
+      "category": "strategy",
+      "change_level": "C1",
+      "priority": "P1",
+      "status": "proposed",
+      "title": "Exigir comparación pareada antes de un override humano amplio",
+      "hypothesis": "Mostrar el costo xP, los jugadores que cambian y el contrafactual puro antes de aprobar reducirá overrides narrativos inconsistentes.",
+      "acceptance": {"sample": "minimum_6_interventions", "metric": "mean_realized_delta", "auto_promote": false}
+    },
+    {
+      "category": "execution",
+      "change_level": "C1",
+      "priority": "P1",
+      "status": "accepted",
+      "title": "Alinear analytics service con minutes/points 1.1.0",
+      "hypothesis": "Usar la misma release que el motor elimina drift de configuración entre decisiones y scorecards GW2+.",
+      "acceptance": {"expected_versions": {"minutes": "1.1.0", "points": "1.1.0"}, "verification": "new_predeadline_batch"}
+    }
+  ]
+}

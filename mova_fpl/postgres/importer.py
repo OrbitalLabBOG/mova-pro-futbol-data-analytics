@@ -98,6 +98,17 @@ TABLES = (
               renames={"detail_json": "detail"}, json_columns=frozenset({"detail_json"})),
     TableSpec("ops", "outbox_events", "ops.outbox_events",
               renames={"payload_json": "payload"}, json_columns=frozenset({"payload_json"})),
+    TableSpec("ops", "gameweek_settlements", "game.gameweek_settlements",
+              renames={"auto_subs_json": "auto_subs", "official_json": "official"},
+              json_columns=frozenset({"auto_subs_json", "official_json"})),
+    TableSpec("ops", "gameweek_reviews", "agent.gw_reviews",
+              renames={"metrics_json": "metrics", "findings_json": "findings"},
+              json_columns=frozenset({"metrics_json", "findings_json"})),
+    TableSpec("ops", "review_player_outcomes", "agent.gw_review_player_outcomes",
+              bool_columns=frozenset({"is_captain"})),
+    TableSpec("ops", "change_proposals", "agent.change_proposals",
+              renames={"evidence_json": "evidence", "acceptance_json": "acceptance"},
+              json_columns=frozenset({"evidence_json", "acceptance_json"})),
 )
 
 TARGETS = tuple(dict.fromkeys(spec.target_table for spec in TABLES))

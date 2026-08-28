@@ -373,6 +373,192 @@ class OpsDB:
             )
         return decision_id
 
+    def record_gameweek_closeout(self, payload: dict) -> dict:
+        """Persiste un cierre ya validado en una sola transacción corta.
+
+        El caller resuelve red, resultados, artefactos y métricas antes de entrar
+        aquí. Los IDs son deterministas para que una recuperación no duplique la
+        memoria de la jornada.
+        """
+        cycle = payload["cycle"]
+        decision = payload["decision"]
+        settlement = payload["settlement"]
+        review = payload["review"]
+        now = utcnow()
+        with self.transaction() as con:
+            con.execute(
+                "INSERT OR IGNORE INTO seasons(season_code,status,created_at) "
+                "VALUES(?,'active',?)", (cycle["season"], now),
+            )
+            con.execute(
+                "UPDATE gameweek_cycles SET phase='reconciled',status='reconciled',"
+                "last_observed_at=?,revision=revision+1 WHERE cycle_id=?",
+                (now, cycle["cycle_id"]),
+            )
+            source = payload["source_snapshot"]
+            con.execute(
+                """INSERT OR IGNORE INTO source_snapshots(
+                snapshot_id,job_id,cycle_id,source_name,captured_at,artifact_path,
+                manifest_sha256,payload_sha256,freshness_seconds,quality_status,quality_json)
+                VALUES(?,?,?,?,?,?,?,?,?,?,?)""",
+                (source["snapshot_id"], payload["job_id"], cycle["cycle_id"],
+                 source["source_name"], source["captured_at"], source["artifact_path"],
+                 source["manifest_sha256"], source["payload_sha256"], 0, "valid",
+                 canonical_json(source["quality"])),
+            )
+            team = payload["team_state"]
+            con.execute(
+                """INSERT OR IGNORE INTO team_state_snapshots(
+                team_state_id,job_id,cycle_id,observed_at,source_name,squad_json,
+                free_transfers,bank_tenths,chips_json,fingerprint,artifact_path,
+                manifest_sha256,quality_status) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (team["team_state_id"], payload["job_id"], cycle["cycle_id"],
+                 team["observed_at"], team["source_name"], canonical_json(team["squad"]),
+                 team["free_transfers"], team["bank_tenths"], canonical_json(team["chips"]),
+                 team["fingerprint"], team["artifact_path"], team["manifest_sha256"], "valid"),
+            )
+            for signal in payload.get("research_signals", []):
+                con.execute(
+                    """INSERT OR IGNORE INTO research_signals(
+                    signal_id,job_id,cycle_id,player_element,claim_type,claim_text,
+                    source_url,source_tier,observed_at,published_at,expires_at,confidence,
+                    conflict_status,content_sha256) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    (signal["signal_id"], payload["job_id"], cycle["cycle_id"],
+                     signal.get("player_element"), signal["claim_type"], signal["claim_text"],
+                     signal["source_url"], signal["source_tier"], signal["observed_at"],
+                     signal.get("published_at"), signal["expires_at"], signal["confidence"],
+                     signal.get("conflict_status", "none"), signal["content_sha256"]),
+                )
+            intervention = payload["intervention"]
+            con.execute(
+                """INSERT OR IGNORE INTO intervention_runs(
+                intervention_id,job_id,cycle_id,policy_version,payload_json,payload_sha256,
+                rationale,rationale_sha256,created_at) VALUES(?,?,?,?,?,?,?,?,?)""",
+                (intervention["intervention_id"], payload["job_id"], cycle["cycle_id"],
+                 intervention["policy_version"], canonical_json(intervention["payload"]),
+                 sha256_json(intervention["payload"]), intervention["rationale"],
+                 hashlib.sha256(intervention["rationale"].encode("utf-8")).hexdigest(),
+                 intervention["created_at"]),
+            )
+            con.execute(
+                """INSERT OR IGNORE INTO decision_runs(
+                decision_id,job_id,cycle_id,revision,mode,policy_version,status,
+                expected_points,chip,fingerprint,manifest_sha256,artifact_path,created_at)
+                VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (decision["decision_id"], payload["job_id"], cycle["cycle_id"],
+                 decision["revision"], decision["mode"], decision["policy_version"],
+                 "reconciled", decision["expected_points"], decision.get("chip"),
+                 decision["fingerprint"], decision["manifest_sha256"],
+                 decision["artifact_path"], decision["created_at"]),
+            )
+            for player in decision["players"]:
+                con.execute(
+                    """INSERT OR IGNORE INTO decision_players(
+                    decision_id,element,squad_position,role,is_captain,is_vice_captain,
+                    transfer_direction,expected_points) VALUES(?,?,?,?,?,?,?,?)""",
+                    (decision["decision_id"], player["element"], player["squad_position"],
+                     player["role"], int(player["is_captain"]),
+                     int(player["is_vice_captain"]), None, player["expected_points"]),
+                )
+            strategy = payload["chip_strategy"]
+            con.execute(
+                """INSERT OR IGNORE INTO chip_strategy_runs(
+                strategy_id,job_id,cycle_id,window_name,policy_version,inventory_json,
+                recommended_chip,status,manifest_sha256,created_at)
+                VALUES(?,?,?,?,?,?,?,?,?,?)""",
+                (strategy["strategy_id"], payload["job_id"], cycle["cycle_id"],
+                 strategy["window_name"], strategy["policy_version"],
+                 canonical_json(strategy["inventory"]), None, "hold_verified",
+                 strategy["manifest_sha256"], strategy["created_at"]),
+            )
+            execution = payload["execution"]
+            con.execute(
+                """INSERT OR IGNORE INTO web_executions(
+                execution_id,decision_id,action_level,envelope_sha256,status,started_at,
+                finished_at,evidence_path,evidence_sha256) VALUES(?,?,?,?,?,?,?,?,?)""",
+                (execution["execution_id"], decision["decision_id"], "manual_attestation",
+                 execution["envelope_sha256"], "verified", execution["started_at"],
+                 execution["finished_at"], execution["evidence_path"],
+                 execution["evidence_sha256"]),
+            )
+            for check in execution["checks"]:
+                con.execute(
+                    """INSERT OR IGNORE INTO verification_checks(
+                    check_id,execution_id,check_name,expected_json,observed_json,passed,checked_at)
+                    VALUES(?,?,?,?,?,?,?)""",
+                    (check["check_id"], execution["execution_id"], check["check_name"],
+                     canonical_json(check["expected"]), canonical_json(check["observed"]),
+                     int(check["passed"]), execution["finished_at"]),
+                )
+            con.execute(
+                """INSERT OR IGNORE INTO gameweek_settlements(
+                settlement_id,idempotency_key,job_id,cycle_id,source_artifact_id,settled_at,
+                entry_points,entry_rank,average_points,bench_points,hit_cost,captain_points,
+                auto_subs_json,official_json,artifact_path,artifact_sha256)
+                VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (settlement["settlement_id"], settlement["idempotency_key"], payload["job_id"],
+                 cycle["cycle_id"], settlement["source_artifact_id"], settlement["settled_at"],
+                 settlement["entry_points"], settlement.get("entry_rank"),
+                 settlement.get("average_points"), settlement["bench_points"],
+                 settlement["hit_cost"], settlement["captain_points"],
+                 canonical_json(settlement["auto_subs"]), canonical_json(settlement["official"]),
+                 review["artifact_path"], review["artifact_sha256"]),
+            )
+            con.execute(
+                """INSERT OR IGNORE INTO gameweek_reviews(
+                review_id,job_id,settlement_id,decision_id,review_type,causality_status,
+                expected_points,actual_points,comparator_label,comparator_expected_points,
+                comparator_actual_points,realized_delta,metrics_json,findings_json,
+                artifact_path,artifact_sha256,created_at)
+                VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (review["review_id"], payload["job_id"], settlement["settlement_id"],
+                 decision["decision_id"], "retrospective",
+                 "not_eligible_no_predeadline_batch", review["expected_points"],
+                 review["actual_points"], review["comparator_label"],
+                 review["comparator_expected_points"], review["comparator_actual_points"],
+                 review["realized_delta"], canonical_json(review["metrics"]),
+                 canonical_json(review["findings"]), review["artifact_path"],
+                 review["artifact_sha256"], review["created_at"]),
+            )
+            for row in review["player_outcomes"]:
+                con.execute(
+                    """INSERT OR IGNORE INTO review_player_outcomes(
+                    review_id,scenario,element,player_name,role,is_captain,expected_points,
+                    p60,actual_points,minutes,effective_points) VALUES(?,?,?,?,?,?,?,?,?,?,?)""",
+                    (review["review_id"], row["scenario"], row["element"], row["player_name"],
+                     row["role"], int(row["is_captain"]), row["expected_points"], row.get("p60"),
+                     row["actual_points"], row["minutes"], row["effective_points"]),
+                )
+            for proposal in review["proposals"]:
+                con.execute(
+                    """INSERT OR IGNORE INTO change_proposals(
+                    proposal_id,review_id,category,change_level,priority,title,hypothesis,
+                    evidence_json,acceptance_json,status,created_at)
+                    VALUES(?,?,?,?,?,?,?,?,?,?,?)""",
+                    (proposal["proposal_id"], review["review_id"], proposal["category"],
+                     proposal["change_level"], proposal["priority"], proposal["title"],
+                     proposal["hypothesis"], canonical_json(proposal["evidence"]),
+                     canonical_json(proposal["acceptance"]), proposal.get("status", "proposed"),
+                     review["created_at"]),
+                )
+            self.append_audit(
+                "gameweek_reconciled", actor=payload["actor"],
+                correlation_id=payload["correlation_id"], cycle_id=cycle["cycle_id"],
+                job_id=payload["job_id"], subject_type="gameweek_settlement",
+                subject_id=settlement["settlement_id"],
+                payload={"reason": payload["reason"], "entry_points": settlement["entry_points"],
+                         "review_type": "retrospective",
+                         "causal_scorecard_created": False}, con=con,
+            )
+        return {
+            "cycle_id": cycle["cycle_id"], "decision_id": decision["decision_id"],
+            "settlement_id": settlement["settlement_id"], "review_id": review["review_id"],
+            "player_outcomes": len(review["player_outcomes"]),
+            "proposals": len(review["proposals"]),
+            "research_signals": len(payload.get("research_signals", [])),
+            "verification_checks": len(execution["checks"]),
+        }
+
     def record_health(self, service: str, status: str, *, memory_available_bytes: int | None,
                       disk_free_bytes: int | None, load_1m: float | None,
                       detail: dict | None = None) -> str:
@@ -495,10 +681,50 @@ class OpsDB:
             ).fetchone()
         return dict(row) if row else None
 
+    def gameweek_review_status(self, season: str, gw: int) -> dict:
+        """Devuelve la memoria post-settlement sin abrir SQLite fuera del runtime."""
+        with self.connect(readonly=True) as con:
+            review = con.execute(
+                """SELECT r.*,s.cycle_id,s.settled_at,s.entry_points,s.entry_rank,
+                s.average_points,s.bench_points,s.hit_cost,s.captain_points,
+                s.auto_subs_json,s.official_json
+                FROM gameweek_reviews r
+                JOIN gameweek_settlements s ON s.settlement_id=r.settlement_id
+                JOIN gameweek_cycles c ON c.cycle_id=s.cycle_id
+                WHERE c.season=? AND c.gw=?
+                ORDER BY r.created_at DESC LIMIT 1""", (season, int(gw)),
+            ).fetchone()
+            if not review:
+                return {"status": "not_found", "season": season, "gw": int(gw)}
+            payload = dict(review)
+            players = con.execute(
+                "SELECT * FROM review_player_outcomes WHERE review_id=? "
+                "ORDER BY scenario,role DESC,element",
+                (review["review_id"],),
+            ).fetchall()
+            proposals = con.execute(
+                "SELECT * FROM change_proposals WHERE review_id=? "
+                "ORDER BY priority,created_at,proposal_id", (review["review_id"],),
+            ).fetchall()
+        for key in ("metrics_json", "findings_json", "auto_subs_json", "official_json"):
+            payload[key.removesuffix("_json")] = json.loads(payload.pop(key))
+        proposal_rows = []
+        for row in proposals:
+            item = dict(row)
+            item["evidence"] = json.loads(item.pop("evidence_json"))
+            item["acceptance"] = json.loads(item.pop("acceptance_json"))
+            proposal_rows.append(item)
+        return {
+            "status": "closed", "season": season, "gw": int(gw),
+            "review": payload, "player_outcomes": [dict(row) for row in players],
+            "change_proposals": proposal_rows,
+        }
+
     def recent(self, table: str, limit: int = 50) -> list[dict]:
         allowed = {"job_runs", "job_steps", "audit_events", "incidents", "health_samples",
                    "source_snapshots", "team_state_snapshots", "decision_runs",
-                   "outbox_events", "chip_strategy_runs"}
+                   "outbox_events", "chip_strategy_runs", "gameweek_settlements",
+                   "gameweek_reviews", "change_proposals"}
         if table not in allowed:
             raise ValueError(f"tabla no permitida: {table}")
         order = {
@@ -507,6 +733,8 @@ class OpsDB:
             "source_snapshots": "captured_at", "decision_runs": "created_at",
             "team_state_snapshots": "observed_at",
             "outbox_events": "created_at", "chip_strategy_runs": "created_at",
+            "gameweek_settlements": "settled_at", "gameweek_reviews": "created_at",
+            "change_proposals": "created_at",
         }[table]
         with self.connect(readonly=True) as con:
             rows = con.execute(

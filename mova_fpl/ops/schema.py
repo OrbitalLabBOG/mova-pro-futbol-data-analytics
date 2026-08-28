@@ -392,8 +392,93 @@ MIGRATION_003 = (
     "ON team_state_snapshots(cycle_id, fingerprint, observed_at DESC)",
 )
 
+MIGRATION_004 = (
+    """
+    CREATE TABLE IF NOT EXISTS gameweek_settlements (
+        settlement_id TEXT PRIMARY KEY,
+        idempotency_key TEXT NOT NULL UNIQUE,
+        job_id TEXT NOT NULL REFERENCES job_runs(job_id),
+        cycle_id TEXT NOT NULL REFERENCES gameweek_cycles(cycle_id),
+        source_artifact_id TEXT NOT NULL,
+        settled_at TEXT NOT NULL,
+        entry_points INTEGER NOT NULL,
+        entry_rank INTEGER,
+        average_points INTEGER,
+        bench_points INTEGER NOT NULL CHECK (bench_points >= 0),
+        hit_cost INTEGER NOT NULL DEFAULT 0 CHECK (hit_cost >= 0),
+        captain_points INTEGER NOT NULL,
+        auto_subs_json TEXT NOT NULL DEFAULT '[]' CHECK (json_valid(auto_subs_json)),
+        official_json TEXT NOT NULL CHECK (json_valid(official_json)),
+        artifact_path TEXT NOT NULL,
+        artifact_sha256 TEXT NOT NULL,
+        UNIQUE (cycle_id, source_artifact_id)
+    ) STRICT
+    """,
+    "CREATE INDEX IF NOT EXISTS idx_gameweek_settlements_cycle "
+    "ON gameweek_settlements(cycle_id, settled_at DESC)",
+    """
+    CREATE TABLE IF NOT EXISTS gameweek_reviews (
+        review_id TEXT PRIMARY KEY,
+        job_id TEXT NOT NULL REFERENCES job_runs(job_id),
+        settlement_id TEXT NOT NULL REFERENCES gameweek_settlements(settlement_id),
+        decision_id TEXT NOT NULL REFERENCES decision_runs(decision_id),
+        review_type TEXT NOT NULL CHECK (review_type IN ('causal','retrospective')),
+        causality_status TEXT NOT NULL CHECK (causality_status IN (
+          'eligible','not_eligible_no_predeadline_batch','paired_intervention')),
+        expected_points REAL NOT NULL,
+        actual_points INTEGER NOT NULL,
+        comparator_label TEXT,
+        comparator_expected_points REAL,
+        comparator_actual_points INTEGER,
+        realized_delta INTEGER,
+        metrics_json TEXT NOT NULL CHECK (json_valid(metrics_json)),
+        findings_json TEXT NOT NULL CHECK (json_valid(findings_json)),
+        artifact_path TEXT NOT NULL,
+        artifact_sha256 TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        UNIQUE (settlement_id, review_type)
+    ) STRICT
+    """,
+    "CREATE INDEX IF NOT EXISTS idx_gameweek_reviews_settlement "
+    "ON gameweek_reviews(settlement_id, created_at DESC)",
+    """
+    CREATE TABLE IF NOT EXISTS review_player_outcomes (
+        review_id TEXT NOT NULL REFERENCES gameweek_reviews(review_id) ON DELETE CASCADE,
+        scenario TEXT NOT NULL CHECK (scenario IN ('selected','comparator')),
+        element INTEGER NOT NULL,
+        player_name TEXT NOT NULL,
+        role TEXT NOT NULL CHECK (role IN ('starter','bench')),
+        is_captain INTEGER NOT NULL DEFAULT 0 CHECK (is_captain IN (0,1)),
+        expected_points REAL NOT NULL,
+        p60 REAL CHECK (p60 IS NULL OR p60 BETWEEN 0 AND 1),
+        actual_points INTEGER NOT NULL,
+        minutes INTEGER NOT NULL CHECK (minutes >= 0),
+        effective_points INTEGER NOT NULL,
+        PRIMARY KEY (review_id, scenario, element)
+    ) STRICT
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS change_proposals (
+        proposal_id TEXT PRIMARY KEY,
+        review_id TEXT NOT NULL REFERENCES gameweek_reviews(review_id) ON DELETE CASCADE,
+        category TEXT NOT NULL CHECK (category IN (
+          'data','model','optimizer','research','strategy','execution','variance')),
+        change_level TEXT NOT NULL CHECK (change_level IN ('C0','C1','C2','C3')),
+        priority TEXT NOT NULL CHECK (priority IN ('P0','P1','P2','P3')),
+        title TEXT NOT NULL,
+        hypothesis TEXT NOT NULL,
+        evidence_json TEXT NOT NULL CHECK (json_valid(evidence_json)),
+        acceptance_json TEXT NOT NULL CHECK (json_valid(acceptance_json)),
+        status TEXT NOT NULL CHECK (status IN ('proposed','testing','accepted','rejected')),
+        created_at TEXT NOT NULL,
+        UNIQUE (review_id, title)
+    ) STRICT
+    """,
+)
+
 MIGRATIONS = (
     (1, "initial_ops_schema", MIGRATION_001),
     (2, "team_state_artifact_provenance", MIGRATION_002),
     (3, "team_state_observation_freshness", MIGRATION_003),
+    (4, "gameweek_settlement_and_review", MIGRATION_004),
 )

@@ -92,6 +92,13 @@ Secuencia de diagnóstico:
    distribución antes de diseñar un experimento/reentrenamiento.
 5. Nunca usar `reconcile` como feature del mismo batch evaluado ni editar una evaluación pasada.
 
+### Jornada histórica sin batch predeadline
+
+No se crea una proyección retroactiva para completar un hueco. `mova review gw` puede registrar un
+diagnóstico `retrospective` y una atribución pareada de decisiones documentadas, pero conserva
+`causality_status=not_eligible_no_predeadline_batch`. Esos reviews no entran al baseline de drift
+ni a `v_model_latest_scorecard`. GW1 2026/27 es el caso de referencia.
+
 ## Recuperación
 
 Un fallo deja job, step, `error_code`, correlación y stack trace en journald. Corregir la causa y

@@ -27,6 +27,9 @@ consulta ordinaria: `mova` y `/api/v1/status` son el contrato estable.
    [docs/operations/data-service.md](../../../docs/operations/data-service.md).
 6. Para proyectar, reconciliar una GW o interpretar scorecards/drift, lee
    [docs/operations/analytics-service.md](../../../docs/operations/analytics-service.md).
+7. Para cerrar una GW, atribuir una intervención y registrar feedback, lee
+   [docs/operations/gameweek.md](../../../docs/operations/gameweek.md). Ejecuta `mova review gw`
+   solo con `finished + data_checked`, package versionado, actor, razón e idempotency key.
 
 `status` no prueba red ni muta estado. `doctor` hace checks acotados y un único GET público a
 FPL; usa `--no-network` cuando la ejecución deba ser hermética. Un `FAIL` requerido devuelve
@@ -79,6 +82,10 @@ pendiente o `browser_writes=false`, limita el browser a login y lecturas.
 `--idempotency-key`. El collector sólo lee fuentes externas; no concede autoridad para clicks o
 escrituras en FPL. Código 2 significa corrida degradada y código 75 lock/cadencia conocida, no
 éxito pleno.
+
+`mova review gw` es una mutación post-settlement. Una GW sin batch inmutable predeadline solo
+admite review retrospectivo; nunca backfillea `model_evaluation_runs`. Después del cierre puede
+exportar ops/trace a PostgreSQL shadow mediante el import auditado, fuera del deadline.
 
 Después de un cambio ejecuta la prueba cercana, `pytest -q`, smoke de Docker y nuevamente
 `mova doctor --json`. Actualiza Supabase solo con evidencia ya verificada.
