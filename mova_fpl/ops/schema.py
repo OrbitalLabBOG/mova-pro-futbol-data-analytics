@@ -598,10 +598,22 @@ MIGRATION_005 = (
     """,
 )
 
+MIGRATION_006 = (
+    """
+    UPDATE research_runs
+    SET finished_at=COALESCE(imported_at, finished_at),
+        error_code=NULL,
+        error_detail=NULL
+    WHERE status='imported'
+      AND (error_code IS NOT NULL OR error_detail IS NOT NULL)
+    """,
+)
+
 MIGRATIONS = (
     (1, "initial_ops_schema", MIGRATION_001),
     (2, "team_state_artifact_provenance", MIGRATION_002),
     (3, "team_state_observation_freshness", MIGRATION_003),
     (4, "gameweek_settlement_and_review", MIGRATION_004),
     (5, "strategic_context_and_research", MIGRATION_005),
+    (6, "repair_imported_research_state", MIGRATION_006),
 )

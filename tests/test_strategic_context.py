@@ -156,12 +156,17 @@ def test_resultado_codex_se_valida_antes_de_entrar(tmp_path):
     result_path = config.research_root / "outbox" / f"{run_id}.result.json"
     result_path.parent.mkdir(parents=True, exist_ok=True)
     result_path.write_text(json.dumps(result), encoding="utf-8")
+    db.reject_research_run(
+        run_id, error_code="ValueError", error_detail="intento recuperable",
+    )
 
     imported = service.import_ready()
     assert imported["processed"] == 1
     assert imported["results"][0]["accepted"] == 1
     stored_run = db.research_run(run_id)
     assert stored_run["status"] == "imported"
+    assert stored_run["error_code"] is None
+    assert stored_run["error_detail"] is None
     assert stored_run["result_path"].endswith(f"archive/{run_id}.result.json")
     assert not result_path.exists()
     assert (config.research_root / "archive" / result_path.name).is_file()
