@@ -59,6 +59,22 @@ def parser() -> argparse.ArgumentParser:
     )
     review_status.add_argument("--gw", type=int, required=True)
     review_status.add_argument("--season")
+    strategy = commands.add_parser(
+        "strategy", help="plan, manifiesto e investigación verificable"
+    )
+    strategy_commands = strategy.add_subparsers(dest="strategy_command", required=True)
+    strategy_commands.add_parser("status", help="estado estratégico del ciclo vigente")
+    strategy_commands.add_parser("prepare", help="sella el manifiesto del ciclo")
+    plan = strategy_commands.add_parser("plan", help="activa un plan de temporada")
+    plan.add_argument("--file", required=True)
+    plan.add_argument("--actor", required=True)
+    plan.add_argument("--reason", required=True)
+    research = strategy_commands.add_parser("research", help="opera la cola de investigación")
+    research.add_argument("operation", choices=("due", "enqueue", "import"))
+    research.add_argument("--force", action="store_true")
+    research.add_argument("--actor")
+    research.add_argument("--reason")
+    research.add_argument("--idempotency-key")
     status = commands.add_parser("status", help="estado operativo consolidado")
     status.add_argument("--json", action="store_true", dest="as_json")
     doctor = commands.add_parser("doctor", help="diagnóstico verificable del runtime")
@@ -159,6 +175,42 @@ def main(argv: list[str] | None = None) -> int:
                 package_path=Path(args.package), actor=args.actor, reason=args.reason,
                 idempotency_key=args.idempotency_key,
             )
+        print(json.dumps(payload, ensure_ascii=False, default=str))
+        return 0
+
+    if args.command == "strategy":
+        from pathlib import Path
+        from mova_fpl.ops.strategy import StrategicContextService
+
+        db = OpsDB(config.ops_db, minimum_version=config.sqlite_min_version)
+        service = StrategicContextService(config, db)
+        if args.strategy_command == "status":
+            payload = db.strategic_status()
+        elif args.strategy_command == "prepare":
+            payload = service.prepare()
+        elif args.strategy_command == "plan":
+            payload = service.activate_plan(
+                json.loads(Path(args.file).read_text(encoding="utf-8")),
+                actor=args.actor, reason=args.reason,
+            )
+        elif args.operation == "due":
+            payload = service.due()
+            print(json.dumps(payload, ensure_ascii=False, default=str))
+            return 0 if payload["due"] else 75
+        elif args.operation == "enqueue":
+            if args.force and not all((args.actor, args.reason, args.idempotency_key)):
+                raise SystemExit(
+                    "strategy research enqueue --force exige --actor, --reason "
+                    "e --idempotency-key"
+                )
+            payload = service.enqueue(
+                force=args.force, actor=args.actor or "mova-research",
+                reason=args.reason, idempotency_key=args.idempotency_key,
+            )
+            print(json.dumps(payload, ensure_ascii=False, default=str))
+            return 75 if payload.get("status") == "skipped" else 0
+        else:
+            payload = service.import_ready()
         print(json.dumps(payload, ensure_ascii=False, default=str))
         return 0
 

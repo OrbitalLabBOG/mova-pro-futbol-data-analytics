@@ -6,7 +6,16 @@ install -d -m 0750 -o 10001 -g 10001 \
   /var/lib/mova-fpl/runtime \
   /var/lib/mova-fpl/artifacts /var/lib/mova-fpl/artifacts/sources \
   /var/lib/mova-fpl/artifacts/models /var/lib/mova-fpl/artifacts/decisions \
-  /var/lib/mova-fpl/artifacts/evidence
+  /var/lib/mova-fpl/artifacts/evidence \
+  /var/lib/mova-fpl/artifacts/strategic-context
+install -d -m 0700 -o 10002 -g 10002 \
+  /var/lib/mova-fpl/codex-home \
+  /var/lib/mova-fpl/artifacts/research \
+  /var/lib/mova-fpl/artifacts/research/inbox \
+  /var/lib/mova-fpl/artifacts/research/outbox \
+  /var/lib/mova-fpl/artifacts/research/archive \
+  /var/lib/mova-fpl/artifacts/research/quarantine \
+  /var/lib/mova-fpl/artifacts/research/logs
 install -d -m 0700 -o 999 -g 999 /var/lib/mova-fpl/postgres
 install -d -m 0700 -o 1000 -g 1000 /var/lib/mova-fpl/browser-profile
 install -d -m 0750 -o 10001 -g 10001 /opt/orbital/backups/mova-fpl

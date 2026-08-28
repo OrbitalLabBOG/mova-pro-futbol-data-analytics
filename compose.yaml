@@ -162,10 +162,39 @@ services:
     pids_limit: 256
     shm_size: 512m
 
+  research:
+    image: mova-fpl-research:${MOVA_IMAGE_TAG:-local}
+    build:
+      context: .
+      dockerfile: deploy/docker/research.Dockerfile
+    profiles: ["research"]
+    restart: "no"
+    read_only: true
+    environment:
+      CODEX_HOME: /home/research/.codex
+      MOVA_RESEARCH_ROOT: /research
+      MOVA_RESEARCH_MODEL: ${MOVA_RESEARCH_MODEL:-gpt-5.4}
+      MOVA_RESEARCH_TIMEOUT_MS: ${MOVA_RESEARCH_TIMEOUT_MS:-300000}
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp:size=128m,mode=1777
+    volumes:
+      - ${MOVA_DATA_ROOT:-/var/lib/mova-fpl}/artifacts/research:/research
+      - ${MOVA_CODEX_HOME:-/var/lib/mova-fpl/codex-home}:/home/research/.codex
+    networks:
+      - research_egress
+    mem_limit: 1g
+    cpus: 0.75
+    pids_limit: 128
+
 networks:
   control: {}
   worker_egress: {}
   browser_egress: {}
+  research_egress: {}
   data:
     internal: true
 

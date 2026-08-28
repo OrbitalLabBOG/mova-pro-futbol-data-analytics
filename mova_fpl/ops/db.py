@@ -681,6 +681,327 @@ class OpsDB:
             ).fetchone()
         return dict(row) if row else None
 
+    def active_season_plan(self, season: str) -> dict | None:
+        with self.connect(readonly=True) as con:
+            row = con.execute(
+                "SELECT * FROM season_plans WHERE season=? AND status='active' "
+                "ORDER BY revision DESC LIMIT 1", (season,),
+            ).fetchone()
+        if not row:
+            return None
+        payload = dict(row)
+        for key in ("assumptions_json", "chip_windows_json", "guardrails_json"):
+            payload[key.removesuffix("_json")] = json.loads(payload.pop(key))
+        return payload
+
+    def activate_season_plan(self, season: str, payload: dict, *, actor: str,
+                             reason: str) -> dict:
+        body = {
+            "season": season,
+            "horizon_start_gw": int(payload["horizon_start_gw"]),
+            "horizon_end_gw": int(payload["horizon_end_gw"]),
+            "assumptions": payload.get("assumptions", []),
+            "chip_windows": payload.get("chip_windows", []),
+            "guardrails": payload.get("guardrails", {}),
+            "rationale": str(payload["rationale"]).strip(),
+        }
+        if not 1 <= body["horizon_start_gw"] <= body["horizon_end_gw"] <= 38:
+            raise ValueError("horizonte de plan inválido")
+        if not body["rationale"]:
+            raise ValueError("rationale del plan es obligatorio")
+        content_sha = sha256_json(body)
+        now = utcnow()
+        with self.transaction() as con:
+            existing = con.execute(
+                "SELECT * FROM season_plans WHERE season=? AND content_sha256=? "
+                "AND status='active' ORDER BY revision DESC LIMIT 1",
+                (season, content_sha),
+            ).fetchone()
+            if existing:
+                plan_id = str(existing["plan_id"])
+                revision = int(existing["revision"])
+            else:
+                revision = int(con.execute(
+                    "SELECT COALESCE(MAX(revision),0)+1 FROM season_plans WHERE season=?",
+                    (season,),
+                ).fetchone()[0])
+                plan_id = new_id("plan")
+                con.execute(
+                    "UPDATE season_plans SET status='superseded' "
+                    "WHERE season=? AND status='active'", (season,),
+                )
+                con.execute(
+                    """INSERT INTO season_plans(
+                    plan_id,season,revision,status,horizon_start_gw,horizon_end_gw,
+                    assumptions_json,chip_windows_json,guardrails_json,rationale,
+                    actor,reason,content_sha256,created_at)
+                    VALUES(?,?,?,'active',?,?,?,?,?,?,?,?,?,?)""",
+                    (plan_id, season, revision, body["horizon_start_gw"],
+                     body["horizon_end_gw"], canonical_json(body["assumptions"]),
+                     canonical_json(body["chip_windows"]), canonical_json(body["guardrails"]),
+                     body["rationale"], actor, reason, content_sha, now),
+                )
+                self.append_audit(
+                    "season_plan_activated", actor=actor, subject_type="season_plan",
+                    subject_id=plan_id, payload={"season": season, "revision": revision,
+                                                "reason": reason,
+                                                "content_sha256": content_sha}, con=con,
+                )
+        return {"plan_id": plan_id, "revision": revision, "content_sha256": content_sha,
+                "reused": existing is not None}
+
+    def latest_cycle_manifest(self, cycle_id: str) -> dict | None:
+        with self.connect(readonly=True) as con:
+            row = con.execute(
+                "SELECT * FROM cycle_manifests WHERE cycle_id=? "
+                "ORDER BY revision DESC LIMIT 1", (cycle_id,),
+            ).fetchone()
+        if not row:
+            return None
+        payload = dict(row)
+        for key in ("source_manifest_json", "analytics_manifest_json",
+                    "research_summary_json"):
+            payload[key.removesuffix("_json")] = json.loads(payload.pop(key))
+        return payload
+
+    def add_cycle_manifest(self, payload: dict, *, actor: str = "mova-strategy") -> dict:
+        body = {
+            "cycle_id": payload["cycle_id"],
+            "as_of_at": payload["as_of_at"],
+            "deadline_at": payload["deadline_at"],
+            "phase": payload["phase"],
+            "team_state_id": payload.get("team_state_id"),
+            "plan_id": payload.get("plan_id"),
+            "source_manifest": payload["source_manifest"],
+            "analytics_manifest": payload["analytics_manifest"],
+            "research_summary": payload["research_summary"],
+        }
+        content_sha = sha256_json(body)
+        now = utcnow()
+        with self.transaction() as con:
+            existing = con.execute(
+                "SELECT * FROM cycle_manifests WHERE cycle_id=? AND content_sha256=?",
+                (body["cycle_id"], content_sha),
+            ).fetchone()
+            if existing:
+                return {"manifest_id": existing["manifest_id"],
+                        "revision": int(existing["revision"]),
+                        "content_sha256": content_sha, "reused": True,
+                        "artifact_path": existing["artifact_path"]}
+            revision = int(con.execute(
+                "SELECT COALESCE(MAX(revision),0)+1 FROM cycle_manifests WHERE cycle_id=?",
+                (body["cycle_id"],),
+            ).fetchone()[0])
+            manifest_id = new_id("manifest")
+            artifact_path = str(payload["artifact_path"])
+            con.execute(
+                """INSERT INTO cycle_manifests(
+                manifest_id,cycle_id,revision,as_of_at,deadline_at,phase,team_state_id,
+                plan_id,source_manifest_json,analytics_manifest_json,research_summary_json,
+                artifact_path,content_sha256,created_at)
+                VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (manifest_id, body["cycle_id"], revision, body["as_of_at"],
+                 body["deadline_at"], body["phase"], body["team_state_id"], body["plan_id"],
+                 canonical_json(body["source_manifest"]),
+                 canonical_json(body["analytics_manifest"]),
+                 canonical_json(body["research_summary"]), artifact_path, content_sha, now),
+            )
+            self.append_audit(
+                "cycle_manifest_sealed", actor=actor, cycle_id=body["cycle_id"],
+                subject_type="cycle_manifest", subject_id=manifest_id,
+                payload={"revision": revision, "content_sha256": content_sha,
+                         "artifact_path": artifact_path}, con=con,
+            )
+        return {"manifest_id": manifest_id, "revision": revision,
+                "content_sha256": content_sha, "reused": False,
+                "artifact_path": artifact_path}
+
+    def queue_research_run(self, payload: dict) -> dict:
+        now = utcnow()
+        with self.transaction() as con:
+            existing = con.execute(
+                "SELECT * FROM research_runs WHERE cycle_id=? AND manifest_id=? "
+                "AND provider=? AND request_sha256=?",
+                (payload["cycle_id"], payload["manifest_id"], payload["provider"],
+                 payload["request_sha256"]),
+            ).fetchone()
+            if existing:
+                return {**dict(existing), "reused": True}
+            run_id = payload["research_run_id"]
+            con.execute(
+                """INSERT INTO research_runs(
+                research_run_id,job_id,cycle_id,manifest_id,provider,status,
+                request_path,request_sha256,queued_at)
+                VALUES(?,?,?,?,?,'queued',?,?,?)""",
+                (run_id, payload.get("job_id"), payload["cycle_id"], payload["manifest_id"],
+                 payload["provider"], payload["request_path"], payload["request_sha256"], now),
+            )
+            self.append_audit(
+                "research_queued", actor="mova-research", cycle_id=payload["cycle_id"],
+                job_id=payload.get("job_id"), subject_type="research_run", subject_id=run_id,
+                payload={"provider": payload["provider"],
+                         "request_sha256": payload["request_sha256"]}, con=con,
+            )
+        return {"research_run_id": run_id, "status": "queued", "queued_at": now,
+                "reused": False}
+
+    def research_run(self, research_run_id: str) -> dict | None:
+        with self.connect(readonly=True) as con:
+            row = con.execute(
+                "SELECT * FROM research_runs WHERE research_run_id=?",
+                (research_run_id,),
+            ).fetchone()
+        return dict(row) if row else None
+
+    def reject_research_run(self, research_run_id: str, *, error_code: str,
+                            error_detail: str) -> None:
+        with self.transaction() as con:
+            run = con.execute(
+                "SELECT cycle_id,job_id,status FROM research_runs WHERE research_run_id=?",
+                (research_run_id,),
+            ).fetchone()
+            if not run or run["status"] == "imported":
+                return
+            con.execute(
+                "UPDATE research_runs SET status='rejected',error_code=?,error_detail=?,"
+                "finished_at=? WHERE research_run_id=?",
+                (error_code, error_detail[:500], utcnow(), research_run_id),
+            )
+            self.append_audit(
+                "research_rejected", actor="mova-research-validator",
+                cycle_id=run["cycle_id"], job_id=run["job_id"],
+                subject_type="research_run", subject_id=research_run_id,
+                severity="warning",
+                payload={"error_code": error_code, "error_detail": error_detail[:500]},
+                con=con,
+            )
+
+    def import_research_result(self, research_run_id: str, payload: dict, *,
+                               result_path: str, result_sha256: str) -> dict:
+        now = utcnow()
+        with self.transaction() as con:
+            run = con.execute(
+                "SELECT * FROM research_runs WHERE research_run_id=?",
+                (research_run_id,),
+            ).fetchone()
+            if not run:
+                raise ValueError("research_run desconocido")
+            if run["status"] == "imported":
+                return {"research_run_id": research_run_id, "status": "imported",
+                        "reused": True}
+            document_ids: dict[str, str] = {}
+            for document in payload["documents"]:
+                document_id = new_id("document")
+                document_ids[document["source_url"]] = document_id
+                con.execute(
+                    """INSERT OR IGNORE INTO research_documents(
+                    document_id,research_run_id,source_url,title,publisher,published_at,
+                    observed_at,source_tier,content_sha256) VALUES(?,?,?,?,?,?,?,?,?)""",
+                    (document_id, research_run_id, document["source_url"], document["title"],
+                     document["publisher"], document.get("published_at"), now,
+                     document["source_tier"], sha256_json(document)),
+                )
+            accepted = 0
+            for signal in payload["signals"]:
+                evidence_urls = signal["source_urls"]
+                validation = signal["validation_status"]
+                source_url = evidence_urls[0]
+                signal_body = {
+                    "claim": signal["claim_text"], "source_urls": evidence_urls,
+                    "direction": signal["direction"],
+                }
+                con.execute(
+                    """INSERT OR IGNORE INTO research_signals(
+                    signal_id,job_id,cycle_id,player_element,claim_type,claim_text,
+                    source_url,source_tier,observed_at,published_at,expires_at,confidence,
+                    conflict_status,content_sha256,research_run_id,subject_name,direction,
+                    validation_status,evidence_json)
+                    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    (new_id("signal"), run["job_id"], run["cycle_id"],
+                     signal.get("player_element"), signal["claim_type"],
+                     signal["claim_text"], source_url, signal["source_tier"], now,
+                     signal.get("published_at"), signal["expires_at"], signal["confidence"],
+                     signal["conflict_status"], sha256_json(signal_body), research_run_id,
+                     signal["subject_name"], signal["direction"], validation,
+                     canonical_json({"source_urls": evidence_urls,
+                                     "document_ids": [document_ids.get(url)
+                                                      for url in evidence_urls]})),
+                )
+                accepted += validation == "accepted"
+            for conflict in payload["conflicts"]:
+                con.execute(
+                    """INSERT INTO research_conflicts(
+                    conflict_id,research_run_id,cycle_id,subject,claim_type,description,
+                    source_urls_json,status,created_at) VALUES(?,?,?,?,?,?,?,?,?)""",
+                    (new_id("conflict"), research_run_id, run["cycle_id"],
+                     conflict["subject"], conflict["claim_type"], conflict["description"],
+                     canonical_json(conflict["source_urls"]), conflict["status"], now),
+                )
+            usage = payload.get("usage", {})
+            con.execute(
+                """UPDATE research_runs SET status='imported',result_path=?,
+                result_sha256=?,usage_json=?,finished_at=COALESCE(finished_at,?),
+                imported_at=? WHERE research_run_id=?""",
+                (result_path, result_sha256, canonical_json(usage), now, now,
+                 research_run_id),
+            )
+            con.execute(
+                """INSERT INTO cost_ledger(
+                cost_id,research_run_id,provider,model,input_tokens,output_tokens,
+                estimated_cost_usd,subscription_usage,detail_json,occurred_at)
+                VALUES(?,?,?,?,?,?,?,?,?,?)""",
+                (new_id("cost"), research_run_id, run["provider"], usage.get("model"),
+                 usage.get("input_tokens"), usage.get("output_tokens"),
+                 usage.get("estimated_cost_usd"), 1, canonical_json(usage), now),
+            )
+            self.append_audit(
+                "research_imported", actor="mova-research-validator",
+                cycle_id=run["cycle_id"], job_id=run["job_id"],
+                subject_type="research_run", subject_id=research_run_id,
+                payload={"documents": len(payload["documents"]),
+                         "signals": len(payload["signals"]), "accepted": accepted,
+                         "conflicts": len(payload["conflicts"]),
+                         "result_sha256": result_sha256}, con=con,
+            )
+        return {"research_run_id": research_run_id, "status": "imported",
+                "documents": len(payload["documents"]), "signals": len(payload["signals"]),
+                "accepted": accepted, "conflicts": len(payload["conflicts"]),
+                "reused": False}
+
+    def strategic_status(self, cycle_id: str | None = None) -> dict:
+        with self.connect(readonly=True) as con:
+            if cycle_id is None:
+                row = con.execute(
+                    "SELECT cycle_id FROM gameweek_cycles ORDER BY deadline_at DESC LIMIT 1"
+                ).fetchone()
+                cycle_id = str(row["cycle_id"]) if row else None
+            if not cycle_id:
+                return {"status": "empty", "cycle_id": None}
+            manifest = con.execute(
+                "SELECT * FROM cycle_manifests WHERE cycle_id=? "
+                "ORDER BY revision DESC LIMIT 1", (cycle_id,),
+            ).fetchone()
+            runs = con.execute(
+                "SELECT research_run_id,provider,status,queued_at,finished_at,imported_at,"
+                "error_code FROM research_runs WHERE cycle_id=? ORDER BY queued_at DESC",
+                (cycle_id,),
+            ).fetchall()
+            signals = con.execute(
+                "SELECT validation_status,conflict_status,COUNT(*) n FROM research_signals "
+                "WHERE cycle_id=? GROUP BY validation_status,conflict_status", (cycle_id,),
+            ).fetchall()
+            conflicts = int(con.execute(
+                "SELECT COUNT(*) FROM research_conflicts WHERE cycle_id=? AND status='unresolved'",
+                (cycle_id,),
+            ).fetchone()[0])
+        return {
+            "status": "ready" if manifest else "not_prepared", "cycle_id": cycle_id,
+            "manifest": dict(manifest) if manifest else None,
+            "research_runs": [dict(row) for row in runs],
+            "signals": [dict(row) for row in signals],
+            "unresolved_conflicts": conflicts,
+        }
+
     def gameweek_review_status(self, season: str, gw: int) -> dict:
         """Devuelve la memoria post-settlement sin abrir SQLite fuera del runtime."""
         with self.connect(readonly=True) as con:
@@ -724,7 +1045,9 @@ class OpsDB:
         allowed = {"job_runs", "job_steps", "audit_events", "incidents", "health_samples",
                    "source_snapshots", "team_state_snapshots", "decision_runs",
                    "outbox_events", "chip_strategy_runs", "gameweek_settlements",
-                   "gameweek_reviews", "change_proposals"}
+                   "gameweek_reviews", "change_proposals", "season_plans",
+                   "cycle_manifests", "research_runs", "research_documents",
+                   "research_signals", "research_conflicts", "cost_ledger"}
         if table not in allowed:
             raise ValueError(f"tabla no permitida: {table}")
         order = {
@@ -735,6 +1058,10 @@ class OpsDB:
             "outbox_events": "created_at", "chip_strategy_runs": "created_at",
             "gameweek_settlements": "settled_at", "gameweek_reviews": "created_at",
             "change_proposals": "created_at",
+            "season_plans": "created_at", "cycle_manifests": "created_at",
+            "research_runs": "queued_at", "research_documents": "observed_at",
+            "research_signals": "observed_at", "research_conflicts": "created_at",
+            "cost_ledger": "occurred_at",
         }[table]
         with self.connect(readonly=True) as con:
             rows = con.execute(
@@ -773,6 +1100,9 @@ class OpsDB:
             except ValueError:
                 pass
         step_rows = []
+        research_counts = {"queued": 0, "imported": 0, "rejected": 0, "failed": 0}
+        research_signals = 0
+        research_conflicts = 0
         with self.connect(readonly=True) as con:
             collector_job = con.execute(
                 "SELECT job_id FROM job_steps "
@@ -784,6 +1114,20 @@ class OpsDB:
                     "SELECT step_name,status,duration_ms FROM job_steps "
                     "WHERE job_id=? ORDER BY started_at", (collector_job["job_id"],)
                 ).fetchall()
+            if cycle.get("cycle_id"):
+                for row in con.execute(
+                    "SELECT status,COUNT(*) n FROM research_runs WHERE cycle_id=? "
+                    "GROUP BY status", (cycle["cycle_id"],),
+                ).fetchall():
+                    research_counts[str(row["status"])] = int(row["n"])
+                research_signals = int(con.execute(
+                    "SELECT COUNT(*) FROM research_signals WHERE cycle_id=? "
+                    "AND validation_status='accepted'", (cycle["cycle_id"],),
+                ).fetchone()[0])
+                research_conflicts = int(con.execute(
+                    "SELECT COUNT(*) FROM research_conflicts WHERE cycle_id=? "
+                    "AND status='unresolved'", (cycle["cycle_id"],),
+                ).fetchone()[0])
         lines = [
             "# HELP mova_up Whether ops.db is readable.",
             "# TYPE mova_up gauge",
@@ -808,6 +1152,16 @@ class OpsDB:
             "# HELP mova_team_state_free_transfers Latest exact free-transfer balance.",
             "# TYPE mova_team_state_free_transfers gauge",
             f"mova_team_state_free_transfers {int(team_state.get('free_transfers') or 0)}",
+            "# HELP mova_research_runs Research runs by status for current cycle.",
+            "# TYPE mova_research_runs gauge",
+            *[f'mova_research_runs{{status="{name}"}} {count}'
+              for name, count in sorted(research_counts.items())],
+            "# HELP mova_research_accepted_signals Accepted signals for current cycle.",
+            "# TYPE mova_research_accepted_signals gauge",
+            f"mova_research_accepted_signals {research_signals}",
+            "# HELP mova_research_unresolved_conflicts Unresolved research conflicts.",
+            "# TYPE mova_research_unresolved_conflicts gauge",
+            f"mova_research_unresolved_conflicts {research_conflicts}",
             "# HELP mova_open_incidents Open incidents by severity.",
             "# TYPE mova_open_incidents gauge",
         ]

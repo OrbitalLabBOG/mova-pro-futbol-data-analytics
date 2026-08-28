@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — operación del stack VPS"
 created: 2026-08-22
-updated: 2026-08-24
+updated: 2026-08-27
 tags: [mova, fpl, vps, docker, systemd, observability]
 status: active
 ---
@@ -29,6 +29,9 @@ VPS. Supabase se reserva para seguimiento externo de construcción del proyecto.
 | datos/modelos/traza | `/var/lib/mova-fpl/db/` y `/var/lib/mova-fpl/artifacts/` |
 | data service raw | `/var/lib/mova-fpl/artifacts/data-service/` |
 | analytics service | `/var/lib/mova-fpl/artifacts/analytics-service/` |
+| contexto estratégico | `/var/lib/mova-fpl/artifacts/strategic-context/` |
+| cola de research | `/var/lib/mova-fpl/artifacts/research/` |
+| auth Codex dedicada | `/var/lib/mova-fpl/codex-home/auth.json` (fuera de backups) |
 | perfil browser | `/var/lib/mova-fpl/browser-profile` (`0700`, sin backup general) |
 | backups | `/opt/orbital/backups/mova-fpl/<UTC>/` |
 | dashboard | `127.0.0.1:8787` del VPS |
@@ -45,7 +48,7 @@ sudo deploy/bin/bootstrap-host.sh
 export MOVA_GIT_SHA="$(git rev-parse --short HEAD)"
 export MOVA_IMAGE_TAG="$MOVA_GIT_SHA"
 sudo sed -i "s/^MOVA_GIT_SHA=.*/MOVA_GIT_SHA=$MOVA_GIT_SHA/; s/^MOVA_IMAGE_TAG=.*/MOVA_IMAGE_TAG=$MOVA_IMAGE_TAG/" /etc/mova-fpl/deploy.env
-docker compose build api worker
+docker compose --profile research build api worker research
 docker compose --profile jobs run --rm --no-deps worker python -m mova_fpl.ops.cli migrate
 docker compose up -d --wait postgres
 mova postgres migrate
@@ -85,6 +88,8 @@ mova data status
 mova collect all
 mova analytics status
 mova analytics run
+mova strategy status
+mova strategy research due
 
 # Vista HTTP; abrir túnel ssh -L 8787:127.0.0.1:8787 root@72.60.245.2
 curl -s http://127.0.0.1:8787/api/v1/status | python -m json.tool
@@ -128,6 +133,11 @@ calendario y eventos. La operación, tablas, calidad y recuperación están en
 versiones ya fueron sellados; tampoco evalúa hasta que la API oficial marque `data_checked`.
 Cada ejecución queda como job `model_analytics`, con pasos, duración, hashes e incidentes. Ver
 [servicio analítico](analytics-service.md).
+
+`mova-fpl-research.timer` evalúa cada 15 minutos, pero la cadencia efectiva es seis horas y
+solo dentro de las 30 horas anteriores al deadline. Ejecuta un contenedor one-shot sin DB,
+runtime env, navegador ni secretos de collector. La preparación, auth, validación y recuperación
+están en [contexto estratégico](strategic-research.md).
 
 La credencial de odds no pertenece a `runtime.env`. Se instala como
 `/etc/mova-fpl/odds-api-key`, propietario `root`, grupo del worker `10001`, modo `0640`, y Compose

@@ -53,7 +53,7 @@ a {{ color:#72a7ff }}
 <div class="card"><div class="muted">Drift del modelo</div><div class="value">{html.escape(str(scorecard.get('drift_status','sin scorecard')))}</div><div>GW {html.escape(str(scorecard.get('gw','—')))} · {html.escape(str(scorecard.get('variant','')))}</div></div>
 </div>
 <h2>Controles efectivos</h2><table><thead><tr><th>Control</th><th>Valor</th></tr></thead><tbody>{control_rows}</tbody></table>
-<p><a href="/api/v1/status">status JSON</a> · <a href="/api/v1/analytics">analytics</a> · <a href="/metrics">métricas</a> · <a href="/api/v1/audit">auditoría</a> · <a href="/api/v1/jobs">jobs</a> · <a href="/api/v1/steps">steps</a></p>
+<p><a href="/api/v1/status">status JSON</a> · <a href="/api/v1/analytics">analytics</a> · <a href="/api/v1/strategy">strategy</a> · <a href="/metrics">métricas</a> · <a href="/api/v1/audit">auditoría</a> · <a href="/api/v1/jobs">jobs</a> · <a href="/api/v1/steps">steps</a></p>
 </body></html>"""
     return body.encode("utf-8")
 
@@ -170,6 +170,7 @@ def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
                     return
                 routes = {
                     "/api/v1/status": None,
+                    "/api/v1/strategy": "strategic_status",
                     "/api/v1/jobs": "job_runs",
                     "/api/v1/steps": "job_steps",
                     "/api/v1/audit": "audit_events",
@@ -179,12 +180,18 @@ def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
                     "/api/v1/team-state": "team_state_snapshots",
                     "/api/v1/decisions": "decision_runs",
                     "/api/v1/outbox": "outbox_events",
+                    "/api/v1/research/runs": "research_runs",
+                    "/api/v1/research/documents": "research_documents",
+                    "/api/v1/research/signals": "research_signals",
+                    "/api/v1/research/conflicts": "research_conflicts",
                 }
                 if parsed.path not in routes:
                     self._send(HTTPStatus.NOT_FOUND, b'{"error":"not_found"}', "application/json")
                     return
                 if routes[parsed.path] is None:
                     payload = build_status(runtime, db)
+                elif routes[parsed.path] == "strategic_status":
+                    payload = db.strategic_status()
                 else:
                     raw = parse_qs(parsed.query).get("limit", ["50"])[0]
                     limit = max(1, min(int(raw), 500))

@@ -21,6 +21,7 @@ UNITS = (
     "mova-fpl-watchdog.timer",
     "mova-fpl-collector.timer",
     "mova-fpl-analytics.timer",
+    "mova-fpl-research.timer",
 )
 
 
@@ -124,6 +125,17 @@ def main() -> int:
             "container_state": (services.get("browser") or {}).get("state", "stopped"),
             "container_health": (services.get("browser") or {}).get("health"),
             "profile_present": profile_present,
+        },
+        "research": {
+            "auth_present": Path(
+                os.environ.get("MOVA_CODEX_HOME", "/var/lib/mova-fpl/codex-home")
+            ).joinpath("auth.json").is_file(),
+            "queue_present": Path(
+                os.environ.get(
+                    "MOVA_RESEARCH_ROOT",
+                    "/var/lib/mova-fpl/artifacts/research"
+                )
+            ).is_dir(),
         },
         "revisions": {"checkout": revision(args.repo), "image": revision(args.repo, "api")},
     }

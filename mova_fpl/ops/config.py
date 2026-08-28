@@ -45,6 +45,11 @@ class RuntimeConfig:
     analytics_minutes_version: str = "1.1.0"
     analytics_points_version: str = "1.1.0"
     analytics_reference_gameweeks: int = 6
+    strategic_root: Path = Path("/var/lib/mova-fpl/artifacts/strategic-context")
+    research_root: Path = Path("/var/lib/mova-fpl/artifacts/research")
+    research_provider: str = "codex_subscription"
+    research_min_interval_seconds: int = 6 * 3600
+    research_deadline_window_seconds: int = 30 * 3600
     collector_fpl_cadence_seconds: int = 6 * 3600
     # Máxima edad operativa de odds. La cadencia efectiva la decide el
     # deadline FPL y la cuota observada del proveedor.
@@ -112,6 +117,22 @@ class RuntimeConfig:
             analytics_reference_gameweeks=int(os.environ.get(
                 "MOVA_ANALYTICS_REFERENCE_GAMEWEEKS", "6"
             )),
+            strategic_root=Path(os.environ.get(
+                "MOVA_STRATEGIC_ROOT",
+                "/var/lib/mova-fpl/artifacts/strategic-context"
+            )),
+            research_root=Path(os.environ.get(
+                "MOVA_RESEARCH_ROOT", "/var/lib/mova-fpl/artifacts/research"
+            )),
+            research_provider=os.environ.get(
+                "MOVA_RESEARCH_PROVIDER", "codex_subscription"
+            ),
+            research_min_interval_seconds=int(os.environ.get(
+                "MOVA_RESEARCH_MIN_INTERVAL_SECONDS", str(6 * 3600)
+            )),
+            research_deadline_window_seconds=int(os.environ.get(
+                "MOVA_RESEARCH_DEADLINE_WINDOW_SECONDS", str(30 * 3600)
+            )),
             collector_fpl_cadence_seconds=int(os.environ.get(
                 "MOVA_COLLECTOR_FPL_CADENCE_SECONDS", str(6 * 3600)
             )),
@@ -169,6 +190,7 @@ class RuntimeConfig:
             )
         for path in (self.ops_db.parent, self.artifact_root, self.analytics_root,
                      self.analytics_lock_path,
+                     self.strategic_root, self.research_root,
                      self.host_probe_path,
                      self.collector_lock_path, self.collector_root,
                      self.collector_browser_path):
@@ -178,6 +200,12 @@ class RuntimeConfig:
             raise ValueError("MOVA_PRIVATE_STATE_MAX_AGE_SECONDS debe ser positivo")
         if not 3 <= self.analytics_reference_gameweeks <= 20:
             raise ValueError("MOVA_ANALYTICS_REFERENCE_GAMEWEEKS debe estar entre 3 y 20")
+        if self.research_provider not in {"codex_subscription", "fixture"}:
+            raise ValueError("MOVA_RESEARCH_PROVIDER inválido")
+        if self.research_min_interval_seconds <= 0:
+            raise ValueError("MOVA_RESEARCH_MIN_INTERVAL_SECONDS debe ser positivo")
+        if not 3600 <= self.research_deadline_window_seconds <= 7 * 86400:
+            raise ValueError("MOVA_RESEARCH_DEADLINE_WINDOW_SECONDS fuera de rango")
         cadences = (
             self.collector_fpl_cadence_seconds, self.collector_odds_cadence_seconds,
             self.collector_events_cadence_seconds, self.collector_schedule_cadence_seconds,

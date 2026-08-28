@@ -5,7 +5,7 @@
   "type": "object",
   "required": [
     "schema", "schema_version", "command", "generated_at", "overall_status",
-    "status_reasons", "runtime", "gameweek", "data", "models", "research",
+    "status_reasons", "runtime", "gameweek", "data", "models", "research", "strategy",
     "decision", "projection", "execution", "operations", "host"
   ],
   "properties": {
@@ -28,6 +28,7 @@
     },
     "analytics": {"type": "object"},
     "research": {"type": "object"},
+    "strategy": {"type": "object"},
     "decision": {"type": ["object", "null"]},
     "projection": {"type": ["object", "null"]},
     "execution": {"type": ["object", "null"]},

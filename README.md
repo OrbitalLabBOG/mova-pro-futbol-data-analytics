@@ -38,6 +38,8 @@ mova doctor
 # servicio autónomo: API FPL + odds + WhoScored
 mova collect all
 mova data status
+mova strategy status
+mova strategy research due
 
 # collector público sellado
 python -m mova_fpl.cli.collect_live --season 2026-27 --gw 2
@@ -78,6 +80,7 @@ Documentos principales:
 - [Servicio autónomo de datos](docs/operations/data-service.md)
 - [Operar el VPS](docs/operations/vps.md)
 - [PostgreSQL shadow](docs/operations/postgres-shadow.md)
+- [Plan y research verificable](docs/operations/strategic-research.md)
 - [Arquitectura del motor](docs/architecture/decision-engine.md)
 - [Autonomous Harness v1](docs/specs/fpl-autonomous-operator/10-autonomous-harness-v1.md)
 
