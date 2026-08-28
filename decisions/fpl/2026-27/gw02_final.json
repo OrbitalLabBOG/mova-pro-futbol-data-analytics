@@ -1,0 +1,55 @@
+{
+  "season": "2026-27",
+  "gw": 2,
+  "horizon": 5,
+  "label": "gw02-research-reviewed-roll-v1",
+  "decision_mode": "human_reviewed_override",
+  "transfers": [],
+  "chip": null,
+  "squad": [
+    496,
+    109,
+    8,
+    11,
+    418,
+    329,
+    173,
+    426,
+    427,
+    557,
+    124,
+    565,
+    411,
+    165,
+    346
+  ],
+  "starters": [
+    496,
+    418,
+    8,
+    11,
+    557,
+    426,
+    427,
+    565,
+    411,
+    165,
+    346
+  ],
+  "captain": 426,
+  "vice_captain": 411,
+  "bench_order": [
+    109,
+    124,
+    329,
+    173
+  ],
+  "rationale": [
+    "Guardar la transferencia libre: no existe una mejora robusta despues de corregir el sesgo de minutos del modelo para jugadores con poca historia enlazada en 2026-27.",
+    "Sin chip: la Wildcard MILP era invalida por presupuesto y su ganancia dependia de vender a Haaland, Tzolis y Sangare pese a que jugaron 90, 75 y 75 minutos en GW1 y siguen disponibles.",
+    "Bruno Fernandes capitan: Manchester United es el favorito mas fuerte de la jornada y el Scout oficial lo considera el mejor candidato de capitania para GW2.",
+    "Haaland vicecapitan y titular: el Scout oficial lo considera esencial y no existe parte medico adverso; su P(60) modelada de 40 por ciento se rechaza como descalibrada.",
+    "Sangare y Tzolis se mantienen titulares: la evidencia oficial contradice sus P(60) modeladas de 13 y 19 por ciento; Sangare fue descrito como set-and-forget tras su debut.",
+    "La FT guardada lleva el equipo a GW3 con dos transferencias y conserva Wildcard, Free Hit, Bench Boost y Triple Captain para una señal estructural mas fuerte."
+  ]
+}
