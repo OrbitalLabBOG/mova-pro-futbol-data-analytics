@@ -145,9 +145,13 @@ class StrategicContextService:
         plan = self.db.active_season_plan(self.config.season)
         with self.db.connect(readonly=True) as con:
             sources = [dict(row) for row in con.execute(
-                "SELECT source_name,captured_at,manifest_sha256,payload_sha256,"
-                "quality_status,artifact_path FROM source_snapshots WHERE cycle_id=? "
-                "ORDER BY captured_at DESC", (cycle_id,),
+                "SELECT s.source_name,s.captured_at,s.manifest_sha256,s.payload_sha256,"
+                "s.quality_status,s.artifact_path FROM source_snapshots s "
+                "WHERE s.cycle_id=? AND s.rowid=("
+                "SELECT latest.rowid FROM source_snapshots latest "
+                "WHERE latest.cycle_id=s.cycle_id AND latest.source_name=s.source_name "
+                "ORDER BY latest.captured_at DESC,latest.rowid DESC LIMIT 1) "
+                "ORDER BY s.source_name", (cycle_id,),
             ).fetchall()]
             projection = con.execute(
                 "SELECT projection_id,model_manifest_json,input_manifest_sha256,"
