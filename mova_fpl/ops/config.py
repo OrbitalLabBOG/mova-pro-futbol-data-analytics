@@ -42,8 +42,8 @@ class RuntimeConfig:
     collector_root: Path = Path("/var/lib/mova-fpl/artifacts/data-service")
     analytics_root: Path = Path("/var/lib/mova-fpl/artifacts/analytics-service")
     analytics_lock_path: Path = Path("/var/lib/mova-fpl/mova-fpl-analytics.lock")
-    analytics_minutes_version: str = "1.0.0"
-    analytics_points_version: str = "1.0.0"
+    analytics_minutes_version: str = "1.1.0"
+    analytics_points_version: str = "1.1.0"
     analytics_reference_gameweeks: int = 6
     collector_fpl_cadence_seconds: int = 6 * 3600
     # Máxima edad operativa de odds. La cadencia efectiva la decide el
@@ -107,8 +107,8 @@ class RuntimeConfig:
             analytics_lock_path=Path(os.environ.get(
                 "MOVA_ANALYTICS_LOCK_PATH", "/var/lib/mova-fpl/mova-fpl-analytics.lock"
             )),
-            analytics_minutes_version=os.environ.get("MOVA_MINUTES_MODEL_VERSION", "1.0.0"),
-            analytics_points_version=os.environ.get("MOVA_POINTS_MODEL_VERSION", "1.0.0"),
+            analytics_minutes_version=os.environ.get("MOVA_MINUTES_MODEL_VERSION", "1.1.0"),
+            analytics_points_version=os.environ.get("MOVA_POINTS_MODEL_VERSION", "1.1.0"),
             analytics_reference_gameweeks=int(os.environ.get(
                 "MOVA_ANALYTICS_REFERENCE_GAMEWEEKS", "6"
             )),

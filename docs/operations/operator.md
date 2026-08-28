@@ -28,6 +28,8 @@ mova data status
 mova data coverage
 mova analytics status
 mova analytics run
+mova review gw --package /app/decisions/fpl/2026-27/gwNN_closeout.json \
+  --actor julian --reason "..." --idempotency-key "..."
 ```
 
 En desarrollo, `mova` es el console script de `pyproject.toml`. Allí `host.available=false` es
@@ -114,6 +116,11 @@ proyección causal antes del deadline, `reconcile` evalúa GWs oficiales con `da
 `/api/v1/analytics/scorecards`, `/api/v1/analytics/gw/<GW>` y métricas `mova_model_*`.
 Interpretación, umbrales y recuperación están en el
 [runbook analítico](analytics-service.md).
+
+El cierre estratégico usa `mova review gw` después de `finished + data_checked`. Exige package,
+actor, razón y clave idempotente; persiste settlement/review en el writer SQLite y exporta la
+atribución a la traza. Si no existió batch predeadline, el resultado es retrospectivo y no cuenta
+como scorecard causal.
 
 ## Probe del host
 

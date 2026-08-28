@@ -37,6 +37,7 @@ COPY requirements/runtime.lock /tmp/runtime.lock
 RUN python -m pip install --no-cache-dir --requirement /tmp/runtime.lock \
  && python -m pip check
 COPY mova_fpl /app/mova_fpl
+COPY decisions /app/decisions
 COPY deploy/docker/engine-entrypoint.sh /usr/local/bin/mova-entrypoint
 RUN chmod 0755 /usr/local/bin/mova-entrypoint \
  && python -c "import sqlite3; assert tuple(map(int, sqlite3.sqlite_version.split('.'))) >= (3,51,3), sqlite3.sqlite_version"

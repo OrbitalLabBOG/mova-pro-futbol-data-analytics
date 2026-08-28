@@ -82,6 +82,19 @@ def test_analytics_cli_is_agent_operable():
     assert parser().parse_args(["analytics", "run"]).analytics_command == "run"
     parsed = parser().parse_args(["analytics", "status", "--limit", "10"])
     assert parsed.analytics_command == "status" and parsed.limit == 10
+    review = parser().parse_args([
+        "review", "gw", "--package", "closeout.json", "--actor", "julian",
+        "--reason", "cerrar GW1", "--idempotency-key", "gw1:closeout:v1",
+    ])
+    assert review.review_command == "gw"
+    review_status = parser().parse_args(["review", "status", "--gw", "1"])
+    assert review_status.review_command == "status" and review_status.gw == 1
+
+
+def test_analytics_defaults_match_approved_decision_models():
+    config = RuntimeConfig()
+    assert config.analytics_minutes_version == "1.1.0"
+    assert config.analytics_points_version == "1.1.0"
 
 
 def test_market_context_requires_and_preserves_bookmaker_consensus():
