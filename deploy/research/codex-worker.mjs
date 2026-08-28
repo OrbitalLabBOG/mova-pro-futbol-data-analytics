@@ -27,7 +27,7 @@ try {
 
 function atomicJson(path, value) {
   const tmp = `${path}.tmp-${process.pid}`;
-  writeFileSync(tmp, JSON.stringify(value) + "\n", {encoding: "utf8", mode: 0o600});
+  writeFileSync(tmp, JSON.stringify(value) + "\n", {encoding: "utf8", mode: 0o660});
   renameSync(tmp, path);
 }
 
@@ -107,7 +107,7 @@ try {
       maxBuffer: 16 * 1024 * 1024,
       env: {...process.env},
     });
-    writeFileSync(eventTmp, execution.stdout || "", {encoding: "utf8", mode: 0o600});
+    writeFileSync(eventTmp, execution.stdout || "", {encoding: "utf8", mode: 0o660});
     renameSync(eventTmp, join(logs, `${runId}.events.jsonl`));
     if (execution.status !== 0) {
       atomicJson(join(logs, `${runId}.error.json`), {

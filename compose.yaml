@@ -179,6 +179,8 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    group_add:
+      - "10001"
     tmpfs:
       - /tmp:size=128m,mode=1777
     volumes:

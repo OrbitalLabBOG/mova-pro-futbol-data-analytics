@@ -33,6 +33,7 @@ def _atomic_json(path: Path, payload: dict) -> str:
     encoded = (canonical_json(payload) + "\n").encode("utf-8")
     temporary = path.with_suffix(path.suffix + f".tmp-{os.getpid()}")
     temporary.write_bytes(encoded)
+    temporary.chmod(0o640)
     temporary.replace(path)
     return hashlib.sha256(encoded).hexdigest()
 

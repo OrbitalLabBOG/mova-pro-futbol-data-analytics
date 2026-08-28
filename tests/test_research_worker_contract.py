@@ -31,6 +31,7 @@ def test_compose_no_monta_db_browser_repo_ni_secretos_en_research():
     section = compose.split("\n  research:\n", 1)[1].split("\nnetworks:\n", 1)[0]
     assert "read_only: true" in section
     assert "cap_drop:" in section and "- ALL" in section
+    assert 'group_add:' in section and '- "10001"' in section
     assert section.count("/research") >= 1
     assert "/home/research/.codex" in section
     for forbidden in (
