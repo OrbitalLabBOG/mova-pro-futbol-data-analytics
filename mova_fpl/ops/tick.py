@@ -220,7 +220,16 @@ class TickRunner:
         snapshot = harness.call("seal_snapshot", save_snapshot)
         decision = None
         degraded = not memory_ok
-        if self.config.enable_shadow_decision and memory_ok:
+        verified_cycle = self.db.seal_verified_decision_cycle(
+            cycle_id, correlation_id=correlation_id, job_id=job_id,
+        )
+        if self.config.enable_shadow_decision and verified_cycle:
+            decision = {
+                "status": "skipped",
+                "reason": "verified_execution_exists",
+                **verified_cycle,
+            }
+        elif self.config.enable_shadow_decision and memory_ok:
             decision = self._shadow_decision(
                 harness, job_id, cycle_id, gw, deadline, now, Path(snapshot["path"]),
                 correlation_id,
