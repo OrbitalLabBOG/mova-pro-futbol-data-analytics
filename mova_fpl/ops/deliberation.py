@@ -101,16 +101,29 @@ def _normalize_intervention(raw: object, request: dict) -> dict:
     allowed = {int(value) for value in request["allowed_player_elements"]}
     owned = {int(value) for value in request["owned_player_elements"]}
     multiplier_raw = raw.get("xp_multiplier") or {}
-    if not isinstance(multiplier_raw, dict) or len(multiplier_raw) > 12:
+    if isinstance(multiplier_raw, list):
+        multiplier_items = [
+            (item.get("player_element"), item.get("factor"))
+            for item in multiplier_raw if isinstance(item, dict)
+        ]
+        if len(multiplier_items) != len(multiplier_raw):
+            raise ValueError("xp_multiplier contiene una fila inválida")
+    elif isinstance(multiplier_raw, dict):
+        multiplier_items = list(multiplier_raw.items())
+    else:
+        raise ValueError("xp_multiplier inválido")
+    if len(multiplier_items) > 12:
         raise ValueError("xp_multiplier inválido o demasiado amplio")
     multipliers: dict[str, float] = {}
-    for key, value in multiplier_raw.items():
+    for key, value in multiplier_items:
         element = int(key)
         factor = float(value)
         if element not in allowed:
             raise ValueError(f"element {element} fuera del contexto sellado")
         if not 0.0 <= factor <= 1.5:
             raise ValueError(f"factor {factor} fuera del rango shadow [0,1.5]")
+        if str(element) in multipliers:
+            raise ValueError(f"element {element} repetido en xp_multiplier")
         multipliers[str(element)] = factor
 
     def elements(name: str, *, must_be_owned: bool = False) -> list[int]:
