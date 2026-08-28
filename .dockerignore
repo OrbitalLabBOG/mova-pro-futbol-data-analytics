@@ -9,6 +9,5 @@ data
 models
 outputs
 artifacts
-decisions
 docs
 tests
