@@ -377,7 +377,7 @@ no borra evidencia previa y nunca amplía autonomía.
 | HV1-03a ✅ | collector/data quality autónomo | completado | HV1-02 |
 | HV1-03b ✅ | proyección/evaluación uniforme, scorecard, drift y servicio desplegado | completado | HV1-03a |
 | HV1-04 🟡 | team state y season plan implementados; falta memoria estratégica longitudinal | 6–8 h | HV1-02 |
-| HV1-05 🟡 | primer ciclo real: 13 documentos, 16 señales, 14 aceptadas y 1 conflicto abierto; falta evaluar cobertura multi-GW | 8–12 h | HV1-02/03 |
+| HV1-05 🟡 | servicio news/research: foco plantilla+candidatos, delta y slot final; falta evaluar cobertura multi-GW | 8–12 h | HV1-02/03 |
 | HV1-06 | Strategist + Critic + Validator + DecisionEnvelope | 10–14 h | HV1-03/04/05 |
 | HV1-07 | executor/verifier y autonomía por riesgo | 8–12 h | HV1-06 |
 | HV1-08 🟡 | scorecard/drift técnico implementado; faltan reviewer causal, costos y promoción | 8–12 h | HV1-03/06 |
@@ -428,6 +428,13 @@ taxonomía/TTL válidos y soporte oficial o de dos fuentes para aceptar una señ
 como candidato o conflicto, nunca como hecho operativo. El rollout conserva `shadow/A0`,
 `kill_switch=true` y `browser_writes=false`. Evidencia y runbook:
 [strategic context](../../operations/strategic-research.md).
+
+El corte de servicio posterior eliminó el barrido genérico: el request recibe la plantilla,
+hasta diez candidatos del modelo y las notas oficiales FPL, más las señales activas previas para
+investigar solo deltas. La agenda conserva la rutina de seis horas y añade una corrida final
+obligatoria entre T-120 y T-70; ticks sin request ya no levantan Codex. El health global permanece
+visible al cambiar de jornada. Esto no implementa todavía fetch independiente/locator de cada
+documento ni promoción automática de señales.
 
 ## 11. Definition of Done del harness v1
 

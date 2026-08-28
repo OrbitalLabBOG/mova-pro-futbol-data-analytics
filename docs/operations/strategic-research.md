@@ -17,6 +17,7 @@ operativa al LLM:
 ~~~text
 plan versionado
   → CycleManifest sellado
+  → foco: plantilla + candidatos xP + notas oficiales FPL
   → request JSON sin secretos
   → Codex web search aislado
   → brief candidato
@@ -27,6 +28,11 @@ plan versionado
 SQLite ops.db continúa como writer oficial hasta el cutover de HV1-02. PostgreSQL conserva
 datos y analítica; Supabase es solamente PM. Ninguna señal modifica predicciones, decisiones o
 el equipo por sí sola.
+
+El servicio tiene dos capas complementarias. El collector FPL conserva cada seis horas el
+campo oficial `news`, `status` y `chance_of_playing_next_round`; el worker Codex hace
+investigación web profunda únicamente en ventanas de decisión. No existe un scraper de prensa
+residente ni una llamada LLM por tick.
 
 ## Contratos
 
@@ -40,6 +46,10 @@ el equipo por sí sola.
 
 Un manifest se reutiliza si su contenido no cambió. Un plan idéntico no crea revisión. Una
 solicitud de investigación referencia el hash exacto del manifest que recibió.
+`research_focus` contiene primero los 15 elementos propios y después hasta diez candidatos del
+batch baseline aprobado, resueltos contra el último snapshot público. Cada sujeto lleva notas
+oficiales, p_play/p60 y razón de inclusión cuando están disponibles. La corrida siguiente recibe
+las señales activas anteriores y debe producir deltas, no repetir claims sin cambios.
 
 ## Operación
 
@@ -67,8 +77,16 @@ mova strategy research enqueue --force --actor julian \
 ~~~
 
 due y una cadencia no vencida devuelven código 75. El timer evalúa cada 15 minutos, pero solo
-encola dentro de las 30 horas pre-deadline y como máximo una vez cada seis horas. El worker usa
-un lock exclusivo y procesa una solicitud; el importador procesa todos los resultados listos.
+encola dentro de las 30 horas pre-deadline y como máximo una vez cada seis horas. Entre T-120 y
+T-70 minutos exige una corrida final aunque la cadencia rutinaria aún no venza; después de T-70
+no inicia research nuevo. Un tick sin request pendiente no levanta el contenedor Codex. El
+worker usa un lock exclusivo y procesa una solicitud; el importador procesa todos los resultados
+listos.
+
+`mova strategy status` expone el ciclo vigente y también `service`: última corrida global,
+conteos por estado, documentos, señales aceptadas y conflictos abiertos. Así la apertura de una
+nueva GW no convierte falsamente el health histórico en cero. Prometheus publica además
+`mova_research_runs_total` y `mova_research_last_import_timestamp_seconds`.
 
 ## Aislamiento y auth
 
@@ -103,6 +121,10 @@ siempre requieren zona horaria.
 Una señal se marca accepted solo con fuente oficial o al menos dos URLs distintas y sin
 conflicto abierto. Una fuente única no oficial queda candidate. La confianza del modelo nunca
 reemplaza este gate.
+
+Límite vigente: `research_documents` sella metadata normalizada y hash del registro citado; no
+hace todavía un fetch HTTP independiente ni conserva locator/excerpt verificable. Esa mejora se
+reserva para hardening si la evaluación multi-GW demuestra falsos positivos o baja trazabilidad.
 
 ## Diagnóstico
 

@@ -122,6 +122,85 @@ class AnalyticsStore:
             ).fetchall()
         return pd.DataFrame(rows)
 
+    def research_focus(self, *, squad: list[dict], batch_id: str | None,
+                       candidate_limit: int = 10) -> list[dict]:
+        """Contexto público mínimo para orientar noticias hacia sujetos relevantes."""
+        owned = {int(item["element"]): item for item in squad if item.get("element")}
+        with connect(self.config, autocommit=True) as con:
+            artifact = con.execute(
+                "select artifact_id from raw.source_artifacts "
+                "where source_name='fpl_official' order by observed_at desc limit 1"
+            ).fetchone()
+            if not artifact:
+                return []
+            projected = []
+            if batch_id:
+                projected = con.execute(
+                    "select element,player_name,team,position,xp,p_play,p_60 "
+                    "from analytics.player_projections where batch_id=%s "
+                    "order by xp desc limit %s",
+                    (batch_id, candidate_limit + len(owned)),
+                ).fetchall()
+            candidates = [row for row in projected if int(row["element"]) not in owned][
+                :candidate_limit
+            ]
+            projected_by_element = {int(row["element"]): row for row in projected}
+            elements = sorted({*owned, *(int(row["element"]) for row in candidates)})
+            if not elements:
+                return []
+            players = con.execute(
+                """select p.element,p.web_name,p.team_id,p.element_type,p.status,p.chance_next,
+                  p.news,t.name team_name,t.short_name team_short,
+                  concat_ws(' ',nullif(p.payload->>'first_name',''),
+                    nullif(p.payload->>'second_name','')) full_name
+                from analytics.fpl_player_observations p
+                join analytics.fpl_team_observations t
+                  on t.artifact_id=p.artifact_id and t.team_id=p.team_id
+                where p.artifact_id=%s and p.element=any(%s)""",
+                (artifact["artifact_id"], elements),
+            ).fetchall()
+        by_element = {int(row["element"]): row for row in players}
+        positions = {1: "GKP", 2: "DEF", 3: "MID", 4: "FWD"}
+        result = []
+        for element in elements:
+            player = by_element.get(element)
+            if not player:
+                continue
+            owned_row = owned.get(element)
+            projection = projected_by_element.get(element)
+            reasons = []
+            if owned_row:
+                reasons.append("current_squad")
+            if any(int(row["element"]) == element for row in candidates):
+                reasons.append("top_projection_candidate")
+            result.append({
+                "element": element,
+                "player_name": player.get("full_name") or player["web_name"],
+                "web_name": player["web_name"],
+                "team": player.get("team_name") or player.get("team_short"),
+                "position": positions.get(int(player["element_type"]), "unknown"),
+                "focus_reason": reasons,
+                "squad_position": int(owned_row["position"]) if owned_row else None,
+                "is_captain": bool(owned_row and owned_row.get("is_captain")),
+                "is_vice_captain": bool(owned_row and owned_row.get("is_vice_captain")),
+                "xp": float(projection["xp"]) if projection else None,
+                "p_play": float(projection["p_play"])
+                if projection and projection.get("p_play") is not None else None,
+                "p_60": float(projection["p_60"])
+                if projection and projection.get("p_60") is not None else None,
+                "official_status": player.get("status"),
+                "official_chance_next": player.get("chance_next"),
+                "official_news": player.get("news") or None,
+            })
+        return sorted(
+            result,
+            key=lambda item: (
+                0 if item["is_captain"] else 1 if "current_squad" in item["focus_reason"] else 2,
+                item["squad_position"] or 99,
+                -(item["xp"] or 0.0),
+            ),
+        )
+
     def actual_frame(self, season: str, gw: int) -> tuple[pd.DataFrame, str | None, bool]:
         with connect(self.config, autocommit=True) as con:
             checked = con.execute(

@@ -36,6 +36,12 @@ def validate_bundle(boot: dict, fixtures: list, entry: dict, history: dict,
         "fixtures": len(fixtures),
         "entry_id": entry.get("id"),
         "history_events": len(history.get("current") or []),
+        "players_with_news": sum(
+            bool(str(item.get("news") or "").strip()) for item in boot.get("elements") or []
+        ),
+        "players_flagged": sum(
+            str(item.get("status") or "a") != "a" for item in boot.get("elements") or []
+        ),
     }
     checks = [
         {"name": "teams_20", "passed": observed["teams"] == 20,
