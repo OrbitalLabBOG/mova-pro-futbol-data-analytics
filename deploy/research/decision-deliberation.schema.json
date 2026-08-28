@@ -57,7 +57,7 @@
             "author": {"type": "string", "const": "strategist"},
             "rationale": {"type": "string", "maxLength": 2000},
             "xp_multiplier": {
-              "type": "object", "maxProperties": 12,
+              "type": "object",
               "additionalProperties": {"type": "number", "minimum": 0, "maximum": 1.5}
             },
             "allow_chips": {
