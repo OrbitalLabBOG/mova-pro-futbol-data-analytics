@@ -15,6 +15,7 @@ const outbox = join(root, "outbox");
 const archive = join(root, "archive");
 const logs = join(root, "logs");
 for (const path of [inbox, outbox, archive, logs]) mkdirSync(path, {recursive: true});
+mkdirSync("/tmp/mova-research", {recursive: true});
 
 let lock;
 try {
