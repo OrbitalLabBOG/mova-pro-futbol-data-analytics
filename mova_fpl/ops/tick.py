@@ -7,7 +7,6 @@ import hashlib
 import json
 import logging
 import os
-import re
 import shutil
 import sys
 from contextlib import contextmanager
@@ -16,6 +15,7 @@ from pathlib import Path
 
 from mova_fpl.data.snapshot import capture_bytes
 from mova_fpl.data.sources import fetch_bootstrap, fetch_fixtures
+from mova_fpl.ops.decision_envelope import build_envelope
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB, canonical_json, new_id, sha256_json, utcnow
 from mova_fpl.ops.harness import Harness
@@ -25,6 +25,7 @@ from mova_fpl.ops.schedule import (
     public_state_cadence_seconds,
     select_event,
 )
+from mova_fpl.ops.strategy import StrategicContextService
 
 LOG = logging.getLogger(__name__)
 ROOT = Path(__file__).resolve().parents[2]
@@ -78,18 +79,6 @@ def _sha_file(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             h.update(chunk)
     return h.hexdigest()
-
-
-def _parse_decision(path: Path) -> dict:
-    text = path.read_text(encoding="utf-8")
-    xp = re.search(r"xP del once \(con capitán\) \| ([0-9.]+)", text)
-    fingerprint = re.search(r"Huella de la decisión: `([0-9a-f]+)`", text)
-    chip = re.search(r"Se juega el ([A-Z ]+) en esta jornada", text)
-    return {
-        "expected_points": float(xp.group(1)) if xp else None,
-        "fingerprint": fingerprint.group(1) if fingerprint else None,
-        "chip": chip.group(1).strip().lower().replace(" ", "_") if chip else None,
-    }
 
 
 class TickRunner:
@@ -230,9 +219,13 @@ class TickRunner:
                 **verified_cycle,
             }
         elif self.config.enable_shadow_decision and memory_ok:
+            prepared = harness.call(
+                "seal_cycle_manifest",
+                lambda: StrategicContextService(self.config, self.db).prepare(now=now),
+            )
             decision = self._shadow_decision(
                 harness, job_id, cycle_id, gw, deadline, now, Path(snapshot["path"]),
-                correlation_id,
+                correlation_id, prepared,
             )
             degraded = degraded or decision.get("status") != "completed"
         elif self.config.enable_shadow_decision:
@@ -257,11 +250,13 @@ class TickRunner:
 
     def _shadow_decision(self, harness: Harness, job_id: str, cycle_id: str, gw: int,
                          deadline: str, now: datetime, snapshot_dir: Path,
-                         correlation_id: str) -> dict:
+                         correlation_id: str, prepared_manifest: dict) -> dict:
         decisions = self.config.artifact_root / "decisions" / self.config.season
         decisions.mkdir(parents=True, exist_ok=True)
-        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        stamp = now.astimezone(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
         out = decisions / f"gw{gw:02d}_{stamp}_shadow.md"
+        bundle_path = decisions / f"gw{gw:02d}_{stamp}_candidates.json"
+        envelope_path = decisions / f"gw{gw:02d}_{stamp}_envelope.json"
         log_path = decisions / f"gw{gw:02d}_{stamp}_shadow.log"
         env = dict(os.environ)
         env.update({
@@ -276,6 +271,7 @@ class TickRunner:
             "--version", "1.1.0", "--minutes-version", "1.1.0",
             "--snapshot-dir", str(snapshot_dir), "--team-id", str(self.config.team_id),
             "--chips", "--lookahead", "6", "--dry-run", "--out", str(out),
+            "--json-out", str(bundle_path), "--as-of", prepared_manifest["manifest"]["as_of_at"],
         ]
         private_state = self.db.latest_team_state(cycle_id)
         private_state_used = None
@@ -309,14 +305,48 @@ class TickRunner:
                 detail={"returncode": result.returncode, "log_path": str(log_path)},
             )
             return {"status": "failed", "log_path": str(log_path)}
-        parsed = _parse_decision(out)
-        artifact_sha = _sha_file(out)
-        decision_id = self.db.record_decision(
-            job_id=job_id, cycle_id=cycle_id, mode="shadow", status="staged",
-            policy_version="milp-points-1.1.0", expected_points=parsed["expected_points"],
-            chip=parsed["chip"], fingerprint=parsed["fingerprint"],
-            manifest_sha256=artifact_sha, artifact_path=str(out),
+        bundle = json.loads(bundle_path.read_text(encoding="utf-8"))
+        controls = {
+            key: value["value"] for key, value in self.db.controls().items()
+        }
+        manifest = {
+            **prepared_manifest["manifest"],
+            "revision": prepared_manifest["revision"],
+        }
+        envelope = build_envelope(
+            bundle=bundle,
+            manifest=manifest,
+            manifest_id=prepared_manifest["manifest_id"],
+            manifest_sha256=prepared_manifest["content_sha256"],
+            controls=controls,
         )
-        return {"status": "completed", "decision_id": decision_id, "artifact": str(out),
-                "artifact_sha256": artifact_sha, "private_team_state": private_state_used,
-                **parsed}
+        envelope_path.write_text(
+            json.dumps(envelope, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        artifact_sha = _sha_file(envelope_path)
+        recorded = self.db.record_decision_envelope(
+            job_id=job_id, envelope=envelope, artifact_path=str(envelope_path),
+            artifact_sha256=artifact_sha,
+        )
+        selected = next(
+            row["decision"] for row in envelope["candidates"]
+            if row["candidate_key"] == envelope["selected_candidate_key"]
+        )
+        return {
+            "status": "completed",
+            "lifecycle_status": envelope["status"],
+            "decision_id": recorded["decision_id"],
+            "envelope_id": recorded["envelope_id"],
+            "artifact": str(envelope_path),
+            "artifact_sha256": artifact_sha,
+            "report_artifact": str(out),
+            "candidate_artifact": str(bundle_path),
+            "manifest_id": prepared_manifest["manifest_id"],
+            "manifest_sha256": prepared_manifest["content_sha256"],
+            "blocking_codes": envelope["validation"]["blocking_codes"],
+            "private_team_state": private_state_used,
+            "expected_points": selected["expected_points"],
+            "fingerprint": selected["fingerprint"],
+            "chip": selected["chip"],
+        }

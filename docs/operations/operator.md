@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — contrato del operador"
 created: 2026-08-23
-updated: 2026-08-27
+updated: 2026-08-28
 tags: [mova, fpl, operator, cli, observability, contract]
 status: active
 ---
@@ -56,6 +56,7 @@ revisión desplegada, PostgreSQL shadow cuando está configurado, perfil browser
 | `research` | conteo de señales y conflictos vigentes del ciclo |
 | `strategy` | último manifiesto sellado y corridas de research del ciclo |
 | `decision` | última decisión sellada, política, estado, xP y fingerprint |
+| `decision_envelope` | manifest real, hash, candidato seleccionado y estado `blocked/staged` |
 | `execution` | última ejecución browser y evidencia, si existe |
 | `operations` | heartbeat, salud, fallos 24 h, incidentes, outbox y migrations |
 | `host` | unidades, API, browser y revisiones; `available=false` fuera del wrapper |
@@ -135,6 +136,13 @@ valida el brief y lo incorpora. El worker Codex no accede a DB, navegador, repo 
 de datos. Contrato y recuperación en
 [contexto estratégico](strategic-research.md).
 
+El lifecycle shadow de HV1-06A genera tres candidatos y un validador determinista. Sus endpoints
+read-only son `/api/v1/decision-envelopes`, `/api/v1/decision-candidates` y
+`/api/v1/decision-checks`; Prometheus expone `mova_decision_envelope_status` y
+`mova_decision_blocking_checks`. Un envelope `blocked` es un resultado seguro esperado, no un
+fallo del tick. Contrato, checks y recuperación en
+[lifecycle de decisión](decision-lifecycle.md).
+
 ## Probe del host
 
 `deploy/bin/host-probe.py` registra exclusivamente estados de unidades, salud de API/PostgreSQL,
@@ -149,7 +157,7 @@ host, diagnosticar desde el host; no ampliar privilegios del contenedor.
 
 ## Rollout y rollback
 
-Para desplegar HV1-01 se construye una imagen con el mismo SHA del checkout, se ejecutan
+Para desplegar el control plane se construye una imagen con el mismo SHA del checkout, se ejecutan
 `status/doctor`, se reemplaza el API y se vuelven a ejecutar ambos comandos. La DB no cambia de
-schema. Ante regresión, restaurar checkout e imagen anterior; `ops.db` y artefactos son compatibles
-y no deben restaurarse.
+schema salvo una migración versionada. Ante regresión de HV1-06A, restaurar checkout e imagen
+anterior; la migración 007 es aditiva y los envelopes nuevos pueden permanecer como evidencia.

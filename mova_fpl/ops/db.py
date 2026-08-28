@@ -373,6 +373,128 @@ class OpsDB:
             )
         return decision_id
 
+    def record_decision_envelope(self, *, job_id: str, envelope: dict,
+                                 artifact_path: str, artifact_sha256: str) -> dict:
+        """Persiste el paquete máquina completo en una sola transacción idempotente."""
+        from mova_fpl.ops.decision_envelope import decision_fingerprint
+
+        content_sha = str(envelope["content_sha256"])
+        cycle_id = str(envelope["cycle_id"])
+        envelope_id = str(envelope["envelope_id"])
+        selected_key = str(envelope["selected_candidate_key"])
+        candidates = {str(row["candidate_key"]): row for row in envelope["candidates"]}
+        selected = candidates[selected_key]["decision"]
+        decision_id = f"decision_{content_sha[:24]}"
+        created_at = utcnow()
+        with self.transaction() as con:
+            existing = con.execute(
+                "SELECT envelope_id,decision_id,status,artifact_path FROM decision_envelopes "
+                "WHERE content_sha256=?", (content_sha,),
+            ).fetchone()
+            if existing:
+                return {**dict(existing), "reused": True, "content_sha256": content_sha}
+
+            revision = int(con.execute(
+                "SELECT COALESCE(MAX(revision),0)+1 FROM decision_runs WHERE cycle_id=?",
+                (cycle_id,),
+            ).fetchone()[0])
+            superseded = con.execute(
+                "UPDATE decision_runs SET status='superseded' "
+                "WHERE cycle_id=? AND status IN ('staged','blocked')", (cycle_id,),
+            ).rowcount
+            con.execute(
+                "UPDATE decision_envelopes SET status='superseded' "
+                "WHERE cycle_id=? AND status IN ('staged','blocked')", (cycle_id,),
+            )
+            con.execute(
+                """INSERT INTO decision_runs(
+                decision_id,job_id,cycle_id,revision,mode,policy_version,status,
+                expected_points,chip,fingerprint,manifest_sha256,artifact_path,created_at)
+                VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (
+                    decision_id, job_id, cycle_id, revision, envelope["mode"],
+                    envelope["policy_version"], envelope["status"],
+                    float(selected["expected_points"]), selected.get("chip"),
+                    decision_fingerprint(selected),
+                    envelope["manifest"]["content_sha256"], artifact_path, created_at,
+                ),
+            )
+            ordered = list(selected["starters"]) + list(selected["bench_order"])
+            for position, element in enumerate(ordered, start=1):
+                con.execute(
+                    """INSERT INTO decision_players(
+                    decision_id,element,squad_position,role,is_captain,is_vice_captain,
+                    transfer_direction,expected_points) VALUES(?,?,?,?,?,?,?,NULL)""",
+                    (
+                        decision_id, element, position,
+                        "starter" if position <= 11 else "bench",
+                        int(element == selected.get("captain")),
+                        int(element == selected.get("vice_captain")),
+                        "in" if element in (selected.get("transfers_in") or ()) else None,
+                    ),
+                )
+            con.execute(
+                """INSERT INTO decision_envelopes(
+                envelope_id,job_id,cycle_id,decision_id,manifest_id,schema_version,
+                policy_version,status,selected_candidate_key,content_sha256,artifact_path,
+                artifact_sha256,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (
+                    envelope_id, job_id, cycle_id, decision_id,
+                    envelope["manifest"]["manifest_id"], envelope["schema"],
+                    envelope["policy_version"], envelope["status"], selected_key,
+                    content_sha, artifact_path, artifact_sha256, created_at,
+                ),
+            )
+            for row in envelope["candidates"]:
+                candidate = row["decision"]
+                con.execute(
+                    """INSERT INTO decision_candidates(
+                    envelope_id,candidate_key,label,selected,decision_json,fingerprint,
+                    expected_points) VALUES(?,?,?,?,?,?,?)""",
+                    (
+                        envelope_id, row["candidate_key"], row["label"],
+                        int(row["candidate_key"] == selected_key),
+                        canonical_json(candidate), decision_fingerprint(candidate),
+                        float(candidate["expected_points"]),
+                    ),
+                )
+            for row in envelope["validation"]["checks"]:
+                check_id = "decisioncheck_" + hashlib.sha256(
+                    f"{envelope_id}:{row['code']}".encode("utf-8")
+                ).hexdigest()[:24]
+                con.execute(
+                    """INSERT INTO decision_validation_checks(
+                    check_id,envelope_id,code,severity,passed,summary,detail_json,created_at)
+                    VALUES(?,?,?,?,?,?,?,?)""",
+                    (
+                        check_id, envelope_id, row["code"], row["severity"],
+                        int(row["passed"]), row["summary"],
+                        canonical_json(row.get("detail") or {}), created_at,
+                    ),
+                )
+            self.append_audit(
+                "decision_envelope_recorded",
+                correlation_id=con.execute(
+                    "SELECT correlation_id FROM job_runs WHERE job_id=?", (job_id,)
+                ).fetchone()[0],
+                cycle_id=cycle_id, job_id=job_id, subject_type="decision_envelope",
+                subject_id=envelope_id,
+                severity="warning" if envelope["status"] == "blocked" else "info",
+                payload={
+                    "decision_id": decision_id, "status": envelope["status"],
+                    "content_sha256": content_sha,
+                    "manifest_sha256": envelope["manifest"]["content_sha256"],
+                    "blocking_codes": envelope["validation"]["blocking_codes"],
+                    "superseded_decisions": superseded,
+                }, con=con,
+            )
+        return {
+            "envelope_id": envelope_id, "decision_id": decision_id,
+            "status": envelope["status"], "revision": revision,
+            "content_sha256": content_sha, "artifact_path": artifact_path,
+            "reused": False, "superseded_decisions": superseded,
+        }
+
     def seal_verified_decision_cycle(self, cycle_id: str, *, correlation_id: str,
                                      job_id: str) -> dict | None:
         """Cierra propuestas tardías cuando el ciclo ya fue ejecutado y verificado."""
@@ -1121,6 +1243,8 @@ class OpsDB:
     def recent(self, table: str, limit: int = 50) -> list[dict]:
         allowed = {"job_runs", "job_steps", "audit_events", "incidents", "health_samples",
                    "source_snapshots", "team_state_snapshots", "decision_runs",
+                   "decision_envelopes", "decision_candidates",
+                   "decision_validation_checks",
                    "outbox_events", "chip_strategy_runs", "gameweek_settlements",
                    "gameweek_reviews", "change_proposals", "season_plans",
                    "cycle_manifests", "research_runs", "research_documents",
@@ -1131,6 +1255,9 @@ class OpsDB:
             "job_runs": "started_at", "job_steps": "started_at", "audit_events": "occurred_at",
             "incidents": "opened_at", "health_samples": "observed_at",
             "source_snapshots": "captured_at", "decision_runs": "created_at",
+            "decision_envelopes": "created_at",
+            "decision_candidates": "rowid",
+            "decision_validation_checks": "created_at",
             "team_state_snapshots": "observed_at",
             "outbox_events": "created_at", "chip_strategy_runs": "created_at",
             "gameweek_settlements": "settled_at", "gameweek_reviews": "created_at",
@@ -1184,6 +1311,8 @@ class OpsDB:
         research_signals = 0
         research_conflicts = 0
         research_last_import_epoch = 0.0
+        decision_envelope_status = "missing"
+        decision_blocking_checks = 0
         with self.connect(readonly=True) as con:
             collector_job = con.execute(
                 "SELECT job_id FROM job_steps "
@@ -1224,6 +1353,17 @@ class OpsDB:
                     ).timestamp()
                 except ValueError:
                     pass
+            latest_envelope = con.execute(
+                "SELECT envelope_id,status FROM decision_envelopes "
+                "ORDER BY created_at DESC LIMIT 1"
+            ).fetchone()
+            if latest_envelope:
+                decision_envelope_status = str(latest_envelope["status"])
+                decision_blocking_checks = int(con.execute(
+                    "SELECT COUNT(*) FROM decision_validation_checks "
+                    "WHERE envelope_id=? AND severity='block' AND passed=0",
+                    (latest_envelope["envelope_id"],),
+                ).fetchone()[0])
         lines = [
             "# HELP mova_up Whether ops.db is readable.",
             "# TYPE mova_up gauge",
@@ -1265,6 +1405,14 @@ class OpsDB:
             "# HELP mova_research_last_import_timestamp_seconds Last imported research run.",
             "# TYPE mova_research_last_import_timestamp_seconds gauge",
             f"mova_research_last_import_timestamp_seconds {research_last_import_epoch:.3f}",
+            "# HELP mova_decision_envelope_status Latest envelope lifecycle status.",
+            "# TYPE mova_decision_envelope_status gauge",
+            *[f'mova_decision_envelope_status{{status="{name}"}} '
+              f'{1 if decision_envelope_status == name else 0}'
+              for name in ("missing", "blocked", "staged", "superseded")],
+            "# HELP mova_decision_blocking_checks Failed hard gates in latest envelope.",
+            "# TYPE mova_decision_blocking_checks gauge",
+            f"mova_decision_blocking_checks {decision_blocking_checks}",
             "# HELP mova_open_incidents Open incidents by severity.",
             "# TYPE mova_open_incidents gauge",
         ]

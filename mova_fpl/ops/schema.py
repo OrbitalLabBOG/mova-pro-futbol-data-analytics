@@ -609,6 +609,53 @@ MIGRATION_006 = (
     """,
 )
 
+MIGRATION_007 = (
+    """
+    CREATE TABLE IF NOT EXISTS decision_envelopes (
+        envelope_id TEXT PRIMARY KEY,
+        job_id TEXT REFERENCES job_runs(job_id),
+        cycle_id TEXT NOT NULL REFERENCES gameweek_cycles(cycle_id),
+        decision_id TEXT NOT NULL UNIQUE REFERENCES decision_runs(decision_id) ON DELETE CASCADE,
+        manifest_id TEXT NOT NULL REFERENCES cycle_manifests(manifest_id),
+        schema_version TEXT NOT NULL,
+        policy_version TEXT NOT NULL,
+        status TEXT NOT NULL CHECK (status IN ('blocked','staged','superseded')),
+        selected_candidate_key TEXT NOT NULL,
+        content_sha256 TEXT NOT NULL UNIQUE,
+        artifact_path TEXT NOT NULL,
+        artifact_sha256 TEXT NOT NULL,
+        created_at TEXT NOT NULL
+    ) STRICT
+    """,
+    "CREATE INDEX IF NOT EXISTS idx_decision_envelopes_cycle_created "
+    "ON decision_envelopes(cycle_id, created_at DESC)",
+    """
+    CREATE TABLE IF NOT EXISTS decision_candidates (
+        envelope_id TEXT NOT NULL REFERENCES decision_envelopes(envelope_id) ON DELETE CASCADE,
+        candidate_key TEXT NOT NULL,
+        label TEXT NOT NULL,
+        selected INTEGER NOT NULL CHECK (selected IN (0,1)),
+        decision_json TEXT NOT NULL CHECK (json_valid(decision_json)),
+        fingerprint TEXT NOT NULL,
+        expected_points REAL NOT NULL,
+        PRIMARY KEY (envelope_id, candidate_key)
+    ) STRICT
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS decision_validation_checks (
+        check_id TEXT PRIMARY KEY,
+        envelope_id TEXT NOT NULL REFERENCES decision_envelopes(envelope_id) ON DELETE CASCADE,
+        code TEXT NOT NULL,
+        severity TEXT NOT NULL CHECK (severity IN ('info','warning','block')),
+        passed INTEGER NOT NULL CHECK (passed IN (0,1)),
+        summary TEXT NOT NULL,
+        detail_json TEXT NOT NULL CHECK (json_valid(detail_json)),
+        created_at TEXT NOT NULL,
+        UNIQUE (envelope_id, code)
+    ) STRICT
+    """,
+)
+
 MIGRATIONS = (
     (1, "initial_ops_schema", MIGRATION_001),
     (2, "team_state_artifact_provenance", MIGRATION_002),
@@ -616,4 +663,5 @@ MIGRATIONS = (
     (4, "gameweek_settlement_and_review", MIGRATION_004),
     (5, "strategic_context_and_research", MIGRATION_005),
     (6, "repair_imported_research_state", MIGRATION_006),
+    (7, "typed_decision_envelopes", MIGRATION_007),
 )

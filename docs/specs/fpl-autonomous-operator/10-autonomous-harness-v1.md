@@ -378,7 +378,8 @@ no borra evidencia previa y nunca amplía autonomía.
 | HV1-03b ✅ | proyección/evaluación uniforme, scorecard, drift y servicio desplegado | completado | HV1-03a |
 | HV1-04 🟡 | team state y season plan implementados; falta memoria estratégica longitudinal | 6–8 h | HV1-02 |
 | HV1-05 🟡 | servicio news/research: foco plantilla+candidatos, delta y slot final; falta evaluar cobertura multi-GW | 8–12 h | HV1-02/03 |
-| HV1-06 | Strategist + Critic + Validator + DecisionEnvelope | 10–14 h | HV1-03/04/05 |
+| HV1-06A ✅ | bundle máquina, `do_nothing`, alternativa, Validator y DecisionEnvelope | completado | HV1-03/04/05 |
+| HV1-06B | Strategist + Critic acotados sobre `Intervention`, sin autoridad directa | 4–7 h | HV1-06A |
 | HV1-07 | executor/verifier y autonomía por riesgo | 8–12 h | HV1-06 |
 | HV1-08 🟡 | scorecard/drift técnico implementado; faltan reviewer causal, costos y promoción | 8–12 h | HV1-03/06 |
 

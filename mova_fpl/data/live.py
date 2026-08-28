@@ -304,6 +304,7 @@ def private_team_state(payload: dict, team_id: int, gw: int, roster: "pd.DataFra
         "ultima_gw": gw,
         "source": "authenticated_api",
         "fingerprint": quality["fingerprint"],
+        "current_picks": tuple(normalized["picks"]),
     }
 
 
@@ -326,9 +327,13 @@ def team_state(team_id: int, gw: int, roster: "pd.DataFrame", rules: dict,
                 "chips_used": usados, "en_blanco": [], "ultima_gw": None}
 
     ultima = max(jugadas)
-    squad, en_blanco = squad_from_picks(team_picks(team_id, ultima), roster, boot)
+    picks = team_picks(team_id, ultima)
+    squad, en_blanco = squad_from_picks(picks, roster, boot)
     if len(squad.players) != rules["size"]:
         raise ValueError(f"la plantilla leida tiene {len(squad.players)} jugadores, "
                          f"se esperaban {rules['size']}")
     return {"squad": squad, "bank": squad.bank, "free_transfers": libres,
-            "chips_used": usados, "en_blanco": en_blanco, "ultima_gw": ultima}
+            "chips_used": usados, "en_blanco": en_blanco, "ultima_gw": ultima,
+            "current_picks": tuple(sorted(
+                picks.get("picks") or (), key=lambda item: int(item.get("position", 0))
+            ))}

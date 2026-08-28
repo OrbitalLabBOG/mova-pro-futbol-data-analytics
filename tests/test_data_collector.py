@@ -254,7 +254,7 @@ def test_odds_policy_force_never_bypasses_quota_guard():
 
 
 def test_postgres_data_service_migration_has_queryable_contract():
-    assert latest_version() == 7
+    assert latest_version() == 8
     sql = "\n".join(path.read_text().lower() for path in sorted(MIGRATIONS.glob("*.sql")))
     for table in (
         "raw.ingestion_runs", "raw.source_cursors", "raw.source_artifacts",
@@ -265,6 +265,8 @@ def test_postgres_data_service_migration_has_queryable_contract():
         "analytics.match_odds_observations", "analytics.whoscored_matches",
         "analytics.market_odds_observations", "analytics.whoscored_events",
         "ops.v_data_source_health",
+        "agent.decision_envelopes", "agent.decision_candidates",
+        "agent.decision_validation_checks",
     ):
         assert table in sql
 
