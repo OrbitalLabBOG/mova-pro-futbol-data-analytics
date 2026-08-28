@@ -89,13 +89,64 @@ class Decision:
     bench_order: tuple[int, ...]
     transfers_in: tuple[int, ...] = ()
     transfers_out: tuple[int, ...] = ()
-    hits: int = 0
+    hits: int = 0  # número de transferencias pagadas; cada una cuesta rules["hit_cost"]
     chip: str | None = None
     expected_points: float = 0.0
     total_cost: float = 0.0
     bank_after: float = 0.0
     policy: str = ""
     notes: tuple[str, ...] = ()
+
+    def to_dict(self) -> dict:
+        """Contrato máquina estable; el Markdown es únicamente una vista humana."""
+        return {
+            "season": self.season,
+            "gw": self.gw,
+            "squad_15": list(self.squad_15),
+            "starters": list(self.starters),
+            "captain": self.captain,
+            "vice_captain": self.vice_captain,
+            "bench_order": list(self.bench_order),
+            "transfers_in": list(self.transfers_in),
+            "transfers_out": list(self.transfers_out),
+            "hits": self.hits,
+            "chip": self.chip,
+            "expected_points": self.expected_points,
+            "total_cost": self.total_cost,
+            "bank_after": self.bank_after,
+            "policy": self.policy,
+            "notes": list(self.notes),
+            "fingerprint": self.fingerprint(),
+        }
+
+    @classmethod
+    def from_dict(cls, payload: dict) -> "Decision":
+        """Reconstruye una decisión para replay sin aceptar campos implícitos."""
+        decision = cls(
+            season=str(payload["season"]),
+            gw=int(payload["gw"]),
+            squad_15=tuple(int(value) for value in payload["squad_15"]),
+            starters=tuple(int(value) for value in payload["starters"]),
+            captain=(int(payload["captain"]) if payload.get("captain") is not None else None),
+            vice_captain=(
+                int(payload["vice_captain"])
+                if payload.get("vice_captain") is not None else None
+            ),
+            bench_order=tuple(int(value) for value in payload["bench_order"]),
+            transfers_in=tuple(int(value) for value in payload.get("transfers_in", ())),
+            transfers_out=tuple(int(value) for value in payload.get("transfers_out", ())),
+            hits=int(payload.get("hits", 0)),
+            chip=payload.get("chip"),
+            expected_points=float(payload.get("expected_points", 0.0)),
+            total_cost=float(payload.get("total_cost", 0.0)),
+            bank_after=float(payload.get("bank_after", 0.0)),
+            policy=str(payload.get("policy", "")),
+            notes=tuple(str(value) for value in payload.get("notes", ())),
+        )
+        expected = payload.get("fingerprint")
+        if expected is not None and str(expected) != decision.fingerprint():
+            raise ValueError("fingerprint de Decision no coincide con su contenido")
+        return decision
 
     def fingerprint(self) -> str:
         """Huella estable para comparar decisiones entre caminos de ejecucion."""

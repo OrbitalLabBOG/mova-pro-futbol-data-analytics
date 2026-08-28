@@ -81,6 +81,9 @@ def _database_snapshot(db: OpsDB) -> dict:
         decision = con.execute(
             "SELECT * FROM decision_runs ORDER BY created_at DESC LIMIT 1"
         ).fetchone()
+        envelope = con.execute(
+            "SELECT * FROM decision_envelopes ORDER BY created_at DESC LIMIT 1"
+        ).fetchone()
         projection = con.execute(
             "SELECT * FROM projection_runs ORDER BY created_at DESC LIMIT 1"
         ).fetchone()
@@ -137,6 +140,7 @@ def _database_snapshot(db: OpsDB) -> dict:
         "latest_tick": dict(latest_tick) if latest_tick else None,
         "team_state": dict(team) if team else None,
         "decision": dict(decision) if decision else None,
+        "decision_envelope": dict(envelope) if envelope else None,
         "projection": dict(projection) if projection else None,
         "execution": dict(execution) if execution else None,
         "health": dict(health) if health else None,
@@ -359,6 +363,11 @@ def build_status(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
             "decision_id", "cycle_id", "revision", "mode", "policy_version", "status",
             "expected_points", "chip", "fingerprint", "manifest_sha256", "created_at"
         )} if state["decision"] else None),
+        "decision_envelope": ({key: state["decision_envelope"].get(key) for key in (
+            "envelope_id", "decision_id", "cycle_id", "manifest_id", "schema_version",
+            "policy_version", "status", "selected_candidate_key", "content_sha256",
+            "artifact_sha256", "created_at"
+        )} if state["decision_envelope"] else None),
         "projection": ({key: state["projection"].get(key) for key in (
             "projection_id", "cycle_id", "input_manifest_sha256", "artifact_sha256",
             "player_count", "created_at"

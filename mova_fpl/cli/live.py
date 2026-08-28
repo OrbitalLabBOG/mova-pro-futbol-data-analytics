@@ -10,8 +10,11 @@ acta se entrega y una persona la introduce.
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 import os
 import time
+from dataclasses import replace
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -24,7 +27,6 @@ from mova_fpl.engine.report import render
 from mova_fpl.engine.runner import Config, decide
 from mova_fpl.engine.simulator import _candidates
 from mova_fpl.engine.state import State
-from dataclasses import replace
 from mova_fpl.models.registry import git_sha, load
 from mova_fpl.optimizer.horizon import build_xp_matrix
 from mova_fpl.rules import get as get_rules
@@ -65,7 +67,8 @@ def _estado_equipo(args, boot, roster, rules) -> dict:
         if args.chips:
             print("      ⚠️  sin --team-id no se sabe que chips quedan: se asumen los ocho")
         return {"squad": None, "bank": 0.0, "free_transfers": 1,
-                "chips_used": (), "en_blanco": [], "ultima_gw": None}
+                "chips_used": (), "en_blanco": [], "ultima_gw": None,
+                "current_picks": ()}
 
     if args.private_team_state:
         from mova_fpl.data.private_state import load as load_private
@@ -85,6 +88,78 @@ def _estado_equipo(args, boot, roster, rules) -> dict:
     if estado["en_blanco"]:
         print(f"      {len(estado['en_blanco'])} jugadores en jornada en blanco")
     return estado
+
+
+def _do_nothing_decision(state: State, picks: tuple[dict, ...]):
+    """Representa literalmente el estado previo; no optimiza ni cambia C/V."""
+    from mova_fpl.engine.state import Decision
+
+    if state.squad is None or not picks:
+        return None
+    ordered = sorted(picks, key=lambda item: int(item.get("position", 0)))
+    starters = tuple(int(item["element"]) for item in ordered if int(item["position"]) <= 11)
+    bench = tuple(int(item["element"]) for item in ordered if int(item["position"]) > 11)
+    captain = next((int(item["element"]) for item in ordered if item.get("is_captain")), None)
+    vice = next((int(item["element"]) for item in ordered if item.get("is_vice_captain")), None)
+    if len(starters) != 11 or len(bench) != 4 or captain is None or vice is None:
+        return None
+    xp = (state.horizon_xp or {}).get(
+        state.gw, {candidate.element: candidate.xp for candidate in state.candidates}
+    )
+    expected = sum(float(xp.get(element, 0.0)) for element in starters)
+    expected += float(xp.get(captain, 0.0))
+    return Decision(
+        season=state.season, gw=state.gw,
+        squad_15=tuple(int(item["element"]) for item in ordered),
+        starters=starters, captain=captain, vice_captain=vice,
+        bench_order=bench, expected_points=round(expected, 2),
+        total_cost=round(sum(player.price for player in state.squad.players), 1),
+        bank_after=round(state.bank, 1), policy="do_nothing",
+        notes=("estado exacto observado; cero cambios",),
+    )
+
+
+def _engine_violations(decision, state: State) -> list[dict]:
+    """Aplica las reglas puras a cada candidato antes de entregarlo al harness."""
+    from mova_fpl.rules.base import Squad, SquadPlayer
+    from mova_fpl.rules.squad import validate_squad
+
+    by_id = state.by_id()
+    owned = {player.element: player for player in (state.squad.players if state.squad else ())}
+    players = []
+    for element in decision.squad_15:
+        candidate = by_id.get(element)
+        previous = owned.get(element)
+        if candidate is None and previous is None:
+            return [{"code": "UNKNOWN_PLAYER", "detail": f"element {element}"}]
+        players.append(SquadPlayer(
+            element=element,
+            position=candidate.position if candidate else previous.position,
+            team=candidate.team if candidate else previous.team,
+            price=candidate.price if candidate else previous.price,
+            purchase_price=previous.purchase_price if previous else None,
+        ))
+    squad = Squad(
+        players=tuple(players), starters=decision.starters, captain=decision.captain,
+        vice_captain=decision.vice_captain, bench_order=decision.bench_order,
+        bank=decision.bank_after,
+    )
+    result = [
+        {"code": item.code, "detail": item.detail}
+        for item in validate_squad(squad, state.rules, check_budget=True)
+    ]
+    if decision.bank_after < -1e-9:
+        result.append({"code": "BUDGET", "detail": "bank_after negativo"})
+    return result
+
+
+def _candidate(key: str, label: str, decision, state: State) -> dict:
+    return {
+        "candidate_key": key,
+        "label": label,
+        "decision": decision.to_dict(),
+        "violations": _engine_violations(decision, state),
+    }
 
 
 def main() -> None:
@@ -115,10 +190,21 @@ def main() -> None:
     ap.add_argument("--dry-run", action="store_true",
                     help="no persiste la decision en la traza")
     ap.add_argument("--out", help="ruta del acta; por defecto outputs/fpl/{season}/gwNN_decision.md")
+    ap.add_argument(
+        "--json-out",
+        help="bundle máquina de baseline, do_nothing y alternativa; no reemplaza el acta",
+    )
+    ap.add_argument(
+        "--as-of",
+        help="timestamp UTC sellado para replay; por defecto usa el reloj actual",
+    )
     args = ap.parse_args()
 
     t0 = time.time()
-    emitida = datetime.now(timezone.utc)
+    emitida = (
+        datetime.fromisoformat(args.as_of.replace("Z", "+00:00")).astimezone(timezone.utc)
+        if args.as_of else datetime.now(timezone.utc)
+    )
 
     print(f"[1/5] Leyendo estado publico de FPL (solo GET)...")
     if args.snapshot_dir:
@@ -166,13 +252,16 @@ def main() -> None:
                  structure_lookahead=args.lookahead)
 
     equipo = _estado_equipo(args, boot, roster, rules_mod.SQUAD)
-    estado = State(season=args.season, gw=args.gw, candidates=candidatos,
-                   squad=equipo["squad"], free_transfers=equipo["free_transfers"],
-                   bank=equipo["bank"], rules=rules_mod.SQUAD, horizon_xp=matriz,
-                   chips=rules_mod.CHIPS if args.chips else None,
-                   chips_used=equipo["chips_used"],
-                   schedule=live.team_schedule(fx, boot, args.gw,
-                                               args.gw + args.lookahead) if args.chips else {})
+    base_state = State(
+        season=args.season, gw=args.gw, candidates=candidatos,
+        squad=equipo["squad"], free_transfers=equipo["free_transfers"],
+        bank=equipo["bank"], rules=rules_mod.SQUAD, horizon_xp=matriz,
+        chips=rules_mod.CHIPS if args.chips else None,
+        chips_used=equipo["chips_used"],
+        schedule=live.team_schedule(fx, boot, args.gw,
+                                    args.gw + args.lookahead) if args.chips else {},
+    )
+    estado = base_state
 
     veredicto = None
     if args.chips:
@@ -203,6 +292,63 @@ def main() -> None:
         ROOT / "outputs" / "fpl" / args.season / f"gw{args.gw:02d}_decision.md")
     destino.parent.mkdir(parents=True, exist_ok=True)
     destino.write_text(acta.texto, encoding="utf-8")
+
+    if args.json_out:
+        no_chip_state = replace(base_state, chips_allowed={})
+        no_chip = decide(args.gw, no_chip_state, cfg)
+        owned = frozenset(
+            player.element for player in (base_state.squad.players if base_state.squad else ())
+        )
+        hold = decide(
+            args.gw,
+            replace(no_chip_state, lock_in=owned),
+            cfg,
+        ) if owned else no_chip
+        do_nothing = _do_nothing_decision(
+            base_state, tuple(equipo.get("current_picks") or ())
+        ) or hold
+        alternative = no_chip if no_chip.fingerprint() != decision.fingerprint() else hold
+        event = event_context(boot, fx, args.gw)
+        report_sha = hashlib.sha256(destino.read_bytes()).hexdigest()
+        payload = {
+            "schema": "mova-live-decision-candidates-v1",
+            "season": args.season,
+            "gw": args.gw,
+            "selected_candidate_key": "milp_baseline",
+            "candidates": [
+                _candidate("do_nothing", "Estado observado sin cambios", do_nothing, base_state),
+                _candidate("milp_baseline", "MILP + planner vigente", decision, estado),
+                _candidate(
+                    "primary_alternative",
+                    "MILP sin chip" if alternative is no_chip else "Conservar plantilla y optimizar XI",
+                    alternative,
+                    no_chip_state,
+                ),
+            ],
+            "team_state": {
+                "source": equipo.get("source"),
+                "fingerprint": equipo.get("fingerprint"),
+                "free_transfers": equipo.get("free_transfers"),
+                "bank": equipo.get("bank"),
+                "squad_size": len(equipo["squad"].players) if equipo.get("squad") else 0,
+                "chips_available": list(equipo.get("chips_available") or ()),
+            },
+            "event_context": event,
+            "engine": {
+                "policy": args.policy,
+                "horizon": args.horizon,
+                "points_model_version": args.version,
+                "minutes_model_version": args.minutes_version,
+                "git_sha": git_sha(),
+            },
+            "report_artifact": {"path": str(destino), "sha256": report_sha},
+        }
+        json_path = Path(args.json_out)
+        json_path.parent.mkdir(parents=True, exist_ok=True)
+        json_path.write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
 
     if not args.dry_run:
         run_id = f"{args.season}-live-{args.policy}-h{args.horizon}"

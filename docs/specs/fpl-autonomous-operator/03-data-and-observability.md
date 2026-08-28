@@ -131,6 +131,9 @@ observación propia para que frescura y disponibilidad sigan siendo medibles.
 | --- | --- | --- |
 | `intervention_runs` | intervención estructurada y citada | payload/rationale sha; policy version |
 | `decision_runs` | revisiones de la decisión | cycle+revision unique; manifest y fingerprint |
+| `decision_envelopes` | paquete inmutable y lifecycle | SHA único; decisión y manifest enlazados |
+| `decision_candidates` | baseline, do-nothing y alternativa | envelope+candidate key unique |
+| `decision_validation_checks` | hard gates explicables | envelope+code unique; severidad y resultado |
 | `decision_players` | 15/XI/banca/C/VC/transfers normalizados | decision+element unique; roles/checks |
 | `web_executions` | envelope e intento externo | decision+action level unique mientras esté activo |
 | `verification_checks` | assertions post-reload | execution+check unique; expected/observed/pass |

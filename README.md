@@ -49,13 +49,18 @@ FPL_TEAM_ID=3609854 python -m mova_fpl.cli.live \
   --season 2026-27 --gw 2 --horizon 3 --top-k 0 --chips
 ```
 
-El flujo de decisión es único:
+El flujo de decisión conserva una sola autoridad y añade un lifecycle máquina:
 
 ```text
-Store.as_of → modelos causales → matriz xP → MILP → Decision → acta + traza
+CycleManifest → modelos causales → matriz xP → MILP
+  → do_nothing + baseline + alternativa
+  → Validator determinista → DecisionEnvelope → acta + auditoría
 ```
 
 - `mova_fpl.engine.runner.decide()` es la única autoridad de decisión.
+- El tick no interpreta Markdown: persiste un `DecisionEnvelope` JSON ligado al manifest real.
+- Una propuesta sin GW previa asentada, proyección aprobada, team state fresco o ventana válida
+  queda `blocked`; solo una que supera todos los hard gates queda `staged`.
 - `mova_fpl` solo hace HTTP `GET`; no escribe en FPL.
 - El browser autenticado vive aislado y sus mutaciones están gobernadas por controles.
 - Supabase no forma parte del runtime; se usa únicamente para seguimiento PM.
@@ -81,6 +86,7 @@ Documentos principales:
 - [Operar el VPS](docs/operations/vps.md)
 - [PostgreSQL shadow](docs/operations/postgres-shadow.md)
 - [Plan y research verificable](docs/operations/strategic-research.md)
+- [Lifecycle de decisión](docs/operations/decision-lifecycle.md)
 - [Arquitectura del motor](docs/architecture/decision-engine.md)
 - [Autonomous Harness v1](docs/specs/fpl-autonomous-operator/10-autonomous-harness-v1.md)
 

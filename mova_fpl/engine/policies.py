@@ -67,11 +67,11 @@ def greedy_policy(state: State, config) -> Decision:
         if en_blanco:
             notas.append(f"{en_blanco} jugadores en jornada en blanco (xp=0, siguen en plantilla)")
         squad, entra, sale = _mejor_transferencia(actuales, state, rules)
-        hits = transfer_cost(len(entra), state.free_transfers, rules["hit_cost"])
+        hits = max(0, len(entra) - state.free_transfers)
 
     xi, banca, cap, vice = pick_lineup(squad, rules)
     coste = round(sum(c.price for c in squad), 1)
-    esperado = sum(c.xp for c in xi) + cap.xp - hits
+    esperado = sum(c.xp for c in xi) + cap.xp - hits * rules["hit_cost"]
 
     return Decision(
         season=state.season, gw=state.gw,
@@ -175,6 +175,7 @@ def milp_policy(state: State, config) -> Decision:
     from mova_fpl.optimizer.horizon import summarize
 
     gw = state.gw
+    rules = state.rules
     xp = state.horizon_xp or {gw: {c.element: c.xp for c in state.candidates}}
     ocfg = optimizer_config(config, len(xp))
 
@@ -203,7 +204,10 @@ def milp_policy(state: State, config) -> Decision:
                          key=lambda i: -fila.get(i, 0.0))
 
     coste = to_millions(sum(to_tenths(atributos[i].price) for i in sol.squad[gw]))
-    esperado = sum(fila.get(i, 0.0) for i in xi) + fila.get(cap, 0.0) - sol.hits[gw]
+    esperado = (
+        sum(fila.get(i, 0.0) for i in xi) + fila.get(cap, 0.0)
+        - rules["hit_cost"] * sol.hits[gw]
+    )
 
     chip = sol.chips.get(gw)
     notas = [str(sol.shortlist), f"horizonte {sorted(xp)} xp_total={summarize(xp)}"]

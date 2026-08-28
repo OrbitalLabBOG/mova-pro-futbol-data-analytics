@@ -34,6 +34,8 @@ El acta queda en `outputs/fpl/2026-27/gwNN_decision.md`. Tarda unos **5 segundos
 | `--top-k 0` | Sin recorte de mercado: optimalidad garantizada | **0** en vivo |
 | `--policy` | `milp` u `greedy-stub` | `milp`; la voraz es el plan B |
 | `--dry-run` | No escribe en la traza | Para ensayar |
+| `--json-out PATH` | Emite candidatos tipados para el harness | Lo usa el tick |
+| `--as-of RFC3339` | Fija el reloj lógico para replay | Lo usa el tick |
 
 ### Con el equipo real (desde la GW2)
 

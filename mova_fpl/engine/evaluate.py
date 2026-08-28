@@ -52,7 +52,7 @@ def score_decision(decision: Decision, results: pd.DataFrame, rules: dict,
     bruto = base + extra_cap
     return GwOutcome(
         gw=decision.gw,
-        points=bruto - decision.hits,
+        points=bruto - decision.hits * int(rules["hit_cost"]),
         points_before_hits=bruto,
         hits=decision.hits,
         captain_points=int(puntos.get(cap, 0)) if cap is not None else 0,

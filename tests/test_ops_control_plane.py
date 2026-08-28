@@ -54,7 +54,7 @@ def _official_sources() -> tuple[bytes, bytes]:
 def test_schema_controls_jobs_y_auditoria(tmp_path):
     config = _config(tmp_path)
     db = _db(config)
-    assert db.migrate() == [1, 2, 3, 4, 5, 6]
+    assert db.migrate() == [1, 2, 3, 4, 5, 6, 7]
     assert db.migrate() == []
     db.ensure_defaults(mode="shadow", action_level="A0", compliance_gate="pending",
                        browser_writes=False)
@@ -104,6 +104,8 @@ def test_schema_controls_jobs_y_auditoria(tmp_path):
             "change_proposals", "season_plans", "cycle_manifests",
             "research_runs", "research_documents", "research_conflicts",
             "cost_ledger"} <= tables
+    assert {"decision_envelopes", "decision_candidates",
+            "decision_validation_checks"} <= tables
 
 
 def test_harness_summarizes_nested_payloads_and_redacts_sensitive_keys(tmp_path):
