@@ -7,7 +7,7 @@
     "summary", "documents", "signals", "conflicts", "limitations", "usage"
   ],
   "properties": {
-    "schema": {"const": "mova-research-brief-v1"},
+    "schema": {"type": "string", "const": "mova-research-brief-v1"},
     "research_run_id": {"type": "string"},
     "cycle_id": {"type": "string"},
     "request_sha256": {"type": "string"},
@@ -23,7 +23,7 @@
           "title": {"type": "string"},
           "publisher": {"type": "string"},
           "published_at": {"type": ["string", "null"]},
-          "source_tier": {"enum": ["official", "tier1", "tier2", "other"]}
+          "source_tier": {"type": "string", "enum": ["official", "tier1", "tier2", "other"]}
         }
       }
     },
@@ -39,12 +39,13 @@
           "subject_name": {"type": "string"},
           "player_element": {"type": ["integer", "null"]},
           "claim_type": {
+            "type": "string",
             "enum": ["availability", "injury", "suspension", "expected_minutes",
               "starting_role", "manager_comment", "fixture_context", "set_pieces",
               "transfer", "other"]
           },
           "claim_text": {"type": "string"},
-          "direction": {"enum": ["positive", "negative", "neutral", "uncertain"]},
+          "direction": {"type": "string", "enum": ["positive", "negative", "neutral", "uncertain"]},
           "confidence": {"type": "number", "minimum": 0, "maximum": 1},
           "source_urls": {
             "type": "array", "minItems": 1, "maxItems": 8,
@@ -62,6 +63,7 @@
         "properties": {
           "subject": {"type": "string"},
           "claim_type": {
+            "type": "string",
             "enum": ["availability", "injury", "suspension", "expected_minutes",
               "starting_role", "manager_comment", "fixture_context", "set_pieces",
               "transfer", "other"]
@@ -71,7 +73,7 @@
             "type": "array", "minItems": 1, "maxItems": 8,
             "items": {"type": "string"}
           },
-          "status": {"enum": ["unresolved", "resolved"]}
+          "status": {"type": "string", "enum": ["unresolved", "resolved"]}
         }
       }
     },
