@@ -94,9 +94,11 @@ El settlement se ejecutó el `2026-08-28T03:57:02Z`, antes de abrir la decisión
   `projection_7af190545c2e40cd8f5b1dadab1eb5ce` (odds shadow), ambos con 616 jugadores
   y releases minutes/points `1.1.0`.
 
-El runtime quedó en commit e imagen `328b873`, `mova doctor` reportó 21 `PASS`, cero `WARN` y
-cero `FAIL`; los cinco timers están activos y los controles siguen en `shadow/A0`, kill switch
-activo y browser writes deshabilitado. SQLite quedó en migración 004 y PostgreSQL en 006.
+La release operativa que cerró el hardening de logs fue `328b873`. Después de incorporar esta
+evidencia se volvió a desplegar main con checkout e imagen coincidentes. `mova doctor` reportó 21
+`PASS`, cero `WARN` y cero `FAIL`; los cinco timers están activos y los controles siguen en
+`shadow/A0`, kill switch activo y browser writes deshabilitado. SQLite quedó en migración 004 y
+PostgreSQL en 006.
 
 El backup posterior al cierre vive en `/opt/orbital/backups/mova-fpl/20260828T040257Z` y el dump
 PostgreSQL en `/opt/orbital/backups/mova-fpl/postgres/20260828T040258Z`; ambos superaron restore
