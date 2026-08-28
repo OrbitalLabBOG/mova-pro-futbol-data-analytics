@@ -57,8 +57,15 @@
             "author": {"type": "string", "const": "strategist"},
             "rationale": {"type": "string", "maxLength": 2000},
             "xp_multiplier": {
-              "type": "object",
-              "additionalProperties": {"type": "number", "minimum": 0, "maximum": 1.5}
+              "type": "array", "maxItems": 12,
+              "items": {
+                "type": "object", "additionalProperties": false,
+                "required": ["player_element", "factor"],
+                "properties": {
+                  "player_element": {"type": "integer", "minimum": 1},
+                  "factor": {"type": "number", "minimum": 0, "maximum": 1.5}
+                }
+              }
             },
             "allow_chips": {
               "type": "array",

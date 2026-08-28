@@ -74,11 +74,18 @@ def _result(request, *, verdict="accept", risks=None, intervention=None):
 
 def test_staged_envelope_accepts_advisory_deliberation_without_applying_intervention():
     request = _request()
-    normalized = normalize_result(_result(request), request)
+    intervention = {
+        "gw": 3, "author": "strategist", "rationale": "Duda ya sellada",
+        "xp_multiplier": [{"player_element": 1, "factor": 0.8}],
+        "allow_chips": [], "block_chips": [], "lock_in": [], "lock_out": [],
+        "risk_lambda": None,
+    }
+    normalized = normalize_result(_result(request, intervention=intervention), request)
 
     assert normalized["status"] == "accepted"
     assert normalized["strategist"]["intervention"]["shadow_only"] is True
     assert normalized["strategist"]["intervention"]["applied"] is False
+    assert normalized["strategist"]["intervention"]["xp_multiplier"] == {"1": 0.8}
 
 
 def test_critic_must_preserve_every_deterministic_blocker():
@@ -181,4 +188,3 @@ def test_deliberation_persistence_records_risks_intervention_and_cost(tmp_path: 
         ).fetchone()[0] == 1
         assert con.execute("SELECT COUNT(*) FROM intervention_runs").fetchone()[0] == 1
         assert con.execute("SELECT COUNT(*) FROM cost_ledger").fetchone()[0] == 1
-
