@@ -78,6 +78,13 @@ El envelope queda `blocked` cuando falla cualquiera de estos checks:
 `hits` significa cantidad de transferencias pagadas. La liquidación y el xP descuentan
 `hits × rules.hit_cost`; con la regla vigente, `1 hit = −4 puntos`.
 
+El presupuesto de una plantilla viva no se valida sumando precios actuales contra las £100M
+iniciales: una plantilla puede superar legalmente ese valor por apreciación. El gate concilia el
+banco con precio de venta FPL de las salidas, precio actual de las entradas y banco previo; para
+`free_hit` usa el valor liquidable completo. También contrasta el diff real de elementos con las
+transferencias declaradas. `BUDGET` significa banco conciliado negativo y
+`BANK_RECONCILIATION` una discrepancia entre ese cálculo y `bank_after`.
+
 ## Consultar
 
 ```bash

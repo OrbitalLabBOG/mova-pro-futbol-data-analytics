@@ -51,6 +51,8 @@ PM de construcción del proyecto.
 | [13-hv1-02a-postgres-shadow-evidence.md](13-hv1-02a-postgres-shadow-evidence.md) | evidencia de schema, import, backup y restore del store shadow |
 | [14-hv1-03a-data-service-evidence.md](14-hv1-03a-data-service-evidence.md) | cierre del collector autónomo: FPL, odds, calendario, eventos, calidad y observabilidad |
 | [15-hv1-04-05-strategic-research-evidence.md](15-hv1-04-05-strategic-research-evidence.md) | season plan, manifest sellado y primera investigación Codex validada en el VPS |
+| [16-hv1-06a-decision-envelope-evidence.md](16-hv1-06a-decision-envelope-evidence.md) | bundle de tres candidatos, Validator determinista y primer envelope vivo |
+| [17-hv1-06b-deliberation-evidence.md](17-hv1-06b-deliberation-evidence.md) | Strategist + Critic acotados, intervención shadow y replay vivo corregido |
 | [contracts/](contracts/) | JSON Schemas máquina para request, result y signal |
 | [decisions/](decisions/) | decisiones arquitectónicas propuestas |
 | [workpacks/](workpacks/) | unidades de implementación y criterios todavía pendientes |

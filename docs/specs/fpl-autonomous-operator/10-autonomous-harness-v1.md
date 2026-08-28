@@ -457,6 +457,13 @@ por invocación. Researcher y Strategist/Critic comparten infraestructura, no au
 El siguiente límite arquitectónico es HV1-07: executor/verifier por clase de riesgo, sujeto a los
 gates existentes y sin promover todavía la intervención del LLM.
 
+El rollout vivo final quedó en `891ac38`: la deliberación corregida comparó los tres candidatos,
+prefirió la alternativa sin chip y quedó bloqueada por los dos gates deterministas vigentes. La
+validación detectó y corrigió una falsa alerta histórica de presupuesto causada por valorar una
+plantilla apreciada contra las £100M iniciales. El envelope nuevo concilió precios de venta,
+compras y banco; los tres candidatos quedaron sin violaciones financieras. La evidencia completa
+está en [HV1-06B](17-hv1-06b-deliberation-evidence.md).
+
 ## 11. Definition of Done del harness v1
 
 - un ciclo completo puede ejecutarse, reanudarse y explicarse desde `mova`;
