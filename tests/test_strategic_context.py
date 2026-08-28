@@ -103,6 +103,23 @@ def test_manifest_usa_el_servicio_analitico_si_sqlite_no_tiene_proyeccion(tmp_pa
     assert manifest["player_count"] == 616
 
 
+def test_manifest_incluye_solo_el_snapshot_mas_reciente_por_fuente(tmp_path):
+    _config, db, service, cycle_id = _runtime(tmp_path)
+    job_id = db.recent("job_runs", 1)[0]["job_id"]
+    db.add_snapshot(
+        job_id=job_id, cycle_id=cycle_id, source_name="fpl_official",
+        captured_at=datetime.now(timezone.utc).isoformat(),
+        artifact_path=str(tmp_path / "source-new"),
+        manifest_sha256="e" * 64, payload_sha256="f" * 64, freshness_seconds=0,
+        quality_status="valid", quality={"schema": "test"},
+    )
+
+    sources = service.prepare()["manifest"]["source_manifest"]
+    assert len(sources) == 1
+    assert sources[0]["manifest_sha256"] == "e" * 64
+    assert sources[0]["artifact_path"].endswith("source-new")
+
+
 def test_resultado_codex_se_valida_antes_de_entrar(tmp_path):
     config, db, service, cycle_id = _runtime(tmp_path)
     service.activate_plan(_plan(), actor="test", reason="bootstrap estratégico")
