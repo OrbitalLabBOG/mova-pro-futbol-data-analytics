@@ -87,7 +87,7 @@ try {
       "no uses shell ni navegador interactivo. Prefiere fuentes oficiales y prensa tier 1.",
       "Cada señal y cada conflicto deben citar únicamente URLs incluidas en documents.",
       "Si una fuente no está en documents, no la cites. Declara conflictos y limitaciones.",
-      "Prioriza estrictamente manifest.research_focus: plantilla actual primero y luego",
+      "Prioriza estrictamente manifest.research_summary.focus: plantilla primero y luego",
       "candidatos del modelo. No hagas un barrido genérico de toda la liga salvo una noticia",
       "que cambie materialmente el contexto de esos sujetos o sus rivales inmediatos.",
       "Compara con manifest.research_summary.previous_active_signals y evita repetir claims",
