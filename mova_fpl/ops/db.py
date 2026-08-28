@@ -940,8 +940,8 @@ class OpsDB:
             usage = payload.get("usage", {})
             con.execute(
                 """UPDATE research_runs SET status='imported',result_path=?,
-                result_sha256=?,usage_json=?,finished_at=COALESCE(finished_at,?),
-                imported_at=? WHERE research_run_id=?""",
+                result_sha256=?,usage_json=?,finished_at=?,imported_at=?,
+                error_code=NULL,error_detail=NULL WHERE research_run_id=?""",
                 (result_path, result_sha256, canonical_json(usage), now, now,
                  research_run_id),
             )
