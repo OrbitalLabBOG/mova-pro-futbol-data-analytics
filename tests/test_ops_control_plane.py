@@ -146,6 +146,46 @@ def test_browser_write_gate_fails_closed(tmp_path):
         raise AssertionError("una configuración A0 no puede habilitar browser writes")
 
 
+def test_verified_execution_sella_propuestas_shadow_tardias(tmp_path):
+    config = _config(tmp_path)
+    db = _db(config)
+    db.migrate()
+    cycle = db.upsert_cycle("2026-27", 2, "2026-08-28T17:30:00Z", phase="preflight")
+    job, _ = db.start_job("test", "test:verified-cycle", "corr_verified", cycle_id=cycle)
+    shadow = db.record_decision(
+        job_id=job, cycle_id=cycle, mode="shadow", status="staged",
+        policy_version="test", expected_points=50.0, chip="wildcard",
+        fingerprint="shadow", manifest_sha256="a" * 64, artifact_path="shadow.md",
+    )
+    verified = db.record_decision(
+        job_id=job, cycle_id=cycle, mode="guarded_human_reviewed",
+        status="executed_verified", policy_version="test", expected_points=None,
+        chip=None, fingerprint="verified", manifest_sha256="b" * 64,
+        artifact_path="verified.json",
+    )
+    with db.transaction() as con:
+        con.execute(
+            """INSERT INTO web_executions(
+            execution_id,decision_id,action_level,envelope_sha256,status,finished_at)
+            VALUES(?,?,?,?,?,?)""",
+            ("execution_verified", verified, "A1", "c" * 64, "verified",
+             "2026-08-28T16:00:00Z"),
+        )
+
+    sealed = db.seal_verified_decision_cycle(
+        cycle, correlation_id="corr_verified", job_id=job,
+    )
+    assert sealed and sealed["superseded_shadow_decisions"] == 1
+    assert sealed["decision_id"] == verified
+    assert db.seal_verified_decision_cycle(
+        cycle, correlation_id="corr_verified", job_id=job,
+    )["superseded_shadow_decisions"] == 0
+    with db.connect(readonly=True) as con:
+        assert con.execute(
+            "SELECT status FROM decision_runs WHERE decision_id=?", (shadow,)
+        ).fetchone()[0] == "superseded"
+
+
 def test_tick_sella_fuentes_y_es_idempotente(tmp_path, monkeypatch):
     boot_raw, fixtures_raw = _official_sources()
     monkeypatch.setattr("mova_fpl.ops.tick.fetch_bootstrap", lambda: boot_raw)

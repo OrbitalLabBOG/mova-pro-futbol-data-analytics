@@ -373,6 +373,47 @@ class OpsDB:
             )
         return decision_id
 
+    def seal_verified_decision_cycle(self, cycle_id: str, *, correlation_id: str,
+                                     job_id: str) -> dict | None:
+        """Cierra propuestas tardías cuando el ciclo ya fue ejecutado y verificado."""
+        with self.transaction() as con:
+            verified = con.execute(
+                """SELECT e.execution_id,d.decision_id,e.finished_at
+                FROM web_executions e
+                JOIN decision_runs d ON d.decision_id=e.decision_id
+                WHERE d.cycle_id=? AND d.status='executed_verified' AND e.status='verified'
+                ORDER BY e.finished_at DESC,e.rowid DESC LIMIT 1""",
+                (cycle_id,),
+            ).fetchone()
+            if not verified:
+                return None
+            superseded = con.execute(
+                "UPDATE decision_runs SET status='superseded' "
+                "WHERE cycle_id=? AND status='staged'",
+                (cycle_id,),
+            ).rowcount
+            if superseded:
+                self.append_audit(
+                    "verified_cycle_shadow_decisions_superseded",
+                    correlation_id=correlation_id,
+                    cycle_id=cycle_id,
+                    job_id=job_id,
+                    subject_type="web_execution",
+                    subject_id=verified["execution_id"],
+                    payload={
+                        "decision_id": verified["decision_id"],
+                        "superseded_shadow_decisions": superseded,
+                        "reason": "verified_execution_exists",
+                    },
+                    con=con,
+                )
+            return {
+                "execution_id": verified["execution_id"],
+                "decision_id": verified["decision_id"],
+                "finished_at": verified["finished_at"],
+                "superseded_shadow_decisions": superseded,
+            }
+
     def record_gameweek_closeout(self, payload: dict) -> dict:
         """Persiste un cierre ya validado en una sola transacción corta.
 
