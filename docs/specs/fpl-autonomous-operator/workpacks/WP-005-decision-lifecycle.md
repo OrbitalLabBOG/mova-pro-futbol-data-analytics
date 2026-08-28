@@ -4,7 +4,7 @@ name: "WP-005 — Lifecycle de decisión, modelos y estrategia"
 created: 2026-08-21
 updated: 2026-08-28
 tags: [mova, fpl, workpack, models, optimization]
-status: in_progress
+status: completed
 ---
 
 # WP-005 — Lifecycle de decisión, modelos y estrategia
@@ -46,5 +46,14 @@ WP-002, WP-003; WP-004 opcional en shadow.
 - SQLite migration 007 y PostgreSQL migration 008 conservan envelope, candidatos y checks;
 - API, status, Prometheus y audit permiten inspección sin abrir artefactos privados.
 
-Pendiente para cerrar WP-005: Strategist/Critic acotados, sensibilidad longitudinal y pipeline
-formal de promoción/retire.
+## Corte implementado — HV1-06B
+
+- Strategist compara exactamente `do_nothing`, `milp_baseline` y `primary_alternative`;
+- su única salida accionable es una `Intervention` validada, siempre shadow y no aplicada;
+- Critic preserva hard blockers por código y exige follow-up antes de aceptar riesgos bloqueantes;
+- request/result quedan ligados a envelope, manifest y hashes inmutables;
+- SQLite 008, PostgreSQL 009, API, Prometheus, audit y cost ledger exponen el ciclo;
+- output inválido se rechaza completo y va a cuarentena.
+
+WP-005 cierra el lifecycle estratégico shadow. Sensibilidad longitudinal y promoción/retire
+continúan en HV1-08 como aprendizaje controlado, no como deuda de autoridad de decisión.

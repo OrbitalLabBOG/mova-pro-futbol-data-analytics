@@ -379,7 +379,7 @@ no borra evidencia previa y nunca amplía autonomía.
 | HV1-04 🟡 | team state y season plan implementados; falta memoria estratégica longitudinal | 6–8 h | HV1-02 |
 | HV1-05 🟡 | servicio news/research: foco plantilla+candidatos, delta y slot final; falta evaluar cobertura multi-GW | 8–12 h | HV1-02/03 |
 | HV1-06A ✅ | bundle máquina, `do_nothing`, alternativa, Validator y DecisionEnvelope | completado | HV1-03/04/05 |
-| HV1-06B | Strategist + Critic acotados sobre `Intervention`, sin autoridad directa | 4–7 h | HV1-06A |
+| HV1-06B ✅ | Strategist + Critic acotados sobre `Intervention`, sin autoridad directa | completado | HV1-06A |
 | HV1-07 | executor/verifier y autonomía por riesgo | 8–12 h | HV1-06 |
 | HV1-08 🟡 | scorecard/drift técnico implementado; faltan reviewer causal, costos y promoción | 8–12 h | HV1-03/06 |
 
@@ -436,6 +436,26 @@ investigar solo deltas. La agenda conserva la rutina de seis horas y añade una 
 obligatoria entre T-120 y T-70; ticks sin request ya no levantan Codex. El health global permanece
 visible al cambiar de jornada. Esto no implementa todavía fetch independiente/locator de cada
 documento ni promoción automática de señales.
+
+### Corte Strategist + Critic — 28 de agosto de 2026
+
+HV1-06B añade una deliberación hija del `DecisionEnvelope`, sin mutarlo. El mismo contenedor
+one-shot procesa requests `deliberation_*`, pero en este rol no recibe web search: solo interpreta
+el envelope, `CycleManifest`, plan y research ya sellados. Strategist cubre obligatoriamente los
+tres comparadores y propone exclusivamente campos del contrato `Intervention`; Critic conserva
+cada hard blocker por código y puede emitir `accept`, `revise` o `block`.
+
+El importador vuelve a validar enlaces, cobertura, jugadores, multiplicadores, chips, locks,
+riesgo, referencias de candidatos y blockers. Un output inconsistente queda `rejected` en
+cuarentena. Toda intervención aceptada persiste con `shadow_only=true` y `applied=false`: este
+corte genera evidencia y una base de atribución, pero no cambia la entrada del MILP ni amplía
+autonomía. SQLite migration 008 y PostgreSQL migration 009 conservan deliberación y riesgos;
+API/Prometheus exponen lifecycle y blockers.
+
+La cadencia sigue usando un único timer de 15 minutos y procesa como máximo una request one-shot
+por invocación. Researcher y Strategist/Critic comparten infraestructura, no autoridad ni prompt.
+El siguiente límite arquitectónico es HV1-07: executor/verifier por clase de riesgo, sujeto a los
+gates existentes y sin promover todavía la intervención del LLM.
 
 ## 11. Definition of Done del harness v1
 
