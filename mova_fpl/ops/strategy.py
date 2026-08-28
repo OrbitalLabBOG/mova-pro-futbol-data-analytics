@@ -94,6 +94,44 @@ class StrategicContextService:
         return {**result, "artifact_path": str(artifact),
                 "artifact_sha256": artifact_sha, "plan": plan}
 
+    def _analytics_manifest(self, *, season: str, gw: int) -> dict:
+        """Lee el contrato del servicio analítico; SQLite es solo un fallback legacy."""
+        try:
+            if self.config.postgres_credential_file.is_file():
+                from mova_fpl.ops.analytics_store import AnalyticsStore
+
+                state = AnalyticsStore(self.config).status(limit=100)
+                source = "postgres_service"
+            else:
+                from mova_fpl.ops.analytics_store import read_status
+
+                state = read_status(self.config)
+                source = "published_status"
+        except Exception as exc:  # noqa: BLE001 - el manifest debe declarar el gap
+            return {"status": "missing", "source": "analytics_service",
+                    "error_code": type(exc).__name__}
+        candidates = [
+            row for row in state.get("latest_projection_batches", [])
+            if row.get("season") == season and int(row.get("target_gw") or 0) == gw
+        ]
+        if not candidates:
+            return {"status": "missing", "source": source,
+                    "service_status": state.get("status"), "reason": "no_batch_for_cycle"}
+        selected = next(
+            (row for row in candidates
+             if row.get("status") == "approved" and row.get("variant") == "baseline"),
+            next((row for row in candidates if row.get("status") == "approved"),
+                 candidates[0]),
+        )
+        return {
+            "status": selected.get("status"), "source": source,
+            "service_status": state.get("status"),
+            **{key: selected.get(key) for key in (
+                "batch_id", "season", "target_gw", "variant", "model_versions",
+                "cutoff_at", "generated_at", "player_count",
+            )},
+        }
+
     def prepare(self, *, now: datetime | None = None) -> dict:
         self.db.migrate()
         current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
@@ -130,6 +168,10 @@ class StrategicContextService:
             projection_payload["model_manifest"] = json.loads(
                 projection_payload.pop("model_manifest_json")
             )
+        if not projection_payload:
+            projection_payload = self._analytics_manifest(
+                season=str(cycle["season"]), gw=int(cycle["gw"]),
+            )
         body = {
             "schema": "mova-cycle-manifest-v1",
             "cycle_id": cycle_id,
@@ -150,7 +192,7 @@ class StrategicContextService:
             "plan_id": plan.get("plan_id") if plan else None,
             "plan_revision": plan.get("revision") if plan else None,
             "source_manifest": sources,
-            "analytics_manifest": projection_payload or {"status": "missing"},
+            "analytics_manifest": projection_payload,
             "research_summary": {
                 "signals": [dict(row) for row in signals],
                 "unresolved_conflicts": unresolved,

@@ -18,6 +18,7 @@ def _runtime(tmp_path: Path) -> tuple[RuntimeConfig, OpsDB, StrategicContextServ
         trace_db=tmp_path / "db" / "trace.db",
         canonical_db=tmp_path / "db" / "canonical.db",
         artifact_root=tmp_path / "artifacts",
+        analytics_root=tmp_path / "artifacts" / "analytics",
         strategic_root=tmp_path / "artifacts" / "strategic",
         research_root=tmp_path / "artifacts" / "research",
         backup_root=tmp_path / "backups",
@@ -78,6 +79,28 @@ def test_plan_y_manifest_son_versionados_e_idempotentes(tmp_path):
     assert manifest["manifest"]["plan_revision"] == 1
     assert Path(manifest["artifact_path"]).is_file()
     assert db.strategic_status(cycle_id)["status"] == "ready"
+
+
+def test_manifest_usa_el_servicio_analitico_si_sqlite_no_tiene_proyeccion(tmp_path):
+    config, _db, service, _cycle_id = _runtime(tmp_path)
+    config.analytics_root.mkdir(parents=True, exist_ok=True)
+    (config.analytics_root / "status.json").write_text(json.dumps({
+        "schema": "mova-analytics-service-status-v1",
+        "status": "healthy",
+        "latest_projection_batches": [{
+            "batch_id": "batch_gw02_baseline", "season": config.season,
+            "target_gw": 2, "variant": "baseline", "status": "approved",
+            "model_versions": {"minutes": "1.1.0", "points": "1.1.0"},
+            "cutoff_at": "2026-08-28T05:00:00+00:00",
+            "generated_at": "2026-08-28T05:01:00+00:00", "player_count": 616,
+        }],
+    }), encoding="utf-8")
+
+    manifest = service.prepare()["manifest"]["analytics_manifest"]
+    assert manifest["source"] == "published_status"
+    assert manifest["status"] == "approved"
+    assert manifest["batch_id"] == "batch_gw02_baseline"
+    assert manifest["player_count"] == 616
 
 
 def test_resultado_codex_se_valida_antes_de_entrar(tmp_path):
