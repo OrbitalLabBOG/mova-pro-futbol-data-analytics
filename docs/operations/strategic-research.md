@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — contexto estratégico e investigación"
 created: 2026-08-27
-updated: 2026-08-27
+updated: 2026-08-28
 tags: [mova, fpl, strategy, research, codex, evidence]
 status: active
 ---
@@ -49,7 +49,8 @@ mova strategy status
 mova strategy research due
 
 # activar una revisión explícita del plan
-mova strategy plan --file /path/season-plan.json +  --actor julian --reason "revisión del horizonte GW2–GW8"
+mova strategy plan --file /path/season-plan.json \
+  --actor julian --reason "revisión del horizonte GW2–GW8"
 
 # sellar el estado sin llamar al LLM
 mova strategy prepare
@@ -60,7 +61,9 @@ docker compose --profile research run --rm --no-deps -T research
 mova strategy research import
 
 # excepción auditada de cadencia
-mova strategy research enqueue --force --actor julian +  --reason "rueda de prensa material" +  --idempotency-key "research:gw02:press-final"
+mova strategy research enqueue --force --actor julian \
+  --reason "rueda de prensa material" \
+  --idempotency-key "research:gw02:press-final"
 ~~~
 
 due y una cadencia no vencida devuelven código 75. El timer evalúa cada 15 minutos, pero solo
@@ -91,7 +94,11 @@ El importador rechaza y pone en cuarentena un brief si:
 - supera 1 MiB o no cumple la identidad/hash del request;
 - cita URL distinta de HTTPS pública, credenciales embebidas, IP privada o puerto no 443;
 - usa una taxonomía desconocida, fecha futura, TTL vencido o elemento inválido;
-- una señal cita documentos ausentes.
+- una señal o conflicto cita documentos ausentes.
+
+`published_at` admite timestamp ISO 8601 con zona o fecha civil `YYYY-MM-DD`; esta última se
+normaliza a medianoche UTC sin inventar una hora editorial. `generated_at` y `expires_at`
+siempre requieren zona horaria.
 
 Una señal se marca accepted solo con fuente oficial o al menos dos URLs distintas y sin
 conflicto abierto. Una fuente única no oficial queda candidate. La confianza del modelo nunca

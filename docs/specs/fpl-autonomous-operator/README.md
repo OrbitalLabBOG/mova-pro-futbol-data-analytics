@@ -2,7 +2,7 @@
 type: project
 name: "MOVA FPL Autonomous Operator 2026/27 — Specification Index"
 created: 2026-08-21
-updated: 2026-08-23
+updated: 2026-08-28
 tags: [mova, fpl, autonomy, observability, specification]
 status: active-shadow
 ---
@@ -50,6 +50,7 @@ PM de construcción del proyecto.
 | [12-gw2-preliminary-review.md](12-gw2-preliminary-review.md) | preliminar GW2, señales de modelo y guardrail de settlement |
 | [13-hv1-02a-postgres-shadow-evidence.md](13-hv1-02a-postgres-shadow-evidence.md) | evidencia de schema, import, backup y restore del store shadow |
 | [14-hv1-03a-data-service-evidence.md](14-hv1-03a-data-service-evidence.md) | cierre del collector autónomo: FPL, odds, calendario, eventos, calidad y observabilidad |
+| [15-hv1-04-05-strategic-research-evidence.md](15-hv1-04-05-strategic-research-evidence.md) | season plan, manifest sellado y primera investigación Codex validada en el VPS |
 | [contracts/](contracts/) | JSON Schemas máquina para request, result y signal |
 | [decisions/](decisions/) | decisiones arquitectónicas propuestas |
 | [workpacks/](workpacks/) | unidades de implementación y criterios todavía pendientes |
