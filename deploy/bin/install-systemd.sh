@@ -20,4 +20,5 @@ systemctl enable --now mova-fpl-stack.service
 systemctl enable --now mova-fpl-tick.timer mova-fpl-private-state.timer \
   mova-fpl-backup.timer mova-fpl-watchdog.timer mova-fpl-collector.timer
 systemctl enable --now mova-fpl-analytics.timer
+systemctl enable --now mova-fpl-research.timer
 systemctl list-timers --all 'mova-fpl-*' --no-pager

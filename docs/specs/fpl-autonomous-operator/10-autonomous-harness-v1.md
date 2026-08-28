@@ -2,7 +2,7 @@
 type: project
 name: "MOVA FPL — Autonomous Harness v1"
 created: 2026-08-23
-updated: 2026-08-24
+updated: 2026-08-27
 tags: [mova, fpl, autonomy, postgres, agents, observability, continuous-improvement]
 status: active-design
 ---
@@ -117,10 +117,12 @@ Stack inicial:
 1. `postgres` — datos y control plane;
 2. `mova-app` — API, collector, modelos, scheduler y roles agénticos;
 3. `mova-browser` — sesión FPL y ejecución UI;
-4. volumen `artifacts` y destino de backups.
+4. `mova-research` — worker genérico one-shot, sin DB ni secretos de datos;
+5. volumen `artifacts` y destino de backups.
 
-No habrá un contenedor por agente. Los jobs agénticos corren one-shot dentro de
-`mova-app`; Codex puede permanecer como especialista opcional invocado por ORBIX.
+No habrá un contenedor por rol. Los roles deterministas corren en `mova-app`; el único worker
+LLM aislado consume solicitudes selladas y devuelve candidatos por cola de archivos. Codex usa
+la suscripción existente y no recibe acceso al control plane.
 
 ## 4. Capas funcionales
 
@@ -374,8 +376,8 @@ no borra evidencia previa y nunca amplía autonomía.
 | HV1-02 🟡 | PostgreSQL shadow, import y verificación; luego adapter/cutover | 10–14 h | HV1-01 |
 | HV1-03a ✅ | collector/data quality autónomo | completado | HV1-02 |
 | HV1-03b ✅ | proyección/evaluación uniforme, scorecard, drift y servicio desplegado | completado | HV1-03a |
-| HV1-04 | team state, season plan y memoria explícita | 6–8 h | HV1-02 |
-| HV1-05 | research con evidencia y acta | 8–12 h | HV1-02/03 |
+| HV1-04 🟡 | team state y season plan implementados; falta memoria estratégica longitudinal | 6–8 h | HV1-02 |
+| HV1-05 🟡 | cola Codex, evidencia, conflictos, TTL y cost ledger; falta medir cobertura real | 8–12 h | HV1-02/03 |
 | HV1-06 | Strategist + Critic + Validator + DecisionEnvelope | 10–14 h | HV1-03/04/05 |
 | HV1-07 | executor/verifier y autonomía por riesgo | 8–12 h | HV1-06 |
 | HV1-08 🟡 | scorecard/drift técnico implementado; faltan reviewer causal, costos y promoción | 8–12 h | HV1-03/06 |
@@ -413,6 +415,19 @@ propuestas no autopromovibles. `mova review gw` valida la API oficial, publica a
 trace y deja audit/job/steps. GW1 se registró como retrospectiva porque no tuvo batch predeadline;
 el scorecard causal comienza en GW2. Evidencia en
 [GW1 closeout](../../decisions/2026-27/gw01-closeout.md).
+
+### Corte strategic context + research — 27 de agosto de 2026
+
+SQLite migration `005` añade planes versionados, manifiestos de ciclo, corridas/documentos/
+conflictos de investigación y cost ledger. `mova strategy` es la fachada estable. El worker
+Codex se ejecuta en un contenedor one-shot con una sola cola montada, sin PostgreSQL, secretos
+de datos, repo o navegador; además se deshabilitan sus herramientas de shell y Computer Use.
+
+El importador determinista exige evidencia HTTPS pública, identidad/hash coincidentes,
+taxonomía/TTL válidos y soporte oficial o de dos fuentes para aceptar una señal. Lo demás queda
+como candidato o conflicto, nunca como hecho operativo. El rollout conserva `shadow/A0`,
+`kill_switch=true` y `browser_writes=false`. Evidencia y runbook:
+[strategic context](../../operations/strategic-research.md).
 
 ## 11. Definition of Done del harness v1
 

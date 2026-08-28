@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — contrato del operador"
 created: 2026-08-23
-updated: 2026-08-24
+updated: 2026-08-27
 tags: [mova, fpl, operator, cli, observability, contract]
 status: active
 ---
@@ -28,6 +28,11 @@ mova data status
 mova data coverage
 mova analytics status
 mova analytics run
+mova strategy status
+mova strategy prepare
+mova strategy research due
+mova strategy research enqueue
+mova strategy research import
 mova review gw --package /app/decisions/fpl/2026-27/gwNN_closeout.json \
   --actor julian --reason "..." --idempotency-key "..."
 ```
@@ -48,7 +53,8 @@ revisión desplegada, PostgreSQL shadow cuando está configurado, perfil browser
 | `gameweek` | GW, deadline, segundos restantes y fase recalculada |
 | `data` | fuentes, data service PostgreSQL, cobertura, team state, FTs, banco, chips y datasets |
 | `models` | releases registrados, versión, estado y hash |
-| `research` | señales y conflictos vigentes del ciclo |
+| `research` | conteo de señales y conflictos vigentes del ciclo |
+| `strategy` | último manifiesto sellado y corridas de research del ciclo |
 | `decision` | última decisión sellada, política, estado, xP y fingerprint |
 | `execution` | última ejecución browser y evidencia, si existe |
 | `operations` | heartbeat, salud, fallos 24 h, incidentes, outbox y migrations |
@@ -122,10 +128,18 @@ actor, razón y clave idempotente; persiste settlement/review en el writer SQLit
 atribución a la traza. Si no existió batch predeadline, el resultado es retrospectivo y no cuenta
 como scorecard causal.
 
+El contexto pre-deadline usa `mova strategy`: `plan` activa una revisión explícita del plan
+de temporada; `prepare` sella fuentes, team state, proyección, plan y research en un
+`CycleManifest`; `research enqueue` publica una solicitud sin secretos; `research import`
+valida el brief y lo incorpora. El worker Codex no accede a DB, navegador, repo ni credenciales
+de datos. Contrato y recuperación en
+[contexto estratégico](strategic-research.md).
+
 ## Probe del host
 
-`deploy/bin/host-probe.py` registra exclusivamente estados de unidades, salud de API/PostgreSQL, presencia
-del perfil browser y revisiones de checkout/imagen. No lee env, cookies, HTML, logs, argumentos de
+`deploy/bin/host-probe.py` registra exclusivamente estados de unidades, salud de API/PostgreSQL,
+presencia del perfil browser, presencia booleana del auth/cola de research y revisiones de
+checkout/imagen. No lee env, cookies, HTML, logs, argumentos de
 procesos ni secretos. Su salida atómica vive en
 `/var/lib/mova-fpl/runtime/host-probe.json`, es consumida como solo lectura por el engine y vence a
 los diez minutos.

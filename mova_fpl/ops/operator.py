@@ -109,6 +109,7 @@ def _database_snapshot(db: OpsDB) -> dict:
         models = _latest_rows(con, "model_releases", "model_name", "created_at")
         cycle_id = str(cycle["cycle_id"]) if cycle else None
         research = {"signals": 0, "conflicts": 0}
+        strategic = {"manifest": None, "research_runs": []}
         if cycle_id:
             row = con.execute(
                 "SELECT COUNT(*) AS signals, "
@@ -117,6 +118,20 @@ def _database_snapshot(db: OpsDB) -> dict:
             ).fetchone()
             research = {"signals": int(row["signals"] or 0),
                         "conflicts": int(row["conflicts"] or 0)}
+            manifest = con.execute(
+                "SELECT manifest_id,revision,as_of_at,phase,team_state_id,plan_id,"
+                "content_sha256,artifact_path FROM cycle_manifests WHERE cycle_id=? "
+                "ORDER BY revision DESC LIMIT 1", (cycle_id,),
+            ).fetchone()
+            runs = con.execute(
+                "SELECT research_run_id,provider,status,queued_at,finished_at,imported_at,"
+                "error_code FROM research_runs WHERE cycle_id=? "
+                "ORDER BY queued_at DESC LIMIT 10", (cycle_id,),
+            ).fetchall()
+            strategic = {
+                "manifest": dict(manifest) if manifest else None,
+                "research_runs": [dict(item) for item in runs],
+            }
     return {
         "cycle": dict(cycle) if cycle else None,
         "latest_tick": dict(latest_tick) if latest_tick else None,
@@ -133,6 +148,7 @@ def _database_snapshot(db: OpsDB) -> dict:
         "datasets": datasets,
         "models": models,
         "research": research,
+        "strategic": strategic,
         "controls": db.controls(),
     }
 
@@ -187,13 +203,17 @@ def build_status(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
     for source in state["sources"]:
         source_age = _age(source["captured_at"], current)
         quality = _json(source.get("quality_json"), {}) or {}
+        is_live_source = source["source_name"] == "fpl_official"
+        fresh = (
+            source_age is not None and source_max_age is not None
+            and source_age <= source_max_age
+        ) if is_live_source else source["quality_status"] == "valid"
         sources.append({
             "name": source["source_name"],
             "captured_at": source["captured_at"],
             "age_seconds": source_age,
-            "max_age_seconds": source_max_age,
-            "fresh": source_age is not None and source_max_age is not None
-                     and source_age <= source_max_age,
+            "max_age_seconds": source_max_age if is_live_source else None,
+            "fresh": fresh,
             "quality": source["quality_status"],
             "artifact_path": source["artifact_path"],
             "manifest_sha256": source["manifest_sha256"],
@@ -334,6 +354,7 @@ def build_status(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
         },
         "analytics": analytics_service,
         "research": state["research"],
+        "strategy": state["strategic"],
         "decision": ({key: state["decision"].get(key) for key in (
             "decision_id", "cycle_id", "revision", "mode", "policy_version", "status",
             "expected_points", "chip", "fingerprint", "manifest_sha256", "created_at"
@@ -581,6 +602,7 @@ def build_doctor(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
             "mova-fpl-private-state.timer", "mova-fpl-backup.timer",
             "mova-fpl-watchdog.timer",
             "mova-fpl-analytics.timer",
+            "mova-fpl-research.timer",
         )
         bad_units = [name for name in expected_units
                      if (units.get(name) or {}).get("active_state") != "active"]
@@ -627,6 +649,17 @@ def build_doctor(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
                              "persistent browser profile is present" if profile_ok else "browser profile is absent",
                              required=False, detail={"profile_present": profile_ok,
                                                      "container_state": browser.get("container_state")}))
+        research_host = host.get("research")
+        if isinstance(research_host, dict):
+            research_ready = bool(
+                research_host.get("auth_present") and research_host.get("queue_present")
+            )
+            checks.append(_check(
+                "research_worker", "PASS" if research_ready else "FAIL",
+                "isolated Codex research worker is provisioned" if research_ready
+                else "Codex auth or research queue is missing",
+                detail=research_host,
+            ))
     else:
         checks.append(_check("host_probe", "WARN", "host-level checks are not observable",
                              required=False, detail={"reason": host.get("reason")}))
@@ -679,7 +712,7 @@ def render_status(payload: dict) -> str:
         f"Equipo: {team.get('squad_size') or 0}/15 · FT {team.get('free_transfers') if team.get('free_transfers') is not None else '—'} · banco £{(team.get('bank_tenths') or 0) / 10:.1f}m · estado {team.get('quality') or 'ausente'}",
         f"Último tick: {tick.get('status') or 'ausente'} · edad {payload['operations'].get('latest_tick_age_seconds')}s",
         f"Controles: {controls['mode']} / {controls['action_level']} · compliance {controls['compliance_gate']} · kill_switch={str(controls['kill_switch']).lower()} · browser_writes={str(controls['browser_writes']).lower()}",
-        f"Fuentes {len(payload['data']['sources'])} · modelos {len(payload['models']['artifacts'])} artefactos/{len(payload['models']['registered'])} registrados · research {payload['research']['signals']} · incidentes {len(incidents)} · outbox {payload['operations']['outbox_pending']}",
+        f"Fuentes {len(payload['data']['sources'])} · modelos {len(payload['models']['artifacts'])} artefactos/{len(payload['models']['registered'])} registrados · research {payload['research']['signals']} · manifiesto {'sí' if payload['strategy']['manifest'] else 'no'} · incidentes {len(incidents)} · outbox {payload['operations']['outbox_pending']}",
         f"Analytics: GW {scorecard.get('gw') or '—'} · {scorecard.get('variant') or 'sin variante'} · drift {scorecard.get('drift_status') or 'sin scorecard'}",
         f"Host: {'observable' if host.get('available') else 'no observable'} · git {payload['runtime']['git_sha']}",
     ))

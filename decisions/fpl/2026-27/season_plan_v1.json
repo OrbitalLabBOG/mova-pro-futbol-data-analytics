@@ -1,0 +1,18 @@
+{
+  "horizon_start_gw": 2,
+  "horizon_end_gw": 8,
+  "assumptions": [
+    "Priorizar minutos esperados, rol estable y flexibilidad de plantilla.",
+    "No reaccionar a una sola jornada sin evidencia causal o cambio material de contexto.",
+    "Reevaluar el horizonte después de cada settlement y ante cambios confirmados de calendario."
+  ],
+  "chip_windows": [],
+  "guardrails": {
+    "max_hit_points": 0,
+    "preserve_free_transfer_when_marginal": true,
+    "chip_requires_explicit_validated_case": true,
+    "research_conflicts_block_material_adjustment": true,
+    "browser_writes": false
+  },
+  "rationale": "Baseline estratégico conservador para GW2–GW8: mantiene opciones abiertas mientras se calibran modelos y research de la temporada nueva; no prescribe jugadores, transferencias ni chips."
+}

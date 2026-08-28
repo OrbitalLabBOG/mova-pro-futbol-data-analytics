@@ -476,9 +476,132 @@ MIGRATION_004 = (
     """,
 )
 
+MIGRATION_005 = (
+    """
+    CREATE TABLE IF NOT EXISTS season_plans (
+        plan_id TEXT PRIMARY KEY,
+        season TEXT NOT NULL,
+        revision INTEGER NOT NULL CHECK (revision >= 1),
+        status TEXT NOT NULL CHECK (status IN ('draft','active','superseded')),
+        horizon_start_gw INTEGER NOT NULL CHECK (horizon_start_gw BETWEEN 1 AND 38),
+        horizon_end_gw INTEGER NOT NULL CHECK (
+          horizon_end_gw BETWEEN horizon_start_gw AND 38),
+        assumptions_json TEXT NOT NULL CHECK (json_valid(assumptions_json)),
+        chip_windows_json TEXT NOT NULL CHECK (json_valid(chip_windows_json)),
+        guardrails_json TEXT NOT NULL CHECK (json_valid(guardrails_json)),
+        rationale TEXT NOT NULL,
+        actor TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        content_sha256 TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        UNIQUE (season, revision)
+    ) STRICT
+    """,
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_season_plans_active "
+    "ON season_plans(season) WHERE status='active'",
+    """
+    CREATE TABLE IF NOT EXISTS cycle_manifests (
+        manifest_id TEXT PRIMARY KEY,
+        cycle_id TEXT NOT NULL REFERENCES gameweek_cycles(cycle_id),
+        revision INTEGER NOT NULL CHECK (revision >= 1),
+        as_of_at TEXT NOT NULL,
+        deadline_at TEXT NOT NULL,
+        phase TEXT NOT NULL,
+        team_state_id TEXT REFERENCES team_state_snapshots(team_state_id),
+        plan_id TEXT REFERENCES season_plans(plan_id),
+        source_manifest_json TEXT NOT NULL CHECK (json_valid(source_manifest_json)),
+        analytics_manifest_json TEXT NOT NULL CHECK (json_valid(analytics_manifest_json)),
+        research_summary_json TEXT NOT NULL CHECK (json_valid(research_summary_json)),
+        artifact_path TEXT NOT NULL,
+        content_sha256 TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        UNIQUE (cycle_id, revision),
+        UNIQUE (cycle_id, content_sha256)
+    ) STRICT
+    """,
+    "CREATE INDEX IF NOT EXISTS idx_cycle_manifests_latest "
+    "ON cycle_manifests(cycle_id, revision DESC)",
+    """
+    CREATE TABLE IF NOT EXISTS research_runs (
+        research_run_id TEXT PRIMARY KEY,
+        job_id TEXT REFERENCES job_runs(job_id),
+        cycle_id TEXT NOT NULL REFERENCES gameweek_cycles(cycle_id),
+        manifest_id TEXT NOT NULL REFERENCES cycle_manifests(manifest_id),
+        provider TEXT NOT NULL,
+        status TEXT NOT NULL CHECK (status IN (
+          'queued','running','completed','imported','rejected','failed')),
+        request_path TEXT NOT NULL,
+        request_sha256 TEXT NOT NULL,
+        result_path TEXT,
+        result_sha256 TEXT,
+        usage_json TEXT NOT NULL DEFAULT '{}' CHECK (json_valid(usage_json)),
+        error_code TEXT,
+        error_detail TEXT,
+        queued_at TEXT NOT NULL,
+        started_at TEXT,
+        finished_at TEXT,
+        imported_at TEXT,
+        UNIQUE (cycle_id, manifest_id, provider, request_sha256)
+    ) STRICT
+    """,
+    "CREATE INDEX IF NOT EXISTS idx_research_runs_status "
+    "ON research_runs(status, queued_at)",
+    """
+    CREATE TABLE IF NOT EXISTS research_documents (
+        document_id TEXT PRIMARY KEY,
+        research_run_id TEXT NOT NULL REFERENCES research_runs(research_run_id) ON DELETE CASCADE,
+        source_url TEXT NOT NULL,
+        title TEXT NOT NULL,
+        publisher TEXT NOT NULL,
+        published_at TEXT,
+        observed_at TEXT NOT NULL,
+        source_tier TEXT NOT NULL CHECK (source_tier IN ('official','tier1','tier2','other')),
+        content_sha256 TEXT NOT NULL,
+        UNIQUE (research_run_id, source_url)
+    ) STRICT
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS research_conflicts (
+        conflict_id TEXT PRIMARY KEY,
+        research_run_id TEXT NOT NULL REFERENCES research_runs(research_run_id) ON DELETE CASCADE,
+        cycle_id TEXT NOT NULL REFERENCES gameweek_cycles(cycle_id),
+        subject TEXT NOT NULL,
+        claim_type TEXT NOT NULL,
+        description TEXT NOT NULL,
+        source_urls_json TEXT NOT NULL CHECK (json_valid(source_urls_json)),
+        status TEXT NOT NULL CHECK (status IN ('unresolved','resolved')),
+        created_at TEXT NOT NULL
+    ) STRICT
+    """,
+    "ALTER TABLE research_signals ADD COLUMN research_run_id TEXT "
+    "REFERENCES research_runs(research_run_id)",
+    "ALTER TABLE research_signals ADD COLUMN subject_name TEXT",
+    "ALTER TABLE research_signals ADD COLUMN direction TEXT "
+    "CHECK (direction IS NULL OR direction IN ('positive','negative','neutral','uncertain'))",
+    "ALTER TABLE research_signals ADD COLUMN validation_status TEXT "
+    "CHECK (validation_status IS NULL OR validation_status IN ('accepted','candidate','rejected'))",
+    "ALTER TABLE research_signals ADD COLUMN evidence_json TEXT CHECK "
+    "(evidence_json IS NULL OR json_valid(evidence_json))",
+    """
+    CREATE TABLE IF NOT EXISTS cost_ledger (
+        cost_id TEXT PRIMARY KEY,
+        research_run_id TEXT REFERENCES research_runs(research_run_id),
+        provider TEXT NOT NULL,
+        model TEXT,
+        input_tokens INTEGER CHECK (input_tokens IS NULL OR input_tokens >= 0),
+        output_tokens INTEGER CHECK (output_tokens IS NULL OR output_tokens >= 0),
+        estimated_cost_usd REAL CHECK (estimated_cost_usd IS NULL OR estimated_cost_usd >= 0),
+        subscription_usage INTEGER NOT NULL DEFAULT 0 CHECK (subscription_usage IN (0,1)),
+        detail_json TEXT NOT NULL DEFAULT '{}' CHECK (json_valid(detail_json)),
+        occurred_at TEXT NOT NULL
+    ) STRICT
+    """,
+)
+
 MIGRATIONS = (
     (1, "initial_ops_schema", MIGRATION_001),
     (2, "team_state_artifact_provenance", MIGRATION_002),
     (3, "team_state_observation_freshness", MIGRATION_003),
     (4, "gameweek_settlement_and_review", MIGRATION_004),
+    (5, "strategic_context_and_research", MIGRATION_005),
 )

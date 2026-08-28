@@ -1,0 +1,12 @@
+[Unit]
+Description=Evaluate MOVA FPL research cadence every 15 minutes
+
+[Timer]
+OnCalendar=*:7/15
+Persistent=true
+RandomizedDelaySec=30
+AccuracySec=20s
+Unit=mova-fpl-research.service
+
+[Install]
+WantedBy=timers.target

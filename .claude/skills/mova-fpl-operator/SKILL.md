@@ -5,7 +5,7 @@ metadata:
   vertical: mova
   type: skill
   repo: mova-pro-futbol-data-analytics
-  updated: 2026-08-24
+  updated: 2026-08-27
 ---
 
 # MOVA FPL Operator
@@ -30,6 +30,9 @@ consulta ordinaria: `mova` y `/api/v1/status` son el contrato estable.
 7. Para cerrar una GW, atribuir una intervención y registrar feedback, lee
    [docs/operations/gameweek.md](../../../docs/operations/gameweek.md). Ejecuta `mova review gw`
    solo con `finished + data_checked`, package versionado, actor, razón e idempotency key.
+8. Para activar un plan, sellar el manifiesto o investigar noticias, lee
+   [docs/operations/strategic-research.md](../../../docs/operations/strategic-research.md).
+   El brief de Codex es candidato hasta que el importador determinista lo valide.
 
 `status` no prueba red ni muta estado. `doctor` hace checks acotados y un único GET público a
 FPL; usa `--no-network` cuando la ejecución deba ser hermética. Un `FAIL` requerido devuelve
@@ -74,6 +77,8 @@ pendiente o `browser_writes=false`, limita el browser a login y lecturas.
   una variante shadow.
 - `deployment_revision WARN`: no asumir qué código corre; comparar checkout, imagen y SHA
   aprobado antes de reconstruir.
+- `research_worker FAIL`: verificar timer, cola y presencia sanitizada del auth; nunca
+  mostrar, copiar a Git ni incluir el archivo de autenticación en evidencias.
 - `host_probe WARN`: usar el wrapper del host; no montar Docker socket o D-Bus dentro del engine.
 - API FPL `FAIL`: conservar la última evidencia, declarar la pérdida de frescura y no forzar una
   corrida que parezca vigente.
