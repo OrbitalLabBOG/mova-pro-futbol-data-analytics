@@ -287,3 +287,14 @@ def test_release_sha_does_not_invalidate_engine_dependency_layers():
     assert dockerfile.index("RUN python -m pip install") < dockerfile.index(
         "ARG MOVA_GIT_SHA=unknown"
     )
+
+
+def test_versioned_decision_packages_are_in_engine_build_context():
+    ignored = {
+        line.strip() for line in Path(".dockerignore").read_text().splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    }
+    assert "decisions" not in ignored
+    assert "COPY decisions /app/decisions" in Path(
+        "deploy/docker/engine.Dockerfile"
+    ).read_text()
