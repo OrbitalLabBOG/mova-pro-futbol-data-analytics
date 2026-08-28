@@ -224,6 +224,7 @@ class StrategicContextService:
             except ValueError:
                 continue
             previous_signals.append(dict(row))
+        research_focus = self._research_focus(squad, projection_payload)
         body = {
             "schema": "mova-cycle-manifest-v1",
             "cycle_id": cycle_id,
@@ -245,8 +246,8 @@ class StrategicContextService:
             "plan_revision": plan.get("revision") if plan else None,
             "source_manifest": sources,
             "analytics_manifest": projection_payload,
-            "research_focus": self._research_focus(squad, projection_payload),
             "research_summary": {
+                "focus": research_focus,
                 "signals": [dict(row) for row in signals],
                 "unresolved_conflicts": unresolved,
                 "previous_active_signals": previous_signals,
@@ -344,7 +345,8 @@ class StrategicContextService:
             "objective": (
                 "Verificar noticias y contexto pre-deadline que puedan cambiar "
                 "disponibilidad, minutos, rol o decisión estratégica FPL. Priorizar "
-                "research_focus y reportar deltas materiales frente a previous_active_signals."
+                "research_summary.focus y reportar deltas materiales frente a "
+                "previous_active_signals."
             ),
             "manifest": manifest,
             "guardrails": {

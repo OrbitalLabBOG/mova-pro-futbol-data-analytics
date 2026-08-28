@@ -46,7 +46,7 @@ residente ni una llamada LLM por tick.
 
 Un manifest se reutiliza si su contenido no cambió. Un plan idéntico no crea revisión. Una
 solicitud de investigación referencia el hash exacto del manifest que recibió.
-`research_focus` contiene primero los 15 elementos propios y después hasta diez candidatos del
+`research_summary.focus` contiene primero los 15 elementos propios y después hasta diez candidatos del
 batch baseline aprobado, resueltos contra el último snapshot público. Cada sujeto lleva notas
 oficiales, p_play/p60 y razón de inclusión cuando están disponibles. La corrida siguiente recibe
 las señales activas anteriores y debe producir deltas, no repetir claims sin cambios.

@@ -77,8 +77,10 @@ def test_plan_y_manifest_son_versionados_e_idempotentes(tmp_path):
     assert reused_plan["reused"] is True
     assert manifest["cycle_id"] == cycle_id
     assert manifest["manifest"]["team_state"]["free_transfers"] == 1
-    assert len(manifest["manifest"]["research_focus"]) == 15
-    assert manifest["manifest"]["research_focus"][0]["focus_reason"] == ["current_squad"]
+    assert len(manifest["manifest"]["research_summary"]["focus"]) == 15
+    assert manifest["manifest"]["research_summary"]["focus"][0]["focus_reason"] == [
+        "current_squad"
+    ]
     assert manifest["manifest"]["plan_revision"] == 1
     assert Path(manifest["artifact_path"]).is_file()
     assert db.strategic_status(cycle_id)["status"] == "ready"
@@ -90,24 +92,37 @@ def test_manifest_resuelve_plantilla_y_candidatos_para_research(tmp_path, monkey
     credential.write_text("fixture", encoding="utf-8")
     config = replace(config, postgres_credential_file=credential)
 
-    def focus(_self, *, squad, batch_id, candidate_limit):
-        assert len(squad) == 15
-        assert candidate_limit == 10
-        return [{
-            "element": 1, "player_name": "Player One", "team": "Test FC",
-            "position": "MID", "focus_reason": ["current_squad"],
-            "official_news": "75% chance of playing",
-        }]
-
-    monkeypatch.setattr(
-        "mova_fpl.ops.analytics_store.AnalyticsStore.research_focus", focus
-    )
-    manifest = StrategicContextService(config, db).prepare()["manifest"]
-    assert manifest["research_focus"] == [{
+    resolved = [{
         "element": 1, "player_name": "Player One", "team": "Test FC",
         "position": "MID", "focus_reason": ["current_squad"],
         "official_news": "75% chance of playing",
     }]
+
+    def focus(_self, *, squad, batch_id, candidate_limit):
+        assert len(squad) == 15
+        assert candidate_limit == 10
+        return list(resolved)
+
+    monkeypatch.setattr(
+        "mova_fpl.ops.analytics_store.AnalyticsStore.research_focus", focus
+    )
+    service = StrategicContextService(config, db)
+    observed = datetime.now(timezone.utc).replace(microsecond=0)
+    first = service.prepare(now=observed)
+    manifest = first["manifest"]
+    assert manifest["research_summary"]["focus"] == [{
+        "element": 1, "player_name": "Player One", "team": "Test FC",
+        "position": "MID", "focus_reason": ["current_squad"],
+        "official_news": "75% chance of playing",
+    }]
+    resolved.append({
+        "element": 2, "player_name": "Player Two", "team": "Test FC",
+        "position": "FWD", "focus_reason": ["top_projection_candidate"],
+        "official_news": None,
+    })
+    changed = service.prepare(now=observed)
+    assert changed["revision"] == first["revision"] + 1
+    assert changed["content_sha256"] != first["content_sha256"]
 
 
 def test_manifest_usa_el_servicio_analitico_si_sqlite_no_tiene_proyeccion(tmp_path):
