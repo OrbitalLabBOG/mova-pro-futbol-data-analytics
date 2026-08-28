@@ -8,8 +8,8 @@ install -d -m 0750 -o 10001 -g 10001 \
   /var/lib/mova-fpl/artifacts/models /var/lib/mova-fpl/artifacts/decisions \
   /var/lib/mova-fpl/artifacts/evidence \
   /var/lib/mova-fpl/artifacts/strategic-context
-install -d -m 0700 -o 10002 -g 10002 \
-  /var/lib/mova-fpl/codex-home \
+install -d -m 0700 -o 10002 -g 10002 /var/lib/mova-fpl/codex-home
+install -d -m 2770 -o 10002 -g 10001 \
   /var/lib/mova-fpl/artifacts/research \
   /var/lib/mova-fpl/artifacts/research/inbox \
   /var/lib/mova-fpl/artifacts/research/outbox \
