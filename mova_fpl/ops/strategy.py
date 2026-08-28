@@ -48,6 +48,13 @@ def _parse_time(value: object, *, field: str) -> datetime:
     return parsed.astimezone(timezone.utc)
 
 
+def _parse_published_at(value: object) -> datetime:
+    raw = str(value).strip()
+    if re.fullmatch(r"\d{4}-\d{2}-\d{2}", raw):
+        raw = f"{raw}T00:00:00+00:00"
+    return _parse_time(raw, field="published_at")
+
+
 def _safe_url(value: object) -> str:
     raw = str(value).strip()
     parsed = urlsplit(raw)
@@ -402,7 +409,7 @@ class StrategicContextService:
                 raise ValueError("source_tier inválido")
             published = raw.get("published_at")
             if published:
-                published_at = _parse_time(published, field="published_at")
+                published_at = _parse_published_at(published)
                 if published_at > observed + timedelta(minutes=10):
                     raise ValueError("published_at está en el futuro")
                 published = published_at.isoformat()

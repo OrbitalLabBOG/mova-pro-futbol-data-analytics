@@ -141,7 +141,7 @@ def test_resultado_codex_se_valida_antes_de_entrar(tmp_path):
         "summary": "No hay una alerta adicional fuera de la declaración oficial.",
         "documents": [{
             "source_url": source, "title": "Team news", "publisher": "Premier League",
-            "published_at": now.isoformat(), "source_tier": "official",
+            "published_at": now.date().isoformat(), "source_tier": "official",
         }],
         "signals": [{
             "subject_name": "Player 1", "player_element": 1,
@@ -168,6 +168,10 @@ def test_resultado_codex_se_valida_antes_de_entrar(tmp_path):
     assert not Path(run["request_path"]).exists()
     assert (config.research_root / "archive" / Path(run["request_path"]).name).is_file()
     with db.connect(readonly=True) as con:
+        document = con.execute(
+            "SELECT published_at FROM research_documents WHERE research_run_id=?",
+            (run_id,),
+        ).fetchone()
         signal = con.execute(
             "SELECT validation_status,source_tier FROM research_signals "
             "WHERE research_run_id=?", (run_id,),
@@ -176,6 +180,7 @@ def test_resultado_codex_se_valida_antes_de_entrar(tmp_path):
             "SELECT subscription_usage,estimated_cost_usd FROM cost_ledger "
             "WHERE research_run_id=?", (run_id,),
         ).fetchone()
+    assert document["published_at"].endswith("T00:00:00+00:00")
     assert dict(signal) == {"validation_status": "accepted", "source_tier": "official"}
     assert dict(cost) == {"subscription_usage": 1, "estimated_cost_usd": None}
 
