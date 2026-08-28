@@ -639,7 +639,16 @@ def build_doctor(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
                 required=False, detail=postgres,
             ))
         revisions = host.get("revisions") or {}
-        aligned = revisions.get("checkout") and revisions.get("checkout") == revisions.get("image")
+        checkout_revision = str(revisions.get("checkout") or "")
+        image_revision = str(revisions.get("image") or "")
+        aligned = bool(
+            checkout_revision and image_revision
+            and (
+                checkout_revision == image_revision
+                or (len(checkout_revision) >= 7 and image_revision.startswith(checkout_revision))
+                or (len(image_revision) >= 7 and checkout_revision.startswith(image_revision))
+            )
+        )
         checks.append(_check("deployment_revision", "PASS" if aligned else "WARN",
                              "checkout and image revisions match" if aligned else "checkout/image revision drift",
                              required=False, detail=revisions))
