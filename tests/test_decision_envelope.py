@@ -1,3 +1,5 @@
+import json
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -87,6 +89,27 @@ def test_envelope_ready_is_staged_and_deterministic():
     assert [row["candidate_key"] for row in first["comparisons"]] == [
         "milp_baseline", "primary_alternative"
     ]
+
+
+def test_envelope_normalizes_typed_database_timestamps_to_json():
+    manifest = _manifest()
+    manifest["analytics_manifest"]["cutoff_at"] = datetime(
+        2026, 9, 4, 15, 0, tzinfo=timezone.utc,
+    )
+
+    envelope = build_envelope(
+        bundle=_bundle(), manifest=manifest, manifest_id="manifest_1",
+        manifest_sha256="b" * 64, controls=CONTROLS,
+    )
+
+    assert isinstance(
+        next(
+            check for check in envelope["validation"]["checks"]
+            if check["code"] == "ANALYTICS_APPROVED_CAUSAL"
+        )["detail"]["cutoff_at"],
+        str,
+    )
+    json.dumps(envelope)
 
 
 def test_preliminary_without_projection_blocks_wildcard():
