@@ -37,7 +37,8 @@ def test_fpl_bundle_contract_covers_whole_public_surface():
     quality, checks = validate_bundle(*_fpl_bundle(), 99)
     assert quality == {
         "teams": 20, "events": 38, "players": 600, "fixtures": 380,
-        "entry_id": 99, "history_events": 1,
+        "entry_id": 99, "history_events": 1, "players_with_news": 0,
+        "players_flagged": 0,
     }
     assert all(item["passed"] for item in checks)
 

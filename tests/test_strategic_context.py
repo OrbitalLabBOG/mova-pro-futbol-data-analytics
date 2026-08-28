@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -76,9 +77,37 @@ def test_plan_y_manifest_son_versionados_e_idempotentes(tmp_path):
     assert reused_plan["reused"] is True
     assert manifest["cycle_id"] == cycle_id
     assert manifest["manifest"]["team_state"]["free_transfers"] == 1
+    assert len(manifest["manifest"]["research_focus"]) == 15
+    assert manifest["manifest"]["research_focus"][0]["focus_reason"] == ["current_squad"]
     assert manifest["manifest"]["plan_revision"] == 1
     assert Path(manifest["artifact_path"]).is_file()
     assert db.strategic_status(cycle_id)["status"] == "ready"
+
+
+def test_manifest_resuelve_plantilla_y_candidatos_para_research(tmp_path, monkeypatch):
+    config, db, _service, _cycle_id = _runtime(tmp_path)
+    credential = tmp_path / "postgres-password"
+    credential.write_text("fixture", encoding="utf-8")
+    config = replace(config, postgres_credential_file=credential)
+
+    def focus(_self, *, squad, batch_id, candidate_limit):
+        assert len(squad) == 15
+        assert candidate_limit == 10
+        return [{
+            "element": 1, "player_name": "Player One", "team": "Test FC",
+            "position": "MID", "focus_reason": ["current_squad"],
+            "official_news": "75% chance of playing",
+        }]
+
+    monkeypatch.setattr(
+        "mova_fpl.ops.analytics_store.AnalyticsStore.research_focus", focus
+    )
+    manifest = StrategicContextService(config, db).prepare()["manifest"]
+    assert manifest["research_focus"] == [{
+        "element": 1, "player_name": "Player One", "team": "Test FC",
+        "position": "MID", "focus_reason": ["current_squad"],
+        "official_news": "75% chance of playing",
+    }]
 
 
 def test_manifest_usa_el_servicio_analitico_si_sqlite_no_tiene_proyeccion(tmp_path):
@@ -188,6 +217,55 @@ def test_resultado_codex_se_valida_antes_de_entrar(tmp_path):
     assert document["published_at"].endswith("T00:00:00+00:00")
     assert dict(signal) == {"validation_status": "accepted", "source_tier": "official"}
     assert dict(cost) == {"subscription_usage": 1, "estimated_cost_usd": None}
+
+
+def test_slot_final_es_obligatorio_aunque_cadencia_rutina_no_venza(tmp_path):
+    _config, db, service, cycle_id = _runtime(tmp_path)
+    current = datetime.now(timezone.utc).replace(microsecond=0)
+    queued = service.enqueue(
+        force=True, actor="test", reason="corrida rutinaria",
+        idempotency_key="research:routine-before-final",
+    )
+    old = (current - timedelta(hours=3)).isoformat()
+    deadline = (current + timedelta(minutes=90)).isoformat()
+    with db.transaction() as con:
+        con.execute(
+            "UPDATE gameweek_cycles SET deadline_at=? WHERE cycle_id=?",
+            (deadline, cycle_id),
+        )
+        con.execute(
+            "UPDATE research_runs SET status='imported',queued_at=?,finished_at=?,"
+            "imported_at=? WHERE research_run_id=?",
+            (old, old, old, queued["research_run_id"]),
+        )
+
+    due = service.due(now=current)
+    assert due["due"] is True
+    assert due["run_kind"] == "final"
+
+    final_observed = (current - timedelta(minutes=20)).isoformat()
+    with db.transaction() as con:
+        con.execute(
+            "UPDATE research_runs SET queued_at=?,finished_at=?,imported_at=? "
+            "WHERE research_run_id=?",
+            (final_observed, final_observed, final_observed, queued["research_run_id"]),
+        )
+    completed = service.due(now=current)
+    assert completed["due"] is False
+    assert completed["reason"] == "final_already_completed"
+
+
+def test_research_no_arranca_despues_del_cutoff_final(tmp_path):
+    _config, db, service, cycle_id = _runtime(tmp_path)
+    current = datetime.now(timezone.utc).replace(microsecond=0)
+    with db.transaction() as con:
+        con.execute(
+            "UPDATE gameweek_cycles SET deadline_at=? WHERE cycle_id=?",
+            ((current + timedelta(minutes=60)).isoformat(), cycle_id),
+        )
+    due = service.due(now=current)
+    assert due["due"] is False
+    assert due["reason"] == "final_cutoff_passed"
 
 
 def test_url_privada_se_cuarentena_y_no_contamina_signals(tmp_path):

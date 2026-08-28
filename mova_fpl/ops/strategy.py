@@ -26,6 +26,7 @@ CLAIM_TYPES = {
 }
 SOURCE_TIERS = {"official", "tier1", "tier2", "other"}
 DIRECTIONS = {"positive", "negative", "neutral", "uncertain"}
+RESEARCH_CANDIDATE_LIMIT = 10
 
 
 def _atomic_json(path: Path, payload: dict) -> str:
@@ -140,6 +141,29 @@ class StrategicContextService:
             )},
         }
 
+    def _research_focus(self, squad: list[dict], analytics_manifest: dict) -> list[dict]:
+        """Combina plantilla, candidatos del modelo y notas públicas FPL."""
+        fallback = [{
+            "element": int(item["element"]),
+            "focus_reason": ["current_squad"],
+            "squad_position": int(item.get("position") or 0) or None,
+            "is_captain": bool(item.get("is_captain")),
+            "is_vice_captain": bool(item.get("is_vice_captain")),
+        } for item in squad if item.get("element")]
+        if not self.config.postgres_credential_file.is_file():
+            return fallback
+        try:
+            from mova_fpl.ops.analytics_store import AnalyticsStore
+
+            resolved = AnalyticsStore(self.config).research_focus(
+                squad=squad,
+                batch_id=analytics_manifest.get("batch_id"),
+                candidate_limit=RESEARCH_CANDIDATE_LIMIT,
+            )
+        except Exception:  # el manifest declara foco parcial sin bloquear research
+            return fallback
+        return resolved or fallback
+
     def prepare(self, *, now: datetime | None = None) -> dict:
         self.db.migrate()
         current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
@@ -151,6 +175,7 @@ class StrategicContextService:
         deadline = str(cycle["deadline_at"])
         team = self.db.latest_team_state(cycle_id)
         plan = self.db.active_season_plan(self.config.season)
+        squad = json.loads(team["squad_json"]) if team else []
         with self.db.connect(readonly=True) as con:
             sources = [dict(row) for row in con.execute(
                 "SELECT s.source_name,s.captured_at,s.manifest_sha256,s.payload_sha256,"
@@ -175,6 +200,13 @@ class StrategicContextService:
                 "SELECT COUNT(*) FROM research_conflicts "
                 "WHERE cycle_id=? AND status='unresolved'", (cycle_id,),
             ).fetchone()[0])
+            previous_signal_rows = con.execute(
+                "SELECT subject_name,player_element,claim_type,claim_text,direction,"
+                "validation_status,conflict_status,source_url,observed_at,published_at,"
+                "expires_at FROM research_signals WHERE cycle_id=? "
+                "AND validation_status IN ('accepted','candidate') "
+                "ORDER BY observed_at DESC,rowid DESC LIMIT 80", (cycle_id,),
+            ).fetchall()
         projection_payload = dict(projection) if projection else None
         if projection_payload and projection_payload.get("model_manifest_json"):
             projection_payload["model_manifest"] = json.loads(
@@ -184,6 +216,14 @@ class StrategicContextService:
             projection_payload = self._analytics_manifest(
                 season=str(cycle["season"]), gw=int(cycle["gw"]),
             )
+        previous_signals = []
+        for row in previous_signal_rows:
+            try:
+                if _parse_time(row["expires_at"], field="expires_at") <= current:
+                    continue
+            except ValueError:
+                continue
+            previous_signals.append(dict(row))
         body = {
             "schema": "mova-cycle-manifest-v1",
             "cycle_id": cycle_id,
@@ -205,9 +245,11 @@ class StrategicContextService:
             "plan_revision": plan.get("revision") if plan else None,
             "source_manifest": sources,
             "analytics_manifest": projection_payload,
+            "research_focus": self._research_focus(squad, projection_payload),
             "research_summary": {
                 "signals": [dict(row) for row in signals],
                 "unresolved_conflicts": unresolved,
+                "previous_active_signals": previous_signals,
             },
         }
         artifact = self.config.strategic_root / "cycles" / cycle_id / (
@@ -234,6 +276,13 @@ class StrategicContextService:
         if seconds > self.config.research_deadline_window_seconds:
             return {"due": False, "reason": "outside_research_window",
                     "deadline_seconds": seconds}
+        if seconds <= self.config.research_final_cutoff_seconds:
+            return {"due": False, "reason": "final_cutoff_passed",
+                    "deadline_seconds": seconds,
+                    "final_cutoff_seconds": self.config.research_final_cutoff_seconds}
+        run_kind = (
+            "final" if seconds <= self.config.research_final_window_seconds else "routine"
+        )
         with self.db.connect(readonly=True) as con:
             latest = con.execute(
                 "SELECT status,queued_at,imported_at FROM research_runs WHERE cycle_id=? "
@@ -242,17 +291,28 @@ class StrategicContextService:
         if latest:
             if latest["status"] in {"queued", "running", "completed"}:
                 return {"due": False, "reason": "previous_run_not_terminal",
-                        "latest_status": latest["status"], "deadline_seconds": seconds}
+                        "latest_status": latest["status"], "deadline_seconds": seconds,
+                        "run_kind": run_kind}
+            if run_kind == "final":
+                queued_at = _parse_time(latest["queued_at"], field="research_queued_at")
+                final_started_at = deadline - timedelta(
+                    seconds=self.config.research_final_window_seconds
+                )
+                if queued_at >= final_started_at:
+                    return {"due": False, "reason": "final_already_completed",
+                            "latest_status": latest["status"],
+                            "deadline_seconds": seconds, "run_kind": run_kind}
             observed = _parse_time(
                 latest["imported_at"] or latest["queued_at"], field="research_observed_at"
             )
             age = int((current - observed).total_seconds())
-            if age < self.config.research_min_interval_seconds:
+            if run_kind == "routine" and age < self.config.research_min_interval_seconds:
                 return {"due": False, "reason": "cadence_not_due", "age_seconds": age,
                         "cadence_seconds": self.config.research_min_interval_seconds,
-                        "latest_status": latest["status"], "deadline_seconds": seconds}
+                        "latest_status": latest["status"], "deadline_seconds": seconds,
+                        "run_kind": run_kind}
         return {"due": True, "reason": "deadline_window", "deadline_seconds": seconds,
-                "cycle_id": cycle["cycle_id"]}
+                "cycle_id": cycle["cycle_id"], "run_kind": run_kind}
 
     def enqueue(self, *, force: bool = False, actor: str = "mova-research",
                 reason: str | None = None, idempotency_key: str | None = None) -> dict:
@@ -280,9 +340,11 @@ class StrategicContextService:
             "manifest_sha256": prepared["content_sha256"],
             "requested_at": utcnow(),
             "provider": self.config.research_provider,
+            "run_kind": assessment.get("run_kind", "forced" if force else "routine"),
             "objective": (
                 "Verificar noticias y contexto pre-deadline que puedan cambiar "
-                "disponibilidad, minutos, rol o decisión estratégica FPL."
+                "disponibilidad, minutos, rol o decisión estratégica FPL. Priorizar "
+                "research_focus y reportar deltas materiales frente a previous_active_signals."
             ),
             "manifest": manifest,
             "guardrails": {

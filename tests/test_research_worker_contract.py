@@ -27,6 +27,8 @@ def test_worker_deshabilita_herramientas_que_podrian_leer_auth_o_actuar():
     assert 'mkdirSync("/tmp/mova-research"' in worker
     assert "Cada señal y cada conflicto" in worker
     assert "únicamente URLs incluidas en documents" in worker
+    assert "manifest.research_focus" in worker
+    assert "previous_active_signals" in worker
     assert "fantasy.premierleague.com" not in worker
 
 
@@ -73,3 +75,9 @@ def test_timer_no_es_un_agente_residente():
     assert "OnCalendar=*:7/15" in timer
     assert "Type=oneshot" in service
     assert "TimeoutStartSec=10min" in service
+
+
+def test_timer_no_levanta_codex_sin_request_pendiente():
+    cycle = (ROOT / "deploy/bin/research-cycle.sh").read_text(encoding="utf-8")
+    assert 'compgen -G "$research_root/inbox/research_*.request.json"' in cycle
+    assert cycle.index("compgen -G") < cycle.index("docker compose")

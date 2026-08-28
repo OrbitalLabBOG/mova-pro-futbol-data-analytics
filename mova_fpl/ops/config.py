@@ -50,6 +50,8 @@ class RuntimeConfig:
     research_provider: str = "codex_subscription"
     research_min_interval_seconds: int = 6 * 3600
     research_deadline_window_seconds: int = 30 * 3600
+    research_final_window_seconds: int = 2 * 3600
+    research_final_cutoff_seconds: int = 70 * 60
     collector_fpl_cadence_seconds: int = 6 * 3600
     # Máxima edad operativa de odds. La cadencia efectiva la decide el
     # deadline FPL y la cuota observada del proveedor.
@@ -133,6 +135,12 @@ class RuntimeConfig:
             research_deadline_window_seconds=int(os.environ.get(
                 "MOVA_RESEARCH_DEADLINE_WINDOW_SECONDS", str(30 * 3600)
             )),
+            research_final_window_seconds=int(os.environ.get(
+                "MOVA_RESEARCH_FINAL_WINDOW_SECONDS", str(2 * 3600)
+            )),
+            research_final_cutoff_seconds=int(os.environ.get(
+                "MOVA_RESEARCH_FINAL_CUTOFF_SECONDS", str(70 * 60)
+            )),
             collector_fpl_cadence_seconds=int(os.environ.get(
                 "MOVA_COLLECTOR_FPL_CADENCE_SECONDS", str(6 * 3600)
             )),
@@ -206,6 +214,12 @@ class RuntimeConfig:
             raise ValueError("MOVA_RESEARCH_MIN_INTERVAL_SECONDS debe ser positivo")
         if not 3600 <= self.research_deadline_window_seconds <= 7 * 86400:
             raise ValueError("MOVA_RESEARCH_DEADLINE_WINDOW_SECONDS fuera de rango")
+        if not (
+            15 * 60 <= self.research_final_cutoff_seconds
+            < self.research_final_window_seconds
+            < self.research_deadline_window_seconds
+        ):
+            raise ValueError("ventanas finales de research inválidas")
         cadences = (
             self.collector_fpl_cadence_seconds, self.collector_odds_cadence_seconds,
             self.collector_events_cadence_seconds, self.collector_schedule_cadence_seconds,

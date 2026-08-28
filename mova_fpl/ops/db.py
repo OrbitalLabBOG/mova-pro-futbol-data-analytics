@@ -1035,12 +1035,48 @@ class OpsDB:
                 "SELECT COUNT(*) FROM research_conflicts WHERE cycle_id=? AND status='unresolved'",
                 (cycle_id,),
             ).fetchone()[0])
+            latest_global = con.execute(
+                "SELECT research_run_id,cycle_id,provider,status,queued_at,finished_at,"
+                "imported_at,error_code FROM research_runs ORDER BY queued_at DESC LIMIT 1"
+            ).fetchone()
+            global_counts = {
+                str(row["status"]): int(row["n"])
+                for row in con.execute(
+                    "SELECT status,COUNT(*) n FROM research_runs GROUP BY status"
+                ).fetchall()
+            }
+            global_documents = int(con.execute(
+                "SELECT COUNT(*) FROM research_documents"
+            ).fetchone()[0])
+            global_accepted = int(con.execute(
+                "SELECT COUNT(*) FROM research_signals "
+                "WHERE validation_status='accepted'"
+            ).fetchone()[0])
+            global_conflicts = int(con.execute(
+                "SELECT COUNT(*) FROM research_conflicts WHERE status='unresolved'"
+            ).fetchone()[0])
+        latest_payload = dict(latest_global) if latest_global else None
+        service_status = "missing"
+        if latest_payload:
+            service_status = (
+                "healthy" if latest_payload["status"] == "imported"
+                else "running" if latest_payload["status"] in {"queued", "running", "completed"}
+                else "degraded"
+            )
         return {
             "status": "ready" if manifest else "not_prepared", "cycle_id": cycle_id,
             "manifest": dict(manifest) if manifest else None,
             "research_runs": [dict(row) for row in runs],
             "signals": [dict(row) for row in signals],
             "unresolved_conflicts": conflicts,
+            "service": {
+                "status": service_status,
+                "latest_run": latest_payload,
+                "run_counts": global_counts,
+                "documents": global_documents,
+                "accepted_signals": global_accepted,
+                "unresolved_conflicts": global_conflicts,
+            },
         }
 
     def gameweek_review_status(self, season: str, gw: int) -> dict:
@@ -1142,8 +1178,12 @@ class OpsDB:
                 pass
         step_rows = []
         research_counts = {"queued": 0, "imported": 0, "rejected": 0, "failed": 0}
+        research_global_counts = {
+            "queued": 0, "imported": 0, "rejected": 0, "failed": 0
+        }
         research_signals = 0
         research_conflicts = 0
+        research_last_import_epoch = 0.0
         with self.connect(readonly=True) as con:
             collector_job = con.execute(
                 "SELECT job_id FROM job_steps "
@@ -1169,6 +1209,21 @@ class OpsDB:
                     "SELECT COUNT(*) FROM research_conflicts WHERE cycle_id=? "
                     "AND status='unresolved'", (cycle["cycle_id"],),
                 ).fetchone()[0])
+            for row in con.execute(
+                "SELECT status,COUNT(*) n FROM research_runs GROUP BY status"
+            ).fetchall():
+                research_global_counts[str(row["status"])] = int(row["n"])
+            last_import = con.execute(
+                "SELECT imported_at FROM research_runs WHERE imported_at IS NOT NULL "
+                "ORDER BY imported_at DESC LIMIT 1"
+            ).fetchone()
+            if last_import:
+                try:
+                    research_last_import_epoch = datetime.fromisoformat(
+                        str(last_import["imported_at"]).replace("Z", "+00:00")
+                    ).timestamp()
+                except ValueError:
+                    pass
         lines = [
             "# HELP mova_up Whether ops.db is readable.",
             "# TYPE mova_up gauge",
@@ -1203,6 +1258,13 @@ class OpsDB:
             "# HELP mova_research_unresolved_conflicts Unresolved research conflicts.",
             "# TYPE mova_research_unresolved_conflicts gauge",
             f"mova_research_unresolved_conflicts {research_conflicts}",
+            "# HELP mova_research_runs_total Research runs by terminal status across cycles.",
+            "# TYPE mova_research_runs_total gauge",
+            *[f'mova_research_runs_total{{status="{name}"}} {count}'
+              for name, count in sorted(research_global_counts.items())],
+            "# HELP mova_research_last_import_timestamp_seconds Last imported research run.",
+            "# TYPE mova_research_last_import_timestamp_seconds gauge",
+            f"mova_research_last_import_timestamp_seconds {research_last_import_epoch:.3f}",
             "# HELP mova_open_incidents Open incidents by severity.",
             "# TYPE mova_open_incidents gauge",
         ]
