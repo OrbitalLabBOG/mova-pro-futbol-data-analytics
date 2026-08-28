@@ -5,6 +5,7 @@ repo_dir=${MOVA_REPO_DIR:-/opt/orbital/services/mova-fpl}
 deploy_env=${MOVA_DEPLOY_ENV:-/etc/mova-fpl/deploy.env}
 runtime_env=${MOVA_ENV_FILE:-/etc/mova-fpl/runtime.env}
 keep_browser=${MOVA_BROWSER_KEEP_RUNNING:-0}
+lock_file=${MOVA_PRIVATE_STATE_LOCK_FILE:-/run/lock/mova-fpl-private-state.lock}
 force=0
 trigger=scheduled
 if [[ "${1:-}" == "--force" ]]; then
@@ -23,6 +24,14 @@ for env_file in "$deploy_env" "$runtime_env"; do
     set +a
   fi
 done
+
+lock_file=${MOVA_PRIVATE_STATE_LOCK_FILE:-$lock_file}
+mkdir -p "$(dirname "$lock_file")"
+exec 9>"$lock_file"
+if ! flock -n 9; then
+  printf '%s\n' '{"status":"skipped","reason":"private_state_lock_busy"}'
+  exit 0
+fi
 
 cd "$repo_dir"
 if [[ "$force" != "1" ]]; then
