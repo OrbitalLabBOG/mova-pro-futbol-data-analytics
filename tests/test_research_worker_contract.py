@@ -25,6 +25,8 @@ def test_worker_deshabilita_herramientas_que_podrian_leer_auth_o_actuar():
     assert '"--search", "exec"' in worker
     assert '"--sandbox", "read-only"' in worker
     assert 'mkdirSync("/tmp/mova-research"' in worker
+    assert "Cada señal y cada conflicto" in worker
+    assert "únicamente URLs incluidas en documents" in worker
     assert "fantasy.premierleague.com" not in worker
 
 
