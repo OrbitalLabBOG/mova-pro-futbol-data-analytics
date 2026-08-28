@@ -122,6 +122,7 @@ def _do_nothing_decision(state: State, picks: tuple[dict, ...]):
 def _engine_violations(decision, state: State) -> list[dict]:
     """Aplica las reglas puras a cada candidato antes de entregarlo al harness."""
     from mova_fpl.rules.base import Squad, SquadPlayer
+    from mova_fpl.rules.market import selling_price, squad_value
     from mova_fpl.rules.squad import validate_squad
 
     by_id = state.by_id()
@@ -146,10 +147,61 @@ def _engine_violations(decision, state: State) -> list[dict]:
     )
     result = [
         {"code": item.code, "detail": item.detail}
-        for item in validate_squad(squad, state.rules, check_budget=True)
+        # El valor de mercado de una plantilla adquirida puede superar las 100M
+        # por apreciacion. La asequibilidad se concilia abajo con precios de venta,
+        # compras y banco, en vez de comparar precios actuales con el presupuesto
+        # inicial.
+        for item in validate_squad(squad, state.rules, check_budget=False)
     ]
-    if decision.bank_after < -1e-9:
-        result.append({"code": "BUDGET", "detail": "bank_after negativo"})
+
+    selected = set(decision.squad_15)
+    previous_ids = set(owned)
+    actual_in = selected - previous_ids
+    actual_out = previous_ids - selected
+
+    if decision.chip != "free_hit":
+        declared_in = set(decision.transfers_in)
+        declared_out = set(decision.transfers_out)
+        if declared_in != actual_in or declared_out != actual_out:
+            result.append({
+                "code": "TRANSFER_DIFF",
+                "detail": (
+                    f"declarado in={sorted(declared_in)} out={sorted(declared_out)}; "
+                    f"real in={sorted(actual_in)} out={sorted(actual_out)}"
+                ),
+            })
+
+    selected_cost = round(sum(player.price for player in players), 1)
+    if state.squad is None:
+        expected_bank = round(float(state.rules["budget"]) - selected_cost, 1)
+    elif decision.chip == "free_hit":
+        available = squad_value(state.squad.players, use_selling_price=True) + state.bank
+        expected_bank = round(available - selected_cost, 1)
+    else:
+        sale_proceeds = sum(
+            selling_price(owned[element].purchase_price, owned[element].price)
+            if owned[element].purchase_price is not None else owned[element].price
+            for element in actual_out
+        )
+        purchase_cost = sum(by_id[element].price for element in actual_in if element in by_id)
+        expected_bank = round(state.bank + sale_proceeds - purchase_cost, 1)
+
+    if expected_bank < -1e-9 or decision.bank_after < -1e-9:
+        result.append({
+            "code": "BUDGET",
+            "detail": (
+                f"banco conciliado {expected_bank:.1f}M; "
+                f"decision declara {decision.bank_after:.1f}M"
+            ),
+        })
+    elif abs(expected_bank - decision.bank_after) > 0.05:
+        result.append({
+            "code": "BANK_RECONCILIATION",
+            "detail": (
+                f"banco conciliado {expected_bank:.1f}M != "
+                f"declarado {decision.bank_after:.1f}M"
+            ),
+        })
     return result
 
 
