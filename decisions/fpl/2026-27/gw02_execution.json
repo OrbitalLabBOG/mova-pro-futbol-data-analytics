@@ -1,0 +1,130 @@
+{
+  "schema": "mova-fpl-supervised-execution-v1",
+  "season": "2026-27",
+  "gw": 2,
+  "cycle_id": "2026-27-gw02",
+  "actor": "julian",
+  "authorization": {
+    "mode": "guarded",
+    "action_level": "A1",
+    "scope": [
+      "lineup",
+      "bench_order",
+      "captain",
+      "vice_captain"
+    ],
+    "transfers_allowed": false,
+    "chips_allowed": false,
+    "window_opened_at": "2026-08-28T15:38:37.764Z",
+    "window_closed_at": "2026-08-28T15:56:46.245Z"
+  },
+  "decision": {
+    "decision_id": "decision_gw02_f1ea86a36ef6",
+    "mode": "guarded_human_reviewed",
+    "policy_version": "human-reviewed-override-v1",
+    "status": "executed_verified",
+    "expected_points": null,
+    "chip": null,
+    "fingerprint": "bec4de5d779448d88037c8f0ccc2e9db9713a44caaf49a097d754597b3249157",
+    "manifest_sha256": "f1ea86a36ef6ea2ecd2df89d8955cc0a69143054695f1696a4fc280fbdc272ec",
+    "artifact_path": "/var/lib/mova-fpl/artifacts/decisions/2026-27/gw02_final_approved.json",
+    "players": [
+      {"element": 496, "squad_position": 1, "role": "starter", "is_captain": false, "is_vice_captain": false},
+      {"element": 8, "squad_position": 2, "role": "starter", "is_captain": false, "is_vice_captain": false},
+      {"element": 418, "squad_position": 3, "role": "starter", "is_captain": false, "is_vice_captain": false},
+      {"element": 11, "squad_position": 4, "role": "starter", "is_captain": false, "is_vice_captain": false},
+      {"element": 557, "squad_position": 5, "role": "starter", "is_captain": false, "is_vice_captain": false},
+      {"element": 426, "squad_position": 6, "role": "starter", "is_captain": true, "is_vice_captain": false},
+      {"element": 427, "squad_position": 7, "role": "starter", "is_captain": false, "is_vice_captain": false},
+      {"element": 565, "squad_position": 8, "role": "starter", "is_captain": false, "is_vice_captain": false},
+      {"element": 346, "squad_position": 9, "role": "starter", "is_captain": false, "is_vice_captain": false},
+      {"element": 165, "squad_position": 10, "role": "starter", "is_captain": false, "is_vice_captain": false},
+      {"element": 411, "squad_position": 11, "role": "starter", "is_captain": false, "is_vice_captain": true},
+      {"element": 109, "squad_position": 12, "role": "bench", "is_captain": false, "is_vice_captain": false},
+      {"element": 124, "squad_position": 13, "role": "bench", "is_captain": false, "is_vice_captain": false},
+      {"element": 329, "squad_position": 14, "role": "bench", "is_captain": false, "is_vice_captain": false},
+      {"element": 173, "squad_position": 15, "role": "bench", "is_captain": false, "is_vice_captain": false}
+    ]
+  },
+  "strategy": {
+    "strategy_id": "chipstrategy_gw02_f1ea86a36ef6",
+    "window_name": "GW02-long-horizon",
+    "policy_version": "season-plan-v1+human-review-v1",
+    "inventory": {
+      "wildcard": "available",
+      "freehit": "available",
+      "bboost": "available",
+      "3xc": "available"
+    },
+    "recommended_chip": null,
+    "status": "hold_verified",
+    "manifest_sha256": "f1ea86a36ef6ea2ecd2df89d8955cc0a69143054695f1696a4fc280fbdc272ec",
+    "rationale": "Roll the free transfer into GW3 and retain every chip. The model's wildcard proposal was invalid on budget and depended on miscalibrated minutes for confirmed GW1 starters."
+  },
+  "execution": {
+    "execution_id": "execution_gw02_f1ea86a36ef6",
+    "action_level": "A1_supervised_browser_ui",
+    "envelope_sha256": "f1ea86a36ef6ea2ecd2df89d8955cc0a69143054695f1696a4fc280fbdc272ec",
+    "status": "verified",
+    "started_at": "2026-08-28T15:38:37.764Z",
+    "finished_at": "2026-08-28T15:56:46.245Z",
+    "evidence_path": "/var/lib/mova-fpl/artifacts/evidence/gw02/after.png",
+    "evidence_sha256": "e415d031dd34f677146786c8b64a90a846eca757d321575fae8073e50feb482e"
+  },
+  "observed_team_state": {
+    "team_state_id": "teamstate_08e1ebfc13614d93ba2f1ee98c3ea31c",
+    "artifact_path": "/var/lib/mova-fpl/artifacts/team_state/2026-27/gw02/20260828T155644482000Z",
+    "manifest_sha256": "938506b9e8d4ed9d4c90cdf77db64e295cfad200d5d24833e7edaa9d9ba57df2",
+    "payload_sha256": "8fc9ac6e0d53aaa2b408cf56dcd7cd304dbd36180d9f4b2d12df4e7e186ed70c",
+    "fingerprint": "bec4de5d779448d88037c8f0ccc2e9db9713a44caaf49a097d754597b3249157",
+    "free_transfers": 1,
+    "transfers_made": 0,
+    "bank_tenths": 0,
+    "team_value_tenths": 1003,
+    "available_chips": ["3xc", "bboost", "freehit", "wildcard"]
+  },
+  "verification_checks": [
+    {
+      "check_id": "check_gw02_decision_manifest",
+      "check_name": "approved_decision_manifest",
+      "expected": {"sha256": "f1ea86a36ef6ea2ecd2df89d8955cc0a69143054695f1696a4fc280fbdc272ec"},
+      "observed": {"sha256": "f1ea86a36ef6ea2ecd2df89d8955cc0a69143054695f1696a4fc280fbdc272ec"},
+      "passed": true
+    },
+    {
+      "check_id": "check_gw02_squad_positions",
+      "check_name": "private_api_squad_positions",
+      "expected": {"elements": [496, 8, 418, 11, 557, 426, 427, 565, 346, 165, 411, 109, 124, 329, 173]},
+      "observed": {"elements": [496, 8, 418, 11, 557, 426, 427, 565, 346, 165, 411, 109, 124, 329, 173]},
+      "passed": true
+    },
+    {
+      "check_id": "check_gw02_captaincy",
+      "check_name": "private_api_captaincy",
+      "expected": {"captain": 426, "captain_multiplier": 2, "vice_captain": 411},
+      "observed": {"captain": 426, "captain_multiplier": 2, "vice_captain": 411},
+      "passed": true
+    },
+    {
+      "check_id": "check_gw02_no_transfers",
+      "check_name": "private_api_no_transfers",
+      "expected": {"transfers_made": 0, "bank_tenths": 0},
+      "observed": {"transfers_made": 0, "bank_tenths": 0},
+      "passed": true
+    },
+    {
+      "check_id": "check_gw02_chips_held",
+      "check_name": "private_api_chips_held",
+      "expected": {"active_chip": null, "available": ["3xc", "bboost", "freehit", "wildcard"]},
+      "observed": {"active_chip": null, "available": ["3xc", "bboost", "freehit", "wildcard"]},
+      "passed": true
+    },
+    {
+      "check_id": "check_gw02_browser_evidence",
+      "check_name": "post_reload_browser_evidence",
+      "expected": {"save_button_present": false, "after_sha256": "e415d031dd34f677146786c8b64a90a846eca757d321575fae8073e50feb482e"},
+      "observed": {"save_button_present": false, "after_sha256": "e415d031dd34f677146786c8b64a90a846eca757d321575fae8073e50feb482e", "snapshot_sha256": "873715af59e9232700d91a2f8c293fb8bc52b7210fa63d6cc5b5c8c36098b55b"},
+      "passed": true
+    }
+  ]
+}
