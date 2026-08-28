@@ -11,13 +11,20 @@ if [[ $enqueue_rc -ne 0 && $enqueue_rc -ne 75 ]]; then
   exit "$enqueue_rc"
 fi
 
-# Un tick sin request no levanta Node/Codex. Primero importa cualquier resultado
-# huérfano; una request persistente sí conserva el retry del worker.
-if [[ $enqueue_rc -eq 75 ]]; then
-  /usr/local/bin/mova strategy research import
-  if ! compgen -G "$research_root/inbox/research_*.request.json" >/dev/null; then
-    exit 75
-  fi
+# Importar primero permite que el siguiente envelope selle research ya validado.
+/usr/local/bin/mova strategy research import
+/usr/local/bin/mova strategy deliberate import
+
+deliberation_rc=0
+/usr/local/bin/mova strategy deliberate enqueue || deliberation_rc=$?
+if [[ $deliberation_rc -ne 0 && $deliberation_rc -ne 75 ]]; then
+  exit "$deliberation_rc"
+fi
+
+# Sin ninguna request no se levanta Node/Codex. Una request persistente conserva
+# el retry del worker, sea Researcher o Strategist+Critic.
+if ! compgen -G "$research_root/inbox/*.request.json" >/dev/null; then
+  exit 75
 fi
 
 worker_rc=0
@@ -27,6 +34,7 @@ if [[ $worker_rc -ne 0 && $worker_rc -ne 75 ]]; then
 fi
 
 /usr/local/bin/mova strategy research import
+/usr/local/bin/mova strategy deliberate import
 if [[ $worker_rc -eq 75 ]]; then
   exit 75
 fi

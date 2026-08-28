@@ -9,9 +9,10 @@ status: active
 
 # Lifecycle de decisión shadow
 
-HV1-06A convierte la salida del engine en un paquete máquina reproducible. El MILP sigue siendo
-la única autoridad que arma plantillas; el harness compara opciones y aplica gates, pero no
-reescribe la decisión ni opera FPL.
+HV1-06A convierte la salida del engine en un paquete máquina reproducible. HV1-06B añade una
+deliberación acotada de Strategist + Critic. El MILP sigue siendo la única autoridad que arma
+plantillas; los roles comparan opciones y proponen una `Intervention` shadow, pero no reescriben
+la decisión, no suavizan gates y no operan FPL.
 
 ## Flujo
 
@@ -21,6 +22,8 @@ snapshot + team state + projection + plan + research
   → live decision candidates JSON
   → deterministic validator
   → DecisionEnvelope blocked|staged
+  → request sellada → Strategist → Critic → validación determinista
+  → deliberation accepted|review_required|blocked + Intervention applied=false
   → decision_runs + players + candidates + checks + audit
 ```
 
@@ -33,6 +36,26 @@ Cada corrida contiene exactamente:
 
 El acta Markdown es una vista para humanos. El tick consume el JSON producido por
 `mova_fpl.cli.live --json-out`; nunca extrae valores con expresiones regulares.
+
+La deliberación es hija del envelope y no lo modifica. El worker one-shot recibe únicamente el
+envelope, su contexto sellado, el plan y señales ya incluidas en el manifest. Para este rol se
+deshabilita web search: descubrir hechos nuevos pertenece exclusivamente al Researcher.
+
+## Contrato Strategist + Critic
+
+Strategist debe cubrir los tres candidatos exactamente una vez y solo puede proponer los campos
+existentes de `Intervention`: multiplicadores acotados, chips a considerar/vetar, `lock_in`,
+`lock_out` y `risk_lambda`. Los jugadores deben pertenecer al contexto sellado y la propuesta se
+normaliza siempre con:
+
+```json
+{"policy_version":"bounded-deliberation-1.0.0","shadow_only":true,"applied":false}
+```
+
+Critic devuelve `accept`, `revise` o `block`. Todo hard blocker del envelope debe reaparecer con
+el mismo código y severidad `block`; omitirlo o intentar aceptar ese envelope rechaza todo el
+resultado y lo mueve a cuarentena. `accept` significa que el análisis fue aceptado como evidencia,
+no que la propuesta tenga autorización operativa.
 
 ## Hard gates
 
@@ -59,14 +82,19 @@ El envelope queda `blocked` cuando falla cualquiera de estos checks:
 
 ```bash
 mova status --json | jq '{decision,decision_envelope}'
+mova strategy deliberate status
 curl -s http://127.0.0.1:8787/api/v1/decision-envelopes?limit=5 | jq
 curl -s http://127.0.0.1:8787/api/v1/decision-candidates?limit=20 | jq
 curl -s http://127.0.0.1:8787/api/v1/decision-checks?limit=30 | jq
+curl -s http://127.0.0.1:8787/api/v1/deliberations?limit=5 | jq
+curl -s http://127.0.0.1:8787/api/v1/deliberation-risks?limit=30 | jq
 curl -s http://127.0.0.1:8787/metrics | grep '^mova_decision_'
 ```
 
 El contrato está en
 [`decision-envelope-v1.schema.json`](../specs/fpl-autonomous-operator/contracts/decision-envelope-v1.schema.json).
+El output de los roles valida además contra
+[`decision-deliberation.schema.json`](../../deploy/research/decision-deliberation.schema.json).
 
 ## Estados y recuperación
 
@@ -74,6 +102,8 @@ El contrato está en
 blocked → nueva evidencia/manifest → nuevo envelope
 staged  → revisión/autoridad posterior → approved/executed en HV1-07
 blocked|staged anterior → superseded al sellar una revisión nueva
+envelope vigente → deliberation queued → accepted|review_required|blocked
+output inválido → rejected + quarantine; nunca intervención parcial
 ```
 
 Un `blocked` esperado no degrada el worker ni abre un incidente: demuestra que el gate detuvo una

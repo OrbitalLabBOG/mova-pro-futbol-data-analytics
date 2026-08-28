@@ -40,6 +40,7 @@ mova collect all
 mova data status
 mova strategy status
 mova strategy research due
+mova strategy deliberate status
 
 # collector público sellado
 python -m mova_fpl.cli.collect_live --season 2026-27 --gw 2
@@ -55,12 +56,15 @@ El flujo de decisión conserva una sola autoridad y añade un lifecycle máquina
 CycleManifest → modelos causales → matriz xP → MILP
   → do_nothing + baseline + alternativa
   → Validator determinista → DecisionEnvelope → acta + auditoría
+  → Strategist + Critic acotados → Intervention shadow no aplicada
 ```
 
 - `mova_fpl.engine.runner.decide()` es la única autoridad de decisión.
 - El tick no interpreta Markdown: persiste un `DecisionEnvelope` JSON ligado al manifest real.
 - Una propuesta sin GW previa asentada, proyección aprobada, team state fresco o ventana válida
   queda `blocked`; solo una que supera todos los hard gates queda `staged`.
+- Strategist y Critic consumen el envelope sellado en un worker one-shot sin DB, browser ni
+  secretos. Su `Intervention` es solo evidencia `shadow_only`; no modifica el envelope ni el MILP.
 - `mova_fpl` solo hace HTTP `GET`; no escribe en FPL.
 - El browser autenticado vive aislado y sus mutaciones están gobernadas por controles.
 - Supabase no forma parte del runtime; se usa únicamente para seguimiento PM.

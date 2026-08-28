@@ -656,6 +656,53 @@ MIGRATION_007 = (
     """,
 )
 
+MIGRATION_008 = (
+    """
+    CREATE TABLE IF NOT EXISTS decision_deliberations (
+        deliberation_id TEXT PRIMARY KEY,
+        cycle_id TEXT NOT NULL REFERENCES gameweek_cycles(cycle_id),
+        envelope_id TEXT NOT NULL UNIQUE REFERENCES decision_envelopes(envelope_id) ON DELETE CASCADE,
+        manifest_id TEXT NOT NULL REFERENCES cycle_manifests(manifest_id),
+        provider TEXT NOT NULL,
+        status TEXT NOT NULL CHECK (status IN (
+          'queued','running','completed','accepted','review_required','blocked','rejected','failed')),
+        request_path TEXT NOT NULL,
+        request_sha256 TEXT NOT NULL UNIQUE,
+        result_path TEXT,
+        result_sha256 TEXT,
+        preferred_candidate_key TEXT,
+        critic_verdict TEXT CHECK (critic_verdict IS NULL OR critic_verdict IN (
+          'accept','revise','block')),
+        strategist_json TEXT CHECK (strategist_json IS NULL OR json_valid(strategist_json)),
+        critic_json TEXT CHECK (critic_json IS NULL OR json_valid(critic_json)),
+        intervention_json TEXT CHECK (intervention_json IS NULL OR json_valid(intervention_json)),
+        intervention_sha256 TEXT,
+        usage_json TEXT NOT NULL DEFAULT '{}' CHECK (json_valid(usage_json)),
+        error_code TEXT,
+        error_detail TEXT,
+        queued_at TEXT NOT NULL,
+        finished_at TEXT,
+        imported_at TEXT
+    ) STRICT
+    """,
+    "CREATE INDEX IF NOT EXISTS idx_decision_deliberations_cycle_queued "
+    "ON decision_deliberations(cycle_id, queued_at DESC)",
+    """
+    CREATE TABLE IF NOT EXISTS decision_deliberation_risks (
+        risk_id TEXT PRIMARY KEY,
+        deliberation_id TEXT NOT NULL REFERENCES decision_deliberations(deliberation_id)
+          ON DELETE CASCADE,
+        code TEXT NOT NULL,
+        severity TEXT NOT NULL CHECK (severity IN ('info','warning','block')),
+        candidate_key TEXT,
+        claim TEXT NOT NULL,
+        mitigation TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        UNIQUE (deliberation_id, code)
+    ) STRICT
+    """,
+)
+
 MIGRATIONS = (
     (1, "initial_ops_schema", MIGRATION_001),
     (2, "team_state_artifact_provenance", MIGRATION_002),
@@ -664,4 +711,5 @@ MIGRATIONS = (
     (5, "strategic_context_and_research", MIGRATION_005),
     (6, "repair_imported_research_state", MIGRATION_006),
     (7, "typed_decision_envelopes", MIGRATION_007),
+    (8, "bounded_strategy_deliberations", MIGRATION_008),
 )

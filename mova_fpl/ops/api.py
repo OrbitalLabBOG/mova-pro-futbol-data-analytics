@@ -182,6 +182,8 @@ def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
                     "/api/v1/decision-envelopes": "decision_envelopes",
                     "/api/v1/decision-candidates": "decision_candidates",
                     "/api/v1/decision-checks": "decision_validation_checks",
+                    "/api/v1/deliberations": "decision_deliberations",
+                    "/api/v1/deliberation-risks": "decision_deliberation_risks",
                     "/api/v1/outbox": "outbox_events",
                     "/api/v1/research/runs": "research_runs",
                     "/api/v1/research/documents": "research_documents",

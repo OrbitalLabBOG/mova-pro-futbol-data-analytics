@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 WORKDIR /opt/mova-research
 COPY deploy/research/codex-worker.mjs /opt/mova-research/codex-worker.mjs
 COPY deploy/research/research-brief.schema.json /opt/mova-research/research-brief.schema.json
+COPY deploy/research/decision-deliberation.schema.json /opt/mova-research/decision-deliberation.schema.json
 RUN chmod 0555 /opt/mova-research/codex-worker.mjs && install -d -m 0700 -o 10002 -g 10002 /home/research/.codex /tmp/mova-research
 
 ENV HOME=/home/research CODEX_HOME=/home/research/.codex MOVA_RESEARCH_ROOT=/research MOVA_RESEARCH_MODEL=gpt-5.4

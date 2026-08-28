@@ -75,6 +75,10 @@ def parser() -> argparse.ArgumentParser:
     research.add_argument("--actor")
     research.add_argument("--reason")
     research.add_argument("--idempotency-key")
+    deliberate = strategy_commands.add_parser(
+        "deliberate", help="opera Strategist + Critic sobre el último envelope"
+    )
+    deliberate.add_argument("operation", choices=("status", "enqueue", "import"))
     status = commands.add_parser("status", help="estado operativo consolidado")
     status.add_argument("--json", action="store_true", dest="as_json")
     doctor = commands.add_parser("doctor", help="diagnóstico verificable del runtime")
@@ -193,6 +197,20 @@ def main(argv: list[str] | None = None) -> int:
                 json.loads(Path(args.file).read_text(encoding="utf-8")),
                 actor=args.actor, reason=args.reason,
             )
+        elif args.strategy_command == "deliberate":
+            from mova_fpl.ops.deliberation import DecisionDeliberationService
+
+            deliberation = DecisionDeliberationService(config, db)
+            if args.operation == "status":
+                payload = db.deliberation_status()
+            elif args.operation == "enqueue":
+                payload = deliberation.enqueue()
+                print(json.dumps(payload, ensure_ascii=False, default=str))
+                return 75 if payload.get("status") in {
+                    "skipped", "accepted", "review_required", "blocked", "rejected"
+                } else 0
+            else:
+                payload = deliberation.import_ready()
         elif args.operation == "due":
             payload = service.due()
             print(json.dumps(payload, ensure_ascii=False, default=str))

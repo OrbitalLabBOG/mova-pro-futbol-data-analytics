@@ -1131,6 +1131,197 @@ class OpsDB:
                 "accepted": accepted, "conflicts": len(payload["conflicts"]),
                 "reused": False}
 
+    def deliberation_source(self) -> dict | None:
+        """Último envelope vigente con los enlaces necesarios para deliberar."""
+        with self.connect(readonly=True) as con:
+            row = con.execute(
+                """SELECT e.envelope_id,e.cycle_id,e.manifest_id,e.artifact_path,
+                e.artifact_sha256,e.content_sha256,d.manifest_sha256,c.season,c.gw
+                FROM decision_envelopes e
+                JOIN decision_runs d ON d.decision_id=e.decision_id
+                JOIN gameweek_cycles c ON c.cycle_id=e.cycle_id
+                WHERE e.status IN ('blocked','staged')
+                ORDER BY e.created_at DESC LIMIT 1"""
+            ).fetchone()
+        return dict(row) if row else None
+
+    def decision_deliberation_for_envelope(self, envelope_id: str) -> dict | None:
+        with self.connect(readonly=True) as con:
+            row = con.execute(
+                "SELECT * FROM decision_deliberations WHERE envelope_id=?",
+                (envelope_id,),
+            ).fetchone()
+        return dict(row) if row else None
+
+    def decision_deliberation(self, deliberation_id: str) -> dict | None:
+        with self.connect(readonly=True) as con:
+            row = con.execute(
+                "SELECT * FROM decision_deliberations WHERE deliberation_id=?",
+                (deliberation_id,),
+            ).fetchone()
+        return dict(row) if row else None
+
+    def queue_decision_deliberation(self, payload: dict) -> dict:
+        now = utcnow()
+        with self.transaction() as con:
+            existing = con.execute(
+                "SELECT * FROM decision_deliberations WHERE envelope_id=?",
+                (payload["envelope_id"],),
+            ).fetchone()
+            if existing:
+                return {**dict(existing), "reused": True}
+            con.execute(
+                """INSERT INTO decision_deliberations(
+                deliberation_id,cycle_id,envelope_id,manifest_id,provider,status,
+                request_path,request_sha256,queued_at)
+                VALUES(?,?,?,?,?,'queued',?,?,?)""",
+                (payload["deliberation_id"], payload["cycle_id"], payload["envelope_id"],
+                 payload["manifest_id"], payload["provider"], payload["request_path"],
+                 payload["request_sha256"], now),
+            )
+            self.append_audit(
+                "decision_deliberation_queued", actor="mova-strategy",
+                cycle_id=payload["cycle_id"], subject_type="decision_deliberation",
+                subject_id=payload["deliberation_id"], payload={
+                    "envelope_id": payload["envelope_id"],
+                    "manifest_id": payload["manifest_id"],
+                    "request_sha256": payload["request_sha256"],
+                    "authority": "advisory_shadow_only",
+                }, con=con,
+            )
+        return {"deliberation_id": payload["deliberation_id"], "status": "queued",
+                "queued_at": now, "reused": False}
+
+    def reject_decision_deliberation(self, deliberation_id: str, *, error_code: str,
+                                     error_detail: str) -> None:
+        with self.transaction() as con:
+            row = con.execute(
+                "SELECT cycle_id,status FROM decision_deliberations WHERE deliberation_id=?",
+                (deliberation_id,),
+            ).fetchone()
+            if not row or row["status"] in {"accepted", "review_required", "blocked"}:
+                return
+            con.execute(
+                "UPDATE decision_deliberations SET status='rejected',error_code=?,"
+                "error_detail=?,finished_at=? WHERE deliberation_id=?",
+                (error_code, error_detail[:500], utcnow(), deliberation_id),
+            )
+            self.append_audit(
+                "decision_deliberation_rejected", actor="mova-deliberation-validator",
+                cycle_id=row["cycle_id"], subject_type="decision_deliberation",
+                subject_id=deliberation_id, severity="warning",
+                payload={"error_code": error_code, "error_detail": error_detail[:500]},
+                con=con,
+            )
+
+    def import_decision_deliberation(self, deliberation_id: str, payload: dict, *,
+                                     result_path: str, result_sha256: str) -> dict:
+        now = utcnow()
+        strategist = payload["strategist"]
+        critic = payload["critic"]
+        intervention = strategist["intervention"]
+        intervention_sha = sha256_json(intervention)
+        intervention_id = f"intervention_{intervention_sha[:24]}"
+        with self.transaction() as con:
+            run = con.execute(
+                """SELECT q.*,e.job_id FROM decision_deliberations q
+                JOIN decision_envelopes e ON e.envelope_id=q.envelope_id
+                WHERE q.deliberation_id=?""", (deliberation_id,),
+            ).fetchone()
+            if not run:
+                raise ValueError("deliberación desconocida")
+            if run["status"] in {"accepted", "review_required", "blocked"}:
+                return {"deliberation_id": deliberation_id, "status": run["status"],
+                        "reused": True}
+            con.execute(
+                """UPDATE decision_deliberations SET status=?,result_path=?,result_sha256=?,
+                preferred_candidate_key=?,critic_verdict=?,strategist_json=?,critic_json=?,
+                intervention_json=?,intervention_sha256=?,usage_json=?,finished_at=?,
+                imported_at=?,error_code=NULL,error_detail=NULL WHERE deliberation_id=?""",
+                (payload["status"], result_path, result_sha256,
+                 strategist["preferred_candidate_key"], critic["verdict"],
+                 canonical_json(strategist), canonical_json(critic),
+                 canonical_json(intervention), intervention_sha,
+                 canonical_json(payload["usage"]), now, now, deliberation_id),
+            )
+            con.execute(
+                """INSERT OR IGNORE INTO intervention_runs(
+                intervention_id,job_id,cycle_id,policy_version,payload_json,payload_sha256,
+                rationale,rationale_sha256,created_at) VALUES(?,?,?,?,?,?,?,?,?)""",
+                (intervention_id, run["job_id"], run["cycle_id"],
+                 intervention["policy_version"], canonical_json(intervention),
+                 intervention_sha, intervention["rationale"],
+                 hashlib.sha256(intervention["rationale"].encode("utf-8")).hexdigest(), now),
+            )
+            for risk in critic["risks"]:
+                risk_id = "deliberationrisk_" + hashlib.sha256(
+                    f"{deliberation_id}:{risk['code']}".encode("utf-8")
+                ).hexdigest()[:24]
+                con.execute(
+                    """INSERT INTO decision_deliberation_risks(
+                    risk_id,deliberation_id,code,severity,candidate_key,claim,mitigation,
+                    created_at) VALUES(?,?,?,?,?,?,?,?)""",
+                    (risk_id, deliberation_id, risk["code"], risk["severity"],
+                     risk.get("candidate_key"), risk["claim"], risk["mitigation"], now),
+                )
+            usage = payload["usage"]
+            con.execute(
+                """INSERT INTO cost_ledger(
+                cost_id,research_run_id,provider,model,input_tokens,output_tokens,
+                estimated_cost_usd,subscription_usage,detail_json,occurred_at)
+                VALUES(?,NULL,?,?,?,?,?,1,?,?)""",
+                (new_id("cost"), run["provider"], usage.get("model"),
+                 usage.get("input_tokens"), usage.get("output_tokens"),
+                 usage.get("estimated_cost_usd"), canonical_json({
+                     **usage, "deliberation_id": deliberation_id,
+                     "kind": "strategy_critic",
+                 }), now),
+            )
+            self.append_audit(
+                "decision_deliberation_imported", actor="mova-deliberation-validator",
+                cycle_id=run["cycle_id"], job_id=run["job_id"],
+                subject_type="decision_deliberation", subject_id=deliberation_id,
+                severity="warning" if payload["status"] == "blocked" else "info",
+                payload={
+                    "envelope_id": run["envelope_id"], "status": payload["status"],
+                    "preferred_candidate_key": strategist["preferred_candidate_key"],
+                    "critic_verdict": critic["verdict"],
+                    "risk_count": len(critic["risks"]),
+                    "intervention_sha256": intervention_sha,
+                    "intervention_applied": False,
+                    "result_sha256": result_sha256,
+                }, con=con,
+            )
+        return {"deliberation_id": deliberation_id, "status": payload["status"],
+                "preferred_candidate_key": strategist["preferred_candidate_key"],
+                "critic_verdict": critic["verdict"], "risks": len(critic["risks"]),
+                "intervention_id": intervention_id, "intervention_applied": False,
+                "reused": False}
+
+    def deliberation_status(self, cycle_id: str | None = None) -> dict:
+        with self.connect(readonly=True) as con:
+            if cycle_id is None:
+                cycle = con.execute(
+                    "SELECT cycle_id FROM gameweek_cycles ORDER BY deadline_at DESC LIMIT 1"
+                ).fetchone()
+                cycle_id = str(cycle["cycle_id"]) if cycle else None
+            if not cycle_id:
+                return {"status": "empty", "cycle_id": None, "latest": None}
+            latest = con.execute(
+                "SELECT * FROM decision_deliberations WHERE cycle_id=? "
+                "ORDER BY queued_at DESC LIMIT 1", (cycle_id,),
+            ).fetchone()
+            risks = []
+            if latest:
+                risks = con.execute(
+                    "SELECT code,severity,candidate_key,claim,mitigation FROM "
+                    "decision_deliberation_risks WHERE deliberation_id=? ORDER BY code",
+                    (latest["deliberation_id"],),
+                ).fetchall()
+        return {"status": str(latest["status"]) if latest else "missing",
+                "cycle_id": cycle_id, "latest": dict(latest) if latest else None,
+                "risks": [dict(row) for row in risks]}
+
     def strategic_status(self, cycle_id: str | None = None) -> dict:
         with self.connect(readonly=True) as con:
             if cycle_id is None:
@@ -1245,6 +1436,7 @@ class OpsDB:
                    "source_snapshots", "team_state_snapshots", "decision_runs",
                    "decision_envelopes", "decision_candidates",
                    "decision_validation_checks",
+                   "decision_deliberations", "decision_deliberation_risks",
                    "outbox_events", "chip_strategy_runs", "gameweek_settlements",
                    "gameweek_reviews", "change_proposals", "season_plans",
                    "cycle_manifests", "research_runs", "research_documents",
@@ -1258,6 +1450,8 @@ class OpsDB:
             "decision_envelopes": "created_at",
             "decision_candidates": "rowid",
             "decision_validation_checks": "created_at",
+            "decision_deliberations": "queued_at",
+            "decision_deliberation_risks": "created_at",
             "team_state_snapshots": "observed_at",
             "outbox_events": "created_at", "chip_strategy_runs": "created_at",
             "gameweek_settlements": "settled_at", "gameweek_reviews": "created_at",
@@ -1313,6 +1507,8 @@ class OpsDB:
         research_last_import_epoch = 0.0
         decision_envelope_status = "missing"
         decision_blocking_checks = 0
+        deliberation_status = "missing"
+        deliberation_blocking_risks = 0
         with self.connect(readonly=True) as con:
             collector_job = con.execute(
                 "SELECT job_id FROM job_steps "
@@ -1364,6 +1560,17 @@ class OpsDB:
                     "WHERE envelope_id=? AND severity='block' AND passed=0",
                     (latest_envelope["envelope_id"],),
                 ).fetchone()[0])
+            latest_deliberation = con.execute(
+                "SELECT deliberation_id,status FROM decision_deliberations "
+                "ORDER BY queued_at DESC LIMIT 1"
+            ).fetchone()
+            if latest_deliberation:
+                deliberation_status = str(latest_deliberation["status"])
+                deliberation_blocking_risks = int(con.execute(
+                    "SELECT COUNT(*) FROM decision_deliberation_risks "
+                    "WHERE deliberation_id=? AND severity='block'",
+                    (latest_deliberation["deliberation_id"],),
+                ).fetchone()[0])
         lines = [
             "# HELP mova_up Whether ops.db is readable.",
             "# TYPE mova_up gauge",
@@ -1413,6 +1620,15 @@ class OpsDB:
             "# HELP mova_decision_blocking_checks Failed hard gates in latest envelope.",
             "# TYPE mova_decision_blocking_checks gauge",
             f"mova_decision_blocking_checks {decision_blocking_checks}",
+            "# HELP mova_deliberation_status Latest Strategist+Critic lifecycle status.",
+            "# TYPE mova_deliberation_status gauge",
+            *[f'mova_deliberation_status{{status="{name}"}} '
+              f'{1 if deliberation_status == name else 0}'
+              for name in ("missing", "queued", "accepted", "review_required", "blocked",
+                           "rejected", "failed")],
+            "# HELP mova_deliberation_blocking_risks Blocking risks in latest critique.",
+            "# TYPE mova_deliberation_blocking_risks gauge",
+            f"mova_deliberation_blocking_risks {deliberation_blocking_risks}",
             "# HELP mova_open_incidents Open incidents by severity.",
             "# TYPE mova_open_incidents gauge",
         ]

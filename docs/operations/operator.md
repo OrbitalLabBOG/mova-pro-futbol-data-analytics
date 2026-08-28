@@ -143,6 +143,13 @@ read-only son `/api/v1/decision-envelopes`, `/api/v1/decision-candidates` y
 fallo del tick. Contrato, checks y recuperación en
 [lifecycle de decisión](decision-lifecycle.md).
 
+HV1-06B reutiliza el mismo worker one-shot para una request `deliberation_*` sin web search. La
+cola queda bajo `mova strategy deliberate enqueue|import|status`; el timer de research procesa
+como máximo una request pendiente por invocación y conserva retries por archivo. La API añade
+`/api/v1/deliberations` y `/api/v1/deliberation-risks`; Prometheus publica
+`mova_deliberation_status` y `mova_deliberation_blocking_risks`. Ningún estado de deliberación
+habilita ejecución: toda intervención persiste con `applied=false`.
+
 ## Probe del host
 
 `deploy/bin/host-probe.py` registra exclusivamente estados de unidades, salud de API/PostgreSQL,
@@ -159,5 +166,6 @@ host, diagnosticar desde el host; no ampliar privilegios del contenedor.
 
 Para desplegar el control plane se construye una imagen con el mismo SHA del checkout, se ejecutan
 `status/doctor`, se reemplaza el API y se vuelven a ejecutar ambos comandos. La DB no cambia de
-schema salvo una migración versionada. Ante regresión de HV1-06A, restaurar checkout e imagen
-anterior; la migración 007 es aditiva y los envelopes nuevos pueden permanecer como evidencia.
+schema salvo una migración versionada. Ante regresión de HV1-06A/B, restaurar checkout e imagen
+anterior; las migraciones 007/008 son aditivas y envelopes/deliberaciones pueden permanecer como
+evidencia. PostgreSQL 008/009 son espejos shadow y no cambian el writer operativo.

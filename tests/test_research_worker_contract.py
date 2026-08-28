@@ -22,7 +22,8 @@ def test_worker_deshabilita_herramientas_que_podrian_leer_auth_o_actuar():
     worker = (ROOT / "deploy/research/codex-worker.mjs").read_text(encoding="utf-8")
     for feature in ("shell_tool", "computer_use", "browser_use", "apps", "multi_agent"):
         assert f'"{feature}"' in worker
-    assert '"--search", "exec"' in worker
+    assert '...(isResearch ? ["--search"] : [])' in worker
+    assert "const prompt = isResearch ? researchPrompt : deliberationPrompt" in worker
     assert '"--sandbox", "read-only"' in worker
     assert 'mkdirSync("/tmp/mova-research"' in worker
     assert "Cada señal y cada conflicto" in worker
@@ -68,6 +69,16 @@ def test_schema_de_salida_es_json_valido_y_cerrado():
 
     assert_typed(schema)
 
+    deliberation = json.loads(
+        (ROOT / "deploy/research/decision-deliberation.schema.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert deliberation["additionalProperties"] is False
+    assert deliberation["properties"]["strategist"]["additionalProperties"] is False
+    assert deliberation["properties"]["critic"]["additionalProperties"] is False
+    assert_typed(deliberation)
+
 
 def test_timer_no_es_un_agente_residente():
     timer = (ROOT / "deploy/systemd/mova-fpl-research.timer").read_text(encoding="utf-8")
@@ -79,5 +90,5 @@ def test_timer_no_es_un_agente_residente():
 
 def test_timer_no_levanta_codex_sin_request_pendiente():
     cycle = (ROOT / "deploy/bin/research-cycle.sh").read_text(encoding="utf-8")
-    assert 'compgen -G "$research_root/inbox/research_*.request.json"' in cycle
+    assert 'compgen -G "$research_root/inbox/*.request.json"' in cycle
     assert cycle.index("compgen -G") < cycle.index("docker compose")
