@@ -2,7 +2,7 @@
 type: gameweek-closeout
 name: "FPL 2026/27 GW1 — settlement y review retrospectivo"
 created: 2026-08-27
-updated: 2026-08-27
+updated: 2026-08-28
 tags: [mova, fpl, gw1, settlement, review, feedback, model]
 status: verified
 season: 2026-27
@@ -77,3 +77,30 @@ decisión y jugadores, estrategia de chips, ejecución manual, siete verificacio
 
 Ninguna conclusión de una sola GW autoriza reentrenamiento, cambio de chip o promoción de
 autonomía.
+
+## Evidencia de cierre productivo
+
+El settlement se ejecutó el `2026-08-28T03:57:02Z`, antes de abrir la decisión manual de GW2:
+
+- job `job_5cfa227bae32403f8c93b32b02bbd4be`, correlación
+  `corr_c0a2f3c4c24fe363b763fe47`;
+- settlement `settlement_2679334e2077c8b901d0fa92` y review
+  `review_326069dd225c7440075c493a`;
+- artifact SHA-256
+  `fe4fbc4b609f0e1f6280c71a47837fbfa52d57799d3cd28e9a63f66e52799c48`;
+- import shadow `pgimport_de45c6ef8b104d2fb34f289712ec99b1`, con todos los conteos e invariantes
+  en `pass`;
+- batches GW2 `projection_42d3afd644fc4db996a8cd9b6d827413` (baseline aprobado) y
+  `projection_7af190545c2e40cd8f5b1dadab1eb5ce` (odds shadow), ambos con 616 jugadores
+  y releases minutes/points `1.1.0`.
+
+El runtime quedó en commit e imagen `328b873`, `mova doctor` reportó 21 `PASS`, cero `WARN` y
+cero `FAIL`; los cinco timers están activos y los controles siguen en `shadow/A0`, kill switch
+activo y browser writes deshabilitado. SQLite quedó en migración 004 y PostgreSQL en 006.
+
+El backup posterior al cierre vive en `/opt/orbital/backups/mova-fpl/20260828T040257Z` y el dump
+PostgreSQL en `/opt/orbital/backups/mova-fpl/postgres/20260828T040258Z`; ambos superaron restore
+drill. Durante el primer intento de despliegue se detectó que `.dockerignore` excluía el package
+`decisions/`; la construcción se detuvo antes de migrar o poblar. El contrato de imagen se corrigió
+en PR #23. La corrida real mostró además exceso de detalle en los logs genéricos del harness; PR
+#24 añadió resumen estructural y redacción de claves sensibles antes del cierre de la iteración.
