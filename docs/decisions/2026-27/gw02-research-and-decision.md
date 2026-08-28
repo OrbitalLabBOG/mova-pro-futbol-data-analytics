@@ -1,7 +1,7 @@
 ---
 title: "FPL 2026/27 GW2 — revisión estratégica y decisión final"
 date: 2026-08-28
-status: approved-pending-execution
+status: executed-verified
 owner: MOVA Fantasy Fútbol Data Analytics
 season: 2026-27
 gameweek: 2
@@ -103,6 +103,41 @@ fixtures claramente superior— y no para perseguir los puntos de una sola jorna
 6. Guardar, esperar la confirmación de FPL, recargar y comparar los 15 jugadores, XI,
    C/V, banca, 1 FT, banco y chips contra el JSON canónico.
 
+## Resultado de ejecución
+
+La operación A1 supervisada terminó el 28 de agosto de 2026 a las `15:56:46 UTC`. FPL
+persistió la alineación exacta después de recargar la página. Una captura autenticada
+posterior confirmó las posiciones 1–15, Bruno con multiplicador 2, Haaland como vice,
+cero transferencias, banco £0.0m y los cuatro chips disponibles.
+
+| Evidencia operativa | Valor |
+| --- | --- |
+| Decisión | `decision_gw02_f1ea86a36ef6`, revisión 63, `executed_verified` |
+| Estrategia | `chipstrategy_gw02_f1ea86a36ef6`, `hold_verified` |
+| Ejecución | `execution_gw02_f1ea86a36ef6`, A1 browser supervisado |
+| Verificaciones | 6/6 aprobadas |
+| Huella de decisión | `f1ea86a36ef6ea2ecd2df89d8955cc0a69143054695f1696a4fc280fbdc272ec` |
+| Huella del equipo | `bec4de5d779448d88037c8f0ccc2e9db9713a44caaf49a097d754597b3249157` |
+| Screenshot posterior | `e415d031dd34f677146786c8b64a90a846eca757d321575fae8073e50feb482e` |
+| Package de ejecución | `2dd124e3cb1b3c4eaace97c0f92c30f97f28556a4e33506d922350b48a2ba1fd` |
+
+La captura privada de control de las `16:22:16 UTC` conservó la misma huella del equipo.
+Los controles regresaron a `shadow/A0`, `browser_writes=false`, `kill_switch=true` y
+`compliance_gate=pending`.
+
+Durante el cierre se corrigieron tres gaps de operabilidad sin alterar la decisión:
+
+- el colector privado adquirió un `flock` host para impedir carreras entre el timer y una
+  captura forzada;
+- un ciclo con ejecución verificada ya no produce nuevas propuestas shadow y marca como
+  `superseded` cualquier propuesta tardía;
+- PostgreSQL recibió la migración 007 para reflejar el contexto ampliado de
+  `research_signals`. El import final `pgimport_e8efc163e5ad4e6b9b840864abfcd1d3`
+  verificó todas las tablas y conteos con estado `pass`.
+
+El doctor final reportó 22 PASS, 0 WARN y 0 FAIL; API, PostgreSQL y browser quedaron
+saludables, con los timers de tick, estado privado y watchdog activos.
+
 ## Condiciones de invalidez
 
 - cambio de estado o precio en el equipo privado antes de guardar;
@@ -113,4 +148,3 @@ fixtures claramente superior— y no para perseguir los puntos de una sola jorna
 
 Ante cualquiera de estas condiciones se detiene la operación; no se improvisa una segunda
 plantilla en el navegador.
-
