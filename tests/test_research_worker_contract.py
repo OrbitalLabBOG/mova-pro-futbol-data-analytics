@@ -23,6 +23,7 @@ def test_worker_deshabilita_herramientas_que_podrian_leer_auth_o_actuar():
         assert f'"{feature}"' in worker
     assert '"--search", "exec"' in worker
     assert '"--sandbox", "read-only"' in worker
+    assert 'mkdirSync("/tmp/mova-research"' in worker
     assert "fantasy.premierleague.com" not in worker
 
 
