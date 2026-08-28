@@ -61,23 +61,23 @@
               "additionalProperties": {"type": "number", "minimum": 0, "maximum": 1.5}
             },
             "allow_chips": {
-              "type": "array", "uniqueItems": true,
+              "type": "array",
               "items": {"type": "string", "enum": [
                 "wildcard", "free_hit", "bench_boost", "triple_captain"
               ]}
             },
             "block_chips": {
-              "type": "array", "uniqueItems": true,
+              "type": "array",
               "items": {"type": "string", "enum": [
                 "wildcard", "free_hit", "bench_boost", "triple_captain"
               ]}
             },
             "lock_in": {
-              "type": "array", "maxItems": 12, "uniqueItems": true,
+              "type": "array", "maxItems": 12,
               "items": {"type": "integer", "minimum": 1}
             },
             "lock_out": {
-              "type": "array", "maxItems": 12, "uniqueItems": true,
+              "type": "array", "maxItems": 12,
               "items": {"type": "integer", "minimum": 1}
             },
             "risk_lambda": {"type": ["number", "null"], "minimum": 0, "maximum": 1}
