@@ -23,13 +23,13 @@ capitanía, chips o escrituras en FPL. Supabase conserva únicamente seguimiento
 
 | Campo | Evidencia verificada |
 | --- | --- |
-| Revisión funcional certificada | `c26286298893bf6e3370293d4ff39952b8f7f658`; el SHA de checkout/imagen posterior debe validarse con `mova doctor` |
+| Revisión funcional certificada | `16b7085`; checkout, API y worker alineados por `mova doctor` |
 | Pull requests del cierre | `#27`–`#37` |
 | Runtime | `/opt/orbital/services/mova-fpl` |
 | Migración SQLite ops | `006`; versiones aplicadas `1..6` |
 | Imagen research | Node 22 por digest + Codex CLI `0.144.6` |
 | Timer | `mova-fpl-research.timer`, habilitado y activo cada 15 min |
-| Cadencia efectiva | ventana de 30 h y máximo una corrida cada 6 h |
+| Cadencia efectiva | ventana de 30 h, rutina cada 6 h y corrida final entre T-120/T-70 |
 | API | `/api/v1/strategy`, tablas research read-only y métricas Prometheus |
 
 ## Contexto sellado de GW2
@@ -47,22 +47,43 @@ capitanía, chips o escrituras en FPL. Supabase conserva únicamente seguimiento
 El plan conserva horizonte GW2–GW8, máximo cero hits por defecto y exige caso explícito para
 chips. No contiene una decisión de jugador o poder para GW2.
 
-## Primera corrida real
+## Corridas reales de GW2
 
 | Campo | Resultado |
 | --- | --- |
-| Research run | `research_016a64c302e545d3a20b9dd3ad1a48ea` |
+| Research runs | `research_016a64c302e545d3a20b9dd3ad1a48ea` y `research_cac868ddf4cc4014b34a2740898e1441` |
 | Provider | `codex_subscription`; uso registrado sin inventar costo USD |
 | Estado final | `imported`, sin `error_code` residual |
-| Documentos | 13 |
-| Señales | 16: 14 `accepted`, 2 `candidate` |
-| Conflictos | 4: 1 no resuelto |
+| Documentos normalizados | 20 registros acumulados |
+| Señales v2 | 26: 20 `accepted`, 6 `candidate`; existen 6 señales v1 legacy sin validation_status |
+| Conflictos | 5: 2 no resueltos |
 | Spool | inbox 0, outbox 0; request y resultado final archivados |
 | Evidencia fallida | primer brief preservado en `quarantine`; eventos JSONL retenidos |
 
-El único conflicto abierto mantiene su señal como candidata. Ninguna confianza producida por
+Los conflictos abiertos mantienen sus señales como candidatas. Ninguna confianza producida por
 el modelo sustituye el gate: una señal solo es aceptada con fuente oficial o dos URLs distintas,
 sin conflicto abierto y con TTL vigente.
+
+## Conversión a servicio de noticias — 28 de agosto
+
+El primer corte buscaba contexto de liga demasiado abierto y su intervalo de seis horas podía
+perder la última ventana: la segunda corrida terminó a T-5h48 y la siguiente cadencia vencía
+después del deadline. La revisión `16b7085` corrigió esa frontera sin introducir otro scraper:
+
+- el collector FPL conserva `news`, status y chance oficial cada seis horas;
+- `research_summary.focus` une la plantilla actual con hasta diez candidatos del batch baseline;
+- nombres, clubes y posiciones se resuelven desde PostgreSQL y quedan dentro del hash del
+  `CycleManifest`;
+- señales activas previas entran al siguiente request para producir deltas y evitar repetición;
+- una corrida final se exige entre T-120 y T-70 aunque no haya vencido la cadencia rutinaria;
+- ticks sin request pendiente importan huérfanos y salen sin levantar Node/Codex;
+- status y Prometheus conservan health global al abrir una nueva jornada.
+
+El smoke vivo selló GW3 como `manifest_7fcd10d9001f41a2a7ac904413660faf`, revisión 1,
+con 15/15 jugadores propios resueltos. Los candidatos son cero porque GW2 aún no comienza y no
+existe un batch causal de GW3; el manifest lo declara `analytics_status=missing` en vez de usar
+una proyección futura inventada. El timer fuera de ventana terminó en cuatro segundos con código
+75 aceptado por systemd y sin crear contenedor research.
 
 ## Hallazgos del ejercicio real
 
@@ -90,7 +111,7 @@ acepta la equivalencia entre SHA corto de checkout y SHA completo de imagen.
 
 | Check | Resultado |
 | --- | --- |
-| Suite | `830 passed, 1 skipped, 79 deselected` |
+| Suite | `841 passed, 1 skipped, 79 deselected` |
 | CI | verde en PR `#27`–`#37` |
 | Doctor con red | 22 PASS, 0 WARN, 0 FAIL |
 | Status | `healthy` |
@@ -98,13 +119,17 @@ acepta la equivalencia entre SHA corto de checkout y SHA completo de imagen.
 | Volumen vivo | 616 jugadores, 380 fixtures, 21 eventos de odds, 10 partidos/15.434 eventos WhoScored |
 | Servicios analíticos | data y analytics `up=1` |
 | Timers | siete timers activos y habilitados |
-| API research | 1 run imported, 14 señales aceptadas, 1 conflicto abierto |
+| API research | 2 runs imported, 20 documentos, 20 señales aceptadas, 2 conflictos abiertos |
 
 ## Estado siguiente
 
 HV1-04 queda parcial: plan, team state y manifest están operativos; falta memoria longitudinal
-de estrategia. HV1-05 queda funcional en shadow y probado con un ciclo real; permanece parcial
-hasta medir cobertura, precisión y costo a través de varios gameweeks.
+de estrategia. HV1-05 queda como servicio funcional en shadow, focalizado y probado con un ciclo
+real; permanece parcial hasta medir cobertura, precisión y costo a través de varios gameweeks.
+
+El hardening `search → fetch independiente → locator/excerpt sellado` no está implementado: los
+documentos actuales sellan metadata normalizada de las URLs citadas. Se mantiene como mejora
+condicionada a evidencia multi-GW, no como infraestructura preventiva.
 
 La siguiente iteración es HV1-06: Strategist + Critic + Validator y `DecisionEnvelope`, todavía
 en shadow y sin autoridad de ejecución.
