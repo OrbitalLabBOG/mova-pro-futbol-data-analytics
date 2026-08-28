@@ -104,6 +104,36 @@ def test_schema_controls_jobs_y_auditoria(tmp_path):
             "change_proposals"} <= tables
 
 
+def test_harness_summarizes_nested_payloads_and_redacts_sensitive_keys(tmp_path):
+    db = _db(_config(tmp_path))
+    db.migrate()
+    job, _ = db.start_job("test", "test:safe-detail", "corr_safe")
+    harness = Harness(db, job, correlation_id="corr_safe")
+    payload = {
+        "entry": {
+            "entry_id": 3609854,
+            "entry_payload": {
+                "player_first_name": "private-first",
+                "player_last_name": "private-last",
+            },
+        },
+        "players": [{"element": value, "web_name": f"P{value}"} for value in range(50)],
+        "authorization": "private-bearer",
+    }
+    assert harness.call("safe_nested_payload", lambda: payload) == payload
+    with db.connect(readonly=True) as con:
+        detail = json.loads(con.execute(
+            "SELECT detail_json FROM job_steps WHERE step_name='safe_nested_payload'"
+        ).fetchone()[0])
+    serialized = json.dumps(detail)
+    assert "private-first" not in serialized
+    assert "private-last" not in serialized
+    assert "private-bearer" not in serialized
+    assert detail["entry"]["entry_payload"] == {"type": "dict", "items": 2}
+    assert detail["players"] == {"type": "list", "items": 50}
+    assert detail["authorization"] == {"type": "redacted"}
+
+
 def test_browser_write_gate_fails_closed(tmp_path):
     config = replace(_config(tmp_path), enable_browser_writes=True)
     try:

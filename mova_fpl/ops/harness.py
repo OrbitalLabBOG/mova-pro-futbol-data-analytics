@@ -13,6 +13,16 @@ from mova_fpl.ops.db import OpsDB
 
 LOG = logging.getLogger(__name__)
 
+_SENSITIVE_KEY_PARTS = (
+    "authorization", "cookie", "password", "secret", "token",
+    "player_first_name", "player_last_name", "email", "phone",
+)
+
+
+def _sensitive_key(value: object) -> bool:
+    normalized = str(value).strip().lower()
+    return any(part in normalized for part in _SENSITIVE_KEY_PARTS)
+
 
 def _safe_detail(value, *, depth: int = 0):
     """Reduce resultados para el ledger sin persistir payloads ni secretos."""
@@ -28,9 +38,16 @@ def _safe_detail(value, *, depth: int = 0):
     if depth > 3:
         return {"type": type(value).__name__}
     if isinstance(value, dict):
-        return {str(key): _safe_detail(item, depth=depth + 1)
-                for key, item in list(value.items())[:50]}
+        if depth >= 2:
+            return {"type": "dict", "items": len(value)}
+        return {
+            str(key): ({"type": "redacted"} if _sensitive_key(key)
+                       else _safe_detail(item, depth=depth + 1))
+            for key, item in list(value.items())[:50]
+        }
     if isinstance(value, (list, tuple)):
+        if depth >= 2 or len(value) > 10:
+            return {"type": type(value).__name__, "items": len(value)}
         return [_safe_detail(item, depth=depth + 1) for item in value[:50]]
     return {"type": type(value).__name__}
 
