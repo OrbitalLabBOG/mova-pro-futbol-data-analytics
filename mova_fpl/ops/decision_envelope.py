@@ -305,6 +305,10 @@ def build_envelope(*, bundle: dict, manifest: dict, manifest_id: str,
         "team_state": dict(bundle.get("team_state") or {}),
         "report_artifact": bundle.get("report_artifact"),
     }
+    # El manifest puede incorporar valores tipados por el driver de SQLite
+    # (por ejemplo TIMESTAMP -> datetime). El envelope es un contrato JSON y no
+    # debe depender de la representación interna del adaptador de persistencia.
+    body = json.loads(canonical_json(body))
     content_sha = sha256_json(body)
     return {
         **body,
