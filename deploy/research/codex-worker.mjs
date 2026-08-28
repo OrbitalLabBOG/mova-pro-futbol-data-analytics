@@ -129,6 +129,7 @@ try {
       brief.generated_at = brief.generated_at || new Date().toISOString();
       brief.usage = {...(brief.usage || {}), model, ...tokenUsage(execution.stdout || "")};
       atomicJson(join(outbox, `${runId}.result.json`), brief);
+      try { unlinkSync(join(logs, `${runId}.error.json`)); } catch {}
     }
   }
 } finally {
