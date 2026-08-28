@@ -52,6 +52,18 @@ def test_schema_de_salida_es_json_valido_y_cerrado():
     assert schema["properties"]["signals"]["maxItems"] == 120
     assert schema["properties"]["usage"]["additionalProperties"] is False
 
+    def assert_typed(node):
+        if isinstance(node, dict):
+            if "const" in node or "enum" in node:
+                assert "type" in node
+            for child in node.values():
+                assert_typed(child)
+        elif isinstance(node, list):
+            for child in node:
+                assert_typed(child)
+
+    assert_typed(schema)
+
 
 def test_timer_no_es_un_agente_residente():
     timer = (ROOT / "deploy/systemd/mova-fpl-research.timer").read_text(encoding="utf-8")
