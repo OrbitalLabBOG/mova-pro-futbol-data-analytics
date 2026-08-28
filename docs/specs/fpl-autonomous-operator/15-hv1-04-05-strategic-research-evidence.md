@@ -23,7 +23,7 @@ capitanía, chips o escrituras en FPL. Supabase conserva únicamente seguimiento
 
 | Campo | Evidencia verificada |
 | --- | --- |
-| Revisión desplegada | `c26286298893bf6e3370293d4ff39952b8f7f658` |
+| Revisión funcional certificada | `c26286298893bf6e3370293d4ff39952b8f7f658`; el SHA de checkout/imagen posterior debe validarse con `mova doctor` |
 | Pull requests del cierre | `#27`–`#37` |
 | Runtime | `/opt/orbital/services/mova-fpl` |
 | Migración SQLite ops | `006`; versiones aplicadas `1..6` |
