@@ -4,7 +4,7 @@ name: "HV1-06A — DecisionEnvelope y Validator determinista"
 created: 2026-08-28
 updated: 2026-08-28
 tags: [mova, fpl, harness, decision-envelope, validation]
-status: verified_local
+status: deployed_verified
 ---
 
 # HV1-06A — evidencia de implementación
@@ -44,7 +44,28 @@ Casos explícitos:
 - candidatos=3, jugadores=15 y checks=11;
 - `1 hit` liquida `−4 puntos`, no `−1`.
 
-## Estado de rollout
+## Rollout verificado en VPS
 
-La evidencia viva del VPS, SHA desplegado, migraciones aplicadas y resultado de `doctor` se añade
-después del rollout. Hasta entonces el corte permanece `verified_local`.
+| Evidencia | Resultado |
+| --- | --- |
+| Implementación versionada | `0de0aeb` |
+| Implementación desplegada | `19e1986` |
+| SQLite | migration 007 aplicada; `quick_check=ok` |
+| PostgreSQL 17 shadow | migration 008 aplicada; import y verify `pass` |
+| Mirror nuevo | 1 envelope, 3 candidatos, 11 checks |
+| Doctor con red | 22 PASS, 0 WARN, 0 FAIL |
+| Status | `healthy`, sin incidentes ni jobs fallidos en 24 h |
+
+La corrida forzada `force:hv1-06a:gw03:19e1986` usó el estado autenticado de 15 jugadores,
+2 FTs, manifest `e0de5f…c271` y los modelos 1.1.0. La salida del baseline conservó la propuesta
+WildCard de 12 movimientos y 51,19 xP para poder medirla, pero el envelope
+`12ef9f…f7b8a` quedó correctamente `blocked` por:
+
+1. `PRIOR_GAMEWEEK_SETTLED`: GW2 seguía sin asentarse y aún había partidos sin iniciar;
+2. `ANALYTICS_APPROVED_CAUSAL`: todavía no existía batch aprobado para GW3;
+3. `IRREVERSIBLE_ACTION_WINDOW`: el ciclo estaba en `baseline`, fuera de ventana operativa.
+
+El tick terminó `completed`, no degradado: bloquear una propuesta inmadura es el resultado sano.
+La API devolvió los tres candidatos y once checks; Prometheus publicó
+`mova_decision_envelope_status{status="blocked"}=1` y `mova_decision_blocking_checks=3`.
+No hubo escrituras browser ni cambio de autonomía: `shadow/A0`, kill switch activo.
