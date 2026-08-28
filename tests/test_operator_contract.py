@@ -85,7 +85,10 @@ def _host_probe(config: RuntimeConfig, now: datetime) -> None:
         "systemd": units,
         "api": {"ready": True, "container_state": "running"},
         "browser": {"profile_present": True, "container_state": "stopped"},
-        "revisions": {"checkout": "abc123", "image": "abc123"},
+        "revisions": {
+            "checkout": "abc1234",
+            "image": "abc1234def567890abc1234def567890abc1234d",
+        },
     }), encoding="utf-8")
 
 
