@@ -160,7 +160,13 @@ def test_resultado_codex_se_valida_antes_de_entrar(tmp_path):
     imported = service.import_ready()
     assert imported["processed"] == 1
     assert imported["results"][0]["accepted"] == 1
-    assert db.research_run(run_id)["status"] == "imported"
+    stored_run = db.research_run(run_id)
+    assert stored_run["status"] == "imported"
+    assert stored_run["result_path"].endswith(f"archive/{run_id}.result.json")
+    assert not result_path.exists()
+    assert (config.research_root / "archive" / result_path.name).is_file()
+    assert not Path(run["request_path"]).exists()
+    assert (config.research_root / "archive" / Path(run["request_path"]).name).is_file()
     with db.connect(readonly=True) as con:
         signal = con.execute(
             "SELECT validation_status,source_tier FROM research_signals "

@@ -373,12 +373,15 @@ class StrategicContextService:
             "usage": self._validate_usage(payload.get("usage", {})),
         }
         result_sha = hashlib.sha256(raw).hexdigest()
-        imported = self.db.import_research_result(
-            run_id, normalized, result_path=str(path), result_sha256=result_sha,
-        )
         archive = self.config.research_root / "archive" / path.name
         archive.parent.mkdir(parents=True, exist_ok=True)
+        imported = self.db.import_research_result(
+            run_id, normalized, result_path=str(archive), result_sha256=result_sha,
+        )
         path.replace(archive)
+        request_path = Path(run["request_path"])
+        if request_path.is_file():
+            request_path.replace(archive.with_name(request_path.name))
         return {**imported, "archive_path": str(archive), "result_sha256": result_sha}
 
     @staticmethod
