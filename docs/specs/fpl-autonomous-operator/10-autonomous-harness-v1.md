@@ -526,6 +526,7 @@ peor a 1,05× y delta p60 ECE no mayor a 0,02. El puntero `active_model_bundle` 
 analytics + decisión verifican sus hashes antes de inferencia. Rollback restaura artefactos y
 provenance del release previo. Este corte cierra HV1-08 sin ampliar `A0`, permisos de browser ni
 autoridad de auto-modificación de código.
+Evidencia: [HV1-08 release controlado de modelos](24-hv1-08-model-release-rollout.md).
 
 ## 11. Definition of Done del harness v1
 
