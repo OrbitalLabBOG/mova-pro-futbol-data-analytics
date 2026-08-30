@@ -276,6 +276,12 @@ def parser() -> argparse.ArgumentParser:
     pg_drill.add_argument("--actor", required=True)
     pg_drill.add_argument("--reason", required=True)
     pg_drill.add_argument("--idempotency-key", required=True)
+    pg_roles = postgres_commands.add_parser(
+        "roles", help="provisiona LOGIN app/readonly y verifica mínimos privilegios"
+    )
+    pg_roles.add_argument("--actor", required=True)
+    pg_roles.add_argument("--reason", required=True)
+    pg_roles.add_argument("--idempotency-key", required=True)
     return root
 
 
@@ -307,6 +313,14 @@ def main(argv: list[str] | None = None) -> int:
 
             db = OpsDB(config.ops_db, minimum_version=config.sqlite_min_version)
             payload = run_cutover_drill(
+                config, db, actor=args.actor, reason=args.reason,
+                idempotency_key=args.idempotency_key,
+            )
+        elif args.postgres_command == "roles":
+            from mova_fpl.ops.postgres_roles import run_role_provision
+
+            db = OpsDB(config.ops_db, minimum_version=config.sqlite_min_version)
+            payload = run_role_provision(
                 config, db, actor=args.actor, reason=args.reason,
                 idempotency_key=args.idempotency_key,
             )

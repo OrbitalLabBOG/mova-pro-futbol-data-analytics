@@ -623,6 +623,12 @@ cubre el ensayo reversible de lectura, no el cambio del writer ni los gates de t
 off-host y aprobación explícita.
 Evidencia: [HV1-02B cutover/rollback reversible de lectura](32-hv1-02b-read-cutover-drill-rollout.md).
 
+HV1-02C separa las identidades efectivas del shadow: owner queda reservado a administración,
+app carece de `DELETE/TEMP` y readonly carece de toda escritura, tiene transacciones read-only por
+defecto y ejecuta el drill. La provisión rota archivos secretos distintos, prueba conexiones
+reales y persiste evidencia idempotente sin material sensible. El gate sólo se considera cubierto
+después de verificar la matriz en el VPS.
+
 ### Corte autonomy readiness consolidado — 30 de agosto de 2026
 
 `mova readiness` crea una sola respuesta determinista sobre la capacidad actual del harness. El

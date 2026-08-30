@@ -128,6 +128,10 @@ def test_cutover_drill_job_is_idempotent_and_observable(tmp_path: Path, monkeypa
         lambda *_args, **_kwargs: FakePG(artifact_path=imported),
     )
     monkeypatch.setattr(
+        "mova_fpl.ops.postgres_cutover.connect_readonly",
+        lambda *_args, **_kwargs: FakePG(),
+    )
+    monkeypatch.setattr(
         "mova_fpl.ops.postgres_cutover.ReadCutoverSession.exercise",
         lambda _self: {
             "status": "pass",

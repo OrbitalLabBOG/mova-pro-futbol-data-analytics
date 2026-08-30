@@ -64,6 +64,8 @@ consulta ordinaria: `mova` y `/api/v1/status` son el contrato estable.
     off-host y cutover/rollback se aprueben.
     `mova postgres drill` prueba únicamente el cutover/rollback de lectura sobre snapshots
     sellados; un pass no cambia el writer ni autoriza promoción.
+    Antes del drill, `mova postgres roles` debe mostrar separación `pass`: owner para
+    migraciones/imports, app sin DELETE y readonly con transacciones read-only por defecto.
 
 `status` no prueba red ni muta estado. `doctor` hace checks acotados y un único GET público a
 FPL; usa `--no-network` cuando la ejecución deba ser hermética. Un `FAIL` requerido devuelve
