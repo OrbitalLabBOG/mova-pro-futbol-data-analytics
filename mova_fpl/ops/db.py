@@ -1999,8 +1999,10 @@ class OpsDB:
                 (review["review_id"],),
             ).fetchall()
             proposals = con.execute(
-                "SELECT * FROM change_proposals WHERE review_id=? "
-                "ORDER BY priority,created_at,proposal_id", (review["review_id"],),
+                """SELECT p.* FROM change_proposals p
+                JOIN gameweek_reviews rr ON rr.review_id=p.review_id
+                WHERE rr.settlement_id=? ORDER BY p.priority,p.created_at,p.proposal_id""",
+                (review["settlement_id"],),
             ).fetchall()
         for key in ("metrics_json", "findings_json", "auto_subs_json", "official_json"):
             payload[key.removesuffix("_json")] = json.loads(payload.pop(key))
@@ -2015,6 +2017,121 @@ class OpsDB:
             "review": payload, "player_outcomes": [dict(row) for row in players],
             "change_proposals": proposal_rows,
         }
+
+    def causal_review_source(self, season: str, gw: int) -> dict | None:
+        with self.connect(readonly=True) as con:
+            row = con.execute(
+                """SELECT r.*,s.cycle_id,s.source_artifact_id,s.official_json,
+                s.settled_at,c.season,c.gw
+                FROM gameweek_reviews r
+                JOIN gameweek_settlements s ON s.settlement_id=r.settlement_id
+                JOIN gameweek_cycles c ON c.cycle_id=s.cycle_id
+                WHERE c.season=? AND c.gw=? AND r.review_type='retrospective'
+                ORDER BY r.created_at DESC LIMIT 1""", (season, int(gw)),
+            ).fetchone()
+        if not row:
+            return None
+        payload = dict(row)
+        payload["official"] = json.loads(payload.pop("official_json"))
+        payload["metrics"] = json.loads(payload.pop("metrics_json"))
+        payload["findings"] = json.loads(payload.pop("findings_json"))
+        return payload
+
+    def pending_causal_review_gws(self, season: str) -> list[int]:
+        with self.connect(readonly=True) as con:
+            rows = con.execute(
+                """SELECT c.gw FROM gameweek_settlements s
+                JOIN gameweek_cycles c ON c.cycle_id=s.cycle_id
+                JOIN gameweek_reviews r ON r.settlement_id=s.settlement_id
+                  AND r.review_type='retrospective'
+                LEFT JOIN gameweek_reviews causal ON causal.settlement_id=s.settlement_id
+                  AND causal.review_type='causal'
+                WHERE c.season=? AND causal.review_id IS NULL ORDER BY c.gw""", (season,),
+            ).fetchall()
+        return [int(row["gw"]) for row in rows]
+
+    def causal_review_context(self, cycle_id: str) -> dict:
+        with self.connect(readonly=True) as con:
+            conflicts = con.execute(
+                "SELECT COUNT(*) FROM research_conflicts WHERE cycle_id=? AND status='unresolved'",
+                (cycle_id,),
+            ).fetchone()[0]
+            checks = con.execute(
+                """SELECT COUNT(*) FROM decision_validation_checks v
+                JOIN decision_envelopes e ON e.envelope_id=v.envelope_id
+                WHERE e.cycle_id=? AND v.passed=0""",
+                (cycle_id,),
+            ).fetchone()[0]
+            executions = con.execute(
+                """SELECT COUNT(*) FROM execution_attempts a
+                JOIN execution_plans p ON p.plan_id=a.plan_id
+                WHERE p.cycle_id=? AND a.status IN ('failed','ambiguous')""", (cycle_id,),
+            ).fetchone()[0]
+            reviews = con.execute(
+                "SELECT findings_json FROM gameweek_reviews WHERE review_type='causal'"
+            ).fetchall()
+        occurrences: dict[str, int] = {}
+        for row in reviews:
+            for finding in json.loads(row["findings_json"]):
+                category = str(finding.get("category") or "")
+                occurrences[category] = occurrences.get(category, 0) + 1
+        return {"unresolved_research_conflicts": int(conflicts),
+                "failed_validation_checks": int(checks),
+                "execution_failures": int(executions),
+                "category_occurrences": occurrences}
+
+    def record_causal_review(self, payload: dict) -> dict:
+        source = payload["source"]
+        with self.transaction() as con:
+            existing = con.execute(
+                "SELECT review_id FROM gameweek_reviews WHERE settlement_id=? "
+                "AND review_type='causal'", (source["settlement_id"],),
+            ).fetchone()
+            if existing:
+                return {"review_id": existing["review_id"], "reused": True}
+            con.execute(
+                """INSERT INTO gameweek_reviews(
+                review_id,job_id,settlement_id,decision_id,review_type,causality_status,
+                expected_points,actual_points,comparator_label,comparator_expected_points,
+                comparator_actual_points,realized_delta,metrics_json,findings_json,
+                artifact_path,artifact_sha256,created_at)
+                VALUES(?,?,?,?,'causal','eligible',?,?,?,?,?,?,?,?,?,?,?)""",
+                (payload["review_id"], payload["job_id"], source["settlement_id"],
+                 source["decision_id"], source["expected_points"], source["actual_points"],
+                 source["comparator_label"], source["comparator_expected_points"],
+                 source["comparator_actual_points"], source["realized_delta"],
+                 canonical_json(payload["metrics"]), canonical_json(payload["findings"]),
+                 payload["artifact_path"], payload["artifact_sha256"], payload["created_at"]),
+            )
+            con.execute(
+                """INSERT INTO review_player_outcomes
+                SELECT ?,scenario,element,player_name,role,is_captain,expected_points,p60,
+                actual_points,minutes,effective_points FROM review_player_outcomes
+                WHERE review_id=?""", (payload["review_id"], source["review_id"]),
+            )
+            for proposal in payload["proposals"]:
+                con.execute(
+                    """INSERT INTO change_proposals(
+                    proposal_id,review_id,category,change_level,priority,title,hypothesis,
+                    evidence_json,acceptance_json,status,created_at)
+                    VALUES(?,?,?,?,?,?,?,?,?,?,?)""",
+                    (proposal["proposal_id"], payload["review_id"], proposal["category"],
+                     proposal["change_level"], proposal["priority"], proposal["title"],
+                     proposal["hypothesis"], canonical_json(proposal["evidence"]),
+                     canonical_json(proposal["acceptance"]), proposal["status"],
+                     payload["created_at"]),
+                )
+            self.append_audit(
+                "causal_review_recorded", actor=payload["actor"],
+                correlation_id=payload["correlation_id"], cycle_id=source["cycle_id"],
+                job_id=payload["job_id"], subject_type="gameweek_review",
+                subject_id=payload["review_id"], payload={
+                    "reason": payload["reason"], "findings": len(payload["findings"]),
+                    "proposals": len(payload["proposals"]),
+                    "single_gw_optimization_forbidden": True,
+                }, con=con,
+            )
+        return {"review_id": payload["review_id"], "reused": False}
 
     def cost_report(self, policy: dict, *, season: str | None = None,
                     gw: int | None = None, month: str | None = None) -> dict:

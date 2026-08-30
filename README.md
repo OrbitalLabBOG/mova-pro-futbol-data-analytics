@@ -69,6 +69,8 @@ CycleManifest → modelos causales → matriz xP → MILP
   nunca modifica modelos, prompts, configuración ni políticas.
 - `mova cost report` muestra consumo y reservas contra límites por job, GW y mes; research y
   deliberación reservan capacidad atómicamente antes de entrar a la cola.
+- `mova review auto` atribuye causas después del scorecard final y exige recurrencia multi-GW
+  antes de crear una propuesta experimental.
 - El tick no interpreta Markdown: persiste un `DecisionEnvelope` JSON ligado al manifest real.
 - Una propuesta sin GW previa asentada, proyección aprobada, team state fresco o ventana válida
   queda `blocked`; solo una que supera todos los hard gates queda `staged`.

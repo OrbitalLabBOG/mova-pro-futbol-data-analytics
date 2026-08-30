@@ -41,6 +41,8 @@ consulta ordinaria: `mova` y `/api/v1/status` son el contrato estable.
     [docs/operations/continuous-improvement.md](../../../docs/operations/continuous-improvement.md).
     `mova improve` nunca aplica la hipótesis al runtime. Antes de encolar trabajo agentic,
     consulta `mova cost report`; un `agent_budget_exceeded` es un bloqueo real, no se fuerza.
+    `mova review auto` solo procede con settlement final y scorecard baseline; `not_ready` es el
+    resultado correcto para una GW preliminar.
 
 `status` no prueba red ni muta estado. `doctor` hace checks acotados y un único GET público a
 FPL; usa `--no-network` cuando la ejecución deba ser hermética. Un `FAIL` requerido devuelve

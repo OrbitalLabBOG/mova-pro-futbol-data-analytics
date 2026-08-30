@@ -10,6 +10,7 @@ from mova_fpl.analytics.gameweek_review import (
 )
 from mova_fpl.cli.settle_trace import export as export_trace
 from mova_fpl.ops.config import RuntimeConfig
+from mova_fpl.ops.causal_review import CausalReviewerService
 from mova_fpl.ops.db import OpsDB
 from mova_fpl.ops.improvement import (
     ContinuousImprovementService, validate_transition_evidence,
@@ -239,3 +240,59 @@ def test_improvement_gate_blocks_weak_evidence_and_direct_accept(tmp_path: Path)
             proposal_id=proposal_id, to_status="accepted", evidence_path=evidence,
             actor="test", reason="atajo inválido", idempotency_key="improve:test:invalid",
         )
+
+
+def test_causal_reviewer_requires_settlement_and_final_scorecard(tmp_path: Path):
+    config = RuntimeConfig(artifact_root=tmp_path / "artifacts")
+    empty = OpsDB(tmp_path / "empty.db", enforce_version=False)
+    result = CausalReviewerService(config, empty).run(
+        gw=2, actor="test", reason="review", idempotency_key="causal:gw2:v1",
+        analytics_state={"latest_scorecards": []},
+    )
+    assert result["status"] == "not_ready"
+    assert result["reason"] == "settlement_not_closed"
+
+    db, _proposal = _persisted_review(tmp_path)
+    missing = CausalReviewerService(config, db).run(
+        gw=1, actor="test", reason="review", idempotency_key="causal:gw1:missing",
+        analytics_state={"latest_scorecards": []},
+    )
+    assert missing["reason"] == "baseline_scorecard_missing"
+    assert db.pending_causal_review_gws("2026-27") == [1]
+
+
+def test_causal_reviewer_is_idempotent_and_does_not_optimize_one_gw(tmp_path: Path):
+    db, _proposal = _persisted_review(tmp_path)
+    config = RuntimeConfig(artifact_root=tmp_path / "artifacts")
+    state = {"latest_scorecards": [{
+        "season": "2026-27", "gw": 1, "variant": "baseline",
+        "drift_status": "ok", "metrics": {"points_mae": 2.1},
+    }]}
+    service = CausalReviewerService(config, db)
+    result = service.run(
+        gw=1, actor="test", reason="cierre causal",
+        idempotency_key="causal:gw1:v1", analytics_state=state,
+    )
+    reused = service.run(
+        gw=1, actor="test", reason="retry",
+        idempotency_key="causal:gw1:v1", analytics_state=state,
+    )
+    assert result["status"] == "completed"
+    assert result["proposals"] == 0
+    assert reused["status"] == "reused"
+    assert Path(result["artifact_path"]).is_file()
+    with db.connect(readonly=True) as con:
+        review = con.execute(
+            "SELECT review_type,causality_status FROM gameweek_reviews "
+            "WHERE review_id=?", (result["review_id"],)
+        ).fetchone()
+        causal_proposals = con.execute(
+            "SELECT COUNT(*) FROM change_proposals WHERE review_id=?",
+            (result["review_id"],),
+        ).fetchone()[0]
+    assert dict(review) == {"review_type": "causal", "causality_status": "eligible"}
+    assert causal_proposals == 0
+    assert db.pending_causal_review_gws("2026-27") == []
+    status = db.gameweek_review_status("2026-27", 1)
+    assert status["review"]["review_type"] == "causal"
+    assert len(status["change_proposals"]) == 3  # conserva propuestas retrospectivas

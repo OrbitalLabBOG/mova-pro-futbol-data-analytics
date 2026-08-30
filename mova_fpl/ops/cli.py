@@ -59,6 +59,13 @@ def parser() -> argparse.ArgumentParser:
     )
     review_status.add_argument("--gw", type=int, required=True)
     review_status.add_argument("--season")
+    review_auto = review_commands.add_parser(
+        "auto", help="clasifica causas sobre settlement + scorecard final"
+    )
+    review_auto.add_argument("--gw", type=int, required=True)
+    review_auto.add_argument("--actor", required=True)
+    review_auto.add_argument("--reason", required=True)
+    review_auto.add_argument("--idempotency-key", required=True)
     improve = commands.add_parser(
         "improve", help="memoria, costos y gate de mejora continua"
     )
@@ -253,6 +260,14 @@ def main(argv: list[str] | None = None) -> int:
         db = OpsDB(config.ops_db, minimum_version=config.sqlite_min_version)
         if args.review_command == "status":
             payload = db.gameweek_review_status(args.season or config.season, args.gw)
+        elif args.review_command == "auto":
+            from mova_fpl.ops.causal_review import CausalReviewerService
+
+            config.validate_postgres()
+            payload = CausalReviewerService(config, db).run(
+                gw=args.gw, actor=args.actor, reason=args.reason,
+                idempotency_key=args.idempotency_key,
+            )
         else:
             from pathlib import Path
             from mova_fpl.ops.review import GameweekReviewService
