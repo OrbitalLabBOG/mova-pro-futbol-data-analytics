@@ -42,6 +42,8 @@ mova strategy status
 mova strategy research due
 mova strategy deliberate status
 mova improve status --season 2026-27
+mova postgres status
+mova postgres verify
 
 # collector público sellado
 python -m mova_fpl.cli.collect_live --season 2026-27 --gw 2
@@ -86,6 +88,8 @@ CycleManifest + memoria estratégica durable → modelos causales → matriz xP 
 - `mova_fpl` solo hace HTTP `GET`; no escribe en FPL.
 - El browser autenticado vive aislado y sus mutaciones están gobernadas por controles.
 - Supabase no forma parte del runtime; se usa únicamente para seguimiento PM.
+- SQLite sigue siendo el writer operativo. PostgreSQL shadow se sincroniza de forma idempotente
+  por ciclo/semana y su paridad/frescura son visibles sin entregar secretos a la API.
 
 ## Repositorio
 

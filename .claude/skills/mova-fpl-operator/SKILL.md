@@ -48,6 +48,10 @@ consulta ordinaria: `mova` y `/api/v1/status` son el contrato estable.
     consulta `mova cost report`; un `agent_budget_exceeded` es un bloqueo real, no se fuerza.
     `mova review auto` solo procede con settlement final y scorecard baseline; `not_ready` es el
     resultado correcto para una GW preliminar.
+11. Para diagnosticar persistencia, ejecuta `mova postgres status` y `mova postgres verify`, y
+    lee [docs/operations/postgres-shadow.md](../../../docs/operations/postgres-shadow.md).
+    `storage.read_parity=pass` requiere hashes de contenido, no solo conteos. El writer sigue
+    siendo SQLite hasta que los gates de ciclos, backup off-host y cutover/rollback se aprueben.
 
 `status` no prueba red ni muta estado. `doctor` hace checks acotados y un único GET público a
 FPL; usa `--no-network` cuando la ejecución deba ser hermética. Un `FAIL` requerido devuelve
@@ -58,7 +62,7 @@ contexto; nunca se presenta como `PASS`.
 
 - Git: código, contratos, configuración de ejemplo, skills y runbooks.
 - VPS: estado operativo, bases, artefactos, backups, logs y browser persistente.
-- `ops.db`: ledger vigente hasta el cutover PostgreSQL de HV1-02.
+- `ops.db`: ledger y writer vigente hasta el cutover PostgreSQL explícitamente aprobado.
 - Supabase: seguimiento PM exclusivamente; nunca runtime ni memoria del agente.
 
 No confíes en un SHA documental si `status.runtime.git_sha`, el probe del checkout y la revisión
