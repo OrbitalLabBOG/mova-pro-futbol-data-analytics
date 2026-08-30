@@ -101,12 +101,13 @@ def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
                     try:
                         from mova_fpl.postgres.store import (
                             prometheus as postgres_prometheus,
+                            read_status as read_postgres_status,
                             status as postgres_status,
                         )
-                        if runtime.postgres_credential_file.is_file():
-                            metrics += postgres_prometheus(postgres_status(runtime))
-                        else:
-                            metrics += postgres_prometheus({"status": "unavailable"})
+                        pg_state = (postgres_status(runtime)
+                                    if runtime.postgres_credential_file.is_file()
+                                    else read_postgres_status(runtime))
+                        metrics += postgres_prometheus(pg_state)
                     except Exception:
                         metrics += "mova_postgres_shadow_up 0\n"
                     try:

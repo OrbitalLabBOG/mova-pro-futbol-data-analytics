@@ -11,6 +11,7 @@ from mova_fpl.ops.cli import parser
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB
 from mova_fpl.ops.operator import build_doctor, build_status, render_doctor, render_status
+from mova_fpl.postgres.store import publish_status as publish_postgres_status
 
 
 def _config(tmp_path: Path) -> RuntimeConfig:
@@ -119,6 +120,31 @@ def test_status_degrades_when_heartbeat_is_stale(tmp_path):
     payload = build_status(config, db, now=now + timedelta(hours=1))
     assert payload["overall_status"] == "degraded"
     assert "latest_tick_stale" in payload["status_reasons"]
+
+
+def test_status_reads_sanitized_postgres_parity_without_database_secret(tmp_path):
+    config, db, now = _seed(tmp_path)
+    publish_postgres_status(config, {
+        "status": "healthy", "server_version": "17.11",
+        "migrations": [{"version": item} for item in range(1, 17)],
+        "latest_import": {
+            "import_run_id": "pgimport_test", "status": "completed",
+            "git_sha": "abc123", "started_at": now.isoformat(),
+            "finished_at": now.isoformat(),
+        },
+        "read_parity": {
+            "status": "pass", "checked_tables": 49,
+            "exact_tables": 48, "aggregate_tables": 1, "failed_tables": 0,
+        },
+        "writer": "sqlite", "postgres_role": "shadow",
+    })
+
+    payload = build_status(config, db, now=now + timedelta(seconds=10))
+
+    assert payload["overall_status"] == "healthy"
+    assert payload["storage"]["operational_writer"] == "sqlite"
+    assert payload["storage"]["postgres_role"] == "shadow"
+    assert payload["storage"]["postgres"]["read_parity"]["status"] == "pass"
 
 
 def test_doctor_passes_complete_runtime_contract(tmp_path):
