@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -15,6 +16,7 @@ def test_imagen_codex_esta_versionada_y_no_contiene_app():
     assert "ARG CODEX_VERSION=0.144.6" in dockerfile
     assert "ca-certificates" in dockerfile
     assert "COPY mova_fpl" not in dockerfile
+    assert "COPY deploy/research/research-normalize.mjs" in dockerfile
     assert "USER 10002:10002" in dockerfile
 
 
@@ -40,6 +42,51 @@ def test_worker_deshabilita_herramientas_que_podrian_leer_auth_o_actuar():
     assert '"codex_exec_timeout"' in worker
     assert "MOVA_RESEARCH_TIMEOUT_MS || 480000" in worker
     assert "fantasy.premierleague.com" not in worker
+    assert "normalizeResearchBrief" in worker
+    assert ".normalization.json" in worker
+
+
+def test_normalizer_drops_or_downgrades_orphan_references_without_inventing_evidence():
+    script = r'''
+import { normalizeResearchBrief } from "./deploy/research/research-normalize.mjs";
+const brief = {
+  documents: [{source_url:"https://example.com/report?utm_source=x", title:"r"}],
+  signals: [
+    {player_element:1, source_urls:["https://example.com/report"]},
+    {player_element:2, source_urls:["https://orphan.example/item"]}
+  ],
+  conflicts: [{source_urls:["https://orphan.example/item"]}],
+  coverage:{subjects:[
+    {player_element:1,status:"material_signal",source_urls:["https://example.com/report"],note:"checked"},
+    {player_element:2,status:"material_signal",source_urls:["https://orphan.example/item"],note:"bad"},
+    {player_element:99,status:"not_checked",source_urls:[],note:"extra"}
+  ]}, limitations:[]
+};
+const request={manifest:{research_summary:{focus:[{element:1},{element:2},{element:3}]}}};
+process.stdout.write(JSON.stringify(normalizeResearchBrief(brief,request)));
+'''
+    result = subprocess.run(
+        ["node", "--input-type=module", "-e", script], cwd=ROOT,
+        text=True, capture_output=True, check=True,
+    )
+    payload = json.loads(result.stdout)
+    normalized, report = payload["brief"], payload["report"]
+    assert normalized["documents"][0]["source_url"] == "https://example.com/report"
+    assert len(normalized["signals"]) == 1
+    assert normalized["conflicts"] == []
+    assert normalized["coverage"]["subjects"] == [
+        {"player_element": 1, "status": "material_signal",
+         "source_urls": ["https://example.com/report"], "note": "checked"},
+        {"player_element": 2, "status": "not_checked", "source_urls": [], "note": "bad"},
+        {"player_element": 3, "status": "not_checked", "source_urls": [],
+         "note": "Sin evidencia verificable en esta corrida."},
+    ]
+    assert report["signals_dropped"] == 1
+    assert report["conflicts_dropped"] == 1
+    assert report["coverage_rows_added"] == 1
+    assert report["coverage_rows_dropped"] == 1
+    assert report["changed"] is True
+    assert "example.com" not in json.dumps(report)
 
 
 def test_compose_no_monta_db_browser_repo_ni_secretos_en_research():
