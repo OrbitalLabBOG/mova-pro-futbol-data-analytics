@@ -214,6 +214,12 @@ def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
                     self._send(HTTPStatus.OK, _json_bytes(payload),
                                "application/json; charset=utf-8")
                     return
+                if parsed.path == "/api/v1/research/coverage":
+                    self._send(
+                        HTTPStatus.OK, _json_bytes(db.research_coverage()),
+                        "application/json; charset=utf-8",
+                    )
+                    return
                 routes = {
                     "/api/v1/status": None,
                     "/api/v1/strategy": "strategic_status",

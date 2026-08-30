@@ -144,7 +144,7 @@ def parser() -> argparse.ArgumentParser:
     plan.add_argument("--actor", required=True)
     plan.add_argument("--reason", required=True)
     research = strategy_commands.add_parser("research", help="opera la cola de investigación")
-    research.add_argument("operation", choices=("due", "enqueue", "import"))
+    research.add_argument("operation", choices=("due", "coverage", "enqueue", "import"))
     research.add_argument("--force", action="store_true")
     research.add_argument("--actor")
     research.add_argument("--reason")
@@ -437,6 +437,8 @@ def main(argv: list[str] | None = None) -> int:
             payload = service.due()
             print(json.dumps(payload, ensure_ascii=False, default=str))
             return 0 if payload["due"] else 75
+        elif args.operation == "coverage":
+            payload = db.research_coverage()
         elif args.operation == "enqueue":
             if args.force and not all((args.actor, args.reason, args.idempotency_key)):
                 raise SystemExit(

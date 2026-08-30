@@ -7,17 +7,17 @@ control plane. Los archivos de cola son el único puente con el worker Codex.
 from __future__ import annotations
 
 import hashlib
-import ipaddress
 import json
 import os
 import re
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from urllib.parse import urlsplit, urlunsplit
 
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB, canonical_json, new_id, sha256_json, utcnow
 from mova_fpl.ops.schedule import phase_for
+from mova_fpl.ops.research_evidence import SafeEvidenceFetcher, canonical_public_url
 
 MAX_RESULT_BYTES = 1_048_576
 CLAIM_TYPES = {
@@ -61,23 +61,7 @@ def _parse_published_at(value: object) -> datetime:
 
 
 def _safe_url(value: object) -> str:
-    raw = str(value).strip()
-    parsed = urlsplit(raw)
-    if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password:
-        raise ValueError("toda evidencia debe usar URL HTTPS pública")
-    host = parsed.hostname.lower().rstrip(".")
-    if host in {"localhost", "localhost.localdomain"}:
-        raise ValueError("host de evidencia no público")
-    try:
-        address = ipaddress.ip_address(host)
-    except ValueError:
-        pass
-    else:
-        if not address.is_global:
-            raise ValueError("IP de evidencia no pública")
-    if parsed.port not in (None, 443):
-        raise ValueError("puerto de evidencia no permitido")
-    return urlunsplit(("https", parsed.netloc.lower(), parsed.path or "/", parsed.query, ""))
+    return canonical_public_url(value)
 
 
 def _clean_text(value: object, *, field: str, maximum: int) -> str:
@@ -88,9 +72,10 @@ def _clean_text(value: object, *, field: str, maximum: int) -> str:
 
 
 class StrategicContextService:
-    def __init__(self, config: RuntimeConfig, db: OpsDB):
+    def __init__(self, config: RuntimeConfig, db: OpsDB, *, evidence_fetcher=None):
         self.config = config
         self.db = db
+        self.evidence_fetcher = evidence_fetcher or SafeEvidenceFetcher(config.research_root)
 
     def activate_plan(self, payload: dict, *, actor: str, reason: str) -> dict:
         self.db.migrate()
@@ -574,29 +559,57 @@ class StrategicContextService:
         run = self.db.research_run(run_id)
         if not run:
             raise ValueError("research_run no registrado")
-        if payload.get("schema") != "mova-research-brief-v1":
+        result_schema = str(payload.get("schema"))
+        if result_schema not in {"mova-research-brief-v1", "mova-research-brief-v2"}:
             raise ValueError("schema de resultado inválido")
         if payload.get("cycle_id") != run["cycle_id"]:
             raise ValueError("cycle_id no coincide")
         if payload.get("request_sha256") != run["request_sha256"]:
             raise ValueError("request_sha256 no coincide")
+        request_path = Path(run["request_path"])
+        if not request_path.is_file() or request_path.stat().st_size > MAX_RESULT_BYTES:
+            raise ValueError("request sellada ausente o demasiado grande")
+        request = json.loads(request_path.read_text(encoding="utf-8"))
+        request_body = {key: value for key, value in request.items()
+                        if key != "request_sha256"}
+        if (sha256_json(request_body) != run["request_sha256"]
+                or request.get("manifest_id") != run["manifest_id"]
+                or request.get("cycle_id") != run["cycle_id"]):
+            raise ValueError("request sellada no coincide")
         observed = datetime.now(timezone.utc)
-        documents = self._validate_documents(payload.get("documents"), observed)
+        deadline = _parse_time(
+            request.get("manifest", {}).get("deadline_at"), field="deadline_at"
+        )
+        generated = _parse_time(payload.get("generated_at"), field="generated_at")
+        if generated > deadline or generated > observed + timedelta(minutes=10):
+            raise ValueError("resultado de research cruza el cutoff")
+        documents = self._validate_documents(
+            payload.get("documents"), observed, research_run_id=run_id,
+            require_fetch=result_schema == "mova-research-brief-v2",
+            cutoff=deadline,
+        )
         by_url = {item["source_url"]: item for item in documents}
         conflicts = self._validate_conflicts(payload.get("conflicts", []), by_url)
         conflict_keys = {(item["subject"].casefold(), item["claim_type"]) for item in conflicts
                          if item["status"] == "unresolved"}
         signals = self._validate_signals(
             payload.get("signals"), by_url, conflict_keys, observed,
+            require_verified=result_schema == "mova-research-brief-v2",
+        )
+        coverage = self._validate_coverage(
+            payload.get("coverage"),
+            request.get("manifest", {}).get("research_summary", {}).get("focus", []),
+            by_url, signals, legacy=result_schema == "mova-research-brief-v1",
         )
         normalized = {
-            "schema": "mova-research-brief-v1", "research_run_id": run_id,
+            "schema": result_schema, "research_run_id": run_id,
             "cycle_id": run["cycle_id"], "request_sha256": run["request_sha256"],
             "generated_at": _parse_time(
                 payload.get("generated_at"), field="generated_at"
             ).isoformat(),
             "summary": _clean_text(payload.get("summary"), field="summary", maximum=3000),
             "documents": documents, "signals": signals, "conflicts": conflicts,
+            "coverage": coverage,
             "limitations": [
                 _clean_text(item, field="limitation", maximum=500)
                 for item in payload.get("limitations", [])[:20]
@@ -615,11 +628,13 @@ class StrategicContextService:
             request_path.replace(archive.with_name(request_path.name))
         return {**imported, "archive_path": str(archive), "result_sha256": result_sha}
 
-    @staticmethod
-    def _validate_documents(value: object, observed: datetime) -> list[dict]:
+    def _validate_documents(self, value: object, observed: datetime, *,
+                            research_run_id: str,
+                            require_fetch: bool, cutoff: datetime) -> list[dict]:
         if not isinstance(value, list) or not 1 <= len(value) <= 80:
             raise ValueError("documents debe contener entre 1 y 80 fuentes")
         documents = []
+        pending_fetches: list[tuple[int, str, str, str]] = []
         seen = set()
         for raw in value:
             if not isinstance(raw, dict):
@@ -634,10 +649,10 @@ class StrategicContextService:
             published = raw.get("published_at")
             if published:
                 published_at = _parse_published_at(published)
-                if published_at > observed + timedelta(minutes=10):
-                    raise ValueError("published_at está en el futuro")
+                if published_at > observed + timedelta(minutes=10) or published_at > cutoff:
+                    raise ValueError("published_at cruza el cutoff")
                 published = published_at.isoformat()
-            documents.append({
+            base = {
                 "source_url": url,
                 "title": _clean_text(raw.get("title"), field="title", maximum=300),
                 "publisher": _clean_text(
@@ -645,7 +660,40 @@ class StrategicContextService:
                 ),
                 "published_at": published,
                 "source_tier": tier,
-            })
+            }
+            if require_fetch:
+                evidence_text = _clean_text(
+                    raw.get("evidence_text"), field="evidence_text", maximum=800
+                )
+                document_id = "document_" + hashlib.sha256(
+                    f"{research_run_id}:{url}".encode("utf-8")
+                ).hexdigest()[:32]
+                pending_fetches.append((len(documents), document_id, url, evidence_text))
+            else:
+                base |= {
+                    "document_id": None, "final_url": None,
+                    "fetch_status": "legacy_unverified", "http_status": None,
+                    "content_type": None, "body_sha256": None,
+                    "normalized_sha256": None, "storage_mode": None,
+                    "locator_type": None, "locator": None, "excerpt": None,
+                    "excerpt_sha256": None, "artifact_path": None,
+                    "artifact_sha256": None, "error_code": None,
+                }
+            documents.append(base)
+        if pending_fetches:
+            def seal(item: tuple[int, str, str, str]) -> tuple[int, dict]:
+                index, document_id, url, evidence_text = item
+                return index, self.evidence_fetcher.seal(
+                    research_run_id=research_run_id, document_id=document_id,
+                    source_url=url, evidence_text=evidence_text,
+                )
+
+            # Network I/O is bounded; executor.map preserves input ordering and the
+            # index assignment keeps the normalized result deterministic.
+            workers = min(8, len(pending_fetches))
+            with ThreadPoolExecutor(max_workers=workers) as executor:
+                for index, sealed in executor.map(seal, pending_fetches):
+                    documents[index] = {**documents[index], **sealed}
         return documents
 
     @staticmethod
@@ -676,7 +724,7 @@ class StrategicContextService:
     @staticmethod
     def _validate_signals(value: object, by_url: dict[str, dict],
                           conflict_keys: set[tuple[str, str]],
-                          observed: datetime) -> list[dict]:
+                          observed: datetime, *, require_verified: bool = False) -> list[dict]:
         if not isinstance(value, list) or len(value) > 120:
             raise ValueError("signals inválido")
         signals = []
@@ -700,11 +748,20 @@ class StrategicContextService:
             element = raw.get("player_element")
             if element is not None and (not isinstance(element, int) or element <= 0):
                 raise ValueError("player_element inválido")
+            verified_urls = [
+                url for url in urls if by_url[url].get("fetch_status") == "verified"
+            ]
+            tier_urls = verified_urls if verified_urls else urls
             source_tier = min(
-                (by_url[url]["source_tier"] for url in urls),
+                (by_url[url]["source_tier"] for url in tier_urls),
                 key=("official", "tier1", "tier2", "other").index,
             )
-            has_strong_evidence = source_tier == "official" or len(urls) >= 2
+            has_strong_evidence = source_tier == "official" or len(tier_urls) >= 2
+            if require_verified:
+                has_strong_evidence = bool(verified_urls) and (
+                    any(by_url[url]["source_tier"] == "official" for url in verified_urls)
+                    or len(verified_urls) >= 2
+                )
             conflicted = (subject.casefold(), claim_type) in conflict_keys
             validation = "accepted" if has_strong_evidence and not conflicted else "candidate"
             signals.append({
@@ -721,6 +778,104 @@ class StrategicContextService:
                 "validation_status": validation,
             })
         return signals
+
+    @staticmethod
+    def _validate_coverage(value: object, focus: object, by_url: dict[str, dict],
+                           signals: list[dict], *, legacy: bool) -> dict:
+        if legacy:
+            return {
+                "schema": "mova-research-coverage-v1", "status": "legacy_unmeasured",
+                "required_subjects": 0, "checked_subjects": 0,
+                "evidence_verified_subjects": 0, "coverage_ratio": None,
+                "evidence_ratio": None, "subjects": [],
+                "utility": {"status": "legacy_unmeasured"},
+            }
+        if not isinstance(focus, list):
+            raise ValueError("research focus inválido")
+        focus_by_element = {
+            int(row["element"]): row for row in focus
+            if isinstance(row, dict) and row.get("element") is not None
+        }
+        raw_subjects = value.get("subjects") if isinstance(value, dict) else None
+        if not isinstance(raw_subjects, list) or len(raw_subjects) != len(focus_by_element):
+            raise ValueError("coverage debe cubrir exactamente research_summary.focus")
+        material_elements = {
+            int(row["player_element"]) for row in signals
+            if row.get("player_element") is not None
+        }
+        subjects = []
+        seen = set()
+        allowed_status = {
+            "material_signal", "no_material_update", "unresolved", "not_checked",
+        }
+        for raw in raw_subjects:
+            if not isinstance(raw, dict):
+                raise ValueError("coverage subject inválido")
+            element = int(raw.get("player_element") or 0)
+            if element not in focus_by_element or element in seen:
+                raise ValueError("coverage referencia sujeto ausente o duplicado")
+            seen.add(element)
+            status = str(raw.get("status"))
+            if status not in allowed_status:
+                raise ValueError("coverage status inválido")
+            urls = list(dict.fromkeys(_safe_url(url) for url in raw.get("source_urls", [])))
+            if any(url not in by_url for url in urls):
+                raise ValueError("coverage referencia documento inexistente")
+            if status == "not_checked" and urls:
+                raise ValueError("not_checked no puede citar evidencia")
+            if status != "not_checked" and not urls:
+                raise ValueError("sujeto investigado exige evidencia")
+            if status == "material_signal" and element not in material_elements:
+                raise ValueError("material_signal no tiene señal correspondiente")
+            verified = any(by_url[url].get("fetch_status") == "verified" for url in urls)
+            focus_row = focus_by_element[element]
+            subjects.append({
+                "player_element": element,
+                "focus_reason": list(focus_row.get("focus_reason") or []),
+                "status": status, "source_urls": urls,
+                "evidence_verified": verified,
+                "note": _clean_text(raw.get("note"), field="coverage.note", maximum=500),
+            })
+        if seen != set(focus_by_element):
+            raise ValueError("coverage incompleta")
+        total = len(subjects)
+        checked = sum(row["status"] != "not_checked" for row in subjects)
+        verified = sum(row["evidence_verified"] for row in subjects)
+        material = sum(row["status"] == "material_signal" for row in subjects)
+        unresolved = sum(row["status"] == "unresolved" for row in subjects)
+        coverage_ratio = checked / total if total else 0.0
+        evidence_ratio = verified / total if total else 0.0
+        groups = {}
+        for name, reason in (("current_squad", "current_squad"),
+                             ("model_candidates", "top_projection_candidate")):
+            rows = [row for row in subjects if reason in row["focus_reason"]]
+            groups[name] = {
+                "required": len(rows),
+                "checked": sum(row["status"] != "not_checked" for row in rows),
+                "evidence_verified": sum(row["evidence_verified"] for row in rows),
+            }
+        status = "complete" if total and checked == total and verified == total else (
+            "partial" if checked else "failed"
+        )
+        return {
+            "schema": "mova-research-coverage-v1", "status": status,
+            "required_subjects": total, "checked_subjects": checked,
+            "evidence_verified_subjects": verified,
+            "material_subjects": material, "unresolved_subjects": unresolved,
+            "coverage_ratio": coverage_ratio, "evidence_ratio": evidence_ratio,
+            "groups": groups, "subjects": sorted(subjects, key=lambda row: row["player_element"]),
+            "utility": {
+                "status": "material_context_found" if material else "no_material_delta",
+                "signal_yield_ratio": material / checked if checked else 0.0,
+                "accepted_signals": sum(
+                    row.get("validation_status") == "accepted" for row in signals
+                ),
+                "candidate_signals": sum(
+                    row.get("validation_status") == "candidate" for row in signals
+                ),
+                "outcome_validation": "pending_post_gameweek",
+            },
+        }
 
     @staticmethod
     def _validate_usage(value: object) -> dict:

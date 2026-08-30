@@ -30,6 +30,9 @@ def test_worker_deshabilita_herramientas_que_podrian_leer_auth_o_actuar():
     assert "únicamente URLs incluidas en documents" in worker
     assert "manifest.research_summary.focus" in worker
     assert "previous_active_signals" in worker
+    assert "fetch independiente" in worker
+    assert "coverage.subjects" in worker
+    assert '"mova-research-brief-v2"' in worker
     assert "duration_ms: Date.now() - startedAtMs" in worker
     assert "search_requests: null" in worker
     assert "fantasy.premierleague.com" not in worker
@@ -57,6 +60,9 @@ def test_schema_de_salida_es_json_valido_y_cerrado():
     assert schema["additionalProperties"] is False
     assert schema["properties"]["documents"]["maxItems"] == 80
     assert schema["properties"]["signals"]["maxItems"] == 120
+    assert schema["properties"]["schema"]["const"] == "mova-research-brief-v2"
+    assert "coverage" in schema["required"]
+    assert "evidence_text" in schema["properties"]["documents"]["items"]["required"]
     assert schema["properties"]["usage"]["additionalProperties"] is False
 
     def assert_typed(node):

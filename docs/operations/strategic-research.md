@@ -22,9 +22,10 @@ plan versionado
   → foco: plantilla + candidatos xP + notas oficiales FPL
   → request JSON sin secretos
   → Codex web search aislado
-  → brief candidato
+  → brief candidato + coverage explícita
+  → fetch HTTPS independiente y excerpt/locator sellado
   → validación determinista
-  → documentos, señales, conflictos y costo/uso
+  → documentos, señales, conflictos, cobertura, utilidad y costo/uso
 ~~~
 
 SQLite ops.db continúa como writer oficial hasta el cutover de HV1-02. PostgreSQL conserva
@@ -40,8 +41,8 @@ residente ni una llamada LLM por tick.
 
 - season_plans: horizonte, supuestos, ventanas de chips y guardrails, por revisión.
 - cycle_manifests: fuentes, team state, proyección, plan, memoria estratégica y research observados.
-- research_runs: request/result, estado, hashes, tiempos y provider.
-- research_documents: metadata de cada URL citada.
+- research_runs: request/result, estado, hashes, tiempos, provider y cobertura por corrida.
+- research_documents: URL canónica/final, fetch, hashes, excerpt mínimo y locator verificable.
 - research_signals: claim, entidad, dirección, confianza, TTL, conflicto y validación.
 - research_conflicts: versiones incompatibles que requieren resolución explícita.
 - cost_ledger: tokens reportados y subscription_usage=1; no inventa costo por token.
@@ -64,6 +65,8 @@ las señales activas anteriores y debe producir deltas, no repetir claims sin ca
 # consulta
 mova strategy status
 mova strategy research due
+mova strategy research coverage
+curl -s http://127.0.0.1:8787/api/v1/research/coverage | python -m json.tool
 
 # activar una revisión explícita del plan
 mova strategy plan --file /path/season-plan.json \
@@ -94,6 +97,8 @@ listos.
 conteos por estado, documentos, señales aceptadas y conflictos abiertos. Así la apertura de una
 nueva GW no convierte falsamente el health histórico en cero. Prometheus publica además
 `mova_research_runs_total`, `mova_research_last_import_timestamp_seconds`,
+`mova_research_coverage_ratio`, `mova_research_evidence_ratio`,
+`mova_research_measured_gameweeks`,
 `mova_strategic_memory_status`, `mova_strategic_memory_items` y
 `mova_strategic_plan_revision`. Un estado `empty` es válido al inicio de temporada; `invalid` o
 `missing` exige volver a sellar el manifest antes de confiar en ese contexto.
@@ -123,18 +128,28 @@ El importador rechaza y pone en cuarentena un brief si:
 - cita URL distinta de HTTPS pública, credenciales embebidas, IP privada o puerto no 443;
 - usa una taxonomía desconocida, fecha futura, TTL vencido o elemento inválido;
 - una señal o conflicto cita documentos ausentes.
+- el request archivado ya no reproduce su hash, manifest o ciclo sellado;
+- coverage omite, duplica o inventa sujetos fuera de `research_summary.focus`.
 
 `published_at` admite timestamp ISO 8601 con zona o fecha civil `YYYY-MM-DD`; esta última se
 normaliza a medianoche UTC sin inventar una hora editorial. `generated_at` y `expires_at`
 siempre requieren zona horaria.
 
-Una señal se marca accepted solo con fuente oficial o al menos dos URLs distintas y sin
-conflicto abierto. Una fuente única no oficial queda candidate. La confianza del modelo nunca
-reemplaza este gate.
+En briefs v2, search solo descubre URLs. El importador vuelve a obtener cada página con HTTPS,
+valida cada salto contra SSRF, limita cuerpo a 2 MiB, permite únicamente texto/HTML/JSON y
+localiza literalmente el `evidence_text` sobre texto normalizado. Conserva solo el excerpt de
+máximo 800 caracteres, locator y hashes; no archiva la página completa. Los fetches usan ocho
+workers como máximo y timeout individual de ocho segundos, con salida en orden determinista.
 
-Límite vigente: `research_documents` sella metadata normalizada y hash del registro citado; no
-hace todavía un fetch HTTP independiente ni conserva locator/excerpt verificable. Esa mejora se
-reserva para hardening si la evaluación multi-GW demuestra falsos positivos o baja trazabilidad.
+Una señal v2 se marca `accepted` solo cuando el locator quedó verificado y existe fuente oficial
+verificada o al menos dos URLs verificadas, sin conflicto abierto. Una cita no recuperable,
+fuente única no oficial o conflicto queda `candidate`. La confianza del modelo nunca reemplaza
+este gate. Briefs v1 históricos permanecen legibles como `legacy_unmeasured/unverified`, pero no
+cuentan para el gate de cobertura.
+
+`mova strategy research coverage` mide por GW foco revisado, evidencia sellada, conflictos y
+utilidad. La promoción continúa bloqueada hasta observar al menos tres GWs medidos con cobertura
+≥ 90 %, evidencia ≥ 80 % y cero conflictos no resueltos en la última corrida de cada ciclo.
 
 ## Diagnóstico
 
@@ -148,6 +163,10 @@ find /var/lib/mova-fpl/artifacts/research -maxdepth 2 -type f -printf '%P\n'
 
 - queued persistente: revisar service, auth y último error JSON; no mostrar contenido sensible.
 - rejected: revisar el error sanitizado y quarantine; no insertarlo a mano.
+- coverage `insufficient_gameweeks`: condición esperada antes de tres ciclos v2; no rebajar el
+  policy ni contar briefs legacy como evidencia.
+- `evidence_*` fallido: revisar `fetch_status`, `fetch_error_code`, MIME/redirect y locator; una
+  cita del proveedor no autoriza marcar el documento como verificado.
 - auth ausente/expirado: detener el timer, renovar por canal autorizado, verificar permisos y
   reactivar.
 - web/search no disponible: conservar el último brief aceptado hasta su TTL; no volverlo vigente
