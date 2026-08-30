@@ -138,7 +138,9 @@ def assess_transfers_snapshot(snapshot: str) -> dict:
     }
     checks = {name: token in snapshot for name, token in required.items()}
     remove_controls = len(re.findall(r'button "Remove player"', snapshot))
-    checks["fifteen_remove_controls"] = remove_controls == 15
+    # La vista pitch y la tabla de mercado pueden exponer controles duplicados
+    # para jugadores propios. Quince es el mínimo de plantilla, no un total DOM.
+    checks["squad_remove_controls_present"] = remove_controls >= 15
     deadline_match = re.search(r'heading "Deadline: ([^"]+)"', snapshot)
     return {
         "schema": "mova-browser-transfer-dom-assessment-v1",

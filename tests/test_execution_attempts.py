@@ -140,6 +140,8 @@ def test_live_transfers_accessibility_fixture_satisfies_fail_closed_contract():
     assessment = assess_transfers_snapshot(snapshot)
     assert assessment["status"] == "pass"
     assert assessment["remove_player_controls"] == 15
+    duplicated_market_controls = snapshot + ('button "Remove player"\n' * 6)
+    assert assess_transfers_snapshot(duplicated_market_controls)["status"] == "pass"
     assert assess_transfers_snapshot(snapshot.replace('button "Make Transfers"', ""))[
         "status"
     ] == "fail"

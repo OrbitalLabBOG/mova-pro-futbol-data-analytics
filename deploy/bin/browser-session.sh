@@ -111,7 +111,7 @@ case "$action" in
     "${compose[@]}" exec -T browser \
       agent-browser --session mova-fpl --cdp "$cdp_port" \
       wait --fn \
-      "location.pathname === '/en/transfers' && document.querySelectorAll('button[aria-label=\"Remove player\"]').length === 15" \
+      "location.pathname === '/en/transfers' && document.querySelectorAll('button[aria-label=\"Remove player\"]').length >= 15" \
       >/dev/null
     "${compose[@]}" exec -T browser sh -c \
       "sed -e 's/__MOVA_TEAM_ID__/$team_id/' -e 's/__MOVA_TARGET_ELEMENTS__/$target_json/' /opt/mova/transfers-dom-probe.js | \
