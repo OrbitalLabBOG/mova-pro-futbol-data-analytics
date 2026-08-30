@@ -270,6 +270,12 @@ def parser() -> argparse.ArgumentParser:
     postgres_commands.add_parser(
         "sync", help="import idempotente semanal del ciclo vigente"
     )
+    pg_drill = postgres_commands.add_parser(
+        "drill", help="ensaya cutover/rollback del read-path sin cambiar el writer"
+    )
+    pg_drill.add_argument("--actor", required=True)
+    pg_drill.add_argument("--reason", required=True)
+    pg_drill.add_argument("--idempotency-key", required=True)
     return root
 
 
@@ -296,6 +302,14 @@ def main(argv: list[str] | None = None) -> int:
             payload = postgres_status(config)
         elif args.postgres_command == "sync":
             payload = sync_shadow(config)
+        elif args.postgres_command == "drill":
+            from mova_fpl.ops.postgres_cutover import run_cutover_drill
+
+            db = OpsDB(config.ops_db, minimum_version=config.sqlite_min_version)
+            payload = run_cutover_drill(
+                config, db, actor=args.actor, reason=args.reason,
+                idempotency_key=args.idempotency_key,
+            )
         else:
             payload = verify_shadow(config)
         print(json.dumps(payload, ensure_ascii=False, default=str))

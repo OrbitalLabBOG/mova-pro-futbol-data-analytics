@@ -61,6 +61,10 @@ mova postgres import \
 mova postgres status
 mova postgres verify
 mova postgres sync
+mova postgres drill \
+  --actor codex \
+  --reason "ensayo read-path antes del cutover" \
+  --idempotency-key "2026-27-gw03:read-cutover-v1"
 ```
 
 `import` trunca y reconstruye únicamente las tablas shadow declaradas. No modifica las tres
@@ -75,6 +79,28 @@ SQLite vivas sigan iguales: el import representa deliberadamente un punto en el 
 `sync` deriva una clave `postgres-shadow-sync:<cycle>:<semana ISO>` del ciclo vigente. El timer
 lo invoca diariamente, pero solo crea un import por ciclo y semana; las repeticiones devuelven
 `reused`. El service comparte el lock de workers y deja un resumen compacto en journald.
+
+## Drill de cutover/rollback de lectura
+
+`postgres drill` no cambia configuración ni writer. Parte del snapshot SQLite inmutable del
+último import verificado, relee siete contratos críticos —controles, ciclo, equipo, research,
+envelope, execution plan y rehearsals— desde PostgreSQL y finalmente vuelve a leerlos desde
+SQLite. La secuencia finita es:
+
+```text
+sqlite_baseline → postgres_candidate → sqlite_rollback
+```
+
+Cada paso conserva conteo y SHA-256. Drift o indisponibilidad del candidato fallan el job; el
+rollback se ejecuta en `finally` y sólo figura verificado si el hash SQLite posterior reproduce
+el baseline. La operación exige actor, razón y clave idempotente; reutilizar la clave con otra
+identidad se rechaza. La evidencia queda en `artifacts/postgres-cutover-drills/`, los jobs/audit
+en SQLite y la superficie read-only en `/api/v1/postgres-cutover-drills`. Prometheus expone
+`mova_postgres_cutover_drill_status` y `mova_postgres_cutover_rollback_verified`.
+
+Este drill cubre la revisión candidata del **read-path** sin dual-write. No autoriza el cutover
+del writer, no convierte PostgreSQL en fuente operativa y no sustituye los gates multi-GW,
+off-host o aprobación explícita.
 
 ## Estado observable sin ampliar autoridad
 
@@ -119,7 +145,9 @@ base activa sin un cambio aprobado.
 2. credenciales LOGIN separadas para app y lectura;
 3. backup off-host cifrado;
 4. aprobación explícita del cambio de writer;
-5. ensayo de cutover y rollback de la revisión candidata.
+5. ~~ensayo de cutover y rollback de lectura de la revisión candidata~~ — cubierto por el drill;
+   el writer real sólo se cambia después de los cuatro gates anteriores.
 
-El repository dual-read, la paridad de contenido y el restore drill local ya están cubiertos. No
+El repository dual-read, la paridad, el restore drill local y el cutover/rollback de lectura ya
+están cubiertos. No
 se consideran evidencia suficiente para cambiar el writer antes de los gates restantes.

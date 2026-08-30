@@ -376,7 +376,7 @@ no borra evidencia previa y nunca amplía autonomía.
 | --- | --- | ---: | --- |
 | HV1-00 ✅ | reset del repo, archivo de legado, packaging y CI hermético | completado | baseline actual |
 | HV1-01 ✅ | contrato `mova`, status/doctor y skill del operador | completado | HV1-00 |
-| HV1-02 🟡 | shadow + dual-read + sync verificado; faltan 3 ciclos, off-host y cutover/rollback | 4–8 h + ciclos | HV1-01 |
+| HV1-02 🟡 | shadow + dual-read + sync + cutover/rollback de lectura; faltan 3 ciclos, off-host y aprobación de writer | 4–8 h + ciclos | HV1-01 |
 | HV1-03a ✅ | collector/data quality autónomo | completado | HV1-02 |
 | HV1-03b ✅ | facade uniforme train/predict/explain/evaluate, scorecard, drift y candidato fail-closed | completado | HV1-03a |
 | HV1-04 ✅ | team state, season plan y memoria estratégica longitudinal sellada | completado | HV1-02 |
@@ -614,6 +614,13 @@ fail-closed con ocho días de frescura. El primer ciclo produjo 49/49 checks, re
 exitoso y diagnóstico limpio. Esto completa dual-read, no el cambio de writer: HV1-02 permanece
 abierto hasta acumular tres ciclos, asegurar backup off-host y ensayar cutover/rollback.
 Evidencia: [HV1-02 PostgreSQL shadow y dual-read](13-hv1-02a-postgres-shadow-evidence.md).
+
+El subcorte HV1-02B añade un drill idempotente del read-path sobre el último import verificado.
+Sella la secuencia `sqlite_baseline → postgres_candidate → sqlite_rollback` para siete contratos
+críticos y exige hashes idénticos antes y después. Una caída o deriva PostgreSQL falla el job sin
+dejar el selector fuera de SQLite; API, audit, artifacts y Prometheus muestran el resultado. Esto
+cubre el ensayo reversible de lectura, no el cambio del writer ni los gates de tres GWs, backup
+off-host y aprobación explícita.
 
 ### Corte autonomy readiness consolidado — 30 de agosto de 2026
 

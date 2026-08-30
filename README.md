@@ -48,6 +48,7 @@ mova strategy deliberate status
 mova improve status --season 2026-27
 mova postgres status
 mova postgres verify
+mova postgres drill --actor codex --reason read-cutover --idempotency-key gw03-v1
 
 # collector público sellado
 python -m mova_fpl.cli.collect_live --season 2026-27 --gw 2
@@ -80,6 +81,8 @@ CycleManifest + memoria estratégica durable → modelos causales → matriz xP 
   falla cerrado. Los controles efectivos siguen bloqueando escrituras.
 - `mova execute rehearsal` importa evidencia browser read-only sellada. Readiness cuenta una sola
   prueba aprobada por GW/capacidad/versión y rechaza fuentes alteradas o intentos de escritura.
+- `mova postgres drill` ensaya el read-path PostgreSQL y su rollback a SQLite con hashes, artifact,
+  idempotencia y métricas, sin cambiar el writer productivo.
 - `mova improve` registra experimentos, evaluaciones, lecciones y uso/costo. Aceptar una lección
   no modifica el runtime; `mova improve release` es el único camino que puede activar un bundle
   `minutes+points`, después de hashes válidos, shadow multi-GW y gate determinista.

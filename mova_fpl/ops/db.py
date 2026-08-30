@@ -3047,6 +3047,14 @@ class OpsDB:
                 row.pop("claim_token_sha256", None)
         return payload
 
+    def recent_jobs_by_type(self, job_type: str, limit: int = 20) -> list[dict]:
+        with self.connect(readonly=True) as con:
+            rows = con.execute(
+                "SELECT * FROM job_runs WHERE job_type=? ORDER BY started_at DESC LIMIT ?",
+                (job_type, max(1, min(limit, 100))),
+            ).fetchall()
+        return [dict(row) for row in rows]
+
     def record_browser_rehearsal(self, *, cycle_id: str, capability: str,
                                  contract_version: str, evidence_mode: str,
                                  status: str, checks: list[dict], evidence_path: str,
@@ -3167,6 +3175,8 @@ class OpsDB:
         strategic_memory_counts = {"decisions": 0, "reviews": 0, "lessons": 0}
         strategic_plan_revision = 0
         browser_rehearsals = {"captaincy": 0, "lineup": 0, "r3": 0}
+        postgres_cutover_status = "missing"
+        postgres_cutover_rollback_verified = 0
         with self.connect(readonly=True) as con:
             collector_job = con.execute(
                 "SELECT job_id FROM job_steps "
@@ -3294,6 +3304,20 @@ class OpsDB:
                     "WHERE capability=? AND contract_version=? AND status='passed' "
                     "AND writes_attempted=0", (capability, version),
                 ).fetchone()[0])
+            latest_cutover = con.execute(
+                "SELECT status,metrics_json FROM job_runs "
+                "WHERE job_type='postgres_read_cutover_drill' "
+                "ORDER BY started_at DESC LIMIT 1"
+            ).fetchone()
+            if latest_cutover:
+                postgres_cutover_status = str(latest_cutover["status"])
+                try:
+                    cutover_metrics = json.loads(latest_cutover["metrics_json"] or "{}")
+                    postgres_cutover_rollback_verified = int(
+                        cutover_metrics.get("rollback_verified") is True
+                    )
+                except (TypeError, json.JSONDecodeError):
+                    postgres_cutover_rollback_verified = 0
         lines = [
             "# HELP mova_up Whether ops.db is readable.",
             "# TYPE mova_up gauge",
@@ -3397,6 +3421,14 @@ class OpsDB:
             "# TYPE mova_browser_rehearsals gauge",
             *[f'mova_browser_rehearsals{{capability="{name}"}} {count}'
               for name, count in sorted(browser_rehearsals.items())],
+            "# HELP mova_postgres_cutover_drill_status Latest read cutover drill lifecycle.",
+            "# TYPE mova_postgres_cutover_drill_status gauge",
+            *[f'mova_postgres_cutover_drill_status{{status="{name}"}} '
+              f'{1 if postgres_cutover_status == name else 0}'
+              for name in ("missing", "running", "completed", "failed")],
+            "# HELP mova_postgres_cutover_rollback_verified Whether the latest drill returned to SQLite.",
+            "# TYPE mova_postgres_cutover_rollback_verified gauge",
+            f"mova_postgres_cutover_rollback_verified {postgres_cutover_rollback_verified}",
             "# HELP mova_open_incidents Open incidents by severity.",
             "# TYPE mova_open_incidents gauge",
         ]

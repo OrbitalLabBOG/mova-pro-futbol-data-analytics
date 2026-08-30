@@ -62,6 +62,8 @@ consulta ordinaria: `mova` y `/api/v1/status` son el contrato estable.
     ciclos usa GWs distintas extraídas de las claves auditadas; snapshots y reintentos dentro de
     una misma GW no cuentan. El writer sigue siendo SQLite hasta que los gates de ciclos, backup
     off-host y cutover/rollback se aprueben.
+    `mova postgres drill` prueba únicamente el cutover/rollback de lectura sobre snapshots
+    sellados; un pass no cambia el writer ni autoriza promoción.
 
 `status` no prueba red ni muta estado. `doctor` hace checks acotados y un único GET público a
 FPL; usa `--no-network` cuando la ejecución deba ser hermética. Un `FAIL` requerido devuelve
