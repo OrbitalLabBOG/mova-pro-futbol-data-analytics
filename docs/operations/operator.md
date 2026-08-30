@@ -68,6 +68,8 @@ revisión desplegada, PostgreSQL shadow cuando está configurado, perfil browser
 `overall_status` es `healthy`, `degraded` o `critical`. Se degrada ante heartbeat, estado privado
 o fuente pública vencidos y fallos recientes. Un incidente P0/P1 abierto lo vuelve crítico. Los
 motivos se enumeran en `status_reasons`, sin obligar al consumidor a inferirlos de texto humano.
+Un tick exitoso resuelve y audita incidentes activos titulados `Tick MOVA falló`; un P1 histórico
+no mantiene el dashboard crítico después de que el mismo servicio se haya recuperado.
 
 `gameweek.readiness` es independiente de la salud técnica. Vale `preliminary` cuando la jornada
 anterior todavía no está `finished` y `data_checked`; en ese estado se puede investigar y comparar

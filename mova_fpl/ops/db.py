@@ -1178,12 +1178,24 @@ class OpsDB:
             job_id=job_id, detail=detail,
         )
 
-    def resolve_incidents(self, title: str, *, resolution: str) -> int:
+    def resolve_incidents(self, title: str, *, resolution: str,
+                          actor: str = "mova-ops") -> int:
         with self.transaction() as con:
+            incidents = con.execute(
+                "SELECT incident_id,severity FROM incidents "
+                "WHERE title=? AND status!='resolved'", (title,),
+            ).fetchall()
             cur = con.execute(
                 "UPDATE incidents SET status='resolved',closed_at=?,resolution=? "
                 "WHERE title=? AND status!='resolved'", (utcnow(), resolution, title),
             )
+            for incident in incidents:
+                self.append_audit(
+                    "incident_resolved", actor=actor,
+                    severity="warning" if incident["severity"] in {"P0", "P1"} else "info",
+                    subject_type="incident", subject_id=incident["incident_id"],
+                    payload={"title": title, "resolution": resolution}, con=con,
+                )
         return int(cur.rowcount)
 
     def status(self) -> dict:
