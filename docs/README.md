@@ -15,6 +15,7 @@ tags: [mova, fpl, documentation]
 | Consultar `mova status/doctor` | [Contrato del operador](operations/operator.md) |
 | Diagnosticar o desplegar el VPS | [Runbook VPS](operations/vps.md) |
 | Operar PostgreSQL shadow | [Runbook PostgreSQL](operations/postgres-shadow.md) |
+| Proyectar, explicar, evaluar o entrenar candidato | [Servicio analítico](operations/analytics-service.md) |
 | Operar plan y research | [Contexto estratégico](operations/strategic-research.md) |
 | Evaluar propuestas y memoria | [Mejora continua](operations/continuous-improvement.md) |
 | Auditar autonomía y preflight | [Execution preflight](operations/execution-preflight.md) |

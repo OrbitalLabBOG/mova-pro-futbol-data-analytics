@@ -25,8 +25,11 @@ consulta ordinaria: `mova` y `/api/v1/status` son el contrato estable.
    desplegar, revisar systemd, backups o browser.
 5. Para recolectar, revisar cobertura o diagnosticar FPL/odds/WhoScored, lee
    [docs/operations/data-service.md](../../../docs/operations/data-service.md).
-6. Para proyectar, reconciliar una GW o interpretar scorecards/drift, lee
+6. Para entrenar un candidato, proyectar, explicar, reconciliar una GW o interpretar
+   scorecards/drift, lee
    [docs/operations/analytics-service.md](../../../docs/operations/analytics-service.md).
+   Usa `mova model status|train|predict|explain|evaluate`. `train` debe devolver
+   `runtime_mutated=false`: jamás copies el candidato al bundle activo ni omitas el release gate.
 7. Para cerrar una GW, atribuir una intervención y registrar feedback, lee
    [docs/operations/gameweek.md](../../../docs/operations/gameweek.md). Ejecuta `mova review gw`
    solo con `finished + data_checked`, package versionado, actor, razón e idempotency key.

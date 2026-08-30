@@ -38,6 +38,10 @@ mova doctor
 # servicio autónomo: API FPL + odds + WhoScored
 mova collect all
 mova data status
+mova model status
+mova model predict --actor codex --reason predeadline --idempotency-key gw03-v1
+mova model explain --batch-id projection_ID --element 123
+mova model evaluate --actor codex --reason settlement --idempotency-key gw02-v1
 mova strategy status
 mova strategy research due
 mova strategy deliberate status
@@ -77,6 +81,8 @@ CycleManifest + memoria estratégica durable → modelos causales → matriz xP 
 - `mova improve` registra experimentos, evaluaciones, lecciones y uso/costo. Aceptar una lección
   no modifica el runtime; `mova improve release` es el único camino que puede activar un bundle
   `minutes+points`, después de hashes válidos, shadow multi-GW y gate determinista.
+- `mova model` separa `train`, `predict`, `explain` y `evaluate`. El entrenamiento sólo publica
+  un bundle candidato inmutable; no cambia el bundle activo y debe atravesar el release gate.
 - `mova cost report` muestra consumo y reservas contra límites por job, GW y mes; research y
   deliberación reservan capacidad atómicamente antes de entrar a la cola.
 - `mova review auto` atribuye causas después del scorecard final y exige recurrencia multi-GW
@@ -110,6 +116,7 @@ Documentos principales:
 - [Operar una jornada](docs/operations/gameweek.md)
 - [Contrato `mova` y diagnóstico](docs/operations/operator.md)
 - [Servicio autónomo de datos](docs/operations/data-service.md)
+- [Servicio analítico y operaciones del modelo](docs/operations/analytics-service.md)
 - [Operar el VPS](docs/operations/vps.md)
 - [PostgreSQL shadow](docs/operations/postgres-shadow.md)
 - [Plan y research verificable](docs/operations/strategic-research.md)

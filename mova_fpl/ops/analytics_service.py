@@ -35,20 +35,34 @@ class AnalyticsService:
         self.db = db
         self.store = AnalyticsStore(config)
 
-    def run(self, action: str = "run", *, now: datetime | None = None) -> dict:
+    def run(self, action: str = "run", *, now: datetime | None = None,
+            actor: str | None = None, reason: str | None = None,
+            idempotency_key: str | None = None) -> dict:
         if action not in {"run", "project", "reconcile"}:
             raise ValueError(f"acción analytics inválida: {action}")
+        audit_values = (actor, reason, idempotency_key)
+        if any(value is not None for value in audit_values) and not all(
+            isinstance(value, str) and value.strip() for value in audit_values
+        ):
+            raise ValueError("actor, reason e idempotency_key deben venir juntos")
         current = now or datetime.now(timezone.utc)
         self.config.validate()
         self.config.validate_postgres()
         self.db.migrate()
         bucket = int(current.timestamp()) // 1800
-        key = f"analytics:{action}:{bucket}"
+        key = idempotency_key or f"analytics:{action}:{bucket}"
         correlation_id = new_id("corr")
         with exclusive_lock(self.config.analytics_lock_path):
             job_id, reused = self.db.start_job("model_analytics", key, correlation_id)
             if reused:
                 return {"status": "reused", "job_id": job_id}
+            if actor is not None:
+                self.db.append_audit(
+                    "model_operation_requested", actor=actor,
+                    correlation_id=correlation_id, job_id=job_id,
+                    subject_type="model_operation", subject_id=action,
+                    payload={"reason": reason, "idempotency_key": idempotency_key},
+                )
             harness = Harness(self.db, job_id, correlation_id=correlation_id)
             try:
                 harness.call("postgres_analytics_migrate", lambda: postgres_migrate(self.config))

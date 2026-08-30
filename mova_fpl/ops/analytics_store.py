@@ -122,6 +122,22 @@ class AnalyticsStore:
             ).fetchall()
         return pd.DataFrame(rows)
 
+    def projection_explanation(self, batch_id: str, element: int) -> dict | None:
+        """Return the sealed inputs and component decomposition for one prediction."""
+        with connect(self.config, autocommit=True) as con:
+            row = con.execute(
+                """select b.batch_id,b.season,b.target_gw,b.variant,b.model_versions,
+                  b.cutoff_at,b.generated_at,b.input_artifact_id,b.input_manifest,
+                  b.artifact_path,b.artifact_sha256,p.element,p.fixture_id,p.player_name,
+                  p.position,p.team,p.opponent_team,p.xp,p.xp_sd,p.p_play,p.p_60,
+                  p.components,p.context
+                from analytics.model_projection_batches b
+                join analytics.player_projections p on p.batch_id=b.batch_id
+                where b.batch_id=%s and p.element=%s""",
+                (batch_id, int(element)),
+            ).fetchone()
+        return dict(row) if row else None
+
     def research_focus(self, *, squad: list[dict], batch_id: str | None,
                        candidate_limit: int = 10) -> list[dict]:
         """Contexto público mínimo para orientar noticias hacia sujetos relevantes."""

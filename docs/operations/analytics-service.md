@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — servicio analítico y drift por gameweek"
 created: 2026-08-24
-updated: 2026-08-24
+updated: 2026-08-30
 tags: [mova, fpl, analytics, model, drift, observability]
 status: active
 ---
@@ -11,7 +11,36 @@ status: active
 
 Esta capa vuelve operable el modelo desde el harness. Sella lo que el modelo sabía antes del
 deadline, lo contrasta después contra la API oficial y conserva el scorecard completo. No elige
-jugadores, no reentrena y no escribe en la cuenta FPL.
+jugadores ni escribe en la cuenta FPL. El facade `mova model` puede producir un reentrenamiento
+candidato, pero no lo promueve ni cambia el runtime.
+
+## Contrato uniforme del modelo
+
+El facade estable separa cuatro jobs y conserva su procedencia:
+
+```bash
+mova model status
+mova model train --version 1.2.0 --holdout 2025-26 \
+  --actor codex --reason 'candidato semanal' --idempotency-key train-2026-w35-v1
+mova model predict --actor codex --reason 'predeadline GW3' \
+  --idempotency-key predict-gw03-v1
+mova model explain --batch-id projection_ID --element 123
+mova model evaluate --actor codex --reason 'settlement GW2' \
+  --idempotency-key evaluate-gw02-v1
+```
+
+- `train` usa la base canónica por hash y cutoff cerrado, escribe `minutes+points` con sidecars,
+  hashes y manifest inmutables, y devuelve `runtime_mutated=false`. Una versión existente no se
+  sobrescribe. Una misma clave idempotente con otro input falla explícitamente.
+- `predict` crea o reutiliza el projection batch causal y audita actor, razón e input hash.
+- `explain` es lectura: devuelve batch, versiones, cutoff, artifact, componentes y un hash del
+  documento de explicación; nunca recalcula ni altera la predicción.
+- `evaluate` sólo reconcilia batches contra jornadas oficiales finales y conserva el scorecard.
+
+El resultado de `train` es un **candidato**, no un modelo activo. La única promoción admitida es
+`mova improve release prepare → shadow → promote`, con propuesta aceptada, hashes verificados y
+scorecards pareados. Repetir una operación con la misma clave retorna `reused`; cambiar el input
+requiere una nueva clave.
 
 ## Flujo y causalidad
 
@@ -91,6 +120,8 @@ Secuencia de diagnóstico:
    cambiar el modelo. Si es `alert`, revisar incidente, calidad de fuente, reglas y cambio de
    distribución antes de diseñar un experimento/reentrenamiento.
 5. Nunca usar `reconcile` como feature del mismo batch evaluado ni editar una evaluación pasada.
+6. Ante un entrenamiento fallido, revisar el `model_train` job y su audit. Los temporales y
+   artifacts incompletos se limpian; no reutilizar la clave fallida ni activar archivos a mano.
 
 ### Jornada histórica sin batch predeadline
 
