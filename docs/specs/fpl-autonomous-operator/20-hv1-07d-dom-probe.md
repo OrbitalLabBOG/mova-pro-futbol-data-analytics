@@ -37,7 +37,7 @@ exactamente un C/VC con los flags del GET privado. Por eso:
 ## Verificación
 
 - pruebas focalizadas del executor y planner: 15 aprobadas;
-- suite completa: 930 passed, 1 skipped, 79 deselected;
+- suite completa inicial: 930 passed, 1 skipped, 79 deselected;
 - `node --check`, compileall y `docker compose config`: aprobados.
 
 La espera del host usa la condición funcional `my-team + 15 switch controls`; no espera
@@ -67,3 +67,59 @@ ejecutado desde la imagen browser ya desplegada volvió a pasar a las
 `2026-08-30T18:41:46.994Z`; después se detuvo el browser con salida limpia. `mova doctor` reportó
 22 PASS, 0 WARN y 0 FAIL; los seis timers operativos consultados continuaron activos. Backups
 posteriores: SQLite `20260830T184302Z` y PostgreSQL `20260830T184303Z`.
+
+## Hardening del colector autenticado
+
+La verificación posterior encontró que `collect` abría la portada de FPL y dependía de una
+redirección implícita hacia `/en/my-team`. Esa redirección dejó de ser determinista: el browser
+podía estar sano y autenticado, pero el gate de 15 controles expiraba en la ruta equivocada.
+El hotfix `039aeeb` hace explícita la navegación a `/en/my-team` y agrega un contrato de
+regresión que exige ruta, pathname y los 15 controles `Switch player`.
+
+El cambio quedó desplegado como revisión VPS `78d58c3`. La captura read-only posterior terminó
+en un intento limpio con 15 jugadores, 2 transferencias libres, los cuatro chips disponibles y
+artefacto versionado; el browser volvió a estado detenido. La suite final reportó 931 passed,
+1 skipped y 79 deselected. Checkout, tag y label OCI quedaron conciliados en `78d58c3`;
+`mova doctor` cerró con 22 PASS, 0 WARN y 0 FAIL, siete timers programados y cero unidades
+fallidas.
+
+## Subcorte HV1-07D.3: driver host captaincy-only
+
+El corte `a330860`, desplegado en el VPS como `c854b10`, conecta el UI action plan con un
+orquestador host apply-once sin ampliar autoridad. La separación es explícita:
+
+- `mova_fpl.ops.browser_driver` compila un instruction stream puro y finito;
+- `browser-r2-driver.py` materializa únicamente checkboxes semánticos de C/VC;
+- `execute-r2-browser.sh` posee el lifecycle claim/begin/finalize y nunca entrega el token al
+  proceso browser;
+- pre-state, probe, plan y post-state viven temporalmente bajo `/run` con `umask 077` y se borran
+  al salir;
+- antes de `begin`, un fallo termina `failed`; después de la frontera apply termina `ambiguous` y
+  no se reintenta;
+- cualquier swap de XI/banca falla con `LINEUP_DRIVER_UNPROVEN`; R3 continúa sin adapter;
+- el commit exige un único botón con nombre accesible exacto y conserva `max_clicks=1`.
+
+La integración host simulada verificó exactamente un `claim`, un `begin`, un `finalize`, dos
+capturas privadas y limpieza completa, sin token en argumentos ni logs. La suite completa cerró
+con **946 passed, 1 skipped y 79 deselected**; shell syntax, compileall, Compose y `diff --check`
+también pasaron.
+
+El rehearsal del VPS fue exclusivamente `--validate-only` sobre un fixture sanitizado: produjo
+schema `mova-browser-r2-driver-plan-v1`, scope `captaincy_only`, nueve pasos, un solo commit y
+`retry_after_commit=false`. No inició Chromium, no reclamó un execution attempt y el endpoint
+continuó con `items=[]`.
+
+Después del despliegue:
+
+- checkout, engine label y browser label coincidieron en `c854b10`;
+- `mova doctor`: 22 PASS, 0 WARN, 0 FAIL;
+- API y PostgreSQL healthy, siete timers activos y cero unidades fallidas;
+- browser detenido;
+- `shadow/A0`, compliance pending, kill switch activo y browser writes false;
+- rebuild inmediato del browser: 0 s y siete pasos cacheados después de mover el SHA debajo de la
+  capa pesada.
+
+Este corte no prueba todavía el botón real posterior a una mutación local: sin cambios pendientes
+la UI no renderiza el commit. Probarlo exige una operación controlada incompatible con A0. Por eso
+HV1-07 permanece parcial: faltan rehearsal de confirmación, driver/rehearsal de lineup y la
+elevación de autoridad bajo un gate explícito.
