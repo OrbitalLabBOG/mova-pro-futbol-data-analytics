@@ -382,7 +382,7 @@ no borra evidencia previa y nunca amplía autonomía.
 | HV1-05 🟡 | servicio news/research: foco plantilla+candidatos, delta y slot final; falta evaluar cobertura multi-GW | 8–12 h | HV1-02/03 |
 | HV1-06A ✅ | bundle máquina, `do_nothing`, alternativa, Validator y DecisionEnvelope | completado | HV1-03/04/05 |
 | HV1-06B ✅ | Strategist + Critic acotados sobre `Intervention`, sin autoridad directa | completado | HV1-06A |
-| HV1-07 🟡 | policy, preflight, apply-once y verifier listos; faltan driver de clicks y rehearsals | 6–10 h | HV1-06 |
+| HV1-07 🟡 | policy, apply-once, verifier y driver host de capitanía listos; faltan lineup y rehearsals | 4–8 h | HV1-06 |
 | HV1-08 ✅ | reviewer causal, budgets, propuesta→lección y release de modelos con shadow/rollback | completado | HV1-03/06 |
 
 No es necesario completar 64–92 horas antes de obtener valor. Cortes de entrega:
@@ -498,8 +498,10 @@ writes apagado, así que esta entrega no amplía autoridad ni toca el equipo.
 El subcorte HV1-07D.2 verificó en la UI productiva los player sheets de los once titulares y sus
 checkboxes accesibles `Captain`/`Vice Captain`, incluidas las selecciones actuales conciliadas con
 el GET privado. El probe `2026.08.2` y `mova execute ui-plan` convierten esa evidencia en acciones
-tipadas sólo después de un lease claimed. El driver host, el click único de confirmación y los tres
-rehearsals continúan pendientes; A0, kill switch y browser writes no cambiaron.
+tipadas sólo después de un lease claimed. HV1-07D.3 añade el wrapper host que conserva el token en
+pipe, valida antes de `begin`, hace como máximo un commit y reconcilia el GET posterior. El scope
+promovido es sólo C/VC: lineup y R3 fallan cerrados, y el control real de confirmación aún exige
+rehearsal. A0, kill switch y browser writes no cambiaron.
 
 ### Corte de mejora continua fail-closed — 30 de agosto de 2026
 

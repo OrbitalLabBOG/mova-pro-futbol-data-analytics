@@ -172,7 +172,8 @@ habilita ejecución: toda intervención persiste con `applied=false`.
 HV1-07A/B añade `mova execute preflight`, `/api/v1/execution-plans`,
 `/api/v1/execution-preflight-checks` y métricas `mova_execution_*`. El comando sella autorización
 o blockers. HV1-07C añade `prepare/claim/begin/finalize/fail`, ledger append-only, command bundle
-R2 y verificación post-reload; el driver de clicks sigue desconectado y R3 permanece fail-closed.
+R2 y verificación post-reload. HV1-07D.3 añade el wrapper host apply-once para capitanía; lineup,
+R3 y cualquier control DOM no probado permanecen fail-closed.
 Runbook: [execution preflight](execution-preflight.md).
 
 ## Probe del host
