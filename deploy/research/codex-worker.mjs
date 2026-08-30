@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Worker deliberadamente pobre: recibe JSON, busca en web y devuelve JSON.
 // No conoce el repo, PostgreSQL, FPL, odds ni el perfil del navegador.
-import { closeSync, constants, mkdirSync, openSync, readFileSync, renameSync,
+import { closeSync, constants, existsSync, mkdirSync, openSync, readFileSync, renameSync,
          statSync, unlinkSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -146,17 +146,23 @@ try {
     const startedAtMs = Date.now();
     const execution = spawnSync("codex", command, {
       input: prompt, encoding: "utf8", cwd: "/tmp/mova-research",
-      timeout: Number(process.env.MOVA_RESEARCH_TIMEOUT_MS || 300000),
+      timeout: Number(process.env.MOVA_RESEARCH_TIMEOUT_MS || 480000),
       maxBuffer: 16 * 1024 * 1024,
       env: {...process.env},
     });
     writeFileSync(eventTmp, execution.stdout || "", {encoding: "utf8", mode: 0o660});
     renameSync(eventTmp, join(logs, `${runId}.events.jsonl`));
-    if (execution.status !== 0) {
+    const outputPresent = existsSync(finalTmp);
+    if (execution.status !== 0 || execution.error || !outputPresent) {
+      const errorCode = execution.error?.code === "ETIMEDOUT"
+        ? "codex_exec_timeout"
+        : !outputPresent ? "codex_output_missing"
+        : execution.error?.code || "codex_exec_failed";
       atomicJson(join(logs, `${runId}.error.json`), {
         schema: "mova-agent-worker-error-v1", run_id: runId,
         occurred_at: new Date().toISOString(), exit_code: execution.status,
-        signal: execution.signal, error_code: execution.error?.code || "codex_exec_failed",
+        signal: execution.signal, error_code: errorCode,
+        duration_ms: Date.now() - startedAtMs, output_present: outputPresent,
         stderr_tail: String(execution.stderr || "").slice(-2000),
       });
       try { unlinkSync(finalTmp); } catch {}

@@ -35,6 +35,10 @@ def test_worker_deshabilita_herramientas_que_podrian_leer_auth_o_actuar():
     assert '"mova-research-brief-v2"' in worker
     assert "duration_ms: Date.now() - startedAtMs" in worker
     assert "search_requests: null" in worker
+    assert "existsSync(finalTmp)" in worker
+    assert '"codex_output_missing"' in worker
+    assert '"codex_exec_timeout"' in worker
+    assert "MOVA_RESEARCH_TIMEOUT_MS || 480000" in worker
     assert "fantasy.premierleague.com" not in worker
 
 
