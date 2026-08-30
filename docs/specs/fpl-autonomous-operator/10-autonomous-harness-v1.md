@@ -512,6 +512,7 @@ una sola GW queda explícitamente como evidencia insuficiente. HV1-08 permanece 
 workflow que aplica un cambio aprobado mediante release, shadow y rollback verificable.
 Evidencia: [HV1-08 mejora continua](21-hv1-08-improvement-rollout.md).
 Rollout de límites: [HV1-08 budgets agentic](22-hv1-08-budget-rollout.md).
+Rollout reviewer: [HV1-08 reviewer causal](23-hv1-08-causal-reviewer-rollout.md).
 
 ## 11. Definition of Done del harness v1
 
