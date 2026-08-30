@@ -317,6 +317,7 @@ def build_status(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
                     "latest_import": {key: latest_import.get(key) for key in (
                         "import_run_id", "status", "git_sha", "started_at", "finished_at"
                     )},
+                    "import_history": pg.get("import_history") or {},
                     "import_age_seconds": import_age,
                     "import_max_age_seconds": POSTGRES_PARITY_MAX_AGE_SECONDS,
                     "import_fresh": (

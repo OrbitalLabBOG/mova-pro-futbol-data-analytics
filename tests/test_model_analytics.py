@@ -151,11 +151,16 @@ def test_read_only_api_exposes_analytics_and_prometheus(tmp_path: Path):
             assert json.load(response)["schema"] == "mova-analytics-service-status-v1"
         with urllib.request.urlopen(base + "/api/v1/costs", timeout=2) as response:
             assert json.load(response)["schema"] == "mova-agent-cost-report-v1"
+        with urllib.request.urlopen(base + "/api/v1/readiness", timeout=2) as response:
+            readiness = json.load(response)
+            assert readiness["schema"] == "mova-autonomy-readiness-v1"
+            assert readiness["activation"]["promotion_is_automatic"] is False
         with urllib.request.urlopen(base + "/metrics", timeout=2) as response:
             metrics = response.read().decode()
             assert "mova_analytics_service_up 1" in metrics
             assert "mova_agent_budget_within_limit" in metrics
             assert "mova_model_bundle_pointer_present 0" in metrics
+            assert "mova_autonomy_readiness_up 1" in metrics
     finally:
         server.shutdown()
         server.server_close()

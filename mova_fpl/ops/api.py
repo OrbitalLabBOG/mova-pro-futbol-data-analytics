@@ -57,7 +57,7 @@ a {{ color:#72a7ff }}
 <div class="card"><div class="muted">Dual-read PostgreSQL</div><div class="value">{html.escape(str(parity.get('status','sin paridad')))}</div><div>{html.escape(str(parity.get('checked_tables',0)))} tablas verificadas</div></div>
 </div>
 <h2>Controles efectivos</h2><table><thead><tr><th>Control</th><th>Valor</th></tr></thead><tbody>{control_rows}</tbody></table>
-<p><a href="/api/v1/status">status JSON</a> · <a href="/api/v1/analytics">analytics</a> · <a href="/api/v1/strategy">strategy</a> · <a href="/api/v1/improvement">learning</a> · <a href="/api/v1/costs">costos</a> · <a href="/metrics">métricas</a> · <a href="/api/v1/audit">auditoría</a> · <a href="/api/v1/jobs">jobs</a> · <a href="/api/v1/steps">steps</a></p>
+<p><a href="/api/v1/status">status JSON</a> · <a href="/api/v1/readiness">autonomy readiness</a> · <a href="/api/v1/analytics">analytics</a> · <a href="/api/v1/strategy">strategy</a> · <a href="/api/v1/improvement">learning</a> · <a href="/api/v1/costs">costos</a> · <a href="/metrics">métricas</a> · <a href="/api/v1/audit">auditoría</a> · <a href="/api/v1/jobs">jobs</a> · <a href="/api/v1/steps">steps</a></p>
 </body></html>"""
     return body.encode("utf-8")
 
@@ -131,6 +131,13 @@ def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
                         metrics += analytics_prometheus(analytics)
                     except Exception:
                         metrics += "mova_analytics_service_up 0\n"
+                    try:
+                        from mova_fpl.ops.readiness import (
+                            build_readiness, prometheus as readiness_prometheus,
+                        )
+                        metrics += readiness_prometheus(build_readiness(runtime, db))
+                    except Exception:
+                        metrics += "mova_autonomy_readiness_up 0\n"
                     self._send(HTTPStatus.OK, metrics.encode(),
                                "text/plain; version=0.0.4; charset=utf-8")
                     return
@@ -217,6 +224,14 @@ def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
                 if parsed.path == "/api/v1/research/coverage":
                     self._send(
                         HTTPStatus.OK, _json_bytes(db.research_coverage()),
+                        "application/json; charset=utf-8",
+                    )
+                    return
+                if parsed.path == "/api/v1/readiness":
+                    from mova_fpl.ops.readiness import build_readiness
+
+                    self._send(
+                        HTTPStatus.OK, _json_bytes(build_readiness(runtime, db)),
                         "application/json; charset=utf-8",
                     )
                     return

@@ -128,6 +128,18 @@ def status(config: PostgresConfig) -> dict:
             "artifact_path,manifest_sha256,error_detail "
             "from mova_meta.import_runs order by started_at desc limit 1"
         ).fetchone()
+        import_history = con.execute(
+            "select count(*) filter (where status='completed') as completed_imports, "
+            "count(distinct (ops_sha256,canonical_sha256,trace_sha256)) "
+            "filter (where status='completed') as distinct_source_snapshots, "
+            "count(distinct substring(idempotency_key from "
+            "'([0-9]{4}-[0-9]{2}-gw[0-9]{2})')) "
+            "filter (where status='completed' and idempotency_key ~ "
+            "'[0-9]{4}-[0-9]{2}-gw[0-9]{2}') as distinct_gameweek_cycles, "
+            "min(finished_at) filter (where status='completed') as first_completed_at, "
+            "max(finished_at) filter (where status='completed') as last_completed_at "
+            "from mova_meta.import_runs"
+        ).fetchone()
         table_checks = []
         if latest:
             table_checks = con.execute(
@@ -155,6 +167,7 @@ def status(config: PostgresConfig) -> dict:
         "schemas": schemas,
         "migrations": migrations,
         "latest_import": latest,
+        "import_history": import_history,
         "table_checks": table_checks,
         "read_parity": read_parity,
         "writer": "sqlite",
@@ -195,6 +208,14 @@ def prometheus(state: dict) -> str:
         "# HELP mova_postgres_import_age_seconds Age of latest completed shadow import.",
         "# TYPE mova_postgres_import_age_seconds gauge",
         f"mova_postgres_import_age_seconds {import_age}",
+        "# HELP mova_postgres_distinct_source_snapshots Distinct completed source snapshots.",
+        "# TYPE mova_postgres_distinct_source_snapshots gauge",
+        f"mova_postgres_distinct_source_snapshots "
+        f"{int((state.get('import_history') or {}).get('distinct_source_snapshots') or 0)}",
+        "# HELP mova_postgres_distinct_gameweek_cycles Gameweek cycles with completed imports.",
+        "# TYPE mova_postgres_distinct_gameweek_cycles gauge",
+        f"mova_postgres_distinct_gameweek_cycles "
+        f"{int((state.get('import_history') or {}).get('distinct_gameweek_cycles') or 0)}",
         "",
     ])
 
@@ -213,6 +234,10 @@ def publish_status(config: PostgresStatusConfig, state: dict) -> dict:
         "migration_count": len(state.get("migrations") or []),
         "latest_import": {key: latest.get(key) for key in (
             "import_run_id", "status", "git_sha", "started_at", "finished_at"
+        )},
+        "import_history": {key: (state.get("import_history") or {}).get(key) for key in (
+            "completed_imports", "distinct_source_snapshots", "distinct_gameweek_cycles",
+            "first_completed_at", "last_completed_at"
         )},
         "read_parity": state.get("read_parity"),
         "writer": state.get("writer"),

@@ -215,6 +215,10 @@ def parser() -> argparse.ArgumentParser:
     fail_execution.add_argument("--claim-token-stdin", action="store_true", required=True)
     status = commands.add_parser("status", help="estado operativo consolidado")
     status.add_argument("--json", action="store_true", dest="as_json")
+    readiness = commands.add_parser(
+        "readiness", help="gate consolidado de promoción de autonomía"
+    )
+    readiness.add_argument("--require-level", choices=("A0", "A1", "A2", "A3"))
     doctor = commands.add_parser("doctor", help="diagnóstico verificable del runtime")
     doctor.add_argument("--json", action="store_true", dest="as_json")
     doctor.add_argument("--no-network", action="store_true",
@@ -553,6 +557,14 @@ def main(argv: list[str] | None = None) -> int:
         payload = build_status(config, db)
         print(json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str)
               if args.as_json else render_status(payload))
+    elif args.command == "readiness":
+        from mova_fpl.ops.readiness import LEVELS, build_readiness
+
+        payload = build_readiness(config, db)
+        print(json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str))
+        if args.require_level:
+            observed = payload["activation"]["technical_eligible_level"]
+            return 0 if LEVELS.index(observed) >= LEVELS.index(args.require_level) else 2
     elif args.command == "doctor":
         payload = build_doctor(config, db, network=not args.no_network)
         print(json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str)
