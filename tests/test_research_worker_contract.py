@@ -44,6 +44,9 @@ def test_worker_deshabilita_herramientas_que_podrian_leer_auth_o_actuar():
     assert "fantasy.premierleague.com" not in worker
     assert "normalizeResearchBrief" in worker
     assert ".normalization.json" in worker
+    assert "const completedAt = new Date().toISOString()" in worker
+    assert "brief.generated_at = completedAt" in worker
+    assert "generated_at_replaced: modelGeneratedAtReplaced" in worker
 
 
 def test_normalizer_drops_or_downgrades_orphan_references_without_inventing_evidence():
