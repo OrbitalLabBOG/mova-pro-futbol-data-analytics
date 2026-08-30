@@ -157,6 +157,12 @@ def parser() -> argparse.ArgumentParser:
     claim_execution.add_argument("--actor", required=True)
     claim_execution.add_argument("--reason", required=True)
     claim_execution.add_argument("--lease-seconds", type=int, default=300)
+    ui_plan = execute_commands.add_parser(
+        "ui-plan", help="compila el plan DOM contra pre-state y probe sanitizado"
+    )
+    ui_plan.add_argument("--execution-id", required=True)
+    ui_plan.add_argument("--pre-state", required=True)
+    ui_plan.add_argument("--dom-probe", required=True)
     begin_execution = execute_commands.add_parser(
         "begin", help="marca el límite de write ambiguity después de validar pre-state"
     )
@@ -417,6 +423,12 @@ def main(argv: list[str] | None = None) -> int:
             payload = service.claim(
                 execution_id=args.execution_id, actor=args.actor, reason=args.reason,
                 lease_seconds=args.lease_seconds,
+            )
+        elif args.execute_command == "ui-plan":
+            payload = service.compile_ui_plan(
+                execution_id=args.execution_id,
+                pre_state=json.loads(Path(args.pre_state).read_text(encoding="utf-8")),
+                dom_probe=json.loads(Path(args.dom_probe).read_text(encoding="utf-8")),
             )
         else:
             claim_token = sys.stdin.read().strip()
