@@ -224,6 +224,9 @@ def parser() -> argparse.ArgumentParser:
     pg_import.add_argument("--idempotency-key", required=True)
     postgres_commands.add_parser("status", help="estado del store shadow")
     postgres_commands.add_parser("verify", help="revalida artefactos y conteos")
+    postgres_commands.add_parser(
+        "sync", help="import idempotente semanal del ciclo vigente"
+    )
     return root
 
 
@@ -234,7 +237,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command != "doctor":
         config.validate()
     if args.command == "postgres":
-        from mova_fpl.postgres.importer import import_shadow, verify_shadow
+        from mova_fpl.postgres.importer import import_shadow, sync_shadow, verify_shadow
         from mova_fpl.postgres.store import migrate as postgres_migrate
         from mova_fpl.postgres.store import status as postgres_status
 
@@ -248,6 +251,8 @@ def main(argv: list[str] | None = None) -> int:
             )
         elif args.postgres_command == "status":
             payload = postgres_status(config)
+        elif args.postgres_command == "sync":
+            payload = sync_shadow(config)
         else:
             payload = verify_shadow(config)
         print(json.dumps(payload, ensure_ascii=False, default=str))

@@ -78,6 +78,7 @@ def _host_probe(config: RuntimeConfig, now: datetime) -> None:
             "mova-fpl-watchdog.timer",
             "mova-fpl-analytics.timer",
             "mova-fpl-research.timer",
+            "mova-fpl-postgres-sync.timer",
         )
     }
     config.host_probe_path.write_text(json.dumps({
@@ -85,6 +86,10 @@ def _host_probe(config: RuntimeConfig, now: datetime) -> None:
         "observed_at": now.isoformat(),
         "systemd": units,
         "api": {"ready": True, "container_state": "running"},
+        "postgres": {
+            "container_state": "running", "container_health": "healthy",
+            "published_ports": False, "role": "shadow",
+        },
         "browser": {"profile_present": True, "container_state": "stopped"},
         "revisions": {
             "checkout": "abc1234",
@@ -147,6 +152,16 @@ def test_status_reads_sanitized_postgres_parity_without_database_secret(tmp_path
     assert payload["storage"]["postgres"]["migration_count"] == 16
     assert payload["storage"]["postgres"]["import_fresh"] is True
     assert payload["storage"]["postgres"]["read_parity"]["status"] == "pass"
+
+
+def test_status_surfaces_missing_parity_artifact_when_postgres_is_running(tmp_path):
+    config, db, now = _seed(tmp_path)
+    _host_probe(config, now)
+
+    payload = build_status(config, db, now=now + timedelta(seconds=10))
+
+    assert payload["overall_status"] == "degraded"
+    assert "postgres_shadow_status_unavailable" in payload["status_reasons"]
 
 
 def test_doctor_passes_complete_runtime_contract(tmp_path):
