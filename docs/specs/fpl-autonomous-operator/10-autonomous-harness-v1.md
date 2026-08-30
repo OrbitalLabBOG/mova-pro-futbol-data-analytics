@@ -471,7 +471,8 @@ gates del solve, pero ya no exige permanecer en A0: un `ExecutionPlan` hijo rele
 state, deadline, incidentes, controles y ejecuciones previas; calcula el diff exacto y clasifica
 `R0`, `R2` o `R3`. Solo policy determinista puede producir `authorized`.
 
-SQLite migration 009 y PostgreSQL migration 010 guardan planes/checks append-only. El CLI
+SQLite migration 009 y PostgreSQL migrations 010/011 guardan planes/checks append-only y su
+provenance de job; el import shadow los reconcilia por conteo. El CLI
 `mova execute preflight`, API, Prometheus, schema JSON y runbook hacen observable cada blocker.
 El rollout continúa en `shadow/A0`: este corte no implementa `apply`, no inicia el browser y no
 añade ninguna primitiva de escritura. HV1-07C debe consumir exclusivamente un plan autorizado,
