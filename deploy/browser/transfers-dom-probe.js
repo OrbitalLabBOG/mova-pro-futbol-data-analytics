@@ -3,7 +3,8 @@
   const targetIds = __MOVA_TARGET_ELEMENTS__;
   const origin = "https://fantasy.premierleague.com";
   const visible = (node) => Boolean(node && node.getClientRects().length > 0);
-  const text = (node) => (node?.innerText || node?.textContent || "").trim();
+  const text = (node) => (node?.innerText || node?.textContent || "")
+    .replace(/\s+/g, " ").trim();
   const visibleButtons = () => [...document.querySelectorAll("button")].filter(visible);
   if (location.origin !== origin || location.pathname !== "/en/transfers") {
     throw new Error("FPL_TRANSFERS_PAGE_REQUIRED");
@@ -42,7 +43,9 @@
   const search = [...document.querySelectorAll('input[type="search"], input[role="searchbox"]')]
     .find((node) => visible(node) && (
       (node.getAttribute("aria-label") || "").trim() === "Find a player"
-      || (node.getAttribute("placeholder") || "").trim() === "Find a player"
+      || ["Find a player", "Search by name"].includes(
+        (node.getAttribute("placeholder") || "").trim(),
+      )
     ));
   const squad = picks.map((pick) => ({
     element: pick.element,
