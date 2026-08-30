@@ -7,13 +7,17 @@ La autorización depende exclusivamente de policy, controles y estado observado.
 from __future__ import annotations
 
 import hashlib
+import hmac
 import json
 import os
-from datetime import datetime, timezone
+import secrets
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+from mova_fpl.data.private_state import validate as validate_private_state
+from mova_fpl.ops.browser_contract import compile_browser_commands
 from mova_fpl.ops.config import RuntimeConfig
-from mova_fpl.ops.db import OpsDB, canonical_json, sha256_json
+from mova_fpl.ops.db import OpsDB, sha256_json
 from mova_fpl.ops.decision_envelope import decision_fingerprint
 from mova_fpl.ops.schedule import phase_for, private_state_cadence_seconds
 
@@ -23,6 +27,7 @@ MAX_ENVELOPE_BYTES = 5 * 1024 * 1024
 ACTION_LEVELS = {"A0": 0, "A1": 1, "A2": 2, "A3": 3}
 RISK_REQUIREMENTS = {"R0": "A0", "R2": "A2", "R3": "A3"}
 EXECUTION_PHASES = {"preflight", "freeze", "execution_window"}
+TERMINAL_ATTEMPT_STATES = {"ambiguous", "verified", "failed", "blocked", "expired"}
 
 
 def _parse_time(value: object) -> datetime:
@@ -222,11 +227,12 @@ def build_execution_plan(*, envelope: dict, envelope_row: dict, manifest_row: di
 
 
 class ExecutionService:
-    """Fachada de preflight persistido. No implementa ``apply``."""
+    """Control plane apply-once; el adapter browser vive fuera del engine."""
 
-    def __init__(self, config: RuntimeConfig, db: OpsDB):
+    def __init__(self, config: RuntimeConfig, db: OpsDB, *, allow_fixture: bool = False):
         self.config = config
         self.db = db
+        self.allow_fixture = allow_fixture
 
     @staticmethod
     def _file_sha(path: Path) -> str:
@@ -316,4 +322,349 @@ class ExecutionService:
             "schema": "mova-execution-status-v1",
             "policy_version": POLICY_VERSION,
             "plans": self.db.recent("execution_plans", limit),
+            "attempts": self.db.recent("execution_attempts", limit),
         }
+
+    def _load_plan(self, row: dict) -> dict:
+        artifact = Path(str(row["artifact_path"]))
+        if not artifact.is_file():
+            raise FileNotFoundError(artifact)
+        resolved = artifact.resolve()
+        if not resolved.is_relative_to(self.config.artifact_root.resolve()):
+            raise ValueError("ExecutionPlan fuera del artifact root autorizado")
+        if self._file_sha(artifact) != row["artifact_sha256"]:
+            raise ValueError("hash físico del ExecutionPlan no coincide")
+        plan = json.loads(artifact.read_text(encoding="utf-8"))
+        unsigned = {key: value for key, value in plan.items()
+                    if key not in {"plan_id", "content_sha256"}}
+        if (
+            plan.get("plan_id") != row["plan_id"]
+            or plan.get("content_sha256") != row["content_sha256"]
+            or sha256_json(unsigned) != row["content_sha256"]
+        ):
+            raise ValueError("identidad o contenido del ExecutionPlan no coincide")
+        return plan
+
+    @staticmethod
+    def _effective_controls(source: dict) -> dict:
+        return dict(source.get("controls") or {})
+
+    def _runtime_blockers(self, source: dict, *, now: datetime) -> list[str]:
+        row = source["plan"]
+        controls = self._effective_controls(source)
+        required = str(row["required_action_level"])
+        observed = str(controls.get("action_level") or "A0")
+        blockers = []
+        if row["status"] != "authorized":
+            blockers.append("PLAN_NOT_AUTHORIZED")
+        if now >= _parse_time(row["deadline_at"]):
+            blockers.append("DEADLINE_CLOSED")
+        if controls.get("kill_switch") is not False:
+            blockers.append("KILL_SWITCH_ON")
+        if controls.get("browser_writes") is not True:
+            blockers.append("BROWSER_WRITES_DISABLED")
+        if controls.get("compliance_gate") != "approved":
+            blockers.append("COMPLIANCE_NOT_APPROVED")
+        if controls.get("mode") != "autonomous":
+            blockers.append("MODE_NOT_AUTONOMOUS")
+        if observed not in ACTION_LEVELS or ACTION_LEVELS[observed] < ACTION_LEVELS[required]:
+            blockers.append("ACTION_LEVEL_INSUFFICIENT")
+        if source.get("open_high_incidents"):
+            blockers.append("OPEN_P0_P1")
+        state = source.get("team_state")
+        if not state or state.get("quality_status") != "valid":
+            blockers.append("TEAM_STATE_INVALID")
+        elif state.get("fingerprint") != row.get("expected_pre_fingerprint"):
+            blockers.append("TEAM_STATE_CHANGED")
+        else:
+            age = max(0, int((now - _parse_time(state["observed_at"])).total_seconds()))
+            limit = private_state_cadence_seconds(row["deadline_at"], now)
+            if age > limit:
+                blockers.append("TEAM_STATE_STALE")
+        return blockers
+
+    def prepare(self, *, plan_id: str, adapter: str, actor: str, reason: str,
+                idempotency_key: str, now: datetime | None = None) -> dict:
+        """Reserva un intento sólo después de revalidar todos los gates mutables."""
+        if not all(value.strip() for value in (plan_id, adapter, actor, reason, idempotency_key)):
+            raise ValueError("prepare exige plan_id, adapter, actor, reason e idempotency_key")
+        if adapter not in {"disabled", "fixture", "browser"}:
+            raise ValueError(f"adapter desconocido: {adapter}")
+        if adapter == "disabled":
+            raise RuntimeError("executor deshabilitado por configuración")
+        if adapter == "fixture" and not self.allow_fixture:
+            raise RuntimeError("fixture executor sólo está permitido en tests herméticos")
+        self.db.migrate()
+        job_id, reused = self.db.start_job(
+            "execution_prepare", idempotency_key,
+            f"corr_{sha256_json(idempotency_key)[:24]}",
+        )
+        if reused:
+            existing = self.db.execution_attempt_for_job(job_id)
+            if not existing:
+                raise RuntimeError("job idempotente sin execution attempt persistido")
+            return {**existing, "reused": True}
+        try:
+            current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+            source = self.db.execution_claim_source(plan_id)
+            plan = self._load_plan(source["plan"])
+            if source.get("attempt"):
+                raise RuntimeError(
+                    f"plan ya reservado por execution attempt {source['attempt']['execution_id']}"
+                )
+            if adapter == "browser" and plan["action"]["risk_class"] != "R2":
+                raise RuntimeError(
+                    "browser adapter sólo está promovido para R2; R3 permanece fail-closed"
+                )
+            blockers = self._runtime_blockers(source, now=current)
+            if blockers:
+                raise RuntimeError("runtime gates bloquearon prepare: " + ",".join(blockers))
+            execution_id = "execution_" + hashlib.sha256(
+                f"{plan_id}:{idempotency_key}".encode("utf-8")
+            ).hexdigest()[:24]
+            command_body = {
+                **compile_browser_commands(plan),
+                "execution_id": execution_id,
+                "created_at": current.isoformat(timespec="milliseconds"),
+            }
+            command_sha = sha256_json(command_body)
+            command_bundle = {**command_body, "content_sha256": command_sha}
+            command_target = (
+                self.config.artifact_root / "execution-commands" / plan["cycle_id"]
+                / f"{execution_id}.json"
+            )
+            command_target.parent.mkdir(parents=True, exist_ok=True)
+            command_tmp = command_target.with_suffix(".json.tmp")
+            command_tmp.write_text(
+                json.dumps(command_bundle, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+            os.replace(command_tmp, command_target)
+            result = self.db.prepare_execution_attempt(
+                plan=source["plan"], job_id=job_id, execution_id=execution_id,
+                idempotency_key=idempotency_key, adapter=adapter,
+                command_path=str(command_target), command_sha256=self._file_sha(command_target),
+                actor=actor,
+                reason=reason, created_at=current.isoformat(timespec="milliseconds"),
+            )
+            self.db.bind_job_cycle(job_id, str(source["plan"]["cycle_id"]))
+            return result
+        except Exception as exc:
+            self.db.finish_job(job_id, "failed", error_code=type(exc).__name__,
+                               error_detail=str(exc)[:2000])
+            raise
+
+    def claim(self, *, execution_id: str, actor: str, reason: str,
+              now: datetime | None = None, lease_seconds: int = 300) -> dict:
+        """Entrega un secreto de uso único; nunca se persiste el valor en claro."""
+        if not 30 <= int(lease_seconds) <= 600:
+            raise ValueError("lease_seconds debe estar entre 30 y 600")
+        current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+        attempt = self.db.execution_attempt(execution_id)
+        self._validate_command_artifact(attempt)
+        source = self.db.execution_claim_source(str(attempt["plan_id"]))
+        blockers = self._runtime_blockers(source, now=current)
+        if blockers:
+            result = self.db.block_prepared_execution(
+                execution_id=execution_id, actor=actor, reason=reason,
+                blocking_codes=blockers,
+                finished_at=current.isoformat(timespec="milliseconds"),
+            )
+            self.db.finish_job(attempt["job_id"], "failed",
+                               error_code="RUNTIME_GATES_CHANGED",
+                               error_detail=",".join(blockers))
+            return result
+        token = secrets.token_urlsafe(32)
+        expires = current + timedelta(seconds=int(lease_seconds))
+        result = self.db.claim_execution_attempt(
+            execution_id=execution_id,
+            token_sha256=hashlib.sha256(token.encode("utf-8")).hexdigest(),
+            claimant=actor, reason=reason,
+            claimed_at=current.isoformat(timespec="milliseconds"),
+            lease_expires_at=expires.isoformat(timespec="milliseconds"),
+        )
+        return {**result, "claim_token": token}
+
+    @staticmethod
+    def _token_sha(token: str) -> str:
+        if not token.strip():
+            raise ValueError("claim token vacío")
+        return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+    def _assert_token(self, attempt: dict, claim_token: str, *, status: str) -> str:
+        token_sha = self._token_sha(claim_token)
+        stored = str(attempt.get("claim_token_sha256") or "")
+        if not stored or not hmac.compare_digest(stored, token_sha):
+            raise PermissionError("claim token inválido")
+        if attempt.get("status") != status:
+            raise RuntimeError(
+                f"execution attempt esperaba {status}; observado {attempt.get('status')}"
+            )
+        return token_sha
+
+    def _validate_command_artifact(self, attempt: dict) -> dict:
+        path = Path(str(attempt["command_path"]))
+        if not path.is_file() or not path.resolve().is_relative_to(
+            self.config.artifact_root.resolve()
+        ):
+            raise ValueError("command bundle ausente o fuera del artifact root")
+        if not hmac.compare_digest(self._file_sha(path), str(attempt["command_sha256"])):
+            raise ValueError("hash físico del command bundle no coincide")
+        bundle = json.loads(path.read_text(encoding="utf-8"))
+        content_sha = str(bundle.pop("content_sha256", ""))
+        if (
+            bundle.get("execution_id") != attempt["execution_id"]
+            or bundle.get("plan_id") != attempt["plan_id"]
+            or not hmac.compare_digest(sha256_json(bundle), content_sha)
+        ):
+            raise ValueError("identidad o contenido del command bundle no coincide")
+        return {**bundle, "content_sha256": content_sha}
+
+    def begin(self, *, execution_id: str, claim_token: str, pre_state: dict,
+              actor: str, reason: str, now: datetime | None = None) -> dict:
+        normalized, quality = validate_private_state(
+            pre_state, expected_team_id=self.config.team_id,
+        )
+        attempt = self.db.execution_attempt(execution_id)
+        token_sha = self._assert_token(attempt, claim_token, status="claimed")
+        self._validate_command_artifact(attempt)
+        source = self.db.execution_claim_source(attempt["plan_id"])
+        plan = self._load_plan(source["plan"])
+        if int(normalized["event"]["id"]) != int(plan["gw"]):
+            raise RuntimeError("pre-state pertenece a otra gameweek")
+        current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+        blockers = self._runtime_blockers(source, now=current)
+        if blockers:
+            result_sha = sha256_json({"status": "blocked", "blocking_codes": blockers})
+            result = self.db.finish_execution_attempt(
+                execution_id=execution_id, token_sha256=token_sha, status="blocked",
+                actor=actor, reason=reason,
+                finished_at=current.isoformat(timespec="milliseconds"),
+                detail={"blocking_codes": blockers}, result_sha256=result_sha,
+                error_code="RUNTIME_GATES_CHANGED", error_detail=",".join(blockers),
+            )
+            self.db.finish_job(attempt["job_id"], "failed",
+                               error_code="RUNTIME_GATES_CHANGED",
+                               error_detail=",".join(blockers))
+            return {**result, "blocking_codes": blockers}
+        return self.db.begin_execution_attempt(
+            execution_id=execution_id, token_sha256=token_sha,
+            observed_pre_fingerprint=quality["fingerprint"], actor=actor, reason=reason,
+            started_at=current.isoformat(timespec="milliseconds"),
+        )
+
+    @staticmethod
+    def _observed_decision_fingerprint(plan: dict, normalized: dict) -> str:
+        picks = sorted(normalized["picks"], key=lambda row: int(row["position"]))
+        selected = {
+            "season": plan["season"], "gw": int(plan["gw"]),
+            "squad_15": [int(row["element"]) for row in picks],
+            "starters": [int(row["element"]) for row in picks if int(row["position"]) <= 11],
+            "bench_order": [int(row["element"]) for row in picks if int(row["position"]) > 11],
+            "captain": next(int(row["element"]) for row in picks if row["is_captain"]),
+            "vice_captain": next(
+                int(row["element"]) for row in picks if row["is_vice_captain"]
+            ),
+            "transfers_in": plan["action"]["exact_diff"]["transfers"]["in"],
+            "transfers_out": plan["action"]["exact_diff"]["transfers"]["out"],
+            "hits": plan["action"]["exact_diff"]["transfers"]["hits"],
+            "chip": plan["action"]["exact_diff"]["chip"]["to"],
+        }
+        return decision_fingerprint(selected)
+
+    def finalize(self, *, execution_id: str, claim_token: str, post_state: dict,
+                 actor: str, reason: str, now: datetime | None = None) -> dict:
+        """Verifica contra un GET post-reload; un mismatch queda ambiguo y abre P0."""
+        normalized, quality = validate_private_state(
+            post_state, expected_team_id=self.config.team_id,
+        )
+        attempt = self.db.execution_attempt(execution_id)
+        token_sha = self._assert_token(attempt, claim_token, status="applying")
+        self._validate_command_artifact(attempt)
+        source = self.db.execution_claim_source(attempt["plan_id"])
+        plan = self._load_plan(source["plan"])
+        observed = self._observed_decision_fingerprint(plan, normalized)
+        expected = str(attempt["expected_post_fingerprint"])
+        checks = [
+            {"code": "POST_GW_MATCH", "passed": int(normalized["event"]["id"]) == int(plan["gw"]),
+             "expected": int(plan["gw"]), "observed": int(normalized["event"]["id"])},
+            {"code": "POST_DECISION_FINGERPRINT_MATCH", "passed": observed == expected,
+             "expected": expected, "observed": observed},
+            {"code": "POST_STATE_VALID", "passed": quality["players"] == 15,
+             "expected": 15, "observed": quality["players"]},
+            {"code": "POST_OBSERVED_AFTER_APPLY",
+             "passed": _parse_time(normalized["observed_at"]) > _parse_time(attempt["started_at"]),
+             "expected": f"> {attempt['started_at']}",
+             "observed": normalized["observed_at"]},
+        ]
+        verified = all(row["passed"] for row in checks)
+        current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+        evidence = {
+            "schema": "mova-execution-evidence-v1", "execution_id": execution_id,
+            "plan_id": plan["plan_id"], "observed_at": normalized["observed_at"],
+            "verification_checks": checks,
+            "private_state_fingerprint": quality["fingerprint"],
+        }
+        result_sha = sha256_json(evidence)
+        target = self.config.artifact_root / "execution-evidence" / plan["cycle_id"] / f"{execution_id}.json"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        temporary = target.with_suffix(".json.tmp")
+        temporary.write_text(
+            json.dumps(evidence, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        os.replace(temporary, target)
+        status = "verified" if verified else "ambiguous"
+        result = self.db.finish_execution_attempt(
+            execution_id=execution_id, token_sha256=token_sha,
+            status=status, actor=actor, reason=reason,
+            finished_at=current.isoformat(timespec="milliseconds"), detail={
+                "checks": checks, "result_sha256": result_sha,
+            }, observed_post_fingerprint=observed, evidence_path=str(target),
+            evidence_sha256=self._file_sha(target), result_sha256=result_sha,
+            error_code=None if verified else "POST_STATE_MISMATCH",
+            error_detail=None if verified else "post-reload state no coincide con el plan",
+        )
+        if verified:
+            self.db.finish_job(attempt["job_id"], "completed", output_sha256=result_sha,
+                               metrics={"status": status, "verification_checks": len(checks)})
+        else:
+            self.db.open_incident_once(
+                "P0", "Ejecución FPL ambigua", correlation_id=None,
+                cycle_id=plan["cycle_id"], job_id=attempt["job_id"],
+                detail={"execution_id": execution_id, "plan_id": plan["plan_id"],
+                        "result_sha256": result_sha},
+            )
+            self.db.finish_job(attempt["job_id"], "failed",
+                               error_code="POST_STATE_MISMATCH",
+                               error_detail="estado post-reload no coincide")
+        return {**result, "verification_checks": checks, "result_sha256": result_sha}
+
+    def fail(self, *, execution_id: str, claim_token: str, ambiguous: bool,
+             actor: str, reason: str, error_code: str, error_detail: str,
+             now: datetime | None = None) -> dict:
+        attempt = self.db.execution_attempt(execution_id)
+        status = "ambiguous" if ambiguous else "failed"
+        token_sha = self._assert_token(
+            attempt, claim_token, status="applying" if ambiguous else "claimed"
+        )
+        current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+        result_sha = sha256_json({"status": status, "error_code": error_code,
+                                  "error_detail": error_detail})
+        result = self.db.finish_execution_attempt(
+            execution_id=execution_id, token_sha256=token_sha,
+            status=status, actor=actor, reason=reason,
+            finished_at=current.isoformat(timespec="milliseconds"),
+            detail={"error_code": error_code}, result_sha256=result_sha,
+            error_code=error_code, error_detail=error_detail[:2000],
+        )
+        if ambiguous:
+            plan = self.db.execution_claim_source(attempt["plan_id"])["plan"]
+            self.db.open_incident_once(
+                "P0", "Ejecución FPL ambigua", cycle_id=plan["cycle_id"],
+                job_id=attempt["job_id"], detail={"execution_id": execution_id,
+                                                  "error_code": error_code},
+            )
+        self.db.finish_job(attempt["job_id"], "failed", error_code=error_code,
+                           error_detail=error_detail[:2000])
+        return result

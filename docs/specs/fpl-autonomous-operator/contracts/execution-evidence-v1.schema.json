@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mova.local/contracts/execution-evidence-v1.schema.json",
+  "title": "MOVA post-reload execution evidence v1",
+  "type": "object",
+  "required": [
+    "schema", "execution_id", "plan_id", "observed_at",
+    "verification_checks", "private_state_fingerprint"
+  ],
+  "properties": {
+    "schema": {"const": "mova-execution-evidence-v1"},
+    "execution_id": {"type": "string"},
+    "plan_id": {"type": "string"},
+    "observed_at": {"type": "string", "format": "date-time"},
+    "verification_checks": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "object",
+        "required": ["code", "passed", "expected", "observed"]
+      }
+    },
+    "private_state_fingerprint": {"type": "string", "minLength": 1}
+  },
+  "additionalProperties": false
+}

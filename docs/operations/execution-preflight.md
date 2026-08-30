@@ -9,9 +9,9 @@ status: active
 
 # Policy de autonomía y preflight
 
-HV1-07A/B introduce la frontera durable previa al browser. El sistema puede sellar el diff exacto,
-clasificar su riesgo y demostrar por qué una acción está autorizada o bloqueada. Este corte **no**
-incluye `apply`: no contiene clicks, endpoints de escritura ni una ruta alternativa hacia FPL.
+HV1-07A/B introduce la frontera durable previa al browser. HV1-07C añade la reserva apply-once,
+lease, límite de ambigüedad y verificador post-reload. El driver de clicks permanece desconectado
+en producción: los controles A0 y el contenedor browser conservan las escrituras apagadas.
 
 ## Contrato
 
@@ -49,6 +49,57 @@ plan. Una nueva observación usa una clave nueva y supersede el plan anterior, s
 El import PostgreSQL shadow copia planes y checks como evidencia consultable; SQLite continúa
 siendo el writer hasta el cutover general de HV1-02.
 
+Desde HV1-07C cada tick que produce un `DecisionEnvelope` ejecuta también el preflight con una
+clave derivada del envelope. Esto crea evidencia `blocked`, `noop` o `authorized`; nunca reclama
+un lease ni inicia el navegador por sí solo.
+
+## Lifecycle apply-once
+
+```text
+authorized plan
+  → prepared
+  → claimed (token opaco, lease 30..600 s)
+  → applying  ← desde aquí todo fallo es write-ambiguous
+  → verified | ambiguous
+```
+
+Los estados `failed`, `blocked` y `expired` sólo son terminales antes de `applying`. Un token se
+guarda únicamente como SHA-256 y se entrega una vez; `begin`, `finalize` y `fail` lo leen por
+`stdin`, nunca como argumento. Un segundo claim falla. Otro idempotency key no puede reservar el
+mismo plan.
+
+```bash
+mova execute prepare \
+  --plan-id execplan_... \
+  --adapter browser \
+  --actor mova-executor \
+  --reason "R2 promovido y gates revalidados" \
+  --idempotency-key "execution:2026-27:gw03:r2:01"
+
+mova execute claim \
+  --execution-id execution_... \
+  --actor mova-executor \
+  --reason "inicio del adapter"
+
+printf '%s' "$CLAIM_TOKEN" | mova execute begin \
+  --execution-id execution_... --pre-state /run/mova/pre-state.json \
+  --actor mova-executor --reason "GET privado pre-write idéntico" \
+  --claim-token-stdin
+
+printf '%s' "$CLAIM_TOKEN" | mova execute finalize \
+  --execution-id execution_... --post-state /run/mova/post-state.json \
+  --actor mova-executor --reason "GET privado posterior al reload" \
+  --claim-token-stdin
+```
+
+No guardar `CLAIM_TOKEN` en shell history, logs, artifacts ni PostgreSQL. El wrapper productivo
+deberá mantenerlo en memoria/pipe y borrar los JSON temporales sanitizados al terminar.
+
+`prepare` vuelve a validar deadline, estado privado, incidentes y controles. Además sella un
+`browser-command-bundle-v1` con exactamente siete operaciones R2: pre-read, XI/banca, C, VC,
+commit único, reload y post-read. El adapter R3 no existe todavía: transfers, hits y chips fallan
+cerrados aunque un plan futuro llegara autorizado.
+
 ## Riesgo y autoridad
 
 | Riesgo | Acciones | Nivel mínimo |
@@ -63,9 +114,9 @@ switch apagado, browser writes habilitado, compliance aprobado, nivel suficiente
 `autonomous` y ausencia de ejecución previa. En `guarded` explicita aprobación humana pendiente y
 permanece bloqueada.
 
-`noop` nunca se envía al browser. El executor de HV1-07C deberá releer FPL, comparar el
-fingerprint post-acción y abrir incidente ante cualquier diferencia. Transfers, hits y chips no
-tendrán un rollback automático ficticio.
+`noop` nunca se envía al browser. `verified` exige que el GET privado posterior al reload
+reconstruya exactamente el fingerprint de la decisión. Un mismatch queda `ambiguous`, abre un P0
+y prohíbe retry automático. Transfers, hits y chips no tendrán un rollback automático ficticio.
 
 ## Recuperación
 
@@ -78,3 +129,16 @@ tendrán un rollback automático ficticio.
 
 Rollout inicial: `shadow / A0`, `kill_switch=true`, `browser_writes=false`. Por tanto, un plan con
 acciones debe quedar bloqueado; ese es el rehearsal seguro esperado.
+
+## Observabilidad
+
+- API: `/api/v1/execution-attempts` y `/api/v1/execution-attempt-events`;
+- Prometheus: `mova_execution_attempt_status` y `mova_execution_attempts_total`;
+- SQLite migration 010: intento + ledger de transiciones append-only;
+- PostgreSQL shadow migration 012: espejo consultable, nunca writer;
+- artifacts: `execution-commands/<cycle>/` y `execution-evidence/<cycle>/`.
+
+El snapshot accessibility vivo se valida por nombres accesibles y no por refs `@eN`, que son
+efímeros. El contrato requiere sesión autenticada, deadline, cuatro chips y 15 controles
+`Switch player`. Que el DOM pase este check sólo habilita el adapter a seguir validando; no
+concede autoridad.

@@ -186,6 +186,8 @@ def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
                     "/api/v1/deliberation-risks": "decision_deliberation_risks",
                     "/api/v1/execution-plans": "execution_plans",
                     "/api/v1/execution-preflight-checks": "execution_preflight_checks",
+                    "/api/v1/execution-attempts": "execution_attempts",
+                    "/api/v1/execution-attempt-events": "execution_attempt_events",
                     "/api/v1/outbox": "outbox_events",
                     "/api/v1/research/runs": "research_runs",
                     "/api/v1/research/documents": "research_documents",

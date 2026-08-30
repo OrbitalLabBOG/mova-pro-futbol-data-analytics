@@ -208,6 +208,7 @@ class TickRunner:
 
         snapshot = harness.call("seal_snapshot", save_snapshot)
         decision = None
+        execution_preflight = None
         degraded = not memory_ok
         verified_cycle = self.db.seal_verified_decision_cycle(
             cycle_id, correlation_id=correlation_id, job_id=job_id,
@@ -228,6 +229,18 @@ class TickRunner:
                 correlation_id, prepared,
             )
             degraded = degraded or decision.get("status") != "completed"
+            if decision.get("status") == "completed" and decision.get("envelope_id"):
+                from mova_fpl.ops.execution import ExecutionService
+
+                execution_preflight = harness.call(
+                    "execution_preflight",
+                    lambda: ExecutionService(self.config, self.db).preflight(
+                        actor="mova-worker",
+                        reason="preflight automático posterior al DecisionEnvelope",
+                        idempotency_key=f"execution-preflight:{decision['envelope_id']}",
+                        now=now,
+                    ),
+                )
         elif self.config.enable_shadow_decision:
             self.db.open_incident(
                 "P2", "Shadow decision omitida por memoria", correlation_id=correlation_id,
@@ -239,12 +252,14 @@ class TickRunner:
             "mova-worker", health_status,
             memory_available_bytes=resource_state["memory_available_bytes"],
             disk_free_bytes=resource_state["disk_free_bytes"], load_1m=resource_state["load_1m"],
-            detail={"gw": gw, "phase": phase, "decision": decision},
+            detail={"gw": gw, "phase": phase, "decision": decision,
+                    "execution_preflight": execution_preflight},
         )
         return {
             "status": "degraded" if degraded else "completed",
             "season": self.config.season, "gw": gw, "deadline_at": deadline,
             "phase": phase, "snapshot": snapshot["path"], "decision": decision,
+            "execution_preflight": execution_preflight,
             **resource_state,
         }
 

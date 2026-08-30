@@ -742,6 +742,62 @@ MIGRATION_009 = (
     """,
 )
 
+MIGRATION_010 = (
+    """
+    CREATE TABLE IF NOT EXISTS execution_attempts (
+        execution_id TEXT PRIMARY KEY,
+        plan_id TEXT NOT NULL UNIQUE REFERENCES execution_plans(plan_id),
+        job_id TEXT NOT NULL UNIQUE REFERENCES job_runs(job_id),
+        idempotency_key TEXT NOT NULL UNIQUE,
+        adapter TEXT NOT NULL CHECK (adapter IN ('disabled','fixture','browser')),
+        command_path TEXT NOT NULL,
+        command_sha256 TEXT NOT NULL,
+        status TEXT NOT NULL CHECK (status IN (
+          'prepared','claimed','applying','ambiguous','verified','failed','blocked','expired'
+        )),
+        claim_token_sha256 TEXT UNIQUE,
+        claimed_by TEXT,
+        claimed_at TEXT,
+        lease_expires_at TEXT,
+        started_at TEXT,
+        finished_at TEXT,
+        expected_pre_fingerprint TEXT,
+        observed_pre_fingerprint TEXT,
+        expected_post_fingerprint TEXT NOT NULL,
+        observed_post_fingerprint TEXT,
+        evidence_path TEXT,
+        evidence_sha256 TEXT,
+        result_sha256 TEXT,
+        error_code TEXT,
+        error_detail TEXT,
+        created_at TEXT NOT NULL,
+        CHECK ((status = 'prepared' AND claim_token_sha256 IS NULL) OR status != 'prepared'),
+        CHECK ((status IN ('verified','failed','ambiguous','blocked','expired')
+          AND finished_at IS NOT NULL) OR status NOT IN (
+          'verified','failed','ambiguous','blocked','expired'
+        ))
+    ) STRICT
+    """,
+    "CREATE INDEX IF NOT EXISTS idx_execution_attempts_status_created "
+    "ON execution_attempts(status, created_at DESC)",
+    """
+    CREATE TABLE IF NOT EXISTS execution_attempt_events (
+        attempt_event_id TEXT PRIMARY KEY,
+        execution_id TEXT NOT NULL REFERENCES execution_attempts(execution_id)
+          ON DELETE CASCADE,
+        sequence INTEGER NOT NULL CHECK (sequence >= 1),
+        from_status TEXT,
+        to_status TEXT NOT NULL,
+        actor TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        detail_json TEXT NOT NULL DEFAULT '{}' CHECK (json_valid(detail_json)),
+        detail_sha256 TEXT NOT NULL,
+        occurred_at TEXT NOT NULL,
+        UNIQUE (execution_id, sequence)
+    ) STRICT
+    """,
+)
+
 MIGRATIONS = (
     (1, "initial_ops_schema", MIGRATION_001),
     (2, "team_state_artifact_provenance", MIGRATION_002),
@@ -752,4 +808,5 @@ MIGRATIONS = (
     (7, "typed_decision_envelopes", MIGRATION_007),
     (8, "bounded_strategy_deliberations", MIGRATION_008),
     (9, "execution_plans_and_preflight", MIGRATION_009),
+    (10, "apply_once_execution_attempts", MIGRATION_010),
 )

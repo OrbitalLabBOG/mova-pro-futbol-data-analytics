@@ -480,6 +480,20 @@ aplicar una vez y verificar el estado post-acción; HV1-07D debe completar tres 
 de promoción antes de elevar autonomía.
 Evidencia del rollout: [HV1-07A/B](18-hv1-07ab-preflight-rollout.md).
 
+### Corte apply-once + verifier — 30 de agosto de 2026
+
+HV1-07C implementa la mitad determinista del executor: reserva única por plan, token almacenado
+como hash, lease acotado, transición explícita a `applying`, terminales fail-closed y verificación
+exacta mediante GET privado posterior al reload. El command bundle R2 es inmutable y el DOM
+contract usa nombres accesibles observados en la UI vigente. El tick ahora orquesta el preflight
+automáticamente después de sellar cada envelope.
+
+SQLite migration 010 y PostgreSQL shadow migration 012 conservan intentos y eventos. CLI, API,
+Prometheus y artifacts permiten replay sin exponer estado privado. Un mismatch post-reload abre
+P0 y queda `ambiguous`; no existe retry automático. El adapter de transfers/chips R3 y el driver
+host que materializa los siete comandos siguen pendientes. Producción permanece A0 con browser
+writes apagado, así que esta entrega no amplía autoridad ni toca el equipo.
+
 ## 11. Definition of Done del harness v1
 
 - un ciclo completo puede ejecutarse, reanudarse y explicarse desde `mova`;
