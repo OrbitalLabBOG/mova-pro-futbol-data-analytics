@@ -54,7 +54,7 @@ FPL_TEAM_ID=3609854 python -m mova_fpl.cli.live \
 El flujo de decisión conserva una sola autoridad y añade un lifecycle máquina:
 
 ```text
-CycleManifest → modelos causales → matriz xP → MILP
+CycleManifest + memoria estratégica durable → modelos causales → matriz xP → MILP
   → do_nothing + baseline + alternativa
   → Validator determinista → DecisionEnvelope → acta + auditoría
   → Strategist + Critic acotados → Intervention shadow no aplicada
@@ -64,6 +64,9 @@ CycleManifest → modelos causales → matriz xP → MILP
 ```
 
 - `mova_fpl.engine.runner.decide()` es la única autoridad de decisión.
+- `mova strategy prepare` reconstruye una memoria estratégica sellada desde planes, decisiones y
+  reviews de GWs anteriores y lecciones validadas. No usa historial conversacional ni incorpora
+  decisiones de la GW en curso.
 - `mova execute` sella riesgo, diff, lease apply-once y verificación. `execute ui-plan` cruza
   pre-state, slots DOM y controles semánticos C/VC después del claim. El wrapper host materializa
   únicamente capitanía R2; XI/banca, R3 y toda ejecución no ensayada fallan cerrados. Los controles

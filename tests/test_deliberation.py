@@ -1,10 +1,12 @@
+import hashlib
 import json
 from pathlib import Path
 
 import pytest
 
+from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB, sha256_json
-from mova_fpl.ops.deliberation import normalize_result
+from mova_fpl.ops.deliberation import DecisionDeliberationService, normalize_result
 
 
 def _request(*, blockers=()):
@@ -118,6 +120,74 @@ def test_intervention_cannot_reference_player_outside_sealed_context():
 
     with pytest.raises(ValueError, match="fuera del contexto sellado"):
         normalize_result(_result(request, intervention=intervention), request)
+
+
+def test_deliberation_request_receives_sealed_strategic_memory(tmp_path: Path):
+    envelope_id = "envelope_" + "b" * 24
+    manifest_id = "manifest_" + "c" * 32
+    manifest_sha = "d" * 64
+    content_sha = "e" * 64
+    envelope = {
+        "envelope_id": envelope_id,
+        "content_sha256": content_sha,
+        "manifest": {"content_sha256": manifest_sha},
+        "candidates": [
+            {"candidate_key": key, "decision": {"squad_15": list(range(1, 16))}}
+            for key in ("do_nothing", "milp_baseline", "primary_alternative")
+        ],
+    }
+    artifact = tmp_path / "envelope.json"
+    artifact.write_text(json.dumps(envelope), encoding="utf-8")
+    artifact_sha = hashlib.sha256(artifact.read_bytes()).hexdigest()
+    memory = {
+        "schema": "mova-strategic-memory-v1",
+        "status": "ready",
+        "content_sha256": "f" * 64,
+        "lessons": [{"lesson_id": "lesson_prior", "status": "validated"}],
+    }
+
+    class FakeDB:
+        queued = None
+
+        def migrate(self):
+            return [14]
+
+        def deliberation_source(self):
+            return {
+                "envelope_id": envelope_id, "content_sha256": content_sha,
+                "manifest_sha256": manifest_sha, "artifact_path": str(artifact),
+                "artifact_sha256": artifact_sha, "manifest_id": manifest_id,
+                "cycle_id": "2026-27-gw03", "season": "2026-27", "gw": 3,
+            }
+
+        def decision_deliberation_for_envelope(self, _envelope_id):
+            return None
+
+        def latest_cycle_manifest(self, _cycle_id):
+            return {
+                "manifest_id": manifest_id, "phase": "preflight",
+                "deadline_at": "2026-09-04T17:30:00+00:00",
+                "analytics_manifest": {"status": "approved"},
+                "research_summary": {"previous_active_signals": []},
+                "memory_summary": memory,
+            }
+
+        def active_season_plan(self, _season):
+            return {"plan_id": "plan_current", "revision": 2}
+
+        def queue_decision_deliberation(self, payload):
+            self.queued = payload
+            return {"status": "queued", **payload}
+
+    fake_db = FakeDB()
+    config = RuntimeConfig(research_root=tmp_path / "research")
+    queued = DecisionDeliberationService(config, fake_db).enqueue()
+    request = json.loads(Path(queued["request_path"]).read_text(encoding="utf-8"))
+
+    assert request["cycle_context"]["strategic_memory"] == memory
+    assert request["cycle_context"]["season_plan"]["revision"] == 2
+    assert request["guardrails"]["no_new_facts"] is True
+    assert fake_db.queued["request_sha256"] == request["request_sha256"]
 
 
 def test_deliberation_persistence_records_risks_intervention_and_cost(tmp_path: Path):

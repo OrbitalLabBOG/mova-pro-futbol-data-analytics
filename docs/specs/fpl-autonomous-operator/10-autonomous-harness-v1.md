@@ -378,7 +378,7 @@ no borra evidencia previa y nunca amplía autonomía.
 | HV1-02 🟡 | PostgreSQL shadow, import y verificación; luego adapter/cutover | 10–14 h | HV1-01 |
 | HV1-03a ✅ | collector/data quality autónomo | completado | HV1-02 |
 | HV1-03b ✅ | proyección/evaluación uniforme, scorecard, drift y servicio desplegado | completado | HV1-03a |
-| HV1-04 🟡 | team state y season plan implementados; falta memoria estratégica longitudinal | 6–8 h | HV1-02 |
+| HV1-04 ✅ | team state, season plan y memoria estratégica longitudinal sellada | completado | HV1-02 |
 | HV1-05 🟡 | servicio news/research: foco plantilla+candidatos, delta y slot final; falta evaluar cobertura multi-GW | 8–12 h | HV1-02/03 |
 | HV1-06A ✅ | bundle máquina, `do_nothing`, alternativa, Validator y DecisionEnvelope | completado | HV1-03/04/05 |
 | HV1-06B ✅ | Strategist + Critic acotados sobre `Intervention`, sin autoridad directa | completado | HV1-06A |
@@ -438,6 +438,20 @@ investigar solo deltas. La agenda conserva la rutina de seis horas y añade una 
 obligatoria entre T-120 y T-70; ticks sin request ya no levantan Codex. El health global permanece
 visible al cambiar de jornada. Esto no implementa todavía fetch independiente/locator de cada
 documento ni promoción automática de señales.
+
+### Corte memoria estratégica longitudinal — 30 de agosto de 2026
+
+SQLite migration `014` y PostgreSQL migration `016` añaden `memory_summary` al
+`CycleManifest`. Cada `mova strategy prepare` reconstruye de manera determinista el historial
+relevante: revisiones del plan, decisiones y reviews de GWs estrictamente anteriores, y lecciones
+validadas no retiradas. La GW objetivo nunca se retroalimenta a sí misma y el contexto no depende
+de memoria de chat.
+
+El resumen conserva límites explícitos, cobertura, comparación entre revisiones y estados de
+promoción, además de un hash propio. Strategist y Critic reciben el mismo objeto sellado;
+SQLite/PostgreSQL shadow, API/status y Prometheus preservan y exponen su provenance. Un inicio de
+temporada sin historia es `empty` válido; memoria ausente o inválida se observa separadamente y
+no se presenta como lista para decidir.
 
 ### Corte Strategist + Critic — 28 de agosto de 2026
 

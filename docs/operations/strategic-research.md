@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — contexto estratégico e investigación"
 created: 2026-08-27
-updated: 2026-08-28
+updated: 2026-08-30
 tags: [mova, fpl, strategy, research, codex, evidence]
 status: active
 ---
@@ -16,6 +16,8 @@ operativa al LLM:
 
 ~~~text
 plan versionado
+  + decisiones/reviews previos + lecciones validadas
+  → memoria estratégica longitudinal sellada
   → CycleManifest sellado
   → foco: plantilla + candidatos xP + notas oficiales FPL
   → request JSON sin secretos
@@ -37,7 +39,7 @@ residente ni una llamada LLM por tick.
 ## Contratos
 
 - season_plans: horizonte, supuestos, ventanas de chips y guardrails, por revisión.
-- cycle_manifests: fuentes, team state, proyección, plan y research observados.
+- cycle_manifests: fuentes, team state, proyección, plan, memoria estratégica y research observados.
 - research_runs: request/result, estado, hashes, tiempos y provider.
 - research_documents: metadata de cada URL citada.
 - research_signals: claim, entidad, dirección, confianza, TTL, conflicto y validación.
@@ -46,6 +48,11 @@ residente ni una llamada LLM por tick.
 
 Un manifest se reutiliza si su contenido no cambió. Un plan idéntico no crea revisión. Una
 solicitud de investigación referencia el hash exacto del manifest que recibió.
+`memory_summary` se reconstruye determinísticamente en cada `prepare`: conserva hasta cuatro
+revisiones de plan, ocho decisiones y ocho reviews de GWs estrictamente anteriores, y veinte
+lecciones validadas no retiradas. Incluye comparación de revisiones, cobertura, estado de
+promoción y hashes de evidencia; no copia evidencia extensa, chain-of-thought ni historial de
+chat. Su propio SHA-256 permite demostrar exactamente qué memoria recibió Strategist.
 `research_summary.focus` contiene primero los 15 elementos propios y después hasta diez candidatos del
 batch baseline aprobado, resueltos contra el último snapshot público. Cada sujeto lleva notas
 oficiales, p_play/p60 y razón de inclusión cuando están disponibles. La corrida siguiente recibe
@@ -86,7 +93,10 @@ listos.
 `mova strategy status` expone el ciclo vigente y también `service`: última corrida global,
 conteos por estado, documentos, señales aceptadas y conflictos abiertos. Así la apertura de una
 nueva GW no convierte falsamente el health histórico en cero. Prometheus publica además
-`mova_research_runs_total` y `mova_research_last_import_timestamp_seconds`.
+`mova_research_runs_total`, `mova_research_last_import_timestamp_seconds`,
+`mova_strategic_memory_status`, `mova_strategic_memory_items` y
+`mova_strategic_plan_revision`. Un estado `empty` es válido al inicio de temporada; `invalid` o
+`missing` exige volver a sellar el manifest antes de confiar en ese contexto.
 
 ## Aislamiento y auth
 

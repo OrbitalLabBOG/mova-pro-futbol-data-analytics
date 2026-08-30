@@ -149,8 +149,10 @@ idempotency key; nunca modifican `mode`, `action_level`, `kill_switch`, complian
 browser.
 
 El contexto pre-deadline usa `mova strategy`: `plan` activa una revisión explícita del plan
-de temporada; `prepare` sella fuentes, team state, proyección, plan y research en un
-`CycleManifest`; `research enqueue` publica una solicitud sin secretos; `research import`
+de temporada; `prepare` sella fuentes, team state, proyección, plan, memoria estratégica durable
+y research en un `CycleManifest`. La memoria usa únicamente registros de GWs anteriores y
+lecciones validadas, nunca historial de conversación; `research enqueue` publica una solicitud
+sin secretos; `research import`
 valida el brief y lo incorpora. El worker Codex no accede a DB, navegador, repo ni credenciales
 de datos. Contrato y recuperación en
 [contexto estratégico](strategic-research.md).

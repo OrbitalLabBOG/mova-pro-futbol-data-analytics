@@ -1333,7 +1333,7 @@ class OpsDB:
             return None
         payload = dict(row)
         for key in ("source_manifest_json", "analytics_manifest_json",
-                    "research_summary_json"):
+                    "research_summary_json", "memory_summary_json"):
             payload[key.removesuffix("_json")] = json.loads(payload.pop(key))
         return payload
 
@@ -1348,6 +1348,7 @@ class OpsDB:
             "source_manifest": payload["source_manifest"],
             "analytics_manifest": payload["analytics_manifest"],
             "research_summary": payload["research_summary"],
+            "memory_summary": payload.get("memory_summary", {}),
         }
         content_sha = sha256_json(body)
         now = utcnow()
@@ -1371,13 +1372,14 @@ class OpsDB:
                 """INSERT INTO cycle_manifests(
                 manifest_id,cycle_id,revision,as_of_at,deadline_at,phase,team_state_id,
                 plan_id,source_manifest_json,analytics_manifest_json,research_summary_json,
-                artifact_path,content_sha256,created_at)
-                VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                memory_summary_json,artifact_path,content_sha256,created_at)
+                VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                 (manifest_id, body["cycle_id"], revision, body["as_of_at"],
                  body["deadline_at"], body["phase"], body["team_state_id"], body["plan_id"],
                  canonical_json(body["source_manifest"]),
                  canonical_json(body["analytics_manifest"]),
-                 canonical_json(body["research_summary"]), artifact_path, content_sha, now),
+                 canonical_json(body["research_summary"]),
+                 canonical_json(body["memory_summary"]), artifact_path, content_sha, now),
             )
             self.append_audit(
                 "cycle_manifest_sealed", actor=actor, cycle_id=body["cycle_id"],
@@ -1954,6 +1956,13 @@ class OpsDB:
                 "SELECT COUNT(*) FROM research_conflicts WHERE status='unresolved'"
             ).fetchone()[0])
         latest_payload = dict(latest_global) if latest_global else None
+        manifest_payload = dict(manifest) if manifest else None
+        memory_summary = None
+        if manifest_payload:
+            try:
+                memory_summary = json.loads(manifest_payload["memory_summary_json"])
+            except (KeyError, TypeError, json.JSONDecodeError):
+                memory_summary = {"status": "invalid", "quality_status": "invalid"}
         service_status = "missing"
         if latest_payload:
             service_status = (
@@ -1963,7 +1972,8 @@ class OpsDB:
             )
         return {
             "status": "ready" if manifest else "not_prepared", "cycle_id": cycle_id,
-            "manifest": dict(manifest) if manifest else None,
+            "manifest": manifest_payload,
+            "memory_summary": memory_summary,
             "research_runs": [dict(row) for row in runs],
             "signals": [dict(row) for row in signals],
             "unresolved_conflicts": conflicts,
@@ -2872,6 +2882,9 @@ class OpsDB:
         decision_blocking_checks = 0
         deliberation_status = "missing"
         deliberation_blocking_risks = 0
+        strategic_memory_status = "missing"
+        strategic_memory_counts = {"decisions": 0, "reviews": 0, "lessons": 0}
+        strategic_plan_revision = 0
         with self.connect(readonly=True) as con:
             collector_job = con.execute(
                 "SELECT job_id FROM job_steps "
@@ -2897,6 +2910,24 @@ class OpsDB:
                     "SELECT COUNT(*) FROM research_conflicts WHERE cycle_id=? "
                     "AND status='unresolved'", (cycle["cycle_id"],),
                 ).fetchone()[0])
+                latest_memory = con.execute(
+                    "SELECT memory_summary_json FROM cycle_manifests WHERE cycle_id=? "
+                    "ORDER BY revision DESC LIMIT 1", (cycle["cycle_id"],),
+                ).fetchone()
+                if latest_memory:
+                    try:
+                        memory = json.loads(latest_memory["memory_summary_json"])
+                        strategic_memory_status = str(memory.get("status") or "invalid")
+                        strategic_memory_counts = {
+                            "decisions": len(memory.get("decision_records") or []),
+                            "reviews": len(memory.get("gw_reviews") or []),
+                            "lessons": len(memory.get("lessons") or []),
+                        }
+                        strategic_plan_revision = int(
+                            (memory.get("plan_comparison") or {}).get("active_revision") or 0
+                        )
+                    except (TypeError, ValueError, json.JSONDecodeError):
+                        strategic_memory_status = "invalid"
             for row in con.execute(
                 "SELECT status,COUNT(*) n FROM research_runs GROUP BY status"
             ).fetchall():
@@ -2996,6 +3027,18 @@ class OpsDB:
             "# HELP mova_research_last_import_timestamp_seconds Last imported research run.",
             "# TYPE mova_research_last_import_timestamp_seconds gauge",
             f"mova_research_last_import_timestamp_seconds {research_last_import_epoch:.3f}",
+            "# HELP mova_strategic_memory_status Latest sealed memory lifecycle status.",
+            "# TYPE mova_strategic_memory_status gauge",
+            *[f'mova_strategic_memory_status{{status="{name}"}} '
+              f'{1 if strategic_memory_status == name else 0}'
+              for name in ("missing", "empty", "ready", "invalid")],
+            "# HELP mova_strategic_memory_items Included memory items by promoted type.",
+            "# TYPE mova_strategic_memory_items gauge",
+            *[f'mova_strategic_memory_items{{type="{name}"}} {count}'
+              for name, count in sorted(strategic_memory_counts.items())],
+            "# HELP mova_strategic_plan_revision Active season-plan revision in memory.",
+            "# TYPE mova_strategic_plan_revision gauge",
+            f"mova_strategic_plan_revision {strategic_plan_revision}",
             "# HELP mova_decision_envelope_status Latest envelope lifecycle status.",
             "# TYPE mova_decision_envelope_status gauge",
             *[f'mova_decision_envelope_status{{status="{name}"}} '

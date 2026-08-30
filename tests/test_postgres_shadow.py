@@ -43,7 +43,7 @@ def test_shadow_mapping_targets_are_unique_and_schema_qualified() -> None:
 
 
 def test_shadow_migration_is_versioned_and_contains_required_schemas() -> None:
-    assert latest_version() == 15
+    assert latest_version() == 16
     migration = MIGRATIONS / "001_shadow_store.sql"
     sql = migration.read_text(encoding="utf-8").lower()
     for schema in ("mova_meta", "raw", "analytics", "game", "research", "agent", "ops"):
@@ -85,6 +85,14 @@ def test_shadow_migration_is_versioned_and_contains_required_schemas() -> None:
     ).lower()
     assert "agent.model_bundle_releases" in release_sql
     assert "agent.model_bundle_release_events" in release_sql
+    memory_sql = (MIGRATIONS / "016_strategic_memory_snapshots.sql").read_text(
+        encoding="utf-8"
+    ).lower()
+    assert "alter table agent.cycle_manifests" in memory_sql
+    assert "memory_summary jsonb" in memory_sql
+    cycle_mapping = next(item for item in TABLES if item.source_table == "cycle_manifests")
+    assert cycle_mapping.renames["memory_summary_json"] == "memory_summary"
+    assert "memory_summary_json" in cycle_mapping.json_columns
 
 
 def test_publish_sources_uses_consistent_online_backups(tmp_path: Path) -> None:
