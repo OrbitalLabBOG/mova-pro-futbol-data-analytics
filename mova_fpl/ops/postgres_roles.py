@@ -8,7 +8,11 @@ import os
 from datetime import datetime, timezone
 
 from mova_fpl.ops.db import OpsDB, new_id, sha256_json
-from mova_fpl.postgres.store import provision_roles
+from mova_fpl.postgres.store import (
+    provision_roles,
+    publish_status,
+    status as postgres_status,
+)
 
 
 JOB_TYPE = "postgres_role_provision"
@@ -47,6 +51,8 @@ def run_role_provision(config, db: OpsDB, *, actor: str, reason: str,
         separation = provision_roles(config)
         if separation.get("status") != "pass":
             raise RuntimeError("PostgreSQL role separation verification failed")
+        full_status = postgres_status(config)
+        publish_status(config, full_status)
         evidence = {
             "schema": SCHEMA,
             "provision_id": new_id("pgroles"),
@@ -72,6 +78,8 @@ def run_role_provision(config, db: OpsDB, *, actor: str, reason: str,
             "app_user": separation["app"]["current_user"],
             "readonly_user": separation["readonly"]["current_user"],
             "secrets_distinct": separation["secrets_distinct"],
+            "migration_count": len(full_status.get("migrations") or []),
+            "read_parity": (full_status.get("read_parity") or {}).get("status"),
             "artifact_path": str(target),
             "artifact_sha256": _file_sha(target),
             "content_sha256": evidence["content_sha256"],

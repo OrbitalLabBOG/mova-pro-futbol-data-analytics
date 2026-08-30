@@ -83,6 +83,16 @@ def test_role_provision_is_audited_idempotent_and_sealed(tmp_path: Path, monkeyp
     monkeypatch.setattr(
         "mova_fpl.ops.postgres_roles.provision_roles", lambda _config: separation
     )
+    monkeypatch.setattr(
+        "mova_fpl.ops.postgres_roles.postgres_status",
+        lambda _config: {
+            "status": "healthy", "migrations": [{"version": 19}],
+            "read_parity": {"status": "pass"}, "role_separation": separation,
+        },
+    )
+    monkeypatch.setattr(
+        "mova_fpl.ops.postgres_roles.publish_status", lambda *_args: None
+    )
 
     first = run_role_provision(
         config, db, actor="codex", reason="least privilege",
