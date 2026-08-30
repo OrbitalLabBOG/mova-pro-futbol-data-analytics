@@ -210,6 +210,16 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
             source="mova postgres status", next_action="sincronizar y verificar PostgreSQL shadow",
         ),
         _gate(
+            "POSTGRES_ROLE_SEPARATION",
+            "pass" if (postgres.get("role_separation") or {}).get("status") == "pass"
+            else "blocked",
+            "identidades PostgreSQL runtime separadas y verificadas",
+            levels=(),
+            observed=(postgres.get("role_separation") or {}).get("status"),
+            required="pass", source="mova postgres roles",
+            next_action="provisionar y verificar identidades app/readonly separadas",
+        ),
+        _gate(
             "POSTGRES_THREE_GAMEWEEK_CYCLES",
             "pass" if distinct_pg_cycles >= 3 else "pending",
             "tres ciclos de gameweek importados al shadow",
