@@ -17,6 +17,12 @@ from typing import Protocol
 from psycopg import sql
 from psycopg.types.json import Jsonb
 
+from mova_fpl.postgres.read_repository import (
+    PostgresReadRepository,
+    SQLiteReadRepository,
+    compare_exact,
+    summary as parity_summary,
+)
 from mova_fpl.postgres.store import PostgresConfig, connect
 
 
@@ -336,6 +342,39 @@ def _invariants(sqlite_paths: dict[str, Path], pg) -> dict:
             "expected": expected, "observed": observed}
 
 
+def _content_parity(sqlite_paths: dict[str, Path], pg) -> tuple[list[dict], dict]:
+    sqlite_repo = SQLiteReadRepository(sqlite_paths)
+    postgres_repo = PostgresReadRepository(pg)
+    details = []
+    for spec in TABLES:
+        if spec.source_db == "canonical":
+            continue
+        detail = compare_exact(spec, sqlite_repo, postgres_repo)
+        details.append({"source_db": spec.source_db,
+                        "source_table": spec.source_table, **detail})
+    invariants = _invariants(sqlite_paths, pg)
+    source_hash = hashlib.sha256(json.dumps(
+        invariants["expected"], sort_keys=True, separators=(",", ":")
+    ).encode()).hexdigest()
+    target_hash = hashlib.sha256(json.dumps(
+        invariants["observed"], sort_keys=True, separators=(",", ":")
+    ).encode()).hexdigest()
+    aggregate = {
+        "source_db": "canonical",
+        "source_table": "player_gameweek",
+        "content_checked": True,
+        "content_mode": "aggregate_invariants",
+        "content_status": invariants["status"],
+        "source_content_sha256": source_hash,
+        "target_content_sha256": target_hash,
+        "source_rows": invariants["expected"]["canonical"][0],
+        "target_rows": invariants["observed"]["canonical"][0],
+        "invariants": invariants,
+    }
+    details.append(aggregate)
+    return details, parity_summary(details)
+
+
 def import_shadow(config: ImportConfig, *, actor: str, reason: str,
                   idempotency_key: str) -> dict:
     if not actor.strip() or not reason.strip() or not idempotency_key.strip():
@@ -395,8 +434,28 @@ def import_shadow(config: ImportConfig, *, actor: str, reason: str,
                     checks.append({"source": f"{spec.source_db}.{spec.source_table}",
                                    "target": spec.target_table, "source_rows": source_rows,
                                    "target_rows": target_rows, "status": check_status})
-                invariants = _invariants(sqlite_paths, pg)
-                if invariants["status"] != "pass" or any(
+                parity_details, read_parity = _content_parity(sqlite_paths, pg)
+                detail_by_source = {
+                    (item["source_db"], item["source_table"]): item
+                    for item in parity_details
+                }
+                for check in checks:
+                    source_db, source_table = check["source"].split(".", 1)
+                    detail = detail_by_source[(source_db, source_table)]
+                    check["detail"] = detail
+                    if detail["content_status"] != "pass":
+                        check["status"] = "fail"
+                    pg.execute(
+                        "update mova_meta.import_table_checks set status=%s,detail=%s "
+                        "where import_run_id=%s and source_db=%s and source_table=%s",
+                        (check["status"], Jsonb(detail), import_run_id,
+                         source_db, source_table),
+                    )
+                invariants = next(
+                    item["invariants"] for item in parity_details
+                    if item["content_mode"] == "aggregate_invariants"
+                )
+                if read_parity["status"] != "pass" or any(
                     item["status"] != "pass" for item in checks
                 ):
                     raise RuntimeError("verificación del import PostgreSQL falló")
@@ -413,7 +472,7 @@ def import_shadow(config: ImportConfig, *, actor: str, reason: str,
             raise
     return {"status": "completed", "import_run_id": import_run_id,
             "artifact_path": str(artifact_path), "checks": checks,
-            "invariants": invariants}
+            "invariants": invariants, "read_parity": read_parity}
 
 
 def _verify_manifest(artifact_path: Path, expected_sha256: str) -> dict:
@@ -473,7 +532,7 @@ def verify_shadow(config: ImportConfig) -> dict:
         if not latest:
             return {"status": "fail", "reason": "completed_import_missing"}
         stored_checks = pg.execute(
-            "select source_db,source_table,target_table,source_rows,target_rows,status "
+            "select source_db,source_table,target_table,source_rows,target_rows,status,detail "
             "from mova_meta.import_table_checks where import_run_id=%s "
             "order by source_db,source_table",
             (latest["import_run_id"],),
@@ -496,9 +555,42 @@ def verify_shadow(config: ImportConfig) -> dict:
         artifact_check = _verify_manifest(
             Path(latest["artifact_path"]), latest["manifest_sha256"].strip()
         )
+        sqlite_paths = {
+            "ops": Path(latest["artifact_path"]) / config.ops_db.name,
+            "canonical": Path(latest["artifact_path"]) / config.canonical_db.name,
+            "trace": Path(latest["artifact_path"]) / config.trace_db.name,
+        }
+        observed_details, read_parity = _content_parity(sqlite_paths, pg)
+        observed_by_source = {
+            (item["source_db"], item["source_table"]): item
+            for item in observed_details
+        }
+        parity_checks = []
+        for stored in stored_checks:
+            key = (stored["source_db"], stored["source_table"])
+            expected = stored.get("detail") or {}
+            observed = observed_by_source.get(key) or {}
+            passed = (
+                expected.get("content_status") == "pass"
+                and observed.get("content_status") == "pass"
+                and expected.get("source_content_sha256")
+                == observed.get("source_content_sha256")
+                and expected.get("target_content_sha256")
+                == observed.get("target_content_sha256")
+            )
+            parity_checks.append({
+                "source": f"{key[0]}.{key[1]}",
+                "mode": observed.get("content_mode"),
+                "status": "pass" if passed else "fail",
+                "source_content_sha256": observed.get("source_content_sha256"),
+                "target_content_sha256": observed.get("target_content_sha256"),
+            })
     all_targets_checked = len(count_checks) == len(TABLES)
     passed = (all_targets_checked and artifact_check["status"] == "pass"
-              and all(item["status"] == "pass" for item in count_checks))
+              and read_parity["status"] == "pass"
+              and len(parity_checks) == len(TABLES)
+              and all(item["status"] == "pass" for item in count_checks)
+              and all(item["status"] == "pass" for item in parity_checks))
     return {
         "status": "pass" if passed else "fail",
         "import_run_id": latest["import_run_id"],
@@ -507,4 +599,5 @@ def verify_shadow(config: ImportConfig) -> dict:
         "all_targets_checked": all_targets_checked,
         "artifact": artifact_check,
         "tables": count_checks,
+        "read_parity": {**read_parity, "checks": parity_checks},
     }

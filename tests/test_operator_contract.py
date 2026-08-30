@@ -105,6 +105,11 @@ def test_status_contract_is_versioned_and_sanitized(tmp_path):
     assert payload["data"]["team_state"]["squad_size"] == 15
     assert payload["data"]["team_state"]["free_transfers"] == 1
     assert payload["runtime"]["controls"]["browser_writes"] is False
+    assert payload["storage"] == {
+        "operational_writer": "sqlite",
+        "postgres_role": "unavailable",
+        "postgres": {"status": "unavailable", "read_parity": {"status": "missing"}},
+    }
     assert "squad_json" not in json.dumps(payload)
     assert "MOVA FPL · HEALTHY" in render_status(payload)
 

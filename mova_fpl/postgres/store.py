@@ -13,6 +13,8 @@ from typing import Protocol
 import psycopg
 from psycopg.rows import dict_row
 
+from mova_fpl.postgres.read_repository import summary as parity_summary
+
 MIGRATIONS = Path(__file__).with_name("migrations")
 
 
@@ -127,6 +129,18 @@ def status(config: PostgresConfig) -> dict:
                 "order by source_db,source_table",
                 (latest["import_run_id"],),
             ).fetchall()
+    content_checks = [row.get("detail") or {} for row in table_checks]
+    checked = [item for item in content_checks if item.get("content_checked")]
+    read_parity = parity_summary(checked) if checked else {
+        "schema": "mova-postgres-read-parity-v1", "status": "missing",
+        "checked_tables": 0, "exact_tables": 0, "aggregate_tables": 0,
+        "failed_tables": 0, "content_sha256": None,
+    }
+    if table_checks and len(checked) != len(table_checks):
+        read_parity = {
+            **read_parity, "status": "fail",
+            "failed_tables": read_parity["failed_tables"] + len(table_checks) - len(checked),
+        }
     return {
         "status": "healthy" if len(schemas) == 7 else "degraded",
         "server_version": server["version"],
@@ -135,6 +149,31 @@ def status(config: PostgresConfig) -> dict:
         "migrations": migrations,
         "latest_import": latest,
         "table_checks": table_checks,
+        "read_parity": read_parity,
         "writer": "sqlite",
         "postgres_role": "shadow",
     }
+
+
+def prometheus(state: dict) -> str:
+    parity = state.get("read_parity") or {}
+    parity_status = str(parity.get("status") or "missing")
+    return "\n".join([
+        "# HELP mova_postgres_shadow_up PostgreSQL shadow availability.",
+        "# TYPE mova_postgres_shadow_up gauge",
+        f"mova_postgres_shadow_up {1 if state.get('status') == 'healthy' else 0}",
+        "# HELP mova_postgres_read_parity_status Latest imported dual-read parity status.",
+        "# TYPE mova_postgres_read_parity_status gauge",
+        *[f'mova_postgres_read_parity_status{{status="{name}"}} '
+          f'{1 if parity_status == name else 0}'
+          for name in ("missing", "pass", "fail")],
+        "# HELP mova_postgres_read_parity_tables Tables checked by parity mode.",
+        "# TYPE mova_postgres_read_parity_tables gauge",
+        f'mova_postgres_read_parity_tables{{mode="exact"}} '
+        f'{int(parity.get("exact_tables") or 0)}',
+        f'mova_postgres_read_parity_tables{{mode="aggregate"}} '
+        f'{int(parity.get("aggregate_tables") or 0)}',
+        f'mova_postgres_read_parity_tables{{mode="failed"}} '
+        f'{int(parity.get("failed_tables") or 0)}',
+        "",
+    ])

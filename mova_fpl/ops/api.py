@@ -27,6 +27,9 @@ def _dashboard(status: dict) -> bytes:
     controls = (status.get("runtime") or {}).get("controls") or {}
     team_state = (status.get("data") or {}).get("team_state") or {}
     scorecard = ((status.get("analytics") or {}).get("latest_scorecards") or [{}])[0]
+    parity = (((status.get("storage") or {}).get("postgres") or {}).get(
+        "read_parity"
+    ) or {})
     control_rows = "".join(
         f"<tr><td>{html.escape(key)}</td><td><code>{html.escape(json.dumps(value))}</code></td></tr>"
         for key, value in controls.items()
@@ -51,6 +54,7 @@ a {{ color:#72a7ff }}
 <div class="card"><div class="muted">Alertas pendientes</div><div class="value">{operations.get('outbox_pending',0)}</div><div>SQLite {html.escape(str((status.get('runtime') or {}).get('sqlite_version','')))}</div></div>
 <div class="card"><div class="muted">Estado privado</div><div class="value">{html.escape(str(team_state.get('quality','sin datos')))}</div><div>{html.escape(str(team_state.get('observed_at','')))} · FT {html.escape(str(team_state.get('free_transfers','—')))}</div></div>
 <div class="card"><div class="muted">Drift del modelo</div><div class="value">{html.escape(str(scorecard.get('drift_status','sin scorecard')))}</div><div>GW {html.escape(str(scorecard.get('gw','—')))} · {html.escape(str(scorecard.get('variant','')))}</div></div>
+<div class="card"><div class="muted">Dual-read PostgreSQL</div><div class="value">{html.escape(str(parity.get('status','sin paridad')))}</div><div>{html.escape(str(parity.get('checked_tables',0)))} tablas verificadas</div></div>
 </div>
 <h2>Controles efectivos</h2><table><thead><tr><th>Control</th><th>Valor</th></tr></thead><tbody>{control_rows}</tbody></table>
 <p><a href="/api/v1/status">status JSON</a> · <a href="/api/v1/analytics">analytics</a> · <a href="/api/v1/strategy">strategy</a> · <a href="/api/v1/improvement">learning</a> · <a href="/api/v1/costs">costos</a> · <a href="/metrics">métricas</a> · <a href="/api/v1/audit">auditoría</a> · <a href="/api/v1/jobs">jobs</a> · <a href="/api/v1/steps">steps</a></p>
@@ -94,6 +98,17 @@ def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
                         runtime.agent_budget_policy(), season=runtime.season
                     )
                     metrics += db.model_release_prometheus()
+                    try:
+                        from mova_fpl.postgres.store import (
+                            prometheus as postgres_prometheus,
+                            status as postgres_status,
+                        )
+                        if runtime.postgres_credential_file.is_file():
+                            metrics += postgres_prometheus(postgres_status(runtime))
+                        else:
+                            metrics += postgres_prometheus({"status": "unavailable"})
+                    except Exception:
+                        metrics += "mova_postgres_shadow_up 0\n"
                     try:
                         from mova_fpl.ops.collector.store import (
                             CollectorStore, prometheus, read_status,
