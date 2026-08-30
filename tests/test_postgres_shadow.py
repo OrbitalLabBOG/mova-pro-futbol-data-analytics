@@ -16,6 +16,7 @@ from mova_fpl.postgres.importer import (
     _json_value,
     _publish_sources,
     shadow_sync_identity,
+    sync_shadow,
 )
 from mova_fpl.postgres.read_repository import (
     PostgresReadRepository,
@@ -289,3 +290,32 @@ def test_postgres_sync_timer_is_persistent_and_locked() -> None:
     assert "RandomizedDelaySec=300s" in timer
     assert "/run/lock/mova-fpl-worker.lock" in service
     assert "/usr/local/bin/mova postgres sync" in service
+
+
+def test_scheduled_sync_output_is_compact(monkeypatch, tmp_path: Path) -> None:
+    ops = tmp_path / "ops.db"
+    with sqlite3.connect(ops) as con:
+        con.execute(
+            "create table gameweek_cycles(cycle_id text,season text,gw integer,"
+            "deadline_at text)"
+        )
+        con.execute(
+            "insert into gameweek_cycles values('2026-27-gw03','2026-27',3,"
+            "'2026-09-04T17:30:00Z')"
+        )
+    config = RuntimeConfig(ops_db=ops)
+    monkeypatch.setattr(
+        "mova_fpl.postgres.importer.import_shadow",
+        lambda *_args, **_kwargs: {
+            "status": "completed", "import_run_id": "pgimport_test",
+            "read_parity": {"status": "pass", "content_sha256": "a" * 64},
+            "checks": [{"large": "payload"}],
+        },
+    )
+
+    result = sync_shadow(config)
+
+    assert result["status"] == "completed"
+    assert result["import_run_id"] == "pgimport_test"
+    assert result["read_parity"]["status"] == "pass"
+    assert "checks" not in result
