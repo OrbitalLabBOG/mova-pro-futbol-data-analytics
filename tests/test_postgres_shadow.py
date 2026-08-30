@@ -3,14 +3,21 @@ from __future__ import annotations
 import hashlib
 import json
 import sqlite3
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
 
 from mova_fpl.ops.cli import parser
 from mova_fpl.ops.config import RuntimeConfig
-from mova_fpl.postgres.importer import TABLES, _json_value, _publish_sources
-from mova_fpl.postgres.store import MIGRATIONS, latest_version
+from mova_fpl.postgres.importer import TABLES, TableSpec, _json_value, _publish_sources
+from mova_fpl.postgres.read_repository import (
+    PostgresReadRepository,
+    SQLiteReadRepository,
+    compare_exact,
+    summary,
+)
+from mova_fpl.postgres.store import MIGRATIONS, latest_version, prometheus
 
 
 def _sqlite(path: Path, statement: str = "create table sample(id integer primary key)") -> None:
@@ -128,3 +135,80 @@ def test_json_conversion_preserves_objects_and_wraps_invalid_text() -> None:
     assert _json_value(None) is None
     assert _json_value('{"a": 1}').obj == {"a": 1}
     assert _json_value("plain text").obj == "plain text"
+
+
+def test_dual_read_repository_normalizes_types_and_detects_value_drift(
+    tmp_path: Path,
+) -> None:
+    ops = tmp_path / "ops.db"
+    with sqlite3.connect(ops) as con:
+        con.execute(
+            "create table sample(id integer primary key,observed_at text,payload_json text,"
+            "enabled integer)"
+        )
+        con.execute(
+            "insert into sample values(1,'2026-08-30T19:00:00Z','{\"b\":2,\"a\":1}',1)"
+        )
+    mapping = TableSpec(
+        "ops", "sample", "ops.sample",
+        renames={"payload_json": "payload"},
+        json_columns=frozenset({"payload_json"}),
+        bool_columns=frozenset({"enabled"}),
+    )
+
+    class Result:
+        def __init__(self, rows):
+            self.rows = rows
+
+        def fetchall(self):
+            return self.rows
+
+        def fetchone(self):
+            return self.rows[0] if self.rows else None
+
+    class FakePG:
+        def __init__(self, rows):
+            self.rows = rows
+
+        def execute(self, statement, _params=None):
+            if isinstance(statement, str):
+                return Result([{"present": 1}])
+            return Result(self.rows)
+
+    equivalent = [{
+        "enabled": True,
+        "id": 1,
+        "observed_at": datetime(2026, 8, 30, 19, tzinfo=timezone.utc),
+        "payload": {"a": 1, "b": 2},
+    }]
+    sqlite_repo = SQLiteReadRepository({"ops": ops})
+    passed = compare_exact(
+        mapping, sqlite_repo, PostgresReadRepository(FakePG(equivalent))
+    )
+
+    assert passed["content_status"] == "pass"
+    assert passed["source_content_sha256"] == passed["target_content_sha256"]
+    report = summary([passed])
+    assert report["status"] == "pass"
+    assert report["exact_tables"] == 1
+
+    drifted = [dict(equivalent[0], enabled=False)]
+    failed = compare_exact(
+        mapping, sqlite_repo, PostgresReadRepository(FakePG(drifted))
+    )
+    assert failed["content_status"] == "fail"
+    assert summary([failed])["failed_tables"] == 1
+
+
+def test_postgres_parity_metrics_are_explicit() -> None:
+    metrics = prometheus({
+        "status": "healthy",
+        "read_parity": {
+            "status": "pass", "exact_tables": 48,
+            "aggregate_tables": 1, "failed_tables": 0,
+        },
+    })
+    assert "mova_postgres_shadow_up 1" in metrics
+    assert 'mova_postgres_read_parity_status{status="pass"} 1' in metrics
+    assert 'mova_postgres_read_parity_tables{mode="exact"} 48' in metrics
+    assert 'mova_postgres_read_parity_tables{mode="aggregate"} 1' in metrics

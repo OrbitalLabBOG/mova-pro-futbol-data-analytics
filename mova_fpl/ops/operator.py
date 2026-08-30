@@ -289,6 +289,33 @@ def build_status(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
         analytics_service = {"status": "unavailable", "latest_scorecards": [],
                              "latest_projection_batches": [], "error": type(exc).__name__}
 
+    storage = {
+        "operational_writer": "sqlite",
+        "postgres_role": "unavailable",
+        "postgres": {"status": "unavailable", "read_parity": {"status": "missing"}},
+    }
+    if config.postgres_credential_file.is_file():
+        try:
+            from mova_fpl.postgres.store import status as postgres_status
+
+            pg = postgres_status(config)
+            latest_import = pg.get("latest_import") or {}
+            storage = {
+                "operational_writer": pg.get("writer") or "sqlite",
+                "postgres_role": pg.get("postgres_role") or "shadow",
+                "postgres": {
+                    "status": pg.get("status"),
+                    "server_version": pg.get("server_version"),
+                    "migration_count": len(pg.get("migrations") or []),
+                    "latest_import": {key: latest_import.get(key) for key in (
+                        "import_run_id", "status", "git_sha", "started_at", "finished_at"
+                    )},
+                    "read_parity": pg.get("read_parity"),
+                },
+            }
+        except Exception as exc:  # noqa: BLE001 - status SQLite sigue disponible
+            storage["postgres"]["error"] = type(exc).__name__
+
     severity = "healthy"
     reasons: list[str] = []
     if any(item["severity"] in {"P0", "P1"} for item in state["incidents"]):
@@ -312,6 +339,10 @@ def build_status(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
             reasons.append("data_service_degraded")
         if analytics_service.get("status") == "alert":
             reasons.append("model_drift_alert")
+        if storage["postgres_role"] == "shadow" and (
+            storage["postgres"].get("read_parity") or {}
+        ).get("status") != "pass":
+            reasons.append("postgres_shadow_parity_not_passed")
         if reasons:
             severity = "degraded"
 
@@ -376,6 +407,7 @@ def build_status(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
             "active_bundle": (state["controls"].get("active_model_bundle") or {}).get("value"),
         },
         "analytics": analytics_service,
+        "storage": storage,
         "research": state["research"],
         "strategy": state["strategic"],
         "decision": ({key: state["decision"].get(key) for key in (
@@ -527,7 +559,9 @@ def build_doctor(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
             pg_status = postgres_status(config)
             applied = [int(item["version"]) for item in pg_status["migrations"]]
             current_schema = bool(applied) and applied[-1] == latest_version()
-            pg_ok = pg_status["status"] == "healthy" and current_schema
+            parity = pg_status.get("read_parity") or {}
+            pg_ok = (pg_status["status"] == "healthy" and current_schema
+                     and parity.get("status") == "pass")
             checks.append(_check(
                 "postgres_shadow", "PASS" if pg_ok else "WARN",
                 "PostgreSQL shadow is reachable and current" if pg_ok
@@ -540,6 +574,7 @@ def build_doctor(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
                     "latest_import_status": (pg_status.get("latest_import") or {}).get("status"),
                     "writer": pg_status.get("writer"),
                     "role": pg_status.get("postgres_role"),
+                    "read_parity": parity,
                 },
             ))
         except Exception as exc:  # noqa: BLE001
