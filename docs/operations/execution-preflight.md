@@ -46,6 +46,8 @@ curl -s http://127.0.0.1:8787/metrics | grep '^mova_execution_'
 
 `preflight` persiste evidencia y exige actor, razón y clave. Repetir la clave devuelve el mismo
 plan. Una nueva observación usa una clave nueva y supersede el plan anterior, sin editar historia.
+El import PostgreSQL shadow copia planes y checks como evidencia consultable; SQLite continúa
+siendo el writer hasta el cutover general de HV1-02.
 
 ## Riesgo y autoridad
 
