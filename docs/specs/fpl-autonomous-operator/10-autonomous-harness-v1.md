@@ -570,6 +570,13 @@ una sola GW queda explícitamente como evidencia insuficiente. HV1-08 permanece 
 workflow que aplica un cambio aprobado mediante release, shadow y rollback verificable.
 Evidencia: [HV1-08 mejora continua](21-hv1-08-improvement-rollout.md).
 
+El hardening HV1-08B separa consumo real, reserva activa y cargo estimado terminal. `committed`
+continúa sumando los tres, pero ya no presenta rechazos como si fueran jobs en vuelo. El uso real
+por encima del techo de job queda visible en el resultado de import, audit warning, CLI/API y dos
+métricas; las reservas huérfanas también se detectan y siguen comprometidas. No se libera ni
+reclasifica consumo histórico para mejorar artificialmente el saldo. Evidencia:
+[HV1-08B budget observability](30-hv1-08b-budget-observability-rollout.md).
+
 ### Corte release controlado de modelos — 30 de agosto de 2026
 
 SQLite migration `013` y PostgreSQL migration `015` añaden releases de bundles y eventos

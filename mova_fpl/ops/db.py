@@ -1477,15 +1477,24 @@ class OpsDB:
 
     def _settle_agent_budget(self, con: sqlite3.Connection, *, subject_id: str,
                              usage: dict, cycle_id: str, actor: str, now: str,
-                             job_id: str | None = None) -> None:
+                             job_id: str | None = None) -> dict | None:
         reservation = con.execute(
             "SELECT * FROM agent_budget_reservations WHERE subject_id=?", (subject_id,)
         ).fetchone()
-        if not reservation or reservation["status"] == "settled":
-            return
-        actual = int(usage.get("input_tokens") or 0) + int(usage.get("output_tokens") or 0)
+        if not reservation:
+            return None
+        actual = (int(reservation["actual_tokens"])
+                  if reservation["status"] == "settled"
+                  else int(usage.get("input_tokens") or 0)
+                  + int(usage.get("output_tokens") or 0))
         policy = json.loads(reservation["policy_json"])
         overrun = actual > int(policy["job_tokens"])
+        result = {"status": "settled", "reservation_id": reservation["reservation_id"],
+                  "reserved_tokens": int(reservation["reserved_tokens"]),
+                  "actual_tokens": actual, "job_limit": int(policy["job_tokens"]),
+                  "overrun": overrun}
+        if reservation["status"] == "settled":
+            return {**result, "reused": True}
         con.execute(
             "UPDATE agent_budget_reservations SET status='settled',actual_tokens=?,"
             "settled_at=? WHERE reservation_id=?",
@@ -1495,11 +1504,9 @@ class OpsDB:
             "agent_budget_settled", actor=actor,
             severity="warning" if overrun else "info", cycle_id=cycle_id, job_id=job_id,
             subject_type=reservation["subject_type"], subject_id=subject_id,
-            payload={"reservation_id": reservation["reservation_id"],
-                     "reserved_tokens": reservation["reserved_tokens"],
-                     "actual_tokens": actual, "job_limit": policy["job_tokens"],
-                     "overrun": overrun}, con=con,
+            payload=result, con=con,
         )
+        return {**result, "reused": False}
 
     def _charge_agent_budget_estimate(self, con: sqlite3.Connection, *,
                                       subject_id: str, cycle_id: str,
@@ -1709,7 +1716,7 @@ class OpsDB:
                  run["cycle_id"], "research", research_run_id, "news_research",
                  usage.get("duration_ms"), usage.get("search_requests")),
             )
-            self._settle_agent_budget(
+            budget_settlement = self._settle_agent_budget(
                 con, subject_id=research_run_id, usage=usage, cycle_id=run["cycle_id"],
                 job_id=run["job_id"], actor="mova-research-validator", now=now,
             )
@@ -1729,6 +1736,7 @@ class OpsDB:
                 "documents": len(payload["documents"]), "signals": len(payload["signals"]),
                 "accepted": accepted, "conflicts": len(payload["conflicts"]),
                 "coverage": coverage,
+                "budget_settlement": budget_settlement,
                 "reused": False}
 
     def deliberation_source(self) -> dict | None:
@@ -1893,7 +1901,7 @@ class OpsDB:
                  "strategy_critic", usage.get("duration_ms"),
                  usage.get("search_requests")),
             )
-            self._settle_agent_budget(
+            budget_settlement = self._settle_agent_budget(
                 con, subject_id=deliberation_id, usage=usage,
                 cycle_id=run["cycle_id"], job_id=run["job_id"],
                 actor="mova-deliberation-validator", now=now,
@@ -1917,6 +1925,7 @@ class OpsDB:
                 "preferred_candidate_key": strategist["preferred_candidate_key"],
                 "critic_verdict": critic["verdict"], "risks": len(critic["risks"]),
                 "intervention_id": intervention_id, "intervention_applied": False,
+                "budget_settlement": budget_settlement,
                 "reused": False}
 
     def deliberation_status(self, cycle_id: str | None = None) -> dict:
@@ -2289,7 +2298,12 @@ class OpsDB:
             gw_reserved = con.execute(
                 "SELECT COUNT(*) uses,COALESCE(SUM(reserved_tokens),0) tokens "
                 "FROM agent_budget_reservations WHERE cycle_id=? "
-                "AND status IN ('reserved','charged')",
+                "AND status='reserved'",
+                (cycle_id,),
+            ).fetchone() if cycle_id else {"uses": 0, "tokens": 0}
+            gw_charged = con.execute(
+                "SELECT COUNT(*) uses,COALESCE(SUM(reserved_tokens),0) tokens "
+                "FROM agent_budget_reservations WHERE cycle_id=? AND status='charged'",
                 (cycle_id,),
             ).fetchone() if cycle_id else {"uses": 0, "tokens": 0}
             month_cost = con.execute(
@@ -2301,7 +2315,50 @@ class OpsDB:
             month_reserved = con.execute(
                 "SELECT COUNT(*) uses,COALESCE(SUM(reserved_tokens),0) tokens "
                 "FROM agent_budget_reservations WHERE substr(created_at,1,7)=? "
-                "AND status IN ('reserved','charged')", (observed_month,),
+                "AND status='reserved'", (observed_month,),
+            ).fetchone()
+            month_charged = con.execute(
+                "SELECT COUNT(*) uses,COALESCE(SUM(reserved_tokens),0) tokens "
+                "FROM agent_budget_reservations WHERE substr(created_at,1,7)=? "
+                "AND status='charged'", (observed_month,),
+            ).fetchone()
+            gw_overruns = con.execute(
+                """SELECT COUNT(*) uses,
+                COALESCE(SUM(actual_tokens - CAST(
+                  json_extract(policy_json,'$.job_tokens') AS INTEGER)),0) excess_tokens,
+                COALESCE(MAX(actual_tokens),0) max_actual_tokens
+                FROM agent_budget_reservations WHERE cycle_id=? AND status='settled'
+                AND actual_tokens > CAST(json_extract(policy_json,'$.job_tokens') AS INTEGER)""",
+                (cycle_id,),
+            ).fetchone() if cycle_id else {"uses": 0, "excess_tokens": 0,
+                                           "max_actual_tokens": 0}
+            month_overruns = con.execute(
+                """SELECT COUNT(*) uses,
+                COALESCE(SUM(actual_tokens - CAST(
+                  json_extract(policy_json,'$.job_tokens') AS INTEGER)),0) excess_tokens,
+                COALESCE(MAX(actual_tokens),0) max_actual_tokens
+                FROM agent_budget_reservations
+                WHERE substr(created_at,1,7)=? AND status='settled'
+                AND actual_tokens > CAST(json_extract(policy_json,'$.job_tokens') AS INTEGER)""",
+                (observed_month,),
+            ).fetchone()
+            orphan_predicate = """r.status='reserved' AND (
+              (r.subject_type='research' AND NOT EXISTS (
+                SELECT 1 FROM research_runs x WHERE x.research_run_id=r.subject_id
+                AND x.status='queued'))
+              OR (r.subject_type='deliberation' AND NOT EXISTS (
+                SELECT 1 FROM decision_deliberations x WHERE x.deliberation_id=r.subject_id
+                AND x.status='queued'))
+            )"""
+            gw_orphans = con.execute(
+                f"""SELECT COUNT(*) uses,COALESCE(SUM(r.reserved_tokens),0) tokens
+                FROM agent_budget_reservations r WHERE r.cycle_id=?
+                AND {orphan_predicate}""", (cycle_id,),
+            ).fetchone() if cycle_id else {"uses": 0, "tokens": 0}
+            month_orphans = con.execute(
+                f"""SELECT COUNT(*) uses,COALESCE(SUM(r.reserved_tokens),0) tokens
+                FROM agent_budget_reservations r WHERE substr(r.created_at,1,7)=?
+                AND {orphan_predicate}""", (observed_month,),
             ).fetchone()
             by_category = con.execute(
                 """SELECT COALESCE(category,'unknown') category,COUNT(*) uses,
@@ -2315,29 +2372,54 @@ class OpsDB:
                 "SELECT * FROM agent_budget_reservations ORDER BY created_at DESC LIMIT 20"
             ).fetchall()
 
-        def scope(consumed, reserved, *, token_limit: int, use_limit: int) -> dict:
-            tokens = int(consumed["tokens"]) + int(reserved["tokens"])
-            uses = int(consumed["uses"]) + int(reserved["uses"])
+        def scope(consumed, reserved, charged, *, token_limit: int,
+                  use_limit: int) -> dict:
+            tokens = (int(consumed["tokens"]) + int(reserved["tokens"])
+                      + int(charged["tokens"]))
+            uses = (int(consumed["uses"]) + int(reserved["uses"])
+                    + int(charged["uses"]))
             return {
                 "consumed_tokens": int(consumed["tokens"]),
                 "reserved_tokens": int(reserved["tokens"]), "committed_tokens": tokens,
+                "charged_estimate_tokens": int(charged["tokens"]),
                 "token_limit": token_limit, "remaining_tokens": max(0, token_limit - tokens),
                 "consumed_uses": int(consumed["uses"]),
                 "reserved_uses": int(reserved["uses"]), "committed_uses": uses,
+                "charged_estimate_uses": int(charged["uses"]),
                 "use_limit": use_limit, "remaining_uses": max(0, use_limit - uses),
                 "status": "within_budget" if tokens <= token_limit and uses <= use_limit
                 else "exceeded",
                 "estimated_cost_usd": consumed["estimated_cost_usd"],
             }
 
+        if int(gw_orphans["uses"]) or int(month_orphans["uses"]):
+            report_status = "orphaned_reservation_observed"
+        elif int(gw_overruns["uses"]) or int(month_overruns["uses"]):
+            report_status = "job_overrun_observed"
+        else:
+            report_status = "within_budget"
         return {
             "schema": "mova-agent-cost-report-v1", "observed_at": utcnow(),
+            "status": report_status,
             "policy": dict(policy), "cycle": dict(cycle) if cycle else None,
-            "gameweek": scope(gw_cost, gw_reserved, token_limit=policy["gw_tokens"],
-                              use_limit=policy["gw_uses"]),
+            "gameweek": scope(gw_cost, gw_reserved, gw_charged,
+                              token_limit=policy["gw_tokens"], use_limit=policy["gw_uses"]),
             "month": {"month": observed_month, **scope(
-                month_cost, month_reserved, token_limit=policy["month_tokens"],
+                month_cost, month_reserved, month_charged,
+                token_limit=policy["month_tokens"],
                 use_limit=policy["month_uses"])},
+            "job_overruns": {
+                "status": ("observed" if int(gw_overruns["uses"])
+                           or int(month_overruns["uses"]) else "none"),
+                "gameweek": dict(gw_overruns),
+                "month": {"month": observed_month, **dict(month_overruns)},
+            },
+            "orphaned_reservations": {
+                "status": ("observed" if int(gw_orphans["uses"])
+                           or int(month_orphans["uses"]) else "none"),
+                "gameweek": dict(gw_orphans),
+                "month": {"month": observed_month, **dict(month_orphans)},
+            },
             "by_category": [dict(row) for row in by_category],
             "latest_reservations": [dict(row) for row in latest],
         }
@@ -2351,10 +2433,16 @@ class OpsDB:
             "# TYPE mova_agent_budget_uses gauge",
             "# HELP mova_agent_budget_within_limit Whether the scope is within budget.",
             "# TYPE mova_agent_budget_within_limit gauge",
+            "# HELP mova_agent_budget_job_overruns Jobs whose actual tokens exceeded policy.",
+            "# TYPE mova_agent_budget_job_overruns gauge",
+            "# HELP mova_agent_budget_job_overrun_tokens Tokens above per-job policy.",
+            "# TYPE mova_agent_budget_job_overrun_tokens gauge",
+            "# HELP mova_agent_budget_orphaned_reservations Reserved budgets without queued jobs.",
+            "# TYPE mova_agent_budget_orphaned_reservations gauge",
         ]
         for scope_name, scope in (("gameweek", report["gameweek"]),
                                   ("month", report["month"])):
-            for kind in ("consumed", "reserved", "remaining"):
+            for kind in ("consumed", "reserved", "charged_estimate", "remaining"):
                 lines.append(
                     f'mova_agent_budget_tokens{{scope="{scope_name}",kind="{kind}"}} '
                     f'{scope[f"{kind}_tokens"]}'
@@ -2374,6 +2462,19 @@ class OpsDB:
             lines.append(
                 f'mova_agent_budget_within_limit{{scope="{scope_name}"}} '
                 f'{1 if scope["status"] == "within_budget" else 0}'
+            )
+            overrun = report["job_overruns"][scope_name]
+            lines.append(
+                f'mova_agent_budget_job_overruns{{scope="{scope_name}"}} '
+                f'{overrun["uses"]}'
+            )
+            lines.append(
+                f'mova_agent_budget_job_overrun_tokens{{scope="{scope_name}"}} '
+                f'{overrun["excess_tokens"]}'
+            )
+            lines.append(
+                f'mova_agent_budget_orphaned_reservations{{scope="{scope_name}"}} '
+                f'{report["orphaned_reservations"][scope_name]["uses"]}'
             )
         return "\n".join(lines) + "\n"
 
