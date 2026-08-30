@@ -64,6 +64,9 @@ PM de construcción del proyecto.
 | [28-hv1-07e-r3-contract-rollout.md](28-hv1-07e-r3-contract-rollout.md) | Contrato R3 tipado, probe vivo read-only y driver de validación sin entrypoint productivo |
 | [29-hv1-05c-agent-recovery-rollout.md](29-hv1-05c-agent-recovery-rollout.md) | Recuperación viva de Researcher v2 y validación Strategist/Critic sobre GW3 |
 | [30-hv1-08b-budget-observability-rollout.md](30-hv1-08b-budget-observability-rollout.md) | Semántica de costos agentic, overruns y reservas huérfanas observables |
+| [31-hv1-07f-browser-rehearsal-ledger-rollout.md](31-hv1-07f-browser-rehearsal-ledger-rollout.md) | Ledger durable anti-inflación y primer rehearsal browser vivo |
+| [32-hv1-02b-read-cutover-drill-rollout.md](32-hv1-02b-read-cutover-drill-rollout.md) | Cutover/rollback reversible de lectura PostgreSQL |
+| [33-hv1-02c-postgres-role-separation-rollout.md](33-hv1-02c-postgres-role-separation-rollout.md) | Identidades runtime least-privilege y drill con readonly real |
 | [contracts/](contracts/) | JSON Schemas máquina para request, result y signal |
 | [decisions/](decisions/) | decisiones arquitectónicas propuestas |
 | [workpacks/](workpacks/) | unidades de implementación y criterios todavía pendientes |

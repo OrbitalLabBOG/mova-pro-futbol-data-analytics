@@ -376,7 +376,7 @@ no borra evidencia previa y nunca amplía autonomía.
 | --- | --- | ---: | --- |
 | HV1-00 ✅ | reset del repo, archivo de legado, packaging y CI hermético | completado | baseline actual |
 | HV1-01 ✅ | contrato `mova`, status/doctor y skill del operador | completado | HV1-00 |
-| HV1-02 🟡 | shadow + dual-read + sync + cutover/rollback de lectura; faltan 3 ciclos, off-host y aprobación de writer | 4–8 h + ciclos | HV1-01 |
+| HV1-02 🟡 | shadow + dual-read + roles + cutover/rollback de lectura; faltan 3 ciclos, off-host y aprobación de writer | ciclos + Q-04 | HV1-01 |
 | HV1-03a ✅ | collector/data quality autónomo | completado | HV1-02 |
 | HV1-03b ✅ | facade uniforme train/predict/explain/evaluate, scorecard, drift y candidato fail-closed | completado | HV1-03a |
 | HV1-04 ✅ | team state, season plan y memoria estratégica longitudinal sellada | completado | HV1-02 |
@@ -630,6 +630,7 @@ app carece de `DELETE/TEMP` y readonly carece de toda escritura, tiene transacci
 defecto y ejecuta el drill. La provisión rota archivos secretos distintos, prueba conexiones
 reales y persiste evidencia idempotente sin material sensible. El gate sólo se considera cubierto
 después de verificar la matriz en el VPS.
+Evidencia: [HV1-02C identidades PostgreSQL runtime separadas](33-hv1-02c-postgres-role-separation-rollout.md).
 
 ### Corte autonomy readiness consolidado — 30 de agosto de 2026
 

@@ -160,12 +160,13 @@ base activa sin un cambio aprobado.
 ## Gates pendientes para cutover
 
 1. acumular imports y comparaciones independientes durante al menos tres ciclos;
-2. credenciales LOGIN separadas para app y lectura;
-3. backup off-host cifrado;
+2. ~~identidades LOGIN separadas para app y lectura~~ — cubierto y usado por el drill;
+3. backup off-host cifrado, sujeto a aprobación Q-04 del destino;
 4. aprobación explícita del cambio de writer;
-5. ~~ensayo de cutover y rollback de lectura de la revisión candidata~~ — cubierto por el drill;
-   el writer real sólo se cambia después de los cuatro gates anteriores.
+5. ~~ensayo de cutover y rollback de lectura de la revisión candidata~~ — cubierto por el drill.
 
-El repository dual-read, la paridad, el restore drill local y el cutover/rollback de lectura ya
-están cubiertos. No
-se consideran evidencia suficiente para cambiar el writer antes de los gates restantes.
+El writer real sólo se cambia después de los tres gates todavía abiertos.
+
+El repository dual-read, la paridad, roles runtime, restore drill local y cutover/rollback de
+lectura ya están cubiertos. No se consideran evidencia suficiente para cambiar el writer antes de
+los gates restantes.
