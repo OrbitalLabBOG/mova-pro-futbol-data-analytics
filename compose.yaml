@@ -174,7 +174,7 @@ services:
       CODEX_HOME: /home/research/.codex
       MOVA_RESEARCH_ROOT: /research
       MOVA_RESEARCH_MODEL: ${MOVA_RESEARCH_MODEL:-gpt-5.4}
-      MOVA_RESEARCH_TIMEOUT_MS: ${MOVA_RESEARCH_TIMEOUT_MS:-300000}
+      MOVA_RESEARCH_TIMEOUT_MS: ${MOVA_RESEARCH_TIMEOUT_MS:-480000}
     security_opt:
       - no-new-privileges:true
     cap_drop:

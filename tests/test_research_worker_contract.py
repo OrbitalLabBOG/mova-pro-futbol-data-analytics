@@ -50,6 +50,7 @@ def test_compose_no_monta_db_browser_repo_ni_secretos_en_research():
     assert 'group_add:' in section and '- "10001"' in section
     assert section.count("/research") >= 1
     assert "/home/research/.codex" in section
+    assert "MOVA_RESEARCH_TIMEOUT_MS:-480000" in section
     for forbidden in (
         "postgres_password", "odds_api_key", "browser-profile", "/var/lib/mova-fpl/db",
         "runtime.env", "network_mode: host", "/var/run/docker.sock",
