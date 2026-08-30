@@ -30,6 +30,8 @@ def test_worker_deshabilita_herramientas_que_podrian_leer_auth_o_actuar():
     assert "únicamente URLs incluidas en documents" in worker
     assert "manifest.research_summary.focus" in worker
     assert "previous_active_signals" in worker
+    assert "duration_ms: Date.now() - startedAtMs" in worker
+    assert "search_requests: null" in worker
     assert "fantasy.premierleague.com" not in worker
 
 

@@ -833,6 +833,56 @@ MIGRATION_011 = (
     "ON lessons(status, created_at DESC)",
 )
 
+MIGRATION_012 = (
+    "ALTER TABLE cost_ledger ADD COLUMN cycle_id TEXT REFERENCES gameweek_cycles(cycle_id)",
+    "ALTER TABLE cost_ledger ADD COLUMN subject_type TEXT CHECK "
+    "(subject_type IS NULL OR subject_type IN ('research','deliberation'))",
+    "ALTER TABLE cost_ledger ADD COLUMN subject_id TEXT",
+    "ALTER TABLE cost_ledger ADD COLUMN category TEXT",
+    "ALTER TABLE cost_ledger ADD COLUMN duration_ms INTEGER "
+    "CHECK (duration_ms IS NULL OR duration_ms >= 0)",
+    "ALTER TABLE cost_ledger ADD COLUMN search_requests INTEGER "
+    "CHECK (search_requests IS NULL OR search_requests >= 0)",
+    """
+    UPDATE cost_ledger SET
+      cycle_id=(SELECT cycle_id FROM research_runs r
+                WHERE r.research_run_id=cost_ledger.research_run_id),
+      subject_type='research', subject_id=research_run_id, category='news_research'
+    WHERE research_run_id IS NOT NULL
+    """,
+    """
+    UPDATE cost_ledger SET
+      subject_type='deliberation',
+      subject_id=json_extract(detail_json,'$.deliberation_id'),
+      cycle_id=(SELECT cycle_id FROM decision_deliberations d
+                WHERE d.deliberation_id=json_extract(cost_ledger.detail_json,
+                                                      '$.deliberation_id')),
+      category='strategy_critic'
+    WHERE research_run_id IS NULL
+      AND json_extract(detail_json,'$.deliberation_id') IS NOT NULL
+    """,
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_cost_ledger_subject "
+    "ON cost_ledger(subject_type,subject_id) WHERE subject_id IS NOT NULL",
+    """
+    CREATE TABLE IF NOT EXISTS agent_budget_reservations (
+        reservation_id TEXT PRIMARY KEY,
+        cycle_id TEXT NOT NULL REFERENCES gameweek_cycles(cycle_id),
+        subject_type TEXT NOT NULL CHECK (subject_type IN ('research','deliberation')),
+        subject_id TEXT NOT NULL UNIQUE,
+        provider TEXT NOT NULL,
+        reserved_tokens INTEGER NOT NULL CHECK (reserved_tokens > 0),
+        actual_tokens INTEGER CHECK (actual_tokens IS NULL OR actual_tokens >= 0),
+        status TEXT NOT NULL CHECK (status IN ('reserved','charged','settled','released')),
+        policy_json TEXT NOT NULL CHECK (json_valid(policy_json)),
+        created_at TEXT NOT NULL,
+        settled_at TEXT,
+        released_at TEXT
+    ) STRICT
+    """,
+    "CREATE INDEX IF NOT EXISTS idx_budget_reservations_cycle_status "
+    "ON agent_budget_reservations(cycle_id,status,created_at)",
+)
+
 MIGRATIONS = (
     (1, "initial_ops_schema", MIGRATION_001),
     (2, "team_state_artifact_provenance", MIGRATION_002),
@@ -845,4 +895,5 @@ MIGRATIONS = (
     (9, "execution_plans_and_preflight", MIGRATION_009),
     (10, "apply_once_execution_attempts", MIGRATION_010),
     (11, "continuous_improvement_gate", MIGRATION_011),
+    (12, "agent_cost_budgets", MIGRATION_012),
 )

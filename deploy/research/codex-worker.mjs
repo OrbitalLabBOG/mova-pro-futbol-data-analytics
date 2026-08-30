@@ -137,6 +137,7 @@ try {
       "--model", model, "--output-schema", outputSchema, "--json",
       "--output-last-message", finalTmp, "-",
     ];
+    const startedAtMs = Date.now();
     const execution = spawnSync("codex", command, {
       input: prompt, encoding: "utf8", cwd: "/tmp/mova-research",
       timeout: Number(process.env.MOVA_RESEARCH_TIMEOUT_MS || 300000),
@@ -165,7 +166,12 @@ try {
       if (!isResearch) brief.envelope_id = request.envelope_id;
       brief.request_sha256 = request.request_sha256;
       brief.generated_at = brief.generated_at || new Date().toISOString();
-      brief.usage = {...(brief.usage || {}), model, ...tokenUsage(execution.stdout || "")};
+      brief.usage = {
+        ...(brief.usage || {}), model, ...tokenUsage(execution.stdout || ""),
+        duration_ms: Date.now() - startedAtMs,
+        // Codex CLI no expone todavía el conteo interno de búsquedas.
+        search_requests: null,
+      };
       atomicJson(join(outbox, `${runId}.result.json`), brief);
       try { unlinkSync(join(logs, `${runId}.error.json`)); } catch {}
     }

@@ -77,6 +77,12 @@ def parser() -> argparse.ArgumentParser:
     transition.add_argument("--actor", required=True)
     transition.add_argument("--reason", required=True)
     transition.add_argument("--idempotency-key", required=True)
+    cost = commands.add_parser("cost", help="presupuestos y uso de inferencia")
+    cost_commands = cost.add_subparsers(dest="cost_command", required=True)
+    cost_report = cost_commands.add_parser("report", help="uso por GW y mes")
+    cost_report.add_argument("--season")
+    cost_report.add_argument("--gw", type=int)
+    cost_report.add_argument("--month", help="mes UTC YYYY-MM")
     strategy = commands.add_parser(
         "strategy", help="plan, manifiesto e investigación verificable"
     )
@@ -270,6 +276,17 @@ def main(argv: list[str] | None = None) -> int:
             )
         print(json.dumps(payload, ensure_ascii=False, default=str))
         return 0
+
+    if args.command == "cost":
+        db = OpsDB(config.ops_db, minimum_version=config.sqlite_min_version)
+        db.migrate()
+        payload = db.cost_report(
+            config.agent_budget_policy(), season=args.season or config.season,
+            gw=args.gw, month=args.month,
+        )
+        print(json.dumps(payload, ensure_ascii=False, default=str))
+        return 2 if any(payload[key]["status"] == "exceeded"
+                        for key in ("gameweek", "month")) else 0
 
     if args.command == "strategy":
         from pathlib import Path

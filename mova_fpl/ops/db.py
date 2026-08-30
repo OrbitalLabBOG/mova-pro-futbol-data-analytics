@@ -1389,6 +1389,139 @@ class OpsDB:
                 "content_sha256": content_sha, "reused": False,
                 "artifact_path": artifact_path}
 
+    def _reserve_agent_budget(self, con: sqlite3.Connection, *, cycle_id: str,
+                              subject_type: str, subject_id: str, provider: str,
+                              policy: dict | None, actor: str, now: str,
+                              job_id: str | None = None) -> dict | None:
+        """Reserva presupuesto junto con el job; `None` conserva fixtures legacy."""
+        if policy is None:
+            return None
+        required = {"reservation_tokens", "job_tokens", "gw_tokens", "month_tokens",
+                    "gw_uses", "month_uses"}
+        if set(policy) != required or any(
+            not isinstance(policy[key], int) or policy[key] <= 0 for key in required
+        ):
+            raise ValueError("agent budget policy inválida")
+        existing = con.execute(
+            "SELECT * FROM agent_budget_reservations WHERE subject_id=?", (subject_id,)
+        ).fetchone()
+        if existing:
+            return {**dict(existing), "reused": True}
+        month = now[:7]
+        consumed_gw = con.execute(
+            "SELECT COALESCE(SUM(COALESCE(input_tokens,0)+COALESCE(output_tokens,0)),0),"
+            "COUNT(*) FROM cost_ledger WHERE cycle_id=?", (cycle_id,),
+        ).fetchone()
+        reserved_gw = con.execute(
+            "SELECT COALESCE(SUM(reserved_tokens),0),COUNT(*) "
+            "FROM agent_budget_reservations WHERE cycle_id=? "
+            "AND status IN ('reserved','charged')",
+            (cycle_id,),
+        ).fetchone()
+        consumed_month = con.execute(
+            "SELECT COALESCE(SUM(COALESCE(input_tokens,0)+COALESCE(output_tokens,0)),0),"
+            "COUNT(*) FROM cost_ledger WHERE substr(occurred_at,1,7)=?", (month,),
+        ).fetchone()
+        reserved_month = con.execute(
+            "SELECT COALESCE(SUM(reserved_tokens),0),COUNT(*) "
+            "FROM agent_budget_reservations WHERE substr(created_at,1,7)=? "
+            "AND status IN ('reserved','charged')", (month,),
+        ).fetchone()
+        estimate = int(policy["reservation_tokens"])
+        gw_tokens = int(consumed_gw[0]) + int(reserved_gw[0])
+        month_tokens = int(consumed_month[0]) + int(reserved_month[0])
+        gw_uses = int(consumed_gw[1]) + int(reserved_gw[1])
+        month_uses = int(consumed_month[1]) + int(reserved_month[1])
+        checks = {
+            "job_tokens": {"used": estimate, "limit": policy["job_tokens"],
+                           "passed": estimate <= policy["job_tokens"]},
+            "gw_tokens": {"used": gw_tokens + estimate, "limit": policy["gw_tokens"],
+                          "passed": gw_tokens + estimate <= policy["gw_tokens"]},
+            "month_tokens": {"used": month_tokens + estimate,
+                             "limit": policy["month_tokens"],
+                             "passed": month_tokens + estimate <= policy["month_tokens"]},
+            "gw_uses": {"used": gw_uses + 1, "limit": policy["gw_uses"],
+                        "passed": gw_uses + 1 <= policy["gw_uses"]},
+            "month_uses": {"used": month_uses + 1, "limit": policy["month_uses"],
+                           "passed": month_uses + 1 <= policy["month_uses"]},
+        }
+        passed = all(item["passed"] for item in checks.values())
+        result = {"status": "reserved" if passed else "blocked", "month": month,
+                  "estimate_tokens": estimate, "checks": checks,
+                  "policy": dict(policy)}
+        if not passed:
+            self.append_audit(
+                "agent_budget_blocked", actor=actor, severity="warning",
+                cycle_id=cycle_id, job_id=job_id, subject_type=subject_type,
+                subject_id=subject_id, payload=result, con=con,
+            )
+            return result
+        reservation_id = "budget_" + hashlib.sha256(
+            f"{subject_type}:{subject_id}".encode("utf-8")
+        ).hexdigest()[:24]
+        con.execute(
+            """INSERT INTO agent_budget_reservations(
+            reservation_id,cycle_id,subject_type,subject_id,provider,reserved_tokens,
+            status,policy_json,created_at) VALUES(?,?,?,?,?,?,'reserved',?,?)""",
+            (reservation_id, cycle_id, subject_type, subject_id, provider, estimate,
+             canonical_json(policy), now),
+        )
+        self.append_audit(
+            "agent_budget_reserved", actor=actor, cycle_id=cycle_id, job_id=job_id,
+            subject_type=subject_type, subject_id=subject_id,
+            payload={**result, "reservation_id": reservation_id}, con=con,
+        )
+        return {**result, "reservation_id": reservation_id}
+
+    def _settle_agent_budget(self, con: sqlite3.Connection, *, subject_id: str,
+                             usage: dict, cycle_id: str, actor: str, now: str,
+                             job_id: str | None = None) -> None:
+        reservation = con.execute(
+            "SELECT * FROM agent_budget_reservations WHERE subject_id=?", (subject_id,)
+        ).fetchone()
+        if not reservation or reservation["status"] == "settled":
+            return
+        actual = int(usage.get("input_tokens") or 0) + int(usage.get("output_tokens") or 0)
+        policy = json.loads(reservation["policy_json"])
+        overrun = actual > int(policy["job_tokens"])
+        con.execute(
+            "UPDATE agent_budget_reservations SET status='settled',actual_tokens=?,"
+            "settled_at=? WHERE reservation_id=?",
+            (actual, now, reservation["reservation_id"]),
+        )
+        self.append_audit(
+            "agent_budget_settled", actor=actor,
+            severity="warning" if overrun else "info", cycle_id=cycle_id, job_id=job_id,
+            subject_type=reservation["subject_type"], subject_id=subject_id,
+            payload={"reservation_id": reservation["reservation_id"],
+                     "reserved_tokens": reservation["reserved_tokens"],
+                     "actual_tokens": actual, "job_limit": policy["job_tokens"],
+                     "overrun": overrun}, con=con,
+        )
+
+    def _charge_agent_budget_estimate(self, con: sqlite3.Connection, *,
+                                      subject_id: str, cycle_id: str,
+                                      actor: str, now: str,
+                                      job_id: str | None = None) -> None:
+        reservation = con.execute(
+            "SELECT * FROM agent_budget_reservations WHERE subject_id=?", (subject_id,)
+        ).fetchone()
+        if not reservation or reservation["status"] != "reserved":
+            return
+        con.execute(
+            "UPDATE agent_budget_reservations SET status='charged',actual_tokens=?,"
+            "settled_at=? WHERE reservation_id=?",
+            (reservation["reserved_tokens"], now, reservation["reservation_id"]),
+        )
+        self.append_audit(
+            "agent_budget_charged_estimate", actor=actor, severity="warning",
+            cycle_id=cycle_id, job_id=job_id,
+            subject_type=reservation["subject_type"], subject_id=subject_id,
+            payload={"reservation_id": reservation["reservation_id"],
+                     "estimated_tokens": reservation["reserved_tokens"],
+                     "reason": "result_unavailable_or_rejected"}, con=con,
+        )
+
     def queue_research_run(self, payload: dict) -> dict:
         now = utcnow()
         with self.transaction() as con:
@@ -1401,6 +1534,16 @@ class OpsDB:
             if existing:
                 return {**dict(existing), "reused": True}
             run_id = payload["research_run_id"]
+            budget = self._reserve_agent_budget(
+                con, cycle_id=payload["cycle_id"], subject_type="research",
+                subject_id=run_id, provider=payload["provider"],
+                policy=payload.get("budget_policy"), actor="mova-research",
+                job_id=payload.get("job_id"), now=now,
+            )
+            if budget and budget["status"] == "blocked":
+                return {"research_run_id": run_id, "status": "blocked",
+                        "reason": "agent_budget_exceeded", "budget": budget,
+                        "reused": False}
             con.execute(
                 """INSERT INTO research_runs(
                 research_run_id,job_id,cycle_id,manifest_id,provider,status,
@@ -1416,7 +1559,7 @@ class OpsDB:
                          "request_sha256": payload["request_sha256"]}, con=con,
             )
         return {"research_run_id": run_id, "status": "queued", "queued_at": now,
-                "reused": False}
+                "budget": budget, "reused": False}
 
     def research_run(self, research_run_id: str) -> dict | None:
         with self.connect(readonly=True) as con:
@@ -1439,6 +1582,10 @@ class OpsDB:
                 "UPDATE research_runs SET status='rejected',error_code=?,error_detail=?,"
                 "finished_at=? WHERE research_run_id=?",
                 (error_code, error_detail[:500], utcnow(), research_run_id),
+            )
+            self._charge_agent_budget_estimate(
+                con, subject_id=research_run_id, cycle_id=run["cycle_id"],
+                job_id=run["job_id"], actor="mova-research-validator", now=utcnow(),
             )
             self.append_audit(
                 "research_rejected", actor="mova-research-validator",
@@ -1521,11 +1668,18 @@ class OpsDB:
             con.execute(
                 """INSERT INTO cost_ledger(
                 cost_id,research_run_id,provider,model,input_tokens,output_tokens,
-                estimated_cost_usd,subscription_usage,detail_json,occurred_at)
-                VALUES(?,?,?,?,?,?,?,?,?,?)""",
+                estimated_cost_usd,subscription_usage,detail_json,occurred_at,
+                cycle_id,subject_type,subject_id,category,duration_ms,search_requests)
+                VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                 (new_id("cost"), research_run_id, run["provider"], usage.get("model"),
                  usage.get("input_tokens"), usage.get("output_tokens"),
-                 usage.get("estimated_cost_usd"), 1, canonical_json(usage), now),
+                 usage.get("estimated_cost_usd"), 1, canonical_json(usage), now,
+                 run["cycle_id"], "research", research_run_id, "news_research",
+                 usage.get("duration_ms"), usage.get("search_requests")),
+            )
+            self._settle_agent_budget(
+                con, subject_id=research_run_id, usage=usage, cycle_id=run["cycle_id"],
+                job_id=run["job_id"], actor="mova-research-validator", now=now,
             )
             self.append_audit(
                 "research_imported", actor="mova-research-validator",
@@ -1580,6 +1734,15 @@ class OpsDB:
             ).fetchone()
             if existing:
                 return {**dict(existing), "reused": True}
+            budget = self._reserve_agent_budget(
+                con, cycle_id=payload["cycle_id"], subject_type="deliberation",
+                subject_id=payload["deliberation_id"], provider=payload["provider"],
+                policy=payload.get("budget_policy"), actor="mova-strategy", now=now,
+            )
+            if budget and budget["status"] == "blocked":
+                return {"deliberation_id": payload["deliberation_id"],
+                        "status": "blocked", "reason": "agent_budget_exceeded",
+                        "budget": budget, "reused": False}
             con.execute(
                 """INSERT INTO decision_deliberations(
                 deliberation_id,cycle_id,envelope_id,manifest_id,provider,status,
@@ -1600,7 +1763,7 @@ class OpsDB:
                 }, con=con,
             )
         return {"deliberation_id": payload["deliberation_id"], "status": "queued",
-                "queued_at": now, "reused": False}
+                "queued_at": now, "budget": budget, "reused": False}
 
     def reject_decision_deliberation(self, deliberation_id: str, *, error_code: str,
                                      error_detail: str) -> None:
@@ -1615,6 +1778,10 @@ class OpsDB:
                 "UPDATE decision_deliberations SET status='rejected',error_code=?,"
                 "error_detail=?,finished_at=? WHERE deliberation_id=?",
                 (error_code, error_detail[:500], utcnow(), deliberation_id),
+            )
+            self._charge_agent_budget_estimate(
+                con, subject_id=deliberation_id, cycle_id=row["cycle_id"],
+                actor="mova-deliberation-validator", now=utcnow(),
             )
             self.append_audit(
                 "decision_deliberation_rejected", actor="mova-deliberation-validator",
@@ -1678,14 +1845,22 @@ class OpsDB:
             con.execute(
                 """INSERT INTO cost_ledger(
                 cost_id,research_run_id,provider,model,input_tokens,output_tokens,
-                estimated_cost_usd,subscription_usage,detail_json,occurred_at)
-                VALUES(?,NULL,?,?,?,?,?,1,?,?)""",
+                estimated_cost_usd,subscription_usage,detail_json,occurred_at,
+                cycle_id,subject_type,subject_id,category,duration_ms,search_requests)
+                VALUES(?,NULL,?,?,?,?,?,1,?,?,?,?,?,?,?,?)""",
                 (new_id("cost"), run["provider"], usage.get("model"),
                  usage.get("input_tokens"), usage.get("output_tokens"),
                  usage.get("estimated_cost_usd"), canonical_json({
                      **usage, "deliberation_id": deliberation_id,
                      "kind": "strategy_critic",
-                 }), now),
+                 }), now, run["cycle_id"], "deliberation", deliberation_id,
+                 "strategy_critic", usage.get("duration_ms"),
+                 usage.get("search_requests")),
+            )
+            self._settle_agent_budget(
+                con, subject_id=deliberation_id, usage=usage,
+                cycle_id=run["cycle_id"], job_id=run["job_id"],
+                actor="mova-deliberation-validator", now=now,
             )
             self.append_audit(
                 "decision_deliberation_imported", actor="mova-deliberation-validator",
@@ -1840,6 +2015,132 @@ class OpsDB:
             "review": payload, "player_outcomes": [dict(row) for row in players],
             "change_proposals": proposal_rows,
         }
+
+    def cost_report(self, policy: dict, *, season: str | None = None,
+                    gw: int | None = None, month: str | None = None) -> dict:
+        """Uso real + reservas activas contra límites configurados."""
+        observed_month = month or utcnow()[:7]
+        try:
+            parsed_month = datetime.strptime(observed_month, "%Y-%m").strftime("%Y-%m")
+        except ValueError as exc:
+            raise ValueError("month debe usar YYYY-MM") from exc
+        if parsed_month != observed_month:
+            raise ValueError("month debe usar YYYY-MM")
+        with self.connect(readonly=True) as con:
+            cycle = None
+            if gw is not None:
+                cycle = con.execute(
+                    "SELECT cycle_id,season,gw,deadline_at FROM gameweek_cycles "
+                    "WHERE season=? AND gw=?", (season or "2026-27", int(gw)),
+                ).fetchone()
+            elif season is not None:
+                cycle = con.execute(
+                    "SELECT cycle_id,season,gw,deadline_at FROM gameweek_cycles "
+                    "WHERE season=? ORDER BY deadline_at DESC LIMIT 1", (season,),
+                ).fetchone()
+            else:
+                cycle = con.execute(
+                    "SELECT cycle_id,season,gw,deadline_at FROM gameweek_cycles "
+                    "ORDER BY deadline_at DESC LIMIT 1"
+                ).fetchone()
+            cycle_id = cycle["cycle_id"] if cycle else None
+            gw_cost = con.execute(
+                """SELECT COUNT(*) uses,
+                COALESCE(SUM(COALESCE(input_tokens,0)+COALESCE(output_tokens,0)),0) tokens,
+                SUM(estimated_cost_usd) estimated_cost_usd
+                FROM cost_ledger WHERE cycle_id=?""", (cycle_id,),
+            ).fetchone() if cycle_id else {"uses": 0, "tokens": 0,
+                                           "estimated_cost_usd": None}
+            gw_reserved = con.execute(
+                "SELECT COUNT(*) uses,COALESCE(SUM(reserved_tokens),0) tokens "
+                "FROM agent_budget_reservations WHERE cycle_id=? "
+                "AND status IN ('reserved','charged')",
+                (cycle_id,),
+            ).fetchone() if cycle_id else {"uses": 0, "tokens": 0}
+            month_cost = con.execute(
+                """SELECT COUNT(*) uses,
+                COALESCE(SUM(COALESCE(input_tokens,0)+COALESCE(output_tokens,0)),0) tokens,
+                SUM(estimated_cost_usd) estimated_cost_usd
+                FROM cost_ledger WHERE substr(occurred_at,1,7)=?""", (observed_month,),
+            ).fetchone()
+            month_reserved = con.execute(
+                "SELECT COUNT(*) uses,COALESCE(SUM(reserved_tokens),0) tokens "
+                "FROM agent_budget_reservations WHERE substr(created_at,1,7)=? "
+                "AND status IN ('reserved','charged')", (observed_month,),
+            ).fetchone()
+            by_category = con.execute(
+                """SELECT COALESCE(category,'unknown') category,COUNT(*) uses,
+                COALESCE(SUM(COALESCE(input_tokens,0)+COALESCE(output_tokens,0)),0) tokens,
+                SUM(estimated_cost_usd) estimated_cost_usd
+                FROM cost_ledger WHERE substr(occurred_at,1,7)=?
+                GROUP BY COALESCE(category,'unknown') ORDER BY category""",
+                (observed_month,),
+            ).fetchall()
+            latest = con.execute(
+                "SELECT * FROM agent_budget_reservations ORDER BY created_at DESC LIMIT 20"
+            ).fetchall()
+
+        def scope(consumed, reserved, *, token_limit: int, use_limit: int) -> dict:
+            tokens = int(consumed["tokens"]) + int(reserved["tokens"])
+            uses = int(consumed["uses"]) + int(reserved["uses"])
+            return {
+                "consumed_tokens": int(consumed["tokens"]),
+                "reserved_tokens": int(reserved["tokens"]), "committed_tokens": tokens,
+                "token_limit": token_limit, "remaining_tokens": max(0, token_limit - tokens),
+                "consumed_uses": int(consumed["uses"]),
+                "reserved_uses": int(reserved["uses"]), "committed_uses": uses,
+                "use_limit": use_limit, "remaining_uses": max(0, use_limit - uses),
+                "status": "within_budget" if tokens <= token_limit and uses <= use_limit
+                else "exceeded",
+                "estimated_cost_usd": consumed["estimated_cost_usd"],
+            }
+
+        return {
+            "schema": "mova-agent-cost-report-v1", "observed_at": utcnow(),
+            "policy": dict(policy), "cycle": dict(cycle) if cycle else None,
+            "gameweek": scope(gw_cost, gw_reserved, token_limit=policy["gw_tokens"],
+                              use_limit=policy["gw_uses"]),
+            "month": {"month": observed_month, **scope(
+                month_cost, month_reserved, token_limit=policy["month_tokens"],
+                use_limit=policy["month_uses"])},
+            "by_category": [dict(row) for row in by_category],
+            "latest_reservations": [dict(row) for row in latest],
+        }
+
+    def cost_prometheus(self, policy: dict, *, season: str) -> str:
+        report = self.cost_report(policy, season=season)
+        lines = [
+            "# HELP mova_agent_budget_tokens Tokens consumed, reserved or limited.",
+            "# TYPE mova_agent_budget_tokens gauge",
+            "# HELP mova_agent_budget_uses Calls consumed, reserved or limited.",
+            "# TYPE mova_agent_budget_uses gauge",
+            "# HELP mova_agent_budget_within_limit Whether the scope is within budget.",
+            "# TYPE mova_agent_budget_within_limit gauge",
+        ]
+        for scope_name, scope in (("gameweek", report["gameweek"]),
+                                  ("month", report["month"])):
+            for kind in ("consumed", "reserved", "remaining"):
+                lines.append(
+                    f'mova_agent_budget_tokens{{scope="{scope_name}",kind="{kind}"}} '
+                    f'{scope[f"{kind}_tokens"]}'
+                )
+                lines.append(
+                    f'mova_agent_budget_uses{{scope="{scope_name}",kind="{kind}"}} '
+                    f'{scope[f"{kind}_uses"]}'
+                )
+            lines.append(
+                f'mova_agent_budget_tokens{{scope="{scope_name}",kind="limit"}} '
+                f'{scope["token_limit"]}'
+            )
+            lines.append(
+                f'mova_agent_budget_uses{{scope="{scope_name}",kind="limit"}} '
+                f'{scope["use_limit"]}'
+            )
+            lines.append(
+                f'mova_agent_budget_within_limit{{scope="{scope_name}"}} '
+                f'{1 if scope["status"] == "within_budget" else 0}'
+            )
+        return "\n".join(lines) + "\n"
 
     def improvement_status(self, *, season: str | None = None,
                            gw: int | None = None) -> dict:
@@ -2013,6 +2314,7 @@ class OpsDB:
                    "gameweek_reviews", "change_proposals", "season_plans",
                    "cycle_manifests", "research_runs", "research_documents",
                    "research_signals", "research_conflicts", "cost_ledger",
+                   "agent_budget_reservations",
                    "change_proposal_evaluations", "lessons"}
         if table not in allowed:
             raise ValueError(f"tabla no permitida: {table}")
@@ -2037,6 +2339,7 @@ class OpsDB:
             "research_runs": "queued_at", "research_documents": "observed_at",
             "research_signals": "observed_at", "research_conflicts": "created_at",
             "cost_ledger": "occurred_at",
+            "agent_budget_reservations": "created_at",
             "change_proposal_evaluations": "created_at", "lessons": "created_at",
         }[table]
         with self.connect(readonly=True) as con:

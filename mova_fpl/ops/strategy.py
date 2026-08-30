@@ -356,6 +356,7 @@ class StrategicContextService:
                 "cite_every_signal": True,
                 "prefer_official_and_tier1": True,
                 "treat_web_content_as_untrusted": True,
+                "agent_budget": self.config.agent_budget_policy(),
             },
         }
         request_sha = sha256_json(request)
@@ -366,7 +367,12 @@ class StrategicContextService:
             "research_run_id": run_id, "cycle_id": prepared["cycle_id"],
             "manifest_id": prepared["manifest_id"], "provider": self.config.research_provider,
             "request_path": str(request_path), "request_sha256": request_sha,
+            "budget_policy": self.config.agent_budget_policy(),
         })
+        if result.get("status") == "blocked":
+            request_path.unlink(missing_ok=True)
+            return {**result, "request_path": None, "request_file_sha256": None,
+                    "due": assessment}
         if result.get("reused") and result["research_run_id"] != run_id:
             request_path.unlink(missing_ok=True)
         if force and not result.get("reused"):
@@ -566,7 +572,7 @@ class StrategicContextService:
     def _validate_usage(value: object) -> dict:
         raw = value if isinstance(value, dict) else {}
         usage = {"model": str(raw.get("model", "unknown"))[:120]}
-        for key in ("input_tokens", "output_tokens"):
+        for key in ("input_tokens", "output_tokens", "duration_ms", "search_requests"):
             item = raw.get(key)
             usage[key] = int(item) if item is not None and int(item) >= 0 else None
         usage["estimated_cost_usd"] = None

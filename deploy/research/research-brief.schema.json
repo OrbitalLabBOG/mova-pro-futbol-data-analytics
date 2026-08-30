@@ -86,7 +86,9 @@
       "properties": {
         "model": {"type": "string"},
         "input_tokens": {"type": ["integer", "null"], "minimum": 0},
-        "output_tokens": {"type": ["integer", "null"], "minimum": 0}
+        "output_tokens": {"type": ["integer", "null"], "minimum": 0},
+        "duration_ms": {"type": ["integer", "null"], "minimum": 0},
+        "search_requests": {"type": ["integer", "null"], "minimum": 0}
       }
     }
   }
