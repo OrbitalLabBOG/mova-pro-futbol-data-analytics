@@ -338,6 +338,7 @@ def test_transfer_probe_is_read_only_allowlisted_and_numeric_only():
     assert "comma-separated numeric allowlist" in session
     assert "credentials: \"include\"" in probe
     assert "targetIds" in probe and "targets_complete" in probe
+    assert "Search by name" in probe and ".replace(/\\s+/g" in probe
     assert ".click(" not in probe
     assert "localStorage" not in probe and "document.cookie" not in probe
 
