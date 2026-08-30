@@ -478,6 +478,7 @@ El rollout continúa en `shadow/A0`: este corte no implementa `apply`, no inicia
 añade ninguna primitiva de escritura. HV1-07C debe consumir exclusivamente un plan autorizado,
 aplicar una vez y verificar el estado post-acción; HV1-07D debe completar tres rehearsals y gates
 de promoción antes de elevar autonomía.
+Evidencia del rollout: [HV1-07A/B](18-hv1-07ab-preflight-rollout.md).
 
 ## 11. Definition of Done del harness v1
 
