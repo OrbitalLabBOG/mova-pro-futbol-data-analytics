@@ -508,6 +508,7 @@ research y deliberación fallan cerrados antes de cola cuando cualquier techo se
 rechazado conserva el cargo estimado, y un resultado recuperado lo reconcilia sin doble conteo.
 El reviewer causal automático continúa pendiente, por lo que HV1-08 permanece parcial.
 Evidencia: [HV1-08 mejora continua](21-hv1-08-improvement-rollout.md).
+Rollout de límites: [HV1-08 budgets agentic](22-hv1-08-budget-rollout.md).
 
 ## 11. Definition of Done del harness v1
 
