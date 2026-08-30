@@ -10,7 +10,13 @@ import pytest
 
 from mova_fpl.ops.cli import parser
 from mova_fpl.ops.config import RuntimeConfig
-from mova_fpl.postgres.importer import TABLES, TableSpec, _json_value, _publish_sources
+from mova_fpl.postgres.importer import (
+    TABLES,
+    TableSpec,
+    _json_value,
+    _publish_sources,
+    shadow_sync_identity,
+)
 from mova_fpl.postgres.read_repository import (
     PostgresReadRepository,
     SQLiteReadRepository,
@@ -41,6 +47,7 @@ def test_postgres_cli_requires_audited_import_fields() -> None:
     assert parsed.idempotency_key == "hv1-02a-baseline"
     with pytest.raises(SystemExit):
         parser().parse_args(["postgres", "import"])
+    assert parser().parse_args(["postgres", "sync"]).postgres_command == "sync"
 
 
 def test_postgres_config_rejects_relative_secret() -> None:
@@ -248,3 +255,37 @@ def test_postgres_status_artifact_is_sanitized_and_readable(tmp_path: Path) -> N
     raw = (config.artifact_root / "postgres-shadow-status.json").read_text()
     assert "must-not-leak" not in raw
     assert "/private/path" not in raw
+
+
+def test_scheduled_sync_identity_is_stable_per_cycle_and_iso_week(tmp_path: Path) -> None:
+    ops = tmp_path / "ops.db"
+    with sqlite3.connect(ops) as con:
+        con.execute(
+            "create table gameweek_cycles(cycle_id text,season text,gw integer,"
+            "deadline_at text)"
+        )
+        con.execute(
+            "insert into gameweek_cycles values('2026-27-gw03','2026-27',3,"
+            "'2026-09-04T17:30:00Z')"
+        )
+    config = RuntimeConfig(ops_db=ops)
+
+    identity = shadow_sync_identity(
+        config, now=datetime(2026, 8, 30, 20, tzinfo=timezone.utc)
+    )
+
+    assert identity == {
+        "cycle_id": "2026-27-gw03", "season": "2026-27", "gw": 3,
+        "deadline_at": "2026-09-04T17:30:00Z", "week_bucket": "2026-W35",
+        "idempotency_key": "postgres-shadow-sync:2026-27-gw03:2026-W35",
+    }
+
+
+def test_postgres_sync_timer_is_persistent_and_locked() -> None:
+    root = Path(__file__).parents[1]
+    timer = (root / "deploy/systemd/mova-fpl-postgres-sync.timer").read_text()
+    service = (root / "deploy/systemd/mova-fpl-postgres-sync.service").read_text()
+    assert "Persistent=true" in timer
+    assert "RandomizedDelaySec=300s" in timer
+    assert "/run/lock/mova-fpl-worker.lock" in service
+    assert "/usr/local/bin/mova postgres sync" in service

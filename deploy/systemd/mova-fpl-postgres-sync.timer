@@ -1,0 +1,11 @@
+[Unit]
+Description=Evaluate MOVA FPL PostgreSQL shadow sync daily
+
+[Timer]
+OnCalendar=*-*-* 05:07:00 America/Bogota
+RandomizedDelaySec=300s
+Persistent=true
+Unit=mova-fpl-postgres-sync.service
+
+[Install]
+WantedBy=timers.target

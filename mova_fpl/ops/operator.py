@@ -23,7 +23,7 @@ SCHEMA_VERSION = "1.0"
 COMMAND_SCHEMA = "mova-fpl-operator-v1"
 MAX_HOST_PROBE_BYTES = 256 * 1024
 TICK_MAX_AGE_SECONDS = 20 * 60
-POSTGRES_PARITY_MAX_AGE_SECONDS = 24 * 60 * 60
+POSTGRES_PARITY_MAX_AGE_SECONDS = 8 * 24 * 60 * 60
 
 
 def _utcnow(now: datetime | None = None) -> datetime:
@@ -359,6 +359,9 @@ def build_status(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
         elif (storage["postgres_role"] == "shadow"
               and not storage["postgres"].get("import_fresh")):
             reasons.append("postgres_shadow_parity_stale")
+        elif ((host.get("postgres") or {}).get("container_state") == "running"
+              and storage["postgres_role"] == "unavailable"):
+            reasons.append("postgres_shadow_status_unavailable")
         if reasons:
             severity = "degraded"
 
@@ -700,6 +703,7 @@ def build_doctor(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
             "mova-fpl-watchdog.timer",
             "mova-fpl-analytics.timer",
             "mova-fpl-research.timer",
+            "mova-fpl-postgres-sync.timer",
         )
         bad_units = [name for name in expected_units
                      if (units.get(name) or {}).get("active_state") != "active"]

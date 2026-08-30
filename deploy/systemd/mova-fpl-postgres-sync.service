@@ -1,0 +1,14 @@
+[Unit]
+Description=MOVA FPL weekly per-cycle PostgreSQL dual-read parity sync
+Requires=mova-fpl-stack.service
+After=mova-fpl-stack.service mova-fpl-backup.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=@@REPO_DIR@@
+ExecStart=/usr/bin/flock -n /run/lock/mova-fpl-worker.lock /usr/local/bin/mova postgres sync
+TimeoutStartSec=15min
+Nice=10
+
+[Install]
+WantedBy=multi-user.target

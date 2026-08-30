@@ -22,6 +22,7 @@ UNITS = (
     "mova-fpl-collector.timer",
     "mova-fpl-analytics.timer",
     "mova-fpl-research.timer",
+    "mova-fpl-postgres-sync.timer",
 )
 
 

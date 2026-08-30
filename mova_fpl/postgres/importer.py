@@ -485,6 +485,47 @@ def import_shadow(config: ImportConfig, *, actor: str, reason: str,
             "invariants": invariants, "read_parity": read_parity}
 
 
+def shadow_sync_identity(config: ImportConfig,
+                         *, now: datetime | None = None) -> dict | None:
+    con = sqlite3.connect(f"file:{config.ops_db}?mode=ro", uri=True)
+    con.row_factory = sqlite3.Row
+    try:
+        cycle = con.execute(
+            "select cycle_id,season,gw,deadline_at from gameweek_cycles "
+            "order by deadline_at desc limit 1"
+        ).fetchone()
+    finally:
+        con.close()
+    if not cycle:
+        return None
+    current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+    iso_year, iso_week, _ = current.isocalendar()
+    return {
+        "cycle_id": cycle["cycle_id"],
+        "season": cycle["season"],
+        "gw": int(cycle["gw"]),
+        "deadline_at": cycle["deadline_at"],
+        "week_bucket": f"{iso_year}-W{iso_week:02d}",
+        "idempotency_key": (
+            f"postgres-shadow-sync:{cycle['cycle_id']}:{iso_year}-W{iso_week:02d}"
+        ),
+    }
+
+
+def sync_shadow(config: ImportConfig) -> dict:
+    """Import semanal por ciclo con identidad determinista para systemd."""
+    identity = shadow_sync_identity(config)
+    if identity is None:
+        return {"status": "skipped", "reason": "cycle_missing"}
+    result = import_shadow(
+        config,
+        actor="scheduler",
+        reason="scheduled weekly per-cycle PostgreSQL dual-read parity",
+        idempotency_key=identity["idempotency_key"],
+    )
+    return {**result, "sync": identity}
+
+
 def _verify_manifest(artifact_path: Path, expected_sha256: str) -> dict:
     manifest_path = artifact_path / "manifest.json"
     if not manifest_path.is_file():
