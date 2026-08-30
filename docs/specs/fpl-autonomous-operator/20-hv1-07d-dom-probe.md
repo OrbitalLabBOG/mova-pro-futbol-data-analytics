@@ -59,3 +59,11 @@ El payload contiene únicamente la allowlist documentada. No se creó execution 
 realizó un rehearsal de escritura. Los controles permanecen shadow/A0, compliance pending, kill
 switch activo y browser writes false. Falta materializar el driver host apply-once y completar
 tres rehearsals controlados antes de considerar cualquier elevación de autoridad.
+
+## Rollout
+
+El subcorte quedó desplegado en `d52ce89`, con checkout e imagen engine coincidentes. El probe
+ejecutado desde la imagen browser ya desplegada volvió a pasar a las
+`2026-08-30T18:41:46.994Z`; después se detuvo el browser con salida limpia. `mova doctor` reportó
+22 PASS, 0 WARN y 0 FAIL; los seis timers operativos consultados continuaron activos. Backups
+posteriores: SQLite `20260830T184302Z` y PostgreSQL `20260830T184303Z`.
