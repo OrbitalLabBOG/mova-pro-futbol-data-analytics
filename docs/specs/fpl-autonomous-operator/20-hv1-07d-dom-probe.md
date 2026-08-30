@@ -145,3 +145,10 @@ Verificación local: 38 pruebas enfocadas; replay/selector/labels manipulados fa
 materialización completa contra browser falso; `970 passed, 1 skipped, 79 deselected`; compileall,
 shell syntax, Compose y `diff --check` aprobados. No se creó intento, no se inició browser y no se
 escribió en FPL.
+
+El rollout inicial quedó en `baf76c2`, desplegado como `c73e4109`. El smoke del VPS reprodujo
+un plan lineup de siete pasos y un solo commit en modo de contrato; el mismo payload por el path
+normal terminó `LINEUP_DRIVER_UNPROVEN`. `mova execute status` publicó el ledger esperado;
+`mova doctor` cerró 22/0/0, API healthy, ocho timers, cero unidades fallidas, checkout/imagen
+coincidentes y browser detenido. Los controles continuaron `shadow/A0`, compliance pending, kill
+switch activo y browser writes false.
