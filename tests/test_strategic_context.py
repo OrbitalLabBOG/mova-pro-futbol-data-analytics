@@ -435,3 +435,9 @@ def test_url_privada_se_cuarentena_y_no_contamina_signals(tmp_path):
     assert "no pública" in imported["results"][0]["error"]
     assert db.recent("research_signals") == []
     assert (config.research_root / "quarantine" / path.name).is_file()
+    request_name = f"{run_id}.request.json"
+    assert (config.research_root / "quarantine" / request_name).is_file()
+    assert not (config.research_root / "inbox" / request_name).exists()
+    replay = service.import_ready()
+    assert replay["processed"] == 0
+    assert replay["terminal_requests_quarantined"] == 0

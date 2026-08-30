@@ -164,6 +164,8 @@ find /var/lib/mova-fpl/artifacts/research -maxdepth 2 -type f -printf '%P\n'
 
 - queued persistente: revisar service, auth y último error JSON; no mostrar contenido sensible.
 - rejected: revisar el error sanitizado y quarantine; no insertarlo a mano.
+- un rechazo terminal mueve resultado y request a `quarantine`; el timer no vuelve a consumir
+  Codex. Un replay requiere una nueva solicitud auditada, no copiar el request al inbox.
 - coverage `insufficient_gameweeks`: condición esperada antes de tres ciclos v2; no rebajar el
   policy ni contar briefs legacy como evidencia.
 - `evidence_*` fallido: revisar `fetch_status`, `fetch_error_code`, MIME/redirect y locator; una
