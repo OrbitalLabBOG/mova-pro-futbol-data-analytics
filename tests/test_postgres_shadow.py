@@ -233,6 +233,8 @@ def test_postgres_parity_metrics_are_explicit() -> None:
     assert 'mova_postgres_read_parity_tables{mode="exact"} 48' in metrics
     assert 'mova_postgres_read_parity_tables{mode="aggregate"} 1' in metrics
     assert "mova_postgres_import_age_seconds -1" in metrics
+    assert "mova_postgres_distinct_source_snapshots 0" in metrics
+    assert "mova_postgres_distinct_gameweek_cycles 0" in metrics
 
 
 def test_postgres_status_artifact_is_sanitized_and_readable(tmp_path: Path) -> None:
@@ -249,6 +251,13 @@ def test_postgres_status_artifact_is_sanitized_and_readable(tmp_path: Path) -> N
             "artifact_path": "/private/path",
         },
         "read_parity": {"status": "pass", "checked_tables": 49},
+        "import_history": {
+            "completed_imports": 4, "distinct_source_snapshots": 3,
+            "distinct_gameweek_cycles": 2,
+            "first_completed_at": "2026-08-23T19:00:20Z",
+            "last_completed_at": "2026-08-30T19:00:20Z",
+            "private": "must-not-leak",
+        },
         "writer": "sqlite",
         "postgres_role": "shadow",
     })
@@ -258,6 +267,7 @@ def test_postgres_status_artifact_is_sanitized_and_readable(tmp_path: Path) -> N
         "git_sha": "abc123", "started_at": "2026-08-30T19:00:00Z",
         "finished_at": "2026-08-30T19:00:20Z",
     }
+    assert payload["import_history"]["distinct_source_snapshots"] == 3
     assert read_status(config) == payload
     raw = (config.artifact_root / "postgres-shadow-status.json").read_text()
     assert "must-not-leak" not in raw
