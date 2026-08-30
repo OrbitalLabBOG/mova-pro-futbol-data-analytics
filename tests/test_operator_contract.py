@@ -141,6 +141,7 @@ def test_status_reads_sanitized_postgres_parity_without_database_secret(tmp_path
             "status": "pass", "checked_tables": 49,
             "exact_tables": 48, "aggregate_tables": 1, "failed_tables": 0,
         },
+        "role_separation": {"status": "pass"},
         "writer": "sqlite", "postgres_role": "shadow",
     })
 
@@ -152,6 +153,7 @@ def test_status_reads_sanitized_postgres_parity_without_database_secret(tmp_path
     assert payload["storage"]["postgres"]["migration_count"] == 16
     assert payload["storage"]["postgres"]["import_fresh"] is True
     assert payload["storage"]["postgres"]["read_parity"]["status"] == "pass"
+    assert payload["storage"]["postgres"]["role_separation"]["status"] == "pass"
 
 
 def test_status_surfaces_missing_parity_artifact_when_postgres_is_running(tmp_path):

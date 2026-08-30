@@ -325,6 +325,7 @@ def build_status(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
                         and import_age <= POSTGRES_PARITY_MAX_AGE_SECONDS
                     ),
                     "read_parity": pg.get("read_parity"),
+                    "role_separation": pg.get("role_separation") or {"status": "missing"},
                 },
             }
     except Exception as exc:  # noqa: BLE001 - status SQLite sigue disponible
@@ -360,6 +361,10 @@ def build_status(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
         elif (storage["postgres_role"] == "shadow"
               and not storage["postgres"].get("import_fresh")):
             reasons.append("postgres_shadow_parity_stale")
+        elif (storage["postgres_role"] == "shadow"
+              and (storage["postgres"].get("role_separation") or {}).get("status")
+              != "pass"):
+            reasons.append("postgres_role_separation_not_passed")
         elif ((host.get("postgres") or {}).get("container_state") == "running"
               and storage["postgres_role"] == "unavailable"):
             reasons.append("postgres_shadow_status_unavailable")
