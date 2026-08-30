@@ -49,6 +49,7 @@ mova improve status --season 2026-27
 mova postgres status
 mova postgres verify
 mova postgres drill --actor codex --reason read-cutover --idempotency-key gw03-v1
+mova postgres roles --actor codex --reason least-privilege --idempotency-key gw03-roles-v1
 
 # collector público sellado
 python -m mova_fpl.cli.collect_live --season 2026-27 --gw 2
@@ -83,6 +84,8 @@ CycleManifest + memoria estratégica durable → modelos causales → matriz xP 
   prueba aprobada por GW/capacidad/versión y rechaza fuentes alteradas o intentos de escritura.
 - `mova postgres drill` ensaya el read-path PostgreSQL y su rollback a SQLite con hashes, artifact,
   idempotencia y métricas, sin cambiar el writer productivo.
+- `mova postgres roles` rota y prueba identidades separadas para aplicación y sólo lectura;
+  owner queda reservado a migraciones/imports y ningún secreto entra a logs o artifacts.
 - `mova improve` registra experimentos, evaluaciones, lecciones y uso/costo. Aceptar una lección
   no modifica el runtime; `mova improve release` es el único camino que puede activar un bundle
   `minutes+points`, después de hashes válidos, shadow multi-GW y gate determinista.

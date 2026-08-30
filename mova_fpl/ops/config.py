@@ -77,6 +77,12 @@ class RuntimeConfig:
     postgres_db: str = "mova"
     postgres_user: str = "mova_owner"
     postgres_credential_file: Path = Path("/run/secrets/postgres_password")
+    postgres_app_user: str = "mova_app_runtime"
+    postgres_app_credential_file: Path = Path("/run/secrets/postgres_app_password")
+    postgres_readonly_user: str = "mova_readonly_runtime"
+    postgres_readonly_credential_file: Path = Path(
+        "/run/secrets/postgres_readonly_password"
+    )
     git_sha: str = "unknown"
 
     @classmethod
@@ -204,6 +210,20 @@ class RuntimeConfig:
             postgres_credential_file=Path(os.environ.get(
                 "MOVA_POSTGRES_CREDENTIAL_FILE", "/run/secrets/postgres_password"
             )),
+            postgres_app_user=os.environ.get(
+                "MOVA_POSTGRES_APP_USER", "mova_app_runtime"
+            ),
+            postgres_app_credential_file=Path(os.environ.get(
+                "MOVA_POSTGRES_APP_CREDENTIAL_FILE",
+                "/run/secrets/postgres_app_password"
+            )),
+            postgres_readonly_user=os.environ.get(
+                "MOVA_POSTGRES_READONLY_USER", "mova_readonly_runtime"
+            ),
+            postgres_readonly_credential_file=Path(os.environ.get(
+                "MOVA_POSTGRES_READONLY_CREDENTIAL_FILE",
+                "/run/secrets/postgres_readonly_password"
+            )),
             git_sha=os.environ.get("MOVA_GIT_SHA", "unknown"),
         )
 
@@ -287,6 +307,27 @@ class RuntimeConfig:
             raise ValueError("MOVA_POSTGRES_PORT fuera de rango")
         if not self.postgres_credential_file.is_absolute():
             raise ValueError("MOVA_POSTGRES_CREDENTIAL_FILE debe ser absoluto")
+
+    def validate_postgres_roles(self) -> None:
+        """Valida identidades separadas sin leer ni exponer sus secretos."""
+        self.validate_postgres()
+        users = {
+            self.postgres_user,
+            self.postgres_app_user,
+            self.postgres_readonly_user,
+        }
+        if len(users) != 3 or any(not item.strip() for item in users):
+            raise ValueError("roles PostgreSQL owner/app/readonly deben ser distintos")
+        credential_paths = (
+            self.postgres_credential_file,
+            self.postgres_app_credential_file,
+            self.postgres_readonly_credential_file,
+        )
+        if len({str(path) for path in credential_paths}) != 3:
+            raise ValueError("secretos PostgreSQL owner/app/readonly deben ser distintos")
+        for path in credential_paths:
+            if not path.is_absolute():
+                raise ValueError("credenciales PostgreSQL de app/readonly deben ser absolutas")
 
     def agent_budget_policy(self) -> dict[str, int]:
         """Política versionable que acompaña cada reserva de inferencia."""

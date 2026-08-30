@@ -12,7 +12,7 @@ from mova_fpl.ops.db import OpsDB, new_id, sha256_json
 from mova_fpl.postgres.cutover import JOB_TYPE, SCHEMA, ReadCutoverSession
 from mova_fpl.postgres.importer import verify_shadow
 from mova_fpl.postgres.read_repository import PostgresReadRepository, SQLiteReadRepository
-from mova_fpl.postgres.store import connect
+from mova_fpl.postgres.store import connect, connect_readonly
 
 
 def _file_sha(path: Path) -> str:
@@ -44,8 +44,8 @@ def run_cutover_drill(config, db: OpsDB, *, actor: str, reason: str,
         if verification.get("status") != "pass":
             raise RuntimeError("latest PostgreSQL import does not pass full verification")
         import_run_id = str(verification["import_run_id"])
-        with connect(config, autocommit=True) as pg:
-            latest = pg.execute(
+        with connect(config, autocommit=True) as owner:
+            latest = owner.execute(
                 "select artifact_path from mova_meta.import_runs where import_run_id=%s",
                 (import_run_id,),
             ).fetchone()
@@ -57,6 +57,7 @@ def run_cutover_drill(config, db: OpsDB, *, actor: str, reason: str,
                 "canonical": root / config.canonical_db.name,
                 "trace": root / config.trace_db.name,
             })
+        with connect_readonly(config, autocommit=True) as pg:
             drill = ReadCutoverSession(
                 sqlite_repo, PostgresReadRepository(pg)
             ).exercise()

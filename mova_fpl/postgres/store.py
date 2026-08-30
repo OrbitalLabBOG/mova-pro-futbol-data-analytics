@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Protocol
 
 import psycopg
+from psycopg import sql
 from psycopg.rows import dict_row
 
 from mova_fpl.postgres.read_repository import summary as parity_summary
@@ -27,21 +28,26 @@ class PostgresConfig(Protocol):
     postgres_db: str
     postgres_user: str
     postgres_credential_file: Path
+    postgres_app_user: str
+    postgres_app_credential_file: Path
+    postgres_readonly_user: str
+    postgres_readonly_credential_file: Path
 
     def validate_postgres(self) -> None: ...
+    def validate_postgres_roles(self) -> None: ...
 
 
 class PostgresStatusConfig(PostgresConfig, Protocol):
     artifact_root: Path
 
 
-def _password(config: PostgresConfig) -> str:
+def _secret(path: Path, label: str) -> str:
     try:
-        password = config.postgres_credential_file.read_text(encoding="utf-8").strip()
+        password = path.read_text(encoding="utf-8").strip()
     except OSError as exc:
-        raise RuntimeError("no se pudo leer el secreto PostgreSQL") from exc
+        raise RuntimeError(f"no se pudo leer el secreto PostgreSQL {label}") from exc
     if not password:
-        raise RuntimeError("el secreto PostgreSQL está vacío")
+        raise RuntimeError(f"el secreto PostgreSQL {label} está vacío")
     return password
 
 
@@ -52,12 +58,127 @@ def connect(config: PostgresConfig, *, autocommit: bool = False):
         port=config.postgres_port,
         dbname=config.postgres_db,
         user=config.postgres_user,
-        password=_password(config),
+        password=_secret(config.postgres_credential_file, "owner"),
         connect_timeout=5,
         application_name="mova-shadow",
         autocommit=autocommit,
         row_factory=dict_row,
     )
+
+
+def _connect_role(config: PostgresConfig, *, user: str, credential_file: Path,
+                  application_name: str, autocommit: bool = False):
+    config.validate_postgres_roles()
+    return psycopg.connect(
+        host=config.postgres_host,
+        port=config.postgres_port,
+        dbname=config.postgres_db,
+        user=user,
+        password=_secret(credential_file, user),
+        connect_timeout=5,
+        application_name=application_name,
+        autocommit=autocommit,
+        row_factory=dict_row,
+    )
+
+
+def connect_readonly(config: PostgresConfig, *, autocommit: bool = False):
+    """Open the candidate reader with the dedicated least-privilege identity."""
+    return _connect_role(
+        config, user=config.postgres_readonly_user,
+        credential_file=config.postgres_readonly_credential_file,
+        application_name="mova-shadow-readonly", autocommit=autocommit,
+    )
+
+
+def _permission_matrix(config: PostgresConfig, *, user: str,
+                       credential_file: Path, expected_group: str) -> dict:
+    with _connect_role(
+        config, user=user, credential_file=credential_file,
+        application_name=f"mova-role-check-{expected_group}", autocommit=True,
+    ) as con:
+        return con.execute(
+            "select current_user as current_user, "
+            "pg_has_role(current_user,%s,'member') as expected_membership, "
+            "has_table_privilege(current_user,'ops.runtime_controls','select') "
+            "as can_select, "
+            "has_table_privilege(current_user,'ops.runtime_controls','insert') "
+            "as can_insert, "
+            "has_table_privilege(current_user,'ops.runtime_controls','update') "
+            "as can_update, "
+            "has_table_privilege(current_user,'ops.runtime_controls','delete') "
+            "as can_delete, "
+            "has_database_privilege(current_user,current_database(),'temp') as can_temp, "
+            "current_setting('default_transaction_read_only') as default_read_only",
+            (expected_group,),
+        ).fetchone()
+
+
+def verify_role_separation(config: PostgresConfig) -> dict:
+    """Verify identity, inheritance and effective privileges without mutating data."""
+    app = _permission_matrix(
+        config, user=config.postgres_app_user,
+        credential_file=config.postgres_app_credential_file,
+        expected_group="mova_app",
+    )
+    readonly = _permission_matrix(
+        config, user=config.postgres_readonly_user,
+        credential_file=config.postgres_readonly_credential_file,
+        expected_group="mova_readonly",
+    )
+    app_pass = (
+        app["current_user"] == config.postgres_app_user
+        and app["expected_membership"] is True
+        and app["can_select"] is True
+        and app["can_insert"] is True
+        and app["can_update"] is True
+        and app["can_delete"] is False
+        and app["can_temp"] is False
+        and app["default_read_only"] == "off"
+    )
+    readonly_pass = (
+        readonly["current_user"] == config.postgres_readonly_user
+        and readonly["expected_membership"] is True
+        and readonly["can_select"] is True
+        and readonly["can_insert"] is False
+        and readonly["can_update"] is False
+        and readonly["can_delete"] is False
+        and readonly["can_temp"] is False
+        and readonly["default_read_only"] == "on"
+    )
+    return {
+        "schema": "mova-postgres-role-separation-v1",
+        "status": "pass" if app_pass and readonly_pass else "fail",
+        "owner_user": config.postgres_user,
+        "app": {**app, "status": "pass" if app_pass else "fail"},
+        "readonly": {**readonly, "status": "pass" if readonly_pass else "fail"},
+        "secrets_distinct": len({
+            str(config.postgres_credential_file),
+            str(config.postgres_app_credential_file),
+            str(config.postgres_readonly_credential_file),
+        }) == 3,
+    }
+
+
+def provision_roles(config: PostgresConfig) -> dict:
+    """Rotate dedicated LOGIN passwords and prove their least privileges."""
+    config.validate_postgres_roles()
+    app_password = _secret(config.postgres_app_credential_file, "app")
+    readonly_password = _secret(config.postgres_readonly_credential_file, "readonly")
+    with connect(config, autocommit=True) as con:
+        con.execute(
+            sql.SQL("alter role {} password %s").format(
+                sql.Identifier(config.postgres_app_user)
+            ),
+            (app_password,),
+        )
+        con.execute(
+            sql.SQL("alter role {} password %s").format(
+                sql.Identifier(config.postgres_readonly_user)
+            ),
+            (readonly_password,),
+        )
+    return verify_role_separation(config)
 
 
 def _migration_files() -> list[Path]:
@@ -160,8 +281,10 @@ def status(config: PostgresConfig) -> dict:
             **read_parity, "status": "fail",
             "failed_tables": read_parity["failed_tables"] + len(table_checks) - len(checked),
         }
+    role_separation = verify_role_separation(config)
+    healthy = len(schemas) == 7 and role_separation["status"] == "pass"
     return {
-        "status": "healthy" if len(schemas) == 7 else "degraded",
+        "status": "healthy" if healthy else "degraded",
         "server_version": server["version"],
         "max_connections": server["max_connections"],
         "schemas": schemas,
@@ -172,6 +295,7 @@ def status(config: PostgresConfig) -> dict:
         "read_parity": read_parity,
         "writer": "sqlite",
         "postgres_role": "shadow",
+        "role_separation": role_separation,
     }
 
 
@@ -188,6 +312,7 @@ def prometheus(state: dict) -> str:
             import_age = max(0, int((datetime.now(timezone.utc) - parsed).total_seconds()))
         except ValueError:
             pass
+    role_status = str((state.get("role_separation") or {}).get("status") or "missing")
     return "\n".join([
         "# HELP mova_postgres_shadow_up PostgreSQL shadow availability.",
         "# TYPE mova_postgres_shadow_up gauge",
@@ -216,6 +341,11 @@ def prometheus(state: dict) -> str:
         "# TYPE mova_postgres_distinct_gameweek_cycles gauge",
         f"mova_postgres_distinct_gameweek_cycles "
         f"{int((state.get('import_history') or {}).get('distinct_gameweek_cycles') or 0)}",
+        "# HELP mova_postgres_role_separation_status Dedicated runtime role verification.",
+        "# TYPE mova_postgres_role_separation_status gauge",
+        *[f'mova_postgres_role_separation_status{{status="{name}"}} '
+          f'{1 if role_status == name else 0}'
+          for name in ("missing", "pass", "fail")],
         "",
     ])
 
@@ -242,6 +372,7 @@ def publish_status(config: PostgresStatusConfig, state: dict) -> dict:
         "read_parity": state.get("read_parity"),
         "writer": state.get("writer"),
         "postgres_role": state.get("postgres_role"),
+        "role_separation": state.get("role_separation"),
     }
     path = _status_path(config)
     path.parent.mkdir(parents=True, exist_ok=True)

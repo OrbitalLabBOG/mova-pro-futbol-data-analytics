@@ -65,6 +65,10 @@ mova postgres drill \
   --actor codex \
   --reason "ensayo read-path antes del cutover" \
   --idempotency-key "2026-27-gw03:read-cutover-v1"
+mova postgres roles \
+  --actor codex \
+  --reason "provisión least-privilege" \
+  --idempotency-key "2026-27-gw03:roles-v1"
 ```
 
 `import` trunca y reconstruye únicamente las tablas shadow declaradas. No modifica las tres
@@ -101,6 +105,20 @@ en SQLite y la superficie read-only en `/api/v1/postgres-cutover-drills`. Promet
 Este drill cubre la revisión candidata del **read-path** sin dual-write. No autoriza el cutover
 del writer, no convierte PostgreSQL en fuente operativa y no sustituye los gates multi-GW,
 off-host o aprobación explícita.
+
+## Identidades runtime separadas
+
+`postgres roles` usa el owner exclusivamente para rotar las contraseñas de
+`mova_app_runtime` y `mova_readonly_runtime`. Los secretos viven en archivos Docker distintos,
+con permisos `root:10001 0640`, y nunca forman parte del job, artifact, API ni log. La identidad
+app hereda `SELECT/INSERT/UPDATE`, sin `DELETE` ni `TEMP`; readonly hereda sólo `SELECT`, no tiene
+`TEMP` y arranca con `default_transaction_read_only=on`. Ambas tienen límites de conexión y
+timeouts defensivos.
+
+La operación exige actor, razón y llave idempotente. Verifica conexiones reales, membresías y
+privilegios efectivos; sella el resultado bajo `artifacts/postgres-role-provision/`. El drill de
+cutover usa readonly para todo acceso candidato. `mova postgres status`, API y Prometheus exponen
+el estado sanitizado `role_separation`/`mova_postgres_role_separation_status`.
 
 ## Estado observable sin ampliar autoridad
 

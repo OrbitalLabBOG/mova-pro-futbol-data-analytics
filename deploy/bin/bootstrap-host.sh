@@ -36,6 +36,15 @@ if [[ ! -e /etc/mova-fpl/postgres-password ]]; then
 fi
 chown root:10001 /etc/mova-fpl/postgres-password
 chmod 0640 /etc/mova-fpl/postgres-password
+for role_secret in postgres-app-password postgres-readonly-password; do
+  if [[ ! -e "/etc/mova-fpl/$role_secret" ]]; then
+    umask 077
+    openssl rand -hex 32 > "/etc/mova-fpl/$role_secret"
+    echo "created /etc/mova-fpl/$role_secret (content not displayed)"
+  fi
+  chown root:10001 "/etc/mova-fpl/$role_secret"
+  chmod 0640 "/etc/mova-fpl/$role_secret"
+done
 if [[ -e /etc/mova-fpl/odds-api-key ]]; then
   chown root:10001 /etc/mova-fpl/odds-api-key
   chmod 0640 /etc/mova-fpl/odds-api-key

@@ -30,6 +30,9 @@ def _dashboard(status: dict) -> bytes:
     parity = (((status.get("storage") or {}).get("postgres") or {}).get(
         "read_parity"
     ) or {})
+    role_separation = (((status.get("storage") or {}).get("postgres") or {}).get(
+        "role_separation"
+    ) or {})
     control_rows = "".join(
         f"<tr><td>{html.escape(key)}</td><td><code>{html.escape(json.dumps(value))}</code></td></tr>"
         for key, value in controls.items()
@@ -54,7 +57,7 @@ a {{ color:#72a7ff }}
 <div class="card"><div class="muted">Alertas pendientes</div><div class="value">{operations.get('outbox_pending',0)}</div><div>SQLite {html.escape(str((status.get('runtime') or {}).get('sqlite_version','')))}</div></div>
 <div class="card"><div class="muted">Estado privado</div><div class="value">{html.escape(str(team_state.get('quality','sin datos')))}</div><div>{html.escape(str(team_state.get('observed_at','')))} · FT {html.escape(str(team_state.get('free_transfers','—')))}</div></div>
 <div class="card"><div class="muted">Drift del modelo</div><div class="value">{html.escape(str(scorecard.get('drift_status','sin scorecard')))}</div><div>GW {html.escape(str(scorecard.get('gw','—')))} · {html.escape(str(scorecard.get('variant','')))}</div></div>
-<div class="card"><div class="muted">Dual-read PostgreSQL</div><div class="value">{html.escape(str(parity.get('status','sin paridad')))}</div><div>{html.escape(str(parity.get('checked_tables',0)))} tablas verificadas</div></div>
+<div class="card"><div class="muted">Dual-read PostgreSQL</div><div class="value">{html.escape(str(parity.get('status','sin paridad')))}</div><div>{html.escape(str(parity.get('checked_tables',0)))} tablas · roles {html.escape(str(role_separation.get('status','sin verificar')))}</div></div>
 </div>
 <h2>Controles efectivos</h2><table><thead><tr><th>Control</th><th>Valor</th></tr></thead><tbody>{control_rows}</tbody></table>
 <p><a href="/api/v1/status">status JSON</a> · <a href="/api/v1/readiness">autonomy readiness</a> · <a href="/api/v1/analytics">analytics</a> · <a href="/api/v1/strategy">strategy</a> · <a href="/api/v1/improvement">learning</a> · <a href="/api/v1/costs">costos</a> · <a href="/metrics">métricas</a> · <a href="/api/v1/audit">auditoría</a> · <a href="/api/v1/jobs">jobs</a> · <a href="/api/v1/steps">steps</a></p>

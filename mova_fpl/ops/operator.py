@@ -599,6 +599,7 @@ def build_doctor(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
                     "latest_import_status": (pg_status.get("latest_import") or {}).get("status"),
                     "writer": pg_status.get("writer"),
                     "role": pg_status.get("postgres_role"),
+                    "role_separation": pg_status.get("role_separation"),
                     "read_parity": parity,
                     "import_age_seconds": import_age,
                     "import_max_age_seconds": POSTGRES_PARITY_MAX_AGE_SECONDS,
