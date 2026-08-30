@@ -1829,6 +1829,163 @@ class OpsDB:
             "change_proposals": proposal_rows,
         }
 
+    def improvement_status(self, *, season: str | None = None,
+                           gw: int | None = None) -> dict:
+        """Memoria de mejora y gasto LLM, sin mutar configuración productiva."""
+        filters: list[str] = []
+        params: list[object] = []
+        if season is not None:
+            filters.append("c.season=?")
+            params.append(season)
+        if gw is not None:
+            filters.append("c.gw=?")
+            params.append(int(gw))
+        where = ("WHERE " + " AND ".join(filters)) if filters else ""
+        with self.connect(readonly=True) as con:
+            proposals = con.execute(
+                f"""SELECT p.*,c.season,c.gw,r.causality_status
+                FROM change_proposals p
+                JOIN gameweek_reviews r ON r.review_id=p.review_id
+                JOIN gameweek_settlements s ON s.settlement_id=r.settlement_id
+                JOIN gameweek_cycles c ON c.cycle_id=s.cycle_id
+                {where} ORDER BY c.gw DESC,p.priority,p.created_at""", params,
+            ).fetchall()
+            lessons = con.execute(
+                f"""SELECT l.*,c.season,c.gw
+                FROM lessons l
+                JOIN gameweek_reviews r ON r.review_id=l.review_id
+                JOIN gameweek_settlements s ON s.settlement_id=r.settlement_id
+                JOIN gameweek_cycles c ON c.cycle_id=s.cycle_id
+                {where} ORDER BY l.created_at DESC""", params,
+            ).fetchall()
+            evaluations = con.execute(
+                f"""SELECT e.* FROM change_proposal_evaluations e
+                JOIN change_proposals p ON p.proposal_id=e.proposal_id
+                JOIN gameweek_reviews r ON r.review_id=p.review_id
+                JOIN gameweek_settlements s ON s.settlement_id=r.settlement_id
+                JOIN gameweek_cycles c ON c.cycle_id=s.cycle_id
+                {where} ORDER BY e.created_at DESC LIMIT 100""", params,
+            ).fetchall()
+            costs = con.execute(
+                """SELECT provider,model,COUNT(*) uses,
+                COALESCE(SUM(input_tokens),0) input_tokens,
+                COALESCE(SUM(output_tokens),0) output_tokens,
+                SUM(estimated_cost_usd) estimated_cost_usd,
+                SUM(subscription_usage) subscription_uses
+                FROM cost_ledger GROUP BY provider,model ORDER BY provider,model"""
+            ).fetchall()
+            cost_months = con.execute(
+                """SELECT substr(occurred_at,1,7) month,COUNT(*) uses,
+                COALESCE(SUM(input_tokens),0) input_tokens,
+                COALESCE(SUM(output_tokens),0) output_tokens,
+                SUM(estimated_cost_usd) estimated_cost_usd,
+                SUM(subscription_usage) subscription_uses
+                FROM cost_ledger GROUP BY substr(occurred_at,1,7) ORDER BY month DESC"""
+            ).fetchall()
+        proposal_rows = []
+        for row in proposals:
+            item = dict(row)
+            item["evidence"] = json.loads(item.pop("evidence_json"))
+            item["acceptance"] = json.loads(item.pop("acceptance_json"))
+            proposal_rows.append(item)
+        lesson_rows = []
+        for row in lessons:
+            item = dict(row)
+            item["evidence"] = json.loads(item.pop("evidence_json"))
+            lesson_rows.append(item)
+        evaluation_rows = []
+        for row in evaluations:
+            item = dict(row)
+            item["evidence"] = json.loads(item.pop("evidence_json"))
+            evaluation_rows.append(item)
+        totals = {
+            "uses": sum(int(row["uses"]) for row in costs),
+            "input_tokens": sum(int(row["input_tokens"]) for row in costs),
+            "output_tokens": sum(int(row["output_tokens"]) for row in costs),
+            "subscription_uses": sum(int(row["subscription_uses"]) for row in costs),
+            "estimated_cost_usd": round(sum(float(row["estimated_cost_usd"] or 0)
+                                            for row in costs), 6),
+            "unknown_cost_uses": sum(int(row["uses"])
+                                     for row in costs if row["estimated_cost_usd"] is None),
+        }
+        return {
+            "schema": "mova-continuous-improvement-status-v1",
+            "filters": {"season": season, "gw": gw},
+            "proposal_counts": {
+                status: sum(item["status"] == status for item in proposal_rows)
+                for status in ("proposed", "testing", "accepted", "rejected")
+            },
+            "proposals": proposal_rows, "evaluations": evaluation_rows,
+            "lessons": lesson_rows,
+            "costs": {"scope": "all_time", "totals": totals,
+                      "by_provider_model": [dict(row) for row in costs],
+                      "by_month": [dict(row) for row in cost_months]},
+            "runtime_mutated": False,
+        }
+
+    def transition_change_proposal(self, proposal_id: str, *, to_status: str,
+                                   evidence: dict, actor: str, reason: str,
+                                   idempotency_key: str) -> dict:
+        """Registra evaluación; aceptar crea memoria, nunca aplica el cambio propuesto."""
+        transitions = {"proposed": {"testing", "rejected"},
+                       "testing": {"accepted", "rejected"}}
+        evidence_sha = sha256_json(evidence)
+        now = utcnow()
+        with self.transaction() as con:
+            reused = con.execute(
+                "SELECT * FROM change_proposal_evaluations WHERE idempotency_key=?",
+                (idempotency_key,),
+            ).fetchone()
+            if reused:
+                if (reused["proposal_id"] != proposal_id or reused["to_status"] != to_status
+                        or reused["evidence_sha256"] != evidence_sha):
+                    raise ValueError("idempotency_key ya usada con otro contenido")
+                return {"status": "reused", "proposal_id": proposal_id,
+                        "evaluation_id": reused["evaluation_id"],
+                        "proposal_status": reused["to_status"], "runtime_mutated": False}
+            proposal = con.execute(
+                "SELECT * FROM change_proposals WHERE proposal_id=?", (proposal_id,)
+            ).fetchone()
+            if not proposal:
+                raise ValueError("proposal_id no existe")
+            current = str(proposal["status"])
+            if to_status not in transitions.get(current, set()):
+                raise ValueError(f"transición inválida: {current} -> {to_status}")
+            evaluation_id = new_id("evaluation")
+            con.execute(
+                """INSERT INTO change_proposal_evaluations(
+                evaluation_id,proposal_id,idempotency_key,from_status,to_status,
+                evidence_json,evidence_sha256,actor,reason,created_at)
+                VALUES(?,?,?,?,?,?,?,?,?,?)""",
+                (evaluation_id, proposal_id, idempotency_key, current, to_status,
+                 canonical_json(evidence), evidence_sha, actor, reason, now),
+            )
+            con.execute("UPDATE change_proposals SET status=? WHERE proposal_id=?",
+                        (to_status, proposal_id))
+            lesson_id = None
+            if to_status == "accepted":
+                lesson_id = "lesson_" + hashlib.sha256(
+                    proposal_id.encode("utf-8")
+                ).hexdigest()[:24]
+                con.execute(
+                    """INSERT INTO lessons(lesson_id,proposal_id,review_id,category,
+                    statement,evidence_json,status,created_at)
+                    VALUES(?,?,?,?,?,?,'validated',?)""",
+                    (lesson_id, proposal_id, proposal["review_id"], proposal["category"],
+                     proposal["hypothesis"], canonical_json(evidence), now),
+                )
+            self.append_audit(
+                "change_proposal_evaluated", actor=actor,
+                severity="warning" if to_status == "accepted" else "info",
+                subject_type="change_proposal", subject_id=proposal_id,
+                payload={"from_status": current, "to_status": to_status,
+                         "evaluation_id": evaluation_id, "lesson_id": lesson_id,
+                         "reason": reason, "runtime_mutated": False}, con=con,
+            )
+        return {"status": "completed", "proposal_id": proposal_id,
+                "evaluation_id": evaluation_id, "proposal_status": to_status,
+                "lesson_id": lesson_id, "runtime_mutated": False}
+
     def recent(self, table: str, limit: int = 50) -> list[dict]:
         allowed = {"job_runs", "job_steps", "audit_events", "incidents", "health_samples",
                    "source_snapshots", "team_state_snapshots", "decision_runs",
@@ -1840,7 +1997,8 @@ class OpsDB:
                    "outbox_events", "chip_strategy_runs", "gameweek_settlements",
                    "gameweek_reviews", "change_proposals", "season_plans",
                    "cycle_manifests", "research_runs", "research_documents",
-                   "research_signals", "research_conflicts", "cost_ledger"}
+                   "research_signals", "research_conflicts", "cost_ledger",
+                   "change_proposal_evaluations", "lessons"}
         if table not in allowed:
             raise ValueError(f"tabla no permitida: {table}")
         order = {
@@ -1864,6 +2022,7 @@ class OpsDB:
             "research_runs": "queued_at", "research_documents": "observed_at",
             "research_signals": "observed_at", "research_conflicts": "created_at",
             "cost_ledger": "occurred_at",
+            "change_proposal_evaluations": "created_at", "lessons": "created_at",
         }[table]
         with self.connect(readonly=True) as con:
             rows = con.execute(

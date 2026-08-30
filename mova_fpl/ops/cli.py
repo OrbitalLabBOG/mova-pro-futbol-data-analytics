@@ -59,6 +59,24 @@ def parser() -> argparse.ArgumentParser:
     )
     review_status.add_argument("--gw", type=int, required=True)
     review_status.add_argument("--season")
+    improve = commands.add_parser(
+        "improve", help="memoria, costos y gate de mejora continua"
+    )
+    improve_commands = improve.add_subparsers(dest="improve_command", required=True)
+    improve_status = improve_commands.add_parser(
+        "status", help="consulta propuestas, lecciones y uso/costo"
+    )
+    improve_status.add_argument("--season")
+    improve_status.add_argument("--gw", type=int)
+    transition = improve_commands.add_parser(
+        "transition", help="evalúa una propuesta sin aplicar cambios al runtime"
+    )
+    transition.add_argument("--proposal-id", required=True)
+    transition.add_argument("--to", choices=("testing", "accepted", "rejected"), required=True)
+    transition.add_argument("--evidence", required=True)
+    transition.add_argument("--actor", required=True)
+    transition.add_argument("--reason", required=True)
+    transition.add_argument("--idempotency-key", required=True)
     strategy = commands.add_parser(
         "strategy", help="plan, manifiesto e investigación verificable"
     )
@@ -232,6 +250,23 @@ def main(argv: list[str] | None = None) -> int:
             payload = GameweekReviewService(config, db).run(
                 package_path=Path(args.package), actor=args.actor, reason=args.reason,
                 idempotency_key=args.idempotency_key,
+            )
+        print(json.dumps(payload, ensure_ascii=False, default=str))
+        return 0
+
+    if args.command == "improve":
+        from pathlib import Path
+        from mova_fpl.ops.improvement import ContinuousImprovementService
+
+        db = OpsDB(config.ops_db, minimum_version=config.sqlite_min_version)
+        service = ContinuousImprovementService(db)
+        if args.improve_command == "status":
+            payload = service.status(season=args.season, gw=args.gw)
+        else:
+            payload = service.transition(
+                proposal_id=args.proposal_id, to_status=args.to,
+                evidence_path=Path(args.evidence), actor=args.actor,
+                reason=args.reason, idempotency_key=args.idempotency_key,
             )
         print(json.dumps(payload, ensure_ascii=False, default=str))
         return 0

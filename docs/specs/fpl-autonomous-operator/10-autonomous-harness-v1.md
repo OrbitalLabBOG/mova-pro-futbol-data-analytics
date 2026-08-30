@@ -380,8 +380,8 @@ no borra evidencia previa y nunca amplía autonomía.
 | HV1-05 🟡 | servicio news/research: foco plantilla+candidatos, delta y slot final; falta evaluar cobertura multi-GW | 8–12 h | HV1-02/03 |
 | HV1-06A ✅ | bundle máquina, `do_nothing`, alternativa, Validator y DecisionEnvelope | completado | HV1-03/04/05 |
 | HV1-06B ✅ | Strategist + Critic acotados sobre `Intervention`, sin autoridad directa | completado | HV1-06A |
-| HV1-07 🟡 | policy + ExecutionPlan + preflight listos; faltan apply/verifier/rehearsals | 8–12 h | HV1-06 |
-| HV1-08 🟡 | scorecard/drift técnico implementado; faltan reviewer causal, costos y promoción | 8–12 h | HV1-03/06 |
+| HV1-07 🟡 | policy, preflight, apply-once y verifier listos; faltan driver de clicks y rehearsals | 6–10 h | HV1-06 |
+| HV1-08 🟡 | scorecard, cost read-model y gate propuesta→lección listos; faltan reviewer causal automático y budgets | 5–8 h | HV1-03/06 |
 
 No es necesario completar 64–92 horas antes de obtener valor. Cortes de entrega:
 
@@ -474,10 +474,10 @@ state, deadline, incidentes, controles y ejecuciones previas; calcula el diff ex
 SQLite migration 009 y PostgreSQL migrations 010/011 guardan planes/checks append-only y su
 provenance de job; el import shadow los reconcilia por conteo. El CLI
 `mova execute preflight`, API, Prometheus, schema JSON y runbook hacen observable cada blocker.
-El rollout continúa en `shadow/A0`: este corte no implementa `apply`, no inicia el browser y no
-añade ninguna primitiva de escritura. HV1-07C debe consumir exclusivamente un plan autorizado,
-aplicar una vez y verificar el estado post-acción; HV1-07D debe completar tres rehearsals y gates
-de promoción antes de elevar autonomía.
+El rollout continúa en `shadow/A0`: este corte no inicia el browser ni amplía autoridad. El corte
+HV1-07C posterior consume exclusivamente un plan autorizado y conserva apply-once/verifier;
+HV1-07D debe completar el driver host y tres rehearsals antes de elevar autonomía.
+Evidencia del rollout: [HV1-07A/B](18-hv1-07ab-preflight-rollout.md).
 
 ### Corte apply-once + verifier — 30 de agosto de 2026
 
@@ -492,6 +492,14 @@ Prometheus y artifacts permiten replay sin exponer estado privado. Un mismatch p
 P0 y queda `ambiguous`; no existe retry automático. El adapter de transfers/chips R3 y el driver
 host que materializa los siete comandos siguen pendientes. Producción permanece A0 con browser
 writes apagado, así que esta entrega no amplía autoridad ni toca el equipo.
+
+### Corte de mejora continua fail-closed — 30 de agosto de 2026
+
+SQLite migration `011` y PostgreSQL migration `013` añaden evaluaciones idempotentes y lecciones
+validadas. `mova improve` y `/api/v1/improvement` exponen propuestas, memoria y uso/costo. El gate
+obliga `proposed → testing → accepted|rejected`, valida evidencia mínima y registra auditoría;
+aceptar no aplica código, modelo, prompt, política ni control. El reviewer causal automático y
+los presupuestos duros continúan pendientes, por lo que HV1-08 permanece parcial.
 
 ## 11. Definition of Done del harness v1
 

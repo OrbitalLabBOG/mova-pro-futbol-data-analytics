@@ -139,6 +139,13 @@ TABLES = (
     TableSpec("ops", "change_proposals", "agent.change_proposals",
               renames={"evidence_json": "evidence", "acceptance_json": "acceptance"},
               json_columns=frozenset({"evidence_json", "acceptance_json"})),
+    TableSpec("ops", "change_proposal_evaluations",
+              "agent.change_proposal_evaluations",
+              renames={"evidence_json": "evidence"},
+              json_columns=frozenset({"evidence_json"})),
+    TableSpec("ops", "lessons", "agent.lessons",
+              renames={"evidence_json": "evidence"},
+              json_columns=frozenset({"evidence_json"})),
 )
 
 TARGETS = tuple(dict.fromkeys(spec.target_table for spec in TABLES))

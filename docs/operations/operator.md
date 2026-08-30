@@ -28,6 +28,7 @@ mova data status
 mova data coverage
 mova analytics status
 mova analytics run
+mova improve status --season 2026-27
 mova strategy status
 mova strategy prepare
 mova strategy research due
@@ -131,6 +132,12 @@ El cierre estratégico usa `mova review gw` después de `finished + data_checked
 actor, razón y clave idempotente; persiste settlement/review en el writer SQLite y exporta la
 atribución a la traza. Si no existió batch predeadline, el resultado es retrospectivo y no cuenta
 como scorecard causal.
+
+La memoria de mejora se consulta con `mova improve status` o `/api/v1/improvement`. Una propuesta
+solo puede pasar `proposed → testing → accepted|rejected`; cada transición exige actor, razón,
+clave idempotente y evidencia JSON. Aceptar crea una `lesson` validada, pero deliberadamente no
+aplica el cambio al runtime. Contrato, formatos y recuperación en
+[mejora continua](continuous-improvement.md).
 
 El contexto pre-deadline usa `mova strategy`: `plan` activa una revisión explícita del plan
 de temporada; `prepare` sella fuentes, team state, proyección, plan y research en un

@@ -35,7 +35,11 @@ consulta ordinaria: `mova` y `/api/v1/status` son el contrato estable.
    El brief de Codex es candidato hasta que el importador determinista lo valide.
 9. Para clasificar riesgo, sellar un diff o diagnosticar un bloqueo previo al browser, lee
    [docs/operations/execution-preflight.md](../../../docs/operations/execution-preflight.md).
-   `mova execute preflight` persiste evidencia, pero no aplica cambios en FPL.
+   `mova execute` conserva preflight, lease apply-once y verifier; el driver de clicks continúa
+   separado y sujeto a controles.
+10. Para revisar propuestas, uso/costo o promover una hipótesis a memoria validada, lee
+    [docs/operations/continuous-improvement.md](../../../docs/operations/continuous-improvement.md).
+    `mova improve` nunca aplica la hipótesis al runtime.
 
 `status` no prueba red ni muta estado. `doctor` hace checks acotados y un único GET público a
 FPL; usa `--no-network` cuando la ejecución deba ser hermética. Un `FAIL` requerido devuelve
@@ -82,6 +86,8 @@ pendiente o `browser_writes=false`, limita el browser a login y lecturas.
   aprobado antes de reconstruir.
 - `research_worker FAIL`: verificar timer, cola y presencia sanitizada del auth; nunca
   mostrar, copiar a Git ni incluir el archivo de autenticación en evidencias.
+- propuesta de mejora atascada: consultar `mova improve status`; no saltar `testing`, no aceptar
+  sin evidencia/rollback y no confundir una lección aceptada con un despliegue.
 - `host_probe WARN`: usar el wrapper del host; no montar Docker socket o D-Bus dentro del engine.
 - API FPL `FAIL`: conservar la última evidencia, declarar la pérdida de frescura y no forzar una
   corrida que parezca vigente.
