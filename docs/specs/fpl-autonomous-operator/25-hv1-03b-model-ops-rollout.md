@@ -4,7 +4,7 @@ name: "HV1-03b — Model operations facade"
 created: 2026-08-30
 updated: 2026-08-30
 tags: [mova, fpl, model, mlops, idempotency, observability]
-status: implementation-verified
+status: deployed-shadow
 ---
 
 # Evidencia HV1-03b — Model operations facade
@@ -40,10 +40,38 @@ PASS
 
 Las pruebas cubren parser tipado, separación de jobs, procedencia de explicación, candidato sin
 promoción, replay idempotente, rechazo de alias con input distinto, limpieza ante fallo y
-protección contra overwrite. La suite completa, smoke del VPS y una corrida candidata real se
-registran en la sección de rollout antes de cerrar el acta.
+protección contra overwrite. La suite completa también pasó:
+`986 passed, 1 skipped, 79 deselected`.
 
 ## Rollout VPS
 
-Pendiente de completar en esta misma iteración. Hasta entonces la implementación está verificada
-localmente, pero el task PM no debe considerarse desplegado.
+Desplegado en `main` como `d5dc90b3`; checkout, etiqueta de imagen y API quedaron en la misma
+revisión. La corrida real produjo:
+
+| Evidencia | Resultado |
+| --- | --- |
+| Dataset | `dataset_43e053f68d069d76f94bf14b`, 253.890 filas, cutoff 2025/26 GW<39 |
+| Candidate | `minutes=1.2.0`, `points=1.2.0` |
+| Training job | `job_503283893b9d449dace33fb796508ca6` |
+| Training manifest | SHA-256 `0a8c96811eb339049ffbad55071d2442a9dd5c05bbea8f269f4d6523f427a3cf` |
+| Candidate manifest | SHA-256 `057bc352346ed45ce9654218cb27eeaac0a8ba5d939f6afccef6ef75416dd34a` |
+| Replay | misma clave → `reused`, mismo job |
+| Bundle verify | hashes de ambos artifacts y sidecars verificados por el release sealer |
+| Runtime activo | permaneció `minutes=1.1.0`, `points=1.1.0`, source `runtime_config` |
+
+`model predict` creó un batch baseline causal de 623 jugadores para GW3
+(`projection_c020f971ad894b0e8c181383daf7c55e`) y su variante odds shadow, usando todavía el
+bundle activo 1.1.0. El replay devolvió el mismo job
+`job_47cd1214932f4d47bcb7fb7371a882c1`.
+
+`model explain` reconstruyó para el elemento 1 versiones, cutoff, artifact, contexto y diez
+componentes, sellados con
+`content_sha256=b6334f3216fca6b21629ae10b598c07f0bf4b65a0bb39e4523892f44d170ad38`.
+
+`model evaluate` terminó correctamente con cuatro batches en `waiting_for_data_checked` y cero
+evaluaciones: GW2/GW3 aún no tenían settlement oficial final. Repetir la clave reutilizó
+`job_a84a5b5f144f4bed9af315127aab2ee2`. Este resultado es el guardrail esperado, no un fallo ni
+permiso para fabricar scorecards.
+
+El smoke posterior obtuvo 21 checks `PASS`, cero `FAIL` y un único `WARN` deliberado porque se
+ejecutó `doctor --no-network`. Ningún control de autonomía, browser ni cuenta FPL cambió.
