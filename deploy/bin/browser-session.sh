@@ -60,7 +60,7 @@ case "$action" in
     start_browser
     "${compose[@]}" exec -T browser \
       agent-browser --session mova-fpl --cdp "$cdp_port" \
-      open https://fantasy.premierleague.com/ >/dev/null
+      open https://fantasy.premierleague.com/en/my-team >/dev/null
     # FPL keeps ad resources open after the functional UI is ready. Waiting on
     # a global load event can hang, so gate on the exact surface we consume.
     "${compose[@]}" exec -T browser \
