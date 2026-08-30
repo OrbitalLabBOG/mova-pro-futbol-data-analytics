@@ -926,6 +926,11 @@ MIGRATION_013 = (
     "ON model_bundle_release_events(release_id,occurred_at DESC)",
 )
 
+MIGRATION_014 = (
+    "ALTER TABLE cycle_manifests ADD COLUMN memory_summary_json TEXT NOT NULL "
+    "DEFAULT '{}' CHECK (json_valid(memory_summary_json))",
+)
+
 MIGRATIONS = (
     (1, "initial_ops_schema", MIGRATION_001),
     (2, "team_state_artifact_provenance", MIGRATION_002),
@@ -940,4 +945,5 @@ MIGRATIONS = (
     (11, "continuous_improvement_gate", MIGRATION_011),
     (12, "agent_cost_budgets", MIGRATION_012),
     (13, "model_bundle_release_gate", MIGRATION_013),
+    (14, "strategic_memory_snapshots", MIGRATION_014),
 )

@@ -82,8 +82,130 @@ def test_plan_y_manifest_son_versionados_e_idempotentes(tmp_path):
         "current_squad"
     ]
     assert manifest["manifest"]["plan_revision"] == 1
+    assert manifest["manifest"]["memory_summary"]["schema"] == (
+        "mova-strategic-memory-v1"
+    )
+    assert manifest["manifest"]["memory_summary"]["status"] == "empty"
+    assert manifest["manifest"]["memory_summary"]["policy"]["chat_history_allowed"] is False
     assert Path(manifest["artifact_path"]).is_file()
-    assert db.strategic_status(cycle_id)["status"] == "ready"
+    strategic_status = db.strategic_status(cycle_id)
+    assert strategic_status["status"] == "ready"
+    assert strategic_status["memory_summary"]["content_sha256"] == (
+        manifest["manifest"]["memory_summary"]["content_sha256"]
+    )
+
+
+def test_manifest_embeds_only_promoted_prior_gameweek_memory(tmp_path):
+    config, db, service, current_cycle = _runtime(tmp_path)
+    now = datetime.now(timezone.utc).replace(microsecond=0)
+    first_plan = service.activate_plan(
+        _plan(), actor="test", reason="plan inicial",
+    )
+    revised_plan = _plan()
+    revised_plan["rationale"] = "Plan revisado después del primer cierre causal."
+    second_plan = service.activate_plan(
+        revised_plan, actor="test", reason="revisión post-GW1",
+    )
+
+    prior_cycle = db.upsert_cycle(
+        config.season, 1, (now - timedelta(days=7)).isoformat(), phase="settlement"
+    )
+    prior_job, _ = db.start_job(
+        "gameweek_review", "memory:gw1", "corr_memory_gw1", cycle_id=prior_cycle,
+    )
+    prior_decision = db.record_decision(
+        job_id=prior_job, cycle_id=prior_cycle, mode="shadow", status="reconciled",
+        policy_version="fixture", expected_points=52.5, chip=None,
+        fingerprint="decision-gw1", manifest_sha256="a" * 64,
+        artifact_path="decision-gw1.json",
+    )
+    current_job, _ = db.start_job(
+        "decision", "memory:gw2", "corr_memory_gw2", cycle_id=current_cycle,
+    )
+    current_decision = db.record_decision(
+        job_id=current_job, cycle_id=current_cycle, mode="shadow", status="blocked",
+        policy_version="fixture", expected_points=60.0, chip="wildcard",
+        fingerprint="decision-gw2", manifest_sha256="b" * 64,
+        artifact_path="decision-gw2.json",
+    )
+    with db.transaction() as con:
+        con.execute(
+            """INSERT INTO gameweek_settlements(
+            settlement_id,idempotency_key,job_id,cycle_id,source_artifact_id,settled_at,
+            entry_points,entry_rank,average_points,bench_points,hit_cost,captain_points,
+            auto_subs_json,official_json,artifact_path,artifact_sha256)
+            VALUES('settlement_memory','memory:settlement:gw1',?,?,?, ?,50,NULL,48,7,0,12,
+            '[]','{}','settlement.json',?)""",
+            (prior_job, prior_cycle, "source-gw1", now.isoformat(), "c" * 64),
+        )
+        con.execute(
+            """INSERT INTO gameweek_reviews(
+            review_id,job_id,settlement_id,decision_id,review_type,causality_status,
+            expected_points,actual_points,comparator_label,comparator_expected_points,
+            comparator_actual_points,realized_delta,metrics_json,findings_json,
+            artifact_path,artifact_sha256,created_at)
+            VALUES('review_memory',?,'settlement_memory',?,'causal','eligible',52.5,50,
+            'hold',51.0,49,-1,'{}',?,'review.json',?,?)""",
+            (prior_job, prior_decision, json.dumps([{
+                "category": "strategy", "summary": "Conservar flexibilidad tuvo valor."
+            }]), "d" * 64, now.isoformat()),
+        )
+        for proposal_id, title in (
+            ("proposal_validated", "Memoria válida"),
+            ("proposal_retired", "Memoria retirada"),
+        ):
+            con.execute(
+                """INSERT INTO change_proposals(
+                proposal_id,review_id,category,change_level,priority,title,hypothesis,
+                evidence_json,acceptance_json,status,created_at)
+                VALUES(?,'review_memory','strategy','C1','P2',?,?,'{}','{}','accepted',?)""",
+                (proposal_id, title, title, now.isoformat()),
+            )
+        con.execute(
+            """INSERT INTO lessons(
+            lesson_id,proposal_id,review_id,category,statement,evidence_json,status,created_at)
+            VALUES('lesson_validated','proposal_validated','review_memory','strategy',
+            'Preservar una transferencia cuando el margen sea pequeño.',
+            '{"experiment_id":"memory-fixture"}','validated',?)""",
+            (now.isoformat(),),
+        )
+        con.execute(
+            """INSERT INTO lessons(
+            lesson_id,proposal_id,review_id,category,statement,evidence_json,status,
+            created_at,retired_at)
+            VALUES('lesson_retired','proposal_retired','review_memory','strategy',
+            'Supuesto retirado.','{}','retired',?,?)""",
+            (now.isoformat(), now.isoformat()),
+        )
+
+    manifest = service.prepare(now=now)["manifest"]
+    memory = manifest["memory_summary"]
+
+    assert memory["status"] == "ready"
+    assert memory["plan_comparison"] == {
+        "active_plan_id": second_plan["plan_id"],
+        "active_revision": 2,
+        "previous_plan_id": first_plan["plan_id"],
+        "previous_revision": 1,
+        "changed_from_previous": True,
+    }
+    assert [item["gw"] for item in memory["decision_records"]] == [1]
+    assert all(item["decision_id"] != current_decision for item in memory["decision_records"])
+    assert [item["review_id"] for item in memory["gw_reviews"]] == ["review_memory"]
+    assert [item["lesson_id"] for item in memory["lessons"]] == ["lesson_validated"]
+    assert memory["lessons"][0]["promotion_status"] == "validated"
+    assert memory["coverage"]["lessons"] == {
+        "available": 1, "included": 1, "truncated": False,
+    }
+    assert len(memory["content_sha256"]) == 64
+    persisted = db.latest_cycle_manifest(current_cycle)
+    assert persisted["memory_summary"] == memory
+    metrics = db.prometheus()
+    assert 'mova_strategic_memory_status{status="ready"} 1' in metrics
+    assert 'mova_strategic_memory_items{type="decisions"} 1' in metrics
+    assert 'mova_strategic_memory_items{type="reviews"} 1' in metrics
+    assert 'mova_strategic_memory_items{type="lessons"} 1' in metrics
+    assert "mova_strategic_plan_revision 2" in metrics
 
 
 def test_manifest_resuelve_plantilla_y_candidatos_para_research(tmp_path, monkeypatch):

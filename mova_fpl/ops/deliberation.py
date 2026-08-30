@@ -365,6 +365,7 @@ class DecisionDeliberationService:
                 "deadline_at": manifest["deadline_at"],
                 "analytics_manifest": manifest["analytics_manifest"],
                 "research_summary": manifest["research_summary"],
+                "strategic_memory": manifest.get("memory_summary", {}),
                 "season_plan": plan,
             },
             "owned_player_elements": sorted(int(value) for value in do_nothing["squad_15"]),

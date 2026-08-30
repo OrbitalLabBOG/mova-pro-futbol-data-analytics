@@ -32,11 +32,14 @@ consulta ordinaria: `mova` y `/api/v1/status` son el contrato estable.
    solo con `finished + data_checked`, package versionado, actor, razón e idempotency key.
 8. Para activar un plan, sellar el manifiesto o investigar noticias, lee
    [docs/operations/strategic-research.md](../../../docs/operations/strategic-research.md).
-   El brief de Codex es candidato hasta que el importador determinista lo valide.
+   Verifica `mova strategy status.memory_summary`: debe provenir de GWs anteriores y lecciones
+   validadas; nunca se reemplaza con historial de chat. El brief de Codex es candidato hasta que
+   el importador determinista lo valide.
 9. Para clasificar riesgo, sellar un diff o diagnosticar un bloqueo previo al browser, lee
    [docs/operations/execution-preflight.md](../../../docs/operations/execution-preflight.md).
    `mova execute` conserva preflight, lease apply-once y verifier; `execute ui-plan` sólo compila
-   DOM después del claim. El driver de clicks continúa separado y sujeto a controles.
+   DOM después del claim. El driver host soporta únicamente capitanía R2 ensayada; XI/banca, R3
+   y controles DOM no probados permanecen fail-closed.
 10. Para revisar propuestas, uso/costo, memoria validada o releases de modelos, lee
     [docs/operations/continuous-improvement.md](../../../docs/operations/continuous-improvement.md).
     `mova improve transition` nunca aplica la hipótesis al runtime. El único aplicador soportado es

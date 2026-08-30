@@ -27,6 +27,10 @@ CLAIM_TYPES = {
 SOURCE_TIERS = {"official", "tier1", "tier2", "other"}
 DIRECTIONS = {"positive", "negative", "neutral", "uncertain"}
 RESEARCH_CANDIDATE_LIMIT = 10
+MEMORY_DECISION_LIMIT = 8
+MEMORY_REVIEW_LIMIT = 8
+MEMORY_LESSON_LIMIT = 20
+MEMORY_PLAN_LIMIT = 4
 
 
 def _atomic_json(path: Path, payload: dict) -> str:
@@ -164,6 +168,151 @@ class StrategicContextService:
             return fallback
         return resolved or fallback
 
+    def _strategic_memory(self, *, season: str, target_gw: int,
+                          as_of_at: str) -> dict:
+        """Build a bounded, evidence-backed memory snapshot for one cycle.
+
+        This is deliberately reconstructed from promoted runtime records. Chat
+        history, free-form operator notes and unvalidated proposals are never
+        inputs. Only prior gameweeks are eligible for decisions, reviews and
+        lessons, preventing same-cycle feedback loops.
+        """
+        with self.db.connect(readonly=True) as con:
+            plan_rows = con.execute(
+                "SELECT plan_id,revision,status,horizon_start_gw,horizon_end_gw,"
+                "rationale,reason,content_sha256,created_at FROM season_plans "
+                "WHERE season=? ORDER BY revision DESC LIMIT ?",
+                (season, MEMORY_PLAN_LIMIT),
+            ).fetchall()
+            decision_rows = con.execute(
+                """SELECT c.gw,d.decision_id,d.status,d.expected_points,d.chip,
+                d.fingerprint,d.manifest_sha256,d.policy_version,d.created_at,
+                e.envelope_id,e.selected_candidate_key,e.content_sha256 envelope_sha256
+                FROM decision_runs d
+                JOIN gameweek_cycles c ON c.cycle_id=d.cycle_id
+                LEFT JOIN decision_envelopes e ON e.decision_id=d.decision_id
+                WHERE c.season=? AND c.gw<? AND d.status<>'superseded'
+                ORDER BY c.gw DESC,d.created_at DESC LIMIT ?""",
+                (season, int(target_gw), MEMORY_DECISION_LIMIT),
+            ).fetchall()
+            review_rows = con.execute(
+                """SELECT c.gw,r.review_id,r.review_type,r.causality_status,
+                r.expected_points,r.actual_points,r.realized_delta,r.findings_json,
+                r.artifact_sha256,r.created_at
+                FROM gameweek_reviews r
+                JOIN gameweek_settlements s ON s.settlement_id=r.settlement_id
+                JOIN gameweek_cycles c ON c.cycle_id=s.cycle_id
+                WHERE c.season=? AND c.gw<?
+                ORDER BY c.gw DESC,r.created_at DESC LIMIT ?""",
+                (season, int(target_gw), MEMORY_REVIEW_LIMIT),
+            ).fetchall()
+            lesson_rows = con.execute(
+                """SELECT c.gw,l.lesson_id,l.proposal_id,l.review_id,l.category,
+                l.statement,l.evidence_json,l.status,l.created_at
+                FROM lessons l
+                JOIN gameweek_reviews r ON r.review_id=l.review_id
+                JOIN gameweek_settlements s ON s.settlement_id=r.settlement_id
+                JOIN gameweek_cycles c ON c.cycle_id=s.cycle_id
+                WHERE c.season=? AND c.gw<? AND l.status='validated'
+                ORDER BY c.gw DESC,l.created_at DESC LIMIT ?""",
+                (season, int(target_gw), MEMORY_LESSON_LIMIT),
+            ).fetchall()
+            totals = {
+                "decisions": int(con.execute(
+                    """SELECT COUNT(*) FROM decision_runs d
+                    JOIN gameweek_cycles c ON c.cycle_id=d.cycle_id
+                    WHERE c.season=? AND c.gw<? AND d.status<>'superseded'""",
+                    (season, int(target_gw)),
+                ).fetchone()[0]),
+                "reviews": int(con.execute(
+                    """SELECT COUNT(*) FROM gameweek_reviews r
+                    JOIN gameweek_settlements s ON s.settlement_id=r.settlement_id
+                    JOIN gameweek_cycles c ON c.cycle_id=s.cycle_id
+                    WHERE c.season=? AND c.gw<?""",
+                    (season, int(target_gw)),
+                ).fetchone()[0]),
+                "lessons": int(con.execute(
+                    """SELECT COUNT(*) FROM lessons l
+                    JOIN gameweek_reviews r ON r.review_id=l.review_id
+                    JOIN gameweek_settlements s ON s.settlement_id=r.settlement_id
+                    JOIN gameweek_cycles c ON c.cycle_id=s.cycle_id
+                    WHERE c.season=? AND c.gw<? AND l.status='validated'""",
+                    (season, int(target_gw)),
+                ).fetchone()[0]),
+            }
+
+        plans = [dict(row) for row in plan_rows]
+        decisions = [{
+            **dict(row),
+            "memory_type": "decision_record",
+            "promotion_status": "sealed_cycle_record",
+        } for row in decision_rows]
+        reviews = []
+        for row in review_rows:
+            item = dict(row)
+            findings = json.loads(item.pop("findings_json"))
+            item["findings"] = findings[:12] if isinstance(findings, list) else []
+            item["memory_type"] = "gw_review"
+            item["promotion_status"] = "post_settlement_record"
+            reviews.append(item)
+        lessons = []
+        for row in lesson_rows:
+            item = dict(row)
+            evidence = json.loads(item.pop("evidence_json"))
+            item["evidence_sha256"] = sha256_json(evidence)
+            item["memory_type"] = "lesson"
+            item["promotion_status"] = "validated"
+            lessons.append(item)
+        plan_comparison = {
+            "active_plan_id": plans[0]["plan_id"] if plans else None,
+            "active_revision": int(plans[0]["revision"]) if plans else None,
+            "previous_plan_id": plans[1]["plan_id"] if len(plans) > 1 else None,
+            "previous_revision": int(plans[1]["revision"]) if len(plans) > 1 else None,
+            "changed_from_previous": (
+                plans[0]["content_sha256"] != plans[1]["content_sha256"]
+                if len(plans) > 1 else None
+            ),
+        }
+        included_collections = {
+            "decisions": decisions,
+            "reviews": reviews,
+            "lessons": lessons,
+        }
+        body = {
+            "schema": "mova-strategic-memory-v1",
+            "policy_version": "strategic-memory-2026.08.1",
+            "season": season,
+            "target_gw": int(target_gw),
+            "as_of_at": as_of_at,
+            "status": "ready" if any(totals.values()) else "empty",
+            "quality_status": "valid",
+            "policy": {
+                "prior_gameweeks_only": True,
+                "validated_lessons_only": True,
+                "chat_history_allowed": False,
+                "limits": {
+                    "plans": MEMORY_PLAN_LIMIT,
+                    "decisions": MEMORY_DECISION_LIMIT,
+                    "reviews": MEMORY_REVIEW_LIMIT,
+                    "lessons": MEMORY_LESSON_LIMIT,
+                },
+            },
+            "plan_comparison": plan_comparison,
+            "plan_history": plans,
+            "decision_records": decisions,
+            "gw_reviews": reviews,
+            "lessons": lessons,
+            "coverage": {
+                name: {
+                    "available": total,
+                    "included": len(included_collections[name]),
+                    "truncated": total > len(included_collections[name]),
+                }
+                for name, total in totals.items()
+            },
+        }
+        return {**body, "content_sha256": sha256_json(body)}
+
     def prepare(self, *, now: datetime | None = None) -> dict:
         self.db.migrate()
         current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
@@ -225,6 +374,10 @@ class StrategicContextService:
                 continue
             previous_signals.append(dict(row))
         research_focus = self._research_focus(squad, projection_payload)
+        memory_summary = self._strategic_memory(
+            season=str(cycle["season"]), target_gw=int(cycle["gw"]),
+            as_of_at=current.isoformat(timespec="seconds"),
+        )
         body = {
             "schema": "mova-cycle-manifest-v1",
             "cycle_id": cycle_id,
@@ -252,6 +405,7 @@ class StrategicContextService:
                 "unresolved_conflicts": unresolved,
                 "previous_active_signals": previous_signals,
             },
+            "memory_summary": memory_summary,
         }
         artifact = self.config.strategic_root / "cycles" / cycle_id / (
             current.strftime("%Y%m%dT%H%M%SZ") + ".json"
