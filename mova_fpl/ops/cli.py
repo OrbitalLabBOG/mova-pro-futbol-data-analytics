@@ -90,6 +90,49 @@ def parser() -> argparse.ArgumentParser:
     preflight.add_argument("--actor", required=True)
     preflight.add_argument("--reason", required=True)
     preflight.add_argument("--idempotency-key", required=True)
+    prepare_execution = execute_commands.add_parser(
+        "prepare", help="reserva una ejecución apply-once autorizada"
+    )
+    prepare_execution.add_argument("--plan-id", required=True)
+    prepare_execution.add_argument("--adapter", choices=("disabled", "browser"),
+                                   default="disabled")
+    prepare_execution.add_argument("--actor", required=True)
+    prepare_execution.add_argument("--reason", required=True)
+    prepare_execution.add_argument("--idempotency-key", required=True)
+    claim_execution = execute_commands.add_parser(
+        "claim", help="concede un lease único y emite el token sólo por stdout"
+    )
+    claim_execution.add_argument("--execution-id", required=True)
+    claim_execution.add_argument("--actor", required=True)
+    claim_execution.add_argument("--reason", required=True)
+    claim_execution.add_argument("--lease-seconds", type=int, default=300)
+    begin_execution = execute_commands.add_parser(
+        "begin", help="marca el límite de write ambiguity después de validar pre-state"
+    )
+    begin_execution.add_argument("--execution-id", required=True)
+    begin_execution.add_argument("--pre-state", required=True)
+    begin_execution.add_argument("--actor", required=True)
+    begin_execution.add_argument("--reason", required=True)
+    begin_execution.add_argument("--claim-token-stdin", action="store_true", required=True)
+    finalize_execution = execute_commands.add_parser(
+        "finalize", help="verifica el GET post-reload y sella evidencia"
+    )
+    finalize_execution.add_argument("--execution-id", required=True)
+    finalize_execution.add_argument("--post-state", required=True)
+    finalize_execution.add_argument("--actor", required=True)
+    finalize_execution.add_argument("--reason", required=True)
+    finalize_execution.add_argument("--claim-token-stdin", action="store_true", required=True)
+    fail_execution = execute_commands.add_parser(
+        "fail", help="cierra fallo pre-write o write ambiguo sin reintento"
+    )
+    fail_execution.add_argument("--execution-id", required=True)
+    fail_execution.add_argument("--classification", choices=("failed", "ambiguous"),
+                                required=True)
+    fail_execution.add_argument("--error-code", required=True)
+    fail_execution.add_argument("--error-detail", required=True)
+    fail_execution.add_argument("--actor", required=True)
+    fail_execution.add_argument("--reason", required=True)
+    fail_execution.add_argument("--claim-token-stdin", action="store_true", required=True)
     status = commands.add_parser("status", help="estado operativo consolidado")
     status.add_argument("--json", action="store_true", dest="as_json")
     doctor = commands.add_parser("doctor", help="diagnóstico verificable del runtime")
@@ -244,19 +287,53 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "execute":
+        from pathlib import Path
         from mova_fpl.ops.execution import ExecutionService
 
         db = OpsDB(config.ops_db, minimum_version=config.sqlite_min_version)
         service = ExecutionService(config, db)
         if args.execute_command == "status":
             payload = service.status()
-        else:
+        elif args.execute_command == "preflight":
             payload = service.preflight(
                 actor=args.actor, reason=args.reason,
                 idempotency_key=args.idempotency_key,
             )
+        elif args.execute_command == "prepare":
+            payload = service.prepare(
+                plan_id=args.plan_id, adapter=args.adapter, actor=args.actor,
+                reason=args.reason, idempotency_key=args.idempotency_key,
+            )
+        elif args.execute_command == "claim":
+            payload = service.claim(
+                execution_id=args.execution_id, actor=args.actor, reason=args.reason,
+                lease_seconds=args.lease_seconds,
+            )
+        else:
+            claim_token = sys.stdin.read().strip()
+            if not claim_token:
+                raise SystemExit("claim token requerido exclusivamente por stdin")
+            if args.execute_command == "begin":
+                payload = service.begin(
+                    execution_id=args.execution_id, claim_token=claim_token,
+                    pre_state=json.loads(Path(args.pre_state).read_text(encoding="utf-8")),
+                    actor=args.actor, reason=args.reason,
+                )
+            elif args.execute_command == "finalize":
+                payload = service.finalize(
+                    execution_id=args.execution_id, claim_token=claim_token,
+                    post_state=json.loads(Path(args.post_state).read_text(encoding="utf-8")),
+                    actor=args.actor, reason=args.reason,
+                )
+            else:
+                payload = service.fail(
+                    execution_id=args.execution_id, claim_token=claim_token,
+                    ambiguous=args.classification == "ambiguous", actor=args.actor,
+                    reason=args.reason, error_code=args.error_code,
+                    error_detail=args.error_detail,
+                )
         print(json.dumps(payload, ensure_ascii=False, default=str))
-        return 0
+        return 2 if payload.get("status") in {"ambiguous", "failed", "blocked"} else 0
 
     db = OpsDB(config.ops_db, minimum_version=config.sqlite_min_version)
     if args.command == "migrate":

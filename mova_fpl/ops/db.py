@@ -519,9 +519,17 @@ class OpsDB:
                 "ORDER BY opened_at"
             ).fetchall()
             prior = con.execute(
-                "SELECT execution_id,status,finished_at FROM web_executions "
-                "WHERE decision_id=? ORDER BY COALESCE(finished_at,started_at) DESC LIMIT 1",
-                (envelope["decision_id"],),
+                """SELECT execution_id,status,finished_at FROM (
+                  SELECT a.execution_id,a.status,a.finished_at,a.created_at AS observed_at
+                  FROM execution_attempts a
+                  JOIN execution_plans p ON p.plan_id=a.plan_id
+                  WHERE p.decision_id=?
+                  UNION ALL
+                  SELECT w.execution_id,w.status,w.finished_at,
+                    COALESCE(w.finished_at,w.started_at) AS observed_at
+                  FROM web_executions w WHERE w.decision_id=?
+                ) ORDER BY observed_at DESC LIMIT 1""",
+                (envelope["decision_id"], envelope["decision_id"]),
             ).fetchone()
         if not manifest:
             raise RuntimeError("DecisionEnvelope referencia un manifest inexistente")
@@ -610,6 +618,280 @@ class OpsDB:
             "blocking_codes": authorization["blocking_codes"],
             "content_sha256": plan["content_sha256"], "artifact_path": artifact_path,
         }
+
+    @staticmethod
+    def _append_attempt_event(con: sqlite3.Connection, *, execution_id: str,
+                              from_status: str | None, to_status: str, actor: str,
+                              reason: str, detail: dict, occurred_at: str) -> None:
+        sequence = int(con.execute(
+            "SELECT COALESCE(MAX(sequence),0)+1 FROM execution_attempt_events "
+            "WHERE execution_id=?", (execution_id,),
+        ).fetchone()[0])
+        detail_sha = sha256_json(detail)
+        event_id = "execevent_" + hashlib.sha256(
+            f"{execution_id}:{sequence}:{to_status}:{detail_sha}".encode("utf-8")
+        ).hexdigest()[:24]
+        con.execute(
+            """INSERT INTO execution_attempt_events(
+            attempt_event_id,execution_id,sequence,from_status,to_status,actor,reason,
+            detail_json,detail_sha256,occurred_at) VALUES(?,?,?,?,?,?,?,?,?,?)""",
+            (event_id, execution_id, sequence, from_status, to_status, actor, reason,
+             canonical_json(detail), detail_sha, occurred_at),
+        )
+
+    def execution_claim_source(self, plan_id: str) -> dict:
+        """Carga el estado mutable que debe revalidarse justo antes de preparar."""
+        with self.connect(readonly=True) as con:
+            plan = con.execute(
+                "SELECT * FROM execution_plans WHERE plan_id=?", (plan_id,)
+            ).fetchone()
+            if not plan:
+                raise ValueError(f"execution plan inexistente: {plan_id}")
+            controls = {
+                str(row["control_key"]): json.loads(row["value_json"])
+                for row in con.execute(
+                    """SELECT control_key,value_json FROM runtime_controls r
+                    WHERE control_id=(SELECT control_id FROM runtime_controls x
+                      WHERE x.control_key=r.control_key
+                      ORDER BY effective_at DESC,control_id DESC LIMIT 1)"""
+                )
+            }
+            incidents = con.execute(
+                "SELECT incident_id,severity,title FROM incidents "
+                "WHERE status!='resolved' AND severity IN ('P0','P1') ORDER BY opened_at"
+            ).fetchall()
+            team_state = con.execute(
+                "SELECT team_state_id,observed_at,fingerprint,quality_status "
+                "FROM team_state_snapshots WHERE cycle_id=? "
+                "ORDER BY observed_at DESC LIMIT 1", (plan["cycle_id"],),
+            ).fetchone()
+            attempt = con.execute(
+                "SELECT * FROM execution_attempts WHERE plan_id=?", (plan_id,)
+            ).fetchone()
+        return {
+            "plan": dict(plan), "controls": controls,
+            "open_high_incidents": [dict(row) for row in incidents],
+            "team_state": dict(team_state) if team_state else None,
+            "attempt": dict(attempt) if attempt else None,
+        }
+
+    def prepare_execution_attempt(self, *, plan: dict, job_id: str,
+                                  execution_id: str, idempotency_key: str,
+                                  adapter: str, command_path: str,
+                                  command_sha256: str, actor: str, reason: str,
+                                  created_at: str) -> dict:
+        """Reserva exactamente un intento por plan; no concede aún el lease."""
+        with self.transaction() as con:
+            existing = con.execute(
+                "SELECT * FROM execution_attempts WHERE plan_id=? OR idempotency_key=?",
+                (plan["plan_id"], idempotency_key),
+            ).fetchone()
+            if existing:
+                if existing["idempotency_key"] != idempotency_key:
+                    raise RuntimeError(
+                        f"plan ya reservado por execution attempt {existing['execution_id']}"
+                    )
+                return {**dict(existing), "reused": True}
+            con.execute(
+                """INSERT INTO execution_attempts(
+                execution_id,plan_id,job_id,idempotency_key,adapter,command_path,
+                command_sha256,status,
+                expected_pre_fingerprint,expected_post_fingerprint,created_at)
+                VALUES(?,?,?,?,?,?,?,'prepared',?,?,?)""",
+                (execution_id, plan["plan_id"], job_id, idempotency_key, adapter,
+                 command_path, command_sha256,
+                 plan["expected_pre_fingerprint"], plan["expected_post_fingerprint"],
+                 created_at),
+            )
+            self._append_attempt_event(
+                con, execution_id=execution_id, from_status=None, to_status="prepared",
+                actor=actor, reason=reason,
+                detail={"adapter": adapter, "plan_id": plan["plan_id"],
+                        "command_sha256": command_sha256},
+                occurred_at=created_at,
+            )
+            self.append_audit(
+                "execution_attempt_prepared", actor=actor,
+                correlation_id=con.execute(
+                    "SELECT correlation_id FROM job_runs WHERE job_id=?", (job_id,)
+                ).fetchone()[0], cycle_id=plan["cycle_id"], job_id=job_id,
+                subject_type="execution_attempt", subject_id=execution_id,
+                payload={"plan_id": plan["plan_id"], "adapter": adapter,
+                         "command_sha256": command_sha256, "reason": reason},
+                con=con,
+            )
+        return {
+            "execution_id": execution_id, "plan_id": plan["plan_id"],
+            "job_id": job_id, "idempotency_key": idempotency_key,
+            "adapter": adapter, "command_path": command_path,
+            "command_sha256": command_sha256, "status": "prepared", "reused": False,
+        }
+
+    def claim_execution_attempt(self, *, execution_id: str, token_sha256: str,
+                                claimant: str, reason: str, claimed_at: str,
+                                lease_expires_at: str) -> dict:
+        """Concede un token una sola vez mediante compare-and-swap transaccional."""
+        with self.transaction() as con:
+            row = con.execute(
+                "SELECT * FROM execution_attempts WHERE execution_id=?", (execution_id,)
+            ).fetchone()
+            if not row:
+                raise ValueError(f"execution attempt inexistente: {execution_id}")
+            if row["status"] != "prepared":
+                raise RuntimeError(f"execution attempt no reclamable: {row['status']}")
+            changed = con.execute(
+                """UPDATE execution_attempts SET status='claimed',claim_token_sha256=?,
+                claimed_by=?,claimed_at=?,lease_expires_at=?
+                WHERE execution_id=? AND status='prepared' AND claim_token_sha256 IS NULL""",
+                (token_sha256, claimant, claimed_at, lease_expires_at, execution_id),
+            ).rowcount
+            if changed != 1:
+                raise RuntimeError("claim perdido por concurrencia")
+            self._append_attempt_event(
+                con, execution_id=execution_id, from_status="prepared", to_status="claimed",
+                actor=claimant, reason=reason,
+                detail={"lease_expires_at": lease_expires_at}, occurred_at=claimed_at,
+            )
+        return {"execution_id": execution_id, "status": "claimed",
+                "lease_expires_at": lease_expires_at}
+
+    def begin_execution_attempt(self, *, execution_id: str, token_sha256: str,
+                                observed_pre_fingerprint: str, actor: str,
+                                reason: str, started_at: str) -> dict:
+        """Marca el instante a partir del cual cualquier fallo se considera ambiguo."""
+        with self.transaction() as con:
+            row = con.execute(
+                "SELECT * FROM execution_attempts WHERE execution_id=?", (execution_id,)
+            ).fetchone()
+            if not row or row["claim_token_sha256"] != token_sha256:
+                raise PermissionError("claim token inválido")
+            if row["status"] != "claimed":
+                raise RuntimeError(f"execution attempt no iniciable: {row['status']}")
+            if str(row["lease_expires_at"]) <= started_at:
+                raise RuntimeError("execution lease expirado")
+            if row["expected_pre_fingerprint"] != observed_pre_fingerprint:
+                raise RuntimeError("pre-state cambió después del preflight")
+            con.execute(
+                """UPDATE execution_attempts SET status='applying',started_at=?,
+                observed_pre_fingerprint=? WHERE execution_id=? AND status='claimed'""",
+                (started_at, observed_pre_fingerprint, execution_id),
+            )
+            self._append_attempt_event(
+                con, execution_id=execution_id, from_status="claimed", to_status="applying",
+                actor=actor, reason=reason,
+                detail={"observed_pre_fingerprint": observed_pre_fingerprint},
+                occurred_at=started_at,
+            )
+        return {"execution_id": execution_id, "status": "applying"}
+
+    def finish_execution_attempt(self, *, execution_id: str, token_sha256: str,
+                                 status: str, actor: str, reason: str,
+                                 finished_at: str, detail: dict,
+                                 observed_post_fingerprint: str | None = None,
+                                 evidence_path: str | None = None,
+                                 evidence_sha256: str | None = None,
+                                 result_sha256: str | None = None,
+                                 error_code: str | None = None,
+                                 error_detail: str | None = None) -> dict:
+        if status not in {"verified", "failed", "ambiguous", "blocked", "expired"}:
+            raise ValueError(f"estado terminal inválido: {status}")
+        with self.transaction() as con:
+            row = con.execute(
+                "SELECT * FROM execution_attempts WHERE execution_id=?", (execution_id,)
+            ).fetchone()
+            if not row or row["claim_token_sha256"] != token_sha256:
+                raise PermissionError("claim token inválido")
+            if row["status"] in {"verified", "failed", "ambiguous", "blocked", "expired"}:
+                same = row["status"] == status and row["result_sha256"] == result_sha256
+                if same:
+                    return {**dict(row), "reused": True}
+                raise RuntimeError(f"execution attempt ya terminal: {row['status']}")
+            allowed_from = {"verified": {"applying"}, "ambiguous": {"applying"},
+                            "failed": {"claimed"}, "blocked": {"claimed"},
+                            "expired": {"claimed"}}
+            if row["status"] not in allowed_from[status]:
+                raise RuntimeError(f"transición inválida: {row['status']} -> {status}")
+            con.execute(
+                """UPDATE execution_attempts SET status=?,finished_at=?,
+                observed_post_fingerprint=?,evidence_path=?,evidence_sha256=?,result_sha256=?,
+                error_code=?,error_detail=? WHERE execution_id=?""",
+                (status, finished_at, observed_post_fingerprint, evidence_path,
+                 evidence_sha256, result_sha256, error_code, error_detail, execution_id),
+            )
+            self._append_attempt_event(
+                con, execution_id=execution_id, from_status=str(row["status"]),
+                to_status=status, actor=actor, reason=reason, detail=detail,
+                occurred_at=finished_at,
+            )
+            plan = con.execute(
+                "SELECT cycle_id FROM execution_plans WHERE plan_id=?", (row["plan_id"],)
+            ).fetchone()
+            self.append_audit(
+                f"execution_attempt_{status}", actor=actor,
+                correlation_id=con.execute(
+                    "SELECT correlation_id FROM job_runs WHERE job_id=?", (row["job_id"],)
+                ).fetchone()[0], cycle_id=plan["cycle_id"], job_id=row["job_id"],
+                subject_type="execution_attempt", subject_id=execution_id,
+                severity="info" if status == "verified" else "critical" if status == "ambiguous" else "warning",
+                payload={"reason": reason, **detail}, con=con,
+            )
+        return {"execution_id": execution_id, "status": status, "reused": False}
+
+    def execution_attempt(self, execution_id: str) -> dict:
+        with self.connect(readonly=True) as con:
+            row = con.execute(
+                "SELECT * FROM execution_attempts WHERE execution_id=?", (execution_id,)
+            ).fetchone()
+            events = con.execute(
+                "SELECT * FROM execution_attempt_events WHERE execution_id=? ORDER BY sequence",
+                (execution_id,),
+            ).fetchall()
+        if not row:
+            raise ValueError(f"execution attempt inexistente: {execution_id}")
+        return {**dict(row), "events": [dict(event) for event in events]}
+
+    def execution_attempt_for_job(self, job_id: str) -> dict | None:
+        with self.connect(readonly=True) as con:
+            row = con.execute(
+                "SELECT * FROM execution_attempts WHERE job_id=?", (job_id,)
+            ).fetchone()
+        return dict(row) if row else None
+
+    def block_prepared_execution(self, *, execution_id: str, actor: str,
+                                 reason: str, blocking_codes: list[str],
+                                 finished_at: str) -> dict:
+        """Cierra sin token un intento que perdió un gate antes del claim."""
+        with self.transaction() as con:
+            row = con.execute(
+                "SELECT * FROM execution_attempts WHERE execution_id=?", (execution_id,)
+            ).fetchone()
+            if not row:
+                raise ValueError(f"execution attempt inexistente: {execution_id}")
+            if row["status"] != "prepared":
+                raise RuntimeError(f"execution attempt no bloqueable: {row['status']}")
+            con.execute(
+                """UPDATE execution_attempts SET status='blocked',finished_at=?,
+                error_code='RUNTIME_GATES_CHANGED',error_detail=? WHERE execution_id=?""",
+                (finished_at, ",".join(blocking_codes), execution_id),
+            )
+            self._append_attempt_event(
+                con, execution_id=execution_id, from_status="prepared", to_status="blocked",
+                actor=actor, reason=reason, detail={"blocking_codes": blocking_codes},
+                occurred_at=finished_at,
+            )
+            plan = con.execute(
+                "SELECT cycle_id FROM execution_plans WHERE plan_id=?", (row["plan_id"],)
+            ).fetchone()
+            self.append_audit(
+                "execution_attempt_blocked", actor=actor, severity="warning",
+                correlation_id=con.execute(
+                    "SELECT correlation_id FROM job_runs WHERE job_id=?", (row["job_id"],)
+                ).fetchone()[0], cycle_id=plan["cycle_id"], job_id=row["job_id"],
+                subject_type="execution_attempt", subject_id=execution_id,
+                payload={"reason": reason, "blocking_codes": blocking_codes}, con=con,
+            )
+        return {"execution_id": execution_id, "status": "blocked",
+                "blocking_codes": blocking_codes}
 
     def seal_verified_decision_cycle(self, cycle_id: str, *, correlation_id: str,
                                      job_id: str) -> dict | None:
@@ -1554,6 +1836,7 @@ class OpsDB:
                    "decision_validation_checks",
                    "decision_deliberations", "decision_deliberation_risks",
                    "execution_plans", "execution_preflight_checks",
+                   "execution_attempts", "execution_attempt_events",
                    "outbox_events", "chip_strategy_runs", "gameweek_settlements",
                    "gameweek_reviews", "change_proposals", "season_plans",
                    "cycle_manifests", "research_runs", "research_documents",
@@ -1571,6 +1854,8 @@ class OpsDB:
             "decision_deliberation_risks": "created_at",
             "execution_plans": "created_at",
             "execution_preflight_checks": "created_at",
+            "execution_attempts": "created_at",
+            "execution_attempt_events": "occurred_at",
             "team_state_snapshots": "observed_at",
             "outbox_events": "created_at", "chip_strategy_runs": "created_at",
             "gameweek_settlements": "settled_at", "gameweek_reviews": "created_at",
@@ -1584,7 +1869,11 @@ class OpsDB:
             rows = con.execute(
                 f"SELECT * FROM {table} ORDER BY {order} DESC LIMIT ?", (max(1, min(limit, 500)),)
             ).fetchall()
-        return [dict(r) for r in rows]
+        payload = [dict(r) for r in rows]
+        if table == "execution_attempts":
+            for row in payload:
+                row.pop("claim_token_sha256", None)
+        return payload
 
     def prometheus(self) -> str:
         status = self.status()
@@ -1627,6 +1916,8 @@ class OpsDB:
         decision_envelope_status = "missing"
         execution_plan_status = "missing"
         execution_plan_blockers = 0
+        execution_attempt_status = "missing"
+        execution_attempt_counts: dict[str, int] = {}
         decision_blocking_checks = 0
         deliberation_status = "missing"
         deliberation_blocking_risks = 0
@@ -1690,6 +1981,18 @@ class OpsDB:
                     "SELECT COUNT(*) FROM execution_preflight_checks "
                     "WHERE plan_id=? AND passed=0", (latest_plan["plan_id"],)
                 ).fetchone()[0])
+            latest_attempt = con.execute(
+                "SELECT execution_id,status FROM execution_attempts "
+                "ORDER BY created_at DESC LIMIT 1"
+            ).fetchone()
+            if latest_attempt:
+                execution_attempt_status = str(latest_attempt["status"])
+            execution_attempt_counts = {
+                str(row["status"]): int(row["n"])
+                for row in con.execute(
+                    "SELECT status,COUNT(*) AS n FROM execution_attempts GROUP BY status"
+                ).fetchall()
+            }
             latest_deliberation = con.execute(
                 "SELECT deliberation_id,status FROM decision_deliberations "
                 "ORDER BY queued_at DESC LIMIT 1"
@@ -1758,6 +2061,18 @@ class OpsDB:
             "# HELP mova_execution_preflight_blocking_checks Failed execution gates.",
             "# TYPE mova_execution_preflight_blocking_checks gauge",
             f"mova_execution_preflight_blocking_checks {execution_plan_blockers}",
+            "# HELP mova_execution_attempt_status Latest apply-once attempt status.",
+            "# TYPE mova_execution_attempt_status gauge",
+            *[f'mova_execution_attempt_status{{status="{name}"}} '
+              f'{1 if execution_attempt_status == name else 0}'
+              for name in ("missing", "prepared", "claimed", "applying", "ambiguous",
+                           "verified", "failed", "blocked", "expired")],
+            "# HELP mova_execution_attempts_total Execution attempts by lifecycle status.",
+            "# TYPE mova_execution_attempts_total gauge",
+            *[f'mova_execution_attempts_total{{status="{name}"}} '
+              f'{execution_attempt_counts.get(name, 0)}'
+              for name in ("prepared", "claimed", "applying", "ambiguous", "verified",
+                           "failed", "blocked", "expired")],
             "# HELP mova_deliberation_status Latest Strategist+Critic lifecycle status.",
             "# TYPE mova_deliberation_status gauge",
             *[f'mova_deliberation_status{{status="{name}"}} '

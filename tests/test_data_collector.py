@@ -254,7 +254,7 @@ def test_odds_policy_force_never_bypasses_quota_guard():
 
 
 def test_postgres_data_service_migration_has_queryable_contract():
-    assert latest_version() == 11
+    assert latest_version() == 12
     sql = "\n".join(path.read_text().lower() for path in sorted(MIGRATIONS.glob("*.sql")))
     for table in (
         "raw.ingestion_runs", "raw.source_cursors", "raw.source_artifacts",

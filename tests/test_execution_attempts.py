@@ -1,0 +1,259 @@
+from datetime import datetime, timedelta, timezone
+import hashlib
+import json
+from pathlib import Path
+
+import pytest
+
+from mova_fpl.data.private_state import validate as validate_private_state
+from mova_fpl.ops.browser_contract import assess_pick_team_snapshot, compile_browser_commands
+from mova_fpl.ops.cli import parser
+from mova_fpl.ops.config import RuntimeConfig
+from mova_fpl.ops.db import OpsDB, sha256_json
+from mova_fpl.ops.execution import ExecutionService
+
+
+NOW = datetime(2026, 9, 4, 16, 0, tzinfo=timezone.utc)
+
+
+def _private_state(order: list[int], *, captain: int, vice: int,
+                   observed_at: datetime = NOW - timedelta(minutes=5)) -> dict:
+    element_types = {1: 1, 15: 1, **{n: 2 for n in range(2, 7)},
+                     **{n: 3 for n in range(7, 12)}, **{n: 4 for n in range(12, 15)}}
+    return {
+        "schema": "mova-fpl-private-team-state-v1",
+        "observed_at": observed_at.isoformat().replace("+00:00", "Z"),
+        "team_id": 3609854,
+        "event": {"id": 3, "deadline_time": "2026-09-04T17:30:00Z"},
+        "picks_last_updated": observed_at.isoformat().replace("+00:00", "Z"),
+        "picks": [
+            {"element": element, "element_type": element_types[element],
+             "position": position, "multiplier": 2 if element == captain else
+             1 if position <= 11 else 0, "is_captain": element == captain,
+             "is_vice_captain": element == vice, "purchase_price": 50,
+             "selling_price": 50}
+            for position, element in enumerate(order, start=1)
+        ],
+        "transfers": {"bank": 10, "value": 1000, "limit": 1, "made": 0,
+                      "cost": 0, "status": "cost"},
+        "chips": [
+            {"name": name, "number": 1, "status_for_entry": "available",
+             "is_pending": False, "start_event": None, "stop_event": None}
+            for name in ("wildcard", "freehit", "bboost", "3xc")
+        ],
+    }
+
+
+def _seed_authorized_service(tmp_path: Path) -> tuple[ExecutionService, dict, dict]:
+    config = RuntimeConfig(
+        ops_db=tmp_path / "db" / "ops.db", artifact_root=tmp_path / "artifacts",
+        analytics_root=tmp_path / "analytics", strategic_root=tmp_path / "strategy",
+        research_root=tmp_path / "research", host_probe_path=tmp_path / "host.json",
+        collector_root=tmp_path / "collector", collector_browser_path=Path("/usr/bin/false"),
+        team_id=3609854,
+    )
+    db = OpsDB(config.ops_db, enforce_version=False)
+    db.migrate()
+    db.ensure_defaults(mode="autonomous", action_level="A2", compliance_gate="approved",
+                       browser_writes=True)
+    db.set_control("kill_switch", False, actor="test", reason="hermetic fixture")
+    cycle = db.upsert_cycle("2026-27", 3, "2026-09-04T17:30:00+00:00",
+                            phase="preflight")
+    source_job, _ = db.start_job("tick", "tick:authorized", "corr_authorized", cycle_id=cycle)
+    pre = _private_state(list(range(1, 16)), captain=1, vice=2)
+    _, pre_quality = validate_private_state(pre, expected_team_id=config.team_id)
+    team_id = db.add_team_state(
+        job_id=source_job, cycle_id=cycle, observed_at=pre["observed_at"],
+        source_name="fpl_authenticated_api", squad=pre["picks"], free_transfers=1,
+        bank_tenths=10, chips=pre["chips"], fingerprint=pre_quality["fingerprint"],
+        artifact_path="team", manifest_sha256="c" * 64,
+    )
+    season_plan = db.activate_season_plan("2026-27", {
+        "horizon_start_gw": 3, "horizon_end_gw": 8, "assumptions": [],
+        "chip_windows": [], "guardrails": {}, "rationale": "fixture",
+    }, actor="test", reason="fixture")
+    manifest = db.add_cycle_manifest({
+        "cycle_id": cycle, "as_of_at": NOW.isoformat(),
+        "deadline_at": "2026-09-04T17:30:00+00:00", "phase": "preflight",
+        "team_state_id": team_id, "plan_id": season_plan["plan_id"],
+        "source_manifest": [], "analytics_manifest": {}, "research_summary": {},
+        "artifact_path": "manifest.json",
+    })
+    current = {
+        "season": "2026-27", "gw": 3, "squad_15": list(range(1, 16)),
+        "starters": list(range(1, 12)), "captain": 1, "vice_captain": 2,
+        "bench_order": list(range(12, 16)), "transfers_in": [], "transfers_out": [],
+        "hits": 0, "chip": None, "expected_points": 50.0,
+    }
+    selected = {**current, "starters": list(range(1, 11)) + [12],
+                "bench_order": [15, 11, 13, 14], "captain": 7, "vice_captain": 8,
+                "expected_points": 53.0}
+    envelope = {
+        "schema": "mova-decision-envelope-v1", "policy_version": "test-policy",
+        "cycle_id": cycle, "season": "2026-27", "gw": 3, "mode": "autonomous",
+        "status": "staged", "selected_candidate_key": "milp_baseline",
+        "manifest": {"manifest_id": manifest["manifest_id"],
+                     "content_sha256": manifest["content_sha256"]},
+        "team_state": {"fingerprint": pre_quality["fingerprint"]},
+        "candidates": [
+            {"candidate_key": "do_nothing", "label": "current", "decision": current,
+             "violations": []},
+            {"candidate_key": "milp_baseline", "label": "selected", "decision": selected,
+             "violations": []},
+        ],
+        "validation": {"status": "staged", "blocking_codes": [], "checks": []},
+    }
+    content_sha = sha256_json(envelope)
+    envelope = {**envelope, "envelope_id": f"envelope_{content_sha[:24]}",
+                "content_sha256": content_sha}
+    artifact = config.artifact_root / "decision-envelopes" / "authorized.json"
+    artifact.parent.mkdir(parents=True)
+    artifact.write_text(json.dumps(envelope, sort_keys=True) + "\n", encoding="utf-8")
+    db.record_decision_envelope(
+        job_id=source_job, envelope=envelope, artifact_path=str(artifact),
+        artifact_sha256=hashlib.sha256(artifact.read_bytes()).hexdigest(),
+    )
+    db.finish_job(source_job, "completed")
+    service = ExecutionService(config, db, allow_fixture=True)
+    plan = service.preflight(actor="test", reason="authorized fixture",
+                             idempotency_key="preflight:authorized", now=NOW)
+    return service, plan, pre
+
+
+def test_live_accessibility_fixture_satisfies_fail_closed_contract():
+    snapshot = Path("tests/fixtures/fpl_pick_team_accessibility.txt").read_text()
+    assessment = assess_pick_team_snapshot(snapshot)
+    assert assessment["status"] == "pass"
+    assert assessment["switch_player_controls"] == 15
+    assert assess_pick_team_snapshot(snapshot.replace('link "Sign Out"', ""))["status"] == "fail"
+
+
+def test_execution_cli_keeps_claim_token_out_of_argv():
+    args = parser().parse_args([
+        "execute", "finalize", "--execution-id", "execution_1",
+        "--post-state", "/tmp/post.json", "--actor", "executor",
+        "--reason", "post reload", "--claim-token-stdin",
+    ])
+    assert args.execute_command == "finalize"
+    assert args.claim_token_stdin is True
+    with pytest.raises(SystemExit):
+        parser().parse_args([
+            "execute", "finalize", "--execution-id", "execution_1",
+            "--post-state", "/tmp/post.json", "--actor", "executor",
+            "--reason", "post reload",
+        ])
+
+
+def test_r2_plan_compiles_to_typed_apply_once_commands(tmp_path: Path):
+    service, plan_row, _ = _seed_authorized_service(tmp_path)
+    plan = service._load_plan(service.db.execution_claim_source(plan_row["plan_id"])["plan"])
+    bundle = compile_browser_commands(plan)
+    assert [row["operation"] for row in bundle["commands"]] == [
+        "read_private_pre_state", "set_lineup", "set_captain", "set_vice_captain",
+        "commit_team_once", "reload_pick_team", "read_private_post_state",
+    ]
+    assert bundle["failure_policy"]["at_or_after_commit"] == "ambiguous_stop_and_reconcile"
+
+
+def test_apply_once_lifecycle_is_idempotent_and_verifies_post_reload(tmp_path: Path):
+    service, plan, pre = _seed_authorized_service(tmp_path)
+    prepared = service.prepare(
+        plan_id=plan["plan_id"], adapter="fixture", actor="test", reason="E2E",
+        idempotency_key="execute:authorized", now=NOW,
+    )
+    reused = service.prepare(
+        plan_id=plan["plan_id"], adapter="fixture", actor="test", reason="E2E",
+        idempotency_key="execute:authorized", now=NOW,
+    )
+    assert reused["reused"] is True and reused["execution_id"] == prepared["execution_id"]
+    command_path = Path(prepared["command_path"])
+    assert command_path.is_file()
+    assert hashlib.sha256(command_path.read_bytes()).hexdigest() == prepared["command_sha256"]
+    claim = service.claim(execution_id=prepared["execution_id"], actor="fixture",
+                          reason="claim", now=NOW)
+    with pytest.raises(RuntimeError, match="no reclamable"):
+        service.claim(execution_id=prepared["execution_id"], actor="fixture",
+                      reason="duplicate claim", now=NOW)
+    service.begin(execution_id=prepared["execution_id"], claim_token=claim["claim_token"],
+                  pre_state=pre, actor="fixture", reason="pre-state matched",
+                  now=NOW + timedelta(seconds=1))
+    post = _private_state(
+        list(range(1, 11)) + [12, 15, 11, 13, 14], captain=7, vice=8,
+        observed_at=NOW + timedelta(seconds=10),
+    )
+    result = service.finalize(
+        execution_id=prepared["execution_id"], claim_token=claim["claim_token"],
+        post_state=post, actor="fixture", reason="post reload", now=NOW + timedelta(seconds=11),
+    )
+    assert result["status"] == "verified"
+    persisted = service.db.execution_attempt(prepared["execution_id"])
+    assert [event["to_status"] for event in persisted["events"]] == [
+        "prepared", "claimed", "applying", "verified",
+    ]
+    assert service.db.quick_check() == "ok"
+
+
+def test_post_reload_mismatch_is_ambiguous_and_opens_p0(tmp_path: Path):
+    service, plan, pre = _seed_authorized_service(tmp_path)
+    prepared = service.prepare(
+        plan_id=plan["plan_id"], adapter="fixture", actor="test", reason="E2E mismatch",
+        idempotency_key="execute:mismatch", now=NOW,
+    )
+    claim = service.claim(execution_id=prepared["execution_id"], actor="fixture",
+                          reason="claim", now=NOW)
+    service.begin(execution_id=prepared["execution_id"], claim_token=claim["claim_token"],
+                  pre_state=pre, actor="fixture", reason="pre-state matched",
+                  now=NOW + timedelta(seconds=1))
+    result = service.finalize(
+        execution_id=prepared["execution_id"], claim_token=claim["claim_token"],
+        post_state={**pre, "observed_at": (NOW + timedelta(seconds=10)).isoformat()},
+        actor="fixture", reason="mismatch", now=NOW + timedelta(seconds=11),
+    )
+    assert result["status"] == "ambiguous"
+    assert service.db.status()["open_incidents"]["P0"] == 1
+
+
+def test_runtime_gate_change_blocks_before_claim_without_token(tmp_path: Path):
+    service, plan, _ = _seed_authorized_service(tmp_path)
+    prepared = service.prepare(
+        plan_id=plan["plan_id"], adapter="fixture", actor="test", reason="gate change",
+        idempotency_key="execute:gate-change", now=NOW,
+    )
+    service.db.set_control("kill_switch", True, actor="test", reason="emergency stop")
+    result = service.claim(execution_id=prepared["execution_id"], actor="fixture",
+                           reason="must block", now=NOW)
+    assert result["status"] == "blocked"
+    assert "claim_token" not in result
+    assert "KILL_SWITCH_ON" in result["blocking_codes"]
+
+
+def test_runtime_gate_change_after_claim_blocks_before_applying(tmp_path: Path):
+    service, plan, pre = _seed_authorized_service(tmp_path)
+    prepared = service.prepare(
+        plan_id=plan["plan_id"], adapter="fixture", actor="test", reason="late gate change",
+        idempotency_key="execute:late-gate-change", now=NOW,
+    )
+    claim = service.claim(execution_id=prepared["execution_id"], actor="fixture",
+                          reason="claim", now=NOW)
+    service.db.set_control("kill_switch", True, actor="test", reason="emergency stop")
+    result = service.begin(
+        execution_id=prepared["execution_id"], claim_token=claim["claim_token"],
+        pre_state=pre, actor="fixture", reason="must stop before write",
+        now=NOW + timedelta(seconds=1),
+    )
+    assert result["status"] == "blocked"
+    assert "KILL_SWITCH_ON" in result["blocking_codes"]
+
+
+def test_command_bundle_tamper_prevents_claim(tmp_path: Path):
+    service, plan, _ = _seed_authorized_service(tmp_path)
+    prepared = service.prepare(
+        plan_id=plan["plan_id"], adapter="fixture", actor="test", reason="tamper test",
+        idempotency_key="execute:tamper", now=NOW,
+    )
+    command_path = Path(prepared["command_path"])
+    command_path.write_text(command_path.read_text() + " ", encoding="utf-8")
+    with pytest.raises(ValueError, match="hash físico"):
+        service.claim(execution_id=prepared["execution_id"], actor="fixture",
+                      reason="must reject", now=NOW)
+    assert service.db.execution_attempt(prepared["execution_id"])["status"] == "prepared"

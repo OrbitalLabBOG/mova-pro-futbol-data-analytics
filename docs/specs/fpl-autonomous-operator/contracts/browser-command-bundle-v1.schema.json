@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mova.local/contracts/browser-command-bundle-v1.schema.json",
+  "title": "MOVA browser command bundle v1",
+  "type": "object",
+  "required": [
+    "schema", "execution_id", "plan_id", "plan_sha256", "content_sha256",
+    "cycle_id", "risk_class", "expected_pre_fingerprint",
+    "expected_post_fingerprint", "commands", "failure_policy"
+  ],
+  "properties": {
+    "schema": {"const": "mova-browser-command-bundle-v1"},
+    "execution_id": {"type": "string", "pattern": "^execution_[a-f0-9]{24}$"},
+    "plan_id": {"type": "string", "pattern": "^execplan_[a-f0-9]{24}$"},
+    "plan_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "risk_class": {"const": "R2"},
+    "commands": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "items": {
+        "type": "object",
+        "required": ["sequence", "operation"],
+        "properties": {
+          "sequence": {"type": "integer", "minimum": 1},
+          "operation": {"enum": [
+            "read_private_pre_state", "set_lineup", "set_captain",
+            "set_vice_captain", "commit_team_once", "reload_pick_team",
+            "read_private_post_state"
+          ]}
+        },
+        "additionalProperties": true
+      }
+    },
+    "failure_policy": {"type": "object"}
+  },
+  "additionalProperties": true
+}

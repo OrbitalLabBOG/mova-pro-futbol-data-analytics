@@ -43,7 +43,7 @@ def test_shadow_mapping_targets_are_unique_and_schema_qualified() -> None:
 
 
 def test_shadow_migration_is_versioned_and_contains_required_schemas() -> None:
-    assert latest_version() == 11
+    assert latest_version() == 12
     migration = MIGRATIONS / "001_shadow_store.sql"
     sql = migration.read_text(encoding="utf-8").lower()
     for schema in ("mova_meta", "raw", "analytics", "game", "research", "agent", "ops"):
@@ -70,6 +70,11 @@ def test_shadow_migration_is_versioned_and_contains_required_schemas() -> None:
         encoding="utf-8"
     ).lower()
     assert "job_id text references ops.job_runs" in provenance_sql
+    attempts_sql = (MIGRATIONS / "012_execution_attempts.sql").read_text(
+        encoding="utf-8"
+    ).lower()
+    assert "agent.execution_attempts" in attempts_sql
+    assert "agent.execution_attempt_events" in attempts_sql
 
 
 def test_publish_sources_uses_consistent_online_backups(tmp_path: Path) -> None:
