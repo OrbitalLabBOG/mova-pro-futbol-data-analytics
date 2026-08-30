@@ -559,6 +559,8 @@ GW, modo read-only, checks y hashes físicos. El gate cuenta GWs distintas, no i
 repetición dentro de la misma jornada es idempotente y no infla readiness. Evidencia con fuentes
 ausentes, hashes alterados, contrato obsoleto o `writes_attempted=true` se rechaza. CLI, API y
 Prometheus lo hacen operable, pero el rollout sigue en A0 y no promueve ningún entrypoint.
+El primer probe vivo de GW3 dejó captaincy en `1/3`, fue reproducible e idempotente y mantuvo el
+browser apagado al finalizar. Evidencia: [HV1-07F rehearsal ledger](31-hv1-07f-browser-rehearsal-ledger-rollout.md).
 
 ### Corte de mejora continua fail-closed — 30 de agosto de 2026
 
