@@ -98,9 +98,10 @@ No guardar `CLAIM_TOKEN` en shell history, logs, artifacts ni PostgreSQL. El wra
 lo mantiene en memoria/pipe y borra los JSON temporales sanitizados al terminar.
 
 `prepare` vuelve a validar deadline, estado privado, incidentes y controles. Además sella un
-`browser-command-bundle-v1` con exactamente siete operaciones R2: pre-read, XI/banca, C, VC,
-commit único, reload y post-read. El adapter R3 no existe todavía: transfers, hits y chips fallan
-cerrados aunque un plan futuro llegara autorizado.
+`browser-command-bundle-v1`. R2 contiene siete operaciones: pre-read, XI/banca, C, VC, commit,
+reload y post-read. R3 añade staging exacto de transfers/chip, preview y una sola confirmación
+irreversible. El contrato R3 existe, pero el adapter productivo sigue ausente: `prepare` con
+`adapter=browser` lo bloquea y capabilities conserva el entrypoint apagado.
 
 Después del claim, el host debe recolectar nuevamente el estado privado y el probe sanitizado.
 El compilador no acepta un intento `prepared`, un lease vencido ni una versión DOM distinta:
@@ -138,6 +139,28 @@ ejecución normal todavía devuelve `LINEUP_DRIVER_UNPROVEN`; sólo
 `--validate-lineup-contract-only` compila ese stream y siempre termina antes de iniciar browser.
 El nombre accesible del commit debe aparecer exactamente una vez tras el cambio local; si no,
 `FPL_COMMIT_CONTROL_UNPROVEN` detiene la ejecución.
+
+Para inspección R3 segura, el host acepta sólo una allowlist numérica de elementos objetivo y
+emite estado sanitizado. Esta operación no hace clicks:
+
+```bash
+deploy/bin/browser-session.sh probe-transfers 572,610
+deploy/bin/browser-session.sh stop
+```
+
+El resultado `mova-browser-transfer-dom-probe-v1` debe conciliar los quince picks autenticados,
+controles visibles, targets del bootstrap, búsqueda, poderes y `Make Transfers`. La UI puede
+duplicar `Remove player` entre pitch y tabla; el gate exige al menos quince, nunca exactamente
+quince. El contrato host resultante sólo puede validarse offline:
+
+```bash
+deploy/bin/browser-r3-driver.py \
+  --ui-plan /run/mova/r3-ui-plan.json \
+  --validate-contract-only
+```
+
+No hay un comando `execute-r3-browser.sh`. Crearlo o habilitar R3 exige tres rehearsals
+verificables, promoción explícita del capability y aprobación separada de controles A3.
 
 ## Riesgo y autoridad
 
