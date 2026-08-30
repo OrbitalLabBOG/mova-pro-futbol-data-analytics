@@ -108,11 +108,71 @@ def test_resultado_rechazado_conserva_el_cargo_estimado(tmp_path):
 
     report = db.cost_report(POLICY, season="2026-27", gw=3)
     assert report["gameweek"]["consumed_tokens"] == 0
-    assert report["gameweek"]["reserved_tokens"] == 100
+    assert report["gameweek"]["reserved_tokens"] == 0
+    assert report["gameweek"]["charged_estimate_tokens"] == 100
+    assert report["gameweek"]["committed_tokens"] == 100
     metrics = db.cost_prometheus(POLICY, season="2026-27")
-    assert 'mova_agent_budget_tokens{scope="gameweek",kind="reserved"} 100' in metrics
+    assert 'mova_agent_budget_tokens{scope="gameweek",kind="reserved"} 0' in metrics
+    assert (
+        'mova_agent_budget_tokens{scope="gameweek",kind="charged_estimate"} 100'
+        in metrics
+    )
     with db.connect(readonly=True) as con:
         row = con.execute(
             "SELECT status,actual_tokens FROM agent_budget_reservations"
         ).fetchone()
         assert dict(row) == {"status": "charged", "actual_tokens": 100}
+
+
+def test_overrun_real_del_job_es_visible_sin_contarlo_como_reserva(tmp_path):
+    db, cycle_id = _runtime(tmp_path)
+    run_id = "research_cccccccccccccccccccccccccccccccc"
+    _queue(db, cycle_id, run_id)
+    imported = db.import_research_result(run_id, {
+        "documents": [], "signals": [], "conflicts": [],
+        "usage": {"model": "fixture", "input_tokens": 100, "output_tokens": 30},
+    }, result_path="result.json", result_sha256="c" * 64)
+
+    assert imported["budget_settlement"] == {
+        "status": "settled", "reservation_id": imported["budget_settlement"]["reservation_id"],
+        "reserved_tokens": 100, "actual_tokens": 130, "job_limit": 120,
+        "overrun": True, "reused": False,
+    }
+
+    report = db.cost_report(POLICY, season="2026-27", gw=3)
+    assert report["status"] == "job_overrun_observed"
+    assert report["gameweek"]["consumed_tokens"] == 130
+    assert report["gameweek"]["reserved_tokens"] == 0
+    assert report["gameweek"]["charged_estimate_tokens"] == 0
+    assert report["job_overruns"]["gameweek"] == {
+        "uses": 1, "excess_tokens": 10, "max_actual_tokens": 130,
+    }
+    metrics = db.cost_prometheus(POLICY, season="2026-27")
+    assert 'mova_agent_budget_job_overruns{scope="gameweek"} 1' in metrics
+    assert 'mova_agent_budget_job_overrun_tokens{scope="gameweek"} 10' in metrics
+    with db.connect(readonly=True) as con:
+        audit = con.execute(
+            "SELECT severity,payload_json FROM audit_events "
+            "WHERE event_type='agent_budget_settled'"
+        ).fetchone()
+        assert audit["severity"] == "warning"
+        assert '"overrun":true' in audit["payload_json"]
+
+
+def test_reserva_huerfana_es_visible_y_sigue_comprometiendo_presupuesto(tmp_path):
+    db, cycle_id = _runtime(tmp_path)
+    run_id = "research_dddddddddddddddddddddddddddddddd"
+    _queue(db, cycle_id, run_id)
+    # Simula un crash histórico entre el terminal del job y su reconciliación de budget.
+    with db.transaction() as con:
+        con.execute(
+            "UPDATE research_runs SET status='rejected' WHERE research_run_id=?", (run_id,)
+        )
+
+    report = db.cost_report(POLICY, season="2026-27", gw=3)
+    assert report["status"] == "orphaned_reservation_observed"
+    assert report["gameweek"]["reserved_tokens"] == 100
+    assert report["gameweek"]["committed_tokens"] == 100
+    assert report["orphaned_reservations"]["gameweek"] == {"uses": 1, "tokens": 100}
+    metrics = db.cost_prometheus(POLICY, season="2026-27")
+    assert 'mova_agent_budget_orphaned_reservations{scope="gameweek"} 1' in metrics

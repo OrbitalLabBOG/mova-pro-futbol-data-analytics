@@ -116,11 +116,22 @@ La política inicial reserva 120.000 tokens por llamada y limita cada job a 160.
 900.000/20 usos y cada mes a 3.000.000/60 usos. Son límites operativos configurables, no una
 estimación monetaria. La reserva se escribe atómicamente con el job: si una dimensión excede el
 techo, el request no queda en inbox ni entra en la cola. Al importar, se reconcilia con uso real;
-si el resultado se rechaza, la reserva se conserva como `charged` hasta una recuperación válida.
+si el resultado se rechaza, queda un cargo estimado terminal `charged` porque el proveedor ya
+pudo consumir la llamada aunque no exista usage confiable. Un replay usa un subject nuevo y no
+libera ese cargo histórico.
+
+`mova cost report` separa `consumed`, `reserved` y `charged_estimate`. `committed` suma los tres:
+una presentación más clara nunca recupera presupuesto. Si el uso real supera el límite por job,
+el resultado conserva su validación deportiva pero el settlement emite warning, el reporte queda
+`job_overrun_observed` y Prometheus publica conteo y exceso. El runtime no puede desconsumir una
+llamada ya terminada. Una reserva `reserved` cuyo subject ya no está queued se expone como
+`orphaned_reservation_observed`; sigue comprometida y exige diagnóstico, no borrado manual.
 
 La API `/api/v1/budget-reservations` expone las últimas reservas y Prometheus publica
 `mova_agent_budget_tokens`, `mova_agent_budget_uses` y
-`mova_agent_budget_within_limit`, por scope `gameweek|month`.
+`mova_agent_budget_within_limit`, por scope `gameweek|month`. También publica
+`mova_agent_budget_job_overruns`, `mova_agent_budget_job_overrun_tokens` y
+`mova_agent_budget_orphaned_reservations`.
 
 ## Recuperación y límites
 
