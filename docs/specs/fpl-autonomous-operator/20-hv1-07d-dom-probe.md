@@ -4,7 +4,7 @@ name: "MOVA FPL — corte HV1-07D DOM probe y swap planner"
 created: 2026-08-30
 updated: 2026-08-30
 tags: [mova, fpl, browser, dom, r2, guardrails]
-status: candidate
+status: verified
 ---
 
 # HV1-07D: DOM probe y planner R2
@@ -31,7 +31,7 @@ quince slots. No confirmó aún controles semánticos estables para capitán y v
 - no existe en este corte un comando que haga clicks ni un timer executor;
 - Compose conserva browser writes en cero y A0/shadow continúa vigente.
 
-## Verificación candidata
+## Verificación
 
 - pruebas focalizadas del executor y planner: 12 aprobadas;
 - suite completa: 898 passed, 1 skipped, 79 deselected;
@@ -41,6 +41,16 @@ La espera del host usa la condición funcional `my-team + 15 switch controls`; n
 `domcontentloaded`/`networkidle`, porque recursos publicitarios de terceros pueden mantener esos
 eventos abiertos aunque la superficie FPL ya esté lista.
 
-El estado de esta acta pasa a `verified` únicamente después de construir la imagen browser en el
-VPS, ejecutar un probe autenticado `pass`, revisar que el payload sea sanitizado y volver a
-detener el browser. Eso tampoco equivale a un rehearsal de escritura.
+El corte productivo quedó en `edb2e0a`, con checkout e imágenes engine/browser coincidentes. El
+probe autenticado observado a las `2026-08-30T17:02:28.541Z` terminó `pass` para `team_id=3609854`:
+
+- sesión autenticada;
+- 15 picks del API;
+- 15 player controls visibles;
+- 15 switch controls visibles;
+- orden posicional y `web_name` coincidentes en los 15 slots.
+
+El payload fue revisado y contiene únicamente la allowlist documentada. Después del probe, el
+browser terminó `Exited (0)` y noVNC quedó detenido. API lista, siete timers activos, doctor 22
+PASS / 0 WARN / 0 FAIL y controles sin cambios: shadow/A0, compliance pending, kill switch activo
+y browser writes false. No se creó execution attempt ni se realizó un rehearsal de escritura.
