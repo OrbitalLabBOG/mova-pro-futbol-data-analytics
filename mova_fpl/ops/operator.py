@@ -108,8 +108,13 @@ def _database_snapshot(db: OpsDB) -> dict:
             "WHERE status!='resolved' ORDER BY severity,opened_at"
         ).fetchall()]
         failed_jobs = [dict(row) for row in con.execute(
-            "SELECT job_id,job_type,status,started_at,error_code FROM job_runs "
-            "WHERE status='failed' ORDER BY started_at DESC LIMIT 20"
+            "SELECT failed.job_id,failed.job_type,failed.status,failed.started_at,"
+            "failed.error_code FROM job_runs failed "
+            "WHERE failed.status='failed' AND NOT EXISTS ("
+            "SELECT 1 FROM job_runs recovered WHERE recovered.job_type=failed.job_type "
+            "AND recovered.status='completed' "
+            "AND recovered.started_at>failed.started_at) "
+            "ORDER BY failed.started_at DESC LIMIT 20"
         ).fetchall()]
         pending = int(con.execute(
             "SELECT COUNT(*) FROM outbox_events WHERE status IN ('pending','sending')"
