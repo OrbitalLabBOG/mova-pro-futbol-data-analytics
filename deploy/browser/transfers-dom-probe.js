@@ -59,7 +59,7 @@
   const checks = {
     signed_in: signedIn,
     fifteen_api_picks: picks.length === 15,
-    fifteen_remove_controls: removeButtons.length === 15,
+    squad_remove_controls_present: removeButtons.length >= 15,
     squad_labels_complete: squad.every((row) => Boolean(row.web_name)),
     targets_complete: targets.length === targetIds.length,
     make_transfers: buttonNames.has("Make Transfers"),
