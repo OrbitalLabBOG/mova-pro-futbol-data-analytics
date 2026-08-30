@@ -15,7 +15,10 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from mova_fpl.data.private_state import validate as validate_private_state
-from mova_fpl.ops.browser_contract import compile_browser_commands
+from mova_fpl.ops.browser_contract import (
+    compile_browser_commands,
+    compile_r2_ui_action_plan,
+)
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB, sha256_json
 from mova_fpl.ops.decision_envelope import decision_fingerprint
@@ -484,6 +487,21 @@ class ExecutionService:
             lease_expires_at=expires.isoformat(timespec="milliseconds"),
         )
         return {**result, "claim_token": token}
+
+    def compile_ui_plan(self, *, execution_id: str, pre_state: dict,
+                        dom_probe: dict, now: datetime | None = None) -> dict:
+        """Compila acciones DOM sólo para un lease vigente; todavía no escribe en FPL."""
+        attempt = self.db.execution_attempt(execution_id)
+        if attempt.get("status") != "claimed":
+            raise RuntimeError("UI action plan exige un execution attempt claimed")
+        lease_expires = _parse_time(attempt["lease_expires_at"])
+        if (now or datetime.now(timezone.utc)).astimezone(timezone.utc) >= lease_expires:
+            raise RuntimeError("lease expirado antes de compilar UI action plan")
+        bundle = self._validate_command_artifact(attempt)
+        return compile_r2_ui_action_plan(
+            bundle=bundle, pre_state=pre_state, dom_probe=dom_probe,
+            expected_team_id=self.config.team_id,
+        )
 
     @staticmethod
     def _token_sha(token: str) -> str:

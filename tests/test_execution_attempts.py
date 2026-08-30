@@ -163,13 +163,34 @@ def test_r2_plan_compiles_to_typed_apply_once_commands(tmp_path: Path):
 def _dom_probe(order: list[int]) -> dict:
     return {
         "schema": "mova-browser-dom-probe-v1",
-        "contract_version": "fpl-pick-team-a11y-2026.08",
+        "contract_version": "fpl-pick-team-a11y-2026.08.2",
         "status": "pass",
         "slots": [
             {"position": position, "element": element, "label_matches": True}
             for position, element in enumerate(order, start=1)
         ],
     }
+
+
+def _dom_probe_with_captain_controls(order: list[int], captain: int, vice: int) -> dict:
+    probe = _dom_probe(order)
+    probe["captain_controls"] = {
+        "status": "pass",
+        "selector_strategy": "player_button_index_then_accessible_checkbox",
+        "starters": [
+            {
+                "position": position,
+                "element": element,
+                "player_button_index": position - 1,
+                "captain_checkbox": True,
+                "vice_captain_checkbox": True,
+                "captain_checked": element == captain,
+                "vice_captain_checked": element == vice,
+            }
+            for position, element in enumerate(order[:11], start=1)
+        ],
+    }
+    return probe
 
 
 def test_position_swap_planner_is_minimal_deterministic_and_replayable():
@@ -221,6 +242,58 @@ def test_r2_ui_plan_is_ready_when_only_lineup_changes(tmp_path: Path):
         "selector": "button", "accessible_name": "Confirm My Choices",
         "max_clicks": 1, "enabled": True,
     }
+
+
+def test_r2_ui_plan_compiles_observed_captain_controls(tmp_path: Path):
+    service, plan_row, pre = _seed_authorized_service(tmp_path)
+    plan = service._load_plan(service.db.execution_claim_source(plan_row["plan_id"])["plan"])
+    bundle = {**compile_browser_commands(plan), "execution_id": "execution_fixture"}
+    result = compile_r2_ui_action_plan(
+        bundle=bundle, pre_state=pre,
+        dom_probe=_dom_probe_with_captain_controls(list(range(1, 16)), 1, 2),
+        expected_team_id=3609854,
+    )
+    assert result["status"] == "ready"
+    assert result["captain"]["action"]["checkbox_accessible_name"] == "Captain"
+    assert result["captain"]["action"]["player_button_index"] == 6
+    assert result["vice_captain"]["action"]["checkbox_accessible_name"] == "Vice Captain"
+    assert result["vice_captain"]["action"]["player_button_index"] == 7
+
+
+def test_r2_ui_plan_rejects_captain_control_pre_state_drift(tmp_path: Path):
+    service, plan_row, pre = _seed_authorized_service(tmp_path)
+    plan = service._load_plan(service.db.execution_claim_source(plan_row["plan_id"])["plan"])
+    bundle = {**compile_browser_commands(plan), "execution_id": "execution_fixture"}
+    with pytest.raises(RuntimeError, match="controles Captain/Vice"):
+        compile_r2_ui_action_plan(
+            bundle=bundle, pre_state=pre,
+            dom_probe=_dom_probe_with_captain_controls(list(range(1, 16)), 3, 2),
+            expected_team_id=3609854,
+        )
+
+
+def test_execution_service_compiles_ui_plan_only_after_claim(tmp_path: Path):
+    service, plan, pre = _seed_authorized_service(tmp_path)
+    prepared = service.prepare(
+        plan_id=plan["plan_id"], adapter="fixture", actor="test", reason="E2E",
+        idempotency_key="execute:ui-plan", now=NOW,
+    )
+    with pytest.raises(RuntimeError, match="exige un execution attempt claimed"):
+        service.compile_ui_plan(
+            execution_id=prepared["execution_id"], pre_state=pre,
+            dom_probe=_dom_probe_with_captain_controls(list(range(1, 16)), 1, 2),
+        )
+    service.claim(
+        execution_id=prepared["execution_id"], actor="fixture", reason="claim",
+        now=NOW, lease_seconds=600,
+    )
+    result = service.compile_ui_plan(
+        execution_id=prepared["execution_id"], pre_state=pre,
+        dom_probe=_dom_probe_with_captain_controls(list(range(1, 16)), 1, 2),
+        now=NOW + timedelta(seconds=1),
+    )
+    assert result["status"] == "ready"
+    assert result["execution_id"] == prepared["execution_id"]
 
 
 def test_r2_ui_plan_rejects_dom_pre_state_drift(tmp_path: Path):

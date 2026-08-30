@@ -12,7 +12,7 @@ from mova_fpl.data.private_state import validate as validate_private_state
 
 
 SCHEMA = "mova-browser-command-bundle-v1"
-DOM_CONTRACT_VERSION = "fpl-pick-team-a11y-2026.08"
+DOM_CONTRACT_VERSION = "fpl-pick-team-a11y-2026.08.2"
 DOM_PROBE_SCHEMA = "mova-browser-dom-probe-v1"
 UI_ACTION_PLAN_SCHEMA = "mova-browser-ui-action-plan-v1"
 
@@ -122,9 +122,8 @@ def compile_r2_ui_action_plan(*, bundle: dict, pre_state: dict, dom_probe: dict,
                               expected_team_id: int) -> dict:
     """Liga command bundle, GET autenticado y DOM observado antes de tocar UI.
 
-    El contrato de swaps quedó observado en producción. Captain/vice permanecen
-    fail-closed hasta que FPL exponga controles semánticos estables y se capture
-    una fixture verificable para ellos.
+    El contrato de swaps y los checkboxes semánticos Captain/Vice Captain fueron
+    observados en producción. Cualquier ausencia o discrepancia queda fail-closed.
     """
     if bundle.get("schema") != SCHEMA or bundle.get("risk_class") != "R2":
         raise ValueError("command bundle R2 incompatible")
@@ -162,11 +161,54 @@ def compile_r2_ui_action_plan(*, bundle: dict, pre_state: dict, dom_probe: dict,
     vice_target = int(next(
         row for row in bundle["commands"] if row["operation"] == "set_vice_captain"
     )["element"])
+    if captain_target == vice_target:
+        raise ValueError("capitán y vicecapitán deben ser jugadores diferentes")
+
+    controls = dom_probe.get("captain_controls") or {}
+    control_rows = controls.get("starters") or []
+    controls_by_element = {int(row["element"]): row for row in control_rows}
+    if controls.get("status") == "pass":
+        checked_captains = [
+            int(row["element"]) for row in control_rows if row.get("captain_checked")
+        ]
+        checked_vices = [
+            int(row["element"]) for row in control_rows if row.get("vice_captain_checked")
+        ]
+        if checked_captains != [captain_now] or checked_vices != [vice_now]:
+            raise RuntimeError("los controles Captain/Vice no coinciden con el pre-state")
+
+    def semantic_action(*, target: int, accessible_name: str) -> dict | None:
+        row = controls_by_element.get(target)
+        if controls.get("status") != "pass" or not row:
+            return None
+        if not row.get("captain_checkbox") or not row.get("vice_captain_checkbox"):
+            return None
+        position = int(row["position"])
+        if position > 11:
+            return None
+        return {
+            "operation": "set_player_checkbox",
+            "target_position": position,
+            "player_button_index": int(row["player_button_index"]),
+            "player_selector": 'button[data-pitch-element="true"]',
+            "checkbox_role": "checkbox",
+            "checkbox_accessible_name": accessible_name,
+            "expected_checked_after": True,
+        }
+
     blockers = []
+    captain_action = None
+    vice_action = None
     if captain_now != captain_target:
-        blockers.append("CAPTAIN_CONTROL_UNPROVEN")
+        captain_action = semantic_action(target=captain_target, accessible_name="Captain")
+        if captain_action is None:
+            blockers.append("CAPTAIN_CONTROL_UNPROVEN")
     if vice_now != vice_target:
-        blockers.append("VICE_CAPTAIN_CONTROL_UNPROVEN")
+        vice_action = semantic_action(
+            target=vice_target, accessible_name="Vice Captain",
+        )
+        if vice_action is None:
+            blockers.append("VICE_CAPTAIN_CONTROL_UNPROVEN")
     return {
         "schema": UI_ACTION_PLAN_SCHEMA,
         "dom_contract_version": DOM_CONTRACT_VERSION,
@@ -177,8 +219,12 @@ def compile_r2_ui_action_plan(*, bundle: dict, pre_state: dict, dom_probe: dict,
         "blocking_codes": blockers,
         "target_order": target,
         "swaps": swaps,
-        "captain": {"from": captain_now, "to": captain_target},
-        "vice_captain": {"from": vice_now, "to": vice_target},
+        "captain": {
+            "from": captain_now, "to": captain_target, "action": captain_action,
+        },
+        "vice_captain": {
+            "from": vice_now, "to": vice_target, "action": vice_action,
+        },
         "commit": {
             "selector": "button",
             "accessible_name": "Confirm My Choices",

@@ -35,8 +35,8 @@ consulta ordinaria: `mova` y `/api/v1/status` son el contrato estable.
    El brief de Codex es candidato hasta que el importador determinista lo valide.
 9. Para clasificar riesgo, sellar un diff o diagnosticar un bloqueo previo al browser, lee
    [docs/operations/execution-preflight.md](../../../docs/operations/execution-preflight.md).
-   `mova execute` conserva preflight, lease apply-once y verifier; el driver de clicks continúa
-   separado y sujeto a controles.
+   `mova execute` conserva preflight, lease apply-once y verifier; `execute ui-plan` sólo compila
+   DOM después del claim. El driver de clicks continúa separado y sujeto a controles.
 10. Para revisar propuestas, uso/costo, memoria validada o releases de modelos, lee
     [docs/operations/continuous-improvement.md](../../../docs/operations/continuous-improvement.md).
     `mova improve transition` nunca aplica la hipótesis al runtime. El único aplicador soportado es

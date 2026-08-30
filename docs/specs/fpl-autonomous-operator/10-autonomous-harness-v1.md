@@ -495,6 +495,12 @@ P0 y queda `ambiguous`; no existe retry automático. El adapter de transfers/chi
 host que materializa los siete comandos siguen pendientes. Producción permanece A0 con browser
 writes apagado, así que esta entrega no amplía autoridad ni toca el equipo.
 
+El subcorte HV1-07D.2 verificó en la UI productiva los player sheets de los once titulares y sus
+checkboxes accesibles `Captain`/`Vice Captain`, incluidas las selecciones actuales conciliadas con
+el GET privado. El probe `2026.08.2` y `mova execute ui-plan` convierten esa evidencia en acciones
+tipadas sólo después de un lease claimed. El driver host, el click único de confirmación y los tres
+rehearsals continúan pendientes; A0, kill switch y browser writes no cambiaron.
+
 ### Corte de mejora continua fail-closed — 30 de agosto de 2026
 
 SQLite migration `011` y PostgreSQL migration `013` añaden evaluaciones idempotentes y lecciones

@@ -64,8 +64,9 @@ CycleManifest → modelos causales → matriz xP → MILP
 ```
 
 - `mova_fpl.engine.runner.decide()` es la única autoridad de decisión.
-- `mova execute` sella riesgo, diff, lease apply-once y verificación; el driver browser de clicks
-  sigue desconectado y los controles efectivos bloquean escrituras.
+- `mova execute` sella riesgo, diff, lease apply-once y verificación. `execute ui-plan` cruza
+  pre-state, slots DOM y controles semánticos C/VC después del claim; el driver de clicks sigue
+  desconectado y los controles efectivos bloquean escrituras.
 - `mova improve` registra experimentos, evaluaciones, lecciones y uso/costo. Aceptar una lección
   no modifica el runtime; `mova improve release` es el único camino que puede activar un bundle
   `minutes+points`, después de hashes válidos, shadow multi-GW y gate determinista.

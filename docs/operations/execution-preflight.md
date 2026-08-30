@@ -100,6 +100,22 @@ deberá mantenerlo en memoria/pipe y borrar los JSON temporales sanitizados al t
 commit único, reload y post-read. El adapter R3 no existe todavía: transfers, hits y chips fallan
 cerrados aunque un plan futuro llegara autorizado.
 
+Después del claim, el host debe recolectar nuevamente el estado privado y el probe sanitizado.
+El compilador no acepta un intento `prepared`, un lease vencido ni una versión DOM distinta:
+
+```bash
+mova execute ui-plan \
+  --execution-id execution_... \
+  --pre-state /run/mova/pre-state.json \
+  --dom-probe /run/mova/dom-probe.json
+```
+
+El resultado sólo puede ser `ready` o `blocked`; todavía no hace clicks. Liga cada cambio de C/VC
+al índice posicional del jugador, abre su player sheet por
+`button[data-pitch-element="true"]` y exige un checkbox con nombre accesible exacto `Captain` o
+`Vice Captain`. El `begin` debe ocurrir después de esta compilación y de una última revalidación;
+a partir de `applying`, cualquier incertidumbre se clasifica `ambiguous` y no se reintenta.
+
 ## Riesgo y autoridad
 
 | Riesgo | Acciones | Nivel mínimo |
@@ -153,6 +169,8 @@ deploy/bin/browser-session.sh probe | jq
 Cruza los 15 picks del GET autenticado con los 15 slots visibles y sus nombres de jugador. La
 secuencia de lineup se calcula como swaps posicionales mínimos sobre
 `button[aria-label="Switch player"]`; antes de cualquier acción, el orden DOM debe ser idéntico al
-pre-state. Los selectores de capitán y vice todavía no superaron este contrato vivo: si cualquiera
-cambia, el UI action plan queda `blocked` con `CAPTAIN_CONTROL_UNPROVEN` o
-`VICE_CAPTAIN_CONTROL_UNPROVEN` y deshabilita el commit. Esta frontera es intencional.
+pre-state. El probe abre y cierra, sin seleccionar, los player sheets de los once titulares y
+comprueba los checkboxes semánticos C/VC. También exige exactamente un capitán y un vice, ambos
+idénticos al GET privado. Si falta cualquier control o existe deriva, el UI action plan queda
+`blocked` con `CAPTAIN_CONTROL_UNPROVEN` o `VICE_CAPTAIN_CONTROL_UNPROVEN`, o falla cerrado por
+pre-state mismatch. El commit continúa desconectado hasta que exista driver host y rehearsals.
