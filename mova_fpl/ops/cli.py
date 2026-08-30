@@ -47,6 +47,29 @@ def parser() -> argparse.ArgumentParser:
     analytics_commands.add_parser("reconcile", help="evalúa GWs con data_checked")
     analytics_status = analytics_commands.add_parser("status", help="estado y scorecards")
     analytics_status.add_argument("--limit", type=int, default=20)
+    model = commands.add_parser("model", help="train, predict, explain y evaluate tipados")
+    model_commands = model.add_subparsers(dest="model_command", required=True)
+    model_commands.add_parser("status", help="bundle activo e interfaces disponibles")
+    model_train = model_commands.add_parser(
+        "train", help="entrena un bundle candidato sin activarlo"
+    )
+    model_train.add_argument("--version", required=True)
+    model_train.add_argument("--holdout", default="2025-26")
+    model_explain = model_commands.add_parser(
+        "explain", help="explica una proyección sellada por jugador"
+    )
+    model_explain.add_argument("--batch-id", required=True)
+    model_explain.add_argument("--element", type=int, required=True)
+    audited_model_commands = []
+    for operation, help_text in (
+        ("predict", "crea o reutiliza una proyección inmutable"),
+        ("evaluate", "reconcilia scorecards finales pendientes"),
+    ):
+        audited_model_commands.append(model_commands.add_parser(operation, help=help_text))
+    for command in [model_train, *audited_model_commands]:
+        command.add_argument("--actor", required=True)
+        command.add_argument("--reason", required=True)
+        command.add_argument("--idempotency-key", required=True)
     review = commands.add_parser("review", help="settlement y feedback por gameweek")
     review_commands = review.add_subparsers(dest="review_command", required=True)
     review_gw = review_commands.add_parser("gw", help="cierra una GW asentada")
@@ -284,6 +307,31 @@ def main(argv: list[str] | None = None) -> int:
         else:
             db = OpsDB(config.ops_db, minimum_version=config.sqlite_min_version)
             payload = AnalyticsService(config, db).run(args.analytics_command)
+        print(json.dumps(payload, ensure_ascii=False, default=str))
+        return 2 if payload.get("status") in {"degraded", "alert"} else 0
+
+    if args.command == "model":
+        from mova_fpl.ops.model_service import ModelOpsService
+
+        db = OpsDB(config.ops_db, minimum_version=config.sqlite_min_version)
+        service = ModelOpsService(config, db)
+        if args.model_command == "status":
+            config.validate_postgres()
+            payload = service.status()
+        elif args.model_command == "train":
+            payload = service.train(
+                version=args.version, holdout=args.holdout, actor=args.actor,
+                reason=args.reason, idempotency_key=args.idempotency_key,
+            )
+        elif args.model_command == "explain":
+            config.validate_postgres()
+            payload = service.explain(batch_id=args.batch_id, element=args.element)
+        else:
+            config.validate_postgres()
+            payload = getattr(service, args.model_command)(
+                actor=args.actor, reason=args.reason,
+                idempotency_key=args.idempotency_key,
+            )
         print(json.dumps(payload, ensure_ascii=False, default=str))
         return 2 if payload.get("status") in {"degraded", "alert"} else 0
 

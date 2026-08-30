@@ -159,12 +159,13 @@ flowchart LR
 
 Cada modelo expone contratos comunes:
 
-- `train(dataset_release, config) -> model_release`;
+- `train(dataset_release, config) -> candidate_model_release`;
 - `predict(model_release, cycle_manifest) -> projection_run`;
 - `explain(projection_run, subject) -> explanation`;
 - `evaluate(model_release, dataset_release) -> scorecard`.
 
-El agente puede accionar y leer estos contratos, pero no alterar predicciones en memoria.
+El agente puede accionar y leer estos contratos, pero no alterar predicciones en memoria. Un
+`candidate_model_release` no cambia el runtime: sólo el gate de mejora puede promoverlo.
 Toda intervención entra como input versionado y se mide con/sin intervención.
 
 ### 4.3 Estado del juego y estrategia
@@ -285,7 +286,7 @@ mova status [--json]
 mova doctor [--json] [--no-network]
 mova collect [public|private|all] [--force --reason ...]
 mova data inspect|freshness|coverage
-mova model train|predict|explain|score
+mova model status|train|predict|explain|evaluate
 mova research run|inspect
 mova cycle run|resume|inspect
 mova decision inspect|compare|validate
@@ -377,7 +378,7 @@ no borra evidencia previa y nunca amplía autonomía.
 | HV1-01 ✅ | contrato `mova`, status/doctor y skill del operador | completado | HV1-00 |
 | HV1-02 🟡 | shadow + dual-read + sync verificado; faltan 3 ciclos, off-host y cutover/rollback | 4–8 h + ciclos | HV1-01 |
 | HV1-03a ✅ | collector/data quality autónomo | completado | HV1-02 |
-| HV1-03b ✅ | proyección/evaluación uniforme, scorecard, drift y servicio desplegado | completado | HV1-03a |
+| HV1-03b ✅ | facade uniforme train/predict/explain/evaluate, scorecard, drift y candidato fail-closed | completado | HV1-03a |
 | HV1-04 ✅ | team state, season plan y memoria estratégica longitudinal sellada | completado | HV1-02 |
 | HV1-05 🟡 | servicio news/research: foco plantilla+candidatos, delta y slot final; falta evaluar cobertura multi-GW | 8–12 h | HV1-02/03 |
 | HV1-06A ✅ | bundle máquina, `do_nothing`, alternativa, Validator y DecisionEnvelope | completado | HV1-03/04/05 |
