@@ -3006,7 +3006,8 @@ class OpsDB:
                    "research_signals", "research_conflicts", "cost_ledger",
                    "agent_budget_reservations",
                    "change_proposal_evaluations", "lessons",
-                   "model_bundle_releases", "model_bundle_release_events"}
+                   "model_bundle_releases", "model_bundle_release_events",
+                   "browser_rehearsals"}
         if table not in allowed:
             raise ValueError(f"tabla no permitida: {table}")
         order = {
@@ -3034,6 +3035,7 @@ class OpsDB:
             "change_proposal_evaluations": "created_at", "lessons": "created_at",
             "model_bundle_releases": "created_at",
             "model_bundle_release_events": "occurred_at",
+            "browser_rehearsals": "observed_at",
         }[table]
         with self.connect(readonly=True) as con:
             rows = con.execute(
@@ -3044,6 +3046,73 @@ class OpsDB:
             for row in payload:
                 row.pop("claim_token_sha256", None)
         return payload
+
+    def record_browser_rehearsal(self, *, cycle_id: str, capability: str,
+                                 contract_version: str, evidence_mode: str,
+                                 status: str, checks: list[dict], evidence_path: str,
+                                 evidence_sha256: str, content_sha256: str,
+                                 idempotency_key: str, actor: str, reason: str,
+                                 observed_at: str) -> dict:
+        rehearsal_id = f"rehearsal_{content_sha256[:24]}"
+        with self.transaction() as con:
+            existing = con.execute(
+                "SELECT * FROM browser_rehearsals WHERE idempotency_key=?",
+                (idempotency_key,),
+            ).fetchone()
+            if existing:
+                if existing["content_sha256"] != content_sha256:
+                    raise ValueError("idempotency_key reutilizada con evidencia distinta")
+                return {**dict(existing), "reused": True}
+            cycle = con.execute(
+                "SELECT cycle_id FROM gameweek_cycles WHERE cycle_id=?", (cycle_id,)
+            ).fetchone()
+            if not cycle:
+                raise ValueError("cycle_id de rehearsal no existe")
+            try:
+                con.execute(
+                    """
+                    INSERT INTO browser_rehearsals(
+                      rehearsal_id,cycle_id,capability,contract_version,evidence_mode,
+                      status,writes_attempted,checks_json,evidence_path,evidence_sha256,
+                      content_sha256,idempotency_key,actor,reason,observed_at,created_at
+                    ) VALUES(?,?,?,?,?,?,0,?,?,?,?,?,?,?,?,?)
+                    """,
+                    (rehearsal_id, cycle_id, capability, contract_version, evidence_mode,
+                     status, canonical_json(checks), evidence_path, evidence_sha256,
+                     content_sha256, idempotency_key, actor, reason, observed_at, utcnow()),
+                )
+            except sqlite3.IntegrityError as exc:
+                duplicate = con.execute(
+                    "SELECT * FROM browser_rehearsals WHERE content_sha256=? OR "
+                    "(cycle_id=? AND capability=? AND contract_version=? AND status='passed')",
+                    (content_sha256, cycle_id, capability, contract_version),
+                ).fetchone()
+                if duplicate:
+                    return {**dict(duplicate), "reused": True,
+                            "deduplicated_by": "evidence_or_gameweek"}
+                raise exc
+            self.append_audit(
+                "browser_rehearsal_recorded", actor=actor, cycle_id=cycle_id,
+                subject_type="browser_rehearsal", subject_id=rehearsal_id,
+                payload={"capability": capability, "contract_version": contract_version,
+                         "status": status, "evidence_mode": evidence_mode,
+                         "writes_attempted": False, "reason": reason}, con=con,
+            )
+            row = con.execute(
+                "SELECT * FROM browser_rehearsals WHERE rehearsal_id=?", (rehearsal_id,)
+            ).fetchone()
+        return {**dict(row), "reused": False}
+
+    def browser_rehearsal_summary(self, contract_versions: dict[str, str]) -> dict:
+        counts = {key: 0 for key in contract_versions}
+        with self.connect(readonly=True) as con:
+            for capability, version in contract_versions.items():
+                counts[capability] = int(con.execute(
+                    "SELECT COUNT(DISTINCT cycle_id) FROM browser_rehearsals "
+                    "WHERE capability=? AND contract_version=? AND status='passed' "
+                    "AND writes_attempted=0", (capability, version),
+                ).fetchone()[0])
+        return counts
 
     def prometheus(self) -> str:
         status = self.status()
@@ -3097,6 +3166,7 @@ class OpsDB:
         strategic_memory_status = "missing"
         strategic_memory_counts = {"decisions": 0, "reviews": 0, "lessons": 0}
         strategic_plan_revision = 0
+        browser_rehearsals = {"captaincy": 0, "lineup": 0, "r3": 0}
         with self.connect(readonly=True) as con:
             collector_job = con.execute(
                 "SELECT job_id FROM job_steps "
@@ -3210,6 +3280,20 @@ class OpsDB:
                     "WHERE deliberation_id=? AND severity='block'",
                     (latest_deliberation["deliberation_id"],),
                 ).fetchone()[0])
+            from mova_fpl.ops.browser_driver import (
+                DRIVER_CONTRACT_VERSION, R3_DRIVER_CONTRACT_VERSION,
+            )
+            rehearsal_versions = {
+                "captaincy": DRIVER_CONTRACT_VERSION,
+                "lineup": DRIVER_CONTRACT_VERSION,
+                "r3": R3_DRIVER_CONTRACT_VERSION,
+            }
+            for capability, version in rehearsal_versions.items():
+                browser_rehearsals[capability] = int(con.execute(
+                    "SELECT COUNT(DISTINCT cycle_id) FROM browser_rehearsals "
+                    "WHERE capability=? AND contract_version=? AND status='passed' "
+                    "AND writes_attempted=0", (capability, version),
+                ).fetchone()[0])
         lines = [
             "# HELP mova_up Whether ops.db is readable.",
             "# TYPE mova_up gauge",
@@ -3309,6 +3393,10 @@ class OpsDB:
             "# HELP mova_deliberation_blocking_risks Blocking risks in latest critique.",
             "# TYPE mova_deliberation_blocking_risks gauge",
             f"mova_deliberation_blocking_risks {deliberation_blocking_risks}",
+            "# HELP mova_browser_rehearsals Distinct gameweeks with passed read-only rehearsals.",
+            "# TYPE mova_browser_rehearsals gauge",
+            *[f'mova_browser_rehearsals{{capability="{name}"}} {count}'
+              for name, count in sorted(browser_rehearsals.items())],
             "# HELP mova_open_incidents Open incidents by severity.",
             "# TYPE mova_open_incidents gauge",
         ]

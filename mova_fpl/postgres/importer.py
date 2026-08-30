@@ -182,6 +182,10 @@ TABLES = (
     TableSpec("ops", "agent_budget_reservations", "agent.budget_reservations",
               renames={"policy_json": "policy"},
               json_columns=frozenset({"policy_json"})),
+    TableSpec("ops", "browser_rehearsals", "agent.browser_rehearsals",
+              renames={"checks_json": "checks"},
+              json_columns=frozenset({"checks_json"}),
+              bool_columns=frozenset({"writes_attempted"})),
 )
 
 TARGETS = tuple(dict.fromkeys(spec.target_table for spec in TABLES))

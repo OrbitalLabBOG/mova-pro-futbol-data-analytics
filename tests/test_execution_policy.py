@@ -128,7 +128,7 @@ def test_noop_is_never_sent_to_browser():
 
 def test_execution_schema_migrates_and_cli_requires_audited_preflight(tmp_path: Path):
     db = OpsDB(tmp_path / "ops.db", enforce_version=False)
-    assert db.migrate()[-1] == 15
+    assert db.migrate()[-1] == 16
     with db.connect(readonly=True) as con:
         tables = {row[0] for row in con.execute(
             "SELECT name FROM sqlite_master WHERE type='table'"

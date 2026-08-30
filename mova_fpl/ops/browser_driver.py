@@ -21,25 +21,29 @@ R3_DRIVER_CONTRACT_VERSION = "fpl-r3-host-driver-2026.08.1"
 LINEUP_EXECUTION_PROMOTED = False
 
 
-def driver_capabilities() -> dict:
+def driver_capabilities(rehearsals: dict | None = None) -> dict:
     """Public, secret-free capability ledger for status and operator tooling."""
+    observed = rehearsals or {}
     return {
         "schema": "mova-browser-driver-capabilities-v1",
         "contract_version": DRIVER_CONTRACT_VERSION,
         "captaincy": {
             "contract": "implemented", "host_entrypoint_enabled": True,
-            "autonomy_promoted": False, "observed_rehearsals": 0,
+            "autonomy_promoted": False,
+            "observed_rehearsals": int(observed.get("captaincy", 0)),
             "required_rehearsals": 3,
         },
         "lineup": {
             "contract": "implemented",
             "host_entrypoint_enabled": LINEUP_EXECUTION_PROMOTED,
-            "autonomy_promoted": False, "observed_rehearsals": 0,
+            "autonomy_promoted": False,
+            "observed_rehearsals": int(observed.get("lineup", 0)),
             "required_rehearsals": 3,
         },
         "r3": {
             "contract": "implemented", "host_entrypoint_enabled": False,
-            "autonomy_promoted": False, "observed_rehearsals": 0,
+            "autonomy_promoted": False,
+            "observed_rehearsals": int(observed.get("r3", 0)),
             "required_rehearsals": 3,
         },
     }

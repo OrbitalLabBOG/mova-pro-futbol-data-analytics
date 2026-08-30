@@ -12,7 +12,8 @@ status: active
 HV1-07A/B introduce la frontera durable previa al browser. HV1-07C añade la reserva apply-once,
 lease, límite de ambigüedad y verificador post-reload. HV1-07D.3 conecta un driver host acotado a
 capitanía con fail-closed estricto. HV1-07D.4 añade el instruction stream tipado de XI/banca,
-todavía detrás de un gate físico de rehearsal. Los controles A0 y el contenedor browser conservan
+todavía detrás de un gate físico de rehearsal. HV1-07F hace ese gate durable y resistente a
+reintentos. Los controles A0 y el contenedor browser conservan
 las escrituras apagadas; instalar el driver no concede autoridad.
 
 ## Contrato
@@ -45,6 +46,29 @@ curl -s http://127.0.0.1:8787/api/v1/execution-plans?limit=5 | jq
 curl -s http://127.0.0.1:8787/api/v1/execution-preflight-checks?limit=50 | jq
 curl -s http://127.0.0.1:8787/metrics | grep '^mova_execution_'
 ```
+
+### Ledger de rehearsals
+
+Un rehearsal sólo cuenta si un artifact `mova-browser-rehearsal-evidence-v1` está dentro de
+`MOVA_ARTIFACT_ROOT`, reproduce su `content_sha256`, referencia artifacts fuente existentes con
+hash físico correcto, usa la versión vigente del contrato y declara `writes_attempted=false`.
+Se registra así:
+
+```bash
+mova execute rehearsal \
+  --file /var/lib/mova-fpl/artifacts/browser-rehearsals/2026-27-gw03-captaincy.json \
+  --actor mova-operator \
+  --reason "probe semántico read-only conciliado" \
+  --idempotency-key "rehearsal:2026-27:gw03:captaincy:r2-2026.08.2"
+
+curl -s http://127.0.0.1:8787/api/v1/browser-rehearsals?limit=20 | jq
+curl -s http://127.0.0.1:8787/metrics | grep '^mova_browser_rehearsals'
+```
+
+El numerador de readiness es `COUNT(DISTINCT cycle_id)` por capacidad y versión contractual.
+Un retry, una clave nueva o una segunda evidencia de la misma GW no aumenta el conteo. Los fallos
+se conservan para auditoría pero no cuentan. Cambiar la versión del contrato reinicia su evidencia
+efectiva; nunca se heredan rehearsals de un DOM/driver anterior.
 
 `preflight` persiste evidencia y exige actor, razón y clave. Repetir la clave devuelve el mismo
 plan. Una nueva observación usa una clave nueva y supersede el plan anterior, sin editar historia.
@@ -194,10 +218,12 @@ acciones debe quedar bloqueado; ese es el rehearsal seguro esperado.
 
 ## Observabilidad
 
-- API: `/api/v1/execution-attempts` y `/api/v1/execution-attempt-events`;
-- Prometheus: `mova_execution_attempt_status` y `mova_execution_attempts_total`;
-- SQLite migration 010: intento + ledger de transiciones append-only;
-- PostgreSQL shadow migration 012: espejo consultable, nunca writer;
+- API: `/api/v1/execution-attempts`, `/api/v1/execution-attempt-events` y
+  `/api/v1/browser-rehearsals`;
+- Prometheus: `mova_execution_attempt_status`, `mova_execution_attempts_total` y
+  `mova_browser_rehearsals{capability=...}`;
+- SQLite migrations 010/016: intentos, transiciones y evidence ledger append-only;
+- PostgreSQL shadow migrations 012/018: espejo consultable, nunca writer;
 - artifacts: `execution-commands/<cycle>/` y `execution-evidence/<cycle>/`.
 
 El snapshot accessibility vivo se valida por nombres accesibles y no por refs `@eN`, que son
@@ -223,7 +249,8 @@ pre-state mismatch. El driver host puede materializar C/VC. El stream de lineup 
 sin navegador, pero el entrypoint real lo rechaza. Faltan los rehearsals controlados del commit y
 de lineup, y A0 bloquea toda ejecución real.
 
-`mova execute status` expone un ledger sanitizado de capacidades: contrato, versión, entrypoint,
-autonomía y rehearsals observados/requeridos para captaincy, lineup y R3. En el corte actual
-captaincy tiene entrypoint pero autonomía no promovida; lineup tiene contrato implementado,
-entrypoint deshabilitado y `0/3` rehearsals; R3 permanece ausente.
+`mova execute status` expone capacidades y evidencia reciente sin secretos: contrato, versión,
+entrypoint, autonomía y GWs distintas observadas/requeridas para captaincy, lineup y R3. En el
+corte actual captaincy tiene entrypoint pero autonomía no promovida; lineup y R3 tienen contrato
+implementado, entrypoint deshabilitado y el conteo durable parte de `0/3` hasta importar evidencia
+real. Ninguno de estos contadores cambia controles ni promueve autonomía.

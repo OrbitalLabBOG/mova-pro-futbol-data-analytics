@@ -20,7 +20,11 @@ from mova_fpl.ops.browser_contract import (
     compile_r2_ui_action_plan,
     compile_r3_ui_action_plan,
 )
-from mova_fpl.ops.browser_driver import driver_capabilities
+from mova_fpl.ops.browser_driver import (
+    DRIVER_CONTRACT_VERSION,
+    R3_DRIVER_CONTRACT_VERSION,
+    driver_capabilities,
+)
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB, sha256_json
 from mova_fpl.ops.decision_envelope import decision_fingerprint
@@ -29,6 +33,13 @@ from mova_fpl.ops.schedule import phase_for, private_state_cadence_seconds
 SCHEMA = "mova-execution-plan-v1"
 POLICY_VERSION = "autonomy-policy-1.0.0"
 MAX_ENVELOPE_BYTES = 5 * 1024 * 1024
+MAX_REHEARSAL_BYTES = 1024 * 1024
+REHEARSAL_SCHEMA = "mova-browser-rehearsal-evidence-v1"
+REHEARSAL_CONTRACTS = {
+    "captaincy": DRIVER_CONTRACT_VERSION,
+    "lineup": DRIVER_CONTRACT_VERSION,
+    "r3": R3_DRIVER_CONTRACT_VERSION,
+}
 ACTION_LEVELS = {"A0": 0, "A1": 1, "A2": 2, "A3": 3}
 RISK_REQUIREMENTS = {"R0": "A0", "R2": "A2", "R3": "A3"}
 EXECUTION_PHASES = {"preflight", "freeze", "execution_window"}
@@ -323,13 +334,92 @@ class ExecutionService:
             raise
 
     def status(self, *, limit: int = 20) -> dict:
+        rehearsals = self.db.browser_rehearsal_summary(REHEARSAL_CONTRACTS)
         return {
             "schema": "mova-execution-status-v1",
             "policy_version": POLICY_VERSION,
-            "browser_driver": driver_capabilities(),
+            "browser_driver": driver_capabilities(rehearsals),
             "plans": self.db.recent("execution_plans", limit),
             "attempts": self.db.recent("execution_attempts", limit),
+            "rehearsals": self.db.recent("browser_rehearsals", limit),
         }
+
+    def record_rehearsal(self, *, evidence_file: str | Path, actor: str,
+                         reason: str, idempotency_key: str,
+                         now: datetime | None = None) -> dict:
+        """Validate and append a read-only browser rehearsal evidence artifact."""
+        if not actor.strip() or not reason.strip() or not idempotency_key.strip():
+            raise ValueError("actor, reason e idempotency_key son obligatorios")
+        path = Path(evidence_file)
+        if not path.is_file():
+            raise FileNotFoundError(path)
+        resolved = path.resolve()
+        if not resolved.is_relative_to(self.config.artifact_root.resolve()):
+            raise ValueError("evidencia de rehearsal fuera del artifact root autorizado")
+        if path.stat().st_size > MAX_REHEARSAL_BYTES:
+            raise ValueError("evidencia de rehearsal excede 1 MiB")
+        evidence = json.loads(path.read_text(encoding="utf-8"))
+        required = {
+            "schema", "cycle_id", "capability", "contract_version", "observed_at",
+            "mode", "status", "writes_attempted", "checks", "source_artifacts",
+            "content_sha256",
+        }
+        if set(evidence) != required:
+            raise ValueError("campos de evidencia de rehearsal no coinciden con el contrato")
+        if evidence["schema"] != REHEARSAL_SCHEMA:
+            raise ValueError("schema de rehearsal no soportado")
+        capability = str(evidence["capability"])
+        expected_contract = REHEARSAL_CONTRACTS.get(capability)
+        if expected_contract is None or evidence["contract_version"] != expected_contract:
+            raise ValueError("capability o contract_version de rehearsal inválido")
+        if evidence["mode"] not in {"read_only_probe", "validate_only"}:
+            raise ValueError("mode de rehearsal no es read-only")
+        if evidence["writes_attempted"] is not False:
+            raise ValueError("un rehearsal con intentos de escritura no es admisible")
+        checks = evidence["checks"]
+        if not isinstance(checks, list) or not checks:
+            raise ValueError("rehearsal exige checks no vacíos")
+        for check in checks:
+            if (not isinstance(check, dict) or set(check) != {"code", "passed"}
+                    or not isinstance(check["code"], str) or not check["code"].strip()
+                    or type(check["passed"]) is not bool):
+                raise ValueError("check de rehearsal inválido")
+        expected_status = "passed" if all(row["passed"] for row in checks) else "failed"
+        if evidence["status"] != expected_status:
+            raise ValueError("status de rehearsal no coincide con sus checks")
+        sources = evidence["source_artifacts"]
+        if not isinstance(sources, list) or not sources:
+            raise ValueError("rehearsal exige source_artifacts no vacíos")
+        for source in sources:
+            if (not isinstance(source, dict) or set(source) != {"path", "sha256"}
+                    or not isinstance(source["path"], str) or not source["path"].strip()
+                    or not isinstance(source["sha256"], str)
+                    or len(source["sha256"]) != 64):
+                raise ValueError("source_artifact de rehearsal inválido")
+            source_path = (self.config.artifact_root / source["path"]).resolve()
+            if not source_path.is_relative_to(self.config.artifact_root.resolve()):
+                raise ValueError("source_artifact fuera del artifact root autorizado")
+            if not source_path.is_file():
+                raise ValueError("source_artifact de rehearsal no existe")
+            if self._file_sha(source_path) != source["sha256"]:
+                raise ValueError("sha256 de source_artifact no coincide")
+        unsigned = {key: value for key, value in evidence.items() if key != "content_sha256"}
+        content_sha = sha256_json(unsigned)
+        if evidence["content_sha256"] != content_sha:
+            raise ValueError("content_sha256 de rehearsal no reproduce su contenido")
+        observed_at = _parse_time(evidence["observed_at"])
+        current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+        if observed_at > current + timedelta(minutes=5):
+            raise ValueError("observed_at de rehearsal está en el futuro")
+        result = self.db.record_browser_rehearsal(
+            cycle_id=str(evidence["cycle_id"]), capability=capability,
+            contract_version=expected_contract, evidence_mode=str(evidence["mode"]),
+            status=expected_status, checks=checks, evidence_path=str(resolved),
+            evidence_sha256=self._file_sha(path), content_sha256=content_sha,
+            idempotency_key=idempotency_key, actor=actor.strip(), reason=reason.strip(),
+            observed_at=observed_at.isoformat(),
+        )
+        return {**result, "browser_writes_performed": False}
 
     def _load_plan(self, row: dict) -> dict:
         artifact = Path(str(row["artifact_path"]))
