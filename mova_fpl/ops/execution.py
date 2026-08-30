@@ -18,6 +18,7 @@ from mova_fpl.data.private_state import validate as validate_private_state
 from mova_fpl.ops.browser_contract import (
     compile_browser_commands,
     compile_r2_ui_action_plan,
+    compile_r3_ui_action_plan,
 )
 from mova_fpl.ops.browser_driver import driver_capabilities
 from mova_fpl.ops.config import RuntimeConfig
@@ -500,10 +501,12 @@ class ExecutionService:
         if (now or datetime.now(timezone.utc)).astimezone(timezone.utc) >= lease_expires:
             raise RuntimeError("lease expirado antes de compilar UI action plan")
         bundle = self._validate_command_artifact(attempt)
-        return compile_r2_ui_action_plan(
-            bundle=bundle, pre_state=pre_state, dom_probe=dom_probe,
-            expected_team_id=self.config.team_id,
+        compiler = (
+            compile_r3_ui_action_plan
+            if bundle.get("risk_class") == "R3" else compile_r2_ui_action_plan
         )
+        return compiler(bundle=bundle, pre_state=pre_state, dom_probe=dom_probe,
+                        expected_team_id=self.config.team_id)
 
     @staticmethod
     def _token_sha(token: str) -> str:

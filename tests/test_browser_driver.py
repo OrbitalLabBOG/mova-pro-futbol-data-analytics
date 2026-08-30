@@ -13,6 +13,7 @@ import pytest
 from mova_fpl.ops.browser_driver import (
     DriverPlanBlocked,
     compile_r2_driver_plan,
+    compile_r3_driver_plan,
     driver_capabilities,
 )
 
@@ -114,7 +115,84 @@ def test_driver_capability_ledger_keeps_lineup_and_r3_unpromoted():
         "autonomy_promoted": False, "observed_rehearsals": 0,
         "required_rehearsals": 3,
     }
-    assert capabilities["r3"]["contract"] == "missing"
+    assert capabilities["r3"] == {
+        "contract": "implemented", "host_entrypoint_enabled": False,
+        "autonomy_promoted": False, "observed_rehearsals": 0,
+        "required_rehearsals": 3,
+    }
+
+
+def _r3_ui_plan() -> dict:
+    return {
+        "schema": "mova-browser-r3-ui-action-plan-v1",
+        "execution_id": "execution_r3_fixture", "plan_id": "execplan_r3_fixture",
+        "pre_state_fingerprint": "f" * 64, "status": "ready",
+        "blocking_codes": [], "scope": "transfers_and_chip",
+        "transfers": [{
+            "sequence": 1, "operation": "replace_player",
+            "out": {"element": 2, "position": 2, "web_name": "Player 2",
+                    "selector": 'button[aria-label="Remove player"]'},
+            "in": {"element": 16, "element_type": 2, "web_name": "Player 16",
+                   "team": "Test FC", "price": 45,
+                   "searchbox_name": "Find a player",
+                   "selector": 'button[aria-label="Add player"]'},
+        }],
+        "economics": {"bank_after": 15, "expected_hits": 0},
+        "chip": {"operation": "stage_chip", "chip": "wildcard",
+                 "route": "transfers", "selector": "button",
+                 "accessible_name": "Wildcard Play", "max_clicks": 1},
+        "preview": {"required": True, "exact_transfer_count": 1,
+                    "expected_hits": 0, "expected_bank_after": 15,
+                    "expected_chip": "wildcard"},
+        "commit": {"selector": "button", "accessible_name": "Make Transfers",
+                   "confirmation_required": True, "max_stage_clicks": 1,
+                   "max_confirmation_clicks": 1, "enabled": True},
+        "failure_policy": {"retry_after_commit": False,
+                           "max_irreversible_confirmations": 1},
+    }
+
+
+def test_r3_driver_contract_compiles_but_has_no_production_entrypoint():
+    plan = compile_r3_driver_plan(_r3_ui_plan())
+    operations = [row["operation"] for row in plan["steps"]]
+    assert plan["production_entrypoint_enabled"] is False
+    assert operations[:2] == ["open_transfers", "verify_pre_state_bound"]
+    assert operations[-4:] == [
+        "open_transfer_review_once", "verify_review_dialog_exact",
+        "confirm_irreversible_once", "reload_and_read_private_post_state",
+    ]
+    assert sum(row["operation"] == "confirm_irreversible_once"
+               for row in plan["steps"]) == 1
+    assert plan["failure_policy"]["retry_after_commit"] is False
+
+
+def test_r3_host_tool_is_validation_only(tmp_path: Path):
+    path = tmp_path / "r3-ui-plan.json"
+    path.write_text(json.dumps(_r3_ui_plan()), encoding="utf-8")
+    result = subprocess.run(
+        ["python3", "deploy/bin/browser-r3-driver.py", "--ui-plan", str(path),
+         "--validate-contract-only"], cwd=ROOT, text=True, capture_output=True,
+        check=True,
+    )
+    payload = json.loads(result.stdout)
+    assert payload["schema"] == "mova-browser-r3-driver-plan-v1"
+    assert payload["production_entrypoint_enabled"] is False
+    script = (ROOT / "deploy/bin/browser-r3-driver.py").read_text(encoding="utf-8")
+    assert "AgentBrowser" not in script and "subprocess" not in script
+
+
+@pytest.mark.parametrize("tamper", ["duplicate", "preview", "commit"])
+def test_r3_driver_contract_rejects_tampering(tamper):
+    payload = _r3_ui_plan()
+    if tamper == "duplicate":
+        payload["transfers"].append(dict(payload["transfers"][0], sequence=2))
+    elif tamper == "preview":
+        payload["preview"]["exact_transfer_count"] = 2
+    else:
+        payload["commit"]["max_confirmation_clicks"] = 2
+    with pytest.raises(DriverPlanBlocked) as caught:
+        compile_r3_driver_plan(payload)
+    assert caught.value.code.startswith("R3_")
 
 
 def test_driver_rejects_lineup_swaps_until_live_rehearsal():
@@ -250,6 +328,18 @@ def test_host_orchestrator_keeps_claim_secret_in_pipe_and_cleans_up():
     assert "printf '%s' \"$claim_token\" | \"$mova_bin\" execute" in script
     assert "rm -f \"$pre_state\" \"$dom_probe\" \"$ui_plan\" \"$post_state\"" in script
     assert "cookies" not in script and "storage" not in script and "state save" not in script
+
+
+def test_transfer_probe_is_read_only_allowlisted_and_numeric_only():
+    session = (ROOT / "deploy/bin/browser-session.sh").read_text(encoding="utf-8")
+    probe = (ROOT / "deploy/browser/transfers-dom-probe.js").read_text(encoding="utf-8")
+    subprocess.run(["bash", "-n", "deploy/bin/browser-session.sh"], cwd=ROOT, check=True)
+    assert "probe-transfers" in session
+    assert "comma-separated numeric allowlist" in session
+    assert "credentials: \"include\"" in probe
+    assert "targetIds" in probe and "targets_complete" in probe
+    assert ".click(" not in probe
+    assert "localStorage" not in probe and "document.cookie" not in probe
 
 
 def test_host_orchestrator_runs_claim_apply_verify_once_and_cleans_temp(tmp_path: Path):

@@ -21,9 +21,10 @@ COPY deploy/docker/supervisord-browser.conf /etc/supervisor/conf.d/mova-browser.
 COPY deploy/docker/browser-entrypoint.sh /usr/local/bin/mova-browser-entrypoint
 COPY deploy/browser/private-team-state.js /opt/mova/private-team-state.js
 COPY deploy/browser/pick-team-dom-probe.js /opt/mova/pick-team-dom-probe.js
+COPY deploy/browser/transfers-dom-probe.js /opt/mova/transfers-dom-probe.js
 RUN mkdir -p /var/lib/mova-fpl/browser-profile /var/log/supervisor \
  && chown -R node:node /var/lib/mova-fpl /var/log/supervisor \
- && chmod 0444 /opt/mova/private-team-state.js /opt/mova/pick-team-dom-probe.js \
+ && chmod 0444 /opt/mova/private-team-state.js /opt/mova/pick-team-dom-probe.js /opt/mova/transfers-dom-probe.js \
  && chmod 0755 /usr/local/bin/mova-browser-entrypoint
 USER node
 EXPOSE 6080
