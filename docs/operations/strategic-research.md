@@ -91,7 +91,8 @@ encola dentro de las 30 horas pre-deadline y como máximo una vez cada seis hora
 T-70 minutos exige una corrida final aunque la cadencia rutinaria aún no venza; después de T-70
 no inicia research nuevo. Un tick sin request pendiente no levanta el contenedor Codex. El
 worker usa un lock exclusivo y procesa una solicitud; el importador procesa todos los resultados
-listos.
+listos. El límite del worker es ocho minutos y systemd conserva diez minutos para importación y
+cleanup; timeout o salida 0 sin artefacto se registran como errores tipados y nunca como brief.
 
 `mova strategy status` expone el ciclo vigente y también `service`: última corrida global,
 conteos por estado, documentos, señales aceptadas y conflictos abiertos. Así la apertura de una
