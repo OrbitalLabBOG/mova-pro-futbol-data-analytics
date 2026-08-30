@@ -37,7 +37,7 @@ exactamente un C/VC con los flags del GET privado. Por eso:
 ## Verificación
 
 - pruebas focalizadas del executor y planner: 15 aprobadas;
-- suite completa: 930 passed, 1 skipped, 79 deselected;
+- suite completa inicial: 930 passed, 1 skipped, 79 deselected;
 - `node --check`, compileall y `docker compose config`: aprobados.
 
 La espera del host usa la condición funcional `my-team + 15 switch controls`; no espera
@@ -67,3 +67,18 @@ ejecutado desde la imagen browser ya desplegada volvió a pasar a las
 `2026-08-30T18:41:46.994Z`; después se detuvo el browser con salida limpia. `mova doctor` reportó
 22 PASS, 0 WARN y 0 FAIL; los seis timers operativos consultados continuaron activos. Backups
 posteriores: SQLite `20260830T184302Z` y PostgreSQL `20260830T184303Z`.
+
+## Hardening del colector autenticado
+
+La verificación posterior encontró que `collect` abría la portada de FPL y dependía de una
+redirección implícita hacia `/en/my-team`. Esa redirección dejó de ser determinista: el browser
+podía estar sano y autenticado, pero el gate de 15 controles expiraba en la ruta equivocada.
+El hotfix `039aeeb` hace explícita la navegación a `/en/my-team` y agrega un contrato de
+regresión que exige ruta, pathname y los 15 controles `Switch player`.
+
+El cambio quedó desplegado como revisión VPS `78d58c3`. La captura read-only posterior terminó
+en un intento limpio con 15 jugadores, 2 transferencias libres, los cuatro chips disponibles y
+artefacto versionado; el browser volvió a estado detenido. La suite final reportó 931 passed,
+1 skipped y 79 deselected. Checkout, tag y label OCI quedaron conciliados en `78d58c3`;
+`mova doctor` cerró con 22 PASS, 0 WARN y 0 FAIL, siete timers programados y cero unidades
+fallidas.
