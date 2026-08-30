@@ -101,6 +101,10 @@ curl -s http://127.0.0.1:8787/api/v1/analytics | python -m json.tool
 sudo systemctl start mova-fpl-tick.service
 sudo journalctl -u mova-fpl-tick.service -n 100 --no-pager
 
+# Captura adicional auditada después de una migración en la misma hora
+mova backup --force --actor codex --reason "captura post-migración" \
+  --idempotency-key "backup:post-migration:<git-sha>"
+
 # Refresco excepcional sin esperar la cadencia (auditado e idempotente)
 mova tick --force --actor julian --reason "revisión preliminar GW2" \
   --idempotency-key "force:gw2-prelim:2026-08-23"

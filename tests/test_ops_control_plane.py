@@ -277,3 +277,30 @@ def test_backup_online_es_restaurable(tmp_path):
     assert [item["name"] for item in manifest["files"]] == ["ops.db"]
     restored = OpsDB(Path(result["path"]) / "ops.db", enforce_version=False)
     assert restored.quick_check() == "ok"
+
+
+def test_backup_forzado_es_auditado_e_idempotente(tmp_path, monkeypatch, capsys):
+    from mova_fpl.ops.cli import main
+
+    config = replace(_config(tmp_path), sqlite_min_version="3.0.0")
+    db = OpsDB(config.ops_db, enforce_version=False)
+    db.migrate()
+    monkeypatch.setattr(
+        RuntimeConfig, "from_env", classmethod(lambda _cls: config)
+    )
+    argv = [
+        "backup", "--force", "--actor", "codex", "--reason", "post migration",
+        "--idempotency-key", "backup:test:v1",
+    ]
+    assert main(argv) == 0
+    first = json.loads(capsys.readouterr().out)
+    assert first["status"] == "completed"
+    assert main(argv) == 0
+    assert json.loads(capsys.readouterr().out)["status"] == "reused"
+    with db.connect(readonly=True) as con:
+        audit = con.execute(
+            "SELECT actor,payload_json FROM audit_events "
+            "WHERE event_type='forced_backup_requested'"
+        ).fetchone()
+    assert audit["actor"] == "codex"
+    assert json.loads(audit["payload_json"])["reason"] == "post migration"

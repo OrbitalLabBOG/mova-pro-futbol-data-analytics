@@ -172,6 +172,11 @@ def parser() -> argparse.ArgumentParser:
     watchdog.add_argument("--max-age-seconds", type=int, default=1200)
     backup = commands.add_parser("backup")
     backup.add_argument("--retention-days", type=int, default=35)
+    backup.add_argument("--force", action="store_true",
+                        help="crea captura adicional aunque exista backup en la hora")
+    backup.add_argument("--actor")
+    backup.add_argument("--reason")
+    backup.add_argument("--idempotency-key")
     control = commands.add_parser("control")
     control.add_argument("key")
     control.add_argument("value", help="valor JSON, por ejemplo false o \"shadow\"")
@@ -468,13 +473,26 @@ def main(argv: list[str] | None = None) -> int:
         if not healthy:
             return 1
     elif args.command == "backup":
+        if args.force and not all((args.actor, args.reason, args.idempotency_key)):
+            raise SystemExit(
+                "backup --force exige --actor, --reason y --idempotency-key"
+            )
         day = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H")
         correlation_id = new_id("corr")
-        job_id, reused = db.start_job("backup", f"backup:{day}", correlation_id)
+        job_key = (f"backup:forced:{args.idempotency_key}" if args.force
+                   else f"backup:{day}")
+        job_id, reused = db.start_job("backup", job_key, correlation_id)
         if reused:
             print(json.dumps({"status": "reused", "job_id": job_id}))
         else:
             try:
+                if args.force:
+                    db.append_audit(
+                        "forced_backup_requested", actor=args.actor,
+                        job_id=job_id, subject_type="backup", subject_id=job_id,
+                        payload={"reason": args.reason,
+                                 "idempotency_key": args.idempotency_key},
+                    )
                 result = create_backup(config, db, retention_days=args.retention_days)
             except Exception as exc:
                 db.finish_job(job_id, "failed", error_code=type(exc).__name__,
