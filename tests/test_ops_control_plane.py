@@ -196,6 +196,10 @@ def test_tick_sella_fuentes_y_es_idempotente(tmp_path, monkeypatch):
 
     config = _config(tmp_path)
     db = _db(config)
+    db.migrate()
+    incident_id = db.open_incident(
+        "P1", "Tick MOVA falló", detail={"error_code": "FixtureFailure"}
+    )
     runner = TickRunner(config, db)
     now = datetime(2026, 8, 20, 21, 30, tzinfo=timezone.utc)
     first = runner.run(now=now)
@@ -215,6 +219,17 @@ def test_tick_sella_fuentes_y_es_idempotente(tmp_path, monkeypatch):
     metrics = db.prometheus()
     assert "mova_tick_last_duration_seconds" in metrics
     assert 'mova_collector_step_duration_ms{step="fetch_fpl_bootstrap_events"' in metrics
+    with db.connect(readonly=True) as con:
+        incident = con.execute(
+            "SELECT status,resolution FROM incidents WHERE incident_id=?", (incident_id,)
+        ).fetchone()
+        resolution_audit = con.execute(
+            "SELECT actor FROM audit_events WHERE event_type='incident_resolved' "
+            "AND subject_id=?", (incident_id,),
+        ).fetchone()
+    assert incident["status"] == "resolved"
+    assert first["job_id"] in incident["resolution"]
+    assert resolution_audit["actor"] == "mova-ops"
 
 
 def test_tick_forzado_omite_cadencia_y_deja_auditoria(tmp_path, monkeypatch):

@@ -130,6 +130,9 @@ class TickRunner:
             self.db.finish_job(
                 job_id, result["status"], output_sha256=sha256_json(result), metrics=result,
             )
+            self.db.resolve_incidents(
+                "Tick MOVA falló", resolution=f"tick recuperado en {job_id}", actor=actor,
+            )
             return {"job_id": job_id, "correlation_id": correlation_id, **result}
 
     def _run(self, job_id: str, correlation_id: str, harness: Harness,
