@@ -171,11 +171,17 @@ try {
     } else {
       let brief = JSON.parse(readFileSync(finalTmp, "utf8"));
       unlinkSync(finalTmp);
+      // generated_at is trusted execution metadata, not model-authored content.
+      // Replacing it with the worker clock prevents a hallucinated future timestamp
+      // from either contaminating an as-of run or rejecting otherwise valid output.
+      const completedAt = new Date().toISOString();
+      const modelGeneratedAtReplaced = brief.generated_at !== completedAt;
       if (isResearch) {
         const normalized = normalizeResearchBrief(brief, request);
         brief = normalized.brief;
         atomicJson(join(logs, `${runId}.normalization.json`), {
-          ...normalized.report, run_id: runId, observed_at: new Date().toISOString(),
+          ...normalized.report, run_id: runId, observed_at: completedAt,
+          generated_at_replaced: modelGeneratedAtReplaced,
         });
       }
       brief.schema = isResearch
@@ -185,7 +191,7 @@ try {
       brief.cycle_id = request.cycle_id;
       if (!isResearch) brief.envelope_id = request.envelope_id;
       brief.request_sha256 = request.request_sha256;
-      brief.generated_at = brief.generated_at || new Date().toISOString();
+      brief.generated_at = completedAt;
       brief.usage = {
         ...(brief.usage || {}), model, ...tokenUsage(execution.stdout || ""),
         duration_ms: Date.now() - startedAtMs,
