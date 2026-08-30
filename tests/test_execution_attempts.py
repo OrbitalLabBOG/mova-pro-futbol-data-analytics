@@ -6,7 +6,12 @@ from pathlib import Path
 import pytest
 
 from mova_fpl.data.private_state import validate as validate_private_state
-from mova_fpl.ops.browser_contract import assess_pick_team_snapshot, compile_browser_commands
+from mova_fpl.ops.browser_contract import (
+    assess_pick_team_snapshot,
+    compile_browser_commands,
+    compile_r2_ui_action_plan,
+    plan_position_swaps,
+)
 from mova_fpl.ops.cli import parser
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB, sha256_json
@@ -153,6 +158,81 @@ def test_r2_plan_compiles_to_typed_apply_once_commands(tmp_path: Path):
         "commit_team_once", "reload_pick_team", "read_private_post_state",
     ]
     assert bundle["failure_policy"]["at_or_after_commit"] == "ambiguous_stop_and_reconcile"
+
+
+def _dom_probe(order: list[int]) -> dict:
+    return {
+        "schema": "mova-browser-dom-probe-v1",
+        "contract_version": "fpl-pick-team-a11y-2026.08",
+        "status": "pass",
+        "slots": [
+            {"position": position, "element": element, "label_matches": True}
+            for position, element in enumerate(order, start=1)
+        ],
+    }
+
+
+def test_position_swap_planner_is_minimal_deterministic_and_replayable():
+    current = list(range(1, 16))
+    target = list(range(1, 11)) + [12, 15, 11, 13, 14]
+    swaps = plan_position_swaps(current, target)
+    assert [(row["first_position"], row["second_position"]) for row in swaps] == [
+        (11, 12), (12, 15), (13, 15), (14, 15),
+    ]
+    replay = current[:]
+    for row in swaps:
+        left, right = row["first_index"], row["second_index"]
+        replay[left], replay[right] = replay[right], replay[left]
+    assert replay == target
+
+
+def test_r2_ui_plan_blocks_unproven_captain_controls(tmp_path: Path):
+    service, plan_row, pre = _seed_authorized_service(tmp_path)
+    plan = service._load_plan(service.db.execution_claim_source(plan_row["plan_id"])["plan"])
+    bundle = {**compile_browser_commands(plan), "execution_id": "execution_fixture"}
+    result = compile_r2_ui_action_plan(
+        bundle=bundle, pre_state=pre, dom_probe=_dom_probe(list(range(1, 16))),
+        expected_team_id=3609854,
+    )
+    assert result["status"] == "blocked"
+    assert result["blocking_codes"] == [
+        "CAPTAIN_CONTROL_UNPROVEN", "VICE_CAPTAIN_CONTROL_UNPROVEN",
+    ]
+    assert result["commit"]["enabled"] is False
+    assert result["swaps"]
+
+
+def test_r2_ui_plan_is_ready_when_only_lineup_changes(tmp_path: Path):
+    service, plan_row, pre = _seed_authorized_service(tmp_path)
+    plan = service._load_plan(service.db.execution_claim_source(plan_row["plan_id"])["plan"])
+    bundle = {**compile_browser_commands(plan), "execution_id": "execution_fixture"}
+    for row in bundle["commands"]:
+        if row["operation"] == "set_captain":
+            row["element"] = 1
+        if row["operation"] == "set_vice_captain":
+            row["element"] = 2
+    result = compile_r2_ui_action_plan(
+        bundle=bundle, pre_state=pre, dom_probe=_dom_probe(list(range(1, 16))),
+        expected_team_id=3609854,
+    )
+    assert result["status"] == "ready"
+    assert result["blocking_codes"] == []
+    assert result["commit"] == {
+        "selector": "button", "accessible_name": "Confirm My Choices",
+        "max_clicks": 1, "enabled": True,
+    }
+
+
+def test_r2_ui_plan_rejects_dom_pre_state_drift(tmp_path: Path):
+    service, plan_row, pre = _seed_authorized_service(tmp_path)
+    plan = service._load_plan(service.db.execution_claim_source(plan_row["plan_id"])["plan"])
+    bundle = {**compile_browser_commands(plan), "execution_id": "execution_fixture"}
+    with pytest.raises(RuntimeError, match="orden del DOM"):
+        compile_r2_ui_action_plan(
+            bundle=bundle, pre_state=pre,
+            dom_probe=_dom_probe([2, 1] + list(range(3, 16))),
+            expected_team_id=3609854,
+        )
 
 
 def test_apply_once_lifecycle_is_idempotent_and_verifies_post_reload(tmp_path: Path):

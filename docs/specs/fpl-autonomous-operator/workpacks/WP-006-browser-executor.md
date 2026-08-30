@@ -2,7 +2,7 @@
 type: workpack
 name: "WP-006 — Executor browser y verificación"
 created: 2026-08-21
-updated: 2026-08-21
+updated: 2026-08-30
 tags: [mova, fpl, workpack, agent-browser, verification]
 status: in_progress
 ---
@@ -37,3 +37,13 @@ WP-001..003, WP-005, compliance gate aprobado y autorización externa explícita
 - hard stop impide nuevas mutaciones;
 - screenshot/DOM post-reload tienen hash y ubicación privada;
 - 3 rehearsals supervised por nivel antes de promoverlo.
+
+## Estado de implementación
+
+- `ExecutionPlan`, reserva apply-once, claim/lease, verifier post-reload y ledger están
+  desplegados en shadow;
+- el probe DOM sanitizado cruza GET privado, orden posicional y 15 controles visibles;
+- el planner puro genera swaps mínimos sin guardar refs accessibility;
+- el commit se limita a un click y permanece deshabilitado si existe cualquier blocker;
+- captain/vice todavía están fail-closed: falta observar y fijar su control semántico vivo;
+- R3 y los tres rehearsals supervisados siguen pendientes; no se promovieron controles.
