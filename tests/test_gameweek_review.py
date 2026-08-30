@@ -177,6 +177,12 @@ def _persisted_review(tmp_path: Path) -> tuple[OpsDB, str]:
 
 def test_improvement_gate_promotes_only_a_validated_lesson(tmp_path: Path):
     db, proposal_id = _persisted_review(tmp_path)
+    with db.transaction() as con:
+        con.execute(
+            """INSERT INTO cost_ledger(cost_id,provider,subscription_usage,
+            detail_json,occurred_at) VALUES('cost_unknown','codex_subscription',1,'{}',
+            '2026-08-30T18:00:00Z')"""
+        )
     service = ContinuousImprovementService(db)
     testing = tmp_path / "testing.json"
     testing.write_text(json.dumps({
@@ -211,6 +217,8 @@ def test_improvement_gate_promotes_only_a_validated_lesson(tmp_path: Path):
                for item in status["proposals"])
     assert len(status["lessons"]) == 1
     assert status["lessons"][0]["status"] == "validated"
+    assert status["costs"]["totals"]["estimated_cost_usd"] is None
+    assert status["costs"]["totals"]["unknown_cost_uses"] == 1
     assert status["runtime_mutated"] is False
 
 

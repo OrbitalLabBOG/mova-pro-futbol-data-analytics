@@ -1898,13 +1898,16 @@ class OpsDB:
             item = dict(row)
             item["evidence"] = json.loads(item.pop("evidence_json"))
             evaluation_rows.append(item)
+        total_uses = sum(int(row["uses"]) for row in costs)
+        known_costs = [float(row["estimated_cost_usd"])
+                       for row in costs if row["estimated_cost_usd"] is not None]
         totals = {
-            "uses": sum(int(row["uses"]) for row in costs),
+            "uses": total_uses,
             "input_tokens": sum(int(row["input_tokens"]) for row in costs),
             "output_tokens": sum(int(row["output_tokens"]) for row in costs),
             "subscription_uses": sum(int(row["subscription_uses"]) for row in costs),
-            "estimated_cost_usd": round(sum(float(row["estimated_cost_usd"] or 0)
-                                            for row in costs), 6),
+            "estimated_cost_usd": (round(sum(known_costs), 6) if known_costs
+                                   else (0.0 if total_uses == 0 else None)),
             "unknown_cost_uses": sum(int(row["uses"])
                                      for row in costs if row["estimated_cost_usd"] is None),
         }
