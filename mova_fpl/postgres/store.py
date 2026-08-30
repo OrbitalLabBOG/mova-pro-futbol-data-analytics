@@ -167,16 +167,16 @@ def provision_roles(config: PostgresConfig) -> dict:
     readonly_password = _secret(config.postgres_readonly_credential_file, "readonly")
     with connect(config, autocommit=True) as con:
         con.execute(
-            sql.SQL("alter role {} password %s").format(
-                sql.Identifier(config.postgres_app_user)
-            ),
-            (app_password,),
+            sql.SQL("alter role {} password {}").format(
+                sql.Identifier(config.postgres_app_user),
+                sql.Literal(app_password),
+            )
         )
         con.execute(
-            sql.SQL("alter role {} password %s").format(
-                sql.Identifier(config.postgres_readonly_user)
-            ),
-            (readonly_password,),
+            sql.SQL("alter role {} password {}").format(
+                sql.Identifier(config.postgres_readonly_user),
+                sql.Literal(readonly_password),
+            )
         )
     return verify_role_separation(config)
 

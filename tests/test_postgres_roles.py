@@ -9,7 +9,7 @@ from mova_fpl.ops.cli import parser
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB
 from mova_fpl.ops.postgres_roles import run_role_provision
-from mova_fpl.postgres.store import verify_role_separation
+from mova_fpl.postgres.store import provision_roles, verify_role_separation
 
 
 def _matrix(user: str, *, group: str, writable: bool, read_only: str) -> dict:
@@ -59,6 +59,32 @@ def test_role_matrix_fails_closed_on_readonly_write(monkeypatch):
 
     monkeypatch.setattr("mova_fpl.postgres.store._permission_matrix", unsafe)
     assert verify_role_separation(config)["status"] == "fail"
+
+
+def test_role_password_rotation_uses_composed_utility_statements(monkeypatch):
+    config = RuntimeConfig()
+    calls = []
+
+    class Connection:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def execute(self, statement, params=None):
+            calls.append((statement, params))
+
+    expected = {"status": "pass"}
+    monkeypatch.setattr("mova_fpl.postgres.store._secret", lambda *_args: "fixture")
+    monkeypatch.setattr("mova_fpl.postgres.store.connect", lambda *_args, **_kwargs: Connection())
+    monkeypatch.setattr(
+        "mova_fpl.postgres.store.verify_role_separation", lambda _config: expected
+    )
+
+    assert provision_roles(config) is expected
+    assert len(calls) == 2
+    assert all(params is None for _statement, params in calls)
 
 
 def test_role_provision_is_audited_idempotent_and_sealed(tmp_path: Path, monkeypatch):
