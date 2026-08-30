@@ -64,7 +64,7 @@ def test_shadow_mapping_targets_are_unique_and_schema_qualified() -> None:
 
 
 def test_shadow_migration_is_versioned_and_contains_required_schemas() -> None:
-    assert latest_version() == 17
+    assert latest_version() == 18
     migration = MIGRATIONS / "001_shadow_store.sql"
     sql = migration.read_text(encoding="utf-8").lower()
     for schema in ("mova_meta", "raw", "analytics", "game", "research", "agent", "ops"):
@@ -81,6 +81,12 @@ def test_shadow_migration_is_versioned_and_contains_required_schemas() -> None:
     ).lower()
     assert "research.runs" in research_sql
     assert "research.documents" in research_sql
+    rehearsal_sql = (MIGRATIONS / "018_browser_rehearsals.sql").read_text(
+        encoding="utf-8"
+    ).lower()
+    assert "agent.browser_rehearsals" in rehearsal_sql
+    assert "where status = 'passed'" in rehearsal_sql
+    assert "writes_attempted = false" in rehearsal_sql
     assert "research.conflicts" in research_sql
     envelope_sql = (MIGRATIONS / "008_decision_envelopes.sql").read_text(
         encoding="utf-8"

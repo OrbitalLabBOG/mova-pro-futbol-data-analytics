@@ -553,6 +553,13 @@ R3 `implemented`, `host_entrypoint_enabled=false`, `0/3`; readiness pasa de `blo
 sin cambiar `shadow/A0`, kill switch, compliance ni browser writes. Evidencia:
 [HV1-07E R3](28-hv1-07e-r3-contract-rollout.md).
 
+HV1-07F sustituye los contadores manuales de rehearsal por un ledger de evidencia sellada.
+SQLite migration 016 y PostgreSQL shadow migration 018 guardan capacidad, versión contractual,
+GW, modo read-only, checks y hashes físicos. El gate cuenta GWs distintas, no intentos: una
+repetición dentro de la misma jornada es idempotente y no infla readiness. Evidencia con fuentes
+ausentes, hashes alterados, contrato obsoleto o `writes_attempted=true` se rechaza. CLI, API y
+Prometheus lo hacen operable, pero el rollout sigue en A0 y no promueve ningún entrypoint.
+
 ### Corte de mejora continua fail-closed — 30 de agosto de 2026
 
 SQLite migration `011` y PostgreSQL migration `013` añaden evaluaciones idempotentes y lecciones

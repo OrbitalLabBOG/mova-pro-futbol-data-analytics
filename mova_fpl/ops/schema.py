@@ -961,6 +961,33 @@ MIGRATION_015 = (
     "ALTER TABLE research_documents ADD COLUMN fetch_error_code TEXT",
 )
 
+MIGRATION_016 = (
+    """
+    CREATE TABLE IF NOT EXISTS browser_rehearsals (
+        rehearsal_id TEXT PRIMARY KEY,
+        cycle_id TEXT NOT NULL REFERENCES gameweek_cycles(cycle_id),
+        capability TEXT NOT NULL CHECK (capability IN ('captaincy','lineup','r3')),
+        contract_version TEXT NOT NULL,
+        evidence_mode TEXT NOT NULL CHECK (evidence_mode IN ('read_only_probe','validate_only')),
+        status TEXT NOT NULL CHECK (status IN ('passed','failed')),
+        writes_attempted INTEGER NOT NULL CHECK (writes_attempted = 0),
+        checks_json TEXT NOT NULL CHECK (json_valid(checks_json)),
+        evidence_path TEXT NOT NULL,
+        evidence_sha256 TEXT NOT NULL CHECK (length(evidence_sha256) = 64),
+        content_sha256 TEXT NOT NULL UNIQUE CHECK (length(content_sha256) = 64),
+        idempotency_key TEXT NOT NULL UNIQUE,
+        actor TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        observed_at TEXT NOT NULL,
+        created_at TEXT NOT NULL
+    ) STRICT
+    """,
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_browser_rehearsal_pass_once "
+    "ON browser_rehearsals(cycle_id,capability,contract_version) WHERE status='passed'",
+    "CREATE INDEX IF NOT EXISTS idx_browser_rehearsal_capability_time "
+    "ON browser_rehearsals(capability,contract_version,observed_at DESC)",
+)
+
 MIGRATIONS = (
     (1, "initial_ops_schema", MIGRATION_001),
     (2, "team_state_artifact_provenance", MIGRATION_002),
@@ -977,4 +1004,5 @@ MIGRATIONS = (
     (13, "model_bundle_release_gate", MIGRATION_013),
     (14, "strategic_memory_snapshots", MIGRATION_014),
     (15, "sealed_research_evidence_and_coverage", MIGRATION_015),
+    (16, "browser_rehearsal_evidence_ledger", MIGRATION_016),
 )

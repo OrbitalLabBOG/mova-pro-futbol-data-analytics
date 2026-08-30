@@ -78,6 +78,8 @@ CycleManifest + memoria estratégica durable → modelos causales → matriz xP 
   capitanía R2. El instruction stream de XI/banca está implementado y es verificable en modo de
   contrato, pero su entrypoint productivo permanece cerrado hasta los rehearsals; R3 también
   falla cerrado. Los controles efectivos siguen bloqueando escrituras.
+- `mova execute rehearsal` importa evidencia browser read-only sellada. Readiness cuenta una sola
+  prueba aprobada por GW/capacidad/versión y rechaza fuentes alteradas o intentos de escritura.
 - `mova improve` registra experimentos, evaluaciones, lecciones y uso/costo. Aceptar una lección
   no modifica el runtime; `mova improve release` es el único camino que puede activar un bundle
   `minutes+points`, después de hashes válidos, shadow multi-GW y gate determinista.
