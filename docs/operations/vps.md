@@ -83,6 +83,8 @@ Antes de activar el primer tick, colocar por canal seguro —no Git—:
 # Contrato estable: el wrapper incorpora checks sanitizados del host
 mova status
 mova status --json
+mova readiness
+mova readiness --require-level A1  # exit 2 mientras falte evidencia
 mova doctor --json
 mova data status
 mova collect all
@@ -93,6 +95,7 @@ mova strategy research due
 
 # Vista HTTP; abrir túnel ssh -L 8787:127.0.0.1:8787 root@72.60.245.2
 curl -s http://127.0.0.1:8787/api/v1/status | python -m json.tool
+curl -s http://127.0.0.1:8787/api/v1/readiness | python -m json.tool
 curl -s http://127.0.0.1:8787/metrics
 curl -s http://127.0.0.1:8787/api/v1/data/coverage | python -m json.tool
 curl -s http://127.0.0.1:8787/api/v1/analytics | python -m json.tool
@@ -155,6 +158,12 @@ la validación ni el modo shadow. Exige actor, razón y una clave idempotente ex
 `mova status` no llama la red ni escribe el ledger. `mova doctor` hace un GET público acotado y
 retorna código 1 ante un `FAIL` requerido. El probe del host no lee env, cookies, logs ni HTML;
 ver [contrato del operador](operator.md).
+
+`mova readiness` tampoco muta estado. Consolida salud, settlement, team state, data, analytics,
+proyección, manifest, research, incidentes, drivers y PostgreSQL en un contrato máquina. El campo
+`technical_eligible_level` no cambia `action_level`, compliance, kill switch, modo ni browser
+writes. La promoción siempre es explícita; `--require-level` permite que CI o un agente fallen
+cerrados cuando el nivel solicitado todavía no tiene evidencia.
 
 ## Estado privado del equipo — API-first
 

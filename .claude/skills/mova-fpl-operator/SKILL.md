@@ -17,8 +17,11 @@ consulta ordinaria: `mova` y `/api/v1/status` son el contrato estable.
 ## Orientación mínima
 
 1. Lee `AGENTS.md` del repo.
-2. Ejecuta `mova status --json` y conserva `schema_version`, `generated_at` y
-   `overall_status` al reportar.
+2. Ejecuta `mova status --json` y `mova readiness`; conserva `schema_version`,
+   `generated_at`, `overall_status` y `activation.technical_eligible_level` al reportar.
+   `readiness` separa capacidad técnica de autoridad: nunca interpreta elegibilidad como
+   promoción. Usa `mova readiness --require-level A1|A2|A3` como gate automatizable; exit 2
+   significa evidencia insuficiente, no un permiso para rebajar requisitos.
 3. Si el estado es degradado, incompleto o contradictorio, ejecuta `mova doctor --json`.
 4. Lee [docs/operations/operator.md](../../../docs/operations/operator.md) para interpretar
    el contrato y [docs/operations/vps.md](../../../docs/operations/vps.md) solo si hay que
@@ -55,8 +58,10 @@ consulta ordinaria: `mova` y `/api/v1/status` son el contrato estable.
     resultado correcto para una GW preliminar.
 11. Para diagnosticar persistencia, ejecuta `mova postgres status` y `mova postgres verify`, y
     lee [docs/operations/postgres-shadow.md](../../../docs/operations/postgres-shadow.md).
-    `storage.read_parity=pass` requiere hashes de contenido, no solo conteos. El writer sigue
-    siendo SQLite hasta que los gates de ciclos, backup off-host y cutover/rollback se aprueben.
+    `storage.read_parity=pass` requiere hashes de contenido, no solo conteos. El gate de tres
+    ciclos usa GWs distintas extraídas de las claves auditadas; snapshots y reintentos dentro de
+    una misma GW no cuentan. El writer sigue siendo SQLite hasta que los gates de ciclos, backup
+    off-host y cutover/rollback se aprueben.
 
 `status` no prueba red ni muta estado. `doctor` hace checks acotados y un único GET público a
 FPL; usa `--no-network` cuando la ejecución deba ser hermética. Un `FAIL` requerido devuelve
