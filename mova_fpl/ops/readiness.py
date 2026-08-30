@@ -188,13 +188,14 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
             "pass" if r3.get("contract") == "implemented"
             and r3.get("host_entrypoint_enabled") is True
             and int(r3.get("observed_rehearsals") or 0)
-            >= int(r3.get("required_rehearsals") or 3) else "blocked",
+            >= int(r3.get("required_rehearsals") or 3) else
+            "pending" if r3.get("contract") == "implemented" else "blocked",
             "driver R3 para transferencias/chips implementado y ensayado",
             levels=("A3",), observed=r3,
             required={"contract": "implemented", "host_entrypoint_enabled": True,
                       "rehearsals": int(r3.get("required_rehearsals") or 3)},
             source="browser driver capability ledger",
-            next_action="implementar contrato apply-once R3 y tres rehearsals verificables",
+            next_action="completar tres rehearsals R3 y habilitar el entrypoint de forma explícita",
         ),
         _gate(
             "POSTGRES_SHADOW_PARITY",

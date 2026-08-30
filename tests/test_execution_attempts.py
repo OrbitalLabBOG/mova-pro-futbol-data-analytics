@@ -8,8 +8,10 @@ import pytest
 from mova_fpl.data.private_state import validate as validate_private_state
 from mova_fpl.ops.browser_contract import (
     assess_pick_team_snapshot,
+    assess_transfers_snapshot,
     compile_browser_commands,
     compile_r2_ui_action_plan,
+    compile_r3_ui_action_plan,
     plan_position_swaps,
 )
 from mova_fpl.ops.cli import parser
@@ -133,6 +135,16 @@ def test_live_accessibility_fixture_satisfies_fail_closed_contract():
     assert assess_pick_team_snapshot(snapshot.replace('link "Sign Out"', ""))["status"] == "fail"
 
 
+def test_live_transfers_accessibility_fixture_satisfies_fail_closed_contract():
+    snapshot = Path("tests/fixtures/fpl_transfers_accessibility.txt").read_text()
+    assessment = assess_transfers_snapshot(snapshot)
+    assert assessment["status"] == "pass"
+    assert assessment["remove_player_controls"] == 15
+    assert assess_transfers_snapshot(snapshot.replace('button "Make Transfers"', ""))[
+        "status"
+    ] == "fail"
+
+
 def test_execution_cli_keeps_claim_token_out_of_argv():
     args = parser().parse_args([
         "execute", "finalize", "--execution-id", "execution_1",
@@ -158,6 +170,88 @@ def test_r2_plan_compiles_to_typed_apply_once_commands(tmp_path: Path):
         "commit_team_once", "reload_pick_team", "read_private_post_state",
     ]
     assert bundle["failure_policy"]["at_or_after_commit"] == "ambiguous_stop_and_reconcile"
+
+
+def _r3_bundle(*, chip=None) -> dict:
+    plan = {
+        "plan_id": "execplan_r3_fixture", "content_sha256": "a" * 64,
+        "cycle_id": "2026-27-gw03",
+        "authorization": {"status": "authorized", "authorized": True},
+        "action": {
+            "risk_class": "R3", "expected_pre_team_fingerprint": "b" * 64,
+            "expected_post_decision_fingerprint": "c" * 64,
+            "exact_diff": {
+                "transfers": {"out": [2], "in": [16], "hits": 0},
+                "lineup": {"starters": list(range(1, 12)),
+                           "bench_order": list(range(12, 16))},
+                "captain": {"from": 1, "to": 1},
+                "vice_captain": {"from": 2, "to": 2},
+                "chip": {"from": None, "to": chip},
+            },
+        },
+    }
+    return {**compile_browser_commands(plan), "execution_id": "execution_r3_fixture"}
+
+
+def _r3_dom_probe() -> dict:
+    return {
+        "schema": "mova-browser-transfer-dom-probe-v1",
+        "contract_version": "fpl-transfers-a11y-2026.08.1", "status": "pass",
+        "squad": [
+            {"element": element, "position": position,
+             "web_name": f"Player {element}"}
+            for position, element in enumerate(range(1, 16), start=1)
+        ],
+        "targets": [{"element": 16, "element_type": 2, "web_name": "Player 16",
+                     "team": "Test FC", "price": 45}],
+        "controls": {
+            "make_transfers": "Make Transfers", "player_search": "Find a player",
+            "chip_buttons": ["Wildcard Play", "Free Hit Play"],
+        },
+    }
+
+
+def test_r3_contract_binds_identity_economics_hits_and_apply_once():
+    pre = _private_state(list(range(1, 16)), captain=1, vice=2)
+    bundle = _r3_bundle()
+    assert [row["operation"] for row in bundle["commands"]][:6] == [
+        "read_private_pre_state", "open_transfers", "stage_exact_transfers",
+        "stage_chip", "verify_transfer_preview", "commit_irreversible_once",
+    ]
+    result = compile_r3_ui_action_plan(
+        bundle=bundle, pre_state=pre, dom_probe=_r3_dom_probe(),
+        expected_team_id=3609854,
+    )
+    assert result["status"] == "ready"
+    assert result["economics"] == {
+        "bank_before": 10, "sale_proceeds": 50, "purchase_cost": 45,
+        "bank_after": 15, "free_transfers": 1, "expected_hits": 0,
+    }
+    assert result["transfers"][0]["out"]["element"] == 2
+    assert result["transfers"][0]["in"]["element"] == 16
+    assert result["commit"]["max_confirmation_clicks"] == 1
+    assert result["failure_policy"]["retry_after_commit"] is False
+
+
+def test_r3_contract_fails_closed_on_target_or_cost_drift():
+    pre = _private_state(list(range(1, 16)), captain=1, vice=2)
+    missing = _r3_dom_probe()
+    missing["targets"] = []
+    result = compile_r3_ui_action_plan(
+        bundle=_r3_bundle(), pre_state=pre, dom_probe=missing,
+        expected_team_id=3609854,
+    )
+    assert result["status"] == "blocked"
+    assert "TRANSFER_IN_IDENTITY_UNPROVEN" in result["blocking_codes"]
+    paid = _r3_bundle()
+    next(row for row in paid["commands"] if row["operation"] == "stage_exact_transfers")[
+        "hits"
+    ] = 1
+    result = compile_r3_ui_action_plan(
+        bundle=paid, pre_state=pre, dom_probe=_r3_dom_probe(),
+        expected_team_id=3609854,
+    )
+    assert "TRANSFER_HIT_ACCOUNTING_MISMATCH" in result["blocking_codes"]
 
 
 def _dom_probe(order: list[int]) -> dict:

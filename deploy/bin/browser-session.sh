@@ -92,6 +92,31 @@ case "$action" in
       "sed 's/__MOVA_TEAM_ID__/$team_id/' /opt/mova/pick-team-dom-probe.js | \
        agent-browser --session mova-fpl --cdp '$cdp_port' eval --stdin"
     ;;
+  probe-transfers)
+    team_id=${MOVA_TEAM_ID:-3609854}
+    target_elements=${2:-}
+    if [[ ! "$team_id" =~ ^[1-9][0-9]*$ ]]; then
+      echo "invalid MOVA_TEAM_ID" >&2
+      exit 2
+    fi
+    if [[ -n "$target_elements" && ! "$target_elements" =~ ^[1-9][0-9]*(,[1-9][0-9]*)*$ ]]; then
+      echo "target elements must be a comma-separated numeric allowlist" >&2
+      exit 2
+    fi
+    target_json="[${target_elements}]"
+    start_browser
+    "${compose[@]}" exec -T browser \
+      agent-browser --session mova-fpl --cdp "$cdp_port" \
+      open https://fantasy.premierleague.com/en/transfers >/dev/null
+    "${compose[@]}" exec -T browser \
+      agent-browser --session mova-fpl --cdp "$cdp_port" \
+      wait --fn \
+      "location.pathname === '/en/transfers' && document.querySelectorAll('button[aria-label=\"Remove player\"]').length === 15" \
+      >/dev/null
+    "${compose[@]}" exec -T browser sh -c \
+      "sed -e 's/__MOVA_TEAM_ID__/$team_id/' -e 's/__MOVA_TARGET_ELEMENTS__/$target_json/' /opt/mova/transfers-dom-probe.js | \
+       agent-browser --session mova-fpl --cdp '$cdp_port' eval --stdin"
+    ;;
   status)
     "${compose[@]}" ps -a browser
     if curl -fsS http://127.0.0.1:${MOVA_NOVNC_PORT:-6080}/vnc.html >/dev/null 2>&1; then
@@ -109,7 +134,7 @@ case "$action" in
     "${compose[@]}" stop browser
     ;;
   *)
-    echo "usage: $0 {start|login|read|collect|probe|status|stop}" >&2
+    echo "usage: $0 {start|login|read|collect|probe|probe-transfers [id,id]|status|stop}" >&2
     exit 2
     ;;
 esac
