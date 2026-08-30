@@ -52,6 +52,12 @@ class RuntimeConfig:
     research_deadline_window_seconds: int = 30 * 3600
     research_final_window_seconds: int = 2 * 3600
     research_final_cutoff_seconds: int = 70 * 60
+    agent_budget_reservation_tokens: int = 120_000
+    agent_budget_job_tokens: int = 160_000
+    agent_budget_gw_tokens: int = 900_000
+    agent_budget_month_tokens: int = 3_000_000
+    agent_budget_gw_uses: int = 20
+    agent_budget_month_uses: int = 60
     collector_fpl_cadence_seconds: int = 6 * 3600
     # Máxima edad operativa de odds. La cadencia efectiva la decide el
     # deadline FPL y la cuota observada del proveedor.
@@ -141,6 +147,24 @@ class RuntimeConfig:
             research_final_cutoff_seconds=int(os.environ.get(
                 "MOVA_RESEARCH_FINAL_CUTOFF_SECONDS", str(70 * 60)
             )),
+            agent_budget_reservation_tokens=int(os.environ.get(
+                "MOVA_AGENT_BUDGET_RESERVATION_UNITS", "120000"
+            )),
+            agent_budget_job_tokens=int(os.environ.get(
+                "MOVA_AGENT_BUDGET_JOB_UNITS", "160000"
+            )),
+            agent_budget_gw_tokens=int(os.environ.get(
+                "MOVA_AGENT_BUDGET_GW_UNITS", "900000"
+            )),
+            agent_budget_month_tokens=int(os.environ.get(
+                "MOVA_AGENT_BUDGET_MONTH_UNITS", "3000000"
+            )),
+            agent_budget_gw_uses=int(os.environ.get(
+                "MOVA_AGENT_BUDGET_GW_USES", "20"
+            )),
+            agent_budget_month_uses=int(os.environ.get(
+                "MOVA_AGENT_BUDGET_MONTH_USES", "60"
+            )),
             collector_fpl_cadence_seconds=int(os.environ.get(
                 "MOVA_COLLECTOR_FPL_CADENCE_SECONDS", str(6 * 3600)
             )),
@@ -220,6 +244,17 @@ class RuntimeConfig:
             < self.research_deadline_window_seconds
         ):
             raise ValueError("ventanas finales de research inválidas")
+        token_limits = (
+            self.agent_budget_reservation_tokens, self.agent_budget_job_tokens,
+            self.agent_budget_gw_tokens, self.agent_budget_month_tokens,
+        )
+        if any(value <= 0 for value in token_limits) or not (
+            self.agent_budget_reservation_tokens <= self.agent_budget_job_tokens
+            <= self.agent_budget_gw_tokens <= self.agent_budget_month_tokens
+        ):
+            raise ValueError("presupuestos de tokens del agente inválidos")
+        if not 1 <= self.agent_budget_gw_uses <= self.agent_budget_month_uses:
+            raise ValueError("presupuestos de usos del agente inválidos")
         cadences = (
             self.collector_fpl_cadence_seconds, self.collector_odds_cadence_seconds,
             self.collector_events_cadence_seconds, self.collector_schedule_cadence_seconds,
@@ -252,3 +287,14 @@ class RuntimeConfig:
             raise ValueError("MOVA_POSTGRES_PORT fuera de rango")
         if not self.postgres_credential_file.is_absolute():
             raise ValueError("MOVA_POSTGRES_CREDENTIAL_FILE debe ser absoluto")
+
+    def agent_budget_policy(self) -> dict[str, int]:
+        """Política versionable que acompaña cada reserva de inferencia."""
+        return {
+            "reservation_tokens": self.agent_budget_reservation_tokens,
+            "job_tokens": self.agent_budget_job_tokens,
+            "gw_tokens": self.agent_budget_gw_tokens,
+            "month_tokens": self.agent_budget_month_tokens,
+            "gw_uses": self.agent_budget_gw_uses,
+            "month_uses": self.agent_budget_month_uses,
+        }

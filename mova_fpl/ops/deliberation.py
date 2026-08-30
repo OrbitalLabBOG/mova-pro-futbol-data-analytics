@@ -75,7 +75,7 @@ def _time(value: object, *, field: str) -> str:
 def _usage(value: object) -> dict:
     raw = value if isinstance(value, dict) else {}
     usage = {"model": str(raw.get("model", "unknown"))[:120]}
-    for key in ("input_tokens", "output_tokens"):
+    for key in ("input_tokens", "output_tokens", "duration_ms", "search_requests"):
         item = raw.get(key)
         usage[key] = int(item) if item is not None and int(item) >= 0 else None
     usage["estimated_cost_usd"] = None
@@ -376,6 +376,7 @@ class DecisionDeliberationService:
                 "no_external_actions": True,
                 "no_new_facts": True,
                 "critic_must_preserve_hard_blockers": True,
+                "agent_budget": self.config.agent_budget_policy(),
             },
         }
         request_sha = sha256_json(request)
@@ -390,7 +391,11 @@ class DecisionDeliberationService:
             "provider": self.config.research_provider,
             "request_path": str(path),
             "request_sha256": request_sha,
+            "budget_policy": self.config.agent_budget_policy(),
         })
+        if queued.get("status") == "blocked":
+            path.unlink(missing_ok=True)
+            return {**queued, "request_path": None, "request_file_sha256": None}
         return {**queued, "request_path": str(path), "request_file_sha256": file_sha}
 
     def import_ready(self) -> dict:

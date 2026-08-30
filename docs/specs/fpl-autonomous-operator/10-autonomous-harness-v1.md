@@ -341,8 +341,10 @@ Scorecard del harness por GW:
 `ops.cost_ledger` registra provider/modelo, tokens, búsquedas, costo conocido/estimado,
 duración y categoría. Hay budgets por job, GW y mes. El PostgreSQL usa el VPS existente:
 no añade un proveedor pago, pero sí reserva inicialmente 0,5–0,8 GB RAM y 1–2 GB de disco.
-Los costos variables de LLM/search se miden antes de fijar un techo; Codex por suscripción
-se reporta como cuota/uso, no como costo ficticio por token.
+Los costos variables de LLM/search se miden con techo explícito; Codex por suscripción se
+reporta como cuota/uso, no como costo ficticio por token. La política inicial reserva 120k tokens
+por job y bloquea antes de cola al superar 160k/job, 900k o 20 usos/GW y 3M o 60 usos/mes.
+La reserva es transaccional, se liquida con uso real y conserva estimación ante output rechazado.
 
 ## 9. Ciclo autónomo
 
@@ -381,7 +383,7 @@ no borra evidencia previa y nunca amplía autonomía.
 | HV1-06A ✅ | bundle máquina, `do_nothing`, alternativa, Validator y DecisionEnvelope | completado | HV1-03/04/05 |
 | HV1-06B ✅ | Strategist + Critic acotados sobre `Intervention`, sin autoridad directa | completado | HV1-06A |
 | HV1-07 🟡 | policy, preflight, apply-once y verifier listos; faltan driver de clicks y rehearsals | 6–10 h | HV1-06 |
-| HV1-08 🟡 | scorecard, cost read-model y gate propuesta→lección listos; faltan reviewer causal automático y budgets | 5–8 h | HV1-03/06 |
+| HV1-08 🟡 | scorecard, budgets y gate propuesta→lección listos; falta reviewer causal automático | 3–5 h | HV1-03/06 |
 
 No es necesario completar 64–92 horas antes de obtener valor. Cortes de entrega:
 
@@ -498,8 +500,14 @@ writes apagado, así que esta entrega no amplía autoridad ni toca el equipo.
 SQLite migration `011` y PostgreSQL migration `013` añaden evaluaciones idempotentes y lecciones
 validadas. `mova improve` y `/api/v1/improvement` exponen propuestas, memoria y uso/costo. El gate
 obliga `proposed → testing → accepted|rejected`, valida evidencia mínima y registra auditoría;
-aceptar no aplica código, modelo, prompt, política ni control. El reviewer causal automático y
-los presupuestos duros continúan pendientes, por lo que HV1-08 permanece parcial.
+aceptar no aplica código, modelo, prompt, política ni control.
+
+SQLite migration `012` y PostgreSQL migration `014` añaden ledger atribuido y reservas atómicas.
+`mova cost report`, `/api/v1/costs` y Prometheus muestran consumo, reserva y saldo por GW/mes;
+research y deliberación fallan cerrados antes de cola cuando cualquier techo se agota. Un output
+rechazado conserva el cargo estimado, y un resultado recuperado lo reconcilia sin doble conteo.
+El reviewer causal automático continúa pendiente, por lo que HV1-08 permanece parcial.
+Evidencia: [HV1-08 mejora continua](21-hv1-08-improvement-rollout.md).
 
 ## 11. Definition of Done del harness v1
 

@@ -53,7 +53,7 @@ a {{ color:#72a7ff }}
 <div class="card"><div class="muted">Drift del modelo</div><div class="value">{html.escape(str(scorecard.get('drift_status','sin scorecard')))}</div><div>GW {html.escape(str(scorecard.get('gw','—')))} · {html.escape(str(scorecard.get('variant','')))}</div></div>
 </div>
 <h2>Controles efectivos</h2><table><thead><tr><th>Control</th><th>Valor</th></tr></thead><tbody>{control_rows}</tbody></table>
-<p><a href="/api/v1/status">status JSON</a> · <a href="/api/v1/analytics">analytics</a> · <a href="/api/v1/strategy">strategy</a> · <a href="/api/v1/improvement">learning</a> · <a href="/metrics">métricas</a> · <a href="/api/v1/audit">auditoría</a> · <a href="/api/v1/jobs">jobs</a> · <a href="/api/v1/steps">steps</a></p>
+<p><a href="/api/v1/status">status JSON</a> · <a href="/api/v1/analytics">analytics</a> · <a href="/api/v1/strategy">strategy</a> · <a href="/api/v1/improvement">learning</a> · <a href="/api/v1/costs">costos</a> · <a href="/metrics">métricas</a> · <a href="/api/v1/audit">auditoría</a> · <a href="/api/v1/jobs">jobs</a> · <a href="/api/v1/steps">steps</a></p>
 </body></html>"""
     return body.encode("utf-8")
 
@@ -90,6 +90,9 @@ def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
                     return
                 if parsed.path == "/metrics":
                     metrics = db.prometheus()
+                    metrics += db.cost_prometheus(
+                        runtime.agent_budget_policy(), season=runtime.season
+                    )
                     try:
                         from mova_fpl.ops.collector.store import (
                             CollectorStore, prometheus, read_status,
@@ -181,6 +184,19 @@ def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
                         "application/json; charset=utf-8",
                     )
                     return
+                if parsed.path == "/api/v1/costs":
+                    query = parse_qs(parsed.query)
+                    raw_gw = query.get("gw", [None])[0]
+                    gw = int(raw_gw) if raw_gw is not None else None
+                    if gw is not None and not 1 <= gw <= 38:
+                        raise ValueError("gw debe estar entre 1 y 38")
+                    payload = db.cost_report(
+                        runtime.agent_budget_policy(), season=runtime.season,
+                        gw=gw, month=query.get("month", [None])[0],
+                    )
+                    self._send(HTTPStatus.OK, _json_bytes(payload),
+                               "application/json; charset=utf-8")
+                    return
                 routes = {
                     "/api/v1/status": None,
                     "/api/v1/strategy": "strategic_status",
@@ -208,6 +224,7 @@ def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
                     "/api/v1/research/conflicts": "research_conflicts",
                     "/api/v1/change-proposal-evaluations": "change_proposal_evaluations",
                     "/api/v1/lessons": "lessons",
+                    "/api/v1/budget-reservations": "agent_budget_reservations",
                 }
                 if parsed.path not in routes:
                     self._send(HTTPStatus.NOT_FOUND, b'{"error":"not_found"}', "application/json")

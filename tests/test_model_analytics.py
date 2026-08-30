@@ -142,8 +142,12 @@ def test_read_only_api_exposes_analytics_and_prometheus(tmp_path: Path):
         base = f"http://127.0.0.1:{server.server_port}"
         with urllib.request.urlopen(base + "/api/v1/analytics", timeout=2) as response:
             assert json.load(response)["schema"] == "mova-analytics-service-status-v1"
+        with urllib.request.urlopen(base + "/api/v1/costs", timeout=2) as response:
+            assert json.load(response)["schema"] == "mova-agent-cost-report-v1"
         with urllib.request.urlopen(base + "/metrics", timeout=2) as response:
-            assert "mova_analytics_service_up 1" in response.read().decode()
+            metrics = response.read().decode()
+            assert "mova_analytics_service_up 1" in metrics
+            assert "mova_agent_budget_within_limit" in metrics
     finally:
         server.shutdown()
         server.server_close()
