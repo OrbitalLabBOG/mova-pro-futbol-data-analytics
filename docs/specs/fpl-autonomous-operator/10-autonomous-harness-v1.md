@@ -383,7 +383,7 @@ no borra evidencia previa y nunca amplía autonomía.
 | HV1-06A ✅ | bundle máquina, `do_nothing`, alternativa, Validator y DecisionEnvelope | completado | HV1-03/04/05 |
 | HV1-06B ✅ | Strategist + Critic acotados sobre `Intervention`, sin autoridad directa | completado | HV1-06A |
 | HV1-07 🟡 | policy, preflight, apply-once y verifier listos; faltan driver de clicks y rehearsals | 6–10 h | HV1-06 |
-| HV1-08 🟡 | reviewer causal, scorecard, budgets y gate propuesta→lección listos; falta promoción real controlada | 2–4 h | HV1-03/06 |
+| HV1-08 ✅ | reviewer causal, budgets, propuesta→lección y release de modelos con shadow/rollback | completado | HV1-03/06 |
 
 No es necesario completar 64–92 horas antes de obtener valor. Cortes de entrega:
 
@@ -511,6 +511,21 @@ scorecard. Clasifica siete familias de causa y exige tres ocurrencias antes de c
 una sola GW queda explícitamente como evidencia insuficiente. HV1-08 permanece parcial por el
 workflow que aplica un cambio aprobado mediante release, shadow y rollback verificable.
 Evidencia: [HV1-08 mejora continua](21-hv1-08-improvement-rollout.md).
+
+### Corte release controlado de modelos — 30 de agosto de 2026
+
+SQLite migration `013` y PostgreSQL migration `015` añaden releases de bundles y eventos
+append-only. Una propuesta aceptada puede sellar exclusivamente los artefactos `minutes+points`;
+las rutas se derivan del model root y los SHA-256 se recalculan en cada transición. No existe un
+executor genérico de scripts, patches, schema, prompts o controles.
+
+`mova improve release prepare|shadow|promote|rollback|status` implementa el lifecycle real. El
+analytics service proyecta el candidato como `model_release_shadow:<release_id>` sin sustituir el
+baseline. La promoción exige por defecto tres scorecards finales pareados, cero alertas, MAE no
+peor a 1,05× y delta p60 ECE no mayor a 0,02. El puntero `active_model_bundle` es append-only y
+analytics + decisión verifican sus hashes antes de inferencia. Rollback restaura artefactos y
+provenance del release previo. Este corte cierra HV1-08 sin ampliar `A0`, permisos de browser ni
+autoridad de auto-modificación de código.
 
 ## 11. Definition of Done del harness v1
 

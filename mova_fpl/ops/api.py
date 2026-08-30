@@ -93,6 +93,7 @@ def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
                     metrics += db.cost_prometheus(
                         runtime.agent_budget_policy(), season=runtime.season
                     )
+                    metrics += db.model_release_prometheus()
                     try:
                         from mova_fpl.ops.collector.store import (
                             CollectorStore, prometheus, read_status,
@@ -226,6 +227,8 @@ def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
                     "/api/v1/lessons": "lessons",
                     "/api/v1/budget-reservations": "agent_budget_reservations",
                     "/api/v1/gameweek-reviews": "gameweek_reviews",
+                    "/api/v1/model-bundle-releases": "model_bundle_releases",
+                    "/api/v1/model-bundle-release-events": "model_bundle_release_events",
                 }
                 if parsed.path not in routes:
                     self._send(HTTPStatus.NOT_FOUND, b'{"error":"not_found"}', "application/json")

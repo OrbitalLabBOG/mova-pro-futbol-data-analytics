@@ -320,6 +320,87 @@ class AnalyticsStore:
             },
         }
 
+    def model_release_shadow_gate(self, *, season: str, release: dict) -> dict:
+        """Compara scorecards finales pareados del candidato y su baseline."""
+        release_id = release["release_id"]
+        variant = f"model_release_shadow:{release_id}"
+        baseline = release["baseline_manifest"]["models"]
+        with connect(self.config, autocommit=True) as con:
+            candidates = con.execute(
+                """select distinct on(e.gw) e.gw,e.evaluation_id,e.metrics,e.drift_status,
+                  e.evaluated_at
+                from analytics.model_evaluation_runs e
+                where e.season=%s and e.variant=%s and e.settlement_status='final'
+                order by e.gw,e.evaluated_at desc""", (season, variant),
+            ).fetchall()
+            baselines = con.execute(
+                """select distinct on(e.gw) e.gw,e.evaluation_id,e.metrics,e.drift_status,
+                  e.evaluated_at
+                from analytics.model_evaluation_runs e
+                join analytics.model_projection_batches b on b.batch_id=e.batch_id
+                where e.season=%s and e.variant='baseline'
+                  and e.settlement_status='final'
+                  and b.model_versions->>'minutes'=%s
+                  and b.model_versions->>'points'=%s
+                order by e.gw,e.evaluated_at desc""",
+                (season, baseline["minutes"]["version"], baseline["points"]["version"]),
+            ).fetchall()
+        baseline_by_gw = {int(row["gw"]): row for row in baselines}
+        pairs = [(row, baseline_by_gw[int(row["gw"])]) for row in candidates
+                 if int(row["gw"]) in baseline_by_gw]
+        policy = release["promotion_policy"]
+
+        def metric(row: dict, group: str, name: str) -> float | None:
+            value = (row.get("metrics") or {}).get(group, {}).get(name)
+            return float(value) if value is not None else None
+
+        points = [(metric(candidate, "points", "mae"), metric(base, "points", "mae"))
+                  for candidate, base in pairs]
+        points = [(candidate, base) for candidate, base in points
+                  if candidate is not None and base is not None]
+        p60 = [(metric(candidate, "minutes", "p60_ece"),
+                metric(base, "minutes", "p60_ece")) for candidate, base in pairs]
+        p60 = [(candidate, base) for candidate, base in p60
+               if candidate is not None and base is not None]
+        candidate_mae = sum(item[0] for item in points) / len(points) if points else None
+        baseline_mae = sum(item[1] for item in points) / len(points) if points else None
+        mae_ratio = (candidate_mae / baseline_mae
+                     if candidate_mae is not None and baseline_mae not in {None, 0} else None)
+        candidate_p60 = sum(item[0] for item in p60) / len(p60) if p60 else None
+        baseline_p60 = sum(item[1] for item in p60) / len(p60) if p60 else None
+        p60_delta = (candidate_p60 - baseline_p60
+                     if candidate_p60 is not None and baseline_p60 is not None else None)
+        drift_alerts = sum(row["drift_status"] == "alert" for row, _ in pairs)
+        checks = {
+            "final_gameweeks": len(pairs) >= int(policy["min_final_gameweeks"]),
+            "drift_alerts": drift_alerts <= int(policy["max_drift_alerts"]),
+            "points_mae": mae_ratio is not None
+            and mae_ratio <= float(policy["max_points_mae_ratio"]),
+            "p60_ece": p60_delta is not None
+            and p60_delta <= float(policy["max_p60_ece_delta"]),
+        }
+        status = "passed" if all(checks.values()) else (
+            "insufficient" if not checks["final_gameweeks"] else "failed"
+        )
+        return {
+            "schema": "mova-model-release-shadow-gate-v1",
+            "status": status, "season": season, "release_id": release_id,
+            "variant": variant, "policy": policy, "checks": checks,
+            "final_gameweeks": len(pairs),
+            "gameweeks": [int(candidate["gw"]) for candidate, _ in pairs],
+            "drift_alerts": drift_alerts,
+            "candidate_points_mae": candidate_mae,
+            "baseline_points_mae": baseline_mae,
+            "points_mae_ratio": mae_ratio,
+            "candidate_p60_ece": candidate_p60,
+            "baseline_p60_ece": baseline_p60,
+            "p60_ece_delta": p60_delta,
+            "candidate_evaluation_ids": [candidate["evaluation_id"]
+                                         for candidate, _ in pairs],
+            "baseline_evaluation_ids": [baseline["evaluation_id"]
+                                        for _, baseline in pairs],
+        }
+
 
 def publish_status(config, state: dict) -> None:
     write_atomic(config.analytics_root / "status.json", canonical_bytes(state))

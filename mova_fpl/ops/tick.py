@@ -283,10 +283,15 @@ class TickRunner:
             "MOVA_MODEL_ROOT": str(self.config.artifact_root / "models"),
             "MOVA_GIT_SHA": self.config.git_sha,
         })
+        from mova_fpl.ops.model_release import resolve_active_model_bundle
+
+        active_bundle = resolve_active_model_bundle(self.config, self.db)
+        points_version = active_bundle["models"]["points"]["version"]
+        minutes_version = active_bundle["models"]["minutes"]["version"]
         argv = [
             sys.executable, "-m", "mova_fpl.cli.live", "--season", self.config.season,
             "--gw", str(gw), "--policy", "milp", "--horizon", "3", "--top-k", "0",
-            "--version", "1.1.0", "--minutes-version", "1.1.0",
+            "--version", points_version, "--minutes-version", minutes_version,
             "--snapshot-dir", str(snapshot_dir), "--team-id", str(self.config.team_id),
             "--chips", "--lookahead", "6", "--dry-run", "--out", str(out),
             "--json-out", str(bundle_path), "--as-of", prepared_manifest["manifest"]["as_of_at"],
@@ -363,6 +368,9 @@ class TickRunner:
             "manifest_id": prepared_manifest["manifest_id"],
             "manifest_sha256": prepared_manifest["content_sha256"],
             "blocking_codes": envelope["validation"]["blocking_codes"],
+            "model_bundle": {"release_id": active_bundle.get("release_id"),
+                             "source": active_bundle["source"],
+                             "points": points_version, "minutes": minutes_version},
             "private_team_state": private_state_used,
             "expected_points": selected["expected_points"],
             "fingerprint": selected["fingerprint"],

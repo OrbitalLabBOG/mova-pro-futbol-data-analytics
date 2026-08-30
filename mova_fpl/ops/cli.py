@@ -84,6 +84,26 @@ def parser() -> argparse.ArgumentParser:
     transition.add_argument("--actor", required=True)
     transition.add_argument("--reason", required=True)
     transition.add_argument("--idempotency-key", required=True)
+    release = improve_commands.add_parser(
+        "release", help="promueve bundles de modelos con shadow y rollback"
+    )
+    release_commands = release.add_subparsers(dest="release_command", required=True)
+    release_commands.add_parser("status", help="estado, eventos y puntero activo")
+    release_prepare = release_commands.add_parser(
+        "prepare", help="sella un candidato ligado a una propuesta aceptada"
+    )
+    release_prepare.add_argument("--proposal-id", required=True)
+    release_prepare.add_argument("--manifest", required=True)
+    for command in (release_prepare,):
+        command.add_argument("--actor", required=True)
+        command.add_argument("--reason", required=True)
+        command.add_argument("--idempotency-key", required=True)
+    for operation in ("shadow", "promote", "rollback"):
+        command = release_commands.add_parser(operation)
+        command.add_argument("--release-id", required=True)
+        command.add_argument("--actor", required=True)
+        command.add_argument("--reason", required=True)
+        command.add_argument("--idempotency-key", required=True)
     cost = commands.add_parser("cost", help="presupuestos y uso de inferencia")
     cost_commands = cost.add_subparsers(dest="cost_command", required=True)
     cost_report = cost_commands.add_parser("report", help="uso por GW y mes")
@@ -288,12 +308,29 @@ def main(argv: list[str] | None = None) -> int:
         service = ContinuousImprovementService(db)
         if args.improve_command == "status":
             payload = service.status(season=args.season, gw=args.gw)
-        else:
+        elif args.improve_command == "transition":
             payload = service.transition(
                 proposal_id=args.proposal_id, to_status=args.to,
                 evidence_path=Path(args.evidence), actor=args.actor,
                 reason=args.reason, idempotency_key=args.idempotency_key,
             )
+        else:
+            from mova_fpl.ops.model_release import ModelReleaseService
+
+            release = ModelReleaseService(config, db)
+            if args.release_command == "status":
+                payload = release.status()
+            elif args.release_command == "prepare":
+                payload = release.prepare(
+                    proposal_id=args.proposal_id, manifest_path=Path(args.manifest),
+                    actor=args.actor, reason=args.reason,
+                    idempotency_key=args.idempotency_key,
+                )
+            else:
+                payload = getattr(release, args.release_command)(
+                    release_id=args.release_id, actor=args.actor, reason=args.reason,
+                    idempotency_key=args.idempotency_key,
+                )
         print(json.dumps(payload, ensure_ascii=False, default=str))
         return 0
 

@@ -883,6 +883,49 @@ MIGRATION_012 = (
     "ON agent_budget_reservations(cycle_id,status,created_at)",
 )
 
+MIGRATION_013 = (
+    """
+    CREATE TABLE IF NOT EXISTS model_bundle_releases (
+        release_id TEXT PRIMARY KEY,
+        proposal_id TEXT NOT NULL UNIQUE REFERENCES change_proposals(proposal_id),
+        prepare_idempotency_key TEXT NOT NULL UNIQUE,
+        candidate_manifest_json TEXT NOT NULL CHECK (json_valid(candidate_manifest_json)),
+        baseline_manifest_json TEXT NOT NULL CHECK (json_valid(baseline_manifest_json)),
+        promotion_policy_json TEXT NOT NULL CHECK (json_valid(promotion_policy_json)),
+        status TEXT NOT NULL CHECK (status IN (
+          'prepared','shadow','promoted','superseded','rolled_back')),
+        content_sha256 TEXT NOT NULL CHECK (length(content_sha256) = 64),
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+    ) STRICT
+    """,
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_model_bundle_single_shadow "
+    "ON model_bundle_releases((1)) WHERE status='shadow'",
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_model_bundle_single_promoted "
+    "ON model_bundle_releases((1)) WHERE status='promoted'",
+    """
+    CREATE TABLE IF NOT EXISTS model_bundle_release_events (
+        release_event_id TEXT PRIMARY KEY,
+        release_id TEXT NOT NULL REFERENCES model_bundle_releases(release_id)
+          ON DELETE CASCADE,
+        sequence INTEGER NOT NULL CHECK (sequence >= 1),
+        idempotency_key TEXT NOT NULL UNIQUE,
+        from_status TEXT CHECK (from_status IS NULL OR from_status IN (
+          'prepared','shadow','promoted','superseded','rolled_back')),
+        to_status TEXT NOT NULL CHECK (to_status IN (
+          'prepared','shadow','promoted','superseded','rolled_back')),
+        actor TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        evidence_json TEXT NOT NULL CHECK (json_valid(evidence_json)),
+        evidence_sha256 TEXT NOT NULL CHECK (length(evidence_sha256) = 64),
+        occurred_at TEXT NOT NULL,
+        UNIQUE (release_id, sequence)
+    ) STRICT
+    """,
+    "CREATE INDEX IF NOT EXISTS idx_model_bundle_events_release_time "
+    "ON model_bundle_release_events(release_id,occurred_at DESC)",
+)
+
 MIGRATIONS = (
     (1, "initial_ops_schema", MIGRATION_001),
     (2, "team_state_artifact_provenance", MIGRATION_002),
@@ -896,4 +939,5 @@ MIGRATIONS = (
     (10, "apply_once_execution_attempts", MIGRATION_010),
     (11, "continuous_improvement_gate", MIGRATION_011),
     (12, "agent_cost_budgets", MIGRATION_012),
+    (13, "model_bundle_release_gate", MIGRATION_013),
 )

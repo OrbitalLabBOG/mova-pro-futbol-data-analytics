@@ -2312,6 +2312,18 @@ class OpsDB:
                 SUM(subscription_usage) subscription_uses
                 FROM cost_ledger GROUP BY substr(occurred_at,1,7) ORDER BY month DESC"""
             ).fetchall()
+            releases = con.execute(
+                "SELECT * FROM model_bundle_releases ORDER BY created_at DESC"
+            ).fetchall()
+            release_events = con.execute(
+                "SELECT * FROM model_bundle_release_events "
+                "ORDER BY occurred_at DESC,sequence DESC LIMIT 100"
+            ).fetchall()
+            active_bundle = con.execute(
+                """SELECT value_json,effective_at,actor,reason FROM runtime_controls
+                WHERE control_key='active_model_bundle'
+                ORDER BY effective_at DESC,control_id DESC LIMIT 1"""
+            ).fetchone()
         proposal_rows = []
         for row in proposals:
             item = dict(row)
@@ -2341,6 +2353,12 @@ class OpsDB:
             "unknown_cost_uses": sum(int(row["uses"])
                                      for row in costs if row["estimated_cost_usd"] is None),
         }
+        release_rows = [self._release_row(row) for row in releases]
+        release_event_rows = []
+        for row in release_events:
+            item = dict(row)
+            item["evidence"] = json.loads(item.pop("evidence_json"))
+            release_event_rows.append(item)
         return {
             "schema": "mova-continuous-improvement-status-v1",
             "filters": {"season": season, "gw": gw},
@@ -2350,10 +2368,17 @@ class OpsDB:
             },
             "proposals": proposal_rows, "evaluations": evaluation_rows,
             "lessons": lesson_rows,
+            "model_bundle_releases": release_rows,
+            "model_bundle_release_events": release_event_rows,
+            "active_model_bundle": ({"value": json.loads(active_bundle["value_json"]),
+                                     "effective_at": active_bundle["effective_at"],
+                                     "actor": active_bundle["actor"],
+                                     "reason": active_bundle["reason"]}
+                                    if active_bundle else None),
             "costs": {"scope": "all_time", "totals": totals,
                       "by_provider_model": [dict(row) for row in costs],
                       "by_month": [dict(row) for row in cost_months]},
-            "runtime_mutated": False,
+            "runtime_mutated": active_bundle is not None,
         }
 
     def transition_change_proposal(self, proposal_id: str, *, to_status: str,
@@ -2419,6 +2444,335 @@ class OpsDB:
                 "evaluation_id": evaluation_id, "proposal_status": to_status,
                 "lesson_id": lesson_id, "runtime_mutated": False}
 
+    @staticmethod
+    def _release_row(row) -> dict | None:
+        if not row:
+            return None
+        item = dict(row)
+        for source, target in (
+            ("candidate_manifest_json", "candidate_manifest"),
+            ("baseline_manifest_json", "baseline_manifest"),
+            ("promotion_policy_json", "promotion_policy"),
+        ):
+            item[target] = json.loads(item.pop(source))
+        return item
+
+    def model_bundle_release_status(self) -> dict:
+        self.migrate()
+        with self.connect(readonly=True) as con:
+            releases = con.execute(
+                "SELECT * FROM model_bundle_releases ORDER BY created_at DESC"
+            ).fetchall()
+            events = con.execute(
+                "SELECT * FROM model_bundle_release_events "
+                "ORDER BY occurred_at DESC,sequence DESC LIMIT 100"
+            ).fetchall()
+            control = con.execute(
+                """SELECT value_json,effective_at,actor,reason FROM runtime_controls
+                WHERE control_key='active_model_bundle'
+                ORDER BY effective_at DESC,control_id DESC LIMIT 1"""
+            ).fetchone()
+        event_items = []
+        for row in events:
+            item = dict(row)
+            item["evidence"] = json.loads(item.pop("evidence_json"))
+            event_items.append(item)
+        return {
+            "schema": "mova-model-bundle-release-status-v1",
+            "releases": [self._release_row(row) for row in releases],
+            "events": event_items,
+            "active_model_bundle": ({"value": json.loads(control["value_json"]),
+                                     "effective_at": control["effective_at"],
+                                     "actor": control["actor"],
+                                     "reason": control["reason"]} if control else None),
+        }
+
+    def model_release_prometheus(self) -> str:
+        with self.connect(readonly=True) as con:
+            rows = con.execute(
+                "SELECT status,COUNT(*) count FROM model_bundle_releases GROUP BY status"
+            ).fetchall()
+            events = int(con.execute(
+                "SELECT COUNT(*) FROM model_bundle_release_events"
+            ).fetchone()[0])
+            pointer = con.execute(
+                "SELECT 1 FROM runtime_controls WHERE control_key='active_model_bundle' LIMIT 1"
+            ).fetchone()
+        counts = {str(row["status"]): int(row["count"]) for row in rows}
+        lines = [
+            f'mova_model_bundle_releases{{status="{status}"}} {counts.get(status, 0)}'
+            for status in ("prepared", "shadow", "promoted", "superseded", "rolled_back")
+        ]
+        lines.extend((f"mova_model_bundle_release_events_total {events}",
+                      f"mova_model_bundle_pointer_present {1 if pointer else 0}"))
+        return "\n".join(lines) + "\n"
+
+    def active_model_bundle(self) -> dict | None:
+        self.migrate()
+        with self.connect(readonly=True) as con:
+            row = con.execute(
+                """SELECT value_json FROM runtime_controls
+                WHERE control_key='active_model_bundle'
+                ORDER BY effective_at DESC,control_id DESC LIMIT 1"""
+            ).fetchone()
+        return json.loads(row["value_json"]) if row else None
+
+    def shadow_model_bundle_release(self) -> dict | None:
+        self.migrate()
+        with self.connect(readonly=True) as con:
+            row = con.execute(
+                "SELECT * FROM model_bundle_releases WHERE status='shadow' "
+                "ORDER BY updated_at DESC LIMIT 1"
+            ).fetchone()
+        return self._release_row(row)
+
+    @staticmethod
+    def _insert_release_event(con, *, release_id: str, idempotency_key: str,
+                              from_status: str | None, to_status: str, actor: str,
+                              reason: str, evidence: dict, occurred_at: str) -> str:
+        sequence = int(con.execute(
+            "SELECT COALESCE(MAX(sequence),0)+1 FROM model_bundle_release_events "
+            "WHERE release_id=?", (release_id,)
+        ).fetchone()[0])
+        event_id = new_id("release_event")
+        con.execute(
+            """INSERT INTO model_bundle_release_events(
+            release_event_id,release_id,sequence,idempotency_key,from_status,to_status,
+            actor,reason,evidence_json,evidence_sha256,occurred_at)
+            VALUES(?,?,?,?,?,?,?,?,?,?,?)""",
+            (event_id, release_id, sequence, idempotency_key, from_status, to_status,
+             actor, reason, canonical_json(evidence), sha256_json(evidence), occurred_at),
+        )
+        return event_id
+
+    def prepare_model_bundle_release(self, *, proposal_id: str, candidate: dict,
+                                     baseline: dict, promotion_policy: dict,
+                                     actor: str, reason: str,
+                                     idempotency_key: str) -> dict:
+        content = {"proposal_id": proposal_id, "candidate": candidate,
+                   "baseline": baseline, "promotion_policy": promotion_policy}
+        content_sha = sha256_json(content)
+        now = utcnow()
+        with self.transaction() as con:
+            reused = con.execute(
+                "SELECT * FROM model_bundle_releases WHERE prepare_idempotency_key=?",
+                (idempotency_key,),
+            ).fetchone()
+            if reused:
+                if reused["content_sha256"] != content_sha:
+                    raise ValueError("idempotency_key ya usada con otro release")
+                item = self._release_row(reused)
+                return {"status": "reused", "release": item, "runtime_mutated": False}
+            proposal = con.execute(
+                """SELECT p.status,l.status lesson_status FROM change_proposals p
+                LEFT JOIN lessons l ON l.proposal_id=p.proposal_id
+                WHERE p.proposal_id=?""", (proposal_id,),
+            ).fetchone()
+            if not proposal:
+                raise ValueError("proposal_id no existe")
+            if proposal["status"] != "accepted" or proposal["lesson_status"] != "validated":
+                raise ValueError("la propuesta requiere aceptación y lección validada")
+            prior = con.execute(
+                "SELECT release_id FROM model_bundle_releases WHERE proposal_id=?",
+                (proposal_id,),
+            ).fetchone()
+            if prior:
+                raise ValueError("la propuesta ya tiene un release")
+            for status, manifest in (("approved", baseline), ("candidate", candidate)):
+                for name, model in manifest["models"].items():
+                    existing = con.execute(
+                        "SELECT * FROM model_releases WHERE model_name=? AND version=?",
+                        (name, model["version"]),
+                    ).fetchone()
+                    if existing:
+                        if (existing["artifact_sha256"] != model["artifact_sha256"]
+                                or existing["artifact_path"] != model["artifact_path"]):
+                            raise ValueError(f"release inmutable en conflicto: {name}")
+                        continue
+                    model_id = "model_" + hashlib.sha256(
+                        f"{name}:{model['version']}:{model['artifact_sha256']}".encode()
+                    ).hexdigest()[:24]
+                    con.execute(
+                        """INSERT INTO model_releases(model_release_id,model_name,version,
+                        dataset_id,artifact_path,artifact_sha256,metrics_json,status,created_at)
+                        VALUES(?,?,?,NULL,?,?,?,?,?)""",
+                        (model_id, name, model["version"], model["artifact_path"],
+                         model["artifact_sha256"], canonical_json(model.get("metrics") or {}),
+                         status, now),
+                    )
+            release_id = "release_" + hashlib.sha256(
+                f"{proposal_id}:{content_sha}".encode()
+            ).hexdigest()[:24]
+            con.execute(
+                """INSERT INTO model_bundle_releases(
+                release_id,proposal_id,prepare_idempotency_key,candidate_manifest_json,
+                baseline_manifest_json,promotion_policy_json,status,content_sha256,
+                created_at,updated_at) VALUES(?,?,?,?,?,?,'prepared',?,?,?)""",
+                (release_id, proposal_id, idempotency_key, canonical_json(candidate),
+                 canonical_json(baseline), canonical_json(promotion_policy), content_sha,
+                 now, now),
+            )
+            event_id = self._insert_release_event(
+                con, release_id=release_id, idempotency_key=idempotency_key,
+                from_status=None, to_status="prepared", actor=actor, reason=reason,
+                evidence={"content_sha256": content_sha}, occurred_at=now,
+            )
+            self.append_audit(
+                "model_bundle_release_prepared", actor=actor, severity="warning",
+                subject_type="model_bundle_release", subject_id=release_id,
+                payload={"proposal_id": proposal_id, "event_id": event_id,
+                         "content_sha256": content_sha, "runtime_mutated": False,
+                         "reason": reason}, con=con,
+            )
+        return {"status": "completed", "release_id": release_id,
+                "release_status": "prepared", "event_id": event_id,
+                "runtime_mutated": False}
+
+    def transition_model_bundle_release(self, release_id: str, *, to_status: str,
+                                        evidence: dict, actor: str, reason: str,
+                                        idempotency_key: str) -> dict:
+        transitions = {"prepared": {"shadow", "rolled_back"},
+                       "shadow": {"promoted", "rolled_back"},
+                       "promoted": {"rolled_back"}}
+        evidence_sha = sha256_json(evidence)
+        now = utcnow()
+        with self.transaction() as con:
+            reused = con.execute(
+                "SELECT * FROM model_bundle_release_events WHERE idempotency_key=?",
+                (idempotency_key,),
+            ).fetchone()
+            if reused:
+                if (reused["release_id"] != release_id or reused["to_status"] != to_status
+                        or reused["evidence_sha256"] != evidence_sha):
+                    raise ValueError("idempotency_key ya usada con otro contenido")
+                return {"status": "reused", "release_id": release_id,
+                        "release_status": reused["to_status"],
+                        "event_id": reused["release_event_id"],
+                        "runtime_mutated": reused["to_status"] in {"promoted", "rolled_back"}}
+            row = con.execute(
+                "SELECT * FROM model_bundle_releases WHERE release_id=?", (release_id,)
+            ).fetchone()
+            if not row:
+                raise ValueError("release_id no existe")
+            current = str(row["status"])
+            if to_status not in transitions.get(current, set()):
+                raise ValueError(f"transición inválida: {current} -> {to_status}")
+            candidate = json.loads(row["candidate_manifest_json"])
+            baseline = json.loads(row["baseline_manifest_json"])
+            if to_status == "promoted":
+                prior = con.execute(
+                    "SELECT release_id FROM model_bundle_releases "
+                    "WHERE status='promoted' AND release_id<>?", (release_id,)
+                ).fetchone()
+                if prior:
+                    prior_id = str(prior["release_id"])
+                    con.execute(
+                        "UPDATE model_bundle_releases SET status='superseded',updated_at=? "
+                        "WHERE release_id=?", (now, prior_id),
+                    )
+                    self._insert_release_event(
+                        con, release_id=prior_id,
+                        idempotency_key=f"{idempotency_key}:supersede:{prior_id}",
+                        from_status="promoted", to_status="superseded", actor=actor,
+                        reason=f"superseded por {release_id}",
+                        evidence={"successor_release_id": release_id}, occurred_at=now,
+                    )
+                for name, model in baseline["models"].items():
+                    con.execute(
+                        "UPDATE model_releases SET status='retired' "
+                        "WHERE model_name=? AND version=?", (name, model["version"]),
+                    )
+                for name, model in candidate["models"].items():
+                    con.execute(
+                        "UPDATE model_releases SET status='approved' "
+                        "WHERE model_name=? AND version=?", (name, model["version"]),
+                    )
+                pointer = {"schema": "mova-active-model-bundle-v1",
+                           "release_id": release_id, "models": candidate["models"],
+                           "activated_at": now}
+                con.execute(
+                    "INSERT INTO runtime_controls(control_key,value_json,effective_at,actor,reason) "
+                    "VALUES('active_model_bundle',?,?,?,?)",
+                    (canonical_json(pointer), now, actor, reason),
+                )
+            elif to_status == "rolled_back" and current == "promoted":
+                # Libera primero el índice de único promoted para poder restaurar
+                # el release anterior dentro de la misma transacción.
+                con.execute(
+                    "UPDATE model_bundle_releases SET status='rolled_back',updated_at=? "
+                    "WHERE release_id=?", (now, release_id),
+                )
+                for name, model in candidate["models"].items():
+                    con.execute(
+                        "UPDATE model_releases SET status='retired' "
+                        "WHERE model_name=? AND version=?", (name, model["version"]),
+                    )
+                for name, model in baseline["models"].items():
+                    con.execute(
+                        "UPDATE model_releases SET status='approved' "
+                        "WHERE model_name=? AND version=?", (name, model["version"]),
+                    )
+                baseline_release_id = baseline.get("source_release_id")
+                if baseline_release_id:
+                    prior = con.execute(
+                        "SELECT status FROM model_bundle_releases WHERE release_id=?",
+                        (baseline_release_id,),
+                    ).fetchone()
+                    if prior and prior["status"] == "superseded":
+                        con.execute(
+                            "UPDATE model_bundle_releases SET status='promoted',updated_at=? "
+                            "WHERE release_id=?", (now, baseline_release_id),
+                        )
+                        self._insert_release_event(
+                            con, release_id=baseline_release_id,
+                            idempotency_key=f"{idempotency_key}:restore:{baseline_release_id}",
+                            from_status="superseded", to_status="promoted", actor=actor,
+                            reason=f"restaurado por rollback de {release_id}",
+                            evidence={"rollback_release_id": release_id}, occurred_at=now,
+                        )
+                pointer = {"schema": "mova-active-model-bundle-v1",
+                           "release_id": baseline_release_id, "rollback_of": release_id,
+                           "models": baseline["models"], "activated_at": now}
+                con.execute(
+                    "INSERT INTO runtime_controls(control_key,value_json,effective_at,actor,reason) "
+                    "VALUES('active_model_bundle',?,?,?,?)",
+                    (canonical_json(pointer), now, actor, reason),
+                )
+            elif to_status == "shadow":
+                for name, model in candidate["models"].items():
+                    con.execute(
+                        "UPDATE model_releases SET status='shadow' "
+                        "WHERE model_name=? AND version=?", (name, model["version"]),
+                    )
+            elif to_status == "rolled_back":
+                for name, model in candidate["models"].items():
+                    con.execute(
+                        "UPDATE model_releases SET status='retired' "
+                        "WHERE model_name=? AND version=?", (name, model["version"]),
+                    )
+            con.execute(
+                "UPDATE model_bundle_releases SET status=?,updated_at=? WHERE release_id=?",
+                (to_status, now, release_id),
+            )
+            event_id = self._insert_release_event(
+                con, release_id=release_id, idempotency_key=idempotency_key,
+                from_status=current, to_status=to_status, actor=actor, reason=reason,
+                evidence=evidence, occurred_at=now,
+            )
+            runtime_mutated = to_status == "promoted" or (
+                to_status == "rolled_back" and current == "promoted"
+            )
+            self.append_audit(
+                f"model_bundle_release_{to_status}", actor=actor, severity="warning",
+                subject_type="model_bundle_release", subject_id=release_id,
+                payload={"from_status": current, "to_status": to_status,
+                         "event_id": event_id, "evidence_sha256": evidence_sha,
+                         "runtime_mutated": runtime_mutated, "reason": reason}, con=con,
+            )
+        return {"status": "completed", "release_id": release_id,
+                "release_status": to_status, "event_id": event_id,
+                "runtime_mutated": runtime_mutated}
+
     def recent(self, table: str, limit: int = 50) -> list[dict]:
         allowed = {"job_runs", "job_steps", "audit_events", "incidents", "health_samples",
                    "source_snapshots", "team_state_snapshots", "decision_runs",
@@ -2432,7 +2786,8 @@ class OpsDB:
                    "cycle_manifests", "research_runs", "research_documents",
                    "research_signals", "research_conflicts", "cost_ledger",
                    "agent_budget_reservations",
-                   "change_proposal_evaluations", "lessons"}
+                   "change_proposal_evaluations", "lessons",
+                   "model_bundle_releases", "model_bundle_release_events"}
         if table not in allowed:
             raise ValueError(f"tabla no permitida: {table}")
         order = {
@@ -2458,6 +2813,8 @@ class OpsDB:
             "cost_ledger": "occurred_at",
             "agent_budget_reservations": "created_at",
             "change_proposal_evaluations": "created_at", "lessons": "created_at",
+            "model_bundle_releases": "created_at",
+            "model_bundle_release_events": "occurred_at",
         }[table]
         with self.connect(readonly=True) as con:
             rows = con.execute(
