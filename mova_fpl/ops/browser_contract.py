@@ -149,6 +149,18 @@ def compile_r2_ui_action_plan(*, bundle: dict, pre_state: dict, dom_probe: dict,
         int(value) for value in set_lineup["bench_order"]
     ]
     swaps = plan_position_swaps(current, target)
+    labels_by_element = {
+        int(row["element"]): str(row.get("web_name") or "").strip()
+        for row in slots
+    }
+    target_slots = [
+        {
+            "position": position,
+            "element": element,
+            "web_name": labels_by_element.get(element) or None,
+        }
+        for position, element in enumerate(target, start=1)
+    ]
     captain_now = next(
         int(row["element"]) for row in normalized["picks"] if row["is_captain"]
     )
@@ -197,6 +209,8 @@ def compile_r2_ui_action_plan(*, bundle: dict, pre_state: dict, dom_probe: dict,
         }
 
     blockers = []
+    if swaps and any(not row["web_name"] for row in target_slots):
+        blockers.append("LINEUP_LABELS_UNPROVEN")
     captain_action = None
     vice_action = None
     if captain_now != captain_target:
@@ -217,6 +231,12 @@ def compile_r2_ui_action_plan(*, bundle: dict, pre_state: dict, dom_probe: dict,
         "pre_state_fingerprint": quality["fingerprint"],
         "status": "ready" if not blockers else "blocked",
         "blocking_codes": blockers,
+        "lineup": {
+            "from_order": current,
+            "to_order": target,
+            "target_slots": target_slots,
+            "swap_count": len(swaps),
+        },
         "target_order": target,
         "swaps": swaps,
         "captain": {

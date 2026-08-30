@@ -121,5 +121,27 @@ Después del despliegue:
 
 Este corte no prueba todavía el botón real posterior a una mutación local: sin cambios pendientes
 la UI no renderiza el commit. Probarlo exige una operación controlada incompatible con A0. Por eso
-HV1-07 permanece parcial: faltan rehearsal de confirmación, driver/rehearsal de lineup y la
-elevación de autoridad bajo un gate explícito.
+HV1-07 permanece parcial: faltan rehearsal de confirmación, rehearsal de lineup y la elevación de
+autoridad bajo un gate explícito.
+
+## Subcorte HV1-07D.4: adapter lineup tipado, no promovido
+
+El planner existente ya demostraba la secuencia mínima de swaps; este subcorte completa el lado
+host sin habilitarlo. El compiler valida schema, posiciones, selector allowlisted, secuencia,
+replay exacto y las quince identidades visuales ligadas al probe inicial. El instruction stream:
+
+1. selecciona origen y destino de cada swap por índice posicional;
+2. exige exactamente quince controles antes de cada selección;
+3. verifica el orden visual completo contra los `web_name` observados;
+4. descubre exactamente un `Confirm My Choices`;
+5. conserva un solo commit, sin retry, reload y GET privado posterior.
+
+El modo productivo no puede compilar swaps y devuelve `LINEUP_DRIVER_UNPROVEN`. El único bypass
+es `--validate-lineup-contract-only`, cuyo código retorna el JSON compilado antes de construir un
+cliente browser. La capability publicada registra lineup `implemented`, entrypoint deshabilitado,
+autonomía no promovida y `0/3` rehearsals. R3 continúa ausente.
+
+Verificación local: 38 pruebas enfocadas; replay/selector/labels manipulados fallan cerrados;
+materialización completa contra browser falso; `970 passed, 1 skipped, 79 deselected`; compileall,
+shell syntax, Compose y `diff --check` aprobados. No se creó intento, no se inició browser y no se
+escribió en FPL.

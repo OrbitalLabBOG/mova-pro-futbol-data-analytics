@@ -382,7 +382,7 @@ no borra evidencia previa y nunca amplía autonomía.
 | HV1-05 🟡 | servicio news/research: foco plantilla+candidatos, delta y slot final; falta evaluar cobertura multi-GW | 8–12 h | HV1-02/03 |
 | HV1-06A ✅ | bundle máquina, `do_nothing`, alternativa, Validator y DecisionEnvelope | completado | HV1-03/04/05 |
 | HV1-06B ✅ | Strategist + Critic acotados sobre `Intervention`, sin autoridad directa | completado | HV1-06A |
-| HV1-07 🟡 | policy, apply-once, verifier y driver host de capitanía listos; faltan lineup y rehearsals | 4–8 h | HV1-06 |
+| HV1-07 🟡 | policy/apply-once/verifier; C/VC habilitable y lineup tipado pero gated; faltan rehearsals y R3 | 4–8 h | HV1-06 |
 | HV1-08 ✅ | reviewer causal, budgets, propuesta→lección y release de modelos con shadow/rollback | completado | HV1-03/06 |
 
 No es necesario completar 64–92 horas antes de obtener valor. Cortes de entrega:
@@ -516,6 +516,13 @@ tipadas sólo después de un lease claimed. HV1-07D.3 añade el wrapper host que
 pipe, valida antes de `begin`, hace como máximo un commit y reconcilia el GET posterior. El scope
 promovido es sólo C/VC: lineup y R3 fallan cerrados, y el control real de confirmación aún exige
 rehearsal. A0, kill switch y browser writes no cambiaron.
+
+HV1-07D.4 implementa el instruction stream de XI/banca sin promoverlo: valida la secuencia de
+swaps contra el pre-state, reproduce el target de quince elementos y exige los quince nombres
+visuales antes del commit único. El modo `--validate-lineup-contract-only` no puede iniciar el
+browser; el entrypoint normal conserva `LINEUP_DRIVER_UNPROVEN`. `mova execute status` publica
+capabilities sin secretos: captaincy no tiene autonomía promovida, lineup está implementado pero
+deshabilitado con `0/3` rehearsals y R3 permanece ausente.
 
 ### Corte de mejora continua fail-closed — 30 de agosto de 2026
 

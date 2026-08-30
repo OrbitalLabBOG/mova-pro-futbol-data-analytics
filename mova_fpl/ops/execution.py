@@ -19,6 +19,7 @@ from mova_fpl.ops.browser_contract import (
     compile_browser_commands,
     compile_r2_ui_action_plan,
 )
+from mova_fpl.ops.browser_driver import driver_capabilities
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB, sha256_json
 from mova_fpl.ops.decision_envelope import decision_fingerprint
@@ -324,6 +325,7 @@ class ExecutionService:
         return {
             "schema": "mova-execution-status-v1",
             "policy_version": POLICY_VERSION,
+            "browser_driver": driver_capabilities(),
             "plans": self.db.recent("execution_plans", limit),
             "attempts": self.db.recent("execution_attempts", limit),
         }

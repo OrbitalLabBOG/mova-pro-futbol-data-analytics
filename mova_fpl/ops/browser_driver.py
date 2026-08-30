@@ -2,9 +2,9 @@
 
 This module is deliberately free of CDP and subprocess primitives.  It turns a
 validated UI action plan into a small instruction stream that the host adapter
-can execute.  Lineup swaps remain fail-closed until their live interaction has
-been rehearsed; captain and vice-captain use the semantic controls already
-observed in production.
+can execute.  Lineup swaps have a fully typed, testable instruction stream but
+remain gated until their live interaction has been rehearsed; captain and
+vice-captain use the semantic controls already observed in production.
 """
 
 from __future__ import annotations
@@ -15,7 +15,31 @@ from mova_fpl.ops.browser_contract import UI_ACTION_PLAN_SCHEMA
 
 
 DRIVER_PLAN_SCHEMA = "mova-browser-r2-driver-plan-v1"
-DRIVER_CONTRACT_VERSION = "fpl-r2-host-driver-2026.08.1"
+DRIVER_CONTRACT_VERSION = "fpl-r2-host-driver-2026.08.2"
+LINEUP_EXECUTION_PROMOTED = False
+
+
+def driver_capabilities() -> dict:
+    """Public, secret-free capability ledger for status and operator tooling."""
+    return {
+        "schema": "mova-browser-driver-capabilities-v1",
+        "contract_version": DRIVER_CONTRACT_VERSION,
+        "captaincy": {
+            "contract": "implemented", "host_entrypoint_enabled": True,
+            "autonomy_promoted": False, "observed_rehearsals": 0,
+            "required_rehearsals": 3,
+        },
+        "lineup": {
+            "contract": "implemented",
+            "host_entrypoint_enabled": LINEUP_EXECUTION_PROMOTED,
+            "autonomy_promoted": False, "observed_rehearsals": 0,
+            "required_rehearsals": 3,
+        },
+        "r3": {
+            "contract": "missing", "host_entrypoint_enabled": False,
+            "autonomy_promoted": False,
+        },
+    }
 
 
 class DriverPlanBlocked(RuntimeError):
@@ -81,11 +105,87 @@ def _semantic_steps(section: dict, *, role: str, start: int) -> list[DriverStep]
     ]
 
 
-def compile_r2_driver_plan(ui_plan: dict) -> dict:
-    """Compile the promoted captaincy-only R2 subset into host instructions.
+def _lineup_steps(ui_plan: dict, *, start: int) -> list[DriverStep]:
+    swaps = ui_plan.get("swaps") or []
+    if not swaps:
+        return []
+    lineup = ui_plan.get("lineup") or {}
+    current = [int(value) for value in lineup.get("from_order") or ()]
+    target = [int(value) for value in lineup.get("to_order") or ()]
+    target_slots = lineup.get("target_slots") or []
+    if (
+        len(current) != 15 or len(target) != 15
+        or len(set(current)) != 15 or set(current) != set(target)
+        or int(lineup.get("swap_count", -1)) != len(swaps)
+        or len(target_slots) != 15
+    ):
+        raise DriverPlanBlocked(
+            "LINEUP_CONTRACT_INVALID", "contrato posicional de XI/banca inválido",
+        )
+    labels = []
+    for position, (element, row) in enumerate(zip(target, target_slots), start=1):
+        label = str(row.get("web_name") or "").strip()
+        if (
+            int(row.get("position", 0)) != position
+            or int(row.get("element", 0)) != element
+            or not label or len(label) > 80
+        ):
+            raise DriverPlanBlocked(
+                "LINEUP_TARGET_LABEL_INVALID",
+                f"slot target {position} no tiene identidad visual demostrable",
+            )
+        labels.append({"position": position, "element": element, "web_name": label})
+
+    simulated = current[:]
+    steps: list[DriverStep] = []
+    for expected_sequence, swap in enumerate(swaps, start=1):
+        left = int(swap.get("first_index", -1))
+        right = int(swap.get("second_index", -1))
+        if (
+            swap.get("operation") != "switch_slots"
+            or int(swap.get("sequence", 0)) != expected_sequence
+            or swap.get("selector") != 'button[aria-label="Switch player"]'
+            or not 0 <= left < 15 or not 0 <= right < 15 or left == right
+            or int(swap.get("first_position", 0)) != left + 1
+            or int(swap.get("second_position", 0)) != right + 1
+        ):
+            raise DriverPlanBlocked(
+                "LINEUP_SWAP_INVALID", f"swap {expected_sequence} no cumple el contrato",
+            )
+        steps.extend([
+            DriverStep(start + len(steps), "select_swap_origin", {
+                "swap_sequence": expected_sequence,
+                "position": left + 1,
+                "switch_button_index": left,
+                "selector": swap["selector"],
+                "expected_controls_before": 15,
+            }),
+            DriverStep(start + len(steps) + 1, "select_swap_target", {
+                "swap_sequence": expected_sequence,
+                "position": right + 1,
+                "switch_button_index": right,
+                "selector": swap["selector"],
+                "expected_controls_before": 15,
+            }),
+        ])
+        simulated[left], simulated[right] = simulated[right], simulated[left]
+    if simulated != target:
+        raise DriverPlanBlocked(
+            "LINEUP_SWAP_REPLAY_MISMATCH", "los swaps no reproducen el orden target",
+        )
+    steps.append(DriverStep(start + len(steps), "verify_lineup_visual_order", {
+        "player_selector": 'button[data-pitch-element="true"]',
+        "expected_slots": labels,
+    }))
+    return steps
+
+
+def compile_r2_driver_plan(ui_plan: dict, *, lineup_rehearsed: bool = False) -> dict:
+    """Compile the promoted R2 subset into host instructions.
 
     The compiler rejects any uncertainty before the host claims that the plan
-    is executable.  In particular, lineup swaps are not silently ignored.
+    is executable. Lineup support can be compiled for contract testing, but the
+    production caller cannot enable it until a separate rehearsal promotes it.
     """
     if ui_plan.get("schema") != UI_ACTION_PLAN_SCHEMA:
         raise DriverPlanBlocked("UI_PLAN_SCHEMA_INVALID", "UI action plan incompatible")
@@ -93,7 +193,7 @@ def compile_r2_driver_plan(ui_plan: dict) -> dict:
         raise DriverPlanBlocked("UI_PLAN_NOT_READY", "UI action plan no está ready")
     if not str(ui_plan.get("execution_id") or "").startswith("execution_"):
         raise DriverPlanBlocked("EXECUTION_ID_INVALID", "execution_id ausente o inválido")
-    if ui_plan.get("swaps"):
+    if ui_plan.get("swaps") and not lineup_rehearsed:
         raise DriverPlanBlocked(
             "LINEUP_DRIVER_UNPROVEN",
             "los swaps de XI/banca requieren rehearsal vivo antes de promoción",
@@ -111,7 +211,7 @@ def compile_r2_driver_plan(ui_plan: dict) -> dict:
             "el commit único no cumple el contrato",
         )
 
-    steps: list[DriverStep] = []
+    steps: list[DriverStep] = _lineup_steps(ui_plan, start=1)
     for role, section_name in (("captain", "captain"), ("vice", "vice_captain")):
         section = ui_plan.get(section_name) or {}
         role_steps = _semantic_steps(section, role=role, start=len(steps) + 1)
@@ -139,7 +239,7 @@ def compile_r2_driver_plan(ui_plan: dict) -> dict:
         "execution_id": ui_plan["execution_id"],
         "plan_id": ui_plan.get("plan_id"),
         "pre_state_fingerprint": ui_plan.get("pre_state_fingerprint"),
-        "scope": "captaincy_only",
+        "scope": "lineup_and_captaincy" if ui_plan.get("swaps") else "captaincy_only",
         "steps": [step.as_dict() for step in steps],
         "failure_policy": {
             "before_begin": "failed",

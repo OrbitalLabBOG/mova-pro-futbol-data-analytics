@@ -11,8 +11,9 @@ status: active
 
 HV1-07A/B introduce la frontera durable previa al browser. HV1-07C añade la reserva apply-once,
 lease, límite de ambigüedad y verificador post-reload. HV1-07D.3 conecta un driver host acotado a
-capitanía con fail-closed estricto. Los controles A0 y el contenedor browser conservan las
-escrituras apagadas; instalar el driver no concede autoridad.
+capitanía con fail-closed estricto. HV1-07D.4 añade el instruction stream tipado de XI/banca,
+todavía detrás de un gate físico de rehearsal. Los controles A0 y el contenedor browser conservan
+las escrituras apagadas; instalar el driver no concede autoridad.
 
 ## Contrato
 
@@ -130,9 +131,13 @@ El wrapper reclama una sola vez, recoge pre-state/probe en un directorio `0700`,
 antes de `begin`, cruza explícitamente la frontera `applying`, ejecuta y finaliza contra un GET
 privado posterior al reload. Antes de `begin`, el error termina `failed`; desde `begin`, termina
 `ambiguous`, abre la reconciliación existente y nunca reintenta el commit. El proceso browser no
-recibe el claim token. Sólo C/VC está compilado: cualquier swap produce
-`LINEUP_DRIVER_UNPROVEN`. El nombre accesible del commit debe aparecer exactamente una vez tras
-el cambio local; si no, `FPL_COMMIT_CONTROL_UNPROVEN` detiene la ejecución.
+recibe el claim token. C/VC es el único scope habilitado por el entrypoint. XI/banca ya compila
+una secuencia finita de pares `select_swap_origin/target`, reproduce el target por posición y
+exige que los quince nombres observados queden en el orden esperado antes del commit. La
+ejecución normal todavía devuelve `LINEUP_DRIVER_UNPROVEN`; sólo
+`--validate-lineup-contract-only` compila ese stream y siempre termina antes de iniciar browser.
+El nombre accesible del commit debe aparecer exactamente una vez tras el cambio local; si no,
+`FPL_COMMIT_CONTROL_UNPROVEN` detiene la ejecución.
 
 ## Riesgo y autoridad
 
@@ -191,5 +196,11 @@ pre-state. El probe abre y cierra, sin seleccionar, los player sheets de los onc
 comprueba los checkboxes semánticos C/VC. También exige exactamente un capitán y un vice, ambos
 idénticos al GET privado. Si falta cualquier control o existe deriva, el UI action plan queda
 `blocked` con `CAPTAIN_CONTROL_UNPROVEN` o `VICE_CAPTAIN_CONTROL_UNPROVEN`, o falla cerrado por
-pre-state mismatch. El driver host puede materializar C/VC, pero sigue sin promoción operativa:
-faltan los rehearsals controlados del commit y de lineup, y A0 bloquea el entrypoint real.
+pre-state mismatch. El driver host puede materializar C/VC. El stream de lineup puede validarse
+sin navegador, pero el entrypoint real lo rechaza. Faltan los rehearsals controlados del commit y
+de lineup, y A0 bloquea toda ejecución real.
+
+`mova execute status` expone un ledger sanitizado de capacidades: contrato, versión, entrypoint,
+autonomía y rehearsals observados/requeridos para captaincy, lineup y R3. En el corte actual
+captaincy tiene entrypoint pero autonomía no promovida; lineup tiene contrato implementado,
+entrypoint deshabilitado y `0/3` rehearsals; R3 permanece ausente.
