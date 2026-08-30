@@ -68,7 +68,9 @@ deploy/bin/browser-session.sh stop
 
 El importador aplica una allowlist estricta al JSON del probe, exige sesión, 15 picks/controles,
 orden posicional, once player sheets y selecciones C/VC conciliadas con el GET privado. Abrir y
-cerrar esos sheets no cambia el equipo ni pulsa `Save`. Para otras fuentes ya selladas se usa:
+cerrar esos sheets no cambia el equipo ni pulsa `Save`. El wrapper reserva stdout exclusivamente
+para el JSON; mensajes de Compose van a stderr para que un primer build/recreate no contamine el
+artifact. Para otras fuentes ya selladas se usa:
 
 ```bash
 mova execute rehearsal \

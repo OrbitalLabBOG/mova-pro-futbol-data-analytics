@@ -17,7 +17,9 @@ compose=(docker compose --profile browser)
 cdp_port=${MOVA_BROWSER_CDP_PORT:-9222}
 
 start_browser() {
-  "${compose[@]}" up -d browser
+  # Compose may build/pull on first start and writes progress to stdout. Keep
+  # stdout reserved for the machine-readable probe/collect payload.
+  "${compose[@]}" up -d browser >&2
   for _ in $(seq 1 45); do
     if curl -fsS http://127.0.0.1:${MOVA_NOVNC_PORT:-6080}/vnc.html >/dev/null 2>&1 \
       && "${compose[@]}" exec -T browser \
