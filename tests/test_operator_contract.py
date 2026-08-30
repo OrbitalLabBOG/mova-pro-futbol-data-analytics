@@ -127,6 +127,31 @@ def test_status_degrades_when_heartbeat_is_stale(tmp_path):
     assert "latest_tick_stale" in payload["status_reasons"]
 
 
+def test_status_keeps_failed_job_auditable_but_clears_recovered_failure(tmp_path):
+    config, db, now = _seed(tmp_path)
+    failed_id, _ = db.start_job("recoverable_fixture", "fixture:failed", "corr_failed")
+    db.finish_job(failed_id, "failed", error_code="FixtureError")
+
+    failed = build_status(config, db, now=now + timedelta(seconds=1))
+    assert "failed_jobs_last_24h" in failed["status_reasons"]
+    assert any(row["job_id"] == failed_id
+               for row in failed["operations"]["failed_jobs_last_24h"])
+
+    recovered_id, _ = db.start_job(
+        "recoverable_fixture", "fixture:recovered", "corr_recovered"
+    )
+    db.finish_job(recovered_id, "completed")
+    recovered = build_status(config, db, now=now + timedelta(seconds=2))
+
+    assert "failed_jobs_last_24h" not in recovered["status_reasons"]
+    assert all(row["job_id"] != failed_id
+               for row in recovered["operations"]["failed_jobs_last_24h"])
+    with db.connect(readonly=True) as con:
+        assert con.execute(
+            "SELECT status FROM job_runs WHERE job_id=?", (failed_id,)
+        ).fetchone()[0] == "failed"
+
+
 def test_status_reads_sanitized_postgres_parity_without_database_secret(tmp_path):
     config, db, now = _seed(tmp_path)
     publish_postgres_status(config, {
