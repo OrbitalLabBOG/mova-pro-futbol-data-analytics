@@ -2,7 +2,7 @@
 type: project
 name: "MOVA FPL Autonomous Operator 2026/27 — Readiness and Rollout"
 created: 2026-08-21
-updated: 2026-08-22
+updated: 2026-08-30
 tags: [mova, fpl, readiness, rollout]
 status: active-shadow
 ---
@@ -23,6 +23,11 @@ acumular evidencia antes de evaluar cualquier escritura externa.
 La evidencia verificable del corte está en
 [07-deployment-evidence.md](07-deployment-evidence.md). La matriz inferior se conserva
 como baseline del diagnóstico previo al despliegue.
+
+Desde el 30 de agosto, el veredicto también es máquina-legible mediante `mova readiness` y
+`/api/v1/readiness`. El primer reporte vivo conserva A0 técnico: 8 de 14 gates pasan, 5 esperan
+evidencia temporal y R3 permanece bloqueado por contrato ausente. Esto no reemplaza esta política
+ni concede autoridad. Ver [acta HV1-09](27-hv1-09-autonomy-readiness-rollout.md).
 
 ## Checkpoint vigente — 2026-08-22
 

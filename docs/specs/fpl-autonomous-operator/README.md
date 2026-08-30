@@ -2,7 +2,7 @@
 type: project
 name: "MOVA FPL Autonomous Operator 2026/27 — Specification Index"
 created: 2026-08-21
-updated: 2026-08-28
+updated: 2026-08-30
 tags: [mova, fpl, autonomy, observability, specification]
 status: active-shadow
 ---
@@ -60,6 +60,7 @@ PM de construcción del proyecto.
 | [24-hv1-08-model-release-rollout.md](24-hv1-08-model-release-rollout.md) | Release de modelos con hashes, shadow pareado, promoción y rollback |
 | [25-hv1-03b-model-ops-rollout.md](25-hv1-03b-model-ops-rollout.md) | Facade train/predict/explain/evaluate y candidato fail-closed |
 | [26-hv1-05b-sealed-research-rollout.md](26-hv1-05b-sealed-research-rollout.md) | Fetch/locator sellado, coverage explícita y rollout v2 fail-closed |
+| [27-hv1-09-autonomy-readiness-rollout.md](27-hv1-09-autonomy-readiness-rollout.md) | Gate único de elegibilidad técnica, blockers y evidencia de promoción |
 | [contracts/](contracts/) | JSON Schemas máquina para request, result y signal |
 | [decisions/](decisions/) | decisiones arquitectónicas propuestas |
 | [workpacks/](workpacks/) | unidades de implementación y criterios todavía pendientes |

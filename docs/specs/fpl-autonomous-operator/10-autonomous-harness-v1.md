@@ -385,6 +385,7 @@ no borra evidencia previa y nunca amplía autonomía.
 | HV1-06B ✅ | Strategist + Critic acotados sobre `Intervention`, sin autoridad directa | completado | HV1-06A |
 | HV1-07 🟡 | policy/apply-once/verifier; C/VC habilitable y lineup tipado pero gated; faltan rehearsals y R3 | 4–8 h | HV1-06 |
 | HV1-08 ✅ | reviewer causal, budgets, propuesta→lección y release de modelos con shadow/rollback | completado | HV1-03/06 |
+| HV1-09 ✅ | gate consolidado de readiness, elegibilidad técnica, API/CLI y métricas | completado | HV1-02/03/05/07 |
 
 No es necesario completar 64–92 horas antes de obtener valor. Cortes de entrega:
 
@@ -578,6 +579,21 @@ fail-closed con ocho días de frescura. El primer ciclo produjo 49/49 checks, re
 exitoso y diagnóstico limpio. Esto completa dual-read, no el cambio de writer: HV1-02 permanece
 abierto hasta acumular tres ciclos, asegurar backup off-host y ensayar cutover/rollback.
 Evidencia: [HV1-02 PostgreSQL shadow y dual-read](13-hv1-02a-postgres-shadow-evidence.md).
+
+### Corte autonomy readiness consolidado — 30 de agosto de 2026
+
+`mova readiness` crea una sola respuesta determinista sobre la capacidad actual del harness. El
+contrato `mova-autonomy-readiness-v1` evalúa 14 gates provenientes de estados ya existentes y
+expone `technical_eligible_level`, blockers, evidencia observada y la siguiente acción concreta.
+Está disponible por CLI, `/api/v1/readiness` y Prometheus; `--require-level` devuelve exit 2 si el
+nivel solicitado no está sustentado.
+
+Elegibilidad y autoridad permanecen separadas. El reporte nunca modifica controles y siempre
+declara que la promoción no es automática. PostgreSQL cuenta GWs distintas a partir de identidades
+auditadas de import; varios reintentos o snapshots de una misma jornada no satisfacen el gate de
+tres ciclos. El primer corte vivo reportó A0 técnico, 8/14 gates en pass, 5 pendientes y 1 bloqueado,
+con producción todavía en `shadow/A0`, kill switch activo y browser writes apagado.
+Evidencia: [HV1-09 autonomy readiness](27-hv1-09-autonomy-readiness-rollout.md).
 
 ## 11. Definition of Done del harness v1
 
