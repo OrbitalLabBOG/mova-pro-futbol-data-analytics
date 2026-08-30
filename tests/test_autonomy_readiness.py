@@ -31,6 +31,7 @@ def _operator() -> dict:
         "storage": {"postgres": {
             "status": "healthy", "import_fresh": True,
             "read_parity": {"status": "pass"},
+            "role_separation": {"status": "pass"},
             "import_history": {"completed_imports": 5, "distinct_source_snapshots": 5,
                                "distinct_gameweek_cycles": 3},
         }},
@@ -67,7 +68,7 @@ def test_readiness_separates_technical_eligibility_from_authority() -> None:
     assert report["activation"]["current_action_level"] == "A0"
     assert report["activation"]["promotion_is_automatic"] is False
     assert "EXPLICIT_PROMOTION_REQUIRED" in report["activation"]["activation_blockers"]
-    assert report["summary"] == {"pass": 14, "pending": 0, "blocked": 0, "total": 14}
+    assert report["summary"] == {"pass": 15, "pending": 0, "blocked": 0, "total": 15}
 
 
 def test_readiness_fails_closed_and_reports_specific_evidence_gaps() -> None:
@@ -98,6 +99,7 @@ def test_readiness_fails_closed_and_reports_specific_evidence_gaps() -> None:
     assert by_code["RESEARCH_EVIDENCE_CALIBRATED"]["observed"]["measured_gameweeks"] == 0
     assert by_code["R3_DRIVER_PROVEN"]["status"] == "blocked"
     assert by_code["POSTGRES_THREE_GAMEWEEK_CYCLES"]["observed"] == 1
+    assert by_code["POSTGRES_ROLE_SEPARATION"]["status"] == "pass"
     assert all(item["next_action"] for item in report["next_actions"])
 
 
@@ -110,4 +112,4 @@ def test_readiness_cli_can_be_used_as_a_level_gate_and_metrics_are_bounded() -> 
     )
     metrics = prometheus(report)
     assert 'mova_autonomy_technical_eligible_level{level="A3"} 1' in metrics
-    assert 'mova_autonomy_readiness_gates{status="pass"} 14' in metrics
+    assert 'mova_autonomy_readiness_gates{status="pass"} 15' in metrics
