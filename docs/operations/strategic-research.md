@@ -94,6 +94,14 @@ worker usa un lock exclusivo y procesa una solicitud; el importador procesa todo
 listos. El límite del worker es ocho minutos y systemd conserva diez minutos para importación y
 cleanup; timeout o salida 0 sin artefacto se registran como errores tipados y nunca como brief.
 
+Antes de publicar el resultado, el worker aplica una reparación estructural determinista. Canoniza
+URLs HTTPS, elimina documentos duplicados, descarta referencias que no apuntan a un documento del
+mismo brief y reconstruye `coverage.subjects` exactamente en el orden del foco sellado. Una fila sin
+evidencia se descarta o degrada a `not_checked`; nunca se agrega fuente, claim o señal. Además,
+`generated_at` lo fija el reloj del worker al finalizar porque es metadata de ejecución confiable,
+no contenido editorial del modelo. El reporte sanitizado queda en
+`research/logs/<run_id>.normalization.json` con conteos, sin URLs ni texto de evidencia.
+
 `mova strategy status` expone el ciclo vigente y también `service`: última corrida global,
 conteos por estado, documentos, señales aceptadas y conflictos abiertos. Así la apertura de una
 nueva GW no convierte falsamente el health histórico en cero. Prometheus publica además
@@ -164,6 +172,9 @@ find /var/lib/mova-fpl/artifacts/research -maxdepth 2 -type f -printf '%P\n'
 
 - queued persistente: revisar service, auth y último error JSON; no mostrar contenido sensible.
 - rejected: revisar el error sanitizado y quarantine; no insertarlo a mano.
+- `resultado de research cruza el cutoff`: confirmar primero `generated_at` y después fechas de
+  documentos. Un timestamp futuro del modelo se evita con el reloj del worker; una fuente realmente
+  posterior al deadline sigue siendo rechazo correcto.
 - un rechazo terminal mueve resultado y request a `quarantine`; el timer no vuelve a consumir
   Codex. Un replay requiere una nueva solicitud auditada, no copiar el request al inbox.
 - coverage `insufficient_gameweeks`: condición esperada antes de tres ciclos v2; no rebajar el
