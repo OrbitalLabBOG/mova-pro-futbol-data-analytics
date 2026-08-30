@@ -64,6 +64,29 @@ class AnalyticsService:
                 state = self.store.status()
                 state["last_run"] = result
                 publish_status(self.config, state)
+                if action in {"run", "reconcile"}:
+                    from mova_fpl.ops.causal_review import CausalReviewerService
+
+                    reviewer = CausalReviewerService(self.config, self.db)
+                    result["causal_reviews"] = []
+                    for gw in self.db.pending_causal_review_gws(self.config.season):
+                        try:
+                            causal = reviewer.run(
+                                gw=gw, actor="mova-analytics",
+                                reason="review causal posterior a scorecard final",
+                                idempotency_key=f"causal:{self.config.season}:gw{gw}:v1",
+                                analytics_state=state,
+                            )
+                        except Exception as exc:  # reviewer no invalida scorecards ya sellados
+                            self.db.open_incident_once(
+                                "P2", f"Causal review GW{gw} falló",
+                                correlation_id=correlation_id,
+                                detail={"error_code": type(exc).__name__,
+                                        "error": str(exc)[:1000]},
+                            )
+                            causal = {"status": "failed", "gw": gw,
+                                      "error_code": type(exc).__name__}
+                        result["causal_reviews"].append(causal)
                 result["analytics_status"] = state["status"]
                 self.db.finish_job(job_id, "completed", output_sha256=sha256_json(result),
                                    metrics=result)

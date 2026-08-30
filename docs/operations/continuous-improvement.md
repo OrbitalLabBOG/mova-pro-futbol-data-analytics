@@ -22,6 +22,19 @@ proposed → testing → accepted
 modelo, prompt, política o control haya sido desplegado. La aplicación real conserva su propio
 workflow de código, tests, shadow, aprobación y rollback.
 
+El reviewer causal corre automáticamente después de `analytics reconcile` únicamente cuando
+existen settlement oficial `finished + data_checked` y scorecard baseline final. También puede
+accionarse de forma auditada:
+
+```bash
+mova review auto --gw 2 --actor codex \
+  --reason "scorecard final disponible" --idempotency-key "causal:2026-27:gw2:v1"
+```
+
+Clasifica `data/freshness`, `model/calibration`, `optimizer`, `research/context`, `strategy`,
+`execution` y `variance`. Una observación aislada nunca crea propuesta: una causa accionable debe
+aparecer al menos tres veces antes de abrir experimento. `not_ready` no muta jobs ni memoria.
+
 Las tablas `change_proposal_evaluations` y `lessons` son append-only salvo el estado visible de
 la propuesta. Cada transición conserva actor, razón, clave idempotente, hash y evidencia. El
 reintento con la misma clave y contenido se reutiliza; una colisión de contenido falla cerrada.
@@ -72,6 +85,5 @@ La API `/api/v1/budget-reservations` expone las últimas reservas y Prometheus p
 - Una aceptación no ejecuta código ni cambia controles.
 - Para corregir una hipótesis, rechazarla y crear una propuesta nueva desde evidencia posterior;
   no sobrescribir evaluaciones.
-- El reviewer causal automático sigue pendiente de HV1-08; no simularlo antes de
-  `finished + data_checked`.
+- No simular ni forzar el reviewer antes de `finished + data_checked` y scorecard baseline.
 - PostgreSQL recibe estas tablas por el import shadow; SQLite continúa como writer oficial.

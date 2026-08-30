@@ -225,6 +225,7 @@ def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
                     "/api/v1/change-proposal-evaluations": "change_proposal_evaluations",
                     "/api/v1/lessons": "lessons",
                     "/api/v1/budget-reservations": "agent_budget_reservations",
+                    "/api/v1/gameweek-reviews": "gameweek_reviews",
                 }
                 if parsed.path not in routes:
                     self._send(HTTPStatus.NOT_FOUND, b'{"error":"not_found"}', "application/json")

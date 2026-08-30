@@ -383,7 +383,7 @@ no borra evidencia previa y nunca amplía autonomía.
 | HV1-06A ✅ | bundle máquina, `do_nothing`, alternativa, Validator y DecisionEnvelope | completado | HV1-03/04/05 |
 | HV1-06B ✅ | Strategist + Critic acotados sobre `Intervention`, sin autoridad directa | completado | HV1-06A |
 | HV1-07 🟡 | policy, preflight, apply-once y verifier listos; faltan driver de clicks y rehearsals | 6–10 h | HV1-06 |
-| HV1-08 🟡 | scorecard, budgets y gate propuesta→lección listos; falta reviewer causal automático | 3–5 h | HV1-03/06 |
+| HV1-08 🟡 | reviewer causal, scorecard, budgets y gate propuesta→lección listos; falta promoción real controlada | 2–4 h | HV1-03/06 |
 
 No es necesario completar 64–92 horas antes de obtener valor. Cortes de entrega:
 
@@ -506,7 +506,10 @@ SQLite migration `012` y PostgreSQL migration `014` añaden ledger atribuido y r
 `mova cost report`, `/api/v1/costs` y Prometheus muestran consumo, reserva y saldo por GW/mes;
 research y deliberación fallan cerrados antes de cola cuando cualquier techo se agota. Un output
 rechazado conserva el cargo estimado, y un resultado recuperado lo reconcilia sin doble conteo.
-El reviewer causal automático continúa pendiente, por lo que HV1-08 permanece parcial.
+El reviewer causal automático corre después de reconcile solo con settlement final y baseline
+scorecard. Clasifica siete familias de causa y exige tres ocurrencias antes de crear experimento;
+una sola GW queda explícitamente como evidencia insuficiente. HV1-08 permanece parcial por el
+workflow que aplica un cambio aprobado mediante release, shadow y rollback verificable.
 Evidencia: [HV1-08 mejora continua](21-hv1-08-improvement-rollout.md).
 
 ## 11. Definition of Done del harness v1
