@@ -2,7 +2,7 @@
 type: project
 name: "MOVA FPL — Autonomous Harness v1"
 created: 2026-08-23
-updated: 2026-08-27
+updated: 2026-08-30
 tags: [mova, fpl, autonomy, postgres, agents, observability, continuous-improvement]
 status: active-design
 ---
@@ -380,7 +380,7 @@ no borra evidencia previa y nunca amplía autonomía.
 | HV1-05 🟡 | servicio news/research: foco plantilla+candidatos, delta y slot final; falta evaluar cobertura multi-GW | 8–12 h | HV1-02/03 |
 | HV1-06A ✅ | bundle máquina, `do_nothing`, alternativa, Validator y DecisionEnvelope | completado | HV1-03/04/05 |
 | HV1-06B ✅ | Strategist + Critic acotados sobre `Intervention`, sin autoridad directa | completado | HV1-06A |
-| HV1-07 | executor/verifier y autonomía por riesgo | 8–12 h | HV1-06 |
+| HV1-07 🟡 | policy + ExecutionPlan + preflight listos; faltan apply/verifier/rehearsals | 8–12 h | HV1-06 |
 | HV1-08 🟡 | scorecard/drift técnico implementado; faltan reviewer causal, costos y promoción | 8–12 h | HV1-03/06 |
 
 No es necesario completar 64–92 horas antes de obtener valor. Cortes de entrega:
@@ -463,6 +463,20 @@ validación detectó y corrigió una falsa alerta histórica de presupuesto caus
 plantilla apreciada contra las £100M iniciales. El envelope nuevo concilió precios de venta,
 compras y banco; los tres candidatos quedaron sin violaciones financieras. La evidencia completa
 está en [HV1-06B](17-hv1-06b-deliberation-evidence.md).
+
+### Corte AutonomyPolicy + ExecutionPlan — 30 de agosto de 2026
+
+HV1-07A/B separa madurez deportiva de autoridad operativa. El `DecisionEnvelope` conserva los
+gates del solve, pero ya no exige permanecer en A0: un `ExecutionPlan` hijo relee manifest, team
+state, deadline, incidentes, controles y ejecuciones previas; calcula el diff exacto y clasifica
+`R0`, `R2` o `R3`. Solo policy determinista puede producir `authorized`.
+
+SQLite migration 009 y PostgreSQL migration 010 guardan planes/checks append-only. El CLI
+`mova execute preflight`, API, Prometheus, schema JSON y runbook hacen observable cada blocker.
+El rollout continúa en `shadow/A0`: este corte no implementa `apply`, no inicia el browser y no
+añade ninguna primitiva de escritura. HV1-07C debe consumir exclusivamente un plan autorizado,
+aplicar una vez y verificar el estado post-acción; HV1-07D debe completar tres rehearsals y gates
+de promoción antes de elevar autonomía.
 
 ## 11. Definition of Done del harness v1
 

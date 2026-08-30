@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — contrato del operador"
 created: 2026-08-23
-updated: 2026-08-28
+updated: 2026-08-30
 tags: [mova, fpl, operator, cli, observability, contract]
 status: active
 ---
@@ -33,6 +33,8 @@ mova strategy prepare
 mova strategy research due
 mova strategy research enqueue
 mova strategy research import
+mova execute status
+mova execute preflight --actor codex --reason "..." --idempotency-key "..."
 mova review gw --package /app/decisions/fpl/2026-27/gwNN_closeout.json \
   --actor julian --reason "..." --idempotency-key "..."
 ```
@@ -58,6 +60,7 @@ revisión desplegada, PostgreSQL shadow cuando está configurado, perfil browser
 | `decision` | última decisión sellada, política, estado, xP y fingerprint |
 | `decision_envelope` | manifest real, hash, candidato seleccionado y estado `blocked/staged` |
 | `execution` | última ejecución browser y evidencia, si existe |
+| `execution_plan` | último diff/preflight determinista y clase de riesgo |
 | `operations` | heartbeat, salud, fallos 24 h, incidentes, outbox y migrations |
 | `host` | unidades, API, browser y revisiones; `available=false` fuera del wrapper |
 
@@ -149,6 +152,10 @@ como máximo una request pendiente por invocación y conserva retries por archiv
 `/api/v1/deliberations` y `/api/v1/deliberation-risks`; Prometheus publica
 `mova_deliberation_status` y `mova_deliberation_blocking_risks`. Ningún estado de deliberación
 habilita ejecución: toda intervención persiste con `applied=false`.
+
+HV1-07A/B añade `mova execute preflight`, `/api/v1/execution-plans`,
+`/api/v1/execution-preflight-checks` y métricas `mova_execution_*`. El comando sella autorización
+o blockers, pero no incluye `apply` ni toca FPL. Runbook: [execution preflight](execution-preflight.md).
 
 ## Probe del host
 

@@ -6,7 +6,8 @@
   "required": [
     "schema", "schema_version", "command", "generated_at", "overall_status",
     "status_reasons", "runtime", "gameweek", "data", "models", "research", "strategy",
-    "decision", "projection", "execution", "operations", "host"
+    "decision", "decision_envelope", "deliberation", "projection", "execution",
+    "execution_plan", "operations", "host"
   ],
   "properties": {
     "schema": {"const": "mova-fpl-operator-v1"},
@@ -30,8 +31,11 @@
     "research": {"type": "object"},
     "strategy": {"type": "object"},
     "decision": {"type": ["object", "null"]},
+    "decision_envelope": {"type": ["object", "null"]},
+    "deliberation": {"type": ["object", "null"]},
     "projection": {"type": ["object", "null"]},
     "execution": {"type": ["object", "null"]},
+    "execution_plan": {"type": ["object", "null"]},
     "operations": {"type": "object"},
     "host": {"type": "object"}
   },

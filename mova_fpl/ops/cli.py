@@ -79,6 +79,17 @@ def parser() -> argparse.ArgumentParser:
         "deliberate", help="opera Strategist + Critic sobre el último envelope"
     )
     deliberate.add_argument("operation", choices=("status", "enqueue", "import"))
+    execute = commands.add_parser(
+        "execute", help="plan de ejecución y preflight determinista"
+    )
+    execute_commands = execute.add_subparsers(dest="execute_command", required=True)
+    execute_commands.add_parser("status", help="consulta planes y gates recientes")
+    preflight = execute_commands.add_parser(
+        "preflight", help="sella el diff y evalúa autorización sin operar el browser"
+    )
+    preflight.add_argument("--actor", required=True)
+    preflight.add_argument("--reason", required=True)
+    preflight.add_argument("--idempotency-key", required=True)
     status = commands.add_parser("status", help="estado operativo consolidado")
     status.add_argument("--json", action="store_true", dest="as_json")
     doctor = commands.add_parser("doctor", help="diagnóstico verificable del runtime")
@@ -229,6 +240,21 @@ def main(argv: list[str] | None = None) -> int:
             return 75 if payload.get("status") == "skipped" else 0
         else:
             payload = service.import_ready()
+        print(json.dumps(payload, ensure_ascii=False, default=str))
+        return 0
+
+    if args.command == "execute":
+        from mova_fpl.ops.execution import ExecutionService
+
+        db = OpsDB(config.ops_db, minimum_version=config.sqlite_min_version)
+        service = ExecutionService(config, db)
+        if args.execute_command == "status":
+            payload = service.status()
+        else:
+            payload = service.preflight(
+                actor=args.actor, reason=args.reason,
+                idempotency_key=args.idempotency_key,
+            )
         print(json.dumps(payload, ensure_ascii=False, default=str))
         return 0
 

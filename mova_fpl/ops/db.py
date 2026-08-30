@@ -495,6 +495,122 @@ class OpsDB:
             "reused": False, "superseded_decisions": superseded,
         }
 
+    def execution_preflight_source(self) -> dict:
+        """Carga únicamente el estado durable necesario para un preflight."""
+        with self.connect(readonly=True) as con:
+            envelope = con.execute(
+                "SELECT * FROM decision_envelopes "
+                "WHERE status IN ('staged','blocked') ORDER BY created_at DESC LIMIT 1"
+            ).fetchone()
+            if not envelope:
+                return {"envelope": None}
+            manifest = con.execute(
+                "SELECT m.*,c.deadline_at FROM cycle_manifests m "
+                "JOIN gameweek_cycles c ON c.cycle_id=m.cycle_id "
+                "WHERE m.manifest_id=?", (envelope["manifest_id"],),
+            ).fetchone()
+            team_state = con.execute(
+                "SELECT * FROM team_state_snapshots WHERE cycle_id=? "
+                "ORDER BY observed_at DESC LIMIT 1", (envelope["cycle_id"],),
+            ).fetchone()
+            incidents = con.execute(
+                "SELECT incident_id,severity,status,title,opened_at FROM incidents "
+                "WHERE status!='resolved' AND severity IN ('P0','P1') "
+                "ORDER BY opened_at"
+            ).fetchall()
+            prior = con.execute(
+                "SELECT execution_id,status,finished_at FROM web_executions "
+                "WHERE decision_id=? ORDER BY COALESCE(finished_at,started_at) DESC LIMIT 1",
+                (envelope["decision_id"],),
+            ).fetchone()
+        if not manifest:
+            raise RuntimeError("DecisionEnvelope referencia un manifest inexistente")
+        return {
+            "envelope": dict(envelope), "manifest": dict(manifest),
+            "team_state": dict(team_state) if team_state else None,
+            "open_high_incidents": [dict(row) for row in incidents],
+            "prior_execution": dict(prior) if prior else None,
+        }
+
+    def execution_plan_for_job(self, job_id: str) -> dict | None:
+        with self.connect(readonly=True) as con:
+            row = con.execute(
+                "SELECT * FROM execution_plans WHERE job_id=?", (job_id,)
+            ).fetchone()
+        return dict(row) if row else None
+
+    def record_execution_plan(self, *, job_id: str, plan: dict,
+                              artifact_path: str, artifact_sha256: str) -> dict:
+        """Persiste plan y gates atómicamente; nunca habilita el browser."""
+        authorization = plan["authorization"]
+        action = plan["action"]
+        created_at = plan["created_at"]
+        with self.transaction() as con:
+            existing = con.execute(
+                "SELECT * FROM execution_plans WHERE content_sha256=? OR idempotency_key=?",
+                (plan["content_sha256"], plan["idempotency_key"]),
+            ).fetchone()
+            if existing:
+                return dict(existing)
+            con.execute(
+                "UPDATE execution_plans SET status='superseded' "
+                "WHERE cycle_id=? AND status IN ('blocked','authorized','noop')",
+                (plan["cycle_id"],),
+            )
+            con.execute(
+                """INSERT INTO execution_plans(
+                plan_id,job_id,cycle_id,envelope_id,decision_id,policy_version,risk_class,
+                required_action_level,status,idempotency_key,content_sha256,artifact_path,
+                artifact_sha256,expected_pre_fingerprint,expected_post_fingerprint,
+                deadline_at,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (
+                    plan["plan_id"], job_id, plan["cycle_id"],
+                    plan["envelope"]["envelope_id"], plan["envelope"]["decision_id"],
+                    plan["policy_version"], action["risk_class"],
+                    action["required_action_level"], authorization["status"],
+                    plan["idempotency_key"], plan["content_sha256"], artifact_path,
+                    artifact_sha256, action["expected_pre_team_fingerprint"],
+                    action["expected_post_decision_fingerprint"], plan["deadline_at"],
+                    created_at,
+                ),
+            )
+            for check in authorization["checks"]:
+                check_id = "preflightcheck_" + hashlib.sha256(
+                    f"{plan['plan_id']}:{check['code']}".encode("utf-8")
+                ).hexdigest()[:24]
+                con.execute(
+                    """INSERT INTO execution_preflight_checks(
+                    check_id,plan_id,code,severity,passed,summary,detail_json,created_at)
+                    VALUES(?,?,?,?,?,?,?,?)""",
+                    (check_id, plan["plan_id"], check["code"], check["severity"],
+                     int(check["passed"]), check["summary"],
+                     canonical_json(check.get("detail") or {}), created_at),
+                )
+            self.append_audit(
+                "execution_preflight_recorded", actor=plan["actor"],
+                correlation_id=con.execute(
+                    "SELECT correlation_id FROM job_runs WHERE job_id=?", (job_id,)
+                ).fetchone()[0], cycle_id=plan["cycle_id"], job_id=job_id,
+                subject_type="execution_plan", subject_id=plan["plan_id"],
+                severity="warning" if authorization["status"] == "blocked" else "info",
+                payload={
+                    "reason": plan["reason"], "status": authorization["status"],
+                    "risk_class": action["risk_class"],
+                    "required_action_level": action["required_action_level"],
+                    "blocking_codes": authorization["blocking_codes"],
+                    "content_sha256": plan["content_sha256"],
+                }, con=con,
+            )
+        return {
+            "plan_id": plan["plan_id"], "cycle_id": plan["cycle_id"],
+            "envelope_id": plan["envelope"]["envelope_id"],
+            "decision_id": plan["envelope"]["decision_id"],
+            "status": authorization["status"], "risk_class": action["risk_class"],
+            "required_action_level": action["required_action_level"],
+            "blocking_codes": authorization["blocking_codes"],
+            "content_sha256": plan["content_sha256"], "artifact_path": artifact_path,
+        }
+
     def seal_verified_decision_cycle(self, cycle_id: str, *, correlation_id: str,
                                      job_id: str) -> dict | None:
         """Cierra propuestas tardías cuando el ciclo ya fue ejecutado y verificado."""
@@ -1437,6 +1553,7 @@ class OpsDB:
                    "decision_envelopes", "decision_candidates",
                    "decision_validation_checks",
                    "decision_deliberations", "decision_deliberation_risks",
+                   "execution_plans", "execution_preflight_checks",
                    "outbox_events", "chip_strategy_runs", "gameweek_settlements",
                    "gameweek_reviews", "change_proposals", "season_plans",
                    "cycle_manifests", "research_runs", "research_documents",
@@ -1452,6 +1569,8 @@ class OpsDB:
             "decision_validation_checks": "created_at",
             "decision_deliberations": "queued_at",
             "decision_deliberation_risks": "created_at",
+            "execution_plans": "created_at",
+            "execution_preflight_checks": "created_at",
             "team_state_snapshots": "observed_at",
             "outbox_events": "created_at", "chip_strategy_runs": "created_at",
             "gameweek_settlements": "settled_at", "gameweek_reviews": "created_at",
@@ -1506,6 +1625,8 @@ class OpsDB:
         research_conflicts = 0
         research_last_import_epoch = 0.0
         decision_envelope_status = "missing"
+        execution_plan_status = "missing"
+        execution_plan_blockers = 0
         decision_blocking_checks = 0
         deliberation_status = "missing"
         deliberation_blocking_risks = 0
@@ -1559,6 +1680,15 @@ class OpsDB:
                     "SELECT COUNT(*) FROM decision_validation_checks "
                     "WHERE envelope_id=? AND severity='block' AND passed=0",
                     (latest_envelope["envelope_id"],),
+                ).fetchone()[0])
+            latest_plan = con.execute(
+                "SELECT plan_id,status FROM execution_plans ORDER BY created_at DESC LIMIT 1"
+            ).fetchone()
+            if latest_plan:
+                execution_plan_status = str(latest_plan["status"])
+                execution_plan_blockers = int(con.execute(
+                    "SELECT COUNT(*) FROM execution_preflight_checks "
+                    "WHERE plan_id=? AND passed=0", (latest_plan["plan_id"],)
                 ).fetchone()[0])
             latest_deliberation = con.execute(
                 "SELECT deliberation_id,status FROM decision_deliberations "
@@ -1620,6 +1750,14 @@ class OpsDB:
             "# HELP mova_decision_blocking_checks Failed hard gates in latest envelope.",
             "# TYPE mova_decision_blocking_checks gauge",
             f"mova_decision_blocking_checks {decision_blocking_checks}",
+            "# HELP mova_execution_plan_status Latest deterministic preflight status.",
+            "# TYPE mova_execution_plan_status gauge",
+            *[f'mova_execution_plan_status{{status="{name}"}} '
+              f'{1 if execution_plan_status == name else 0}'
+              for name in ("missing", "blocked", "authorized", "noop", "superseded")],
+            "# HELP mova_execution_preflight_blocking_checks Failed execution gates.",
+            "# TYPE mova_execution_preflight_blocking_checks gauge",
+            f"mova_execution_preflight_blocking_checks {execution_plan_blockers}",
             "# HELP mova_deliberation_status Latest Strategist+Critic lifecycle status.",
             "# TYPE mova_deliberation_status gauge",
             *[f'mova_deliberation_status{{status="{name}"}} '

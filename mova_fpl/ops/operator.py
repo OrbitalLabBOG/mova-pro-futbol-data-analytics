@@ -93,6 +93,9 @@ def _database_snapshot(db: OpsDB) -> dict:
         execution = con.execute(
             "SELECT * FROM web_executions ORDER BY COALESCE(finished_at,started_at) DESC LIMIT 1"
         ).fetchone()
+        execution_plan = con.execute(
+            "SELECT * FROM execution_plans ORDER BY created_at DESC LIMIT 1"
+        ).fetchone()
         health = con.execute(
             "SELECT * FROM health_samples ORDER BY observed_at DESC LIMIT 1"
         ).fetchone()
@@ -147,6 +150,7 @@ def _database_snapshot(db: OpsDB) -> dict:
         "deliberation": dict(deliberation) if deliberation else None,
         "projection": dict(projection) if projection else None,
         "execution": dict(execution) if execution else None,
+        "execution_plan": dict(execution_plan) if execution_plan else None,
         "health": dict(health) if health else None,
         "migrations": migrations,
         "incidents": incidents,
@@ -386,6 +390,11 @@ def build_status(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
             "execution_id", "decision_id", "action_level", "envelope_sha256", "status",
             "started_at", "finished_at", "evidence_sha256", "error_code"
         )} if state["execution"] else None),
+        "execution_plan": ({key: state["execution_plan"].get(key) for key in (
+            "plan_id", "cycle_id", "envelope_id", "decision_id", "policy_version",
+            "risk_class", "required_action_level", "status", "content_sha256",
+            "deadline_at", "created_at"
+        )} if state["execution_plan"] else None),
         "operations": {
             "latest_tick": ({key: tick.get(key) for key in (
                 "job_id", "cycle_id", "status", "started_at", "finished_at", "output_sha256",

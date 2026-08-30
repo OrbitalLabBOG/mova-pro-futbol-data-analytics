@@ -57,9 +57,11 @@ CycleManifest → modelos causales → matriz xP → MILP
   → do_nothing + baseline + alternativa
   → Validator determinista → DecisionEnvelope → acta + auditoría
   → Strategist + Critic acotados → Intervention shadow no aplicada
+  → ExecutionPlan blocked|authorized|noop (preflight; todavía sin apply)
 ```
 
 - `mova_fpl.engine.runner.decide()` es la única autoridad de decisión.
+- `mova execute preflight` sella riesgo, diff y gates; no contiene una ruta de escritura.
 - El tick no interpreta Markdown: persiste un `DecisionEnvelope` JSON ligado al manifest real.
 - Una propuesta sin GW previa asentada, proyección aprobada, team state fresco o ventana válida
   queda `blocked`; solo una que supera todos los hard gates queda `staged`.
