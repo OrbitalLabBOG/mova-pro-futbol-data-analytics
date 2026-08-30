@@ -1612,16 +1612,29 @@ class OpsDB:
                 return {"research_run_id": research_run_id, "status": "imported",
                         "reused": True}
             document_ids: dict[str, str] = {}
+            documents_by_url: dict[str, dict] = {}
             for document in payload["documents"]:
-                document_id = new_id("document")
+                document_id = document.get("document_id") or new_id("document")
                 document_ids[document["source_url"]] = document_id
+                documents_by_url[document["source_url"]] = document
                 con.execute(
                     """INSERT OR IGNORE INTO research_documents(
                     document_id,research_run_id,source_url,title,publisher,published_at,
-                    observed_at,source_tier,content_sha256) VALUES(?,?,?,?,?,?,?,?,?)""",
+                    observed_at,source_tier,content_sha256,final_url,fetch_status,http_status,
+                    content_type,body_sha256,normalized_sha256,storage_mode,locator_type,locator,
+                    excerpt,excerpt_sha256,artifact_path,artifact_sha256,fetch_error_code)
+                    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                     (document_id, research_run_id, document["source_url"], document["title"],
                      document["publisher"], document.get("published_at"), now,
-                     document["source_tier"], sha256_json(document)),
+                     document["source_tier"], sha256_json(document),
+                     document.get("final_url"),
+                     document.get("fetch_status", "legacy_unverified"),
+                     document.get("http_status"), document.get("content_type"),
+                     document.get("body_sha256"), document.get("normalized_sha256"),
+                     document.get("storage_mode"), document.get("locator_type"),
+                     document.get("locator"), document.get("excerpt"),
+                     document.get("excerpt_sha256"), document.get("artifact_path"),
+                     document.get("artifact_sha256"), document.get("error_code")),
                 )
             accepted = 0
             for signal in payload["signals"]:
@@ -1632,6 +1645,15 @@ class OpsDB:
                     "claim": signal["claim_text"], "source_urls": evidence_urls,
                     "direction": signal["direction"],
                 }
+                evidence_refs = [{
+                    "document_id": document_ids.get(url),
+                    "locator_type": documents_by_url[url].get("locator_type"),
+                    "locator": documents_by_url[url].get("locator"),
+                    "excerpt_sha256": documents_by_url[url].get("excerpt_sha256"),
+                    "fetch_status": documents_by_url[url].get(
+                        "fetch_status", "legacy_unverified"
+                    ),
+                } for url in evidence_urls]
                 con.execute(
                     """INSERT OR IGNORE INTO research_signals(
                     signal_id,job_id,cycle_id,player_element,claim_type,claim_text,
@@ -1647,7 +1669,8 @@ class OpsDB:
                      signal["subject_name"], signal["direction"], validation,
                      canonical_json({"source_urls": evidence_urls,
                                      "document_ids": [document_ids.get(url)
-                                                      for url in evidence_urls]})),
+                                                      for url in evidence_urls],
+                                     "evidence_refs": evidence_refs})),
                 )
                 accepted += validation == "accepted"
             for conflict in payload["conflicts"]:
@@ -1660,11 +1683,18 @@ class OpsDB:
                      canonical_json(conflict["source_urls"]), conflict["status"], now),
                 )
             usage = payload.get("usage", {})
+            coverage = payload.get("coverage", {})
             con.execute(
                 """UPDATE research_runs SET status='imported',result_path=?,
                 result_sha256=?,usage_json=?,finished_at=?,imported_at=?,
-                error_code=NULL,error_detail=NULL WHERE research_run_id=?""",
+                result_schema=?,coverage_json=?,coverage_status=?,coverage_ratio=?,
+                evidence_ratio=?,error_code=NULL,error_detail=NULL
+                WHERE research_run_id=?""",
                 (result_path, result_sha256, canonical_json(usage), now, now,
+                 payload.get("schema", "mova-research-brief-v1"),
+                 canonical_json(coverage),
+                 coverage.get("status", "legacy_unmeasured"),
+                 coverage.get("coverage_ratio"), coverage.get("evidence_ratio"),
                  research_run_id),
             )
             con.execute(
@@ -1690,11 +1720,15 @@ class OpsDB:
                 payload={"documents": len(payload["documents"]),
                          "signals": len(payload["signals"]), "accepted": accepted,
                          "conflicts": len(payload["conflicts"]),
+                         "coverage_status": coverage.get("status", "legacy_unmeasured"),
+                         "coverage_ratio": coverage.get("coverage_ratio"),
+                         "evidence_ratio": coverage.get("evidence_ratio"),
                          "result_sha256": result_sha256}, con=con,
             )
         return {"research_run_id": research_run_id, "status": "imported",
                 "documents": len(payload["documents"]), "signals": len(payload["signals"]),
                 "accepted": accepted, "conflicts": len(payload["conflicts"]),
+                "coverage": coverage,
                 "reused": False}
 
     def deliberation_source(self) -> dict | None:
@@ -1970,6 +2004,7 @@ class OpsDB:
                 else "running" if latest_payload["status"] in {"queued", "running", "completed"}
                 else "degraded"
             )
+        coverage = self.research_coverage(limit=12)
         return {
             "status": "ready" if manifest else "not_prepared", "cycle_id": cycle_id,
             "manifest": manifest_payload,
@@ -1984,7 +2019,80 @@ class OpsDB:
                 "documents": global_documents,
                 "accepted_signals": global_accepted,
                 "unresolved_conflicts": global_conflicts,
+                "coverage": coverage,
             },
+        }
+
+    def research_coverage(self, *, limit: int = 20) -> dict:
+        """Evaluate evidence coverage across immutable imported research runs."""
+        policy = {
+            "version": "research-coverage-2026.08.1",
+            "minimum_measured_gameweeks": 3,
+            "minimum_coverage_ratio": 0.90,
+            "minimum_evidence_ratio": 0.80,
+            "maximum_unresolved_conflicts": 0,
+        }
+        with self.connect(readonly=True) as con:
+            rows = con.execute(
+                """SELECT r.research_run_id,r.cycle_id,c.season,c.gw,r.status,
+                r.result_schema,r.coverage_status,r.coverage_ratio,r.evidence_ratio,
+                r.coverage_json,r.queued_at,r.imported_at,
+                (SELECT COUNT(*) FROM research_documents d
+                  WHERE d.research_run_id=r.research_run_id) documents,
+                (SELECT COUNT(*) FROM research_documents d
+                  WHERE d.research_run_id=r.research_run_id AND d.fetch_status='verified')
+                  verified_documents,
+                (SELECT COUNT(*) FROM research_signals s
+                  WHERE s.research_run_id=r.research_run_id
+                    AND s.validation_status='accepted') accepted_signals,
+                (SELECT COUNT(*) FROM research_signals s
+                  WHERE s.research_run_id=r.research_run_id
+                    AND s.validation_status='candidate') candidate_signals,
+                (SELECT COUNT(*) FROM research_conflicts x
+                  WHERE x.research_run_id=r.research_run_id AND x.status='unresolved')
+                  unresolved_conflicts
+                FROM research_runs r JOIN gameweek_cycles c ON c.cycle_id=r.cycle_id
+                WHERE r.status='imported' ORDER BY r.imported_at DESC LIMIT ?""",
+                (max(1, min(int(limit), 100)),),
+            ).fetchall()
+        runs = []
+        for row in rows:
+            item = dict(row)
+            try:
+                item["coverage"] = json.loads(item.pop("coverage_json"))
+            except (TypeError, json.JSONDecodeError):
+                item["coverage"] = {"status": "failed", "reason": "invalid_json"}
+                item.pop("coverage_json", None)
+            runs.append(item)
+        latest_by_cycle = {}
+        for row in runs:
+            latest_by_cycle.setdefault(row["cycle_id"], row)
+        measured = [
+            row for row in latest_by_cycle.values()
+            if row["coverage_status"] in {"complete", "partial", "failed"}
+        ]
+        passing = [
+            row for row in measured
+            if float(row["coverage_ratio"] or 0) >= policy["minimum_coverage_ratio"]
+            and float(row["evidence_ratio"] or 0) >= policy["minimum_evidence_ratio"]
+            and int(row["unresolved_conflicts"] or 0)
+                <= policy["maximum_unresolved_conflicts"]
+        ]
+        if len(measured) < policy["minimum_measured_gameweeks"]:
+            gate = "insufficient_gameweeks"
+        elif len(passing) == len(measured):
+            gate = "passed"
+        else:
+            gate = "failed"
+        return {
+            "schema": "mova-research-coverage-report-v1", "policy": policy,
+            "status": gate, "measured_gameweeks": len(measured),
+            "passing_gameweeks": len(passing),
+            "legacy_unmeasured_gameweeks": sum(
+                row["coverage_status"] == "legacy_unmeasured"
+                for row in latest_by_cycle.values()
+            ),
+            "latest": runs[0] if runs else None, "runs": runs,
         }
 
     def gameweek_review_status(self, season: str, gw: int) -> dict:
@@ -2874,6 +2982,9 @@ class OpsDB:
         research_signals = 0
         research_conflicts = 0
         research_last_import_epoch = 0.0
+        research_coverage_ratio = 0.0
+        research_evidence_ratio = 0.0
+        research_measured_gameweeks = 0
         decision_envelope_status = "missing"
         execution_plan_status = "missing"
         execution_plan_blockers = 0
@@ -2943,6 +3054,18 @@ class OpsDB:
                     ).timestamp()
                 except ValueError:
                     pass
+            latest_coverage = con.execute(
+                "SELECT coverage_ratio,evidence_ratio FROM research_runs "
+                "WHERE status='imported' AND coverage_status IN ('complete','partial','failed') "
+                "ORDER BY imported_at DESC LIMIT 1"
+            ).fetchone()
+            if latest_coverage:
+                research_coverage_ratio = float(latest_coverage["coverage_ratio"] or 0)
+                research_evidence_ratio = float(latest_coverage["evidence_ratio"] or 0)
+            research_measured_gameweeks = int(con.execute(
+                "SELECT COUNT(DISTINCT cycle_id) FROM research_runs "
+                "WHERE status='imported' AND coverage_status IN ('complete','partial','failed')"
+            ).fetchone()[0])
             latest_envelope = con.execute(
                 "SELECT envelope_id,status FROM decision_envelopes "
                 "ORDER BY created_at DESC LIMIT 1"
@@ -3027,6 +3150,15 @@ class OpsDB:
             "# HELP mova_research_last_import_timestamp_seconds Last imported research run.",
             "# TYPE mova_research_last_import_timestamp_seconds gauge",
             f"mova_research_last_import_timestamp_seconds {research_last_import_epoch:.3f}",
+            "# HELP mova_research_coverage_ratio Checked focus subjects in latest measured run.",
+            "# TYPE mova_research_coverage_ratio gauge",
+            f"mova_research_coverage_ratio {research_coverage_ratio:.6f}",
+            "# HELP mova_research_evidence_ratio Focus subjects backed by sealed locators.",
+            "# TYPE mova_research_evidence_ratio gauge",
+            f"mova_research_evidence_ratio {research_evidence_ratio:.6f}",
+            "# HELP mova_research_measured_gameweeks Gameweeks with explicit coverage v2.",
+            "# TYPE mova_research_measured_gameweeks gauge",
+            f"mova_research_measured_gameweeks {research_measured_gameweeks}",
             "# HELP mova_strategic_memory_status Latest sealed memory lifecycle status.",
             "# TYPE mova_strategic_memory_status gauge",
             *[f'mova_strategic_memory_status{{status="{name}"}} '

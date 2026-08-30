@@ -380,7 +380,7 @@ no borra evidencia previa y nunca amplía autonomía.
 | HV1-03a ✅ | collector/data quality autónomo | completado | HV1-02 |
 | HV1-03b ✅ | facade uniforme train/predict/explain/evaluate, scorecard, drift y candidato fail-closed | completado | HV1-03a |
 | HV1-04 ✅ | team state, season plan y memoria estratégica longitudinal sellada | completado | HV1-02 |
-| HV1-05 🟡 | servicio news/research: foco plantilla+candidatos, delta y slot final; falta evaluar cobertura multi-GW | 8–12 h | HV1-02/03 |
+| HV1-05 🟡 | news/research con fetch/locator sellado, cobertura y utilidad; faltan 3 GWs medidos | ciclos reales | HV1-02/03 |
 | HV1-06A ✅ | bundle máquina, `do_nothing`, alternativa, Validator y DecisionEnvelope | completado | HV1-03/04/05 |
 | HV1-06B ✅ | Strategist + Critic acotados sobre `Intervention`, sin autoridad directa | completado | HV1-06A |
 | HV1-07 🟡 | policy/apply-once/verifier; C/VC habilitable y lineup tipado pero gated; faltan rehearsals y R3 | 4–8 h | HV1-06 |
@@ -437,8 +437,14 @@ El corte de servicio posterior eliminó el barrido genérico: el request recibe 
 hasta diez candidatos del modelo y las notas oficiales FPL, más las señales activas previas para
 investigar solo deltas. La agenda conserva la rutina de seis horas y añade una corrida final
 obligatoria entre T-120 y T-70; ticks sin request ya no levantan Codex. El health global permanece
-visible al cambiar de jornada. Esto no implementa todavía fetch independiente/locator de cada
-documento ni promoción automática de señales.
+visible al cambiar de jornada.
+
+El hardening posterior implementó el contrato v2: search solo descubre, el importador hace fetch
+HTTPS independiente con defensa SSRF, sella excerpt mínimo + locator + hashes y exige evidencia
+verificada antes de aceptar una señal. Cada corrida declara cobertura exacta de la plantilla y
+candidatos; CLI, API, PostgreSQL shadow y Prometheus exponen cobertura, evidencia, conflictos y
+utilidad. Los briefs v1 se conservan como legacy no medido. HV1-05 continúa parcial únicamente
+hasta reunir tres GWs v2 que satisfagan el gate; este corte no promueve señales ni ejecución.
 
 ### Corte memoria estratégica longitudinal — 30 de agosto de 2026
 

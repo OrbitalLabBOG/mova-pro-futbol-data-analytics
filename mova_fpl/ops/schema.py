@@ -931,6 +931,36 @@ MIGRATION_014 = (
     "DEFAULT '{}' CHECK (json_valid(memory_summary_json))",
 )
 
+MIGRATION_015 = (
+    "ALTER TABLE research_runs ADD COLUMN result_schema TEXT NOT NULL "
+    "DEFAULT 'mova-research-brief-v1'",
+    "ALTER TABLE research_runs ADD COLUMN coverage_json TEXT NOT NULL "
+    "DEFAULT '{}' CHECK (json_valid(coverage_json))",
+    "ALTER TABLE research_runs ADD COLUMN coverage_status TEXT NOT NULL "
+    "DEFAULT 'legacy_unmeasured' CHECK (coverage_status IN ("
+    "'legacy_unmeasured','complete','partial','failed'))",
+    "ALTER TABLE research_runs ADD COLUMN coverage_ratio REAL "
+    "CHECK (coverage_ratio IS NULL OR coverage_ratio BETWEEN 0 AND 1)",
+    "ALTER TABLE research_runs ADD COLUMN evidence_ratio REAL "
+    "CHECK (evidence_ratio IS NULL OR evidence_ratio BETWEEN 0 AND 1)",
+    "ALTER TABLE research_documents ADD COLUMN final_url TEXT",
+    "ALTER TABLE research_documents ADD COLUMN fetch_status TEXT NOT NULL "
+    "DEFAULT 'legacy_unverified' CHECK (fetch_status IN ("
+    "'legacy_unverified','verified','failed'))",
+    "ALTER TABLE research_documents ADD COLUMN http_status INTEGER",
+    "ALTER TABLE research_documents ADD COLUMN content_type TEXT",
+    "ALTER TABLE research_documents ADD COLUMN body_sha256 TEXT",
+    "ALTER TABLE research_documents ADD COLUMN normalized_sha256 TEXT",
+    "ALTER TABLE research_documents ADD COLUMN storage_mode TEXT",
+    "ALTER TABLE research_documents ADD COLUMN locator_type TEXT",
+    "ALTER TABLE research_documents ADD COLUMN locator TEXT",
+    "ALTER TABLE research_documents ADD COLUMN excerpt TEXT",
+    "ALTER TABLE research_documents ADD COLUMN excerpt_sha256 TEXT",
+    "ALTER TABLE research_documents ADD COLUMN artifact_path TEXT",
+    "ALTER TABLE research_documents ADD COLUMN artifact_sha256 TEXT",
+    "ALTER TABLE research_documents ADD COLUMN fetch_error_code TEXT",
+)
+
 MIGRATIONS = (
     (1, "initial_ops_schema", MIGRATION_001),
     (2, "team_state_artifact_provenance", MIGRATION_002),
@@ -946,4 +976,5 @@ MIGRATIONS = (
     (12, "agent_cost_budgets", MIGRATION_012),
     (13, "model_bundle_release_gate", MIGRATION_013),
     (14, "strategic_memory_snapshots", MIGRATION_014),
+    (15, "sealed_research_evidence_and_coverage", MIGRATION_015),
 )

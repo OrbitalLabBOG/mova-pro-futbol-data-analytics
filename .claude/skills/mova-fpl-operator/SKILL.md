@@ -37,7 +37,8 @@ consulta ordinaria: `mova` y `/api/v1/status` son el contrato estable.
    [docs/operations/strategic-research.md](../../../docs/operations/strategic-research.md).
    Verifica `mova strategy status.memory_summary`: debe provenir de GWs anteriores y lecciones
    validadas; nunca se reemplaza con historial de chat. El brief de Codex es candidato hasta que
-   el importador determinista lo valide.
+   el importador determinista lo valide. Consulta `mova strategy research coverage`: un brief v2
+   exige fetch independiente, locator sellado y cobertura exacta del foco; v1 es legacy no medido.
 9. Para clasificar riesgo, sellar un diff o diagnosticar un bloqueo previo al browser, lee
    [docs/operations/execution-preflight.md](../../../docs/operations/execution-preflight.md).
    `mova execute` conserva preflight, lease apply-once y verifier; `execute ui-plan` sólo compila
@@ -102,6 +103,8 @@ pendiente o `browser_writes=false`, limita el browser a login y lecturas.
   aprobado antes de reconstruir.
 - `research_worker FAIL`: verificar timer, cola y presencia sanitizada del auth; nunca
   mostrar, copiar a Git ni incluir el archivo de autenticación en evidencias.
+- research coverage parcial: inspeccionar `fetch_error_code`, `coverage.groups`, conflictos y
+  sujetos `not_checked`; no convertir una cita de search en evidencia ni rebajar el gate multi-GW.
 - propuesta de mejora atascada: consultar `mova improve status`; no saltar `testing`, no aceptar
   sin evidencia/rollback y no confundir una lección aceptada con un despliegue.
 - release de modelo atascado: consultar `mova improve release status`; comprobar hashes, variante

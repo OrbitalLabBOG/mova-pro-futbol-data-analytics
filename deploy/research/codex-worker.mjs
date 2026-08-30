@@ -96,11 +96,17 @@ try {
       "no uses shell ni navegador interactivo. Prefiere fuentes oficiales y prensa tier 1.",
       "Cada señal y cada conflicto deben citar únicamente URLs incluidas en documents.",
       "Si una fuente no está en documents, no la cites. Declara conflictos y limitaciones.",
+      "Cada document debe incluir evidence_text: un fragmento breve, exacto y textual de",
+      "la página recuperada. No lo parafrasees; el importador debe localizarlo byte a byte",
+      "después de normalizar HTML. Search solo descubre: un fetch independiente lo verifica.",
       "Prioriza estrictamente manifest.research_summary.focus: plantilla primero y luego",
       "candidatos del modelo. No hagas un barrido genérico de toda la liga salvo una noticia",
       "que cambie materialmente el contexto de esos sujetos o sus rivales inmediatos.",
       "Compara con manifest.research_summary.previous_active_signals y evita repetir claims",
       "sin cambios. En una corrida final busca deltas posteriores a la corrida anterior.",
+      "coverage.subjects debe contener exactamente una fila por cada player_element único de",
+      "manifest.research_summary.focus. Usa material_signal, no_material_update, unresolved o",
+      "not_checked. Toda fila distinta de not_checked cita al menos una URL de documents.",
       "official_news es un hecho observado de la API FPL, pero verifica en web su vigencia.",
       "No inventes player_element: déjalo null cuando el manifiesto no lo permita resolver.",
       "Devuelve únicamente el objeto exigido por el JSON Schema.",
@@ -159,7 +165,7 @@ try {
       const brief = JSON.parse(readFileSync(finalTmp, "utf8"));
       unlinkSync(finalTmp);
       brief.schema = isResearch
-        ? "mova-research-brief-v1" : "mova-decision-deliberation-v1";
+        ? "mova-research-brief-v2" : "mova-decision-deliberation-v1";
       if (isResearch) brief.research_run_id = runId;
       else brief.deliberation_id = runId;
       brief.cycle_id = request.cycle_id;
