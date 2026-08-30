@@ -3,12 +3,17 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from mova_fpl.analytics.gameweek_review import (
     build_decision, load_closeout_package, score_scenario,
 )
 from mova_fpl.cli.settle_trace import export as export_trace
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB
+from mova_fpl.ops.improvement import (
+    ContinuousImprovementService, validate_transition_evidence,
+)
 from mova_fpl.ops.review import GameweekReviewService
 from mova_fpl.rules import get as get_rules
 
@@ -148,3 +153,81 @@ def test_closeout_is_queryable_through_supported_runtime(tmp_path: Path):
     assert status["review"]["comparator_actual_points"] == 62
     assert len(status["player_outcomes"]) == 30
     assert len(status["change_proposals"]) == 3
+
+
+def _persisted_review(tmp_path: Path) -> tuple[OpsDB, str]:
+    path, package = _package()
+    config = RuntimeConfig(artifact_root=tmp_path / "artifacts")
+    db = OpsDB(tmp_path / "ops.db", enforce_version=False)
+    db.migrate()
+    cycle_id = db.upsert_cycle(
+        package["season"], package["gw"], package["deadline_at"], phase="settlement"
+    )
+    job_id, _ = db.start_job(
+        "gameweek_review", "gw1:improvement-test", "corr_improvement", cycle_id=cycle_id
+    )
+    result = GameweekReviewService(config, db)._build(
+        package, _official(package), path, job_id, cycle_id, "corr_improvement",
+        "test", "seed improvement", "gw1:improvement-test",
+    )
+    db.record_gameweek_closeout(result["ledger"])
+    proposal_id = db.gameweek_review_status("2026-27", 1)["change_proposals"][0]["proposal_id"]
+    return db, proposal_id
+
+
+def test_improvement_gate_promotes_only_a_validated_lesson(tmp_path: Path):
+    db, proposal_id = _persisted_review(tmp_path)
+    service = ContinuousImprovementService(db)
+    testing = tmp_path / "testing.json"
+    testing.write_text(json.dumps({
+        "experiment_id": "exp_minutes_v2", "test_plan": "backtest causal pareado",
+    }), encoding="utf-8")
+    accepted = tmp_path / "accepted.json"
+    accepted.write_text(json.dumps({
+        "experiment_id": "exp_minutes_v2", "evaluated_at": "2026-08-30T18:00:00Z",
+        "acceptance_passed": True, "baseline": {"mae": 1.2},
+        "candidate": {"mae": 1.1}, "test_evidence": ["artifact://exp_minutes_v2"],
+        "rollback_plan": "restaurar model release anterior",
+    }), encoding="utf-8")
+
+    first = service.transition(
+        proposal_id=proposal_id, to_status="testing", evidence_path=testing,
+        actor="test", reason="abre experimento", idempotency_key="improve:test:testing",
+    )
+    promoted = service.transition(
+        proposal_id=proposal_id, to_status="accepted", evidence_path=accepted,
+        actor="test", reason="cumple criterio", idempotency_key="improve:test:accepted",
+    )
+    reused = service.transition(
+        proposal_id=proposal_id, to_status="accepted", evidence_path=accepted,
+        actor="test", reason="retry", idempotency_key="improve:test:accepted",
+    )
+    status = service.status(season="2026-27", gw=1)
+
+    assert first["runtime_mutated"] is False
+    assert promoted["lesson_id"].startswith("lesson_")
+    assert reused["status"] == "reused"
+    assert any(item["proposal_id"] == proposal_id and item["status"] == "accepted"
+               for item in status["proposals"])
+    assert len(status["lessons"]) == 1
+    assert status["lessons"][0]["status"] == "validated"
+    assert status["runtime_mutated"] is False
+
+
+def test_improvement_gate_blocks_weak_evidence_and_direct_accept(tmp_path: Path):
+    db, proposal_id = _persisted_review(tmp_path)
+    weak = {"experiment_id": "exp", "acceptance_passed": False}
+    with pytest.raises(ValueError, match="evaluated_at"):
+        validate_transition_evidence("accepted", weak)
+    evidence = tmp_path / "accepted.json"
+    evidence.write_text(json.dumps({
+        "experiment_id": "exp", "evaluated_at": "2026-08-30T18:00:00Z",
+        "acceptance_passed": True, "baseline": {"mae": 1.2},
+        "candidate": {"mae": 1.1}, "test_evidence": ["artifact://exp"],
+        "rollback_plan": "rollback",
+    }), encoding="utf-8")
+    with pytest.raises(ValueError, match="transición inválida"):
+        ContinuousImprovementService(db).transition(
+            proposal_id=proposal_id, to_status="accepted", evidence_path=evidence,
+            actor="test", reason="atajo inválido", idempotency_key="improve:test:invalid",
+        )

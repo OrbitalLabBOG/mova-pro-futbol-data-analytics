@@ -798,6 +798,41 @@ MIGRATION_010 = (
     """,
 )
 
+MIGRATION_011 = (
+    """
+    CREATE TABLE IF NOT EXISTS change_proposal_evaluations (
+        evaluation_id TEXT PRIMARY KEY,
+        proposal_id TEXT NOT NULL REFERENCES change_proposals(proposal_id) ON DELETE CASCADE,
+        idempotency_key TEXT NOT NULL UNIQUE,
+        from_status TEXT NOT NULL CHECK (from_status IN (
+          'proposed','testing','accepted','rejected')),
+        to_status TEXT NOT NULL CHECK (to_status IN ('testing','accepted','rejected')),
+        evidence_json TEXT NOT NULL CHECK (json_valid(evidence_json)),
+        evidence_sha256 TEXT NOT NULL CHECK (length(evidence_sha256) = 64),
+        actor TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        created_at TEXT NOT NULL
+    ) STRICT
+    """,
+    "CREATE INDEX IF NOT EXISTS idx_change_evaluations_proposal_created "
+    "ON change_proposal_evaluations(proposal_id, created_at DESC)",
+    """
+    CREATE TABLE IF NOT EXISTS lessons (
+        lesson_id TEXT PRIMARY KEY,
+        proposal_id TEXT NOT NULL UNIQUE REFERENCES change_proposals(proposal_id),
+        review_id TEXT NOT NULL REFERENCES gameweek_reviews(review_id),
+        category TEXT NOT NULL,
+        statement TEXT NOT NULL,
+        evidence_json TEXT NOT NULL CHECK (json_valid(evidence_json)),
+        status TEXT NOT NULL CHECK (status IN ('validated','retired')),
+        created_at TEXT NOT NULL,
+        retired_at TEXT
+    ) STRICT
+    """,
+    "CREATE INDEX IF NOT EXISTS idx_lessons_status_created "
+    "ON lessons(status, created_at DESC)",
+)
+
 MIGRATIONS = (
     (1, "initial_ops_schema", MIGRATION_001),
     (2, "team_state_artifact_provenance", MIGRATION_002),
@@ -809,4 +844,5 @@ MIGRATIONS = (
     (8, "bounded_strategy_deliberations", MIGRATION_008),
     (9, "execution_plans_and_preflight", MIGRATION_009),
     (10, "apply_once_execution_attempts", MIGRATION_010),
+    (11, "continuous_improvement_gate", MIGRATION_011),
 )

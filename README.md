@@ -41,6 +41,7 @@ mova data status
 mova strategy status
 mova strategy research due
 mova strategy deliberate status
+mova improve status --season 2026-27
 
 # collector público sellado
 python -m mova_fpl.cli.collect_live --season 2026-27 --gw 2
@@ -57,11 +58,15 @@ CycleManifest → modelos causales → matriz xP → MILP
   → do_nothing + baseline + alternativa
   → Validator determinista → DecisionEnvelope → acta + auditoría
   → Strategist + Critic acotados → Intervention shadow no aplicada
-  → ExecutionPlan blocked|authorized|noop (preflight; todavía sin apply)
+  → ExecutionPlan → apply-once ledger + verifier (driver de clicks desconectado)
+  → settlement → review → proposal → test gate → lección validada
 ```
 
 - `mova_fpl.engine.runner.decide()` es la única autoridad de decisión.
-- `mova execute preflight` sella riesgo, diff y gates; no contiene una ruta de escritura.
+- `mova execute` sella riesgo, diff, lease apply-once y verificación; el driver browser de clicks
+  sigue desconectado y los controles efectivos bloquean escrituras.
+- `mova improve` registra experimentos, evaluaciones, lecciones y uso/costo; aceptar una lección
+  nunca modifica modelos, prompts, configuración ni políticas.
 - El tick no interpreta Markdown: persiste un `DecisionEnvelope` JSON ligado al manifest real.
 - Una propuesta sin GW previa asentada, proyección aprobada, team state fresco o ventana válida
   queda `blocked`; solo una que supera todos los hard gates queda `staged`.

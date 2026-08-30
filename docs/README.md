@@ -16,6 +16,7 @@ tags: [mova, fpl, documentation]
 | Diagnosticar o desplegar el VPS | [Runbook VPS](operations/vps.md) |
 | Operar PostgreSQL shadow | [Runbook PostgreSQL](operations/postgres-shadow.md) |
 | Operar plan y research | [Contexto estratégico](operations/strategic-research.md) |
+| Evaluar propuestas y memoria | [Mejora continua](operations/continuous-improvement.md) |
 | Auditar autonomía y preflight | [Execution preflight](operations/execution-preflight.md) |
 | Consultar la decisión GW1 | [Research y decisión](decisions/2026-27/gw01-research-and-decision.md) |
 | Auditar el experimento de odds/eventos | [Ablación causal](decisions/2026-27/odds-events-ablation.md) |

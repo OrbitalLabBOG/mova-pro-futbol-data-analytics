@@ -53,6 +53,7 @@ PM de construcción del proyecto.
 | [15-hv1-04-05-strategic-research-evidence.md](15-hv1-04-05-strategic-research-evidence.md) | season plan, manifest sellado y primera investigación Codex validada en el VPS |
 | [16-hv1-06a-decision-envelope-evidence.md](16-hv1-06a-decision-envelope-evidence.md) | bundle de tres candidatos, Validator determinista y primer envelope vivo |
 | [17-hv1-06b-deliberation-evidence.md](17-hv1-06b-deliberation-evidence.md) | Strategist + Critic acotados, intervención shadow y replay vivo corregido |
+| [20-hv1-07d-dom-probe.md](20-hv1-07d-dom-probe.md) | DOM probe autenticado y planner R2 fail-closed |
 | [contracts/](contracts/) | JSON Schemas máquina para request, result y signal |
 | [decisions/](decisions/) | decisiones arquitectónicas propuestas |
 | [workpacks/](workpacks/) | unidades de implementación y criterios todavía pendientes |
