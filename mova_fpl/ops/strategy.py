@@ -528,6 +528,7 @@ class StrategicContextService:
         self.db.migrate()
         outbox = self.config.research_root / "outbox"
         results = []
+        terminal_requests_quarantined = self._quarantine_terminal_requests()
         for path in sorted(outbox.glob("research_*.result.json")):
             try:
                 results.append(self._import_one(path))
@@ -541,10 +542,45 @@ class StrategicContextService:
                         candidate_id, error_code=type(exc).__name__,
                         error_detail=str(exc),
                     )
+                    request_quarantine = self._quarantine_request(candidate_id)
+                else:
+                    request_quarantine = None
                 results.append({"status": "rejected", "path": str(quarantine),
+                                "request_path": request_quarantine,
                                 "error_code": type(exc).__name__,
                                 "error": str(exc)[:500]})
-        return {"status": "completed", "processed": len(results), "results": results}
+        return {
+            "status": "completed", "processed": len(results), "results": results,
+            "terminal_requests_quarantined": terminal_requests_quarantined,
+        }
+
+    def _quarantine_terminal_requests(self) -> int:
+        count = 0
+        inbox = self.config.research_root / "inbox"
+        for path in sorted(inbox.glob("research_*.request.json")):
+            run_id = path.name.removesuffix(".request.json")
+            if not re.fullmatch(r"research_[0-9a-f]{32}", run_id):
+                continue
+            run = self.db.research_run(run_id)
+            pending_result = (
+                self.config.research_root / "outbox" / f"{run_id}.result.json"
+            )
+            if run and run.get("status") == "rejected" and not pending_result.is_file():
+                self._quarantine_request(run_id)
+                count += 1
+        return count
+
+    def _quarantine_request(self, run_id: str) -> str | None:
+        source = self.config.research_root / "inbox" / f"{run_id}.request.json"
+        if not source.is_file():
+            return None
+        target = self.config.research_root / "quarantine" / source.name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        if target.exists():
+            digest = hashlib.sha256(source.read_bytes()).hexdigest()[:12]
+            target = target.with_name(f"{run_id}.request-{digest}.json")
+        source.replace(target)
+        return str(target)
 
     def _import_one(self, path: Path) -> dict:
         if path.stat().st_size > MAX_RESULT_BYTES:
