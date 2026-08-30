@@ -55,6 +55,42 @@ def _evidence(service: ExecutionService, cycle_id: str, *, passed: bool = True,
     return path
 
 
+def _captaincy_probe(service: ExecutionService, *, valid: bool = True) -> Path:
+    subchecks = {
+        "eleven_starter_sheets": valid, "semantic_checkboxes": True,
+        "one_captain": True, "one_vice_captain": True,
+        "captain_matches_api": True, "vice_captain_matches_api": True,
+    }
+    probe = {
+        "schema": "mova-browser-dom-probe-v1",
+        "contract_version": "fpl-pick-team-a11y-2026.08.2",
+        "observed_at": NOW.isoformat(), "team_id": service.config.team_id,
+        "status": "pass" if valid else "fail",
+        "checks": {
+            "signed_in": valid, "fifteen_api_picks": True,
+            "fifteen_player_controls": True, "fifteen_switch_controls": True,
+            "positional_order_matches": True, "captain_controls": valid,
+        },
+        "slots": [],
+        "captain_controls": {
+            "status": "pass" if valid else "fail",
+            "selector_strategy": "player_button_index_then_accessible_checkbox",
+            "checks": subchecks,
+            "starters": [
+                {"position": index + 1, "element": index + 1,
+                 "player_button_index": index, "captain_checkbox": True,
+                 "vice_captain_checkbox": True, "captain_checked": index == 0,
+                 "vice_captain_checked": index == 1}
+                for index in range(11)
+            ],
+        },
+    }
+    path = service.config.artifact_root / "browser-probes" / "captaincy.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(probe) + "\n")
+    return path
+
+
 def test_rehearsal_is_counted_once_per_gameweek_and_contract(tmp_path: Path):
     service, cycle_id = _service(tmp_path)
     first = service.record_rehearsal(
@@ -146,4 +182,28 @@ def test_missing_or_tampered_source_artifact_is_rejected(tmp_path: Path):
         service.record_rehearsal(
             evidence_file=path, actor="test", reason="tampered source",
             idempotency_key="rehearsal:tampered", now=NOW,
+        )
+
+
+def test_live_captaincy_probe_is_sealed_without_browser_writes(tmp_path: Path):
+    service, cycle_id = _service(tmp_path)
+    result = service.record_captaincy_probe(
+        source_file=_captaincy_probe(service), cycle_id=cycle_id, actor="test",
+        reason="live read-only probe", idempotency_key="captaincy-probe:gw3", now=NOW,
+    )
+    assert result["status"] == "passed"
+    assert result["browser_writes_performed"] is False
+    evidence = json.loads(Path(result["evidence_path"]).read_text())
+    assert evidence["writes_attempted"] is False
+    assert len(evidence["checks"]) == 12
+    assert service.status()["browser_driver"]["captaincy"]["observed_rehearsals"] == 1
+
+
+def test_failed_captaincy_probe_cannot_be_sealed_as_passed(tmp_path: Path):
+    service, cycle_id = _service(tmp_path)
+    with pytest.raises(ValueError, match="no supera"):
+        service.record_captaincy_probe(
+            source_file=_captaincy_probe(service, valid=False), cycle_id=cycle_id,
+            actor="test", reason="failed probe", idempotency_key="captaincy-probe:failed",
+            now=NOW,
         )

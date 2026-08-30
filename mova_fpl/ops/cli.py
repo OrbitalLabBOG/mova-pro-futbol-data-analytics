@@ -165,6 +165,15 @@ def parser() -> argparse.ArgumentParser:
     rehearsal.add_argument("--actor", required=True)
     rehearsal.add_argument("--reason", required=True)
     rehearsal.add_argument("--idempotency-key", required=True)
+    captaincy_probe = execute_commands.add_parser(
+        "rehearsal-captaincy-probe",
+        help="sella e importa un probe vivo sanitizado de capitanía",
+    )
+    captaincy_probe.add_argument("--source", required=True)
+    captaincy_probe.add_argument("--cycle-id", required=True)
+    captaincy_probe.add_argument("--actor", required=True)
+    captaincy_probe.add_argument("--reason", required=True)
+    captaincy_probe.add_argument("--idempotency-key", required=True)
     preflight = execute_commands.add_parser(
         "preflight", help="sella el diff y evalúa autorización sin operar el browser"
     )
@@ -479,6 +488,11 @@ def main(argv: list[str] | None = None) -> int:
             payload = service.record_rehearsal(
                 evidence_file=Path(args.file), actor=args.actor, reason=args.reason,
                 idempotency_key=args.idempotency_key,
+            )
+        elif args.execute_command == "rehearsal-captaincy-probe":
+            payload = service.record_captaincy_probe(
+                source_file=Path(args.source), cycle_id=args.cycle_id, actor=args.actor,
+                reason=args.reason, idempotency_key=args.idempotency_key,
             )
         elif args.execute_command == "preflight":
             payload = service.preflight(
