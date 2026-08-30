@@ -5,6 +5,7 @@ import { closeSync, constants, existsSync, mkdirSync, openSync, readFileSync, re
          statSync, unlinkSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import { spawnSync } from "node:child_process";
+import { normalizeResearchBrief } from "./research-normalize.mjs";
 
 const root = process.env.MOVA_RESEARCH_ROOT || "/research";
 const schemas = {
@@ -168,8 +169,15 @@ try {
       try { unlinkSync(finalTmp); } catch {}
       process.exitCode = 1;
     } else {
-      const brief = JSON.parse(readFileSync(finalTmp, "utf8"));
+      let brief = JSON.parse(readFileSync(finalTmp, "utf8"));
       unlinkSync(finalTmp);
+      if (isResearch) {
+        const normalized = normalizeResearchBrief(brief, request);
+        brief = normalized.brief;
+        atomicJson(join(logs, `${runId}.normalization.json`), {
+          ...normalized.report, run_id: runId, observed_at: new Date().toISOString(),
+        });
+      }
       brief.schema = isResearch
         ? "mova-research-brief-v2" : "mova-decision-deliberation-v1";
       if (isResearch) brief.research_run_id = runId;
