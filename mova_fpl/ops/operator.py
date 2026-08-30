@@ -23,6 +23,7 @@ SCHEMA_VERSION = "1.0"
 COMMAND_SCHEMA = "mova-fpl-operator-v1"
 MAX_HOST_PROBE_BYTES = 256 * 1024
 TICK_MAX_AGE_SECONDS = 20 * 60
+POSTGRES_PARITY_MAX_AGE_SECONDS = 24 * 60 * 60
 
 
 def _utcnow(now: datetime | None = None) -> datetime:
@@ -301,16 +302,27 @@ def build_status(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
               else read_status(config))
         if pg.get("status") != "unavailable":
             latest_import = pg.get("latest_import") or {}
+            import_age = _age(latest_import.get("finished_at"), current)
             storage = {
                 "operational_writer": pg.get("writer") or "sqlite",
                 "postgres_role": pg.get("postgres_role") or "shadow",
                 "postgres": {
                     "status": pg.get("status"),
                     "server_version": pg.get("server_version"),
-                    "migration_count": len(pg.get("migrations") or []),
+                    "migration_count": int(
+                        pg.get("migration_count")
+                        if pg.get("migration_count") is not None
+                        else len(pg.get("migrations") or [])
+                    ),
                     "latest_import": {key: latest_import.get(key) for key in (
                         "import_run_id", "status", "git_sha", "started_at", "finished_at"
                     )},
+                    "import_age_seconds": import_age,
+                    "import_max_age_seconds": POSTGRES_PARITY_MAX_AGE_SECONDS,
+                    "import_fresh": (
+                        import_age is not None
+                        and import_age <= POSTGRES_PARITY_MAX_AGE_SECONDS
+                    ),
                     "read_parity": pg.get("read_parity"),
                 },
             }
@@ -344,6 +356,9 @@ def build_status(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
             storage["postgres"].get("read_parity") or {}
         ).get("status") != "pass":
             reasons.append("postgres_shadow_parity_not_passed")
+        elif (storage["postgres_role"] == "shadow"
+              and not storage["postgres"].get("import_fresh")):
+            reasons.append("postgres_shadow_parity_stale")
         if reasons:
             severity = "degraded"
 
@@ -561,8 +576,13 @@ def build_doctor(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
             applied = [int(item["version"]) for item in pg_status["migrations"]]
             current_schema = bool(applied) and applied[-1] == latest_version()
             parity = pg_status.get("read_parity") or {}
+            latest_import = pg_status.get("latest_import") or {}
+            import_age = _age(latest_import.get("finished_at"), current)
             pg_ok = (pg_status["status"] == "healthy" and current_schema
-                     and parity.get("status") == "pass")
+                     and parity.get("status") == "pass"
+                     and latest_import.get("status") == "completed"
+                     and import_age is not None
+                     and import_age <= POSTGRES_PARITY_MAX_AGE_SECONDS)
             checks.append(_check(
                 "postgres_shadow", "PASS" if pg_ok else "WARN",
                 "PostgreSQL shadow is reachable and current" if pg_ok
@@ -576,6 +596,8 @@ def build_doctor(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
                     "writer": pg_status.get("writer"),
                     "role": pg_status.get("postgres_role"),
                     "read_parity": parity,
+                    "import_age_seconds": import_age,
+                    "import_max_age_seconds": POSTGRES_PARITY_MAX_AGE_SECONDS,
                 },
             ))
         except Exception as exc:  # noqa: BLE001
