@@ -29,6 +29,7 @@ mova data coverage
 mova analytics status
 mova analytics run
 mova improve status --season 2026-27
+mova improve release status
 mova strategy status
 mova strategy prepare
 mova strategy research due
@@ -55,7 +56,7 @@ revisión desplegada, PostgreSQL shadow cuando está configurado, perfil browser
 | `runtime` | temporada, team id, SHA, SQLite y controles efectivos |
 | `gameweek` | GW, deadline, segundos restantes y fase recalculada |
 | `data` | fuentes, data service PostgreSQL, cobertura, team state, FTs, banco, chips y datasets |
-| `models` | releases registrados, versión, estado y hash |
+| `models` | releases registrados, bundle activo/shadow, versión, estado y hash |
 | `research` | conteo de señales y conflictos vigentes del ciclo |
 | `strategy` | último manifiesto sellado y corridas de research del ciclo |
 | `decision` | última decisión sellada, política, estado, xP y fingerprint |
@@ -140,6 +141,12 @@ solo puede pasar `proposed → testing → accepted|rejected`; cada transición 
 clave idempotente y evidencia JSON. Aceptar crea una `lesson` validada, pero deliberadamente no
 aplica el cambio al runtime. Contrato, formatos y recuperación en
 [mejora continua](continuous-improvement.md).
+
+La aplicación real de un cambio de modelo usa exclusivamente `mova improve release`. El release
+sella los dos artefactos, proyecta el candidato en shadow junto al baseline, exige scorecards
+finales pareados y cambia un puntero append-only. Promoción y rollback requieren actor, razón e
+idempotency key; nunca modifican `mode`, `action_level`, `kill_switch`, compliance ni permisos del
+browser.
 
 El contexto pre-deadline usa `mova strategy`: `plan` activa una revisión explícita del plan
 de temporada; `prepare` sella fuentes, team state, proyección, plan y research en un

@@ -116,6 +116,11 @@ def _database_snapshot(db: OpsDB) -> dict:
         sources = _latest_rows(con, "source_snapshots", "source_name", "captured_at")
         datasets = _latest_rows(con, "dataset_releases", "dataset_name", "created_at")
         models = _latest_rows(con, "model_releases", "model_name", "created_at")
+        model_bundle_release = con.execute(
+            "SELECT * FROM model_bundle_releases "
+            "ORDER BY CASE status WHEN 'promoted' THEN 0 WHEN 'shadow' THEN 1 ELSE 2 END,"
+            "updated_at DESC LIMIT 1"
+        ).fetchone()
         cycle_id = str(cycle["cycle_id"]) if cycle else None
         research = {"signals": 0, "conflicts": 0}
         strategic = {"manifest": None, "research_runs": []}
@@ -159,6 +164,7 @@ def _database_snapshot(db: OpsDB) -> dict:
         "sources": sources,
         "datasets": datasets,
         "models": models,
+        "model_bundle_release": dict(model_bundle_release) if model_bundle_release else None,
         "research": research,
         "strategic": strategic,
         "controls": db.controls(),
@@ -363,6 +369,11 @@ def build_status(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
                 "created_at"
             )} for row in state["models"]],
             "artifacts": model_artifacts,
+            "bundle_release": ({key: state["model_bundle_release"].get(key) for key in (
+                "release_id", "proposal_id", "status", "content_sha256",
+                "created_at", "updated_at"
+            )} if state["model_bundle_release"] else None),
+            "active_bundle": (state["controls"].get("active_model_bundle") or {}).get("value"),
         },
         "analytics": analytics_service,
         "research": state["research"],

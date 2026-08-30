@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 from pathlib import Path
 
 import pytest
@@ -15,6 +16,7 @@ from mova_fpl.ops.db import OpsDB
 from mova_fpl.ops.improvement import (
     ContinuousImprovementService, validate_transition_evidence,
 )
+from mova_fpl.ops.model_release import ModelReleaseService, resolve_active_model_bundle
 from mova_fpl.ops.review import GameweekReviewService
 from mova_fpl.rules import get as get_rules
 
@@ -240,6 +242,181 @@ def test_improvement_gate_blocks_weak_evidence_and_direct_accept(tmp_path: Path)
             proposal_id=proposal_id, to_status="accepted", evidence_path=evidence,
             actor="test", reason="atajo inválido", idempotency_key="improve:test:invalid",
         )
+
+
+class _ReleaseAnalytics:
+    def __init__(self, status: str = "passed"):
+        self.status = status
+
+    def model_release_shadow_gate(self, *, season: str, release: dict) -> dict:
+        passed = self.status == "passed"
+        return {
+            "schema": "mova-model-release-shadow-gate-v1", "status": self.status,
+            "season": season, "release_id": release["release_id"],
+            "final_gameweeks": 3 if passed else 1,
+            "checks": {"final_gameweeks": passed, "drift_alerts": True,
+                       "points_mae": True, "p60_ece": True},
+            "candidate_evaluation_ids": ["evaluation_candidate"] if passed else [],
+            "baseline_evaluation_ids": ["evaluation_baseline"] if passed else [],
+        }
+
+
+def _model_artifact(config: RuntimeConfig, name: str, version: str, body: bytes) -> str:
+    directory = config.artifact_root / "models" / name
+    directory.mkdir(parents=True, exist_ok=True)
+    path = directory / f"{name}-{version}.joblib"
+    path.write_bytes(body)
+    digest = hashlib.sha256(body).hexdigest()
+    path.with_suffix(".json").write_text(json.dumps({
+        "name": name, "version": version, "artifact_sha256": digest,
+        "metrics": {"fixture": True},
+    }), encoding="utf-8")
+    return digest
+
+
+def test_model_release_requires_shadow_then_promotes_and_rolls_back(tmp_path: Path):
+    db, proposal_id = _persisted_review(tmp_path)
+    improvement = ContinuousImprovementService(db)
+    testing = tmp_path / "release-testing.json"
+    testing.write_text(json.dumps({
+        "experiment_id": "exp_model_v2", "test_plan": "backtest causal pareado",
+    }), encoding="utf-8")
+    accepted = tmp_path / "release-accepted.json"
+    accepted.write_text(json.dumps({
+        "experiment_id": "exp_model_v2", "evaluated_at": "2026-08-30T18:00:00Z",
+        "acceptance_passed": True, "baseline": {"mae": 1.2},
+        "candidate": {"mae": 1.1}, "test_evidence": ["artifact://exp_model_v2"],
+        "rollback_plan": "restaurar bundle anterior",
+    }), encoding="utf-8")
+    improvement.transition(
+        proposal_id=proposal_id, to_status="testing", evidence_path=testing,
+        actor="test", reason="abre experimento", idempotency_key="release:testing",
+    )
+    improvement.transition(
+        proposal_id=proposal_id, to_status="accepted", evidence_path=accepted,
+        actor="test", reason="acepta experimento", idempotency_key="release:accepted",
+    )
+
+    config = RuntimeConfig(artifact_root=tmp_path / "artifacts")
+    baseline_hashes = {
+        name: _model_artifact(config, name, "1.1.0", f"{name}-baseline".encode())
+        for name in ("minutes", "points")
+    }
+    candidate_hashes = {
+        name: _model_artifact(config, name, "1.2.0", f"{name}-candidate".encode())
+        for name in ("minutes", "points")
+    }
+    manifest = tmp_path / "release.json"
+    manifest.write_text(json.dumps({
+        "schema": "mova-model-bundle-candidate-v1",
+        "models": {name: {"version": "1.2.0", "artifact_sha256": digest}
+                   for name, digest in candidate_hashes.items()},
+        "promotion_policy": {"min_final_gameweeks": 3},
+    }), encoding="utf-8")
+    service = ModelReleaseService(config, db, _ReleaseAnalytics("insufficient"))
+    prepared = service.prepare(
+        proposal_id=proposal_id, manifest_path=manifest, actor="test",
+        reason="sella candidato", idempotency_key="release:prepare",
+    )
+    release_id = prepared["release_id"]
+    reused = service.prepare(
+        proposal_id=proposal_id, manifest_path=manifest, actor="test",
+        reason="retry", idempotency_key="release:prepare",
+    )
+    assert reused["status"] == "reused"
+    shadow = service.shadow(
+        release_id=release_id, actor="test", reason="inicia shadow",
+        idempotency_key="release:shadow",
+    )
+    assert shadow["runtime_mutated"] is False
+    with pytest.raises(ValueError, match="shadow gate no aprobado"):
+        service.promote(
+            release_id=release_id, actor="test", reason="prematuro",
+            idempotency_key="release:promote:blocked",
+        )
+    assert db.model_bundle_release_status()["releases"][0]["status"] == "shadow"
+
+    service.analytics = _ReleaseAnalytics("passed")
+    promoted = service.promote(
+        release_id=release_id, actor="test", reason="gate aprobado",
+        idempotency_key="release:promote",
+    )
+    assert promoted["runtime_mutated"] is True
+    assert service.promote(
+        release_id=release_id, actor="test", reason="retry",
+        idempotency_key="release:promote",
+    )["status"] == "reused"
+    active = resolve_active_model_bundle(config, db)
+    assert active["release_id"] == release_id
+    assert active["models"]["points"]["artifact_sha256"] == candidate_hashes["points"]
+
+    second_proposal = next(
+        row["proposal_id"] for row in improvement.status()["proposals"]
+        if row["proposal_id"] != proposal_id
+    )
+    improvement.transition(
+        proposal_id=second_proposal, to_status="testing", evidence_path=testing,
+        actor="test", reason="segundo experimento", idempotency_key="release2:testing",
+    )
+    improvement.transition(
+        proposal_id=second_proposal, to_status="accepted", evidence_path=accepted,
+        actor="test", reason="acepta segundo", idempotency_key="release2:accepted",
+    )
+    second_hashes = {
+        name: _model_artifact(config, name, "1.3.0", f"{name}-candidate-2".encode())
+        for name in ("minutes", "points")
+    }
+    second_manifest = tmp_path / "release-2.json"
+    second_manifest.write_text(json.dumps({
+        "schema": "mova-model-bundle-candidate-v1",
+        "models": {name: {"version": "1.3.0", "artifact_sha256": digest}
+                   for name, digest in second_hashes.items()},
+    }), encoding="utf-8")
+    second = service.prepare(
+        proposal_id=second_proposal, manifest_path=second_manifest, actor="test",
+        reason="sella segundo", idempotency_key="release2:prepare",
+    )
+    second_id = second["release_id"]
+    service.shadow(
+        release_id=second_id, actor="test", reason="shadow segundo",
+        idempotency_key="release2:shadow",
+    )
+    service.promote(
+        release_id=second_id, actor="test", reason="promueve segundo",
+        idempotency_key="release2:promote",
+    )
+    service.rollback(
+        release_id=second_id, actor="test", reason="revierte al primero",
+        idempotency_key="release2:rollback",
+    )
+    active = resolve_active_model_bundle(config, db)
+    assert active["release_id"] == release_id
+    states = {row["release_id"]: row["status"]
+              for row in db.model_bundle_release_status()["releases"]}
+    assert states[release_id] == "promoted"
+    assert states[second_id] == "rolled_back"
+
+    rolled_back = service.rollback(
+        release_id=release_id, actor="test", reason="drill de rollback",
+        idempotency_key="release:rollback",
+    )
+    assert rolled_back["runtime_mutated"] is True
+    active = resolve_active_model_bundle(config, db)
+    assert active["release_id"] is None
+    assert active["models"]["minutes"]["artifact_sha256"] == baseline_hashes["minutes"]
+
+
+def test_model_release_rejects_tampered_artifact(tmp_path: Path):
+    db, _proposal_id = _persisted_review(tmp_path)
+    config = RuntimeConfig(artifact_root=tmp_path / "artifacts")
+    for name in ("minutes", "points"):
+        _model_artifact(config, name, "1.1.0", name.encode())
+    pointer = {"schema": "mova-active-model-bundle-v1", "release_id": "release_bad",
+               "models": {name: {"version": "1.1.0", "artifact_sha256": "0" * 64}
+                          for name in ("minutes", "points")}}
+    db.set_control("active_model_bundle", pointer, actor="test", reason="tamper fixture")
+    with pytest.raises(ValueError, match="hash de artefacto no coincide"):
+        resolve_active_model_bundle(config, db)
 
 
 def test_causal_reviewer_requires_settlement_and_final_scorecard(tmp_path: Path):

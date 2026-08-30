@@ -37,9 +37,11 @@ consulta ordinaria: `mova` y `/api/v1/status` son el contrato estable.
    [docs/operations/execution-preflight.md](../../../docs/operations/execution-preflight.md).
    `mova execute` conserva preflight, lease apply-once y verifier; el driver de clicks continúa
    separado y sujeto a controles.
-10. Para revisar propuestas, uso/costo o promover una hipótesis a memoria validada, lee
+10. Para revisar propuestas, uso/costo, memoria validada o releases de modelos, lee
     [docs/operations/continuous-improvement.md](../../../docs/operations/continuous-improvement.md).
-    `mova improve` nunca aplica la hipótesis al runtime. Antes de encolar trabajo agentic,
+    `mova improve transition` nunca aplica la hipótesis al runtime. El único aplicador soportado es
+    `mova improve release` para bundles `minutes+points`, tras shadow pareado; no sirve para código,
+    guardrails ni permisos. Antes de encolar trabajo agentic,
     consulta `mova cost report`; un `agent_budget_exceeded` es un bloqueo real, no se fuerza.
     `mova review auto` solo procede con settlement final y scorecard baseline; `not_ready` es el
     resultado correcto para una GW preliminar.
@@ -91,6 +93,9 @@ pendiente o `browser_writes=false`, limita el browser a login y lecturas.
   mostrar, copiar a Git ni incluir el archivo de autenticación en evidencias.
 - propuesta de mejora atascada: consultar `mova improve status`; no saltar `testing`, no aceptar
   sin evidencia/rollback y no confundir una lección aceptada con un despliegue.
+- release de modelo atascado: consultar `mova improve release status`; comprobar hashes, variante
+  shadow y scorecards pareados. Nunca editar `active_model_bundle` con `mova control` para saltar
+  el gate.
 - `host_probe WARN`: usar el wrapper del host; no montar Docker socket o D-Bus dentro del engine.
 - API FPL `FAIL`: conservar la última evidencia, declarar la pérdida de frescura y no forzar una
   corrida que parezca vigente.

@@ -18,9 +18,16 @@ proposed → testing → accepted
          ↘ rejected ↗
 ```
 
-`accepted` significa que la hipótesis se convirtió en memoria validada; no significa que un
-modelo, prompt, política o control haya sido desplegado. La aplicación real conserva su propio
-workflow de código, tests, shadow, aprobación y rollback.
+`accepted` significa que la hipótesis se convirtió en memoria validada; por sí sola no despliega
+un modelo, prompt, política o control. Para modelos existe un segundo lifecycle explícito:
+
+```text
+accepted lesson → prepared → shadow → promoted
+                              ↘ rolled_back ←┘
+```
+
+El release solo admite el bundle completo `minutes+points`. No ejecuta scripts, patches ni código
+arbitrario y no puede cambiar controles de autonomía o browser.
 
 El reviewer causal corre automáticamente después de `analytics reconcile` únicamente cuando
 existen settlement oficial `finished + data_checked` y scorecard baseline final. También puede
@@ -51,7 +58,43 @@ mova improve transition --proposal-id proposal_... --to testing \
 mova improve transition --proposal-id proposal_... --to accepted \
   --evidence /path/accepted.json --actor codex \
   --reason "cumple criterio versionado" --idempotency-key "improve:proposal:accepted:v1"
+
+mova improve release prepare --proposal-id proposal_... --manifest /path/release.json \
+  --actor codex --reason "sella candidato" --idempotency-key "release:proposal:prepare:v1"
+mova improve release shadow --release-id release_... --actor codex \
+  --reason "inicia inferencia paralela" --idempotency-key "release:proposal:shadow:v1"
+mova improve release status
+mova improve release promote --release-id release_... --actor codex \
+  --reason "gate multi-GW aprobado" --idempotency-key "release:proposal:promote:v1"
+mova improve release rollback --release-id release_... --actor codex \
+  --reason "degradación observada" --idempotency-key "release:proposal:rollback:v1"
 ```
+
+Manifest mínimo:
+
+```json
+{
+  "schema": "mova-model-bundle-candidate-v1",
+  "models": {
+    "minutes": {"version": "1.2.0", "artifact_sha256": "<64 hex>"},
+    "points": {"version": "1.2.0", "artifact_sha256": "<64 hex>"}
+  },
+  "promotion_policy": {"min_final_gameweeks": 3}
+}
+```
+
+Las rutas se derivan de `MOVA_ARTIFACT_ROOT/models`; el manifest no puede inyectar una ruta. En
+`prepare`, el servicio vuelve a calcular ambos hashes y captura el bundle activo como rollback.
+En `shadow`, `mova analytics project` agrega la variante
+`model_release_shadow:<release_id>` sin sustituir el baseline. `promote` exige al menos tres GWs
+finales pareadas, cero alertas de drift por defecto, MAE de puntos no mayor a 1,05× el baseline y
+delta de ECE p60 no mayor a 0,02. Los límites solo pueden ajustarse dentro de rangos acotados.
+
+La promoción escribe `active_model_bundle` en el ledger append-only. Analytics y el tick de
+decisión resuelven ese puntero y verifican los hashes antes de cargar modelos. El rollback restaura
+el bundle anterior y, cuando corresponde, la identidad del release que había sido superseded.
+Los endpoints read-only son `/api/v1/model-bundle-releases` y
+`/api/v1/model-bundle-release-events`.
 
 La evidencia `testing` exige `experiment_id` y `test_plan`. `accepted` exige además
 `evaluated_at`, `acceptance_passed=true`, métricas `baseline` y `candidate`, al menos una
@@ -83,6 +126,9 @@ La API `/api/v1/budget-reservations` expone las últimas reservas y Prometheus p
 
 - Una transición inválida no modifica la propuesta.
 - Una aceptación no ejecuta código ni cambia controles.
+- Un release sin propuesta aceptada, artefactos intactos o shadow aprobado falla cerrado.
+- Un candidato shadow que falla abre P2 y no invalida la proyección baseline.
+- Rollback desde `shadow` solo retira el candidato; desde `promoted` restaura el puntero anterior.
 - Para corregir una hipótesis, rechazarla y crear una propuesta nueva desde evidencia posterior;
   no sobrescribir evaluaciones.
 - No simular ni forzar el reviewer antes de `finished + data_checked` y scorecard baseline.

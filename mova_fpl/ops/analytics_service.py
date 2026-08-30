@@ -122,6 +122,14 @@ class AnalyticsService:
         if now >= deadline or observed >= deadline:
             return {"status": "skipped", "reason": "deadline_closed", "gw": gw}
 
+        from mova_fpl.ops.model_release import (
+            resolve_active_model_bundle, verify_model_bundle,
+        )
+
+        active_bundle = resolve_active_model_bundle(self.config, self.db)
+        active_minutes = active_bundle["models"]["minutes"]["version"]
+        active_points = active_bundle["models"]["points"]["version"]
+
         output = self.config.analytics_root / "projections" / self.config.season / f"gw{gw:02d}"
 
         def identity(signature: dict, variant: str, extra: dict | None = None) -> dict:
@@ -158,14 +166,14 @@ class AnalyticsService:
                         "variant": variant, "players": existing["player_count"]}
             projection = project_snapshot(
                 boot=boot, fixtures=fixtures, season=self.config.season, gw=gw,
-                minutes_version=self.config.analytics_minutes_version,
-                points_version=self.config.analytics_points_version,
+                minutes_version=active_minutes,
+                points_version=active_points,
                 market_context=market_context,
             )
             return persist(projection, variant, status, identity_)
 
         baseline_signature = projection_signature(
-            self.config.analytics_minutes_version, self.config.analytics_points_version,
+            active_minutes, active_points,
             market=False,
         )
         batches = [cached_or_project("baseline", "approved", baseline_signature)]
@@ -177,7 +185,7 @@ class AnalyticsService:
         if (market["artifact_id"] and quality["coverage_ratio"] == 1.0
                 and quality["minimum_bookmakers"] >= 5):
             shadow_signature = projection_signature(
-                self.config.analytics_minutes_version, self.config.analytics_points_version,
+                active_minutes, active_points,
                 market=True,
             )
             batches.append(cached_or_project(
@@ -189,9 +197,50 @@ class AnalyticsService:
             odds_status = "projected_shadow"
         else:
             odds_status = "unavailable_or_incomplete"
+        release_shadow = self.db.shadow_model_bundle_release()
+        model_release_status = "inactive"
+        if release_shadow:
+            release_id = release_shadow["release_id"]
+            variant = f"model_release_shadow:{release_id}"
+            try:
+                candidate = verify_model_bundle(
+                    self.config, release_shadow["candidate_manifest"]
+                )
+                candidate_minutes = candidate["models"]["minutes"]["version"]
+                candidate_points = candidate["models"]["points"]["version"]
+                signature = projection_signature(
+                    candidate_minutes, candidate_points, market=False
+                )
+                identity_ = identity(signature, variant, {"release_id": release_id})
+                existing = self.store.projection_by_key(_sha(identity_))
+                if existing:
+                    batch = {"status": "reused", "batch_id": existing["batch_id"],
+                             "variant": variant, "players": existing["player_count"]}
+                else:
+                    projection = project_snapshot(
+                        boot=boot, fixtures=fixtures, season=self.config.season, gw=gw,
+                        minutes_version=candidate_minutes,
+                        points_version=candidate_points,
+                    )
+                    batch = persist(projection, variant, "shadow", identity_)
+                batches.append(batch)
+                model_release_status = "projected_shadow"
+            except Exception as exc:  # el candidato nunca invalida el baseline productivo
+                self.db.open_incident_once(
+                    "P2", f"Shadow model release {release_id} falló",
+                    detail={"error_code": type(exc).__name__,
+                            "error": str(exc)[:1000], "gw": gw},
+                )
+                model_release_status = "failed_shadow"
         return {"status": "completed", "gw": gw, "batches": batches,
+                "active_model_bundle": {"release_id": active_bundle.get("release_id"),
+                                        "source": active_bundle["source"],
+                                        "minutes": active_minutes,
+                                        "points": active_points},
                 "market": {"status": odds_status, "quality": quality,
                            "artifact_id": market["artifact_id"]},
+                "model_release_shadow": {"status": model_release_status,
+                                         "release_id": (release_shadow or {}).get("release_id")},
                 "events_signal": "rejected_by_experiment"}
 
     def reconcile(self) -> dict:

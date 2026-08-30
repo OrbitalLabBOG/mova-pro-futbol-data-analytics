@@ -60,13 +60,15 @@ CycleManifest → modelos causales → matriz xP → MILP
   → Strategist + Critic acotados → Intervention shadow no aplicada
   → ExecutionPlan → apply-once ledger + verifier (driver de clicks desconectado)
   → settlement → review → proposal → test gate → lección validada
+  → model bundle sellado → shadow pareado → promote/rollback
 ```
 
 - `mova_fpl.engine.runner.decide()` es la única autoridad de decisión.
 - `mova execute` sella riesgo, diff, lease apply-once y verificación; el driver browser de clicks
   sigue desconectado y los controles efectivos bloquean escrituras.
-- `mova improve` registra experimentos, evaluaciones, lecciones y uso/costo; aceptar una lección
-  nunca modifica modelos, prompts, configuración ni políticas.
+- `mova improve` registra experimentos, evaluaciones, lecciones y uso/costo. Aceptar una lección
+  no modifica el runtime; `mova improve release` es el único camino que puede activar un bundle
+  `minutes+points`, después de hashes válidos, shadow multi-GW y gate determinista.
 - `mova cost report` muestra consumo y reservas contra límites por job, GW y mes; research y
   deliberación reservan capacidad atómicamente antes de entrar a la cola.
 - `mova review auto` atribuye causas después del scorecard final y exige recurrencia multi-GW

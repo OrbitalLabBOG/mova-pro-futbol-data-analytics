@@ -89,6 +89,13 @@ def test_analytics_cli_is_agent_operable():
     assert review.review_command == "gw"
     review_status = parser().parse_args(["review", "status", "--gw", "1"])
     assert review_status.review_command == "status" and review_status.gw == 1
+    release = parser().parse_args([
+        "improve", "release", "promote", "--release-id", "release_test",
+        "--actor", "codex", "--reason", "shadow aprobado",
+        "--idempotency-key", "release:test:promote",
+    ])
+    assert release.improve_command == "release"
+    assert release.release_command == "promote"
 
 
 def test_analytics_defaults_match_approved_decision_models():
@@ -148,6 +155,7 @@ def test_read_only_api_exposes_analytics_and_prometheus(tmp_path: Path):
             metrics = response.read().decode()
             assert "mova_analytics_service_up 1" in metrics
             assert "mova_agent_budget_within_limit" in metrics
+            assert "mova_model_bundle_pointer_present 0" in metrics
     finally:
         server.shutdown()
         server.server_close()
