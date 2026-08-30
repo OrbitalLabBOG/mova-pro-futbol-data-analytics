@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mova.local/contracts/execution-plan-v1.schema.json",
+  "title": "MOVA deterministic execution plan v1",
+  "type": "object",
+  "required": [
+    "schema", "policy_version", "plan_id", "content_sha256", "cycle_id",
+    "season", "gw", "created_at", "deadline_at", "idempotency_key",
+    "envelope", "action", "controls", "authorization", "execution_contract"
+  ],
+  "properties": {
+    "schema": {"const": "mova-execution-plan-v1"},
+    "policy_version": {"const": "autonomy-policy-1.0.0"},
+    "plan_id": {"type": "string", "pattern": "^execplan_[a-f0-9]{24}$"},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "cycle_id": {"type": "string"},
+    "season": {"type": "string"},
+    "gw": {"type": "integer", "minimum": 1, "maximum": 38},
+    "created_at": {"type": "string", "format": "date-time"},
+    "deadline_at": {"type": "string", "format": "date-time"},
+    "idempotency_key": {"type": "string", "minLength": 1},
+    "envelope": {
+      "type": "object",
+      "required": ["envelope_id", "decision_id", "content_sha256", "manifest_id", "manifest_sha256"],
+      "additionalProperties": true
+    },
+    "action": {
+      "type": "object",
+      "required": ["risk_class", "required_action_level", "exact_diff", "expected_post_decision_fingerprint"],
+      "properties": {
+        "risk_class": {"enum": ["R0", "R2", "R3"]},
+        "required_action_level": {"enum": ["A0", "A2", "A3"]},
+        "exact_diff": {"type": "object"}
+      },
+      "additionalProperties": true
+    },
+    "controls": {"type": "object"},
+    "authorization": {
+      "type": "object",
+      "required": ["status", "authorized", "requires_human_approval", "blocking_codes", "checks"],
+      "properties": {
+        "status": {"enum": ["blocked", "authorized", "noop"]},
+        "authorized": {"type": "boolean"},
+        "blocking_codes": {"type": "array", "items": {"type": "string"}},
+        "checks": {"type": "array", "minItems": 1}
+      },
+      "additionalProperties": true
+    },
+    "execution_contract": {"type": "object"}
+  },
+  "additionalProperties": true
+}

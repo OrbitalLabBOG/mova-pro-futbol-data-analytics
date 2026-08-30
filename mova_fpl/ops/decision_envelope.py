@@ -266,15 +266,18 @@ def build_envelope(*, bundle: dict, manifest: dict, manifest_id: str,
         plan_id=manifest.get("plan_id"), irreversible=irreversible,
     ))
 
+    # El envelope sólo decide madurez deportiva. La autoridad browser pertenece
+    # al preflight posterior; así un cambio explícito A0→A3 no invalida el solve
+    # ni permite que este módulo se autorice a sí mismo.
     controls_ok = (
-        controls.get("mode") == "shadow"
-        and controls.get("action_level") == "A0"
-        and controls.get("browser_writes") is False
-        and controls.get("kill_switch") is True
+        controls.get("mode") in {"shadow", "supervised", "guarded", "autonomous", "paused"}
+        and controls.get("action_level") in {"A0", "A1", "A2", "A3"}
+        and isinstance(controls.get("browser_writes"), bool)
+        and isinstance(controls.get("kill_switch"), bool)
     )
     checks.append(_check(
-        "SHADOW_CONTROLS_ENFORCED", controls_ok, "block",
-        "HV1-06A permanece sin autoridad de ejecución",
+        "EXECUTION_AUTHORITY_SEPARATED", controls_ok, "block",
+        "el envelope no concede autoridad; el executor aplica policy separada",
         controls=controls,
     ))
 

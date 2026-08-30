@@ -5,7 +5,7 @@ metadata:
   vertical: mova
   type: skill
   repo: mova-pro-futbol-data-analytics
-  updated: 2026-08-27
+  updated: 2026-08-30
 ---
 
 # MOVA FPL Operator
@@ -33,6 +33,9 @@ consulta ordinaria: `mova` y `/api/v1/status` son el contrato estable.
 8. Para activar un plan, sellar el manifiesto o investigar noticias, lee
    [docs/operations/strategic-research.md](../../../docs/operations/strategic-research.md).
    El brief de Codex es candidato hasta que el importador determinista lo valide.
+9. Para clasificar riesgo, sellar un diff o diagnosticar un bloqueo previo al browser, lee
+   [docs/operations/execution-preflight.md](../../../docs/operations/execution-preflight.md).
+   `mova execute preflight` persiste evidencia, pero no aplica cambios en FPL.
 
 `status` no prueba red ni muta estado. `doctor` hace checks acotados y un único GET público a
 FPL; usa `--no-network` cuando la ejecución deba ser hermética. Un `FAIL` requerido devuelve

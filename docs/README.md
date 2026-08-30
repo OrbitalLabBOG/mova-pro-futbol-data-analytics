@@ -1,7 +1,7 @@
 ---
 type: project
 name: "MOVA FPL — Technical Documentation"
-updated: 2026-08-27
+updated: 2026-08-30
 status: active
 tags: [mova, fpl, documentation]
 ---
@@ -16,6 +16,7 @@ tags: [mova, fpl, documentation]
 | Diagnosticar o desplegar el VPS | [Runbook VPS](operations/vps.md) |
 | Operar PostgreSQL shadow | [Runbook PostgreSQL](operations/postgres-shadow.md) |
 | Operar plan y research | [Contexto estratégico](operations/strategic-research.md) |
+| Auditar autonomía y preflight | [Execution preflight](operations/execution-preflight.md) |
 | Consultar la decisión GW1 | [Research y decisión](decisions/2026-27/gw01-research-and-decision.md) |
 | Auditar el experimento de odds/eventos | [Ablación causal](decisions/2026-27/odds-events-ablation.md) |
 | Implementar el harness | [Autonomous Harness v1](specs/fpl-autonomous-operator/10-autonomous-harness-v1.md) |

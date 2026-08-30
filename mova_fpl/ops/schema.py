@@ -703,6 +703,45 @@ MIGRATION_008 = (
     """,
 )
 
+MIGRATION_009 = (
+    """
+    CREATE TABLE IF NOT EXISTS execution_plans (
+        plan_id TEXT PRIMARY KEY,
+        job_id TEXT NOT NULL UNIQUE REFERENCES job_runs(job_id),
+        cycle_id TEXT NOT NULL REFERENCES gameweek_cycles(cycle_id),
+        envelope_id TEXT NOT NULL REFERENCES decision_envelopes(envelope_id),
+        decision_id TEXT NOT NULL REFERENCES decision_runs(decision_id),
+        policy_version TEXT NOT NULL,
+        risk_class TEXT NOT NULL CHECK (risk_class IN ('R0','R2','R3')),
+        required_action_level TEXT NOT NULL CHECK (required_action_level IN ('A0','A2','A3')),
+        status TEXT NOT NULL CHECK (status IN ('blocked','authorized','noop','superseded')),
+        idempotency_key TEXT NOT NULL UNIQUE,
+        content_sha256 TEXT NOT NULL UNIQUE,
+        artifact_path TEXT NOT NULL,
+        artifact_sha256 TEXT NOT NULL,
+        expected_pre_fingerprint TEXT,
+        expected_post_fingerprint TEXT NOT NULL,
+        deadline_at TEXT NOT NULL,
+        created_at TEXT NOT NULL
+    ) STRICT
+    """,
+    "CREATE INDEX IF NOT EXISTS idx_execution_plans_cycle_created "
+    "ON execution_plans(cycle_id, created_at DESC)",
+    """
+    CREATE TABLE IF NOT EXISTS execution_preflight_checks (
+        check_id TEXT PRIMARY KEY,
+        plan_id TEXT NOT NULL REFERENCES execution_plans(plan_id) ON DELETE CASCADE,
+        code TEXT NOT NULL,
+        severity TEXT NOT NULL CHECK (severity IN ('block')),
+        passed INTEGER NOT NULL CHECK (passed IN (0,1)),
+        summary TEXT NOT NULL,
+        detail_json TEXT NOT NULL CHECK (json_valid(detail_json)),
+        created_at TEXT NOT NULL,
+        UNIQUE (plan_id, code)
+    ) STRICT
+    """,
+)
+
 MIGRATIONS = (
     (1, "initial_ops_schema", MIGRATION_001),
     (2, "team_state_artifact_provenance", MIGRATION_002),
@@ -712,4 +751,5 @@ MIGRATIONS = (
     (6, "repair_imported_research_state", MIGRATION_006),
     (7, "typed_decision_envelopes", MIGRATION_007),
     (8, "bounded_strategy_deliberations", MIGRATION_008),
+    (9, "execution_plans_and_preflight", MIGRATION_009),
 )

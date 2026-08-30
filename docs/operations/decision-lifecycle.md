@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — lifecycle de decisión shadow"
 created: 2026-08-28
-updated: 2026-08-28
+updated: 2026-08-30
 tags: [mova, fpl, decision-envelope, validator, shadow]
 status: active
 ---
@@ -24,6 +24,7 @@ snapshot + team state + projection + plan + research
   → DecisionEnvelope blocked|staged
   → request sellada → Strategist → Critic → validación determinista
   → deliberation accepted|review_required|blocked + Intervention applied=false
+  → ExecutionPlan + deterministic preflight (sin apply)
   → decision_runs + players + candidates + checks + audit
 ```
 
@@ -73,7 +74,7 @@ El envelope queda `blocked` cuando falla cualquiera de estos checks:
 | `RESEARCH_CONFLICTS_CLEAR` | cero conflictos materiales abiertos |
 | `IRREVERSIBLE_ACTION_WINDOW` | transfer/hit/chip dentro de `refresh..execution_window` |
 | `SEASON_PLAN_BOUND` | una acción irreversible está ligada al plan activo |
-| `SHADOW_CONTROLS_ENFORCED` | `shadow/A0`, browser writes off y kill switch on |
+| `EXECUTION_AUTHORITY_SEPARATED` | el envelope no concede autoridad browser; policy posterior decide |
 
 `hits` significa cantidad de transferencias pagadas. La liquidación y el xP descuentan
 `hits × rules.hit_cost`; con la regla vigente, `1 hit = −4 puntos`.
@@ -95,6 +96,8 @@ El contrato está en
 [`decision-envelope-v1.schema.json`](../specs/fpl-autonomous-operator/contracts/decision-envelope-v1.schema.json).
 El output de los roles valida además contra
 [`decision-deliberation.schema.json`](../../deploy/research/decision-deliberation.schema.json).
+La frontera posterior está documentada en
+[policy de autonomía y preflight](execution-preflight.md).
 
 ## Estados y recuperación
 
