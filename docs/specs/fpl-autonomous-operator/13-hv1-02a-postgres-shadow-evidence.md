@@ -119,3 +119,10 @@ reversible del read-path quedó verificado en
 [HV1-02B](32-hv1-02b-read-cutover-drill-rollout.md). HV1-02 sigue abierto: exige tres ciclos
 independientes, backup cifrado off-host, roles LOGIN separados y aprobación explícita antes de
 proponer PostgreSQL como writer.
+
+## Corte HV1-02c — identidades runtime separadas (30 de agosto de 2026)
+
+La migración 019, secretos independientes y verificación efectiva de permisos están documentados
+en [HV1-02C](33-hv1-02c-postgres-role-separation-rollout.md). El drill candidato ya usa readonly;
+owner queda reservado a administración. Permanecen abiertos tres GWs, off-host Q-04 y aprobación
+explícita del writer.
