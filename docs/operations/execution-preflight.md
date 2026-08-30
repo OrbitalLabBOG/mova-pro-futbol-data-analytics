@@ -142,3 +142,17 @@ El snapshot accessibility vivo se valida por nombres accesibles y no por refs `@
 efímeros. El contrato requiere sesión autenticada, deadline, cuatro chips y 15 controles
 `Switch player`. Que el DOM pase este check sólo habilita el adapter a seguir validando; no
 concede autoridad.
+
+El probe estructurado se ejecuta desde el host y devuelve exclusivamente una allowlist
+sanitizada. No incluye cookies, storage, perfil ni HTML crudo:
+
+```bash
+deploy/bin/browser-session.sh probe | jq
+```
+
+Cruza los 15 picks del GET autenticado con los 15 slots visibles y sus nombres de jugador. La
+secuencia de lineup se calcula como swaps posicionales mínimos sobre
+`button[aria-label="Switch player"]`; antes de cualquier acción, el orden DOM debe ser idéntico al
+pre-state. Los selectores de capitán y vice todavía no superaron este contrato vivo: si cualquiera
+cambia, el UI action plan queda `blocked` con `CAPTAIN_CONTROL_UNPROVEN` o
+`VICE_CAPTAIN_CONTROL_UNPROVEN` y deshabilita el commit. Esta frontera es intencional.
