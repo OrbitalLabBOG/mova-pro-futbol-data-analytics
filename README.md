@@ -71,8 +71,9 @@ CycleManifest + memoria estratégica durable → modelos causales → matriz xP 
   decisiones de la GW en curso.
 - `mova execute` sella riesgo, diff, lease apply-once y verificación. `execute ui-plan` cruza
   pre-state, slots DOM y controles semánticos C/VC después del claim. El wrapper host materializa
-  únicamente capitanía R2; XI/banca, R3 y toda ejecución no ensayada fallan cerrados. Los controles
-  efectivos siguen bloqueando escrituras.
+  capitanía R2. El instruction stream de XI/banca está implementado y es verificable en modo de
+  contrato, pero su entrypoint productivo permanece cerrado hasta los rehearsals; R3 también
+  falla cerrado. Los controles efectivos siguen bloqueando escrituras.
 - `mova improve` registra experimentos, evaluaciones, lecciones y uso/costo. Aceptar una lección
   no modifica el runtime; `mova improve release` es el único camino que puede activar un bundle
   `minutes+points`, después de hashes válidos, shadow multi-GW y gate determinista.

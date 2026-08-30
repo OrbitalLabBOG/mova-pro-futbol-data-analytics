@@ -82,6 +82,28 @@ def _close_sheet_script() -> str:
     )
 
 
+def _switch_control_script(index: int) -> str:
+    return (
+        "(function(){const visible=n=>Boolean(n&&n.getClientRects().length);"
+        "const buttons=Array.from(document.querySelectorAll("
+        "'button[aria-label=\"Switch player\"]')).filter(visible);"
+        f"if(buttons.length!==15||!buttons[{index}])return false;"
+        f"buttons[{index}].click();return true;}})()"
+    )
+
+
+def _lineup_order_script(expected_slots: list[dict]) -> str:
+    expected = json.dumps(expected_slots, ensure_ascii=False)
+    return (
+        "(function(){const visible=n=>Boolean(n&&n.getClientRects().length);"
+        "const buttons=Array.from(document.querySelectorAll("
+        "'button[data-pitch-element=\"true\"]')).filter(visible);"
+        f"const expected={expected};if(buttons.length!==15||expected.length!==15)return false;"
+        "return expected.every((row,index)=>{const text=(buttons[index].innerText||"
+        "buttons[index].textContent||'').trim();return text.includes(row.web_name);});})()"
+    )
+
+
 def _sheet_closed_script() -> str:
     return (
         "(function(){const visible=n=>Boolean(n&&n.getClientRects().length);"
@@ -99,7 +121,18 @@ def execute(driver_plan: dict, browser: AgentBrowser) -> None:
         operation = step["operation"]
         sequence = int(step["sequence"])
         _emit("browser_driver_step_started", sequence=sequence, operation=operation)
-        if operation == "open_player_sheet":
+        if operation in {"select_swap_origin", "select_swap_target"}:
+            if browser.run(
+                "eval", _switch_control_script(int(step["switch_button_index"])),
+                capture=True,
+            ) != "true":
+                raise RuntimeError("FPL_SWITCH_CONTROL_MISSING")
+        elif operation == "verify_lineup_visual_order":
+            if browser.run(
+                "eval", _lineup_order_script(list(step["expected_slots"])), capture=True,
+            ) != "true":
+                raise RuntimeError("FPL_LINEUP_VISUAL_ORDER_MISMATCH")
+        elif operation == "open_player_sheet":
             if browser.run("eval", _open_player_script(int(step["player_button_index"])),
                            capture=True) != "true":
                 raise RuntimeError("FPL_PLAYER_CONTROL_MISSING")
@@ -156,12 +189,18 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--ui-plan", required=True)
     parser.add_argument("--validate-only", action="store_true")
+    parser.add_argument(
+        "--validate-lineup-contract-only", action="store_true",
+        help="compila swaps para tests/rehearsal sin iniciar browser ni promover producción",
+    )
     parser.add_argument("--session", default="mova-fpl")
     parser.add_argument("--cdp-port", type=int, default=9222)
     args = parser.parse_args()
     try:
         ui_plan = json.loads(Path(args.ui_plan).read_text(encoding="utf-8"))
-        driver_plan = compile_r2_driver_plan(ui_plan)
+        driver_plan = compile_r2_driver_plan(
+            ui_plan, lineup_rehearsed=args.validate_lineup_contract_only,
+        )
     except (OSError, ValueError, TypeError, KeyError, DriverPlanBlocked) as exc:
         _emit(
             "browser_driver_blocked",
@@ -169,7 +208,7 @@ def main() -> int:
             error_detail=str(exc)[:500],
         )
         return 2
-    if args.validate_only:
+    if args.validate_only or args.validate_lineup_contract_only:
         print(json.dumps(driver_plan, ensure_ascii=False, sort_keys=True))
         return 0
     browser = AgentBrowser(

@@ -166,7 +166,8 @@ def _dom_probe(order: list[int]) -> dict:
         "contract_version": "fpl-pick-team-a11y-2026.08.2",
         "status": "pass",
         "slots": [
-            {"position": position, "element": element, "label_matches": True}
+            {"position": position, "element": element,
+             "web_name": f"Player {element}", "label_matches": True}
             for position, element in enumerate(order, start=1)
         ],
     }
@@ -238,6 +239,10 @@ def test_r2_ui_plan_is_ready_when_only_lineup_changes(tmp_path: Path):
     )
     assert result["status"] == "ready"
     assert result["blocking_codes"] == []
+    assert result["lineup"]["swap_count"] == 4
+    assert result["lineup"]["target_slots"][10] == {
+        "position": 11, "element": 12, "web_name": "Player 12",
+    }
     assert result["commit"] == {
         "selector": "button", "accessible_name": "Confirm My Choices",
         "max_clicks": 1, "enabled": True,
@@ -294,6 +299,16 @@ def test_execution_service_compiles_ui_plan_only_after_claim(tmp_path: Path):
     )
     assert result["status"] == "ready"
     assert result["execution_id"] == prepared["execution_id"]
+
+
+def test_execution_status_exposes_browser_driver_capabilities(tmp_path: Path):
+    service, _, _ = _seed_authorized_service(tmp_path)
+    capabilities = service.status()["browser_driver"]
+    assert capabilities["captaincy"]["host_entrypoint_enabled"] is True
+    assert capabilities["captaincy"]["autonomy_promoted"] is False
+    assert capabilities["lineup"]["contract"] == "implemented"
+    assert capabilities["lineup"]["host_entrypoint_enabled"] is False
+    assert capabilities["r3"]["host_entrypoint_enabled"] is False
 
 
 def test_r2_ui_plan_rejects_dom_pre_state_drift(tmp_path: Path):

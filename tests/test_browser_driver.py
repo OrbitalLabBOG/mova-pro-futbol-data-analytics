@@ -3,16 +3,30 @@
 from __future__ import annotations
 
 import json
+import importlib.util
 import os
 import subprocess
 from pathlib import Path
 
 import pytest
 
-from mova_fpl.ops.browser_driver import DriverPlanBlocked, compile_r2_driver_plan
+from mova_fpl.ops.browser_driver import (
+    DriverPlanBlocked,
+    compile_r2_driver_plan,
+    driver_capabilities,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def _host_driver_module():
+    path = ROOT / "deploy/bin/browser-r2-driver.py"
+    spec = importlib.util.spec_from_file_location("mova_browser_r2_driver_test", path)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def _action(name: str, index: int) -> dict:
@@ -47,6 +61,32 @@ def _ui_plan(*, swaps: list[dict] | None = None) -> dict:
     }
 
 
+def _lineup_ui_plan() -> dict:
+    payload = _ui_plan(swaps=[
+        {
+            "sequence": 1, "operation": "switch_slots",
+            "first_position": 11, "second_position": 12,
+            "first_index": 10, "second_index": 11,
+            "selector": 'button[aria-label="Switch player"]',
+        },
+    ])
+    payload["captain"]["action"] = None
+    payload["vice_captain"]["action"] = None
+    payload["lineup"] = {
+        "from_order": list(range(1, 16)),
+        "to_order": list(range(1, 11)) + [12, 11, 13, 14, 15],
+        "swap_count": 1,
+        "target_slots": [
+            {"position": position, "element": element,
+             "web_name": f"Player {element}"}
+            for position, element in enumerate(
+                list(range(1, 11)) + [12, 11, 13, 14, 15], start=1,
+            )
+        ],
+    }
+    return payload
+
+
 def test_captaincy_driver_plan_is_ordered_and_apply_once():
     plan = compile_r2_driver_plan(_ui_plan())
     operations = [row["operation"] for row in plan["steps"]]
@@ -65,10 +105,50 @@ def test_captaincy_driver_plan_is_ordered_and_apply_once():
     assert plan["failure_policy"]["retry_after_commit"] is False
 
 
+def test_driver_capability_ledger_keeps_lineup_and_r3_unpromoted():
+    capabilities = driver_capabilities()
+    assert capabilities["captaincy"]["host_entrypoint_enabled"] is True
+    assert capabilities["captaincy"]["autonomy_promoted"] is False
+    assert capabilities["lineup"] == {
+        "contract": "implemented", "host_entrypoint_enabled": False,
+        "autonomy_promoted": False, "observed_rehearsals": 0,
+        "required_rehearsals": 3,
+    }
+    assert capabilities["r3"]["contract"] == "missing"
+
+
 def test_driver_rejects_lineup_swaps_until_live_rehearsal():
     with pytest.raises(DriverPlanBlocked) as caught:
         compile_r2_driver_plan(_ui_plan(swaps=[{"operation": "switch_slots"}]))
     assert caught.value.code == "LINEUP_DRIVER_UNPROVEN"
+
+
+def test_lineup_contract_compiles_typed_swaps_but_only_with_rehearsal_gate():
+    plan = compile_r2_driver_plan(_lineup_ui_plan(), lineup_rehearsed=True)
+    assert plan["scope"] == "lineup_and_captaincy"
+    assert [row["operation"] for row in plan["steps"]] == [
+        "select_swap_origin", "select_swap_target", "verify_lineup_visual_order",
+        "discover_commit_control", "commit_once", "wait_commit_settled",
+        "reload_pick_team",
+    ]
+    assert plan["steps"][0]["switch_button_index"] == 10
+    assert plan["steps"][1]["switch_button_index"] == 11
+    assert len(plan["steps"][2]["expected_slots"]) == 15
+    assert sum(row["operation"] == "commit_once" for row in plan["steps"]) == 1
+
+
+@pytest.mark.parametrize("tamper", ["selector", "replay", "label"])
+def test_lineup_contract_rejects_tampering(tamper):
+    payload = _lineup_ui_plan()
+    if tamper == "selector":
+        payload["swaps"][0]["selector"] = "button"
+    elif tamper == "replay":
+        payload["lineup"]["to_order"] = list(range(1, 16))
+    else:
+        payload["lineup"]["target_slots"][10]["web_name"] = ""
+    with pytest.raises(DriverPlanBlocked) as caught:
+        compile_r2_driver_plan(payload, lineup_rehearsed=True)
+    assert caught.value.code.startswith("LINEUP_")
 
 
 @pytest.mark.parametrize("change", [
@@ -108,6 +188,53 @@ def test_host_driver_validate_only_never_starts_browser(tmp_path: Path):
     payload = json.loads(result.stdout)
     assert payload["schema"] == "mova-browser-r2-driver-plan-v1"
     assert payload["execution_id"] == "execution_fixture"
+
+
+def test_host_driver_lineup_contract_mode_never_starts_browser(tmp_path: Path):
+    path = tmp_path / "ui-plan.json"
+    path.write_text(json.dumps(_lineup_ui_plan()), encoding="utf-8")
+    blocked = subprocess.run(
+        ["python3", "deploy/bin/browser-r2-driver.py", "--ui-plan", str(path),
+         "--validate-only"], cwd=ROOT, text=True, capture_output=True,
+    )
+    assert blocked.returncode == 2
+    assert "LINEUP_DRIVER_UNPROVEN" in blocked.stdout
+    validated = subprocess.run(
+        ["python3", "deploy/bin/browser-r2-driver.py", "--ui-plan", str(path),
+         "--validate-lineup-contract-only"], cwd=ROOT, text=True,
+        capture_output=True, check=True,
+    )
+    payload = json.loads(validated.stdout)
+    assert payload["scope"] == "lineup_and_captaincy"
+    assert payload["contract_version"] == "fpl-r2-host-driver-2026.08.2"
+
+
+def test_lineup_instruction_stream_materializes_against_fake_browser():
+    module = _host_driver_module()
+    plan = compile_r2_driver_plan(_lineup_ui_plan(), lineup_rehearsed=True)
+
+    class FakeBrowser:
+        def __init__(self):
+            self.calls = []
+
+        def run(self, *args, capture=False):
+            self.calls.append((args, capture))
+            if args[:2] == ("get", "url"):
+                return "https://fantasy.premierleague.com/en/my-team"
+            if args[0] == "eval" and "querySelectorAll('button')" in args[1]:
+                return "1"
+            if args[0] == "eval":
+                return "true"
+            return ""
+
+    browser = FakeBrowser()
+    module.execute(plan, browser)
+    eval_scripts = [args[1] for args, _ in browser.calls if args[0] == "eval"]
+    assert sum('Switch player' in script for script in eval_scripts) == 2
+    assert sum('data-pitch-element' in script for script in eval_scripts) == 1
+    assert sum(args[0] == "reload" for args, _ in browser.calls) == 1
+    assert sum(args[0] == "find" and args[-1] == "--exact"
+               for args, _ in browser.calls) == 1
 
 
 def test_host_orchestrator_keeps_claim_secret_in_pipe_and_cleans_up():
