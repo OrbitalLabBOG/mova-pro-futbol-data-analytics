@@ -144,6 +144,8 @@ def test_status_reads_sanitized_postgres_parity_without_database_secret(tmp_path
     assert payload["overall_status"] == "healthy"
     assert payload["storage"]["operational_writer"] == "sqlite"
     assert payload["storage"]["postgres_role"] == "shadow"
+    assert payload["storage"]["postgres"]["migration_count"] == 16
+    assert payload["storage"]["postgres"]["import_fresh"] is True
     assert payload["storage"]["postgres"]["read_parity"]["status"] == "pass"
 
 

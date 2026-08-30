@@ -165,6 +165,16 @@ def status(config: PostgresConfig) -> dict:
 def prometheus(state: dict) -> str:
     parity = state.get("read_parity") or {}
     parity_status = str(parity.get("status") or "missing")
+    finished_at = (state.get("latest_import") or {}).get("finished_at")
+    import_age = -1
+    if finished_at:
+        try:
+            parsed = datetime.fromisoformat(str(finished_at).replace("Z", "+00:00"))
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=timezone.utc)
+            import_age = max(0, int((datetime.now(timezone.utc) - parsed).total_seconds()))
+        except ValueError:
+            pass
     return "\n".join([
         "# HELP mova_postgres_shadow_up PostgreSQL shadow availability.",
         "# TYPE mova_postgres_shadow_up gauge",
@@ -182,6 +192,9 @@ def prometheus(state: dict) -> str:
         f'{int(parity.get("aggregate_tables") or 0)}',
         f'mova_postgres_read_parity_tables{{mode="failed"}} '
         f'{int(parity.get("failed_tables") or 0)}',
+        "# HELP mova_postgres_import_age_seconds Age of latest completed shadow import.",
+        "# TYPE mova_postgres_import_age_seconds gauge",
+        f"mova_postgres_import_age_seconds {import_age}",
         "",
     ])
 

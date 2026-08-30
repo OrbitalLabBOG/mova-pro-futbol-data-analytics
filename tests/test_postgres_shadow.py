@@ -218,6 +218,7 @@ def test_postgres_parity_metrics_are_explicit() -> None:
     assert 'mova_postgres_read_parity_status{status="pass"} 1' in metrics
     assert 'mova_postgres_read_parity_tables{mode="exact"} 48' in metrics
     assert 'mova_postgres_read_parity_tables{mode="aggregate"} 1' in metrics
+    assert "mova_postgres_import_age_seconds -1" in metrics
 
 
 def test_postgres_status_artifact_is_sanitized_and_readable(tmp_path: Path) -> None:
