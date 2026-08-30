@@ -59,6 +59,7 @@ PM de construcción del proyecto.
 | [23-hv1-08-causal-reviewer-rollout.md](23-hv1-08-causal-reviewer-rollout.md) | Reviewer causal post-settlement y propuestas multi-GW |
 | [24-hv1-08-model-release-rollout.md](24-hv1-08-model-release-rollout.md) | Release de modelos con hashes, shadow pareado, promoción y rollback |
 | [25-hv1-03b-model-ops-rollout.md](25-hv1-03b-model-ops-rollout.md) | Facade train/predict/explain/evaluate y candidato fail-closed |
+| [26-hv1-05b-sealed-research-rollout.md](26-hv1-05b-sealed-research-rollout.md) | Fetch/locator sellado, coverage explícita y rollout v2 fail-closed |
 | [contracts/](contracts/) | JSON Schemas máquina para request, result y signal |
 | [decisions/](decisions/) | decisiones arquitectónicas propuestas |
 | [workpacks/](workpacks/) | unidades de implementación y criterios todavía pendientes |

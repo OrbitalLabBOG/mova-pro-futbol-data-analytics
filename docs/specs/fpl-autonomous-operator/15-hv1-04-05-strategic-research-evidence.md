@@ -156,3 +156,8 @@ condicionada a evidencia multi-GW, no como infraestructura preventiva.
 
 La siguiente iteración es HV1-06: Strategist + Critic + Validator y `DecisionEnvelope`, todavía
 en shadow y sin autoridad de ejecución.
+
+> Nota de vigencia (30 de agosto): el hardening diferido de fetch/locator ya fue implementado.
+> Su rollout, fallos reales y gate todavía parcial están documentados en
+> [HV1-05B](26-hv1-05b-sealed-research-rollout.md). Las afirmaciones anteriores describen el
+> corte histórico HV1-04/05A.
