@@ -52,7 +52,23 @@ curl -s http://127.0.0.1:8787/metrics | grep '^mova_execution_'
 Un rehearsal sólo cuenta si un artifact `mova-browser-rehearsal-evidence-v1` está dentro de
 `MOVA_ARTIFACT_ROOT`, reproduce su `content_sha256`, referencia artifacts fuente existentes con
 hash físico correcto, usa la versión vigente del contrato y declara `writes_attempted=false`.
-Se registra así:
+El camino preferido para capitanía sella directamente el probe sanitizado generado por el host:
+
+```bash
+deploy/bin/browser-session.sh probe \
+  > /var/lib/mova-fpl/artifacts/browser-probes/2026-27-gw03-captaincy.json
+mova execute rehearsal-captaincy-probe \
+  --source /var/lib/mova-fpl/artifacts/browser-probes/2026-27-gw03-captaincy.json \
+  --cycle-id 2026-27-gw03 \
+  --actor mova-operator \
+  --reason "probe semántico read-only conciliado" \
+  --idempotency-key "rehearsal:2026-27:gw03:captaincy:r2-2026.08.2"
+deploy/bin/browser-session.sh stop
+```
+
+El importador aplica una allowlist estricta al JSON del probe, exige sesión, 15 picks/controles,
+orden posicional, once player sheets y selecciones C/VC conciliadas con el GET privado. Abrir y
+cerrar esos sheets no cambia el equipo ni pulsa `Save`. Para otras fuentes ya selladas se usa:
 
 ```bash
 mova execute rehearsal \

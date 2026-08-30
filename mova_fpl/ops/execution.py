@@ -35,6 +35,8 @@ POLICY_VERSION = "autonomy-policy-1.0.0"
 MAX_ENVELOPE_BYTES = 5 * 1024 * 1024
 MAX_REHEARSAL_BYTES = 1024 * 1024
 REHEARSAL_SCHEMA = "mova-browser-rehearsal-evidence-v1"
+CAPTAINCY_PROBE_SCHEMA = "mova-browser-dom-probe-v1"
+CAPTAINCY_PROBE_CONTRACT = "fpl-pick-team-a11y-2026.08.2"
 REHEARSAL_CONTRACTS = {
     "captaincy": DRIVER_CONTRACT_VERSION,
     "lineup": DRIVER_CONTRACT_VERSION,
@@ -420,6 +422,98 @@ class ExecutionService:
             observed_at=observed_at.isoformat(),
         )
         return {**result, "browser_writes_performed": False}
+
+    def record_captaincy_probe(self, *, source_file: str | Path, cycle_id: str,
+                                actor: str, reason: str, idempotency_key: str,
+                                now: datetime | None = None) -> dict:
+        """Seal a live sanitized pick-team probe and import it as captaincy evidence."""
+        source = Path(source_file)
+        if not source.is_file():
+            raise FileNotFoundError(source)
+        resolved = source.resolve()
+        root = self.config.artifact_root.resolve()
+        if not resolved.is_relative_to(root):
+            raise ValueError("probe de capitanía fuera del artifact root autorizado")
+        if source.stat().st_size > MAX_REHEARSAL_BYTES:
+            raise ValueError("probe de capitanía excede 1 MiB")
+        probe = json.loads(source.read_text(encoding="utf-8"))
+        if set(probe) != {
+            "schema", "contract_version", "observed_at", "team_id", "status",
+            "checks", "slots", "captain_controls",
+        }:
+            raise ValueError("campos del probe de capitanía no coinciden con la allowlist")
+        if (probe.get("schema") != CAPTAINCY_PROBE_SCHEMA
+                or probe.get("contract_version") != CAPTAINCY_PROBE_CONTRACT):
+            raise ValueError("contrato del probe de capitanía no soportado")
+        if int(probe.get("team_id") or 0) != self.config.team_id:
+            raise ValueError("team_id del probe de capitanía no coincide")
+        checks = probe.get("checks")
+        captain = probe.get("captain_controls") or {}
+        captain_checks = captain.get("checks")
+        if (set(captain) != {"status", "selector_strategy", "checks", "starters"}
+                or set(checks or {}) != {
+                    "signed_in", "fifteen_api_picks", "fifteen_player_controls",
+                    "fifteen_switch_controls", "positional_order_matches", "captain_controls",
+                }
+                or set(captain_checks or {}) != {
+                    "eleven_starter_sheets", "semantic_checkboxes", "one_captain",
+                    "one_vice_captain", "captain_matches_api", "vice_captain_matches_api",
+                }
+                or probe.get("status") != "pass" or not isinstance(checks, dict) or not checks
+                or not all(type(value) is bool and value for value in checks.values())
+                or captain.get("status") != "pass"
+                or not isinstance(captain_checks, dict) or not captain_checks
+                or not all(type(value) is bool and value for value in captain_checks.values())):
+            raise ValueError("probe de capitanía no supera todos los checks read-only")
+        starters = captain.get("starters")
+        if (not isinstance(starters, list) or len(starters) != 11
+                or any(set(row) != {
+                    "position", "element", "player_button_index", "captain_checkbox",
+                    "vice_captain_checkbox", "captain_checked", "vice_captain_checked",
+                } for row in starters)
+                or sum(row.get("captain_checked") is True for row in starters) != 1
+                or sum(row.get("vice_captain_checked") is True for row in starters) != 1):
+            raise ValueError("selecciones semánticas del probe de capitanía son inválidas")
+        observed = _parse_time(probe.get("observed_at"))
+        current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+        if observed > current + timedelta(minutes=5):
+            raise ValueError("observed_at del probe de capitanía está en el futuro")
+        sealed_checks = [
+            {"code": f"pick_team:{code}", "passed": value}
+            for code, value in sorted(checks.items())
+        ] + [
+            {"code": f"captaincy:{code}", "passed": value}
+            for code, value in sorted(captain_checks.items())
+        ]
+        evidence = {
+            "schema": REHEARSAL_SCHEMA,
+            "cycle_id": cycle_id,
+            "capability": "captaincy",
+            "contract_version": DRIVER_CONTRACT_VERSION,
+            "observed_at": observed.isoformat(),
+            "mode": "read_only_probe",
+            "status": "passed",
+            "writes_attempted": False,
+            "checks": sealed_checks,
+            "source_artifacts": [{
+                "path": str(resolved.relative_to(root)),
+                "sha256": self._file_sha(source),
+            }],
+        }
+        evidence["content_sha256"] = sha256_json(evidence)
+        target = (self.config.artifact_root / "browser-rehearsals" / cycle_id
+                  / f"captaincy-{evidence['content_sha256'][:16]}.json")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        temporary = target.with_suffix(".json.tmp")
+        temporary.write_text(
+            json.dumps(evidence, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        os.replace(temporary, target)
+        return self.record_rehearsal(
+            evidence_file=target, actor=actor, reason=reason,
+            idempotency_key=idempotency_key, now=current,
+        )
 
     def _load_plan(self, row: dict) -> dict:
         artifact = Path(str(row["artifact_path"]))
