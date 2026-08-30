@@ -22,7 +22,7 @@ PM de construcción del proyecto.
 
 | Campo | Valor |
 | --- | --- |
-| Versión | 0.9 |
+| Versión | 0.10 |
 | Estado | `active-shadow` |
 | Riesgo | alto: cuenta externa, deadlines irreversibles y sesión autenticada |
 | Business owner | Julián Zuluaga |
@@ -61,6 +61,7 @@ PM de construcción del proyecto.
 | [25-hv1-03b-model-ops-rollout.md](25-hv1-03b-model-ops-rollout.md) | Facade train/predict/explain/evaluate y candidato fail-closed |
 | [26-hv1-05b-sealed-research-rollout.md](26-hv1-05b-sealed-research-rollout.md) | Fetch/locator sellado, coverage explícita y rollout v2 fail-closed |
 | [27-hv1-09-autonomy-readiness-rollout.md](27-hv1-09-autonomy-readiness-rollout.md) | Gate único de elegibilidad técnica, blockers y evidencia de promoción |
+| [28-hv1-07e-r3-contract-rollout.md](28-hv1-07e-r3-contract-rollout.md) | Contrato R3 tipado, probe vivo read-only y driver de validación sin entrypoint productivo |
 | [contracts/](contracts/) | JSON Schemas máquina para request, result y signal |
 | [decisions/](decisions/) | decisiones arquitectónicas propuestas |
 | [workpacks/](workpacks/) | unidades de implementación y criterios todavía pendientes |

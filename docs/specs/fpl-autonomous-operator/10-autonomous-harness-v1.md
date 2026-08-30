@@ -383,7 +383,7 @@ no borra evidencia previa y nunca amplía autonomía.
 | HV1-05 🟡 | news/research con fetch/locator sellado, cobertura y utilidad; faltan 3 GWs medidos | ciclos reales | HV1-02/03 |
 | HV1-06A ✅ | bundle máquina, `do_nothing`, alternativa, Validator y DecisionEnvelope | completado | HV1-03/04/05 |
 | HV1-06B ✅ | Strategist + Critic acotados sobre `Intervention`, sin autoridad directa | completado | HV1-06A |
-| HV1-07 🟡 | policy/apply-once/verifier; C/VC habilitable y lineup tipado pero gated; faltan rehearsals y R3 | 4–8 h | HV1-06 |
+| HV1-07 🟡 | policy/apply-once/verifier; R2/R3 tipados pero sin promoción; faltan entrypoints/rehearsals | 3–6 h | HV1-06 |
 | HV1-08 ✅ | reviewer causal, budgets, propuesta→lección y release de modelos con shadow/rollback | completado | HV1-03/06 |
 | HV1-09 ✅ | gate consolidado de readiness, elegibilidad técnica, API/CLI y métricas | completado | HV1-02/03/05/07 |
 
@@ -530,7 +530,18 @@ swaps contra el pre-state, reproduce el target de quince elementos y exige los q
 visuales antes del commit único. El modo `--validate-lineup-contract-only` no puede iniciar el
 browser; el entrypoint normal conserva `LINEUP_DRIVER_UNPROVEN`. `mova execute status` publica
 capabilities sin secretos: captaincy no tiene autonomía promovida, lineup está implementado pero
-deshabilitado con `0/3` rehearsals y R3 permanece ausente.
+deshabilitado con `0/3` rehearsals.
+
+HV1-07E completa el contrato R3 sin activarlo. El command bundle liga transferencias, hits, chip,
+XI/C/VC y fingerprints; el compilador vuelve a conciliar plantilla autenticada, identidad de cada
+target, cuota posicional, precios de venta/compra, banco, transfers libres, hits y disponibilidad
+del chip. El probe `/en/transfers` es read-only y usa una allowlist numérica de targets; no exporta
+sesión, HTML ni storage. El driver host sólo ofrece `--validate-contract-only`: produce un stream
+finito con review exacto, una confirmación irreversible máxima y cero retries después del commit,
+pero deliberadamente no contiene `AgentBrowser` ni entrypoint de ejecución. Capabilities reporta
+R3 `implemented`, `host_entrypoint_enabled=false`, `0/3`; readiness pasa de `blocked` a `pending`
+sin cambiar `shadow/A0`, kill switch, compliance ni browser writes. Evidencia:
+[HV1-07E R3](28-hv1-07e-r3-contract-rollout.md).
 
 ### Corte de mejora continua fail-closed — 30 de agosto de 2026
 
