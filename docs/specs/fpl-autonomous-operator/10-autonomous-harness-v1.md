@@ -500,6 +500,7 @@ validadas. `mova improve` y `/api/v1/improvement` exponen propuestas, memoria y 
 obliga `proposed → testing → accepted|rejected`, valida evidencia mínima y registra auditoría;
 aceptar no aplica código, modelo, prompt, política ni control. El reviewer causal automático y
 los presupuestos duros continúan pendientes, por lo que HV1-08 permanece parcial.
+Evidencia: [HV1-08 mejora continua](21-hv1-08-improvement-rollout.md).
 
 ## 11. Definition of Done del harness v1
 

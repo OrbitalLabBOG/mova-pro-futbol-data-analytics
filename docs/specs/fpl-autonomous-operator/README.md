@@ -54,6 +54,7 @@ PM de construcción del proyecto.
 | [16-hv1-06a-decision-envelope-evidence.md](16-hv1-06a-decision-envelope-evidence.md) | bundle de tres candidatos, Validator determinista y primer envelope vivo |
 | [17-hv1-06b-deliberation-evidence.md](17-hv1-06b-deliberation-evidence.md) | Strategist + Critic acotados, intervención shadow y replay vivo corregido |
 | [20-hv1-07d-dom-probe.md](20-hv1-07d-dom-probe.md) | DOM probe autenticado y planner R2 fail-closed |
+| [21-hv1-08-improvement-rollout.md](21-hv1-08-improvement-rollout.md) | Gate propuesta→lección, costos explícitos y reconciliación de incidentes |
 | [contracts/](contracts/) | JSON Schemas máquina para request, result y signal |
 | [decisions/](decisions/) | decisiones arquitectónicas propuestas |
 | [workpacks/](workpacks/) | unidades de implementación y criterios todavía pendientes |
