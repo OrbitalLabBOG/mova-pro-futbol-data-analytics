@@ -132,7 +132,9 @@
     },
     "usage": {
       "type": "object", "additionalProperties": false,
-      "required": ["model", "input_tokens", "output_tokens"],
+      "required": [
+        "model", "input_tokens", "output_tokens", "duration_ms", "search_requests"
+      ],
       "properties": {
         "model": {"type": "string"},
         "input_tokens": {"type": ["integer", "null"], "minimum": 0},

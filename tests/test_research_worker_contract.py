@@ -69,6 +69,8 @@ def test_schema_de_salida_es_json_valido_y_cerrado():
         if isinstance(node, dict):
             if "const" in node or "enum" in node:
                 assert "type" in node
+            if node.get("type") == "object" and node.get("additionalProperties") is False:
+                assert set(node.get("required", [])) == set(node.get("properties", {}))
             for child in node.values():
                 assert_typed(child)
         elif isinstance(node, list):
