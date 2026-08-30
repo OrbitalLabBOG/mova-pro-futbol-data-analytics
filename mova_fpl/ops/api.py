@@ -235,6 +235,18 @@ def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
                         "application/json; charset=utf-8",
                     )
                     return
+                if parsed.path == "/api/v1/postgres-cutover-drills":
+                    raw = parse_qs(parsed.query).get("limit", ["20"])[0]
+                    limit = max(1, min(int(raw), 100))
+                    self._send(
+                        HTTPStatus.OK,
+                        _json_bytes({"schema": "mova-postgres-cutover-drills-v1",
+                                     "items": db.recent_jobs_by_type(
+                                         "postgres_read_cutover_drill", limit
+                                     ), "limit": limit}),
+                        "application/json; charset=utf-8",
+                    )
+                    return
                 routes = {
                     "/api/v1/status": None,
                     "/api/v1/strategy": "strategic_status",
