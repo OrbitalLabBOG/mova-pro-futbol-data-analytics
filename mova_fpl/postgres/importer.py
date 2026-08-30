@@ -523,7 +523,16 @@ def sync_shadow(config: ImportConfig) -> dict:
         reason="scheduled weekly per-cycle PostgreSQL dual-read parity",
         idempotency_key=identity["idempotency_key"],
     )
-    return {**result, "sync": identity}
+    read_parity = result.get("read_parity")
+    if not read_parity:
+        read_parity = (postgres_status(config).get("read_parity") or {})
+    return {
+        "status": result.get("status"),
+        "import_status": result.get("import_status") or result.get("status"),
+        "import_run_id": result.get("import_run_id"),
+        "read_parity": read_parity,
+        "sync": identity,
+    }
 
 
 def _verify_manifest(artifact_path: Path, expected_sha256: str) -> dict:
