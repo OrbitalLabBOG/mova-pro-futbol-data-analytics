@@ -17,7 +17,13 @@ from mova_fpl.postgres.read_repository import (
     compare_exact,
     summary,
 )
-from mova_fpl.postgres.store import MIGRATIONS, latest_version, prometheus
+from mova_fpl.postgres.store import (
+    MIGRATIONS,
+    latest_version,
+    prometheus,
+    publish_status,
+    read_status,
+)
 
 
 def _sqlite(path: Path, statement: str = "create table sample(id integer primary key)") -> None:
@@ -212,3 +218,32 @@ def test_postgres_parity_metrics_are_explicit() -> None:
     assert 'mova_postgres_read_parity_status{status="pass"} 1' in metrics
     assert 'mova_postgres_read_parity_tables{mode="exact"} 48' in metrics
     assert 'mova_postgres_read_parity_tables{mode="aggregate"} 1' in metrics
+
+
+def test_postgres_status_artifact_is_sanitized_and_readable(tmp_path: Path) -> None:
+    config = RuntimeConfig(artifact_root=tmp_path / "artifacts")
+    payload = publish_status(config, {
+        "status": "healthy",
+        "server_version": "17.11",
+        "migrations": [{"version": 1}],
+        "latest_import": {
+            "import_run_id": "pgimport_test", "status": "completed",
+            "git_sha": "abc123", "started_at": "2026-08-30T19:00:00Z",
+            "finished_at": "2026-08-30T19:00:20Z",
+            "actor": "must-not-leak", "reason": "must-not-leak",
+            "artifact_path": "/private/path",
+        },
+        "read_parity": {"status": "pass", "checked_tables": 49},
+        "writer": "sqlite",
+        "postgres_role": "shadow",
+    })
+
+    assert payload["latest_import"] == {
+        "import_run_id": "pgimport_test", "status": "completed",
+        "git_sha": "abc123", "started_at": "2026-08-30T19:00:00Z",
+        "finished_at": "2026-08-30T19:00:20Z",
+    }
+    assert read_status(config) == payload
+    raw = (config.artifact_root / "postgres-shadow-status.json").read_text()
+    assert "must-not-leak" not in raw
+    assert "/private/path" not in raw

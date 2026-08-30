@@ -294,11 +294,12 @@ def build_status(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
         "postgres_role": "unavailable",
         "postgres": {"status": "unavailable", "read_parity": {"status": "missing"}},
     }
-    if config.postgres_credential_file.is_file():
-        try:
-            from mova_fpl.postgres.store import status as postgres_status
+    try:
+        from mova_fpl.postgres.store import read_status, status as postgres_status
 
-            pg = postgres_status(config)
+        pg = (postgres_status(config) if config.postgres_credential_file.is_file()
+              else read_status(config))
+        if pg.get("status") != "unavailable":
             latest_import = pg.get("latest_import") or {}
             storage = {
                 "operational_writer": pg.get("writer") or "sqlite",
@@ -313,8 +314,8 @@ def build_status(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
                     "read_parity": pg.get("read_parity"),
                 },
             }
-        except Exception as exc:  # noqa: BLE001 - status SQLite sigue disponible
-            storage["postgres"]["error"] = type(exc).__name__
+    except Exception as exc:  # noqa: BLE001 - status SQLite sigue disponible
+        storage["postgres"]["error"] = type(exc).__name__
 
     severity = "healthy"
     reasons: list[str] = []

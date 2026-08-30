@@ -23,7 +23,12 @@ from mova_fpl.postgres.read_repository import (
     compare_exact,
     summary as parity_summary,
 )
-from mova_fpl.postgres.store import PostgresConfig, connect
+from mova_fpl.postgres.store import (
+    PostgresConfig,
+    connect,
+    publish_status,
+    status as postgres_status,
+)
 
 
 class ImportConfig(PostgresConfig, Protocol):
@@ -469,7 +474,12 @@ def import_shadow(config: ImportConfig, *, actor: str, reason: str,
                 "error_detail=%s where import_run_id=%s",
                 (str(exc)[:2000], import_run_id),
             )
+            try:
+                publish_status(config, postgres_status(config))
+            except Exception:  # el fallo original conserva precedencia
+                pass
             raise
+    publish_status(config, postgres_status(config))
     return {"status": "completed", "import_run_id": import_run_id,
             "artifact_path": str(artifact_path), "checks": checks,
             "invariants": invariants, "read_parity": read_parity}
@@ -591,7 +601,7 @@ def verify_shadow(config: ImportConfig) -> dict:
               and len(parity_checks) == len(TABLES)
               and all(item["status"] == "pass" for item in count_checks)
               and all(item["status"] == "pass" for item in parity_checks))
-    return {
+    payload = {
         "status": "pass" if passed else "fail",
         "import_run_id": latest["import_run_id"],
         "writer": "sqlite",
@@ -601,3 +611,5 @@ def verify_shadow(config: ImportConfig) -> dict:
         "tables": count_checks,
         "read_parity": {**read_parity, "checks": parity_checks},
     }
+    publish_status(config, postgres_status(config))
+    return payload

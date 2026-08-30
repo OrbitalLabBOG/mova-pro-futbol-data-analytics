@@ -7,6 +7,9 @@ crear y verificar el store candidato de HV1-02.
 from __future__ import annotations
 
 import hashlib
+import json
+import os
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Protocol
 
@@ -26,6 +29,10 @@ class PostgresConfig(Protocol):
     postgres_credential_file: Path
 
     def validate_postgres(self) -> None: ...
+
+
+class PostgresStatusConfig(PostgresConfig, Protocol):
+    artifact_root: Path
 
 
 def _password(config: PostgresConfig) -> str:
@@ -177,3 +184,54 @@ def prometheus(state: dict) -> str:
         f'{int(parity.get("failed_tables") or 0)}',
         "",
     ])
+
+
+def _status_path(config: PostgresStatusConfig) -> Path:
+    return config.artifact_root / "postgres-shadow-status.json"
+
+
+def publish_status(config: PostgresStatusConfig, state: dict) -> dict:
+    latest = state.get("latest_import") or {}
+    payload = {
+        "schema": "mova-postgres-shadow-status-v1",
+        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "status": state.get("status"),
+        "server_version": state.get("server_version"),
+        "migration_count": len(state.get("migrations") or []),
+        "latest_import": {key: latest.get(key) for key in (
+            "import_run_id", "status", "git_sha", "started_at", "finished_at"
+        )},
+        "read_parity": state.get("read_parity"),
+        "writer": state.get("writer"),
+        "postgres_role": state.get("postgres_role"),
+    }
+    path = _status_path(config)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    tmp.write_text(
+        json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str) + "\n",
+        encoding="utf-8",
+    )
+    tmp.chmod(0o640)
+    tmp.replace(path)
+    return payload
+
+
+def read_status(config: PostgresStatusConfig) -> dict:
+    path = _status_path(config)
+    unavailable = {
+        "schema": "mova-postgres-shadow-status-v1",
+        "status": "unavailable",
+        "read_parity": {"status": "missing"},
+        "writer": "sqlite",
+        "postgres_role": "unavailable",
+    }
+    try:
+        if not path.is_file() or path.stat().st_size > 256 * 1024:
+            return unavailable
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return unavailable
+    if not isinstance(payload, dict) or payload.get("schema") != unavailable["schema"]:
+        return unavailable
+    return payload
