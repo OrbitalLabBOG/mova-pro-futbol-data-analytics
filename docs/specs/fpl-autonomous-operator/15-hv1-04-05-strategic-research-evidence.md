@@ -2,7 +2,7 @@
 type: evidence
 name: "HV1-04/05 — Contexto estratégico e investigación aislada"
 created: 2026-08-28
-updated: 2026-08-28
+updated: 2026-08-30
 tags: [mova, fpl, hv1-04, hv1-05, strategy, research, codex, vps]
 status: deployed-shadow
 ---
@@ -121,10 +121,33 @@ acepta la equivalencia entre SHA corto de checkout y SHA completo de imagen.
 | Timers | siete timers activos y habilitados |
 | API research | 2 runs imported, 20 documentos, 20 señales aceptadas, 2 conflictos abiertos |
 
+## Cierre de memoria longitudinal HV1-04 — 30 de agosto
+
+La revisión funcional `3367536`, desplegada en el VPS como `7c557f6`, añadió la migración SQLite
+`014` y PostgreSQL `016`. `mova strategy prepare` selló para GW3 el manifest
+`manifest_04be90ca521146618b0227580f211a3f`, revisión 14, con memoria
+`mova-strategic-memory-v1` `ready/valid` y SHA-256
+`08699a419c993fcacbb35b7b0fff8ae7665dd23704a26dbb7e8e5bc11d913496`.
+
+La fotografía incluyó dos decisiones selladas —GW1 y GW2—, un review post-settlement de GW1 y
+cero lecciones, porque todavía no existe ninguna promovida como `validated`. Verificó
+`prior_gameweeks_only=true`, `validated_lessons_only=true` y `chat_history_allowed=false`; por
+tanto, ninguna decisión de GW3 ni memoria conversacional entró al contexto. Strategist y Critic
+reciben este mismo objeto desde el manifest inmutable.
+
+El import shadow reconcilió 22/22 manifests y todas las tablas declaradas; `postgres verify`
+quedó `pass`. Prometheus publicó memoria `ready=1`, dos decisiones, un review, cero lecciones y
+plan revision 1. El backup auditado quedó en
+`/opt/orbital/backups/mova-fpl/20260830T194020Z`. La suite local terminó con
+`949 passed, 1 skipped, 79 deselected`; en vivo, doctor terminó 22 PASS, 0 WARN, 0 FAIL, siete
+timers activos, cero unidades fallidas y el browser apagado. Los controles no cambiaron:
+`shadow/A0`, `kill_switch=true`, `browser_writes=false`, compliance pendiente.
+
 ## Estado siguiente
 
-HV1-04 queda parcial: plan, team state y manifest están operativos; falta memoria longitudinal
-de estrategia. HV1-05 queda como servicio funcional en shadow, focalizado y probado con un ciclo
+HV1-04 queda cerrado: team state, plan versionado y memoria estratégica longitudinal forman un
+contrato durable, acotado y observable. HV1-05 queda como servicio funcional en shadow,
+focalizado y probado con un ciclo
 real; permanece parcial hasta medir cobertura, precisión y costo a través de varios gameweeks.
 
 El hardening `search → fetch independiente → locator/excerpt sellado` no está implementado: los
