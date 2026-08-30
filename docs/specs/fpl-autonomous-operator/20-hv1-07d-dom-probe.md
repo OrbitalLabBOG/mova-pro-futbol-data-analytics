@@ -37,6 +37,10 @@ quince slots. No confirmó aún controles semánticos estables para capitán y v
 - suite completa: 898 passed, 1 skipped, 79 deselected;
 - `node --check`, compileall y `docker compose config`: aprobados.
 
+La espera del host usa la condición funcional `my-team + 15 switch controls`; no espera
+`domcontentloaded`/`networkidle`, porque recursos publicitarios de terceros pueden mantener esos
+eventos abiertos aunque la superficie FPL ya esté lista.
+
 El estado de esta acta pasa a `verified` únicamente después de construir la imagen browser en el
 VPS, ejecutar un probe autenticado `pass`, revisar que el payload sea sanitizado y volver a
 detener el browser. Eso tampoco equivale a un rehearsal de escritura.
