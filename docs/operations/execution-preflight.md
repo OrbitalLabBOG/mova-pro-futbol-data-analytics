@@ -10,8 +10,9 @@ status: active
 # Policy de autonomía y preflight
 
 HV1-07A/B introduce la frontera durable previa al browser. HV1-07C añade la reserva apply-once,
-lease, límite de ambigüedad y verificador post-reload. El driver de clicks permanece desconectado
-en producción: los controles A0 y el contenedor browser conservan las escrituras apagadas.
+lease, límite de ambigüedad y verificador post-reload. HV1-07D.3 conecta un driver host acotado a
+capitanía con fail-closed estricto. Los controles A0 y el contenedor browser conservan las
+escrituras apagadas; instalar el driver no concede autoridad.
 
 ## Contrato
 
@@ -93,7 +94,7 @@ printf '%s' "$CLAIM_TOKEN" | mova execute finalize \
 ```
 
 No guardar `CLAIM_TOKEN` en shell history, logs, artifacts ni PostgreSQL. El wrapper productivo
-deberá mantenerlo en memoria/pipe y borrar los JSON temporales sanitizados al terminar.
+lo mantiene en memoria/pipe y borra los JSON temporales sanitizados al terminar.
 
 `prepare` vuelve a validar deadline, estado privado, incidentes y controles. Además sella un
 `browser-command-bundle-v1` con exactamente siete operaciones R2: pre-read, XI/banca, C, VC,
@@ -110,11 +111,28 @@ mova execute ui-plan \
   --dom-probe /run/mova/dom-probe.json
 ```
 
-El resultado sólo puede ser `ready` o `blocked`; todavía no hace clicks. Liga cada cambio de C/VC
-al índice posicional del jugador, abre su player sheet por
+El resultado sólo puede ser `ready` o `blocked`; compilarlo todavía no hace clicks. Liga cada
+cambio de C/VC al índice posicional del jugador, abre su player sheet por
 `button[data-pitch-element="true"]` y exige un checkbox con nombre accesible exacto `Captain` o
 `Vice Captain`. El `begin` debe ocurrir después de esta compilación y de una última revalidación;
 a partir de `applying`, cualquier incertidumbre se clasifica `ambiguous` y no se reintenta.
+
+El wrapper host es el único entrypoint del driver promovido:
+
+```bash
+deploy/bin/execute-r2-browser.sh \
+  --execution-id execution_... \
+  --actor mova-executor \
+  --reason "capitanía R2 promovida"
+```
+
+El wrapper reclama una sola vez, recoge pre-state/probe en un directorio `0700`, valida el plan
+antes de `begin`, cruza explícitamente la frontera `applying`, ejecuta y finaliza contra un GET
+privado posterior al reload. Antes de `begin`, el error termina `failed`; desde `begin`, termina
+`ambiguous`, abre la reconciliación existente y nunca reintenta el commit. El proceso browser no
+recibe el claim token. Sólo C/VC está compilado: cualquier swap produce
+`LINEUP_DRIVER_UNPROVEN`. El nombre accesible del commit debe aparecer exactamente una vez tras
+el cambio local; si no, `FPL_COMMIT_CONTROL_UNPROVEN` detiene la ejecución.
 
 ## Riesgo y autoridad
 
@@ -173,4 +191,5 @@ pre-state. El probe abre y cierra, sin seleccionar, los player sheets de los onc
 comprueba los checkboxes semánticos C/VC. También exige exactamente un capitán y un vice, ambos
 idénticos al GET privado. Si falta cualquier control o existe deriva, el UI action plan queda
 `blocked` con `CAPTAIN_CONTROL_UNPROVEN` o `VICE_CAPTAIN_CONTROL_UNPROVEN`, o falla cerrado por
-pre-state mismatch. El commit continúa desconectado hasta que exista driver host y rehearsals.
+pre-state mismatch. El driver host puede materializar C/VC, pero sigue sin promoción operativa:
+faltan los rehearsals controlados del commit y de lineup, y A0 bloquea el entrypoint real.
