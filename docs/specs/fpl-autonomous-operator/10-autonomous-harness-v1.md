@@ -375,7 +375,7 @@ no borra evidencia previa y nunca amplía autonomía.
 | --- | --- | ---: | --- |
 | HV1-00 ✅ | reset del repo, archivo de legado, packaging y CI hermético | completado | baseline actual |
 | HV1-01 ✅ | contrato `mova`, status/doctor y skill del operador | completado | HV1-00 |
-| HV1-02 🟡 | PostgreSQL shadow, import y verificación; luego adapter/cutover | 10–14 h | HV1-01 |
+| HV1-02 🟡 | shadow + dual-read + sync verificado; faltan 3 ciclos, off-host y cutover/rollback | 4–8 h + ciclos | HV1-01 |
 | HV1-03a ✅ | collector/data quality autónomo | completado | HV1-02 |
 | HV1-03b ✅ | proyección/evaluación uniforme, scorecard, drift y servicio desplegado | completado | HV1-03a |
 | HV1-04 ✅ | team state, season plan y memoria estratégica longitudinal sellada | completado | HV1-02 |
@@ -551,6 +551,19 @@ analytics + decisión verifican sus hashes antes de inferencia. Rollback restaur
 provenance del release previo. Este corte cierra HV1-08 sin ampliar `A0`, permisos de browser ni
 autoridad de auto-modificación de código.
 Evidencia: [HV1-08 release controlado de modelos](24-hv1-08-model-release-rollout.md).
+
+### Corte dual-read PostgreSQL — 30 de agosto de 2026
+
+El repository adapter compara contenido normalizado entre SQLite writer y PostgreSQL shadow.
+Cada import audita 48 tablas exactas y el histórico canónico mediante invariantes agregados;
+conteos iguales sin hashes ya no constituyen paridad. `mova postgres sync` usa una identidad
+estable por ciclo/semana y el timer diario reutiliza el mismo import.
+
+La API no recibe el secreto ni la red de datos: consume un artefacto de health sanitizado y
+fail-closed con ocho días de frescura. El primer ciclo produjo 49/49 checks, restore temporal
+exitoso y diagnóstico limpio. Esto completa dual-read, no el cambio de writer: HV1-02 permanece
+abierto hasta acumular tres ciclos, asegurar backup off-host y ensayar cutover/rollback.
+Evidencia: [HV1-02 PostgreSQL shadow y dual-read](13-hv1-02a-postgres-shadow-evidence.md).
 
 ## 11. Definition of Done del harness v1
 

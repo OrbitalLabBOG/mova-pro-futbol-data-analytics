@@ -2,7 +2,7 @@
 type: evidence
 name: "HV1-02a — PostgreSQL shadow"
 created: 2026-08-23
-updated: 2026-08-23
+updated: 2026-08-30
 tags: [mova, fpl, hv1-02, postgres, evidence]
 status: deployed-shadow
 ---
@@ -88,8 +88,32 @@ No se ejecutaron transferencias, chips ni escrituras browser durante el rollout.
 
 ## Estado del workpack
 
-HV1-02a queda completo como fundación shadow. HV1-02 permanece abierto: el siguiente corte es
-el repository adapter/dual-read y la acumulación de ciclos comparables antes de considerar
-cualquier cambio de writer. El registro formal de releases de datasets/modelos también sigue
-pendiente; los cuatro artefactos actuales están presentes y sanos, pero todavía no están
-registrados en `model_releases`.
+HV1-02a queda completo como fundación shadow. El registro de releases de modelos se resolvió en
+HV1-08; el cierre del writer continúa bajo HV1-02.
+
+## Corte HV1-02b — dual-read verificable (30 de agosto de 2026)
+
+El adapter de lectura normaliza valores SQLite/PostgreSQL, ordena por contenido y compara SHA-256
+sin depender del orden físico. Cubre 48 tablas con igualdad exacta y el histórico canónico de
+253.890 filas mediante contrato de invariantes agregados. Cada import persiste los checks en
+`mova_meta.import_table_checks`; `verify` los recalcula desde los artefactos fuente y PostgreSQL.
+
+El sync programado deriva una identidad estable por ciclo/semana y publica un estado sanitizado
+para API/Prometheus sin entregar credenciales ni red PostgreSQL al contenedor API. La frescura
+máxima es de ocho días y cualquier ausencia, antigüedad o mismatch degrada el health.
+
+| Evidencia VPS | Resultado |
+| --- | --- |
+| Revisión desplegada | `9951136b` |
+| Import idempotente | `pgimport_b5d0fbf4c62c47629f9c57d06592fe25`; segunda ejecución `reused` |
+| Paridad | 49/49; 48 exactas, 1 agregada, 0 fallos |
+| Fingerprint dual-read | `b7311c67a2e56ef86d04d773ca17bc8cfa92ba71889e6dbe4158e0acc87d5c7d` |
+| Scheduler | timer diario persistente; máximo un import por ciclo/semana |
+| Backup fresco | `20260830T200735Z`; 31.213.157 bytes |
+| Restore drill | restauró y eliminó `mova_restore_20260830200805_3172660` |
+| Suite hermética | `962 passed, 1 skipped, 79 deselected` |
+| Diagnóstico | 22 PASS, 0 WARN, 0 FAIL; 8 timers; 0 units failed |
+
+Los controles permanecen `shadow/A0`, kill switch activo y browser writes apagado. HV1-02 sigue
+abierto: exige tres ciclos independientes, backup off-host, credenciales de aplicación y un
+ensayo explícito de cutover/rollback antes de proponer PostgreSQL como writer.
