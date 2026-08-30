@@ -2,9 +2,9 @@
 type: workpack
 name: "WP-004 — Investigación y señales de noticias"
 created: 2026-08-21
-updated: 2026-08-22
+updated: 2026-08-30
 tags: [mova, fpl, workpack, research, llm]
-status: proposed
+status: active-shadow
 ---
 
 # WP-004 — Investigación y señales de noticias
@@ -58,3 +58,17 @@ HN-4 Codex specialist → HN-5 shadow completo`.
 
 La implementación exacta está en
 [../09-agent-harness-implementation-spec.md](../09-agent-harness-implementation-spec.md).
+
+## Estado verificado
+
+Researcher v2 ya opera one-shot en producción shadow con search, fetch independiente,
+locator sellado, cobertura exacta, budget y cuarentena fail-closed. El worker normaliza
+únicamente estructura: elimina duplicados y referencias sin documento, degrada cobertura
+sin evidencia y fija `generated_at` con su reloj confiable; nunca crea evidencia ni relaja
+el importador.
+
+La corrida viva GW3 `research_d7350894755bf88acebe3f579f217841` importó 12 documentos,
+11 verificados, 13 señales, 10 aceptadas y cero conflictos. La cobertura fue parcial:
+18/25 sujetos y 15/25 con evidencia verificada. El workpack continúa `active-shadow` hasta
+cumplir tres GWs v2 con los umbrales de promoción; no se debe presentar esta corrida como
+gate aprobado.

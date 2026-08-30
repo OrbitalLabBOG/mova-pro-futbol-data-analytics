@@ -447,6 +447,16 @@ candidatos; CLI, API, PostgreSQL shadow y Prometheus exponen cobertura, evidenci
 utilidad. Los briefs v1 se conservan como legacy no medido. HV1-05 continúa parcial únicamente
 hasta reunir tres GWs v2 que satisfagan el gate; este corte no promueve señales ni ejecución.
 
+El rollout vivo GW3 añadió una frontera de reparación estructural antes del importador: URLs
+canónicas, documentos únicos, referencias internas válidas, cobertura exacta y timestamp de
+finalización tomado del reloj del worker. Dos rechazos reales —referencia huérfana y
+`generated_at` futuro generado por el modelo— se conservaron en cuarentena y se corrigieron con
+nuevas solicitudes auditadas, sin editar resultados. La tercera corrida importó 12 documentos,
+11 verificados, 10 señales aceptadas y cero conflictos, con cobertura parcial 72% y evidencia 60%.
+El DecisionEnvelope posterior incluyó esas señales; Strategist prefirió la alternativa sin chip y
+Critic la bloqueó por settlement/ventana irreversible. La intervención quedó `shadow_only` y no
+aplicada. Evidencia: [HV1-05C](29-hv1-05c-agent-recovery-rollout.md).
+
 ### Corte memoria estratégica longitudinal — 30 de agosto de 2026
 
 SQLite migration `014` y PostgreSQL migration `016` añaden `memory_summary` al
