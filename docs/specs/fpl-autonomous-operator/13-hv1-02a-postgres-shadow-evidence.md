@@ -114,6 +114,8 @@ máxima es de ocho días y cualquier ausencia, antigüedad o mismatch degrada el
 | Suite hermética | `962 passed, 1 skipped, 79 deselected` |
 | Diagnóstico | 22 PASS, 0 WARN, 0 FAIL; 8 timers; 0 units failed |
 
-Los controles permanecen `shadow/A0`, kill switch activo y browser writes apagado. HV1-02 sigue
-abierto: exige tres ciclos independientes, backup off-host, credenciales de aplicación y un
-ensayo explícito de cutover/rollback antes de proponer PostgreSQL como writer.
+Los controles permanecen `shadow/A0`, kill switch activo y browser writes apagado. El ensayo
+reversible del read-path quedó verificado en
+[HV1-02B](32-hv1-02b-read-cutover-drill-rollout.md). HV1-02 sigue abierto: exige tres ciclos
+independientes, backup cifrado off-host, roles LOGIN separados y aprobación explícita antes de
+proponer PostgreSQL como writer.

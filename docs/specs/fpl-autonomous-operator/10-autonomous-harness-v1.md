@@ -621,6 +621,7 @@ críticos y exige hashes idénticos antes y después. Una caída o deriva Postgr
 dejar el selector fuera de SQLite; API, audit, artifacts y Prometheus muestran el resultado. Esto
 cubre el ensayo reversible de lectura, no el cambio del writer ni los gates de tres GWs, backup
 off-host y aprobación explícita.
+Evidencia: [HV1-02B cutover/rollback reversible de lectura](32-hv1-02b-read-cutover-drill-rollout.md).
 
 ### Corte autonomy readiness consolidado — 30 de agosto de 2026
 
