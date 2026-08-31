@@ -1,0 +1,17 @@
+[Unit]
+Description=MOVA FPL encrypted off-host operational database backup
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+WorkingDirectory=@@REPO_DIR@@
+EnvironmentFile=-/etc/mova-fpl/deploy.env
+ExecStart=/usr/bin/flock -n /run/lock/mova-fpl-offsite-backup.lock @@REPO_DIR@@/deploy/bin/offsite-backup.sh
+TimeoutStartSec=1800
+Nice=10
+PrivateTmp=true
+NoNewPrivileges=true

@@ -148,3 +148,17 @@ def test_scorecard_prometheus_has_bounded_labels():
     assert 'mova_harness_scorecard_status{status="pass"} 1' in metrics
     assert "mova_harness_readiness_pass_ratio 1.0000" in metrics
     assert "cycle_gw3" not in metrics
+
+
+def test_off_host_backup_and_restore_are_durability_gates():
+    report = evaluate_scorecard(
+        readiness=_readiness(
+            _gate("OFF_HOST_BACKUP_CONFIGURED"),
+            _gate("OFF_HOST_RESTORE_PROVEN", "pending"),
+        ),
+        cost_report=_cost(), improvement=_improvement(),
+        deliberation={"status": "accepted"},
+    )
+    durability = next(row for row in report["dimensions"] if row["name"] == "durability")
+    assert durability["status"] == "pending"
+    assert [item["code"] for item in durability["unmet"]] == ["OFF_HOST_RESTORE_PROVEN"]

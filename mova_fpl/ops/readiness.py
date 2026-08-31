@@ -41,6 +41,7 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
                        alert_channel_evidence: dict | None = None,
                        alert_channel_live_evidence: dict | None = None,
                        host_recovery_evidence: dict | None = None,
+                       offsite_restore_evidence: dict | None = None,
                        snapshot_rejection_evidence: dict | None = None,
                        browser_failure_evidence: dict | None = None,
                        generated_at: str | None = None) -> dict:
@@ -114,6 +115,19 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
         host_recovery.get("status") == "completed"
         and int(host_recovery.get("completed") or 0)
         == int(host_recovery.get("required") or 5)
+    )
+    offsite = (operator_status.get("host") or {}).get("offsite_backup") or {
+        "status": "unconfigured", "configured": False, "encrypted": False,
+        "external": False, "timer_active": False,
+    }
+    offsite_restore = offsite_restore_evidence or {
+        "status": "missing", "checks": 0, "passed": 0,
+    }
+    offsite_restore_passed = (
+        offsite_restore.get("status") == "completed"
+        and int(offsite_restore.get("checks") or 0) >= 8
+        and int(offsite_restore.get("passed") or 0)
+        == int(offsite_restore.get("checks") or 0)
     )
     snapshot_rejection = snapshot_rejection_evidence or {
         "status": "missing", "checks": 0, "passed": 0,
@@ -406,6 +420,31 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
             source="mova_meta.import_runs",
             next_action="acumular imports completos de tres GWs; reintentos de una GW no cuentan",
         ),
+        _gate(
+            "OFF_HOST_BACKUP_CONFIGURED",
+            "pass" if offsite.get("configured") is True
+            and offsite.get("encrypted") is True and offsite.get("external") is True
+            and offsite.get("timer_active") is True else
+            "blocked" if offsite.get("status") == "invalid" else "pending",
+            "backup cifrado off-host con owner y timer explícitos",
+            levels=(), observed=offsite,
+            required={"configured": True, "encrypted": True, "external": True,
+                      "timer_active": True},
+            source="host_probe.offsite_backup",
+            next_action="elegir destino/owner y desplegar restic con credenciales root-only",
+        ),
+        _gate(
+            "OFF_HOST_RESTORE_PROVEN",
+            "pass" if offsite_restore_passed else
+            "blocked" if offsite_restore.get("status") == "failed" else "pending",
+            "restore desde copia off-host cifrada verificado sin mutar runtime",
+            levels=(), observed={key: offsite_restore.get(key) for key in (
+                "job_id", "status", "checks", "passed", "finished_at", "output_sha256",
+            )},
+            required={"status": "completed", "checks": ">=8", "all_passed": True},
+            source="job_runs.host_recovery_drill:offsite_restore",
+            next_action="ejecutar restore drill desde el destino off-host autorizado",
+        ),
     ]
 
     eligible = "A0"
@@ -476,6 +515,7 @@ def build_readiness(config: RuntimeConfig, db: OpsDB, *,
             {"status": "missing", "delivered": False, "external_calls": 0}
         ),
         host_recovery_evidence=db.host_recovery_drill_status(),
+        offsite_restore_evidence=db.offsite_restore_drill_status(),
         snapshot_rejection_evidence=db.snapshot_rejection_drill_status(),
         browser_failure_evidence=db.browser_failure_drill_status(),
         generated_at=current.astimezone(timezone.utc).isoformat(timespec="seconds"),

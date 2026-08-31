@@ -365,6 +365,7 @@ def parser() -> argparse.ArgumentParser:
         "--scenario", choices=(
             "api_recovery", "postgres_recovery", "browser_recovery", "combined_recovery",
             "reboot_recovery",
+            "offsite_restore",
         ),
         default="api_recovery",
     )
@@ -376,6 +377,7 @@ def parser() -> argparse.ArgumentParser:
         "--scenario", choices=(
             "api_recovery", "postgres_recovery", "browser_recovery", "combined_recovery",
             "reboot_recovery",
+            "offsite_restore",
         ),
         default="api_recovery",
     )

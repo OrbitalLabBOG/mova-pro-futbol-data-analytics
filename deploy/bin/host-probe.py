@@ -4,8 +4,10 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
+import re
 import subprocess
 import tempfile
 import urllib.error
@@ -24,6 +26,9 @@ UNITS = (
     "mova-fpl-research.timer",
     "mova-fpl-postgres-sync.timer",
 )
+OFFSITE_CONFIG_KEYS = {
+    "schema", "enabled", "provider", "owner", "repository_file", "password_file",
+}
 
 
 def command(argv: list[str], *, cwd: Path | None = None) -> tuple[int, str]:
@@ -97,12 +102,102 @@ def revision(repo: Path, service: str | None = None) -> str | None:
     return output or None if code == 0 else None
 
 
+def offsite_backup_status(
+    path: Path, *, credential_root: Path = Path("/etc/mova-fpl"), required_uid: int = 0,
+) -> dict:
+    """Expose only sanitized readiness for the optional encrypted off-host target."""
+    base = {
+        "schema": "mova-offsite-backup-status-v1", "configured": False,
+        "encrypted": False, "external": False, "provider": None, "owner": None,
+        "destination_fingerprint": None, "timer_active": False,
+    }
+    if not path.exists():
+        return {**base, "status": "unconfigured", "reasons": ["config_missing"]}
+    reasons: list[str] = []
+    try:
+        stat = path.lstat()
+        if path.is_symlink() or not path.is_file() or stat.st_size > 16_384:
+            raise ValueError("unsafe_config")
+        if stat.st_uid != required_uid:
+            reasons.append("config_owner_invalid")
+        if stat.st_mode & 0o077:
+            reasons.append("config_permissions_too_broad")
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(payload, dict) or set(payload) != OFFSITE_CONFIG_KEYS:
+            raise ValueError("invalid_config_schema")
+        if payload.get("schema") != "mova-offsite-backup-v1":
+            reasons.append("invalid_config_schema")
+        if payload.get("enabled") is not True:
+            reasons.append("not_enabled")
+        provider = str(payload.get("provider") or "")
+        if provider != "restic":
+            reasons.append("unsupported_provider")
+        owner = str(payload.get("owner") or "")
+        if not re.fullmatch(r"[A-Za-z0-9_.@-]{2,80}", owner):
+            reasons.append("invalid_owner")
+
+        repository_descriptor: bytes | None = None
+        for name in ("repository_file", "password_file"):
+            candidate = Path(str(payload.get(name) or ""))
+            if (not candidate.is_absolute() or candidate.parent != credential_root
+                    or candidate.is_symlink() or not candidate.is_file()):
+                reasons.append(f"{name}_missing_or_unsafe")
+                continue
+            candidate_stat = candidate.stat()
+            if (candidate_stat.st_uid != required_uid or candidate_stat.st_size > 4096
+                    or candidate_stat.st_mode & 0o077):
+                reasons.append(f"{name}_owner_permissions_or_size_invalid")
+                continue
+            if name == "repository_file":
+                repository_descriptor = candidate.read_bytes().strip()
+
+        remote_prefixes = (
+            b"azure:", b"b2:", b"gs:", b"rclone:", b"rest:", b"s3:",
+            b"sftp:", b"swift:",
+        )
+        external = bool(
+            repository_descriptor
+            and repository_descriptor.lower().startswith(remote_prefixes)
+        )
+        if repository_descriptor is not None and not external:
+            reasons.append("repository_not_external")
+
+        timer = unit_state("mova-fpl-offsite-backup.timer")
+        timer_active = (
+            timer.get("load_state") == "loaded"
+            and timer.get("active_state") == "active"
+            and timer.get("unit_file_state") == "enabled"
+        )
+        if not timer_active:
+            reasons.append("timer_not_active")
+        fingerprint = None
+        if repository_descriptor is not None and external:
+            fingerprint = hashlib.sha256(
+                provider.encode() + b"\0" + repository_descriptor
+            ).hexdigest()[:16]
+        configured = not reasons
+        return {
+            **base, "status": "configured" if configured else "invalid",
+            "configured": configured, "encrypted": provider == "restic",
+            "external": external, "provider": provider or None, "owner": owner or None,
+            "destination_fingerprint": fingerprint, "timer_active": timer_active,
+            "reasons": reasons,
+        }
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+        code = str(exc) if str(exc) in {"unsafe_config", "invalid_config_schema"} else type(exc).__name__
+        return {**base, "status": "invalid", "reasons": [code]}
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--browser-profile", type=Path, required=True)
     parser.add_argument("--api-port", type=int, default=8787)
+    parser.add_argument(
+        "--offsite-config", type=Path,
+        default=Path("/etc/mova-fpl/offsite-backup.json"),
+    )
     args = parser.parse_args()
 
     services = compose_services(args.repo)
@@ -138,6 +233,7 @@ def main() -> int:
                 )
             ).is_dir(),
         },
+        "offsite_backup": offsite_backup_status(args.offsite_config),
         "revisions": {"checkout": revision(args.repo), "image": revision(args.repo, "api")},
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)

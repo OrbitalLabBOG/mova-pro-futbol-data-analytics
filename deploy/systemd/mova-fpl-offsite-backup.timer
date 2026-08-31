@@ -1,0 +1,11 @@
+[Unit]
+Description=Schedule MOVA FPL encrypted off-host backup
+
+[Timer]
+OnCalendar=*-*-* 05:17:00 America/Bogota
+RandomizedDelaySec=600s
+Persistent=true
+Unit=mova-fpl-offsite-backup.service
+
+[Install]
+WantedBy=timers.target

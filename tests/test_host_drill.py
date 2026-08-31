@@ -120,6 +120,22 @@ def _reboot_payload() -> dict:
     }
 
 
+def _offsite_restore_payload() -> dict:
+    return {
+        "schema": "mova-host-drill-v1", "scenario": "offsite_restore",
+        "status": "pass", "started_at": "2026-08-31T05:00:00Z",
+        "finished_at": "2026-08-31T05:20:00Z", "downtime_seconds": 1200,
+        "revision": "abc1234",
+        "checks": {
+            "encrypted_backup_present": True, "remote_snapshot_downloaded": True,
+            "manifest_verified": True, "sqlite_restore_passed": True,
+            "postgres_restore_passed": True, "artifacts_hashes_match": True,
+            "credentials_not_persisted": True, "runtime_unchanged": True,
+        },
+        "fpl_state_mutated": False,
+    }
+
+
 def test_host_drill_import_is_allowlisted_atomic_and_consumes_inbox(tmp_path: Path):
     config = RuntimeConfig(artifact_root=tmp_path / "artifacts", git_sha="abc1234")
     source = config.artifact_root / "host-drills" / "inbox" / "api.json"
@@ -258,6 +274,28 @@ def test_reboot_host_drill_rejects_drift_timeout_or_invalid_contract(mutation):
         validate(
             {**_reboot_payload(), **mutation}, expected_revision="abc1234",
             expected_scenario="reboot_recovery",
+        )
+
+
+def test_offsite_restore_drill_is_allowlisted_and_time_bounded():
+    result = validate(
+        _offsite_restore_payload(), expected_revision="abc1234",
+        expected_scenario="offsite_restore",
+    )
+    assert result["scenario"] == "offsite_restore"
+    assert len(result["checks"]) == 8
+
+
+@pytest.mark.parametrize("mutation", [
+    {"downtime_seconds": 1801},
+    {"checks": {"encrypted_backup_present": True}},
+    {"fpl_state_mutated": True},
+])
+def test_offsite_restore_drill_rejects_timeout_partial_or_mutating_evidence(mutation):
+    with pytest.raises(ValueError):
+        validate(
+            {**_offsite_restore_payload(), **mutation}, expected_revision="abc1234",
+            expected_scenario="offsite_restore",
         )
 
 
@@ -440,3 +478,19 @@ def test_four_legacy_host_scenarios_no_longer_claim_full_reboot_recovery(tmp_pat
     assert status["completed"] == 4
     assert status["required"] == 5
     assert "reboot_recovery" not in status["scenarios"]
+
+
+def test_offsite_restore_status_is_independent_from_host_recovery_count(tmp_path):
+    db = OpsDB(tmp_path / "ops.db", enforce_version=False)
+    db.migrate()
+    job_id, reused = db.start_job(
+        "host_recovery_drill", "fixture:offsite", "corr_offsite"
+    )
+    assert reused is False
+    db.finish_job(job_id, "completed", output_sha256="7" * 64,
+                  metrics={"scenario": "offsite_restore", "checks": 8,
+                           "passed": 8, "downtime_seconds": 12})
+
+    assert db.offsite_restore_drill_status()["status"] == "completed"
+    assert db.offsite_restore_drill_status()["passed"] == 8
+    assert db.host_recovery_drill_status()["completed"] == 0

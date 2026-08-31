@@ -59,6 +59,14 @@ SCENARIOS = {
         },
         "max_downtime_seconds": 1200,
     },
+    "offsite_restore": {
+        "checks": {
+            "encrypted_backup_present", "remote_snapshot_downloaded",
+            "manifest_verified", "sqlite_restore_passed", "postgres_restore_passed",
+            "artifacts_hashes_match", "credentials_not_persisted", "runtime_unchanged",
+        },
+        "max_downtime_seconds": 1800,
+    },
 }
 MAX_BYTES = 64 * 1024
 

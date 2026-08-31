@@ -1571,6 +1571,27 @@ class OpsDB:
             "scenarios": scenarios,
         }
 
+    def offsite_restore_drill_status(self) -> dict:
+        """Return the latest independently imported off-host restore proof."""
+        with self.connect(readonly=True) as con:
+            rows = con.execute(
+                "SELECT job_id,status,started_at,finished_at,output_sha256,metrics_json,"
+                "error_code FROM job_runs WHERE job_type='host_recovery_drill' "
+                "ORDER BY started_at DESC"
+            ).fetchall()
+        for raw in rows:
+            row = dict(raw)
+            metrics = json.loads(row.pop("metrics_json") or "{}")
+            if metrics.get("scenario") != "offsite_restore":
+                continue
+            row.update({
+                "checks": int(metrics.get("checks") or 0),
+                "passed": int(metrics.get("passed") or 0),
+                "downtime_seconds": metrics.get("downtime_seconds"),
+            })
+            return row
+        return {"status": "missing", "checks": 0, "passed": 0}
+
     def latest_snapshot(self, cycle_id: str) -> dict | None:
         with self.connect(readonly=True) as con:
             row = con.execute(

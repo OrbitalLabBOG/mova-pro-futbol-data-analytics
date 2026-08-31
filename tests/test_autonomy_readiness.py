@@ -35,6 +35,12 @@ def _operator() -> dict:
             "import_history": {"completed_imports": 5, "distinct_source_snapshots": 5,
                                "distinct_gameweek_cycles": 3},
         }},
+        "host": {"offsite_backup": {
+            "status": "configured", "configured": True, "encrypted": True,
+            "external": True, "timer_active": True, "provider": "restic",
+            "owner": "operator", "destination_fingerprint": "abcdef1234567890",
+            "reasons": [],
+        }},
     }
 
 
@@ -110,6 +116,14 @@ def _snapshot_rejection() -> dict:
     }
 
 
+def _offsite_restore() -> dict:
+    return {
+        "job_id": "job_offsite_restore", "status": "completed", "checks": 8,
+        "passed": 8, "finished_at": "2026-08-31T05:00:00+00:00",
+        "output_sha256": "9" * 64,
+    }
+
+
 def _browser_failure() -> dict:
     return {
         "job_id": "job_browser_failure", "status": "completed", "checks": 11,
@@ -127,6 +141,7 @@ def test_readiness_separates_technical_eligibility_from_authority() -> None:
         alert_channel_evidence=_alert_channel_drill(),
         alert_channel_live_evidence=_alert_channel_live(),
         host_recovery_evidence=_host_recovery(),
+        offsite_restore_evidence=_offsite_restore(),
         snapshot_rejection_evidence=_snapshot_rejection(),
         browser_failure_evidence=_browser_failure(),
         generated_at="2026-08-30T22:00:00+00:00",
@@ -138,13 +153,17 @@ def test_readiness_separates_technical_eligibility_from_authority() -> None:
     assert report["activation"]["current_action_level"] == "A0"
     assert report["activation"]["promotion_is_automatic"] is False
     assert "EXPLICIT_PROMOTION_REQUIRED" in report["activation"]["activation_blockers"]
-    assert report["summary"] == {"pass": 23, "pending": 0, "blocked": 0, "total": 23}
+    assert report["summary"] == {"pass": 25, "pending": 0, "blocked": 0, "total": 25}
 
 
 def test_readiness_fails_closed_and_reports_specific_evidence_gaps() -> None:
     operator = deepcopy(_operator())
     operator["gameweek"]["readiness"] = "preliminary"
     operator["storage"]["postgres"]["import_history"]["distinct_gameweek_cycles"] = 1
+    operator["host"]["offsite_backup"] = {
+        "status": "unconfigured", "configured": False, "encrypted": False,
+        "external": False, "timer_active": False,
+    }
     research = deepcopy(_research())
     research.update(status="insufficient_gameweeks", measured_gameweeks=0,
                     passing_gameweeks=0)
@@ -166,6 +185,7 @@ def test_readiness_fails_closed_and_reports_specific_evidence_gaps() -> None:
         alert_channel_evidence={"status": "missing"},
         alert_channel_live_evidence={"status": "missing"},
         host_recovery_evidence={"status": "incomplete", "completed": 0, "required": 5},
+        offsite_restore_evidence={"status": "missing", "checks": 0, "passed": 0},
         snapshot_rejection_evidence={"status": "missing"},
         browser_failure_evidence={"status": "missing"},
     )
@@ -184,6 +204,8 @@ def test_readiness_fails_closed_and_reports_specific_evidence_gaps() -> None:
     assert by_code["EXTERNAL_ALERT_CHANNEL_CONFIGURED"]["status"] == "pending"
     assert by_code["EXTERNAL_ALERT_CHANNEL_LIVE_PROVEN"]["status"] == "pending"
     assert by_code["HOST_RECOVERY_DRILLS_PROVEN"]["status"] == "pending"
+    assert by_code["OFF_HOST_BACKUP_CONFIGURED"]["status"] == "pending"
+    assert by_code["OFF_HOST_RESTORE_PROVEN"]["status"] == "pending"
     assert by_code["SNAPSHOT_REJECTION_PROVEN"]["status"] == "pending"
     assert by_code["BROWSER_FAILURE_DRILL_PROVEN"]["status"] == "pending"
     assert all(item["next_action"] for item in report["next_actions"])
@@ -200,9 +222,10 @@ def test_readiness_cli_can_be_used_as_a_level_gate_and_metrics_are_bounded() -> 
         alert_channel_evidence=_alert_channel_drill(),
         alert_channel_live_evidence=_alert_channel_live(),
         host_recovery_evidence=_host_recovery(),
+        offsite_restore_evidence=_offsite_restore(),
         snapshot_rejection_evidence=_snapshot_rejection(),
         browser_failure_evidence=_browser_failure(),
     )
     metrics = prometheus(report)
     assert 'mova_autonomy_technical_eligible_level{level="A3"} 1' in metrics
-    assert 'mova_autonomy_readiness_gates{status="pass"} 23' in metrics
+    assert 'mova_autonomy_readiness_gates{status="pass"} 25' in metrics

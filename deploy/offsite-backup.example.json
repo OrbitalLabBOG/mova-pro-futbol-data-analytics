@@ -1,0 +1,8 @@
+{
+  "schema": "mova-offsite-backup-v1",
+  "enabled": false,
+  "provider": "restic",
+  "owner": "replace-with-accountable-owner",
+  "repository_file": "/etc/mova-fpl/offsite-repository",
+  "password_file": "/etc/mova-fpl/offsite-password"
+}
