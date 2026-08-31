@@ -331,6 +331,17 @@ def test_semantic_binding_avoids_second_budget_reservation(tmp_path: Path):
             "SELECT binding_type FROM decision_deliberation_bindings ORDER BY created_at"
         ).fetchall()
         assert {row["binding_type"] for row in bindings} == {"original", "semantic_reuse"}
+    with db.transaction() as con:
+        con.execute(
+            """INSERT INTO decision_deliberations(deliberation_id,cycle_id,envelope_id,
+            manifest_id,provider,status,request_path,request_sha256,queued_at)
+            VALUES(?,?,?,?,?,'failed',?,?,?)""",
+            ("deliberation_" + "7" * 32, cycle_id, envelope_ids[1], manifest_ids[1],
+             "fixture", "failed.json", "8" * 64, "2026-09-04T16:00:00+00:00"),
+        )
+    status = db.deliberation_status(cycle_id)
+    assert status["latest"]["deliberation_id"] == "deliberation_" + "1" * 32
+    assert status["latest"]["bound_envelope_id"] == envelope_ids[1]
 
 
 def test_deliberation_persistence_records_risks_intervention_and_cost(tmp_path: Path):
