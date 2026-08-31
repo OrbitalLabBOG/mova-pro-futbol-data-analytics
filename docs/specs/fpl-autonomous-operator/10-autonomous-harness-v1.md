@@ -2,9 +2,9 @@
 type: project
 name: "MOVA FPL — Autonomous Harness v1"
 created: 2026-08-23
-updated: 2026-08-30
+updated: 2026-08-31
 tags: [mova, fpl, autonomy, postgres, agents, observability, continuous-improvement]
-status: active-design
+status: active-shadow
 ---
 
 # Autonomous Harness v1
@@ -52,24 +52,27 @@ La base de desarrollo también quedó saneada antes de iniciar el harness:
 - `pytest -q` es hermético y las pruebas con datos externos están marcadas explícitamente;
 - un contrato de higiene bloquea carpetas legacy y artefactos pesados en Git.
 
-Verificación viva del corte:
+Verificación viva del corte al 31 de agosto:
 
-- API healthy, cinco timers activos y cero incidentes abiertos;
-- GW2, deadline oficial `2026-08-28T17:30:00Z`;
-- último team state válido: 15 jugadores, 1 FT, banco £0.0m y chips disponibles;
-- último tick completado y correctamente omitido por cadencia;
-- runtime engine `684e5da`; checkout documental del VPS `d5e9d25`;
-- `main` contiene la investigación de harness hasta `4ead0e1`.
+- API y PostgreSQL healthy, doctor 22/22 y cero incidentes abiertos;
+- GW3, deadline oficial `2026-09-04T17:30:00Z`, todavía preliminar;
+- último team state válido: 15 jugadores y sesión browser persistente;
+- runtime engine/browser y checkout exactos en `884cb32`;
+- readiness: 13 pass, 6 pending y 0 blocked sobre 19 gates;
+- scorecard del harness: operaciones pass; las otras seis dimensiones pendientes, A0 intacto.
 
-Gaps reales:
+Gaps reales restantes:
 
-1. datos, control plane y memoria están repartidos entre SQLite y artefactos;
-2. no existe una interfaz completa y estable para operar todo el sistema;
-3. research/noticias no está conectado de punta a punta;
-4. no existe todavía un ciclo multirol de estrategia, crítica y revisión;
-5. ya existe scorecard técnico post-GW; falta atribución de decisiones y promoción de mejoras;
-6. calidad de modelos ya es consultable; falta unir costos y calidad del harness completo;
-7. el browser sabe leer, pero la ejecución autónoma sigue bloqueada.
+1. acumular tres GWs independientes para research, rehearsals browser y ciclos PostgreSQL;
+2. revisar el overrun histórico de 7.678 tokens del Researcher y completar el primer loop hasta
+   una lección persistida;
+3. mantener lineup y R3 sin entrypoint hasta satisfacer evidencia multi-GW y aprobación;
+4. elegir destinos autorizados para alertas externas y backup cifrado off-host;
+5. ensayar un reboot completo del VPS y aprobar compliance/promoción de forma explícita.
+
+La dispersión operativa original ya quedó encapsulada por `mova`, PostgreSQL shadow, manifests y
+artifacts sellados. Research, deliberación multirol, reviewer causal, costos y calidad ahora son
+consultables de punta a punta; esto no implica que hayan cumplido aún sus gates longitudinales.
 
 ## 3. Decisiones de arquitectura
 
@@ -387,6 +390,7 @@ no borra evidencia previa y nunca amplía autonomía.
 | HV1-07 🟡 | policy/apply-once/verifier; R2/R3 tipados pero sin promoción; faltan entrypoints/rehearsals | 3–6 h | HV1-06 |
 | HV1-08 ✅ | reviewer causal, budgets, propuesta→lección y release de modelos con shadow/rollback | completado | HV1-03/06 |
 | HV1-09 ✅ | gate consolidado de readiness, elegibilidad técnica, API/CLI y métricas | completado | HV1-02/03/05/07 |
+| HV1-10 ✅ | scorecard unificado de calidad, costos, roles, aprendizaje y autoridad | completado | HV1-08/09 |
 
 No es necesario completar 64–92 horas antes de obtener valor. Cortes de entrega:
 
@@ -667,6 +671,21 @@ auditadas de import; varios reintentos o snapshots de una misma jornada no satis
 tres ciclos. El primer corte vivo reportó A0 técnico, 8/14 gates en pass, 5 pendientes y 1 bloqueado,
 con producción todavía en `shadow/A0`, kill switch activo y browser writes apagado.
 Evidencia: [HV1-09 autonomy readiness](27-hv1-09-autonomy-readiness-rollout.md).
+
+### Corte harness scorecard — 31 de agosto de 2026
+
+`mova harness scorecard` y `/api/v1/harness-scorecard` reúnen en un contrato read-only la calidad
+de 19 gates, siete dimensiones operativas, presupuesto GW/mes, reutilización semántica, estado de
+la deliberación y memoria de mejora. Prometheus publica únicamente labels acotados. El scorecard
+no duplica policy ni concede autoridad: consume readiness y declara siempre
+`promotion_is_automatic=false`.
+
+La primera corrida viva reportó 13/19 gates en pass, operaciones en pass y seis dimensiones
+pending. Detectó un overrun individual de 7.678 tokens con consumos agregados aún dentro de
+presupuesto. La semántica quedó fijada así: exceso agregado o reserva huérfana bloquea; un overrun
+histórico exige revisión pero no paraliza indefinidamente el sistema. También hizo visible que hay
+tres propuestas post-GW, pero todavía ninguna lección/evaluación completa. Evidencia:
+[HV1-10 harness scorecard](44-hv1-10-harness-scorecard-rollout.md).
 
 ## 11. Definition of Done del harness v1
 

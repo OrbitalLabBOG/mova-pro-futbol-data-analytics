@@ -17,11 +17,14 @@ consulta ordinaria: `mova` y `/api/v1/status` son el contrato estable.
 ## Orientación mínima
 
 1. Lee `AGENTS.md` del repo.
-2. Ejecuta `mova status --json` y `mova readiness`; conserva `schema_version`,
+2. Ejecuta `mova status --json`, `mova readiness` y `mova harness scorecard`; conserva `schema_version`,
    `generated_at`, `overall_status` y `activation.technical_eligible_level` al reportar.
    `readiness` separa capacidad técnica de autoridad: nunca interpreta elegibilidad como
    promoción. Usa `mova readiness --require-level A1|A2|A3` como gate automatizable; exit 2
-   significa evidencia insuficiente, no un permiso para rebajar requisitos.
+   significa evidencia insuficiente, no un permiso para rebajar requisitos. El scorecard une
+   calidad, costo, aprendizaje y roles sin crear policy nueva. `blocked` exige atención;
+   `pending` puede ser evidencia temporal pendiente. Nunca confundas su `readiness_pass_ratio`
+   con probabilidad de éxito ni con permiso de ejecución.
 3. Si el estado es degradado, incompleto o contradictorio, ejecuta `mova doctor --json`.
    Para una respuesta compacta usa `mova safety` o `/api/v1/safety`: `unsafe` exige atención
    inmediata, `attention_required` exige leer `reasons`, y `safe_to_wait` sólo describe el estado
@@ -59,7 +62,9 @@ consulta ordinaria: `mova` y `/api/v1/status` son el contrato estable.
     `mova improve transition` nunca aplica la hipótesis al runtime. El único aplicador soportado es
     `mova improve release` para bundles `minutes+points`, tras shadow pareado; no sirve para código,
     guardrails ni permisos. Antes de encolar trabajo agentic,
-    consulta `mova cost report`; un `agent_budget_exceeded` es un bloqueo real, no se fuerza.
+    consulta `mova cost report`; un exceso agregado o reserva huérfana es un bloqueo real y no se
+    fuerza. Un `job_overrun_observed` histórico exige revisar prompt/budget con evidencia, pero no
+    se presenta como exceso agregado mientras GW y mes sigan `within_budget`.
     Revisa `semantic_reuse.*_avoided_uses` y `/api/v1/deliberation-bindings` cuando la
     deliberación parezca repetitiva. Un binding `semantic_reuse` es éxito idempotente: no vuelvas
     a encolar ni borres el ledger para forzar otra llamada.

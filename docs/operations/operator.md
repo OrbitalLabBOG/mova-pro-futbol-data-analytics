@@ -40,6 +40,7 @@ mova data coverage
 mova analytics status
 mova analytics run
 mova improve status --season 2026-27
+mova harness scorecard
 mova improve release status
 mova strategy status
 mova strategy prepare
@@ -63,6 +64,12 @@ revisión desplegada, PostgreSQL shadow cuando está configurado, perfil browser
 `safety` reduce la misma evidencia a una pregunta operativa. `safe_to_wait` significa que no hay
 razones activas en el snapshot; `attention_required` muestra degradaciones y `unsafe` identifica
 P0/P1 o una contradicción de permisos. No reemplaza el gate `readiness` ni autoriza writes.
+
+`mova harness scorecard` responde una pregunta distinta: cómo están calidad, costos, roles,
+durabilidad, browser y aprendizaje en conjunto. Consume los gates de `readiness`; no los duplica
+ni promueve autoridad. Está también en `/api/v1/harness-scorecard` y sus métricas usan el prefijo
+`mova_harness_`. Un overrun histórico queda `pending` si los presupuestos agregados siguen dentro
+del límite; exceso GW/mes o reservas huérfanas quedan `blocked`.
 
 El watchdog despacha el outbox vencido a journald después de validar el heartbeat. El claim usa
 lease recuperable, la entrega ocurre fuera de SQLite y los fallos reintentan con backoff hasta

@@ -46,6 +46,7 @@ mova strategy status
 mova strategy research due
 mova strategy deliberate status
 mova improve status --season 2026-27
+mova harness scorecard
 mova postgres status
 mova postgres verify
 mova postgres drill --actor codex --reason read-cutover --idempotency-key gw03-v1
