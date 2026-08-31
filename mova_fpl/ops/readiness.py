@@ -75,12 +75,12 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
         and int(resilience.get("passed") or 0) == int(resilience.get("checks") or 0)
     )
     host_recovery = host_recovery_evidence or {
-        "status": "incomplete", "completed": 0, "required": 3, "scenarios": {},
+        "status": "incomplete", "completed": 0, "required": 4, "scenarios": {},
     }
     host_recovery_passed = (
         host_recovery.get("status") == "completed"
         and int(host_recovery.get("completed") or 0)
-        == int(host_recovery.get("required") or 3)
+        == int(host_recovery.get("required") or 4)
     )
     snapshot_rejection = snapshot_rejection_evidence or {
         "status": "missing", "checks": 0, "passed": 0,
@@ -205,7 +205,7 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
             "HOST_RECOVERY_DRILLS_PROVEN",
             "pass" if host_recovery_passed else
             "blocked" if host_recovery.get("status") == "failed" else "pending",
-            "caídas reales de API, PostgreSQL y browser recuperadas sin mutar FPL",
+            "caídas aisladas y combinadas del control plane recuperadas sin mutar FPL",
             levels=("A1", "A2", "A3"),
             observed={
                 "status": host_recovery.get("status"),
@@ -215,9 +215,10 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
             },
             required={"status": "completed", "scenarios": [
                 "api_recovery", "postgres_recovery", "browser_recovery",
+                "combined_recovery",
             ]},
             source="job_runs.host_recovery_drill",
-            next_action="ejecutar los drills host allowlisted de API, PostgreSQL y browser",
+            next_action="ejecutar drills host aislados y el outage combinado allowlisted",
         ),
         _gate(
             "SNAPSHOT_REJECTION_PROVEN",

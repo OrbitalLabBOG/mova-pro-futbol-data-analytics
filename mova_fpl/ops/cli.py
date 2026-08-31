@@ -313,7 +313,9 @@ def parser() -> argparse.ArgumentParser:
     host_drill.add_argument("--reason", required=True)
     host_drill.add_argument("--idempotency-key", required=True)
     host_drill.add_argument(
-        "--scenario", choices=("api_recovery", "postgres_recovery", "browser_recovery"),
+        "--scenario", choices=(
+            "api_recovery", "postgres_recovery", "browser_recovery", "combined_recovery",
+        ),
         default="api_recovery",
     )
     host_status = drill_commands.add_parser(
@@ -321,7 +323,9 @@ def parser() -> argparse.ArgumentParser:
     )
     host_status.add_argument("--idempotency-key", required=True)
     host_status.add_argument(
-        "--scenario", choices=("api_recovery", "postgres_recovery", "browser_recovery"),
+        "--scenario", choices=(
+            "api_recovery", "postgres_recovery", "browser_recovery", "combined_recovery",
+        ),
         default="api_recovery",
     )
     host_status.add_argument("--actor")

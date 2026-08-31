@@ -1412,7 +1412,9 @@ class OpsDB:
 
     def host_recovery_drill_status(self) -> dict:
         """Resume la evidencia más reciente por escenario host requerido."""
-        required = ("api_recovery", "postgres_recovery", "browser_recovery")
+        required = (
+            "api_recovery", "postgres_recovery", "browser_recovery", "combined_recovery",
+        )
         with self.connect(readonly=True) as con:
             rows = con.execute(
                 "SELECT job_id,status,started_at,finished_at,output_sha256,metrics_json,"

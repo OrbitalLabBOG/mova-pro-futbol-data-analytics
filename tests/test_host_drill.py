@@ -71,6 +71,34 @@ def _browser_payload() -> dict:
     }
 
 
+def _combined_payload() -> dict:
+    fingerprint = "d" * 64
+    return {
+        "schema": "mova-host-drill-v1", "scenario": "combined_recovery",
+        "status": "pass", "started_at": "2026-08-31T03:00:00Z",
+        "finished_at": "2026-08-31T03:01:00Z", "downtime_seconds": 25,
+        "revision": "abc1234",
+        "checks": {
+            "services_ready_before": True,
+            "all_services_unavailable_during": True,
+            "sqlite_integrity_during": True,
+            "stored_team_state_unchanged_during": True,
+            "postgres_ready_after": True,
+            "postgres_parity_after": True,
+            "api_ready_after": True,
+            "browser_ready_after": True,
+            "session_authenticated_after": True,
+            "revisions_unchanged": True,
+            "private_state_unchanged": True,
+            "controls_fail_closed": True,
+            "initial_browser_state_restored": True,
+        },
+        "team_state_sha256_before": fingerprint,
+        "team_state_sha256_after": fingerprint,
+        "fpl_state_mutated": False,
+    }
+
+
 def test_host_drill_import_is_allowlisted_atomic_and_consumes_inbox(tmp_path: Path):
     config = RuntimeConfig(artifact_root=tmp_path / "artifacts", git_sha="abc1234")
     source = config.artifact_root / "host-drills" / "inbox" / "api.json"
@@ -166,6 +194,29 @@ def test_browser_host_drill_rejects_state_drift_or_invalid_contract(mutation):
         )
 
 
+def test_combined_host_drill_is_allowlisted_and_binds_private_state():
+    result = validate(
+        _combined_payload(), expected_revision="abc1234",
+        expected_scenario="combined_recovery",
+    )
+    assert result["scenario"] == "combined_recovery"
+    assert len(result["checks"]) == 13
+    assert result["team_state_sha256_before"] == "d" * 64
+
+
+@pytest.mark.parametrize("mutation", [
+    {"team_state_sha256_after": "e" * 64},
+    {"downtime_seconds": 241},
+    {"checks": {"services_ready_before": True}},
+])
+def test_combined_host_drill_rejects_drift_or_invalid_contract(mutation):
+    with pytest.raises(ValueError):
+        validate(
+            {**_combined_payload(), **mutation}, expected_revision="abc1234",
+            expected_scenario="combined_recovery",
+        )
+
+
 def test_host_drill_rejects_scenario_substitution():
     with pytest.raises(ValueError, match="scenario mismatch"):
         validate(
@@ -210,6 +261,28 @@ def test_browser_host_script_restores_initial_state_and_never_writes_fpl():
     assert "team_state_unchanged" in script
     assert "controls_fail_closed" in script
     assert "initial_service_state_restored" in script
+    assert "fpl_state_mutated" in script
+    assert not any(token in script for token in (
+        "execute begin", "execute finalize", "probe-transfers", "browser_writes=true",
+    ))
+
+
+def test_combined_host_script_locks_services_recovers_all_and_never_writes_fpl():
+    script = Path("deploy/bin/combined-recovery-drill.sh").read_text(encoding="utf-8")
+    assert "trap restore_services EXIT HUP INT TERM" in script
+    assert "mova-fpl-combined-recovery-drill.lock" in script
+    for lock_name in (
+        "mova-fpl-worker.lock", "mova-fpl-collector-host.lock",
+        "mova-fpl-analytics-host.lock", "mova-fpl-research-host.lock",
+        "mova-fpl-private-state.lock",
+    ):
+        assert lock_name in script
+    assert "docker compose stop --timeout 10 api" in script
+    assert "docker compose stop --timeout 20 postgres" in script
+    assert "all_services_unavailable_during" in script
+    assert "sqlite_integrity_during" in script
+    assert "private_state_unchanged" in script
+    assert "initial_browser_state_restored" in script
     assert "fpl_state_mutated" in script
     assert not any(token in script for token in (
         "execute begin", "execute finalize", "probe-transfers", "browser_writes=true",
