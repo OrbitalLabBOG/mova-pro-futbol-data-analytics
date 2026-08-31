@@ -98,7 +98,8 @@ def evaluate_scorecard(*, readiness: dict, cost_report: dict,
     gw_cost = cost_report.get("gameweek") or {}
     month_cost = cost_report.get("month") or {}
     orphaned = (cost_report.get("orphaned_reservations") or {}).get("status") == "observed"
-    overrun = (cost_report.get("job_overruns") or {}).get("status") == "observed"
+    overrun_status = (cost_report.get("job_overruns") or {}).get("status")
+    overrun = overrun_status in {"observed", "unreviewed", "reviewed_pending"}
     cost_blocked = (
         orphaned or gw_cost.get("status") == "exceeded"
         or month_cost.get("status") == "exceeded"
@@ -112,8 +113,15 @@ def evaluate_scorecard(*, readiness: dict, cost_report: dict,
         })
     elif overrun:
         cost_unmet.append({
-            "code": "AGENT_JOB_OVERRUN_REVIEWED", "status": "pending",
-            "next_action": "revisar el job que excedió su límite y ajustar prompt o budget con evidencia",
+            "code": ("AGENT_JOB_OVERRUN_REVIEWED" if overrun_status in {
+                "observed", "unreviewed"
+            } else "AGENT_JOB_OVERRUN_FOLLOWUP_VERIFIED"),
+            "status": "pending",
+            "next_action": (
+                "revisar el job que excedió su límite y registrar una transición auditada"
+                if overrun_status in {"observed", "unreviewed"} else
+                "verificar un run posterior equivalente dentro del límite y resolver el overrun"
+            ),
         })
     cost_dimension = {
         "name": "economics",

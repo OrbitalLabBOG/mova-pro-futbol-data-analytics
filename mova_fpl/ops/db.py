@@ -2551,6 +2551,136 @@ class OpsDB:
             )
         return {"review_id": payload["review_id"], "reused": False}
 
+    def transition_budget_overrun(self, reservation_id: str, *, to_status: str,
+                                  action: str, followup_reservation_id: str | None,
+                                  actor: str, reason: str,
+                                  idempotency_key: str) -> dict:
+        """Revisa un overrun real sin cambiar límites ni liberar presupuesto."""
+        if not all(str(value).strip() for value in (
+            reservation_id, to_status, action, actor, reason, idempotency_key,
+        )):
+            raise ValueError("campos obligatorios de revisión de overrun vacíos")
+        allowed_actions = {
+            "reviewed": {"optimize_prompt", "reduce_scope", "adjust_limit"},
+            "resolved": {"verified_followup"},
+            "waived": {"accept_variance"},
+        }
+        if action not in allowed_actions.get(to_status, set()):
+            raise ValueError("action incompatible con to_status")
+        now = utcnow()
+        with self.transaction() as con:
+            existing = con.execute(
+                "SELECT * FROM agent_budget_overrun_events WHERE idempotency_key=?",
+                (idempotency_key,),
+            ).fetchone()
+            if existing:
+                if (existing["reservation_id"] != reservation_id
+                        or existing["to_status"] != to_status
+                        or existing["action"] != action
+                        or existing["followup_reservation_id"] != followup_reservation_id
+                        or existing["actor"] != actor or existing["reason"] != reason):
+                    raise ValueError("idempotency_key ya usada con otro contenido")
+                return {**dict(existing), "status": "reused", "runtime_mutated": False}
+            reservation = con.execute(
+                "SELECT * FROM agent_budget_reservations WHERE reservation_id=?",
+                (reservation_id,),
+            ).fetchone()
+            if not reservation:
+                raise ValueError("reservation_id no existe")
+            policy = json.loads(reservation["policy_json"])
+            actual = int(reservation["actual_tokens"] or 0)
+            job_limit = int(policy.get("job_tokens") or 0)
+            if reservation["status"] != "settled" or actual <= job_limit:
+                raise ValueError("reservation_id no corresponde a un overrun settled")
+            latest = con.execute(
+                "SELECT * FROM agent_budget_overrun_events WHERE reservation_id=? "
+                "ORDER BY sequence DESC LIMIT 1", (reservation_id,),
+            ).fetchone()
+            current = str(latest["to_status"]) if latest else "open"
+            transitions = {
+                "open": {"reviewed", "waived"},
+                "reviewed": {"resolved", "waived"},
+            }
+            if to_status not in transitions.get(current, set()):
+                raise ValueError(f"transición de overrun inválida: {current} -> {to_status}")
+            followup = None
+            if to_status == "resolved":
+                if not followup_reservation_id or followup_reservation_id == reservation_id:
+                    raise ValueError("resolved exige followup_reservation_id distinto")
+                followup = con.execute(
+                    "SELECT * FROM agent_budget_reservations WHERE reservation_id=?",
+                    (followup_reservation_id,),
+                ).fetchone()
+                if not followup:
+                    raise ValueError("followup_reservation_id no existe")
+                followup_policy = json.loads(followup["policy_json"])
+                followup_actual = int(followup["actual_tokens"] or 0)
+                followup_limit = int(followup_policy.get("job_tokens") or 0)
+                if (followup["status"] != "settled"
+                        or followup["subject_type"] != reservation["subject_type"]
+                        or followup["provider"] != reservation["provider"]
+                        or followup["created_at"] < reservation["created_at"]
+                        or followup_actual > followup_limit):
+                    raise ValueError("followup no prueba un run posterior equivalente dentro de límite")
+            elif followup_reservation_id:
+                raise ValueError("followup_reservation_id sólo aplica a resolved")
+            evidence = {
+                "schema": "mova-agent-budget-overrun-evidence-v1",
+                "reservation": {
+                    "reservation_id": reservation_id,
+                    "cycle_id": reservation["cycle_id"],
+                    "subject_type": reservation["subject_type"],
+                    "subject_id": reservation["subject_id"],
+                    "provider": reservation["provider"],
+                    "actual_tokens": actual,
+                    "job_limit": job_limit,
+                    "excess_tokens": actual - job_limit,
+                },
+                "transition": {"from_status": current, "to_status": to_status,
+                               "action": action},
+                "followup": ({
+                    "reservation_id": followup["reservation_id"],
+                    "subject_id": followup["subject_id"],
+                    "actual_tokens": int(followup["actual_tokens"]),
+                    "job_limit": int(json.loads(followup["policy_json"])["job_tokens"]),
+                } if followup else None),
+            }
+            evidence_sha = sha256_json(evidence)
+            sequence = int(latest["sequence"] or 0) + 1 if latest else 1
+            event_id = "budgetoverrun_" + hashlib.sha256(
+                f"{reservation_id}:{idempotency_key}".encode("utf-8")
+            ).hexdigest()[:24]
+            con.execute(
+                """INSERT INTO agent_budget_overrun_events(
+                event_id,reservation_id,sequence,from_status,to_status,action,
+                followup_reservation_id,actual_tokens,job_limit,excess_tokens,
+                evidence_json,evidence_sha256,idempotency_key,actor,reason,created_at)
+                VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (event_id, reservation_id, sequence, current, to_status, action,
+                 followup_reservation_id, actual, job_limit, actual - job_limit,
+                 canonical_json(evidence), evidence_sha, idempotency_key, actor, reason, now),
+            )
+            self.append_audit(
+                "agent_budget_overrun_transitioned", actor=actor,
+                severity="warning" if to_status == "waived" else "info",
+                cycle_id=reservation["cycle_id"], subject_type="budget_reservation",
+                subject_id=reservation_id, payload={
+                    "event_id": event_id, "from_status": current,
+                    "to_status": to_status, "action": action,
+                    "evidence_sha256": evidence_sha, "reason": reason,
+                    "runtime_mutated": False,
+                }, con=con,
+            )
+        return {
+            "status": "completed", "event_id": event_id,
+            "reservation_id": reservation_id, "sequence": sequence,
+            "from_status": current, "to_status": to_status, "action": action,
+            "followup_reservation_id": followup_reservation_id,
+            "actual_tokens": actual, "job_limit": job_limit,
+            "excess_tokens": actual - job_limit,
+            "evidence_sha256": evidence_sha, "runtime_mutated": False,
+        }
+
     def cost_report(self, policy: dict, *, season: str | None = None,
                     gw: int | None = None, month: str | None = None) -> dict:
         """Uso real + reservas activas contra límites configurados."""
@@ -2624,26 +2754,6 @@ class OpsDB:
                 "WHERE binding_type='semantic_reuse' AND substr(created_at,1,7)=?",
                 (observed_month,),
             ).fetchone()[0])
-            gw_overruns = con.execute(
-                """SELECT COUNT(*) uses,
-                COALESCE(SUM(actual_tokens - CAST(
-                  json_extract(policy_json,'$.job_tokens') AS INTEGER)),0) excess_tokens,
-                COALESCE(MAX(actual_tokens),0) max_actual_tokens
-                FROM agent_budget_reservations WHERE cycle_id=? AND status='settled'
-                AND actual_tokens > CAST(json_extract(policy_json,'$.job_tokens') AS INTEGER)""",
-                (cycle_id,),
-            ).fetchone() if cycle_id else {"uses": 0, "excess_tokens": 0,
-                                           "max_actual_tokens": 0}
-            month_overruns = con.execute(
-                """SELECT COUNT(*) uses,
-                COALESCE(SUM(actual_tokens - CAST(
-                  json_extract(policy_json,'$.job_tokens') AS INTEGER)),0) excess_tokens,
-                COALESCE(MAX(actual_tokens),0) max_actual_tokens
-                FROM agent_budget_reservations
-                WHERE substr(created_at,1,7)=? AND status='settled'
-                AND actual_tokens > CAST(json_extract(policy_json,'$.job_tokens') AS INTEGER)""",
-                (observed_month,),
-            ).fetchone()
             orphan_predicate = """r.status='reserved' AND (
               (r.subject_type='research' AND NOT EXISTS (
                 SELECT 1 FROM research_runs x WHERE x.research_run_id=r.subject_id
@@ -2673,6 +2783,28 @@ class OpsDB:
             latest = con.execute(
                 "SELECT * FROM agent_budget_reservations ORDER BY created_at DESC LIMIT 20"
             ).fetchall()
+            overrun_rows = con.execute(
+                """SELECT r.reservation_id,r.cycle_id,r.subject_type,r.subject_id,
+                r.provider,r.actual_tokens,r.created_at,
+                CAST(json_extract(r.policy_json,'$.job_tokens') AS INTEGER) job_limit,
+                r.actual_tokens-CAST(json_extract(r.policy_json,'$.job_tokens') AS INTEGER)
+                  excess_tokens,
+                COALESCE((SELECT e.to_status FROM agent_budget_overrun_events e
+                  WHERE e.reservation_id=r.reservation_id ORDER BY e.sequence DESC LIMIT 1),
+                  'open') review_status,
+                (SELECT e.action FROM agent_budget_overrun_events e
+                  WHERE e.reservation_id=r.reservation_id ORDER BY e.sequence DESC LIMIT 1)
+                  review_action,
+                (SELECT e.created_at FROM agent_budget_overrun_events e
+                  WHERE e.reservation_id=r.reservation_id ORDER BY e.sequence DESC LIMIT 1)
+                  reviewed_at
+                FROM agent_budget_reservations r
+                WHERE r.status='settled'
+                  AND r.actual_tokens>CAST(json_extract(r.policy_json,'$.job_tokens') AS INTEGER)
+                  AND (r.cycle_id=? OR substr(r.created_at,1,7)=?)
+                ORDER BY r.created_at DESC""",
+                (cycle_id, observed_month),
+            ).fetchall()
 
         def scope(consumed, reserved, charged, *, token_limit: int,
                   use_limit: int) -> dict:
@@ -2694,9 +2826,41 @@ class OpsDB:
                 "estimated_cost_usd": consumed["estimated_cost_usd"],
             }
 
+        overrun_items = [dict(row) for row in overrun_rows]
+
+        def overrun_scope(rows: list[dict]) -> dict:
+            states = {name: sum(row["review_status"] == name for row in rows)
+                      for name in ("open", "reviewed", "resolved", "waived")}
+            if states["open"]:
+                status = "unreviewed"
+            elif states["reviewed"]:
+                status = "reviewed_pending"
+            elif rows:
+                status = "closed"
+            else:
+                status = "none"
+            return {
+                "status": status, "uses": len(rows),
+                "excess_tokens": sum(int(row["excess_tokens"]) for row in rows),
+                "max_actual_tokens": max(
+                    (int(row["actual_tokens"]) for row in rows), default=0
+                ),
+                "states": states,
+            }
+
+        gw_overrun_state = overrun_scope([
+            row for row in overrun_items if row["cycle_id"] == cycle_id
+        ])
+        month_overrun_state = overrun_scope([
+            row for row in overrun_items if str(row["created_at"])[:7] == observed_month
+        ])
+        active_overrun = any(
+            item["status"] in {"unreviewed", "reviewed_pending"}
+            for item in (gw_overrun_state, month_overrun_state)
+        )
         if int(gw_orphans["uses"]) or int(month_orphans["uses"]):
             report_status = "orphaned_reservation_observed"
-        elif int(gw_overruns["uses"]) or int(month_overruns["uses"]):
+        elif active_overrun:
             report_status = "job_overrun_observed"
         else:
             report_status = "within_budget"
@@ -2711,10 +2875,14 @@ class OpsDB:
                 token_limit=policy["month_tokens"],
                 use_limit=policy["month_uses"])},
             "job_overruns": {
-                "status": ("observed" if int(gw_overruns["uses"])
-                           or int(month_overruns["uses"]) else "none"),
-                "gameweek": dict(gw_overruns),
-                "month": {"month": observed_month, **dict(month_overruns)},
+                "status": ("unreviewed" if any(
+                    item["status"] == "unreviewed"
+                    for item in (gw_overrun_state, month_overrun_state)
+                ) else "reviewed_pending" if active_overrun else
+                    "closed" if overrun_items else "none"),
+                "gameweek": gw_overrun_state,
+                "month": {"month": observed_month, **month_overrun_state},
+                "items": overrun_items[:20],
             },
             "orphaned_reservations": {
                 "status": ("observed" if int(gw_orphans["uses"])
@@ -2743,6 +2911,8 @@ class OpsDB:
             "# TYPE mova_agent_budget_job_overruns gauge",
             "# HELP mova_agent_budget_job_overrun_tokens Tokens above per-job policy.",
             "# TYPE mova_agent_budget_job_overrun_tokens gauge",
+            "# HELP mova_agent_budget_overrun_reviews Overrun lifecycle by review state.",
+            "# TYPE mova_agent_budget_overrun_reviews gauge",
             "# HELP mova_agent_budget_orphaned_reservations Reserved budgets without queued jobs.",
             "# TYPE mova_agent_budget_orphaned_reservations gauge",
             "# HELP mova_agent_deliberation_semantic_reuses Agent calls avoided by semantic idempotency.",
@@ -2780,6 +2950,11 @@ class OpsDB:
                 f'mova_agent_budget_job_overrun_tokens{{scope="{scope_name}"}} '
                 f'{overrun["excess_tokens"]}'
             )
+            for state in ("open", "reviewed", "resolved", "waived"):
+                lines.append(
+                    f'mova_agent_budget_overrun_reviews{{scope="{scope_name}",'
+                    f'status="{state}"}} {overrun["states"][state]}'
+                )
             lines.append(
                 f'mova_agent_budget_orphaned_reservations{{scope="{scope_name}"}} '
                 f'{report["orphaned_reservations"][scope_name]["uses"]}'
@@ -3318,7 +3493,7 @@ class OpsDB:
                    "gameweek_reviews", "change_proposals", "season_plans",
                    "cycle_manifests", "research_runs", "research_documents",
                    "research_signals", "research_conflicts", "cost_ledger",
-                   "agent_budget_reservations",
+                   "agent_budget_reservations", "agent_budget_overrun_events",
                    "change_proposal_evaluations", "lessons",
                    "model_bundle_releases", "model_bundle_release_events",
                    "browser_rehearsals"}
@@ -3347,6 +3522,7 @@ class OpsDB:
             "research_signals": "observed_at", "research_conflicts": "created_at",
             "cost_ledger": "occurred_at",
             "agent_budget_reservations": "created_at",
+            "agent_budget_overrun_events": "created_at",
             "change_proposal_evaluations": "created_at", "lessons": "created_at",
             "model_bundle_releases": "created_at",
             "model_bundle_release_events": "occurred_at",

@@ -1008,6 +1008,33 @@ MIGRATION_017 = (
     "ON decision_deliberation_bindings(deliberation_id,created_at DESC)",
 )
 
+MIGRATION_018 = (
+    """
+    CREATE TABLE IF NOT EXISTS agent_budget_overrun_events (
+        event_id TEXT PRIMARY KEY,
+        reservation_id TEXT NOT NULL REFERENCES agent_budget_reservations(reservation_id),
+        sequence INTEGER NOT NULL CHECK (sequence >= 1),
+        from_status TEXT CHECK (from_status IS NULL OR from_status IN ('open','reviewed')),
+        to_status TEXT NOT NULL CHECK (to_status IN ('reviewed','resolved','waived')),
+        action TEXT NOT NULL CHECK (action IN (
+          'optimize_prompt','reduce_scope','adjust_limit','verified_followup','accept_variance')),
+        followup_reservation_id TEXT REFERENCES agent_budget_reservations(reservation_id),
+        actual_tokens INTEGER NOT NULL CHECK (actual_tokens > 0),
+        job_limit INTEGER NOT NULL CHECK (job_limit > 0),
+        excess_tokens INTEGER NOT NULL CHECK (excess_tokens > 0),
+        evidence_json TEXT NOT NULL CHECK (json_valid(evidence_json)),
+        evidence_sha256 TEXT NOT NULL CHECK (length(evidence_sha256) = 64),
+        idempotency_key TEXT NOT NULL UNIQUE,
+        actor TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        UNIQUE (reservation_id, sequence)
+    ) STRICT
+    """,
+    "CREATE INDEX IF NOT EXISTS idx_budget_overrun_events_reservation "
+    "ON agent_budget_overrun_events(reservation_id,sequence DESC)",
+)
+
 MIGRATIONS = (
     (1, "initial_ops_schema", MIGRATION_001),
     (2, "team_state_artifact_provenance", MIGRATION_002),
@@ -1026,4 +1053,5 @@ MIGRATIONS = (
     (15, "sealed_research_evidence_and_coverage", MIGRATION_015),
     (16, "browser_rehearsal_evidence_ledger", MIGRATION_016),
     (17, "semantic_deliberation_idempotency", MIGRATION_017),
+    (18, "agent_budget_overrun_lifecycle", MIGRATION_018),
 )

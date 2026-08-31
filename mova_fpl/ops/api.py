@@ -300,6 +300,7 @@ def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
                     "/api/v1/change-proposal-evaluations": "change_proposal_evaluations",
                     "/api/v1/lessons": "lessons",
                     "/api/v1/budget-reservations": "agent_budget_reservations",
+                    "/api/v1/budget-overrun-events": "agent_budget_overrun_events",
                     "/api/v1/gameweek-reviews": "gameweek_reviews",
                     "/api/v1/model-bundle-releases": "model_bundle_releases",
                     "/api/v1/model-bundle-release-events": "model_bundle_release_events",

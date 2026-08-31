@@ -45,7 +45,7 @@ def _runtime(tmp_path):
     return db, cycle_id
 
 
-def _queue(db, cycle_id, run_id):
+def _queue(db, cycle_id, run_id, policy=POLICY):
     return db.queue_research_run({
         "research_run_id": run_id,
         "cycle_id": cycle_id,
@@ -53,7 +53,7 @@ def _queue(db, cycle_id, run_id):
         "provider": "fixture",
         "request_path": f"{run_id}.json",
         "request_sha256": run_id.removeprefix("research_").ljust(64, "0")[:64],
-        "budget_policy": POLICY,
+        "budget_policy": policy,
     })
 
 
@@ -144,12 +144,19 @@ def test_overrun_real_del_job_es_visible_sin_contarlo_como_reserva(tmp_path):
     assert report["gameweek"]["consumed_tokens"] == 130
     assert report["gameweek"]["reserved_tokens"] == 0
     assert report["gameweek"]["charged_estimate_tokens"] == 0
+    assert report["job_overruns"]["status"] == "unreviewed"
     assert report["job_overruns"]["gameweek"] == {
-        "uses": 1, "excess_tokens": 10, "max_actual_tokens": 130,
+        "status": "unreviewed", "uses": 1, "excess_tokens": 10,
+        "max_actual_tokens": 130,
+        "states": {"open": 1, "reviewed": 0, "resolved": 0, "waived": 0},
     }
     metrics = db.cost_prometheus(POLICY, season="2026-27")
     assert 'mova_agent_budget_job_overruns{scope="gameweek"} 1' in metrics
     assert 'mova_agent_budget_job_overrun_tokens{scope="gameweek"} 10' in metrics
+    assert (
+        'mova_agent_budget_overrun_reviews{scope="gameweek",status="open"} 1'
+        in metrics
+    )
     with db.connect(readonly=True) as con:
         audit = con.execute(
             "SELECT severity,payload_json FROM audit_events "
@@ -157,6 +164,67 @@ def test_overrun_real_del_job_es_visible_sin_contarlo_como_reserva(tmp_path):
         ).fetchone()
         assert audit["severity"] == "warning"
         assert '"overrun":true' in audit["payload_json"]
+
+
+def test_overrun_review_transition_is_idempotent_and_requires_verified_followup(tmp_path):
+    policy = {**POLICY, "gw_tokens": 400, "month_tokens": 600,
+              "gw_uses": 4, "month_uses": 6}
+    db, cycle_id = _runtime(tmp_path)
+    overrun_run = "research_eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+    _queue(db, cycle_id, overrun_run, policy)
+    imported = db.import_research_result(overrun_run, {
+        "documents": [], "signals": [], "conflicts": [],
+        "usage": {"model": "fixture", "input_tokens": 100, "output_tokens": 30},
+    }, result_path="result.json", result_sha256="e" * 64)
+    reservation_id = imported["budget_settlement"]["reservation_id"]
+
+    reviewed = db.transition_budget_overrun(
+        reservation_id, to_status="reviewed", action="optimize_prompt",
+        followup_reservation_id=None, actor="codex", reason="reducir discovery repetitivo",
+        idempotency_key="overrun-review-v1",
+    )
+    replay = db.transition_budget_overrun(
+        reservation_id, to_status="reviewed", action="optimize_prompt",
+        followup_reservation_id=None, actor="codex", reason="reducir discovery repetitivo",
+        idempotency_key="overrun-review-v1",
+    )
+    assert reviewed["to_status"] == "reviewed"
+    assert reviewed["runtime_mutated"] is False
+    assert replay["status"] == "reused"
+    assert db.cost_report(policy, season="2026-27", gw=3)["job_overruns"][
+        "status"
+    ] == "reviewed_pending"
+    with pytest.raises(ValueError, match="followup_reservation_id"):
+        db.transition_budget_overrun(
+            reservation_id, to_status="resolved", action="verified_followup",
+            followup_reservation_id=None, actor="codex", reason="sin followup",
+            idempotency_key="overrun-resolve-invalid",
+        )
+
+    followup_run = "research_ffffffffffffffffffffffffffffffff"
+    _queue(db, cycle_id, followup_run, policy)
+    followup = db.import_research_result(followup_run, {
+        "documents": [], "signals": [], "conflicts": [],
+        "usage": {"model": "fixture", "input_tokens": 50, "output_tokens": 20},
+    }, result_path="followup.json", result_sha256="f" * 64)
+    resolved = db.transition_budget_overrun(
+        reservation_id, to_status="resolved", action="verified_followup",
+        followup_reservation_id=followup["budget_settlement"]["reservation_id"],
+        actor="codex", reason="followup equivalente bajo límite",
+        idempotency_key="overrun-resolve-v1",
+    )
+    assert resolved["to_status"] == "resolved"
+    report = db.cost_report(policy, season="2026-27", gw=3)
+    assert report["status"] == "within_budget"
+    assert report["job_overruns"]["status"] == "closed"
+    assert report["job_overruns"]["gameweek"]["states"]["resolved"] == 1
+    with pytest.raises(ValueError, match="otro contenido"):
+        db.transition_budget_overrun(
+            reservation_id, to_status="resolved", action="verified_followup",
+            followup_reservation_id=followup["budget_settlement"]["reservation_id"],
+            actor="otro", reason="followup equivalente bajo límite",
+            idempotency_key="overrun-resolve-v1",
+        )
 
 
 def test_reserva_huerfana_es_visible_y_sigue_comprometiendo_presupuesto(tmp_path):

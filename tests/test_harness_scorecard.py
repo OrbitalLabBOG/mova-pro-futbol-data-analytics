@@ -111,6 +111,26 @@ def test_historical_job_overrun_is_pending_but_aggregate_budget_stays_available(
     assert report["overall_status"] == "pending"
 
 
+def test_reviewed_overrun_requests_followup_and_closed_overrun_passes():
+    pending_cost = _cost()
+    pending_cost["job_overruns"] = {"status": "reviewed_pending"}
+    pending = evaluate_scorecard(
+        readiness=_readiness(_gate("RUNTIME_HEALTHY")), cost_report=pending_cost,
+        improvement=_improvement(), deliberation={"status": "accepted"},
+    )
+    economics = next(row for row in pending["dimensions"] if row["name"] == "economics")
+    assert economics["unmet"][0]["code"] == "AGENT_JOB_OVERRUN_FOLLOWUP_VERIFIED"
+
+    closed_cost = _cost()
+    closed_cost["job_overruns"] = {"status": "closed"}
+    closed = evaluate_scorecard(
+        readiness=_readiness(_gate("RUNTIME_HEALTHY")), cost_report=closed_cost,
+        improvement=_improvement(), deliberation={"status": "accepted"},
+    )
+    economics = next(row for row in closed["dimensions"] if row["name"] == "economics")
+    assert economics["status"] == "pass"
+
+
 def test_scorecard_prometheus_has_bounded_labels():
     report = evaluate_scorecard(
         readiness=_readiness(_gate("RUNTIME_HEALTHY")),

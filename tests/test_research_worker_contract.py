@@ -34,6 +34,8 @@ def test_worker_deshabilita_herramientas_que_podrian_leer_auth_o_actuar():
     assert "previous_active_signals" in worker
     assert "fetch independiente" in worker
     assert "coverage.subjects" in worker
+    assert "máximo 10 consultas web distintas y 12 documents finales" in worker
+    assert "nunca excedas el budget" in worker
     assert '"mova-research-brief-v2"' in worker
     assert "duration_ms: Date.now() - startedAtMs" in worker
     assert "search_requests: null" in worker
@@ -113,8 +115,8 @@ def test_schema_de_salida_es_json_valido_y_cerrado():
         (ROOT / "deploy/research/research-brief.schema.json").read_text(encoding="utf-8")
     )
     assert schema["additionalProperties"] is False
-    assert schema["properties"]["documents"]["maxItems"] == 80
-    assert schema["properties"]["signals"]["maxItems"] == 120
+    assert schema["properties"]["documents"]["maxItems"] == 16
+    assert schema["properties"]["signals"]["maxItems"] == 40
     assert schema["properties"]["schema"]["const"] == "mova-research-brief-v2"
     assert "coverage" in schema["required"]
     assert "evidence_text" in schema["properties"]["documents"]["items"]["required"]

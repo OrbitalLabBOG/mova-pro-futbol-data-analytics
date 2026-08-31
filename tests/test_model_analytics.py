@@ -159,6 +159,8 @@ def test_read_only_api_exposes_analytics_and_prometheus(tmp_path: Path):
             scorecard = json.load(response)
             assert scorecard["schema"] == "mova-harness-scorecard-v1"
             assert scorecard["authority"]["promotion_is_automatic"] is False
+        with urllib.request.urlopen(base + "/api/v1/budget-overrun-events", timeout=2) as response:
+            assert json.load(response)["items"] == []
         with urllib.request.urlopen(base + "/metrics", timeout=2) as response:
             metrics = response.read().decode()
             assert "mova_analytics_service_up 1" in metrics

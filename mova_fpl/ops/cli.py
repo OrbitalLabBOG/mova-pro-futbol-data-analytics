@@ -135,6 +135,20 @@ def parser() -> argparse.ArgumentParser:
     cost_report.add_argument("--season")
     cost_report.add_argument("--gw", type=int)
     cost_report.add_argument("--month", help="mes UTC YYYY-MM")
+    cost_overrun = cost_commands.add_parser(
+        "overrun", help="transiciona la revisión durable de un overrun por job"
+    )
+    cost_overrun.add_argument("--reservation-id", required=True)
+    cost_overrun.add_argument("--to", choices=("reviewed", "resolved", "waived"),
+                              required=True)
+    cost_overrun.add_argument(
+        "--action", choices=("optimize_prompt", "reduce_scope", "adjust_limit",
+                             "verified_followup", "accept_variance"), required=True,
+    )
+    cost_overrun.add_argument("--followup-reservation-id")
+    cost_overrun.add_argument("--actor", required=True)
+    cost_overrun.add_argument("--reason", required=True)
+    cost_overrun.add_argument("--idempotency-key", required=True)
     harness = commands.add_parser(
         "harness", help="calidad, costo y autonomía del sistema agentic"
     )
@@ -535,6 +549,15 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "cost":
         db = OpsDB(config.ops_db, minimum_version=config.sqlite_min_version)
         db.migrate()
+        if args.cost_command == "overrun":
+            payload = db.transition_budget_overrun(
+                args.reservation_id, to_status=args.to, action=args.action,
+                followup_reservation_id=args.followup_reservation_id,
+                actor=args.actor, reason=args.reason,
+                idempotency_key=args.idempotency_key,
+            )
+            print(json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str))
+            return 0
         payload = db.cost_report(
             config.agent_budget_policy(), season=args.season or config.season,
             gw=args.gw, month=args.month,
