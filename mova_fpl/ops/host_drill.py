@@ -29,6 +29,16 @@ SCENARIOS = {
         },
         "max_downtime_seconds": 180,
     },
+    "browser_recovery": {
+        "checks": {
+            "browser_ready_before", "session_authenticated_before",
+            "browser_unavailable_during", "browser_ready_after",
+            "session_authenticated_after", "revision_unchanged",
+            "team_state_unchanged", "controls_fail_closed",
+            "initial_service_state_restored",
+        },
+        "max_downtime_seconds": 180,
+    },
 }
 MAX_BYTES = 64 * 1024
 
@@ -73,7 +83,7 @@ def validate(payload: dict, *, expected_revision: str,
         "downtime_seconds": duration, "revision": revision, "checks": checks,
         "fpl_state_mutated": False, "host_service_restarted": True,
     }
-    if scenario == "postgres_recovery":
+    if scenario in {"postgres_recovery", "browser_recovery"}:
         before = str(payload.get("team_state_sha256_before") or "")
         after = str(payload.get("team_state_sha256_after") or "")
         if (len(before) != 64 or any(char not in "0123456789abcdef" for char in before)

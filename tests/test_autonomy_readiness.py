@@ -64,10 +64,11 @@ def _resilience() -> dict:
 
 def _host_recovery() -> dict:
     return {
-        "status": "completed", "completed": 2, "required": 2,
+        "status": "completed", "completed": 3, "required": 3,
         "scenarios": {
             "api_recovery": {"status": "completed", "checks": 5, "passed": 5},
             "postgres_recovery": {"status": "completed", "checks": 8, "passed": 8},
+            "browser_recovery": {"status": "completed", "checks": 9, "passed": 9},
         },
     }
 
@@ -126,7 +127,7 @@ def test_readiness_fails_closed_and_reports_specific_evidence_gaps() -> None:
     report = evaluate_readiness(
         operator_status=operator, research_coverage=research,
         execution_status=execution, resilience_evidence={"status": "missing"},
-        host_recovery_evidence={"status": "incomplete", "completed": 0, "required": 2},
+        host_recovery_evidence={"status": "incomplete", "completed": 0, "required": 3},
         snapshot_rejection_evidence={"status": "missing"},
         browser_failure_evidence={"status": "missing"},
     )

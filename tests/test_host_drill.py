@@ -47,6 +47,30 @@ def _postgres_payload() -> dict:
     }
 
 
+def _browser_payload() -> dict:
+    fingerprint = "b" * 64
+    return {
+        "schema": "mova-host-drill-v1", "scenario": "browser_recovery",
+        "status": "pass", "started_at": "2026-08-31T02:00:00Z",
+        "finished_at": "2026-08-31T02:00:45Z", "downtime_seconds": 14,
+        "revision": "abc1234",
+        "checks": {
+            "browser_ready_before": True,
+            "session_authenticated_before": True,
+            "browser_unavailable_during": True,
+            "browser_ready_after": True,
+            "session_authenticated_after": True,
+            "revision_unchanged": True,
+            "team_state_unchanged": True,
+            "controls_fail_closed": True,
+            "initial_service_state_restored": True,
+        },
+        "team_state_sha256_before": fingerprint,
+        "team_state_sha256_after": fingerprint,
+        "fpl_state_mutated": False,
+    }
+
+
 def test_host_drill_import_is_allowlisted_atomic_and_consumes_inbox(tmp_path: Path):
     config = RuntimeConfig(artifact_root=tmp_path / "artifacts", git_sha="abc1234")
     source = config.artifact_root / "host-drills" / "inbox" / "api.json"
@@ -116,6 +140,32 @@ def test_postgres_host_drill_rejects_drift_or_invalid_contract(mutation):
         )
 
 
+def test_browser_host_drill_is_allowlisted_and_binds_private_state():
+    result = validate(
+        _browser_payload(), expected_revision="abc1234",
+        expected_scenario="browser_recovery",
+    )
+    assert result["scenario"] == "browser_recovery"
+    assert len(result["checks"]) == 9
+    assert result["team_state_sha256_before"] == "b" * 64
+    assert result["team_state_sha256_after"] == result["team_state_sha256_before"]
+
+
+@pytest.mark.parametrize("mutation", [
+    {"team_state_sha256_after": "c" * 64},
+    {"team_state_sha256_before": "not-a-digest"},
+    {"downtime_seconds": 181},
+    {"checks": {"browser_ready_before": True}},
+])
+def test_browser_host_drill_rejects_state_drift_or_invalid_contract(mutation):
+    payload = {**_browser_payload(), **mutation}
+    with pytest.raises(ValueError):
+        validate(
+            payload, expected_revision="abc1234",
+            expected_scenario="browser_recovery",
+        )
+
+
 def test_host_drill_rejects_scenario_substitution():
     with pytest.raises(ValueError, match="scenario mismatch"):
         validate(
@@ -148,6 +198,22 @@ def test_postgres_host_script_locks_writers_and_proves_recovery():
     assert "team_state_hash" in script
     assert "fpl_state_mutated" in script
     assert not any(token in script for token in ("my-team", "transfers", "agent-browser"))
+
+
+def test_browser_host_script_restores_initial_state_and_never_writes_fpl():
+    script = Path("deploy/bin/browser-recovery-drill.sh").read_text(encoding="utf-8")
+    assert "trap restore_initial_state EXIT HUP INT TERM" in script
+    assert "mova-fpl-browser-recovery-drill.lock" in script
+    assert "mova-fpl-private-state.lock" in script
+    assert '"$browser_session" collect' in script
+    assert "browser_unavailable_during" in script
+    assert "team_state_unchanged" in script
+    assert "controls_fail_closed" in script
+    assert "initial_service_state_restored" in script
+    assert "fpl_state_mutated" in script
+    assert not any(token in script for token in (
+        "execute begin", "execute finalize", "probe-transfers", "browser_writes=true",
+    ))
 
 
 def test_host_cli_binds_scenario_and_identity(tmp_path: Path, monkeypatch, capsys):
