@@ -619,6 +619,23 @@ def build_doctor(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
                                  "squad_size", "free_transfers", "bank_tenths"
                              )}))
 
+        try:
+            from mova_fpl.ops.watchdog import assess_agent_queue
+
+            queue = assess_agent_queue(config, db, now=current)
+            checks.append(_check(
+                "agent_queue_integrity", "PASS" if queue["healthy"] else "WARN",
+                "agent queue lifecycle is consistent" if queue["healthy"]
+                else "agent queue contains lifecycle anomalies",
+                required=False, detail=queue,
+            ))
+        except Exception as exc:  # noqa: BLE001
+            checks.append(_check(
+                "agent_queue_integrity", "WARN", "agent queue could not be inspected",
+                required=False,
+                detail={"error": type(exc).__name__, "message": str(exc)[:300]},
+            ))
+
     for name, path, tables in (
         ("canonical_database", config.canonical_db, ("player_gameweek",)),
         ("trace_database", config.trace_db,

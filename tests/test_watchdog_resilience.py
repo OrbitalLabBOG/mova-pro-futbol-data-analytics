@@ -1,9 +1,18 @@
 from __future__ import annotations
 
+import json
+import os
 from datetime import datetime, timedelta, timezone
 
+from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB
-from mova_fpl.ops.watchdog import INCIDENT_TITLE, resilience_drill, run
+from mova_fpl.ops.watchdog import (
+    AGENT_QUEUE_INCIDENT_TITLE,
+    INCIDENT_TITLE,
+    assess_agent_queue,
+    resilience_drill,
+    run,
+)
 
 
 def test_watchdog_opens_single_p0_delivers_and_resolves(tmp_path):
@@ -83,3 +92,68 @@ def test_resilience_status_is_machine_readable(tmp_path):
     assert status["job_id"] == job_id
     assert status["status"] == "completed"
     assert status["checks"] == status["passed"] == 6
+
+
+def test_watchdog_detects_deduplicates_and_resolves_orphan_agent_request(tmp_path):
+    db = OpsDB(tmp_path / "ops.db", enforce_version=False)
+    db.migrate()
+    job_id, _ = db.start_job("tick", "tick:queue-health", "corr_queue_health")
+    db.finish_job(job_id, "completed")
+    config = RuntimeConfig(research_root=tmp_path / "research")
+    request_id = "deliberation_" + "4" * 32
+    request = config.research_root / "inbox" / f"{request_id}.request.json"
+    request.parent.mkdir(parents=True)
+    request.write_text(json.dumps({
+        "schema": "mova-decision-deliberation-request-v1",
+        "deliberation_id": request_id,
+    }), encoding="utf-8")
+    old = datetime.now(timezone.utc).timestamp() - 120
+    os.utime(request, (old, old))
+    delivered = []
+
+    first = run(db, config=config, sink=lambda event: delivered.append(event["event_key"]))
+    duplicate = run(
+        db, config=config, sink=lambda event: delivered.append(event["event_key"])
+    )
+    request.unlink()
+    recovered = run(
+        db, config=config, sink=lambda event: delivered.append(event["event_key"])
+    )
+
+    assert first["status"] == "degraded"
+    assert first["reason"] == "agent_queue_unhealthy"
+    assert first["agent_queue"]["anomalies"][0]["reason"] == "unregistered_request"
+    assert first["alerts"]["delivered"] == 1
+    assert duplicate["alerts"]["claimed"] == 0
+    assert recovered["status"] == "ok"
+    assert recovered["resolved_by_domain"]["agent_queue"] == 1
+    with db.connect(readonly=True) as con:
+        rows = con.execute(
+            "SELECT severity,status FROM incidents WHERE title=?",
+            (AGENT_QUEUE_INCIDENT_TITLE,),
+        ).fetchall()
+    assert [(row["severity"], row["status"]) for row in rows] == [("P1", "resolved")]
+    assert len(delivered) == 1
+
+
+def test_agent_queue_allows_fresh_enqueue_but_rejects_quarantine_tombstone(tmp_path):
+    db = OpsDB(tmp_path / "ops.db", enforce_version=False)
+    db.migrate()
+    config = RuntimeConfig(research_root=tmp_path / "research")
+    request_id = "deliberation_" + "5" * 32
+    request = config.research_root / "inbox" / f"{request_id}.request.json"
+    request.parent.mkdir(parents=True)
+    request.write_text(json.dumps({
+        "schema": "mova-decision-deliberation-request-v1",
+        "deliberation_id": request_id,
+    }), encoding="utf-8")
+
+    fresh = assess_agent_queue(config, db)
+    tombstone = config.research_root / "quarantine" / f"{request_id}.result.json"
+    tombstone.parent.mkdir(parents=True)
+    tombstone.write_text("{}\n", encoding="utf-8")
+    rejected = assess_agent_queue(config, db)
+
+    assert fresh["healthy"] is True
+    assert rejected["healthy"] is False
+    assert rejected["anomalies"][0]["reason"] == "quarantined_result_tombstone"

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -22,6 +23,7 @@ def _config(tmp_path: Path) -> RuntimeConfig:
         trace_db=tmp_path / "db" / "trace.db",
         canonical_db=tmp_path / "db" / "canonical.db",
         artifact_root=tmp_path / "artifacts",
+        research_root=tmp_path / "artifacts" / "research",
         backup_root=tmp_path / "backups",
         host_probe_path=tmp_path / "runtime" / "host-probe.json",
         lock_path=tmp_path / "runtime.lock",
@@ -234,6 +236,28 @@ def test_doctor_fails_closed_without_required_databases_or_models(tmp_path):
     assert {"canonical_database", "trace_database", "model_artifacts"} <= failures
     assert payload["overall_status"] == "failed"
     assert payload["summary"]["required_failures"] == 3
+
+
+def test_doctor_warns_on_agent_queue_lifecycle_anomaly(tmp_path):
+    config, db, now = _seed(tmp_path)
+    request_id = "deliberation_" + "6" * 32
+    request = config.research_root / "inbox" / f"{request_id}.request.json"
+    request.parent.mkdir(parents=True)
+    request.write_text(json.dumps({
+        "schema": "mova-decision-deliberation-request-v1",
+        "deliberation_id": request_id,
+    }), encoding="utf-8")
+    old = (now - timedelta(minutes=2)).timestamp()
+    request.touch()
+    os.utime(request, (old, old))
+
+    payload = build_doctor(config, db, now=now, network=False)
+    queue = next(item for item in payload["checks"]
+                 if item["name"] == "agent_queue_integrity")
+
+    assert queue["status"] == "WARN"
+    assert queue["required"] is False
+    assert queue["detail"]["anomaly_count"] == 1
 
 
 def test_cli_exposes_human_and_json_operator_modes():

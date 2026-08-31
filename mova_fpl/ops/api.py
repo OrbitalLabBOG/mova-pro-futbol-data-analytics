@@ -99,6 +99,12 @@ def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
                     return
                 if parsed.path == "/metrics":
                     metrics = db.prometheus()
+                    from mova_fpl.ops.watchdog import (
+                        agent_queue_prometheus, assess_agent_queue,
+                    )
+                    metrics += agent_queue_prometheus(
+                        assess_agent_queue(runtime, db)
+                    )
                     from mova_fpl.ops.alerts import channel_prometheus, channel_report
                     metrics += channel_prometheus(channel_report(runtime, db))
                     metrics += db.cost_prometheus(
@@ -161,6 +167,16 @@ def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
                         metrics += "mova_autonomy_readiness_up 0\n"
                     self._send(HTTPStatus.OK, metrics.encode(),
                                "text/plain; version=0.0.4; charset=utf-8")
+                    return
+                if parsed.path == "/api/v1/agent-queue":
+                    from mova_fpl.ops.watchdog import assess_agent_queue
+
+                    payload = assess_agent_queue(runtime, db)
+                    self._send(
+                        HTTPStatus.OK if payload["healthy"]
+                        else HTTPStatus.SERVICE_UNAVAILABLE,
+                        _json_bytes(payload), "application/json; charset=utf-8",
+                    )
                     return
                 if parsed.path in {"/", "/dashboard"}:
                     status = build_status(runtime, db)

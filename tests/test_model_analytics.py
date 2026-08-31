@@ -135,7 +135,9 @@ def test_market_context_requires_and_preserves_bookmaker_consensus():
 def test_read_only_api_exposes_analytics_and_prometheus(tmp_path: Path):
     config = RuntimeConfig(
         ops_db=tmp_path / "ops.db", artifact_root=tmp_path / "artifacts",
-        analytics_root=tmp_path / "analytics", postgres_credential_file=tmp_path / "missing",
+        analytics_root=tmp_path / "analytics",
+        research_root=tmp_path / "artifacts" / "research",
+        postgres_credential_file=tmp_path / "missing",
     )
     db = OpsDB(config.ops_db, enforce_version=False)
     db.migrate()
@@ -165,6 +167,10 @@ def test_read_only_api_exposes_analytics_and_prometheus(tmp_path: Path):
             assert orchestration["runtime_mutated"] is False
         with urllib.request.urlopen(base + "/api/v1/budget-overrun-events", timeout=2) as response:
             assert json.load(response)["items"] == []
+        with urllib.request.urlopen(base + "/api/v1/agent-queue", timeout=2) as response:
+            queue = json.load(response)
+            assert queue["healthy"] is True
+            assert queue["requests"] == 0
         with urllib.request.urlopen(base + "/metrics", timeout=2) as response:
             metrics = response.read().decode()
             assert "mova_analytics_service_up 1" in metrics
@@ -173,6 +179,8 @@ def test_read_only_api_exposes_analytics_and_prometheus(tmp_path: Path):
             assert "mova_autonomy_readiness_up 1" in metrics
             assert "mova_harness_scorecard_up 1" in metrics
             assert "mova_orchestration_dependency_violations 0" in metrics
+            assert "mova_agent_queue_healthy 1" in metrics
+            assert "mova_agent_queue_anomalies 0" in metrics
     finally:
         server.shutdown()
         server.server_close()
