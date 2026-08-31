@@ -11,6 +11,8 @@ if [[ $enqueue_rc -ne 0 && $enqueue_rc -ne 75 ]]; then
   exit "$enqueue_rc"
 fi
 
+# Los receipts preceden al resultado: preservan incluso intentos fallidos o muertos.
+/usr/local/bin/mova strategy attempts import
 # Importar primero permite que el siguiente envelope selle research ya validado.
 /usr/local/bin/mova strategy research import
 /usr/local/bin/mova strategy deliberate import
@@ -29,12 +31,13 @@ fi
 
 worker_rc=0
 docker compose --profile research run --rm --no-deps -T research || worker_rc=$?
+
+/usr/local/bin/mova strategy attempts import
+/usr/local/bin/mova strategy research import
+/usr/local/bin/mova strategy deliberate import
 if [[ $worker_rc -ne 0 && $worker_rc -ne 75 ]]; then
   exit "$worker_rc"
 fi
-
-/usr/local/bin/mova strategy research import
-/usr/local/bin/mova strategy deliberate import
 if [[ $worker_rc -eq 75 ]]; then
   exit 75
 fi

@@ -110,6 +110,7 @@ def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
                     metrics += db.cost_prometheus(
                         runtime.agent_budget_policy(), season=runtime.season
                     )
+                    metrics += db.agent_worker_attempt_prometheus()
                     metrics += db.model_release_prometheus()
                     try:
                         from mova_fpl.ops.harness_scorecard import (
@@ -176,6 +177,12 @@ def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
                         HTTPStatus.OK if payload["healthy"]
                         else HTTPStatus.SERVICE_UNAVAILABLE,
                         _json_bytes(payload), "application/json; charset=utf-8",
+                    )
+                    return
+                if parsed.path == "/api/v1/agent-attempts":
+                    self._send(
+                        HTTPStatus.OK, _json_bytes(db.agent_worker_attempt_status()),
+                        "application/json; charset=utf-8",
                     )
                     return
                 if parsed.path in {"/", "/dashboard"}:
@@ -342,6 +349,7 @@ def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
                     "/api/v1/lessons": "lessons",
                     "/api/v1/budget-reservations": "agent_budget_reservations",
                     "/api/v1/budget-overrun-events": "agent_budget_overrun_events",
+                    "/api/v1/agent-attempt-events": "agent_worker_attempt_events",
                     "/api/v1/gameweek-reviews": "gameweek_reviews",
                     "/api/v1/model-bundle-releases": "model_bundle_releases",
                     "/api/v1/model-bundle-release-events": "model_bundle_release_events",

@@ -1035,6 +1035,34 @@ MIGRATION_018 = (
     "ON agent_budget_overrun_events(reservation_id,sequence DESC)",
 )
 
+MIGRATION_019 = (
+    """
+    CREATE TABLE IF NOT EXISTS agent_worker_attempt_events (
+        event_id TEXT PRIMARY KEY,
+        attempt_id TEXT NOT NULL,
+        subject_type TEXT NOT NULL CHECK (subject_type IN ('research','deliberation')),
+        subject_id TEXT NOT NULL,
+        request_sha256 TEXT NOT NULL CHECK (length(request_sha256) = 64),
+        event_type TEXT NOT NULL CHECK (event_type IN ('started','finished')),
+        status TEXT NOT NULL CHECK (status IN ('running','succeeded','failed')),
+        model TEXT NOT NULL,
+        input_tokens INTEGER CHECK (input_tokens IS NULL OR input_tokens >= 0),
+        output_tokens INTEGER CHECK (output_tokens IS NULL OR output_tokens >= 0),
+        duration_ms INTEGER CHECK (duration_ms IS NULL OR duration_ms >= 0),
+        error_code TEXT,
+        output_present INTEGER CHECK (output_present IS NULL OR output_present IN (0,1)),
+        receipt_path TEXT NOT NULL,
+        receipt_sha256 TEXT NOT NULL CHECK (length(receipt_sha256) = 64),
+        occurred_at TEXT NOT NULL,
+        UNIQUE (attempt_id, event_type),
+        CHECK ((event_type='started' AND status='running') OR event_type='finished'),
+        CHECK ((status='failed' AND error_code IS NOT NULL) OR status!='failed')
+    ) STRICT
+    """,
+    "CREATE INDEX IF NOT EXISTS idx_agent_worker_attempt_subject "
+    "ON agent_worker_attempt_events(subject_type,subject_id,occurred_at)",
+)
+
 MIGRATIONS = (
     (1, "initial_ops_schema", MIGRATION_001),
     (2, "team_state_artifact_provenance", MIGRATION_002),
@@ -1054,4 +1082,5 @@ MIGRATIONS = (
     (16, "browser_rehearsal_evidence_ledger", MIGRATION_016),
     (17, "semantic_deliberation_idempotency", MIGRATION_017),
     (18, "agent_budget_overrun_lifecycle", MIGRATION_018),
+    (19, "agent_worker_attempt_ledger", MIGRATION_019),
 )

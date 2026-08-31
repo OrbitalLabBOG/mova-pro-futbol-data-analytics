@@ -37,7 +37,7 @@ def test_worker_deshabilita_herramientas_que_podrian_leer_auth_o_actuar():
     assert "máximo 10 consultas web distintas y 12 documents finales" in worker
     assert "nunca excedas el budget" in worker
     assert '"mova-research-brief-v2"' in worker
-    assert "duration_ms: Date.now() - startedAtMs" in worker
+    assert "duration_ms: durationMs" in worker
     assert "search_requests: null" in worker
     assert "existsSync(finalTmp)" in worker
     assert '"codex_output_missing"' in worker
@@ -51,6 +51,11 @@ def test_worker_deshabilita_herramientas_que_podrian_leer_auth_o_actuar():
     assert "generated_at_replaced: modelGeneratedAtReplaced" in worker
     assert 'statSync(join(quarantine, `${id}.result.json`))' in worker
     assert "terminal tombstone" in worker
+    assert "maxAutomaticAttempts = 2" in worker
+    assert 'receipt(runId, attemptId, request, "started")' in worker
+    assert 'receipt(runId, attemptId, request, "finished"' in worker
+    assert "stderr_tail" not in worker
+    assert "${runId}.${attemptId}.events.jsonl" in worker
 
 
 def test_normalizer_drops_or_downgrades_orphan_references_without_inventing_evidence():
@@ -161,3 +166,5 @@ def test_timer_no_levanta_codex_sin_request_pendiente():
     cycle = (ROOT / "deploy/bin/research-cycle.sh").read_text(encoding="utf-8")
     assert 'compgen -G "$research_root/inbox/*.request.json"' in cycle
     assert cycle.index("compgen -G") < cycle.index("docker compose")
+    assert cycle.count("strategy attempts import") == 2
+    assert cycle.rindex("strategy attempts import") > cycle.index("docker compose")

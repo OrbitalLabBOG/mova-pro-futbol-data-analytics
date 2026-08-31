@@ -64,7 +64,7 @@ def test_shadow_mapping_targets_are_unique_and_schema_qualified() -> None:
 
 
 def test_shadow_migration_is_versioned_and_contains_required_schemas() -> None:
-    assert latest_version() == 21
+    assert latest_version() == 22
     migration = MIGRATIONS / "001_shadow_store.sql"
     sql = migration.read_text(encoding="utf-8").lower()
     for schema in ("mova_meta", "raw", "analytics", "game", "research", "agent", "ops"):
@@ -92,6 +92,11 @@ def test_shadow_migration_is_versioned_and_contains_required_schemas() -> None:
     ).lower()
     assert "agent.budget_overrun_events" in overrun_sql
     assert "verified_followup" in overrun_sql
+    worker_attempt_sql = (MIGRATIONS / "022_agent_worker_attempt_ledger.sql").read_text(
+        encoding="utf-8"
+    ).lower()
+    assert "agent.worker_attempt_events" in worker_attempt_sql
+    assert "unique (attempt_id, event_type)" in worker_attempt_sql
     role_sql = (MIGRATIONS / "019_login_role_separation.sql").read_text(
         encoding="utf-8"
     ).lower()

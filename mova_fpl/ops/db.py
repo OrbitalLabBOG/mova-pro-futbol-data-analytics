@@ -1920,6 +1920,102 @@ class OpsDB:
             ).fetchone()
         return dict(row) if row else None
 
+    def agent_subject(self, subject_type: str, subject_id: str) -> dict | None:
+        if subject_type == "research":
+            table, key = "research_runs", "research_run_id"
+        elif subject_type == "deliberation":
+            table, key = "decision_deliberations", "deliberation_id"
+        else:
+            raise ValueError("subject_type agentic inválido")
+        with self.connect(readonly=True) as con:
+            row = con.execute(
+                f"SELECT * FROM {table} WHERE {key}=?", (subject_id,)
+            ).fetchone()
+        return dict(row) if row else None
+
+    def record_agent_worker_attempt_event(self, payload: dict, *, receipt_path: str,
+                                          receipt_sha256: str) -> dict:
+        event_id = "agentattempt_" + hashlib.sha256(
+            f"{payload['attempt_id']}:{payload['event_type']}".encode("utf-8")
+        ).hexdigest()[:24]
+        with self.transaction() as con:
+            existing = con.execute(
+                "SELECT * FROM agent_worker_attempt_events WHERE event_id=?", (event_id,)
+            ).fetchone()
+            if existing:
+                if existing["receipt_sha256"] != receipt_sha256:
+                    raise ValueError("receipt replay con contenido diferente")
+                return {**dict(existing), "reused": True}
+            con.execute(
+                """INSERT INTO agent_worker_attempt_events(
+                event_id,attempt_id,subject_type,subject_id,request_sha256,event_type,status,
+                model,input_tokens,output_tokens,duration_ms,error_code,output_present,
+                receipt_path,receipt_sha256,occurred_at)
+                VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (event_id, payload["attempt_id"], payload["subject_type"],
+                 payload["subject_id"], payload["request_sha256"], payload["event_type"],
+                 payload["status"], payload["model"], payload.get("input_tokens"),
+                 payload.get("output_tokens"), payload.get("duration_ms"),
+                 payload.get("error_code"), payload.get("output_present"), receipt_path,
+                 receipt_sha256, payload["occurred_at"]),
+            )
+            subject = self.agent_subject(payload["subject_type"], payload["subject_id"])
+            self.append_audit(
+                "agent_worker_attempt_" + payload["event_type"], actor="mova-agent-worker",
+                severity="warning" if payload["status"] == "failed" else "info",
+                cycle_id=subject.get("cycle_id") if subject else None,
+                subject_type=payload["subject_type"], subject_id=payload["subject_id"],
+                payload={
+                    "attempt_id": payload["attempt_id"], "status": payload["status"],
+                    "error_code": payload.get("error_code"),
+                    "input_tokens": payload.get("input_tokens"),
+                    "output_tokens": payload.get("output_tokens"),
+                    "duration_ms": payload.get("duration_ms"),
+                    "receipt_sha256": receipt_sha256,
+                }, con=con,
+            )
+        return {"event_id": event_id, "attempt_id": payload["attempt_id"],
+                "event_type": payload["event_type"], "reused": False}
+
+    def agent_worker_attempt_status(self) -> dict:
+        with self.connect(readonly=True) as con:
+            rows = con.execute(
+                """SELECT subject_type,subject_id,
+                COUNT(DISTINCT CASE WHEN event_type='started' THEN attempt_id END) AS attempts,
+                COUNT(DISTINCT CASE WHEN event_type='finished' AND status='failed'
+                                    THEN attempt_id END) AS failures,
+                COUNT(DISTINCT CASE WHEN event_type='finished' AND status='succeeded'
+                                    THEN attempt_id END) AS successes,
+                MAX(occurred_at) AS last_event_at
+                FROM agent_worker_attempt_events
+                GROUP BY subject_type,subject_id ORDER BY last_event_at DESC"""
+            ).fetchall()
+        subjects = [dict(row) for row in rows]
+        totals = {"attempts": 0, "failures": 0, "successes": 0}
+        for row in subjects:
+            for key in totals:
+                totals[key] += int(row[key])
+        exhausted = sum(
+            int(row["attempts"]) >= 2 and not int(row["successes"]) for row in subjects
+        )
+        return {"status": "ok", "max_automatic_attempts": 2,
+                "subjects": subjects, "subject_count": len(subjects),
+                "totals": totals, "exhausted_subjects": exhausted}
+
+    def agent_worker_attempt_prometheus(self) -> str:
+        report = self.agent_worker_attempt_status()
+        lines = [
+            "# HELP mova_agent_worker_attempts Agent worker attempts by terminal outcome.",
+            "# TYPE mova_agent_worker_attempts gauge",
+            "# HELP mova_agent_worker_exhausted_subjects Subjects that reached the replay limit.",
+            "# TYPE mova_agent_worker_exhausted_subjects gauge",
+            f'mova_agent_worker_attempts{{status="started"}} {report["totals"]["attempts"]}',
+            f'mova_agent_worker_attempts{{status="failed"}} {report["totals"]["failures"]}',
+            f'mova_agent_worker_attempts{{status="succeeded"}} {report["totals"]["successes"]}',
+            f'mova_agent_worker_exhausted_subjects {report["exhausted_subjects"]}',
+        ]
+        return "\n".join(lines) + "\n"
+
     def reject_research_run(self, research_run_id: str, *, error_code: str,
                             error_detail: str) -> None:
         with self.transaction() as con:
@@ -3622,6 +3718,7 @@ class OpsDB:
                    "cycle_manifests", "research_runs", "research_documents",
                    "research_signals", "research_conflicts", "cost_ledger",
                    "agent_budget_reservations", "agent_budget_overrun_events",
+                   "agent_worker_attempt_events",
                    "change_proposal_evaluations", "lessons",
                    "model_bundle_releases", "model_bundle_release_events",
                    "browser_rehearsals"}
@@ -3651,6 +3748,7 @@ class OpsDB:
             "cost_ledger": "occurred_at",
             "agent_budget_reservations": "created_at",
             "agent_budget_overrun_events": "created_at",
+            "agent_worker_attempt_events": "occurred_at",
             "change_proposal_evaluations": "created_at", "lessons": "created_at",
             "model_bundle_releases": "created_at",
             "model_bundle_release_events": "occurred_at",

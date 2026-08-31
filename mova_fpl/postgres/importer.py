@@ -188,6 +188,8 @@ TABLES = (
     TableSpec("ops", "agent_budget_overrun_events", "agent.budget_overrun_events",
               renames={"evidence_json": "evidence"},
               json_columns=frozenset({"evidence_json"})),
+    TableSpec("ops", "agent_worker_attempt_events", "agent.worker_attempt_events",
+              bool_columns=frozenset({"output_present"})),
     TableSpec("ops", "browser_rehearsals", "agent.browser_rehearsals",
               renames={"checks_json": "checks"},
               json_columns=frozenset({"checks_json"}),
