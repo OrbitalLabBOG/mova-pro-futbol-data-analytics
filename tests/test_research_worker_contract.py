@@ -168,12 +168,18 @@ def test_timer_no_es_un_agente_residente():
 
 def test_timer_no_levanta_codex_sin_request_pendiente():
     cycle = (ROOT / "deploy/bin/research-cycle.sh").read_text(encoding="utf-8")
+    bootstrap = (ROOT / "deploy/bin/bootstrap-host.sh").read_text(encoding="utf-8")
     assert 'compgen -G "$research_root/inbox/*.request.json"' in cycle
     assert cycle.index("compgen -G") < cycle.index("docker compose")
     assert cycle.count("strategy attempts import") == 2
     assert cycle.rindex("strategy attempts import") > cycle.index("docker compose")
     assert "strategy attempts authorize" in cycle
     assert cycle.index("strategy attempts authorize") < cycle.index("docker compose")
+    assert 'for directory in inbox outbox archive quarantine logs receipts permits' in cycle
+    assert 'install -d -m 2770 -o "$research_uid" -g "$shared_gid"' in cycle
+    assert cycle.index("for directory in") < cycle.index("strategy attempts import")
+    assert "/var/lib/mova-fpl/artifacts/research/receipts" in bootstrap
+    assert "/var/lib/mova-fpl/artifacts/research/permits" in bootstrap
 
 
 def test_worker_falla_cerrado_con_request_sin_permiso_host(tmp_path):

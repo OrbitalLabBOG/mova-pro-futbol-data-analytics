@@ -15,7 +15,9 @@ install -d -m 2770 -o 10002 -g 10001 \
   /var/lib/mova-fpl/artifacts/research/outbox \
   /var/lib/mova-fpl/artifacts/research/archive \
   /var/lib/mova-fpl/artifacts/research/quarantine \
-  /var/lib/mova-fpl/artifacts/research/logs
+  /var/lib/mova-fpl/artifacts/research/logs \
+  /var/lib/mova-fpl/artifacts/research/receipts \
+  /var/lib/mova-fpl/artifacts/research/permits
 install -d -m 0700 -o 999 -g 999 /var/lib/mova-fpl/postgres
 install -d -m 0700 -o 1000 -g 1000 /var/lib/mova-fpl/browser-profile
 install -d -m 0750 -o 10001 -g 10001 /opt/orbital/backups/mova-fpl

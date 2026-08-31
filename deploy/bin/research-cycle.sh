@@ -3,6 +3,17 @@ set -euo pipefail
 
 repo_dir=${MOVA_REPO_DIR:-/opt/orbital/services/mova-fpl}
 research_root=${MOVA_RESEARCH_ROOT:-/var/lib/mova-fpl/artifacts/research}
+research_uid=${MOVA_RESEARCH_UID:-10002}
+shared_gid=${MOVA_RUNTIME_GID:-10001}
+
+# Engine (uid 10001) y worker Codex (uid 10002 + grupo 10001) comparten esta
+# frontera. Si engine crea primero receipts/permits con 0750, el worker no puede
+# escribir su receipt started y el timer autoriza eternamente sin consumir el
+# intento. El host oneshot repara sólo los directorios allowlisted antes de
+# tocar la cola; setgid conserva el grupo compartido para archivos nuevos.
+for directory in inbox outbox archive quarantine logs receipts permits; do
+  install -d -m 2770 -o "$research_uid" -g "$shared_gid" "$research_root/$directory"
+done
 cd "$repo_dir"
 
 enqueue_rc=0
