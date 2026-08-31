@@ -44,7 +44,8 @@ El workpack termina con una recomendación de nivel; no lo activa sin aprobació
 
 Ya existen readiness consolidado, rehearsals browser por capacidad, cutover/rollback de lectura,
 restore drills e idempotencia de agentes. HV1-09B añade un escenario hermético repetible para
-scheduler ausente, P0, delivery, deduplicación y recuperación. HV1-09C añade caída real y
-recuperación del contenedor API con trap host, integridad posterior e import allowlisted. Continúan
-pendientes los escenarios combinados DB/browser/DOM/save ambiguo, un reboot real, los ciclos independientes y las
-aprobaciones; por ello el workpack permanece `active-shadow` y no recomienda promoción.
+scheduler ausente, P0, delivery, deduplicación y recuperación. HV1-09C verificó en producción una
+caída real y recuperación del contenedor API en 7 s, con trap host, integridad posterior, import
+allowlisted y replay sin segunda caída. Continúan pendientes los escenarios combinados
+DB/browser/DOM/save ambiguo, un reboot real, los ciclos independientes y las aprobaciones; por ello
+el workpack permanece `active-shadow` y no recomienda promoción.

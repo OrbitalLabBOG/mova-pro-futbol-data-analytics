@@ -4,7 +4,7 @@ name: "HV1-09C — API recovery drill"
 created: 2026-08-31
 updated: 2026-08-31
 tags: [mova, fpl, chaos, api, recovery, idempotency]
-status: implemented-pending-live-rollout
+status: verified-live
 ---
 
 # HV1-09C — API recovery drill
@@ -37,12 +37,29 @@ El drill sí reinicia un contenedor de observabilidad; por eso es host-only y ex
 controles, equipo, sesión, collector o modelos. No prueba caída de DB, browser/DOM, save ambiguo o
 reboot completo, que permanecen abiertos.
 
-## Evidencia previa al rollout
+## Evidencia de verificación
 
 - pruebas dirigidas: 21 pass;
 - suite completa: `1098 passed, 1 skipped, 79 deselected`;
 - import allowlisted, rechazo de revision/status/checks/path/downtime inválidos y consumo atómico
   del inbox cubiertos;
 - `compileall`, sintaxis shell y `git diff --check`: pass.
+- revisión desplegada y verificada en checkout, imagen y etiqueta OCI: `8f7b2d1`;
+- primer ensayo sobre `f5dcda0`: la API se recuperó, pero el import rechazó escribir en
+  `host-drills/imported` por ownership incorrecto. El defecto quedó corregido antes del segundo
+  ensayo con un preflight reproducible de ambos directorios y prueba de regresión;
+- ensayo vivo aprobado: job `job_2b0f255871c74ee3852752c4d6f61678`, downtime 7 s, cinco de
+  cinco checks, `fpl_state_mutated=false` y artefacto SHA-256
+  `808084dd0ee2793f2c7420386803853b34600b7aa8fb76ff3428917b173afc9d`;
+- replay con la misma idempotency key: `reused=true`, mismo job y `StartedAt` del contenedor
+  sin cambios; no se repitió la caída;
+- `mova doctor`: 22 pass, 0 warn, 0 fail; watchdog timer activo; `mova safety`:
+  `safe_to_wait`, sin alertas abiertas;
+- readiness: 10 pass, 6 pending, 0 blocked; permanece A0/shadow por gates explícitos y
+  temporales, no por fallo de este escenario;
+- PostgreSQL: import `pgimport_1b1954e2184a4b628b271c403a36832c`, paridad 54/54;
+- backup posterior: job `job_6698226b2b0547bb9a273112c5c8bb7e`, ruta
+  `/opt/orbital/backups/mova-fpl/20260831T014635Z`.
 
-Suite completa y evidencia viva se anexarán sólo tras el deploy y la recuperación observada.
+El archivo del primer intento permanece en el inbox como evidencia diagnóstica no importada. No
+cuenta como prueba aprobada y no altera el único job canónico de este escenario.
