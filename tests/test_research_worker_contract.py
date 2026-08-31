@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 import subprocess
 
@@ -52,8 +53,11 @@ def test_worker_deshabilita_herramientas_que_podrian_leer_auth_o_actuar():
     assert 'statSync(join(quarantine, `${id}.result.json`))' in worker
     assert "terminal tombstone" in worker
     assert "maxAutomaticAttempts = 2" in worker
-    assert 'receipt(runId, attemptId, request, "started")' in worker
-    assert 'receipt(runId, attemptId, request, "finished"' in worker
+    assert 'loadPermit(runId, request.request_sha256)' in worker
+    assert 'permit.authorization_id, request, "started")' in worker
+    assert 'permit.authorization_id, request, "finished"' in worker
+    assert '"mova-agent-attempt-v2"' in worker
+    assert '"mova-agent-attempt-permit-v1"' in worker
     assert "stderr_tail" not in worker
     assert "${runId}.${attemptId}.events.jsonl" in worker
 
@@ -168,3 +172,22 @@ def test_timer_no_levanta_codex_sin_request_pendiente():
     assert cycle.index("compgen -G") < cycle.index("docker compose")
     assert cycle.count("strategy attempts import") == 2
     assert cycle.rindex("strategy attempts import") > cycle.index("docker compose")
+    assert "strategy attempts authorize" in cycle
+    assert cycle.index("strategy attempts authorize") < cycle.index("docker compose")
+
+
+def test_worker_falla_cerrado_con_request_sin_permiso_host(tmp_path):
+    inbox = tmp_path / "inbox"
+    inbox.mkdir(parents=True)
+    run_id = "research_" + "1" * 32
+    (inbox / f"{run_id}.request.json").write_text(json.dumps({
+        "schema": "mova-research-request-v1", "research_run_id": run_id,
+        "request_sha256": "a" * 64,
+    }) + "\n", encoding="utf-8")
+    result = subprocess.run(
+        ["node", str(ROOT / "deploy/research/codex-worker.mjs")], cwd=ROOT,
+        env={**os.environ, "MOVA_RESEARCH_ROOT": str(tmp_path)},
+        text=True, capture_output=True, check=False,
+    )
+    assert result.returncode == 75
+    assert list((tmp_path / "receipts").glob("*.json")) == []

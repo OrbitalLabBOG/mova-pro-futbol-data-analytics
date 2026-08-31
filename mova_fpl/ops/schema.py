@@ -1078,6 +1078,34 @@ MIGRATION_020 = (
     "WHERE accounting_mode IS NULL",
 )
 
+MIGRATION_021 = (
+    """
+    CREATE TABLE IF NOT EXISTS agent_attempt_authorizations (
+        authorization_id TEXT PRIMARY KEY,
+        subject_type TEXT NOT NULL CHECK (subject_type IN ('research','deliberation')),
+        subject_id TEXT NOT NULL,
+        request_sha256 TEXT NOT NULL CHECK (length(request_sha256) = 64),
+        attempt_number INTEGER NOT NULL CHECK (attempt_number BETWEEN 1 AND 2),
+        status TEXT NOT NULL CHECK (status IN ('preparing','authorized','started','finished','expired')),
+        budget_snapshot_json TEXT NOT NULL CHECK (json_valid(budget_snapshot_json)),
+        deadline_at TEXT NOT NULL,
+        expires_at TEXT NOT NULL,
+        permit_path TEXT NOT NULL,
+        permit_sha256 TEXT CHECK (permit_sha256 IS NULL OR length(permit_sha256) = 64),
+        attempt_id TEXT,
+        created_at TEXT NOT NULL,
+        started_at TEXT,
+        finished_at TEXT,
+        UNIQUE (subject_id, authorization_id)
+    ) STRICT
+    """,
+    "CREATE INDEX IF NOT EXISTS idx_agent_attempt_authorization_subject "
+    "ON agent_attempt_authorizations(subject_type,subject_id,created_at DESC)",
+    "ALTER TABLE agent_worker_attempt_events ADD COLUMN authorization_id TEXT",
+    "CREATE INDEX IF NOT EXISTS idx_agent_worker_attempt_authorization "
+    "ON agent_worker_attempt_events(authorization_id,event_type)",
+)
+
 MIGRATIONS = (
     (1, "initial_ops_schema", MIGRATION_001),
     (2, "team_state_artifact_provenance", MIGRATION_002),
@@ -1099,4 +1127,5 @@ MIGRATIONS = (
     (18, "agent_budget_overrun_lifecycle", MIGRATION_018),
     (19, "agent_worker_attempt_ledger", MIGRATION_019),
     (20, "physical_attempt_budget_accounting", MIGRATION_020),
+    (21, "pre_attempt_authorization", MIGRATION_021),
 )

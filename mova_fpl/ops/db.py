@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import sqlite3
 import uuid
 from contextlib import contextmanager
@@ -2043,6 +2044,234 @@ class OpsDB:
             ).fetchone()
         return dict(row) if row else None
 
+    def pending_agent_subjects(self) -> list[dict]:
+        with self.connect(readonly=True) as con:
+            rows = con.execute(
+                """SELECT 'research' subject_type,research_run_id subject_id,cycle_id,
+                request_path,request_sha256,queued_at FROM research_runs WHERE status='queued'
+                UNION ALL
+                SELECT 'deliberation',deliberation_id,cycle_id,request_path,request_sha256,
+                queued_at FROM decision_deliberations WHERE status='queued'
+                ORDER BY queued_at,subject_id"""
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+    def prepare_agent_attempt_authorization(
+        self, *, subject_type: str, subject_id: str, permit_dir: str,
+        now: datetime, permit_ttl_seconds: int, final_cutoff_seconds: int,
+    ) -> dict:
+        """Atomically re-check budget/deadline before a physical agent call."""
+        current = now.astimezone(timezone.utc)
+        now_text = current.isoformat(timespec="milliseconds")
+        with self.transaction() as con:
+            if subject_type == "research":
+                table, key = "research_runs", "research_run_id"
+            elif subject_type == "deliberation":
+                table, key = "decision_deliberations", "deliberation_id"
+            else:
+                raise ValueError("subject_type agentic inválido")
+            subject = con.execute(
+                f"SELECT * FROM {table} WHERE {key}=?", (subject_id,)
+            ).fetchone()
+            if not subject or subject["status"] != "queued":
+                return {"status": "skipped", "reason": "subject_not_queued"}
+            cycle = con.execute(
+                "SELECT * FROM gameweek_cycles WHERE cycle_id=?", (subject["cycle_id"],)
+            ).fetchone()
+            if not cycle:
+                return {"status": "blocked", "reason": "cycle_missing"}
+            deadline = datetime.fromisoformat(
+                str(cycle["deadline_at"]).replace("Z", "+00:00")
+            ).astimezone(timezone.utc)
+            seconds_to_deadline = int((deadline - current).total_seconds())
+            starts = int(con.execute(
+                "SELECT COUNT(DISTINCT attempt_id) FROM agent_worker_attempt_events "
+                "WHERE subject_type=? AND subject_id=? AND event_type='started'",
+                (subject_type, subject_id),
+            ).fetchone()[0])
+            successes = int(con.execute(
+                "SELECT COUNT(DISTINCT attempt_id) FROM agent_worker_attempt_events "
+                "WHERE subject_type=? AND subject_id=? AND event_type='finished' "
+                "AND status='succeeded'", (subject_type, subject_id),
+            ).fetchone()[0])
+            attempt_number = starts + 1
+            reservation = con.execute(
+                "SELECT * FROM agent_budget_reservations WHERE subject_id=?",
+                (subject_id,),
+            ).fetchone()
+            checks: dict[str, dict] = {
+                "subject_queued": {"passed": True, "observed": subject["status"]},
+                "no_success": {"passed": successes == 0, "observed": successes},
+                "attempt_limit": {"passed": attempt_number <= 2,
+                                  "observed": attempt_number, "limit": 2},
+                "deadline_open": {
+                    "passed": seconds_to_deadline > final_cutoff_seconds,
+                    "observed_seconds": seconds_to_deadline,
+                    "required_seconds": final_cutoff_seconds,
+                },
+                "reservation_active": {
+                    "passed": bool(reservation and reservation["status"] == "reserved"),
+                    "observed": reservation["status"] if reservation else "missing",
+                },
+            }
+
+            def audit_blocked(result: dict) -> None:
+                already = con.execute(
+                    "SELECT 1 FROM audit_events WHERE "
+                    "event_type='agent_attempt_authorization_blocked' "
+                    "AND subject_type=? AND subject_id=? "
+                    "AND json_extract(payload_json,'$.attempt_number')=? "
+                    "AND json_extract(payload_json,'$.reason')=? LIMIT 1",
+                    (subject_type, subject_id, attempt_number, result["reason"]),
+                ).fetchone()
+                if not already:
+                    self.append_audit(
+                        "agent_attempt_authorization_blocked",
+                        actor="mova-agent-authorizer", severity="warning",
+                        cycle_id=subject["cycle_id"], subject_type=subject_type,
+                        subject_id=subject_id, payload=result, con=con,
+                    )
+
+            if not all(item["passed"] for item in checks.values()):
+                result = {"status": "blocked", "reason": "pre_attempt_gate_failed",
+                          "subject_type": subject_type, "subject_id": subject_id,
+                          "attempt_number": attempt_number, "checks": checks}
+                audit_blocked(result)
+                return result
+            policy = json.loads(reservation["policy_json"])
+            physical = self._physical_attempt_accounting(con, reservation=reservation)
+            previous_tokens = int(physical["accounted_tokens"]) if starts else 0
+            gw = self._agent_budget_aggregates(con, cycle_id=subject["cycle_id"])
+            month = self._agent_budget_aggregates(con, month=now_text[:7])
+
+            def committed(scope: dict, field: str) -> int:
+                return sum(int(scope[name][field])
+                           for name in ("settled", "reserved", "charged"))
+
+            projected_job = previous_tokens + int(reservation["reserved_tokens"])
+            projected_gw_tokens = committed(gw, "tokens") + previous_tokens
+            projected_month_tokens = committed(month, "tokens") + previous_tokens
+            projected_gw_uses = committed(gw, "uses") + starts
+            projected_month_uses = committed(month, "uses") + starts
+            checks.update({
+                "job_tokens": {"passed": projected_job <= int(policy["job_tokens"]),
+                               "used": projected_job, "limit": int(policy["job_tokens"])},
+                "gw_tokens": {"passed": projected_gw_tokens <= int(policy["gw_tokens"]),
+                              "used": projected_gw_tokens,
+                              "limit": int(policy["gw_tokens"])},
+                "month_tokens": {
+                    "passed": projected_month_tokens <= int(policy["month_tokens"]),
+                    "used": projected_month_tokens,
+                    "limit": int(policy["month_tokens"]),
+                },
+                "gw_uses": {"passed": projected_gw_uses <= int(policy["gw_uses"]),
+                            "used": projected_gw_uses, "limit": int(policy["gw_uses"])},
+                "month_uses": {
+                    "passed": projected_month_uses <= int(policy["month_uses"]),
+                    "used": projected_month_uses, "limit": int(policy["month_uses"]),
+                },
+            })
+            if not all(item["passed"] for item in checks.values()):
+                result = {"status": "blocked", "reason": "pre_attempt_budget_exceeded",
+                          "subject_type": subject_type, "subject_id": subject_id,
+                          "attempt_number": attempt_number, "checks": checks}
+                audit_blocked(result)
+                return result
+            con.execute(
+                "UPDATE agent_attempt_authorizations SET status='expired' "
+                "WHERE subject_id=? AND status IN ('preparing','authorized') AND expires_at<=?",
+                (subject_id, now_text),
+            )
+            existing = con.execute(
+                "SELECT * FROM agent_attempt_authorizations WHERE subject_id=? "
+                "AND request_sha256=? AND attempt_number=? "
+                "AND status IN ('preparing','authorized') AND expires_at>? "
+                "ORDER BY created_at DESC LIMIT 1",
+                (subject_id, subject["request_sha256"], attempt_number, now_text),
+            ).fetchone()
+            if existing:
+                return {**dict(existing), "budget_snapshot": json.loads(
+                    existing["budget_snapshot_json"]), "reused": True}
+            expires = min(
+                current + timedelta(seconds=permit_ttl_seconds),
+                deadline - timedelta(seconds=final_cutoff_seconds),
+            )
+            authorization_id = new_id("agentauth")
+            permit_path = str(
+                Path(permit_dir) / f"{subject_id}.{authorization_id}.permit.json"
+            )
+            snapshot = {
+                "checks": checks, "previous_attempts": starts,
+                "previous_accounted_tokens": previous_tokens,
+                "reservation_id": reservation["reservation_id"],
+                "reservation_tokens": int(reservation["reserved_tokens"]),
+            }
+            con.execute(
+                """INSERT INTO agent_attempt_authorizations(
+                authorization_id,subject_type,subject_id,request_sha256,attempt_number,status,
+                budget_snapshot_json,deadline_at,expires_at,permit_path,created_at)
+                VALUES(?,?,?,?,?,'preparing',?,?,?,?,?)""",
+                (authorization_id, subject_type, subject_id, subject["request_sha256"],
+                 attempt_number, canonical_json(snapshot), deadline.isoformat(),
+                 expires.isoformat(), permit_path, now_text),
+            )
+        return {
+            "authorization_id": authorization_id, "subject_type": subject_type,
+            "subject_id": subject_id, "request_sha256": subject["request_sha256"],
+            "attempt_number": attempt_number, "status": "preparing",
+            "deadline_at": deadline.isoformat(), "expires_at": expires.isoformat(),
+            "permit_path": permit_path, "budget_snapshot": snapshot, "reused": False,
+        }
+
+    def seal_agent_attempt_authorization(self, authorization_id: str, *,
+                                         permit_sha256: str) -> dict:
+        if not re.fullmatch(r"[0-9a-f]{64}", permit_sha256):
+            raise ValueError("permit_sha256 inválido")
+        with self.transaction() as con:
+            row = con.execute(
+                "SELECT * FROM agent_attempt_authorizations WHERE authorization_id=?",
+                (authorization_id,),
+            ).fetchone()
+            if not row:
+                raise ValueError("autorización agentic desconocida")
+            if row["status"] == "authorized":
+                if row["permit_sha256"] != permit_sha256:
+                    raise ValueError("replay de permiso con contenido diferente")
+                return {**dict(row), "reused": True}
+            if row["status"] != "preparing":
+                raise ValueError("autorización agentic no sellable")
+            con.execute(
+                "UPDATE agent_attempt_authorizations SET status='authorized',permit_sha256=? "
+                "WHERE authorization_id=?", (permit_sha256, authorization_id),
+            )
+            if row["subject_type"] == "research":
+                subject_table, subject_key = "research_runs", "research_run_id"
+            else:
+                subject_table, subject_key = "decision_deliberations", "deliberation_id"
+            cycle_id = con.execute(
+                f"SELECT cycle_id FROM {subject_table} WHERE {subject_key}=?",
+                (row["subject_id"],),
+            ).fetchone()[0]
+            self.append_audit(
+                "agent_attempt_authorized", actor="mova-agent-authorizer",
+                cycle_id=cycle_id,
+                subject_type=row["subject_type"], subject_id=row["subject_id"],
+                payload={"authorization_id": authorization_id,
+                         "attempt_number": int(row["attempt_number"]),
+                         "permit_sha256": permit_sha256,
+                         "expires_at": row["expires_at"]}, con=con,
+            )
+        return {**dict(row), "status": "authorized", "permit_sha256": permit_sha256,
+                "reused": False}
+
+    def agent_attempt_authorization(self, authorization_id: str) -> dict | None:
+        with self.connect(readonly=True) as con:
+            row = con.execute(
+                "SELECT * FROM agent_attempt_authorizations WHERE authorization_id=?",
+                (authorization_id,),
+            ).fetchone()
+        return dict(row) if row else None
+
     def record_agent_worker_attempt_event(self, payload: dict, *, receipt_path: str,
                                           receipt_sha256: str) -> dict:
         event_id = "agentattempt_" + hashlib.sha256(
@@ -2056,18 +2285,55 @@ class OpsDB:
                 if existing["receipt_sha256"] != receipt_sha256:
                     raise ValueError("receipt replay con contenido diferente")
                 return {**dict(existing), "reused": True}
+            authorization_id = payload.get("authorization_id")
+            if authorization_id:
+                authorization = con.execute(
+                    "SELECT * FROM agent_attempt_authorizations WHERE authorization_id=?",
+                    (authorization_id,),
+                ).fetchone()
+                if not authorization:
+                    raise ValueError("receipt sin autorización durable")
+                if (authorization["subject_type"] != payload["subject_type"]
+                        or authorization["subject_id"] != payload["subject_id"]
+                        or authorization["request_sha256"] != payload["request_sha256"]):
+                    raise ValueError("receipt no coincide con su autorización")
+                occurred = datetime.fromisoformat(
+                    str(payload["occurred_at"]).replace("Z", "+00:00")
+                )
+                expires = datetime.fromisoformat(
+                    str(authorization["expires_at"]).replace("Z", "+00:00")
+                )
+                if payload["event_type"] == "started":
+                    if authorization["status"] != "authorized" or occurred > expires:
+                        raise ValueError("autorización expirada o ya consumida")
+                    con.execute(
+                        "UPDATE agent_attempt_authorizations SET status='started',"
+                        "attempt_id=?,started_at=? WHERE authorization_id=?",
+                        (payload["attempt_id"], payload["occurred_at"], authorization_id),
+                    )
+                else:
+                    if (authorization["status"] != "started"
+                            or authorization["attempt_id"] != payload["attempt_id"]):
+                        raise ValueError("finish no corresponde al start autorizado")
+                    con.execute(
+                        "UPDATE agent_attempt_authorizations SET status='finished',"
+                        "finished_at=? WHERE authorization_id=?",
+                        (payload["occurred_at"], authorization_id),
+                    )
+            elif payload.get("schema") != "mova-agent-attempt-v1":
+                raise ValueError("receipt actual exige autorización")
             con.execute(
                 """INSERT INTO agent_worker_attempt_events(
                 event_id,attempt_id,subject_type,subject_id,request_sha256,event_type,status,
                 model,input_tokens,output_tokens,duration_ms,error_code,output_present,
-                receipt_path,receipt_sha256,occurred_at)
-                VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                receipt_path,receipt_sha256,occurred_at,authorization_id)
+                VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                 (event_id, payload["attempt_id"], payload["subject_type"],
                  payload["subject_id"], payload["request_sha256"], payload["event_type"],
                  payload["status"], payload["model"], payload.get("input_tokens"),
                  payload.get("output_tokens"), payload.get("duration_ms"),
                  payload.get("error_code"), payload.get("output_present"), receipt_path,
-                 receipt_sha256, payload["occurred_at"]),
+                 receipt_sha256, payload["occurred_at"], authorization_id),
             )
             subject = self.agent_subject(payload["subject_type"], payload["subject_id"])
             self.append_audit(
@@ -2077,6 +2343,7 @@ class OpsDB:
                 subject_type=payload["subject_type"], subject_id=payload["subject_id"],
                 payload={
                     "attempt_id": payload["attempt_id"], "status": payload["status"],
+                    "authorization_id": authorization_id,
                     "error_code": payload.get("error_code"),
                     "input_tokens": payload.get("input_tokens"),
                     "output_tokens": payload.get("output_tokens"),
@@ -2100,6 +2367,10 @@ class OpsDB:
                 FROM agent_worker_attempt_events
                 GROUP BY subject_type,subject_id ORDER BY last_event_at DESC"""
             ).fetchall()
+            authorization_rows = con.execute(
+                "SELECT status,COUNT(*) count FROM agent_attempt_authorizations "
+                "GROUP BY status ORDER BY status"
+            ).fetchall()
         subjects = [dict(row) for row in rows]
         totals = {"attempts": 0, "failures": 0, "successes": 0}
         for row in subjects:
@@ -2108,9 +2379,12 @@ class OpsDB:
         exhausted = sum(
             int(row["attempts"]) >= 2 and not int(row["successes"]) for row in subjects
         )
+        authorizations = {row["status"]: int(row["count"])
+                          for row in authorization_rows}
         return {"status": "ok", "max_automatic_attempts": 2,
                 "subjects": subjects, "subject_count": len(subjects),
-                "totals": totals, "exhausted_subjects": exhausted}
+                "totals": totals, "exhausted_subjects": exhausted,
+                "authorizations": authorizations}
 
     def agent_worker_attempt_prometheus(self) -> str:
         report = self.agent_worker_attempt_status()
@@ -2119,11 +2393,18 @@ class OpsDB:
             "# TYPE mova_agent_worker_attempts gauge",
             "# HELP mova_agent_worker_exhausted_subjects Subjects that reached the replay limit.",
             "# TYPE mova_agent_worker_exhausted_subjects gauge",
+            "# HELP mova_agent_attempt_authorizations Physical-call permits by state.",
+            "# TYPE mova_agent_attempt_authorizations gauge",
             f'mova_agent_worker_attempts{{status="started"}} {report["totals"]["attempts"]}',
             f'mova_agent_worker_attempts{{status="failed"}} {report["totals"]["failures"]}',
             f'mova_agent_worker_attempts{{status="succeeded"}} {report["totals"]["successes"]}',
             f'mova_agent_worker_exhausted_subjects {report["exhausted_subjects"]}',
         ]
+        for status in ("preparing", "authorized", "started", "finished", "expired"):
+            lines.append(
+                f'mova_agent_attempt_authorizations{{status="{status}"}} '
+                f'{report["authorizations"].get(status, 0)}'
+            )
         return "\n".join(lines) + "\n"
 
     def reject_research_run(self, research_run_id: str, *, error_code: str,

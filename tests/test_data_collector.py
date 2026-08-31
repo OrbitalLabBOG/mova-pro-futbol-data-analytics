@@ -254,7 +254,7 @@ def test_odds_policy_force_never_bypasses_quota_guard():
 
 
 def test_postgres_data_service_migration_has_queryable_contract():
-    assert latest_version() == 23
+    assert latest_version() == 24
     sql = "\n".join(path.read_text().lower() for path in sorted(MIGRATIONS.glob("*.sql")))
     for table in (
         "raw.ingestion_runs", "raw.source_cursors", "raw.source_artifacts",
@@ -277,7 +277,9 @@ def test_data_artifacts_never_contain_secrets_in_contract():
     migration = "\n".join(path.read_text().lower() for path in sorted(MIGRATIONS.glob("*.sql")))
     assert "cookie" not in migration
     assert "password" not in migration
-    assert "authorization" not in migration
+    # Domain authorization ledgers are safe metadata; credential-bearing headers are not.
+    assert "authorization_header" not in migration
+    assert "bearer " not in migration
 
 
 def test_coverage_snapshot_is_available_to_unprivileged_api(tmp_path: Path):

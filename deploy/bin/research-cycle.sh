@@ -29,6 +29,17 @@ if ! compgen -G "$research_root/inbox/*.request.json" >/dev/null; then
   exit 75
 fi
 
+# El host revalida estado, deadline y presupuesto por cada ejecución física.
+# El worker no puede invocar Codex sin el permiso corto ligado al hash de request.
+authorize_rc=0
+/usr/local/bin/mova strategy attempts authorize || authorize_rc=$?
+if [[ $authorize_rc -ne 0 && $authorize_rc -ne 75 ]]; then
+  exit "$authorize_rc"
+fi
+if [[ $authorize_rc -eq 75 ]]; then
+  exit 75
+fi
+
 worker_rc=0
 docker compose --profile research run --rm --no-deps -T research || worker_rc=$?
 

@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timezone
+from pathlib import Path
 
 from mova_fpl.ops.agent_attempts import AgentAttemptService
 from mova_fpl.ops.config import RuntimeConfig
-from mova_fpl.ops.db import OpsDB
+from mova_fpl.ops.db import OpsDB, sha256_json
 
 
 def _runtime(tmp_path):
@@ -32,10 +33,13 @@ def _runtime(tmp_path):
             (cycle_id, "a" * 64),
         )
     run_id = "research_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-    request_sha = "b" * 64
+    request = {"schema": "mova-research-request-v1", "research_run_id": run_id,
+               "cycle_id": cycle_id, "fixture": True}
+    request_sha = sha256_json(request)
+    request["request_sha256"] = request_sha
     request_path = config.research_root / "inbox" / f"{run_id}.request.json"
     request_path.parent.mkdir(parents=True)
-    request_path.write_text("{}\n", encoding="utf-8")
+    request_path.write_text(json.dumps(request) + "\n", encoding="utf-8")
     db.queue_research_run({
         "research_run_id": run_id, "cycle_id": cycle_id,
         "manifest_id": "manifest_attempt", "provider": "fixture",
@@ -49,7 +53,8 @@ def _runtime(tmp_path):
 
 def _receipt(config, run_id, request_sha, attempt, phase, status, **values):
     payload = {
-        "schema": "mova-agent-attempt-v1", "attempt_id": attempt,
+        "schema": ("mova-agent-attempt-v2" if values.get("authorization_id")
+                   else "mova-agent-attempt-v1"), "attempt_id": attempt,
         "subject_type": "research", "subject_id": run_id,
         "request_sha256": request_sha, "event_type": phase, "status": status,
         "model": "fixture", "input_tokens": values.get("input_tokens"),
@@ -58,6 +63,8 @@ def _receipt(config, run_id, request_sha, attempt, phase, status, **values):
         "output_present": values.get("output_present"),
         "occurred_at": datetime.now(timezone.utc).isoformat(),
     }
+    if values.get("authorization_id"):
+        payload["authorization_id"] = values["authorization_id"]
     root = config.research_root / "receipts"
     root.mkdir(parents=True, exist_ok=True)
     path = root / f"{run_id}.{attempt}.{phase}.json"
@@ -172,3 +179,93 @@ def test_intentos_sin_fin_se_cargan_conservadoramente_por_intento(tmp_path):
     assert report["gameweek"]["charged_uses"] == 2
     assert report["gameweek"]["charged_estimate_tokens"] == 200
     assert report["gameweek"]["charged_estimate_uses"] == 2
+
+
+def test_permiso_por_intento_es_idempotente_y_cierra_con_receipts_v2(tmp_path):
+    config, db, run_id, request_sha, _ = _runtime(tmp_path)
+    service = AgentAttemptService(config, db)
+    first = service.authorize_next()
+    replay = service.authorize_next()
+    assert first["status"] == "authorized"
+    assert replay["authorization_id"] == first["authorization_id"]
+    assert replay["permit_sha256"] == first["permit_sha256"]
+    assert replay["reused"] is True
+
+    attempt = "attempt_" + "9" * 32
+    _receipt(config, run_id, request_sha, attempt, "started", "running",
+             authorization_id=first["authorization_id"])
+    _receipt(config, run_id, request_sha, attempt, "finished", "failed",
+             authorization_id=first["authorization_id"], input_tokens=10,
+             output_tokens=2, duration_ms=50, error_code="fixture_failed",
+             output_present=False)
+    service.import_ready()
+    with db.connect(readonly=True) as con:
+        authorization = con.execute(
+            "SELECT status,attempt_id FROM agent_attempt_authorizations"
+        ).fetchone()
+        assert dict(authorization) == {"status": "finished", "attempt_id": attempt}
+
+    second = service.authorize_next()
+    assert second["status"] == "authorized"
+    assert second["attempt_number"] == 2
+    assert second["authorization_id"] != first["authorization_id"]
+
+
+def test_retry_se_bloquea_antes_de_codex_si_excede_job_budget(tmp_path):
+    config, db, run_id, request_sha, _ = _runtime(tmp_path)
+    service = AgentAttemptService(config, db)
+    first = service.authorize_next()
+    attempt = "attempt_" + "a" * 32
+    _receipt(config, run_id, request_sha, attempt, "started", "running",
+             authorization_id=first["authorization_id"])
+    _receipt(config, run_id, request_sha, attempt, "finished", "failed",
+             authorization_id=first["authorization_id"], input_tokens=25,
+             output_tokens=5, duration_ms=50, error_code="fixture_failed",
+             output_present=False)
+    service.import_ready()
+
+    blocked = service.authorize_next()
+    assert blocked["status"] == "blocked"
+    candidate = blocked["blocked_candidates"][0]
+    assert candidate["reason"] == "pre_attempt_budget_exceeded"
+    assert candidate["checks"]["job_tokens"] == {
+        "passed": False, "used": 130, "limit": 120,
+    }
+    assert service.authorize_next()["status"] == "blocked"
+    with db.connect(readonly=True) as con:
+        assert con.execute(
+            "SELECT COUNT(*) FROM agent_attempt_authorizations"
+        ).fetchone()[0] == 1
+        assert con.execute(
+            "SELECT COUNT(*) FROM audit_events "
+            "WHERE event_type='agent_attempt_authorization_blocked'"
+        ).fetchone()[0] == 1
+
+
+def test_receipt_v2_rechaza_permiso_alterado_y_no_crea_evento(tmp_path):
+    config, db, run_id, request_sha, _ = _runtime(tmp_path)
+    service = AgentAttemptService(config, db)
+    permit = service.authorize_next()
+    permit_path = Path(permit["permit_path"])
+    permit_path.write_text(permit_path.read_text(encoding="utf-8") + " ", encoding="utf-8")
+    _receipt(config, run_id, request_sha, "attempt_" + "b" * 32,
+             "started", "running", authorization_id=permit["authorization_id"])
+
+    imported = service.import_ready()
+    assert imported["processed"] == 0
+    assert imported["rejected"][0]["error"] == "permiso durable alterado"
+    with db.connect(readonly=True) as con:
+        assert con.execute(
+            "SELECT COUNT(*) FROM agent_worker_attempt_events"
+        ).fetchone()[0] == 0
+
+
+def test_permiso_se_bloquea_dentro_del_cutoff_final(tmp_path):
+    config, db, _, _, _ = _runtime(tmp_path)
+    result = AgentAttemptService(config, db).authorize_next(
+        now=datetime(2026, 9, 4, 16, 30, tzinfo=timezone.utc)
+    )
+    assert result["status"] == "blocked"
+    gate = result["blocked_candidates"][0]
+    assert gate["reason"] == "pre_attempt_gate_failed"
+    assert gate["checks"]["deadline_open"]["passed"] is False

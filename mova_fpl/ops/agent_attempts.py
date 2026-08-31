@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from mova_fpl.ops.config import RuntimeConfig
-from mova_fpl.ops.db import OpsDB
+from mova_fpl.ops.db import OpsDB, canonical_json, sha256_json
 
 MAX_RECEIPT_BYTES = 65_536
 MAX_AUTOMATIC_ATTEMPTS = 2
@@ -31,6 +31,78 @@ class AgentAttemptService:
     @property
     def receipts(self) -> Path:
         return self.config.research_root / "receipts"
+
+    @property
+    def permits(self) -> Path:
+        return self.config.research_root / "permits"
+
+    def authorize_next(self, *, now: datetime | None = None) -> dict:
+        """Seal one short-lived host permit; without it the worker cannot call Codex."""
+        self.db.migrate()
+        current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+        self.permits.mkdir(parents=True, exist_ok=True)
+        blocked = []
+        for subject in self.db.pending_agent_subjects():
+            try:
+                request_path = Path(subject["request_path"])
+                inbox = (self.config.research_root / "inbox").resolve()
+                expected = f"{subject['subject_id']}.request.json"
+                if (request_path.name != expected or request_path.is_symlink()
+                        or not request_path.is_file()
+                        or request_path.resolve().parent != inbox):
+                    raise ValueError("request pendiente fuera del inbox permitido")
+                request = json.loads(request_path.read_text(encoding="utf-8"))
+                embedded_sha = request.pop("request_sha256", None)
+                if (embedded_sha != subject["request_sha256"]
+                        or sha256_json(request) != subject["request_sha256"]):
+                    raise ValueError("request pendiente no coincide con hash durable")
+                prepared = self.db.prepare_agent_attempt_authorization(
+                    subject_type=subject["subject_type"], subject_id=subject["subject_id"],
+                    permit_dir=str(self.permits), now=current, permit_ttl_seconds=600,
+                    final_cutoff_seconds=self.config.research_final_cutoff_seconds,
+                )
+                if prepared["status"] in {"blocked", "skipped"}:
+                    blocked.append(prepared)
+                    continue
+                budget = prepared.get("budget_snapshot") or json.loads(
+                    prepared["budget_snapshot_json"]
+                )
+                permit_path = Path(prepared["permit_path"])
+                permit = {
+                    "schema": "mova-agent-attempt-permit-v1",
+                    "authorization_id": prepared["authorization_id"],
+                    "subject_type": prepared["subject_type"],
+                    "subject_id": prepared["subject_id"],
+                    "request_sha256": prepared["request_sha256"],
+                    "attempt_number": int(prepared["attempt_number"]),
+                    "deadline_at": prepared["deadline_at"],
+                    "expires_at": prepared["expires_at"],
+                    "budget_snapshot_sha256": sha256_json(budget),
+                }
+                raw = (canonical_json(permit) + "\n").encode("utf-8")
+                tmp = permit_path.with_name(f"{permit_path.name}.tmp")
+                tmp.write_bytes(raw)
+                tmp.chmod(0o660)
+                tmp.replace(permit_path)
+                digest = hashlib.sha256(raw).hexdigest()
+                sealed = self.db.seal_agent_attempt_authorization(
+                    prepared["authorization_id"], permit_sha256=digest
+                )
+                return {
+                    "status": "authorized", "authorization_id": sealed["authorization_id"],
+                    "subject_type": prepared["subject_type"],
+                    "subject_id": prepared["subject_id"],
+                    "attempt_number": int(prepared["attempt_number"]),
+                    "expires_at": prepared["expires_at"], "permit_path": str(permit_path),
+                    "permit_sha256": digest, "reused": bool(sealed.get("reused")),
+                    "blocked_candidates": blocked,
+                }
+            except Exception as exc:  # noqa: BLE001 - candidato aislado, no autoriza IO
+                blocked.append({"status": "blocked", "subject_type": subject["subject_type"],
+                                "subject_id": subject["subject_id"],
+                                "reason": type(exc).__name__, "detail": str(exc)[:300]})
+        return {"status": "skipped" if not blocked else "blocked",
+                "reason": "no_authorized_subject", "blocked_candidates": blocked}
 
     def import_ready(self) -> dict:
         self.db.migrate()
@@ -91,13 +163,33 @@ class AgentAttemptService:
         payload = json.loads(raw)
         if not isinstance(payload, dict):
             raise ValueError("receipt debe ser objeto JSON")
-        expected_keys = {
+        base_keys = {
             "schema", "attempt_id", "subject_type", "subject_id", "request_sha256",
             "event_type", "status", "model", "input_tokens", "output_tokens",
             "duration_ms", "error_code", "output_present", "occurred_at",
         }
-        if set(payload) != expected_keys or payload["schema"] != "mova-agent-attempt-v1":
+        schema = payload.get("schema")
+        expected_keys = (base_keys if schema == "mova-agent-attempt-v1"
+                         else base_keys | {"authorization_id"})
+        if (schema not in {"mova-agent-attempt-v1", "mova-agent-attempt-v2"}
+                or set(payload) != expected_keys):
             raise ValueError("schema de receipt inválido")
+        if schema == "mova-agent-attempt-v2" and not re.fullmatch(
+            r"agentauth_[0-9a-f]{32}", str(payload.get("authorization_id") or "")
+        ):
+            raise ValueError("authorization_id inválido")
+        if schema == "mova-agent-attempt-v2":
+            authorization = self.db.agent_attempt_authorization(payload["authorization_id"])
+            if not authorization:
+                raise ValueError("receipt sin autorización durable")
+            permit = Path(authorization["permit_path"])
+            permit_root = self.permits.resolve()
+            if (permit.is_symlink() or not permit.is_file()
+                    or permit.resolve().parent != permit_root):
+                raise ValueError("permiso durable ausente o fuera de allowlist")
+            digest = hashlib.sha256(permit.read_bytes()).hexdigest()
+            if digest != authorization["permit_sha256"]:
+                raise ValueError("permiso durable alterado")
         prefix, attempt_id, phase = match.groups()
         subject_id = path.name.split(".", 1)[0]
         subject_type = "research" if prefix == "research" else "deliberation"

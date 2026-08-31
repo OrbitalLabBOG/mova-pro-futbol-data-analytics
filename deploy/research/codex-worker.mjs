@@ -22,8 +22,9 @@ const archive = join(root, "archive");
 const quarantine = join(root, "quarantine");
 const logs = join(root, "logs");
 const receipts = join(root, "receipts");
+const permits = join(root, "permits");
 const maxAutomaticAttempts = 2;
-for (const path of [inbox, outbox, archive, quarantine, logs, receipts]) {
+for (const path of [inbox, outbox, archive, quarantine, logs, receipts, permits]) {
   mkdirSync(path, {recursive: true});
 }
 mkdirSync("/tmp/mova-research", {recursive: true});
@@ -70,11 +71,40 @@ function attemptCount(runId) {
   ).length;
 }
 
-function receipt(runId, attemptId, request, eventType, values = {}) {
+function loadPermit(runId, requestSha256) {
+  const candidates = readdirSync(permits).filter(name =>
+    name.startsWith(`${runId}.agentauth_`) && name.endsWith(".permit.json")
+  ).sort().reverse();
+  const keys = ["schema", "authorization_id", "subject_type", "subject_id",
+    "request_sha256", "attempt_number", "deadline_at", "expires_at",
+    "budget_snapshot_sha256"].sort();
+  for (const name of candidates) {
+    try {
+      const path = join(permits, name);
+      if (!statSync(path).isFile()) continue;
+      const permit = JSON.parse(readFileSync(path, "utf8"));
+      if (Object.keys(permit).sort().join("|") !== keys.join("|")
+          || permit.schema !== "mova-agent-attempt-permit-v1"
+          || !/^agentauth_[0-9a-f]{32}$/.test(permit.authorization_id)
+          || permit.subject_id !== runId || permit.request_sha256 !== requestSha256
+          || permit.attempt_number !== attemptCount(runId) + 1
+          || permit.attempt_number > maxAutomaticAttempts
+          || !/^[0-9a-f]{64}$/.test(permit.budget_snapshot_sha256)
+          || Date.parse(permit.expires_at) <= Date.now()
+          || Date.parse(permit.deadline_at) <= Date.now()) continue;
+      const expectedType = runId.startsWith("research_") ? "research" : "deliberation";
+      if (permit.subject_type === expectedType) return permit;
+    } catch {}
+  }
+  return null;
+}
+
+function receipt(runId, attemptId, authorizationId, request, eventType, values = {}) {
   const subjectType = request.schema === "mova-research-request-v1"
     ? "research" : "deliberation";
   atomicJson(join(receipts, `${runId}.${attemptId}.${eventType}.json`), {
-    schema: "mova-agent-attempt-v1", attempt_id: attemptId,
+    schema: "mova-agent-attempt-v2", attempt_id: attemptId,
+    authorization_id: authorizationId,
     subject_type: subjectType, subject_id: runId,
     request_sha256: request.request_sha256, event_type: eventType,
     status: eventType === "started" ? "running" : values.status,
@@ -92,6 +122,7 @@ try {
       && name.endsWith(".request.json"))
     .sort();
   let selected = null;
+  let selectedPermit = null;
   for (const name of requests) {
     const id = name.slice(0, -".request.json".length);
     if (!statSync(join(inbox, name)).isFile()) continue;
@@ -112,7 +143,14 @@ try {
     // Dos starts, incluso si el proceso murió antes del finish, agotan el replay.
     // El host importa los receipts y terminaliza la request sin volver a pagar.
     if (attemptCount(id) >= maxAutomaticAttempts) continue;
+    let requestSha256 = null;
+    try {
+      requestSha256 = JSON.parse(readFileSync(join(inbox, name), "utf8")).request_sha256;
+    } catch {}
+    const permit = loadPermit(id, requestSha256);
+    if (!permit) continue;
     selected = name;
+    selectedPermit = permit;
     break;
   }
   if (!selected) process.exitCode = 75;
@@ -127,6 +165,10 @@ try {
     const idPattern = isResearch
       ? /^research_[0-9a-f]{32}$/ : /^deliberation_[0-9a-f]{32}$/;
     if (!idPattern.test(runId)) throw new Error("invalid_run_id");
+    const permit = loadPermit(runId, request.request_sha256);
+    if (!permit || permit.authorization_id !== selectedPermit?.authorization_id) {
+      throw new Error("attempt_not_authorized");
+    }
     const attemptId = `attempt_${randomUUID().replaceAll("-", "")}`;
     const researchPrompt = [
       "Eres el investigador pre-deadline de MOVA Fantasy Premier League.",
@@ -189,7 +231,7 @@ try {
       "--output-last-message", finalTmp, "-",
     ];
     const startedAtMs = Date.now();
-    receipt(runId, attemptId, request, "started");
+    receipt(runId, attemptId, permit.authorization_id, request, "started");
     const execution = spawnSync("codex", command, {
       input: prompt, encoding: "utf8", cwd: "/tmp/mova-research",
       timeout: Number(process.env.MOVA_RESEARCH_TIMEOUT_MS || 480000),
@@ -213,7 +255,7 @@ try {
         signal: execution.signal, error_code: errorCode,
         duration_ms: durationMs, output_present: outputPresent,
       });
-      receipt(runId, attemptId, request, "finished", {
+      receipt(runId, attemptId, permit.authorization_id, request, "finished", {
         status: "failed", ...usage, duration_ms: durationMs,
         error_code: errorCode, output_present: outputPresent,
       });
@@ -250,7 +292,7 @@ try {
         search_requests: null,
       };
       atomicJson(join(outbox, `${runId}.result.json`), brief);
-      receipt(runId, attemptId, request, "finished", {
+      receipt(runId, attemptId, permit.authorization_id, request, "finished", {
         status: "succeeded", ...usage, duration_ms: durationMs,
         output_present: true,
       });

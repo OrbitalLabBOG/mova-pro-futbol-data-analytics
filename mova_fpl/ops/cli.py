@@ -182,7 +182,7 @@ def parser() -> argparse.ArgumentParser:
     attempts = strategy_commands.add_parser(
         "attempts", help="importa y consulta recibos inmutables del worker"
     )
-    attempts.add_argument("operation", choices=("status", "import"))
+    attempts.add_argument("operation", choices=("status", "import", "authorize"))
     execute = commands.add_parser(
         "execute", help="plan de ejecución y preflight determinista"
     )
@@ -642,8 +642,14 @@ def main(argv: list[str] | None = None) -> int:
             from mova_fpl.ops.agent_attempts import AgentAttemptService
 
             attempts = AgentAttemptService(config, db)
-            payload = (attempts.status() if args.operation == "status"
-                       else attempts.import_ready())
+            if args.operation == "status":
+                payload = attempts.status()
+            elif args.operation == "authorize":
+                payload = attempts.authorize_next()
+                print(json.dumps(payload, ensure_ascii=False, default=str))
+                return 0 if payload["status"] == "authorized" else 75
+            else:
+                payload = attempts.import_ready()
         elif args.operation == "due":
             payload = service.due()
             print(json.dumps(payload, ensure_ascii=False, default=str))
