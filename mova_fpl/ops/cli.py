@@ -12,7 +12,9 @@ from mova_fpl.ops.backup import create_backup
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB, new_id, sha256_json
 from mova_fpl.ops.logging import configure_logging
-from mova_fpl.ops.operator import build_doctor, build_status, render_doctor, render_status
+from mova_fpl.ops.operator import (
+    build_doctor, build_safety, build_status, render_doctor, render_status,
+)
 from mova_fpl.ops.tick import LockBusy, TickRunner
 
 
@@ -241,6 +243,28 @@ def parser() -> argparse.ArgumentParser:
     fail_execution.add_argument("--claim-token-stdin", action="store_true", required=True)
     status = commands.add_parser("status", help="estado operativo consolidado")
     status.add_argument("--json", action="store_true", dest="as_json")
+    commands.add_parser("safety", help="resumen read-only: ¿es seguro esperar?")
+    alerts = commands.add_parser("alerts", help="entrega y reconocimiento de alertas")
+    alert_commands = alerts.add_subparsers(dest="alerts_command", required=True)
+    alert_commands.add_parser("status", help="estado sanitizado del outbox")
+    alert_dispatch = alert_commands.add_parser("dispatch", help="entrega alertas vencidas")
+    alert_dispatch.add_argument("--limit", type=int, default=20)
+    alert_ack = alert_commands.add_parser("acknowledge", help="reconoce un incidente")
+    alert_ack.add_argument("--incident-id", required=True)
+    alert_ack.add_argument("--actor", required=True)
+    alert_ack.add_argument("--reason", required=True)
+    maintenance = commands.add_parser("maintenance", help="mantenimiento seguro de artefactos")
+    maintenance_commands = maintenance.add_subparsers(
+        dest="maintenance_command", required=True
+    )
+    cleanup = maintenance_commands.add_parser(
+        "cleanup", help="lista transitorios; sólo borra con --apply"
+    )
+    cleanup.add_argument("--older-than-seconds", type=int, default=86400)
+    cleanup.add_argument("--apply", action="store_true")
+    cleanup.add_argument("--actor")
+    cleanup.add_argument("--reason")
+    cleanup.add_argument("--idempotency-key")
     readiness = commands.add_parser(
         "readiness", help="gate consolidado de promoción de autonomía"
     )
@@ -627,6 +651,63 @@ def main(argv: list[str] | None = None) -> int:
         payload = build_status(config, db)
         print(json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str)
               if args.as_json else render_status(payload))
+    elif args.command == "safety":
+        print(json.dumps(build_safety(config, db), ensure_ascii=False,
+                         sort_keys=True, default=str))
+    elif args.command == "alerts":
+        db.migrate()
+        if args.alerts_command == "status":
+            payload = db.outbox_status()
+        elif args.alerts_command == "dispatch":
+            from mova_fpl.ops.alerts import dispatch
+            payload = dispatch(db, limit=args.limit)
+        else:
+            payload = db.acknowledge_incident(
+                args.incident_id, actor=args.actor, reason=args.reason,
+            )
+        print(json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str))
+    elif args.command == "maintenance":
+        from mova_fpl.ops.maintenance import cleanup
+
+        if args.apply and not all((args.actor, args.reason, args.idempotency_key)):
+            raise SystemExit(
+                "maintenance cleanup --apply exige --actor, --reason y --idempotency-key"
+            )
+        if not args.apply:
+            payload = cleanup(
+                config.artifact_root, older_than_seconds=args.older_than_seconds,
+            )
+        else:
+            correlation_id = new_id("corr")
+            job_id, reused = db.start_job(
+                "maintenance_cleanup", f"cleanup:{args.idempotency_key}", correlation_id,
+            )
+            if reused:
+                payload = {"schema": "mova-maintenance-cleanup-v1", "status": "reused",
+                           "job_id": job_id}
+            else:
+                try:
+                    db.append_audit(
+                        "maintenance_cleanup_requested", actor=args.actor, job_id=job_id,
+                        subject_type="artifact_root", subject_id=str(config.artifact_root),
+                        payload={"reason": args.reason,
+                                 "older_than_seconds": args.older_than_seconds},
+                    )
+                    payload = cleanup(
+                        config.artifact_root,
+                        older_than_seconds=args.older_than_seconds, apply=True,
+                    )
+                except Exception as exc:
+                    db.finish_job(job_id, "failed", error_code=type(exc).__name__,
+                                  error_detail=str(exc)[:2000])
+                    raise
+                db.finish_job(job_id, "completed", output_sha256=sha256_json(payload),
+                              metrics={key: payload[key] for key in (
+                                  "candidate_count", "candidate_bytes", "removed_count",
+                                  "removed_bytes",
+                              )})
+                payload["job_id"] = job_id
+        print(json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str))
     elif args.command == "readiness":
         from mova_fpl.ops.readiness import LEVELS, build_readiness
 
@@ -659,6 +740,8 @@ def main(argv: list[str] | None = None) -> int:
         if not result["due"]:
             return 75
     elif args.command == "watchdog":
+        from mova_fpl.ops.alerts import dispatch
+
         db.quick_check()
         status = db.status()
         tick = status.get("latest_tick") or {}
@@ -669,8 +752,9 @@ def main(argv: list[str] | None = None) -> int:
         observed = datetime.fromisoformat(str(finished).replace("Z", "+00:00"))
         age = int((datetime.now(timezone.utc) - observed).total_seconds())
         healthy = age <= args.max_age_seconds and tick.get("status") in {"completed", "degraded"}
+        alerts = dispatch(db)
         print(json.dumps({"status": "ok" if healthy else "down", "tick_age_seconds": age,
-                          "latest_tick_status": tick.get("status")}))
+                          "latest_tick_status": tick.get("status"), "alerts": alerts}))
         if not healthy:
             return 1
     elif args.command == "backup":

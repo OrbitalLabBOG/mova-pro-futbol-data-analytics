@@ -11,7 +11,7 @@ import json
 import sqlite3
 import uuid
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from mova_fpl.ops.schema import MIGRATIONS
@@ -1177,6 +1177,115 @@ class OpsDB:
             severity, title, correlation_id=correlation_id, cycle_id=cycle_id,
             job_id=job_id, detail=detail,
         )
+
+    def outbox_status(self) -> dict:
+        """Resumen sanitizado del canal de alertas, sin exponer payloads."""
+        with self.connect(readonly=True) as con:
+            rows = con.execute(
+                "SELECT status,severity,COUNT(*) AS n FROM outbox_events "
+                "GROUP BY status,severity ORDER BY status,severity"
+            ).fetchall()
+            due = con.execute(
+                "SELECT COUNT(*) FROM outbox_events WHERE status IN ('pending','sending') "
+                "AND available_at<=?", (utcnow(),),
+            ).fetchone()[0]
+            latest = con.execute(
+                "SELECT outbox_id,event_key,created_at,available_at,event_type,severity,status,"
+                "attempts,sent_at,acknowledged_at,last_error FROM outbox_events "
+                "ORDER BY created_at DESC LIMIT 20"
+            ).fetchall()
+        counts: dict[str, dict[str, int]] = {}
+        for row in rows:
+            counts.setdefault(str(row["status"]), {})[str(row["severity"])] = int(row["n"])
+        return {
+            "schema": "mova-alert-status-v1", "counts": counts,
+            "due": int(due), "latest": [dict(row) for row in latest],
+        }
+
+    def claim_outbox(self, *, limit: int = 20, lease_seconds: int = 120) -> list[dict]:
+        """Reclama eventos vencidos con lease; un crash permite reintento posterior."""
+        now = datetime.now(timezone.utc)
+        available = now.isoformat(timespec="milliseconds")
+        lease_until = (now + timedelta(seconds=lease_seconds)).isoformat(timespec="milliseconds")
+        with self.transaction() as con:
+            rows = con.execute(
+                "SELECT * FROM outbox_events WHERE status='pending' AND available_at<=? "
+                "OR (status='sending' AND available_at<=?) "
+                "ORDER BY CASE severity WHEN 'P0' THEN 0 WHEN 'P1' THEN 1 "
+                "WHEN 'P2' THEN 2 ELSE 3 END,created_at LIMIT ?",
+                (available, available, max(1, min(limit, 100))),
+            ).fetchall()
+            claimed = []
+            for row in rows:
+                con.execute(
+                    "UPDATE outbox_events SET status='sending',attempts=attempts+1,"
+                    "available_at=? WHERE outbox_id=?", (lease_until, row["outbox_id"]),
+                )
+                item = dict(row)
+                item["attempts"] = int(item["attempts"]) + 1
+                item["available_at"] = lease_until
+                claimed.append(item)
+        return claimed
+
+    def finish_outbox(self, outbox_id: str, *, delivered: bool,
+                      error: str | None = None, max_attempts: int = 5,
+                      retry_seconds: int = 300) -> str:
+        now = datetime.now(timezone.utc)
+        with self.transaction() as con:
+            row = con.execute(
+                "SELECT attempts,status FROM outbox_events WHERE outbox_id=?", (outbox_id,),
+            ).fetchone()
+            if not row:
+                raise ValueError("outbox event not found")
+            if delivered:
+                status = "sent"
+                con.execute(
+                    "UPDATE outbox_events SET status='sent',sent_at=?,last_error=NULL "
+                    "WHERE outbox_id=?", (now.isoformat(timespec="milliseconds"), outbox_id),
+                )
+            else:
+                status = "dead" if int(row["attempts"]) >= max_attempts else "pending"
+                delay = retry_seconds * (2 ** max(0, int(row["attempts"]) - 1))
+                con.execute(
+                    "UPDATE outbox_events SET status=?,available_at=?,last_error=? "
+                    "WHERE outbox_id=?",
+                    (status, (now + timedelta(seconds=delay)).isoformat(timespec="milliseconds"),
+                     (error or "delivery_failed")[:500], outbox_id),
+                )
+            self.append_audit(
+                "alert_delivery_succeeded" if delivered else "alert_delivery_failed",
+                actor="mova-alert-dispatcher", severity="info" if delivered else "warning",
+                subject_type="outbox_event", subject_id=outbox_id,
+                payload={"status": status, "attempts": int(row["attempts"]),
+                         "error_code": (error or "")[:100]}, con=con,
+            )
+        return status
+
+    def acknowledge_incident(self, incident_id: str, *, actor: str, reason: str) -> dict:
+        with self.transaction() as con:
+            row = con.execute(
+                "SELECT status,title FROM incidents WHERE incident_id=?", (incident_id,),
+            ).fetchone()
+            if not row:
+                raise ValueError("incident not found")
+            reused = row["status"] in {"acknowledged", "resolved"}
+            if not reused:
+                con.execute(
+                    "UPDATE incidents SET status='acknowledged',owner=? WHERE incident_id=?",
+                    (actor, incident_id),
+                )
+                con.execute(
+                    "UPDATE outbox_events SET status='acknowledged',acknowledged_at=? "
+                    "WHERE event_key=? AND status!='dead'",
+                    (utcnow(), f"incident:{incident_id}"),
+                )
+                self.append_audit(
+                    "incident_acknowledged", actor=actor, severity="info",
+                    subject_type="incident", subject_id=incident_id,
+                    payload={"reason": reason, "title": row["title"]}, con=con,
+                )
+        return {"incident_id": incident_id, "status": row["status"] if reused else "acknowledged",
+                "reused": reused}
 
     def resolve_incidents(self, title: str, *, resolution: str,
                           actor: str = "mova-ops") -> int:

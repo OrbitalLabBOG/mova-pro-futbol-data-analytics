@@ -499,6 +499,49 @@ def build_status(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
     }
 
 
+def build_safety(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = None) -> dict:
+    """Vista breve, estable y read-only para decidir si el operador puede esperar."""
+    status = build_status(config, db, now=now)
+    operations = status["operations"]
+    controls = status["runtime"]["controls"]
+    critical = [item for item in operations["open_incidents"]
+                if item.get("severity") in {"P0", "P1"}]
+    blockers = list(status["status_reasons"])
+    if controls.get("kill_switch") is not True:
+        blockers.append("kill_switch_not_engaged")
+    if controls.get("browser_writes") and controls.get("action_level") == "A0":
+        blockers.append("browser_write_gate_inconsistent")
+    verdict = "unsafe" if critical or "browser_write_gate_inconsistent" in blockers else (
+        "attention_required" if blockers else "safe_to_wait"
+    )
+    team = status["data"]["team_state"]
+    return {
+        "schema": "mova-safety-summary-v1",
+        "generated_at": status["generated_at"],
+        "verdict": verdict,
+        "reasons": sorted(set(blockers)),
+        "gameweek": {key: status["gameweek"].get(key) for key in (
+            "gw", "deadline_at", "seconds_to_deadline", "phase", "readiness"
+        )},
+        "controls": {key: controls.get(key) for key in (
+            "mode", "action_level", "compliance_gate", "kill_switch", "browser_writes"
+        )},
+        "freshness": {
+            "latest_tick_age_seconds": operations["latest_tick_age_seconds"],
+            "team_state_age_seconds": team["age_seconds"],
+            "team_state_max_age_seconds": team["max_age_seconds"],
+            "team_state_quality": team["quality"],
+        },
+        "alerts": {
+            "critical_open": len(critical),
+            "total_open": len(operations["open_incidents"]),
+            "pending_delivery": operations["outbox_pending"],
+        },
+        "decision": (status.get("decision") or {}).get("status"),
+        "execution": (status.get("execution") or {}).get("status"),
+    }
+
+
 def _check(name: str, status: str, summary: str, *, required: bool = True,
            detail: dict | None = None) -> dict:
     return {"name": name, "status": status, "required": required,

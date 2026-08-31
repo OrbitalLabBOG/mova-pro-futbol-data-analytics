@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — contrato del operador"
 created: 2026-08-23
-updated: 2026-08-30
+updated: 2026-08-31
 tags: [mova, fpl, operator, cli, observability, contract]
 status: active
 ---
@@ -21,6 +21,11 @@ imagen aprobada:
 ```bash
 mova status
 mova status --json
+mova safety
+mova alerts status
+mova alerts dispatch
+mova alerts acknowledge --incident-id incident_... --actor julian --reason "triage confirmado"
+mova maintenance cleanup
 mova doctor
 mova doctor --json
 mova doctor --json --no-network
@@ -48,6 +53,19 @@ normal si no existe un probe; no se monta el socket Docker ni D-Bus dentro del e
 configuración, SQLite, heartbeat, estado privado, datos/modelos, recursos, backup, servicios,
 revisión desplegada, PostgreSQL shadow cuando está configurado, perfil browser y un GET público a FPL. Retorna 1 cuando existe al menos un
 `FAIL` requerido; los `WARN` no cambian el exit code.
+
+`safety` reduce la misma evidencia a una pregunta operativa. `safe_to_wait` significa que no hay
+razones activas en el snapshot; `attention_required` muestra degradaciones y `unsafe` identifica
+P0/P1 o una contradicción de permisos. No reemplaza el gate `readiness` ni autoriza writes.
+
+El watchdog despacha el outbox vencido a journald después de validar el heartbeat. El claim usa
+lease recuperable, la entrega ocurre fuera de SQLite y los fallos reintentan con backoff hasta
+estado `dead`. `sent` confirma entrega al sink local, no lectura humana. `acknowledge` reconoce el
+incidente con actor y razón; resolverlo sigue exigiendo que la condición causal haya desaparecido.
+
+`maintenance cleanup` sólo presenta candidatos `.tmp`, `.partial` o `.tmp-*` con más de 24 horas.
+No sigue symlinks ni considera evidencia canónica. Para borrar exige `--apply --actor --reason
+--idempotency-key`; toda aplicación queda como job y audit event.
 
 ## Semántica de `status`
 

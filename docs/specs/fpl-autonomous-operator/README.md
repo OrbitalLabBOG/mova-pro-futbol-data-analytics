@@ -22,7 +22,7 @@ PM de construcción del proyecto.
 
 | Campo | Valor |
 | --- | --- |
-| Versión | 0.13 |
+| Versión | 0.14 |
 | Estado | `active-shadow` |
 | Riesgo | alto: cuenta externa, deadlines irreversibles y sesión autenticada |
 | Business owner | Julián Zuluaga |
@@ -68,6 +68,7 @@ PM de construcción del proyecto.
 | [32-hv1-02b-read-cutover-drill-rollout.md](32-hv1-02b-read-cutover-drill-rollout.md) | Cutover/rollback reversible de lectura PostgreSQL |
 | [33-hv1-02c-postgres-role-separation-rollout.md](33-hv1-02c-postgres-role-separation-rollout.md) | Identidades runtime least-privilege y drill con readonly real |
 | [34-hv1-07g-capability-probes-rollout.md](34-hv1-07g-capability-probes-rollout.md) | Importadores allowlisted y primeros probes vivos de lineup/R3 |
+| [36-hv1-01b-alert-safety-maintenance.md](36-hv1-01b-alert-safety-maintenance.md) | Outbox recuperable, acuse, safety summary y cleanup conservador |
 | [contracts/](contracts/) | JSON Schemas máquina para request, result y signal |
 | [decisions/](decisions/) | decisiones arquitectónicas propuestas |
 | [workpacks/](workpacks/) | unidades de implementación y criterios todavía pendientes |
