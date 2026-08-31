@@ -16,19 +16,6 @@ cd "$repo_dir"
 # every scheduled writer that depends on PostgreSQL out of the outage window.
 exec {drill_fd}>/run/lock/mova-fpl-postgres-recovery-drill.lock
 flock -n "$drill_fd" || { echo "another PostgreSQL recovery drill is running" >&2; exit 75; }
-for lock_file in \
-  /run/lock/mova-fpl-worker.lock \
-  /run/lock/mova-fpl-collector-host.lock \
-  /run/lock/mova-fpl-analytics-host.lock \
-  /run/lock/mova-fpl-research-host.lock \
-  /run/lock/mova-fpl-private-state.lock
-do
-  exec {service_fd}>"$lock_file"
-  if ! flock -n "$service_fd"; then
-    echo "dependent service is active; PostgreSQL drill deferred: $lock_file" >&2
-    exit 75
-  fi
-done
 
 set +e
 existing=$(/usr/local/bin/mova drill host-status --scenario postgres_recovery \
@@ -43,6 +30,21 @@ if [[ "$existing_rc" -ne 75 ]]; then
   echo "$existing" >&2
   exit "$existing_rc"
 fi
+
+# Replays and identity conflicts return before competing with scheduled work.
+for lock_file in \
+  /run/lock/mova-fpl-worker.lock \
+  /run/lock/mova-fpl-collector-host.lock \
+  /run/lock/mova-fpl-analytics-host.lock \
+  /run/lock/mova-fpl-research-host.lock \
+  /run/lock/mova-fpl-private-state.lock
+do
+  exec {service_fd}>"$lock_file"
+  if ! flock -n "$service_fd"; then
+    echo "dependent service is active; PostgreSQL drill deferred: $lock_file" >&2
+    exit 75
+  fi
+done
 
 artifact_root=${MOVA_DATA_ROOT:-/var/lib/mova-fpl}/artifacts
 ops_db=${MOVA_DATA_ROOT:-/var/lib/mova-fpl}/db/ops.db

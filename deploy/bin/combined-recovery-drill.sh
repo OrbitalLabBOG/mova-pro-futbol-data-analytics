@@ -15,19 +15,6 @@ cd "$repo_dir"
 
 exec {drill_fd}>/run/lock/mova-fpl-combined-recovery-drill.lock
 flock -n "$drill_fd" || { echo "another combined recovery drill is running" >&2; exit 75; }
-for lock_file in \
-  /run/lock/mova-fpl-worker.lock \
-  /run/lock/mova-fpl-collector-host.lock \
-  /run/lock/mova-fpl-analytics-host.lock \
-  /run/lock/mova-fpl-research-host.lock \
-  /run/lock/mova-fpl-private-state.lock
-do
-  exec {service_fd}>"$lock_file"
-  flock -n "$service_fd" || {
-    echo "dependent service is active; combined drill deferred: $lock_file" >&2
-    exit 75
-  }
-done
 
 set +e
 existing=$(/usr/local/bin/mova drill host-status --scenario combined_recovery \
@@ -42,6 +29,21 @@ if [[ "$existing_rc" -ne 75 ]]; then
   echo "$existing" >&2
   exit "$existing_rc"
 fi
+
+# Only a new outage competes for service locks; replay/conflict is read-only.
+for lock_file in \
+  /run/lock/mova-fpl-worker.lock \
+  /run/lock/mova-fpl-collector-host.lock \
+  /run/lock/mova-fpl-analytics-host.lock \
+  /run/lock/mova-fpl-research-host.lock \
+  /run/lock/mova-fpl-private-state.lock
+do
+  exec {service_fd}>"$lock_file"
+  flock -n "$service_fd" || {
+    echo "dependent service is active; combined drill deferred: $lock_file" >&2
+    exit 75
+  }
+done
 
 artifact_root=${MOVA_DATA_ROOT:-/var/lib/mova-fpl}/artifacts
 ops_db=${MOVA_DATA_ROOT:-/var/lib/mova-fpl}/db/ops.db

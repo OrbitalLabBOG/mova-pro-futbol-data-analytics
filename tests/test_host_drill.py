@@ -248,6 +248,7 @@ def test_postgres_host_script_locks_writers_and_proves_recovery():
     assert script.count("/usr/local/bin/mova postgres verify") == 2
     assert "team_state_hash" in script
     assert "fpl_state_mutated" in script
+    assert script.index("drill host-status") < script.index("mova-fpl-worker.lock")
     assert not any(token in script for token in ("my-team", "transfers", "agent-browser"))
 
 
@@ -262,6 +263,7 @@ def test_browser_host_script_restores_initial_state_and_never_writes_fpl():
     assert "controls_fail_closed" in script
     assert "initial_service_state_restored" in script
     assert "fpl_state_mutated" in script
+    assert script.index("drill host-status") < script.index("mova-fpl-private-state.lock")
     assert not any(token in script for token in (
         "execute begin", "execute finalize", "probe-transfers", "browser_writes=true",
     ))
@@ -284,6 +286,7 @@ def test_combined_host_script_locks_services_recovers_all_and_never_writes_fpl()
     assert "private_state_unchanged" in script
     assert "initial_browser_state_restored" in script
     assert "fpl_state_mutated" in script
+    assert script.index("drill host-status") < script.index("mova-fpl-worker.lock")
     assert not any(token in script for token in (
         "execute begin", "execute finalize", "probe-transfers", "browser_writes=true",
     ))

@@ -15,8 +15,6 @@ cd "$repo_dir"
 
 exec {drill_fd}>/run/lock/mova-fpl-browser-recovery-drill.lock
 flock -n "$drill_fd" || { echo "another browser recovery drill is running" >&2; exit 75; }
-exec {private_fd}>/run/lock/mova-fpl-private-state.lock
-flock -n "$private_fd" || { echo "private-state collector is active; browser drill deferred" >&2; exit 75; }
 
 set +e
 existing=$(/usr/local/bin/mova drill host-status --scenario browser_recovery \
@@ -31,6 +29,10 @@ if [[ "$existing_rc" -ne 75 ]]; then
   echo "$existing" >&2
   exit "$existing_rc"
 fi
+
+# A completed replay never waits for the collector because it cannot start an outage.
+exec {private_fd}>/run/lock/mova-fpl-private-state.lock
+flock -n "$private_fd" || { echo "private-state collector is active; browser drill deferred" >&2; exit 75; }
 
 artifact_root=${MOVA_DATA_ROOT:-/var/lib/mova-fpl}/artifacts
 inbox="$artifact_root/host-drills/inbox"
