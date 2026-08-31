@@ -159,6 +159,10 @@ def test_read_only_api_exposes_analytics_and_prometheus(tmp_path: Path):
             scorecard = json.load(response)
             assert scorecard["schema"] == "mova-harness-scorecard-v1"
             assert scorecard["authority"]["promotion_is_automatic"] is False
+        with urllib.request.urlopen(base + "/api/v1/orchestration", timeout=2) as response:
+            orchestration = json.load(response)
+            assert orchestration["schema"] == "mova-orchestration-status-v1"
+            assert orchestration["runtime_mutated"] is False
         with urllib.request.urlopen(base + "/api/v1/budget-overrun-events", timeout=2) as response:
             assert json.load(response)["items"] == []
         with urllib.request.urlopen(base + "/metrics", timeout=2) as response:
@@ -168,6 +172,7 @@ def test_read_only_api_exposes_analytics_and_prometheus(tmp_path: Path):
             assert "mova_model_bundle_pointer_present 0" in metrics
             assert "mova_autonomy_readiness_up 1" in metrics
             assert "mova_harness_scorecard_up 1" in metrics
+            assert "mova_orchestration_dependency_violations 0" in metrics
     finally:
         server.shutdown()
         server.server_close()

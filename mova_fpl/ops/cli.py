@@ -156,6 +156,9 @@ def parser() -> argparse.ArgumentParser:
     harness_commands.add_parser(
         "scorecard", help="evaluación read-only consolidada del harness"
     )
+    harness_commands.add_parser(
+        "workflow", help="estado y dependencias del ciclo agentic vigente"
+    )
     strategy = commands.add_parser(
         "strategy", help="plan, manifiesto e investigación verificable"
     )
@@ -313,6 +316,13 @@ def parser() -> argparse.ArgumentParser:
     resilience.add_argument("--actor", required=True)
     resilience.add_argument("--reason", required=True)
     resilience.add_argument("--idempotency-key", required=True)
+    orchestration = drill_commands.add_parser(
+        "orchestration",
+        help="orden, fail-closed y deadline del grafo agentic sin IO externo",
+    )
+    orchestration.add_argument("--actor", required=True)
+    orchestration.add_argument("--reason", required=True)
+    orchestration.add_argument("--idempotency-key", required=True)
     snapshot_drill = drill_commands.add_parser(
         "snapshot", help="rechazo hermético de snapshots alterados o inseguros"
     )
@@ -567,12 +577,19 @@ def main(argv: list[str] | None = None) -> int:
                         for key in ("gameweek", "month")) else 0
 
     if args.command == "harness":
-        from mova_fpl.ops.harness_scorecard import build_scorecard
-
         db = OpsDB(config.ops_db, minimum_version=config.sqlite_min_version)
-        payload = build_scorecard(config, db)
+        if args.harness_command == "workflow":
+            from mova_fpl.ops.orchestration import build_workflow
+
+            payload = build_workflow(config, db)
+            blocked = payload["verdict"] == "blocked"
+        else:
+            from mova_fpl.ops.harness_scorecard import build_scorecard
+
+            payload = build_scorecard(config, db)
+            blocked = payload["overall_status"] == "blocked"
         print(json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str))
-        return 2 if payload["overall_status"] == "blocked" else 0
+        return 2 if blocked else 0
 
     if args.command == "strategy":
         from pathlib import Path
@@ -884,23 +901,27 @@ def main(argv: list[str] | None = None) -> int:
             return 0 if row["status"] == "completed" else 2
         correlation_id = new_id("corr")
         is_resilience = args.drill_command == "resilience"
+        is_orchestration = args.drill_command == "orchestration"
         is_snapshot = args.drill_command == "snapshot"
         is_browser_failure = args.drill_command == "browser-failure"
         is_host = args.drill_command == "import-host"
         job_type = (
             "resilience_drill" if is_resilience else
+            "orchestration_drill" if is_orchestration else
             "snapshot_rejection_drill" if is_snapshot else
             "browser_failure_drill" if is_browser_failure else
             "host_recovery_drill"
         )
         schema = (
             "mova-resilience-drill-v1" if is_resilience else
+            "mova-orchestration-drill-v1" if is_orchestration else
             "mova-snapshot-rejection-drill-v1" if is_snapshot else
             "mova-browser-failure-drill-v1" if is_browser_failure else
             "mova-host-drill-v1"
         )
         scenario = (
             "scheduler_p0_recovery" if is_resilience else
+            "agent_orchestration_deadline" if is_orchestration else
             "snapshot_rejection" if is_snapshot else
             "dom_drift_ambiguous_save" if is_browser_failure else args.scenario
         )
@@ -939,6 +960,9 @@ def main(argv: list[str] | None = None) -> int:
                 if is_resilience:
                     from mova_fpl.ops.watchdog import resilience_drill
                     payload = resilience_drill()
+                elif is_orchestration:
+                    from mova_fpl.ops.orchestration import orchestration_drill
+                    payload = orchestration_drill()
                 elif is_snapshot:
                     from mova_fpl.ops.snapshot_drill import run as snapshot_rejection_drill
                     payload = snapshot_rejection_drill()

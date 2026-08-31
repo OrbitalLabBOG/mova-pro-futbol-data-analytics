@@ -1376,6 +1376,23 @@ class OpsDB:
                         "passed": int(metrics.get("passed") or 0)})
         return payload
 
+    def orchestration_drill_status(self) -> dict:
+        with self.connect(readonly=True) as con:
+            row = con.execute(
+                "SELECT job_id,status,started_at,finished_at,output_sha256,metrics_json,"
+                "error_code FROM job_runs WHERE job_type='orchestration_drill' "
+                "ORDER BY started_at DESC LIMIT 1"
+            ).fetchone()
+        if not row:
+            return {"status": "missing", "checks": 0, "passed": 0}
+        payload = dict(row)
+        metrics = json.loads(payload.pop("metrics_json") or "{}")
+        payload.update({
+            "checks": int(metrics.get("checks") or 0),
+            "passed": int(metrics.get("passed") or 0),
+        })
+        return payload
+
     def snapshot_rejection_drill_status(self) -> dict:
         with self.connect(readonly=True) as con:
             row = con.execute(

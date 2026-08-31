@@ -62,6 +62,12 @@ def _resilience() -> dict:
             "output_sha256": "a" * 64}
 
 
+def _orchestration() -> dict:
+    return {"job_id": "job_orchestration", "status": "completed", "checks": 12,
+            "passed": 12, "finished_at": "2026-08-31T03:30:00+00:00",
+            "output_sha256": "d" * 64}
+
+
 def _host_recovery() -> dict:
     return {
         "status": "completed", "completed": 4, "required": 4,
@@ -94,6 +100,7 @@ def test_readiness_separates_technical_eligibility_from_authority() -> None:
     report = evaluate_readiness(
         operator_status=_operator(), research_coverage=_research(),
         execution_status=_execution(), resilience_evidence=_resilience(),
+        orchestration_evidence=_orchestration(),
         host_recovery_evidence=_host_recovery(),
         snapshot_rejection_evidence=_snapshot_rejection(),
         browser_failure_evidence=_browser_failure(),
@@ -106,7 +113,7 @@ def test_readiness_separates_technical_eligibility_from_authority() -> None:
     assert report["activation"]["current_action_level"] == "A0"
     assert report["activation"]["promotion_is_automatic"] is False
     assert "EXPLICIT_PROMOTION_REQUIRED" in report["activation"]["activation_blockers"]
-    assert report["summary"] == {"pass": 19, "pending": 0, "blocked": 0, "total": 19}
+    assert report["summary"] == {"pass": 20, "pending": 0, "blocked": 0, "total": 20}
 
 
 def test_readiness_fails_closed_and_reports_specific_evidence_gaps() -> None:
@@ -128,6 +135,7 @@ def test_readiness_fails_closed_and_reports_specific_evidence_gaps() -> None:
     report = evaluate_readiness(
         operator_status=operator, research_coverage=research,
         execution_status=execution, resilience_evidence={"status": "missing"},
+        orchestration_evidence={"status": "missing"},
         host_recovery_evidence={"status": "incomplete", "completed": 0, "required": 4},
         snapshot_rejection_evidence={"status": "missing"},
         browser_failure_evidence={"status": "missing"},
@@ -142,6 +150,7 @@ def test_readiness_fails_closed_and_reports_specific_evidence_gaps() -> None:
     assert by_code["POSTGRES_THREE_GAMEWEEK_CYCLES"]["observed"] == 1
     assert by_code["POSTGRES_ROLE_SEPARATION"]["status"] == "pass"
     assert by_code["RESILIENCE_DRILL_PROVEN"]["status"] == "pending"
+    assert by_code["ORCHESTRATION_DRILL_PROVEN"]["status"] == "pending"
     assert by_code["HOST_RECOVERY_DRILLS_PROVEN"]["status"] == "pending"
     assert by_code["SNAPSHOT_REJECTION_PROVEN"]["status"] == "pending"
     assert by_code["BROWSER_FAILURE_DRILL_PROVEN"]["status"] == "pending"
@@ -154,10 +163,11 @@ def test_readiness_cli_can_be_used_as_a_level_gate_and_metrics_are_bounded() -> 
     report = evaluate_readiness(
         operator_status=_operator(), research_coverage=_research(),
         execution_status=_execution(), resilience_evidence=_resilience(),
+        orchestration_evidence=_orchestration(),
         host_recovery_evidence=_host_recovery(),
         snapshot_rejection_evidence=_snapshot_rejection(),
         browser_failure_evidence=_browser_failure(),
     )
     metrics = prometheus(report)
     assert 'mova_autonomy_technical_eligible_level{level="A3"} 1' in metrics
-    assert 'mova_autonomy_readiness_gates{status="pass"} 19' in metrics
+    assert 'mova_autonomy_readiness_gates{status="pass"} 20' in metrics

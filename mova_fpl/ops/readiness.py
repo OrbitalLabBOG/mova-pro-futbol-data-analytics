@@ -36,6 +36,7 @@ def _gate(code: str, status: str, summary: str, *, levels: tuple[str, ...],
 
 def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
                        execution_status: dict, resilience_evidence: dict | None = None,
+                       orchestration_evidence: dict | None = None,
                        host_recovery_evidence: dict | None = None,
                        snapshot_rejection_evidence: dict | None = None,
                        browser_failure_evidence: dict | None = None,
@@ -73,6 +74,15 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
         resilience.get("status") == "completed"
         and int(resilience.get("checks") or 0) >= 6
         and int(resilience.get("passed") or 0) == int(resilience.get("checks") or 0)
+    )
+    orchestration = orchestration_evidence or {
+        "status": "missing", "checks": 0, "passed": 0,
+    }
+    orchestration_passed = (
+        orchestration.get("status") == "completed"
+        and int(orchestration.get("checks") or 0) >= 12
+        and int(orchestration.get("passed") or 0)
+        == int(orchestration.get("checks") or 0)
     )
     host_recovery = host_recovery_evidence or {
         "status": "incomplete", "completed": 0, "required": 4, "scenarios": {},
@@ -200,6 +210,19 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
             required={"status": "completed", "checks": ">=6", "all_passed": True},
             source="job_runs.resilience_drill",
             next_action="ejecutar mova drill resilience con una clave idempotente nueva",
+        ),
+        _gate(
+            "ORCHESTRATION_DRILL_PROVEN",
+            "pass" if orchestration_passed else
+            "blocked" if orchestration.get("status") == "failed" else "pending",
+            "orden agentic, fail-closed, idempotencia y deadline ensayados",
+            levels=("A1", "A2", "A3"),
+            observed={key: orchestration.get(key) for key in (
+                "job_id", "status", "checks", "passed", "finished_at", "output_sha256"
+            )},
+            required={"status": "completed", "checks": ">=12", "all_passed": True},
+            source="job_runs.orchestration_drill",
+            next_action="ejecutar mova drill orchestration con una clave idempotente nueva",
         ),
         _gate(
             "HOST_RECOVERY_DRILLS_PROVEN",
@@ -378,6 +401,7 @@ def build_readiness(config: RuntimeConfig, db: OpsDB, *,
         research_coverage=db.research_coverage(),
         execution_status=ExecutionService(config, db).status(),
         resilience_evidence=db.resilience_drill_status(),
+        orchestration_evidence=db.orchestration_drill_status(),
         host_recovery_evidence=db.host_recovery_drill_status(),
         snapshot_rejection_evidence=db.snapshot_rejection_drill_status(),
         browser_failure_evidence=db.browser_failure_drill_status(),

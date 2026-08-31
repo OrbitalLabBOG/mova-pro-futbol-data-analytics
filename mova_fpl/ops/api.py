@@ -111,6 +111,13 @@ def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
                     except Exception:
                         metrics += "mova_harness_scorecard_up 0\n"
                     try:
+                        from mova_fpl.ops.orchestration import (
+                            build_workflow, prometheus as orchestration_prometheus,
+                        )
+                        metrics += orchestration_prometheus(build_workflow(runtime, db))
+                    except Exception:
+                        metrics += "mova_orchestration_status{status=\"blocked\"} 1\n"
+                    try:
                         from mova_fpl.postgres.store import (
                             prometheus as postgres_prometheus,
                             read_status as read_postgres_status,
@@ -254,6 +261,14 @@ def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
 
                     self._send(
                         HTTPStatus.OK, _json_bytes(build_scorecard(runtime, db)),
+                        "application/json; charset=utf-8",
+                    )
+                    return
+                if parsed.path == "/api/v1/orchestration":
+                    from mova_fpl.ops.orchestration import build_workflow
+
+                    self._send(
+                        HTTPStatus.OK, _json_bytes(build_workflow(runtime, db)),
                         "application/json; charset=utf-8",
                     )
                     return
