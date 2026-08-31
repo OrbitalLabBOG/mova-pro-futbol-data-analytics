@@ -4,7 +4,7 @@ name: "HV1-09D — PostgreSQL recovery drill"
 created: 2026-08-31
 updated: 2026-08-31
 tags: [mova, fpl, chaos, postgres, recovery, idempotency]
-status: implemented-pending-live-rollout
+status: verified-live
 ---
 
 # HV1-09D — PostgreSQL recovery drill
@@ -40,9 +40,23 @@ la prueba se difiere. No toca browser, controles, equipo, modelos, credenciales,
 PostgreSQL ni configuración. El trap recrea el servicio ante toda salida intermedia. Sigue
 pendiente probar snapshot inválido, browser/DOM, save ambiguo, combinaciones y reboot completo.
 
-## Evidencia previa al rollout
+## Evidencia verificada
 
-- validación dirigida: escenarios API/DB, sustitución, fingerprints, timing e identidad;
-- suite completa y smoke Docker se anexarán después de cerrar el commit candidato;
-- sintaxis shell, `compileall` y `git diff --check`: pass.
-
+- candidato del drill `237357b`; hardening de conflicto JSON desplegado en `a78ff16`;
+- suite completa: `1106 passed, 1 skipped, 79 deselected`; validación dirigida 24 pass;
+- sintaxis shell, Compose, `compileall` y `git diff --check`: pass;
+- backup previo: job `job_a224ad9881a747ff9e1d28074a4a1a05`, ruta
+  `/opt/orbital/backups/mova-fpl/20260831T020006Z`;
+- ensayo vivo: job `job_48f63b5ab68a4fad81045e5070b69b7b`, downtime 7 s, ocho de
+  ocho checks y artefacto SHA-256
+  `5f0c026a4bdf50fafbb2d470b54932f17aeacd699070db8b56377f495c3d56e1`;
+- el contenedor conservó ID e imagen; API respondió durante la caída; fingerprints privado
+  antes/después: `078c12ce4fd35b966ef76bf1829d50627fd4f946453de6f66c20c4f587e13b85`;
+- replay: mismo job y `StartedAt` sin cambios; identidad distinta: `status=conflict`, exit 2 y
+  ningún restart;
+- import posterior `pgimport_39e3959ffdbd462b8a0eff1a2a775139`: 54/54; read parity pass;
+- `mova doctor`: 22 pass, 0 warn, 0 fail; watchdog activo; `mova safety`: `safe_to_wait`;
+- readiness: 11 pass, 6 pending, 0 blocked sobre 17; `HOST_RECOVERY_DRILLS_PROVEN=pass`,
+  elegibilidad conservada en A0;
+- backup posterior: job `job_f4244f0acefd4cd39154357db7de4bcc`, ruta
+  `/opt/orbital/backups/mova-fpl/20260831T020448Z`.
