@@ -106,9 +106,8 @@ def semantic_deliberation_input(request: dict) -> dict:
             "signals": signals,
         },
         "strategic_memory": {
-            key: memory.get(key) for key in (
-                "schema", "status", "content_sha256", "lessons", "season_plan_revision",
-            ) if memory.get(key) is not None
+            key: value for key, value in memory.items()
+            if key not in {"as_of_at", "content_sha256"}
         },
         "season_plan": {
             key: plan.get(key) for key in (

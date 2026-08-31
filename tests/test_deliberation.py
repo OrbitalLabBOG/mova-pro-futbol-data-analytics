@@ -217,7 +217,11 @@ def test_semantic_input_ignores_provenance_churn_but_detects_material_change():
                                "player_count": 600, "target_gw": 3},
         "research_summary": {"focus": [], "previous_active_signals": [],
                              "signals": [], "unresolved_conflicts": 0},
-        "strategic_memory": {"content_sha256": "memory-a"},
+        "strategic_memory": {
+            "as_of_at": "2026-09-04T15:00:00+00:00",
+            "content_sha256": "memory-a", "lessons": [],
+            "decision_records": [{"gw": 2, "fingerprint": "team-a"}],
+        },
         "season_plan": {"revision": 1, "content_sha256": "plan-a"},
     }
     second = json.loads(json.dumps(first))
@@ -227,11 +231,21 @@ def test_semantic_input_ignores_provenance_churn_but_detects_material_change():
                    "requested_at": "2026-09-04T15:15:00+00:00"})
     second["envelope"]["engine"]["git_sha"] = "deploy-b"
     second["cycle_context"]["analytics_manifest"]["batch_id"] = "batch-b"
+    second["cycle_context"]["strategic_memory"].update({
+        "as_of_at": "2026-09-04T15:15:00+00:00", "content_sha256": "memory-b",
+    })
 
     assert sha256_json(semantic_deliberation_input(first)) == sha256_json(
         semantic_deliberation_input(second)
     )
     second["envelope"]["candidates"][0]["decision"]["squad_15"][0] = 999
+    assert sha256_json(semantic_deliberation_input(first)) != sha256_json(
+        semantic_deliberation_input(second)
+    )
+    second = json.loads(json.dumps(first))
+    second["cycle_context"]["strategic_memory"]["decision_records"][0][
+        "fingerprint"
+    ] = "team-materially-changed"
     assert sha256_json(semantic_deliberation_input(first)) != sha256_json(
         semantic_deliberation_input(second)
     )
