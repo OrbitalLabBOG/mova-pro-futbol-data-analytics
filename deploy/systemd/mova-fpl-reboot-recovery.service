@@ -1,0 +1,18 @@
+[Unit]
+Description=Verify a prepared MOVA FPL recovery after a real host reboot
+Requires=mova-fpl-stack.service
+After=mova-fpl-stack.service network-online.target
+Wants=network-online.target
+ConditionPathExists=/var/lib/mova-fpl/runtime/reboot-recovery.pending.json
+
+[Service]
+Type=oneshot
+WorkingDirectory=@@REPO_DIR@@
+EnvironmentFile=-/etc/mova-fpl/deploy.env
+ExecStart=@@REPO_DIR@@/deploy/bin/reboot-recovery-verify.sh
+Restart=on-failure
+RestartSec=30
+TimeoutStartSec=1200
+
+[Install]
+WantedBy=multi-user.target

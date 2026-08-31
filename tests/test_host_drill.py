@@ -99,6 +99,27 @@ def _combined_payload() -> dict:
     }
 
 
+def _reboot_payload() -> dict:
+    fingerprint = "f" * 64
+    return {
+        "schema": "mova-host-drill-v1", "scenario": "reboot_recovery",
+        "status": "pass", "started_at": "2026-08-31T04:00:00Z",
+        "finished_at": "2026-08-31T04:08:00Z", "downtime_seconds": 480,
+        "revision": "abc1234",
+        "checks": {
+            "boot_id_changed": True, "stack_ready_after": True,
+            "timers_active_after": True, "scheduler_resumed": True,
+            "sqlite_integrity_after": True, "postgres_parity_after": True,
+            "revision_unchanged": True, "controls_fail_closed": True,
+            "team_state_unchanged": True, "idempotency_unique": True,
+            "backup_prepared": True,
+        },
+        "team_state_sha256_before": fingerprint,
+        "team_state_sha256_after": fingerprint,
+        "fpl_state_mutated": False,
+    }
+
+
 def test_host_drill_import_is_allowlisted_atomic_and_consumes_inbox(tmp_path: Path):
     config = RuntimeConfig(artifact_root=tmp_path / "artifacts", git_sha="abc1234")
     source = config.artifact_root / "host-drills" / "inbox" / "api.json"
@@ -217,6 +238,29 @@ def test_combined_host_drill_rejects_drift_or_invalid_contract(mutation):
         )
 
 
+def test_reboot_host_drill_is_allowlisted_and_binds_boot_recovery_state():
+    result = validate(
+        _reboot_payload(), expected_revision="abc1234",
+        expected_scenario="reboot_recovery",
+    )
+    assert result["scenario"] == "reboot_recovery"
+    assert len(result["checks"]) == 11
+    assert result["team_state_sha256_before"] == "f" * 64
+
+
+@pytest.mark.parametrize("mutation", [
+    {"team_state_sha256_after": "0" * 64},
+    {"downtime_seconds": 1201},
+    {"checks": {"boot_id_changed": True}},
+])
+def test_reboot_host_drill_rejects_drift_timeout_or_invalid_contract(mutation):
+    with pytest.raises(ValueError):
+        validate(
+            {**_reboot_payload(), **mutation}, expected_revision="abc1234",
+            expected_scenario="reboot_recovery",
+        )
+
+
 def test_host_drill_rejects_scenario_substitution():
     with pytest.raises(ValueError, match="scenario mismatch"):
         validate(
@@ -292,6 +336,33 @@ def test_combined_host_script_locks_services_recovers_all_and_never_writes_fpl()
     ))
 
 
+def test_reboot_workflow_requires_two_phases_and_never_reboots_or_writes_fpl():
+    prepare = Path("deploy/bin/reboot-recovery-prepare.sh").read_text(encoding="utf-8")
+    verify = Path("deploy/bin/reboot-recovery-verify.sh").read_text(encoding="utf-8")
+    unit = Path("deploy/systemd/mova-fpl-reboot-recovery.service").read_text(
+        encoding="utf-8"
+    )
+    assert "drill host-status --scenario reboot_recovery" in prepare
+    assert "reboot_executed\": False" in prepare
+    assert "backup --force" in prepare
+    assert "postgres-shadow-backup.sh" in prepare
+    assert "expires_epoch=$((prepared_epoch + 600))" in prepare
+    assert "reboot-recovery.expired" in prepare
+    assert "/proc/sys/kernel/random/boot_id" in prepare
+    assert "boot_id_after" in verify and '!= "$boot_id_before"' in verify
+    assert "boot_started_epoch > expires_epoch" in verify
+    assert "scheduler_resumed" in verify
+    assert "idempotency_unique" in verify
+    assert "drill import-host" in verify and "--scenario reboot_recovery" in verify
+    assert "ConditionPathExists=/var/lib/mova-fpl/runtime/reboot-recovery.pending.json" in unit
+    assert "After=mova-fpl-stack.service" in unit
+    for script in (prepare, verify):
+        assert not any(token in script for token in (
+            "systemctl reboot", "shutdown -r", "execute begin", "execute finalize",
+            "probe-transfers", "browser_writes=true",
+        ))
+
+
 def test_host_cli_binds_scenario_and_identity(tmp_path: Path, monkeypatch, capsys):
     from mova_fpl.ops.cli import main
 
@@ -346,3 +417,26 @@ def test_host_cli_binds_scenario_and_identity(tmp_path: Path, monkeypatch, capsy
         "scenario": "postgres_recovery",
         "error_code": "idempotency_identity_mismatch",
     }
+
+
+def test_four_legacy_host_scenarios_no_longer_claim_full_reboot_recovery(tmp_path):
+    db = OpsDB(tmp_path / "ops.db", enforce_version=False)
+    db.migrate()
+    for scenario, checks in (
+        ("api_recovery", 5), ("postgres_recovery", 8),
+        ("browser_recovery", 9), ("combined_recovery", 13),
+    ):
+        job_id, reused = db.start_job(
+            "host_recovery_drill", f"fixture:{scenario}", f"corr_{scenario}"
+        )
+        assert reused is False
+        db.finish_job(job_id, "completed", output_sha256="a" * 64,
+                      metrics={"scenario": scenario, "checks": checks,
+                               "passed": checks, "downtime_seconds": 1})
+
+    status = db.host_recovery_drill_status()
+
+    assert status["status"] == "incomplete"
+    assert status["completed"] == 4
+    assert status["required"] == 5
+    assert "reboot_recovery" not in status["scenarios"]

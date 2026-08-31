@@ -364,6 +364,7 @@ def parser() -> argparse.ArgumentParser:
     host_drill.add_argument(
         "--scenario", choices=(
             "api_recovery", "postgres_recovery", "browser_recovery", "combined_recovery",
+            "reboot_recovery",
         ),
         default="api_recovery",
     )
@@ -374,6 +375,7 @@ def parser() -> argparse.ArgumentParser:
     host_status.add_argument(
         "--scenario", choices=(
             "api_recovery", "postgres_recovery", "browser_recovery", "combined_recovery",
+            "reboot_recovery",
         ),
         default="api_recovery",
     )

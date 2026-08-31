@@ -22,4 +22,5 @@ systemctl enable --now mova-fpl-tick.timer mova-fpl-private-state.timer \
 systemctl enable --now mova-fpl-analytics.timer
 systemctl enable --now mova-fpl-research.timer
 systemctl enable --now mova-fpl-postgres-sync.timer
+systemctl enable mova-fpl-reboot-recovery.service
 systemctl list-timers --all 'mova-fpl-*' --no-pager

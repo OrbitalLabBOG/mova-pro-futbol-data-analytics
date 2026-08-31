@@ -1531,6 +1531,7 @@ class OpsDB:
         """Resume la evidencia más reciente por escenario host requerido."""
         required = (
             "api_recovery", "postgres_recovery", "browser_recovery", "combined_recovery",
+            "reboot_recovery",
         )
         with self.connect(readonly=True) as con:
             rows = con.execute(

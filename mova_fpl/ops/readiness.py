@@ -108,12 +108,12 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
         == alert_channel_state.get("destination_fingerprint")
     )
     host_recovery = host_recovery_evidence or {
-        "status": "incomplete", "completed": 0, "required": 4, "scenarios": {},
+        "status": "incomplete", "completed": 0, "required": 5, "scenarios": {},
     }
     host_recovery_passed = (
         host_recovery.get("status") == "completed"
         and int(host_recovery.get("completed") or 0)
-        == int(host_recovery.get("required") or 4)
+        == int(host_recovery.get("required") or 5)
     )
     snapshot_rejection = snapshot_rejection_evidence or {
         "status": "missing", "checks": 0, "passed": 0,
@@ -290,7 +290,7 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
             "HOST_RECOVERY_DRILLS_PROVEN",
             "pass" if host_recovery_passed else
             "blocked" if host_recovery.get("status") == "failed" else "pending",
-            "caídas aisladas y combinadas del control plane recuperadas sin mutar FPL",
+            "caídas aisladas, combinadas y reboot completo recuperados sin mutar FPL",
             levels=("A1", "A2", "A3"),
             observed={
                 "status": host_recovery.get("status"),
@@ -300,10 +300,11 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
             },
             required={"status": "completed", "scenarios": [
                 "api_recovery", "postgres_recovery", "browser_recovery",
-                "combined_recovery",
+                "combined_recovery", "reboot_recovery",
             ]},
             source="job_runs.host_recovery_drill",
-            next_action="ejecutar drills host aislados y el outage combinado allowlisted",
+            next_action=("ejecutar los drills host allowlisted pendientes; el reboot exige "
+                         "preparación y autorización explícita"),
         ),
         _gate(
             "SNAPSHOT_REJECTION_PROVEN",

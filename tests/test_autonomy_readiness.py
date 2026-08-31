@@ -91,12 +91,13 @@ def _alert_channel_live() -> dict:
 
 def _host_recovery() -> dict:
     return {
-        "status": "completed", "completed": 4, "required": 4,
+        "status": "completed", "completed": 5, "required": 5,
         "scenarios": {
             "api_recovery": {"status": "completed", "checks": 5, "passed": 5},
             "postgres_recovery": {"status": "completed", "checks": 8, "passed": 8},
             "browser_recovery": {"status": "completed", "checks": 9, "passed": 9},
             "combined_recovery": {"status": "completed", "checks": 13, "passed": 13},
+            "reboot_recovery": {"status": "completed", "checks": 11, "passed": 11},
         },
     }
 
@@ -164,7 +165,7 @@ def test_readiness_fails_closed_and_reports_specific_evidence_gaps() -> None:
                        "external_delivery": False},
         alert_channel_evidence={"status": "missing"},
         alert_channel_live_evidence={"status": "missing"},
-        host_recovery_evidence={"status": "incomplete", "completed": 0, "required": 4},
+        host_recovery_evidence={"status": "incomplete", "completed": 0, "required": 5},
         snapshot_rejection_evidence={"status": "missing"},
         browser_failure_evidence={"status": "missing"},
     )
