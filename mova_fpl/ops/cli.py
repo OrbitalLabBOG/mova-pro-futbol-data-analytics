@@ -253,6 +253,10 @@ def parser() -> argparse.ArgumentParser:
     alert_ack.add_argument("--incident-id", required=True)
     alert_ack.add_argument("--actor", required=True)
     alert_ack.add_argument("--reason", required=True)
+    alert_retry = alert_commands.add_parser("retry", help="reabre un evento dead")
+    alert_retry.add_argument("--outbox-id", required=True)
+    alert_retry.add_argument("--actor", required=True)
+    alert_retry.add_argument("--reason", required=True)
     maintenance = commands.add_parser("maintenance", help="mantenimiento seguro de artefactos")
     maintenance_commands = maintenance.add_subparsers(
         dest="maintenance_command", required=True
@@ -280,6 +284,14 @@ def parser() -> argparse.ArgumentParser:
     commands.add_parser("private-state-due")
     watchdog = commands.add_parser("watchdog")
     watchdog.add_argument("--max-age-seconds", type=int, default=1200)
+    drill = commands.add_parser("drill", help="rehearsals herméticos de resiliencia")
+    drill_commands = drill.add_subparsers(dest="drill_command", required=True)
+    resilience = drill_commands.add_parser(
+        "resilience", help="P0 scheduler, dedup, delivery y recovery"
+    )
+    resilience.add_argument("--actor", required=True)
+    resilience.add_argument("--reason", required=True)
+    resilience.add_argument("--idempotency-key", required=True)
     backup = commands.add_parser("backup")
     backup.add_argument("--retention-days", type=int, default=35)
     backup.add_argument("--force", action="store_true",
@@ -661,9 +673,13 @@ def main(argv: list[str] | None = None) -> int:
         elif args.alerts_command == "dispatch":
             from mova_fpl.ops.alerts import dispatch
             payload = dispatch(db, limit=args.limit)
-        else:
+        elif args.alerts_command == "acknowledge":
             payload = db.acknowledge_incident(
                 args.incident_id, actor=args.actor, reason=args.reason,
+            )
+        else:
+            payload = db.retry_outbox(
+                args.outbox_id, actor=args.actor, reason=args.reason,
             )
         print(json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str))
     elif args.command == "maintenance":
@@ -740,23 +756,51 @@ def main(argv: list[str] | None = None) -> int:
         if not result["due"]:
             return 75
     elif args.command == "watchdog":
-        from mova_fpl.ops.alerts import dispatch
+        from mova_fpl.ops.watchdog import run
 
-        db.quick_check()
-        status = db.status()
-        tick = status.get("latest_tick") or {}
-        finished = tick.get("finished_at")
-        if not finished:
-            print(json.dumps({"status": "down", "reason": "no_finished_tick"}))
+        try:
+            payload = run(db, max_age_seconds=args.max_age_seconds)
+        except Exception as exc:  # DB rota puede impedir persistir; journald conserva el fallo
+            payload = {"schema": "mova-watchdog-v2", "status": "down",
+                       "reason": "control_plane_unavailable",
+                       "error_code": type(exc).__name__}
+        print(json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str))
+        if payload["status"] != "ok":
             return 1
-        observed = datetime.fromisoformat(str(finished).replace("Z", "+00:00"))
-        age = int((datetime.now(timezone.utc) - observed).total_seconds())
-        healthy = age <= args.max_age_seconds and tick.get("status") in {"completed", "degraded"}
-        alerts = dispatch(db)
-        print(json.dumps({"status": "ok" if healthy else "down", "tick_age_seconds": age,
-                          "latest_tick_status": tick.get("status"), "alerts": alerts}))
-        if not healthy:
-            return 1
+    elif args.command == "drill":
+        from mova_fpl.ops.watchdog import resilience_drill
+
+        correlation_id = new_id("corr")
+        job_id, reused = db.start_job(
+            "resilience_drill", f"resilience-drill:{args.idempotency_key}", correlation_id,
+        )
+        if reused:
+            print(json.dumps({"schema": "mova-resilience-drill-v1", "status": "reused",
+                              "job_id": job_id}))
+        else:
+            db.append_audit(
+                "resilience_drill_requested", actor=args.actor,
+                correlation_id=correlation_id, job_id=job_id,
+                subject_type="drill", subject_id="scheduler_p0_recovery",
+                payload={"reason": args.reason},
+            )
+            try:
+                payload = resilience_drill()
+            except Exception as exc:
+                db.finish_job(job_id, "failed", error_code=type(exc).__name__,
+                              error_detail=str(exc)[:2000])
+                raise
+            result_status = "completed" if payload["status"] == "pass" else "failed"
+            db.finish_job(
+                job_id, result_status, output_sha256=sha256_json(payload),
+                metrics={"checks": len(payload["checks"]),
+                         "passed": sum(payload["checks"].values())},
+                error_code=None if result_status == "completed" else "DrillFailed",
+            )
+            print(json.dumps({"job_id": job_id, **payload}, ensure_ascii=False,
+                             sort_keys=True, default=str))
+            if result_status != "completed":
+                return 1
     elif args.command == "backup":
         if args.force and not all((args.actor, args.reason, args.idempotency_key)):
             raise SystemExit(

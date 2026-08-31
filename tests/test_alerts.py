@@ -61,3 +61,25 @@ def test_expired_sending_lease_is_reclaimed(tmp_path):
     reclaimed = db.claim_outbox()
     assert len(reclaimed) == 1
     assert reclaimed[0]["attempts"] == 2
+
+
+def test_dead_event_requires_audited_retry_or_ack(tmp_path):
+    db = _db(tmp_path)
+    incident = db.open_incident("P0", "delivery unavailable")
+    event = db.claim_outbox()[0]
+    assert db.finish_outbox(
+        event["outbox_id"], delivered=False, error="SinkDown", max_attempts=1,
+    ) == "dead"
+
+    retried = db.retry_outbox(
+        event["outbox_id"], actor="operator", reason="sink restored",
+    )
+    assert retried["status"] == "pending" and not retried["reused"]
+    assert db.retry_outbox(
+        event["outbox_id"], actor="operator", reason="same request",
+    )["reused"]
+
+    event = db.claim_outbox()[0]
+    db.finish_outbox(event["outbox_id"], delivered=False, max_attempts=1)
+    db.acknowledge_incident(incident, actor="operator", reason="triaged elsewhere")
+    assert db.outbox_status()["latest"][0]["status"] == "acknowledged"

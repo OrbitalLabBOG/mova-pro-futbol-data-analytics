@@ -50,3 +50,9 @@ maintenance cleanup` opera por defecto en dry-run y su allowlist sólo considera
 `.partial` y `.tmp-*`; symlinks y evidencia canónica quedan fuera. El workpack conserva
 `active-shadow`: falta elegir y ensayar un canal externo de notificación si journald no basta para
 la operación desatendida, y comprobar el flujo durante ciclos vivos.
+
+HV1-09B endurece el scheduler muerto: `mova watchdog` abre/deduplica P0, intenta la entrega y
+devuelve fallo también cuando el sink falla o existe outbox `dead`. `mova alerts retry` ofrece
+recuperación explícita y auditada; reconocer un incidente también puede cerrar un evento `dead`
+sin confundirlo con delivery. El rehearsal `mova drill resilience` verifica P0→delivery→dedup→
+recovery en una base efímera y persiste sólo el job/resultado del ensayo en el ledger real.

@@ -2,9 +2,9 @@
 type: workpack
 name: "WP-001 — Runtime reproducible y deploy VPS"
 created: 2026-08-21
-updated: 2026-08-21
+updated: 2026-08-31
 tags: [mova, fpl, workpack, docker, vps]
-status: proposed
+status: active-shadow
 ---
 
 # WP-001 — Runtime reproducible y deploy VPS
@@ -40,3 +40,12 @@ G0 aprobado; remote Git sincronizado con el SHA de release.
 ## No incluye
 
 Tablas, browser login, writes FPL ni activar timers productivos antes del control plane.
+
+## Estado verificado
+
+Engine/browser fijados, Compose hardened, secrets externos, límites, healthchecks, units
+persistentes, backup/restore, SHA/digest y gates de recursos operan en el VPS. El watchdog v2
+abre un único P0 cuando falta o vence el heartbeat, entrega el outbox fuera de la transacción y
+resuelve el incidente tras recuperación. El rehearsal hermético prueba esa cadena sin mutar el
+runtime. El workpack permanece `active-shadow`: falta un reboot controlado del host que pruebe
+retoma sin duplicados y la copia cifrada off-host sigue sujeta a Q-04.

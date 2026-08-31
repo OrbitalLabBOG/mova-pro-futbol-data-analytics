@@ -25,6 +25,8 @@ mova safety
 mova alerts status
 mova alerts dispatch
 mova alerts acknowledge --incident-id incident_... --actor julian --reason "triage confirmado"
+mova alerts retry --outbox-id outbox_... --actor julian --reason "sink restaurado"
+mova drill resilience --actor codex --reason "rehearsal P0" --idempotency-key "..."
 mova maintenance cleanup
 mova doctor
 mova doctor --json
@@ -62,6 +64,14 @@ El watchdog despacha el outbox vencido a journald después de validar el heartbe
 lease recuperable, la entrega ocurre fuera de SQLite y los fallos reintentan con backoff hasta
 estado `dead`. `sent` confirma entrega al sink local, no lectura humana. `acknowledge` reconoce el
 incidente con actor y razón; resolverlo sigue exigiendo que la condición causal haya desaparecido.
+Si falta un tick, el último tick venció o su estado falló, el watchdog abre un único incidente P0,
+lo entrega y termina non-zero. También falla si el sink rechaza la entrega o existe un evento
+`dead`. Tras reparar el sink, `alerts retry` reabre el evento de manera auditada; eventos enviados
+o ya reconocidos no pueden repetirse.
+
+`drill resilience` usa una base efímera para probar ausencia de tick, P0, delivery, deduplicación
+y recuperación. No altera controles ni datos deportivos (`runtime_mutated=false`), pero la
+invocación y su hash sí quedan como job auditado en el ledger operativo.
 
 `maintenance cleanup` sólo presenta candidatos `.tmp`, `.partial` o `.tmp-*` con más de 24 horas.
 No sigue symlinks ni considera evidencia canónica. Para borrar exige `--apply --actor --reason

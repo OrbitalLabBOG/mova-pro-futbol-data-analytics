@@ -2,9 +2,9 @@
 type: workpack
 name: "WP-008 — Shadow, rehearsals y promoción de autonomía"
 created: 2026-08-21
-updated: 2026-08-21
+updated: 2026-08-31
 tags: [mova, fpl, workpack, rollout, safety]
-status: proposed
+status: active-shadow
 ---
 
 # WP-008 — Shadow, rehearsals y promoción de autonomía
@@ -39,3 +39,11 @@ WP-001..007.
 ## Cierre
 
 El workpack termina con una recomendación de nivel; no lo activa sin aprobación separada.
+
+## Estado verificado
+
+Ya existen readiness consolidado, rehearsals browser por capacidad, cutover/rollback de lectura,
+restore drills e idempotencia de agentes. HV1-09B añade un escenario hermético repetible para
+scheduler ausente, P0, delivery, deduplicación y recuperación. Continúan pendientes los escenarios
+combinados API/DB/browser/DOM/save ambiguo, un reboot real, los ciclos independientes y las
+aprobaciones; por ello el workpack permanece `active-shadow` y no recomienda promoción.

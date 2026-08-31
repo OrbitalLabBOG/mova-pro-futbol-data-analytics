@@ -88,6 +88,13 @@ No marques como resuelto lo que sólo fue reconocido. Para revisar basura transi
 maintenance cleanup`; el modo normal es dry-run. `--apply` exige actor, razón e idempotency key y
 nunca debe ampliarse a formatos de evidencia.
 
+Un watchdog `down` abre y entrega un P0 deduplicado; `degraded` significa que el heartbeat puede
+estar sano pero la entrega falló o existe un evento `dead`. Tras reparar el sink usa `mova alerts
+retry --outbox-id ... --actor ... --reason ...`; nunca reintentes un evento `sent` o
+`acknowledged`. Para comprobar la ruta sin falsificar un incidente vivo ejecuta `mova drill
+resilience` con actor, razón e idempotency key. El resultado válido declara
+`runtime_mutated=false` y todos sus checks en true.
+
 ## Fuentes de verdad
 
 - Git: código, contratos, configuración de ejemplo, skills y runbooks.

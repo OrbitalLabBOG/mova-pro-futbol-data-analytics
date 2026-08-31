@@ -1261,6 +1261,31 @@ class OpsDB:
             )
         return status
 
+    def retry_outbox(self, outbox_id: str, *, actor: str, reason: str) -> dict:
+        """Reabre explícitamente un evento dead; pending/sending son idempotentes."""
+        with self.transaction() as con:
+            row = con.execute(
+                "SELECT status,attempts FROM outbox_events WHERE outbox_id=?", (outbox_id,),
+            ).fetchone()
+            if not row:
+                raise ValueError("outbox event not found")
+            if row["status"] in {"sent", "acknowledged"}:
+                raise ValueError("delivered outbox event cannot be retried")
+            reused = row["status"] in {"pending", "sending"}
+            if not reused:
+                con.execute(
+                    "UPDATE outbox_events SET status='pending',available_at=?,last_error=NULL "
+                    "WHERE outbox_id=?", (utcnow(), outbox_id),
+                )
+                self.append_audit(
+                    "alert_retry_requested", actor=actor, severity="warning",
+                    subject_type="outbox_event", subject_id=outbox_id,
+                    payload={"reason": reason, "previous_attempts": int(row["attempts"])},
+                    con=con,
+                )
+        return {"outbox_id": outbox_id,
+                "status": row["status"] if reused else "pending", "reused": reused}
+
     def acknowledge_incident(self, incident_id: str, *, actor: str, reason: str) -> dict:
         with self.transaction() as con:
             row = con.execute(
@@ -1276,7 +1301,7 @@ class OpsDB:
                 )
                 con.execute(
                     "UPDATE outbox_events SET status='acknowledged',acknowledged_at=? "
-                    "WHERE event_key=? AND status!='dead'",
+                    "WHERE event_key=? AND status!='acknowledged'",
                     (utcnow(), f"incident:{incident_id}"),
                 )
                 self.append_audit(
