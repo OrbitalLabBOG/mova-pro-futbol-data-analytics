@@ -4,7 +4,7 @@ name: "HV1-09E — Snapshot rejection drill"
 created: 2026-08-31
 updated: 2026-08-31
 tags: [mova, fpl, chaos, snapshot, integrity, path-traversal]
-status: implemented-pending-live-rollout
+status: verified-live
 ---
 
 # HV1-09E — Snapshot rejection drill
@@ -54,9 +54,22 @@ actor, razón y clave. Un replay completado reutiliza el job; un cambio de ident
 Este escenario prueba el boundary de evidencia sin dañar un artifact real. No sustituye la caída
 real PostgreSQL ya cubierta, ni prueba browser/DOM, save ambiguo, fallos combinados o reboot.
 
-## Evidencia previa al rollout
+## Evidencia verificada
 
-- pruebas dirigidas: contrato, diez checks, ledger, replay, conflicto y failed replay;
-- suite completa, smoke Docker y evidencia VPS se anexarán después del commit candidato;
-- `compileall` y `git diff --check`: pass.
-
+- revisión productiva: `86dd286`;
+- suite completa: `1116 passed, 1 skipped, 79 deselected`; pruebas dirigidas: 19 pass;
+- Compose, `compileall` y `git diff --check`: pass;
+- backup previo: job `job_65933d35ad284f52b8cdbb2efdbcf1f8`, ruta
+  `/opt/orbital/backups/mova-fpl/20260831T021430Z`;
+- rehearsal VPS: job `job_90085807b39b4d2ba478ed89705eead5`, diez de diez checks,
+  `fixture_only=true`, `runtime_mutated=false`, output SHA-256
+  `371086e254c977e3da0bcf517b6d094d59ce465c182e6093219e39b06e2e6b91`;
+- replay: mismo job; identidad distinta: `conflict`, exit 2; failed replay cubierto por test;
+- artifact real anterior y posterior al import: manifest pass, read parity pass, 54 tablas, cero
+  fallos;
+- import posterior `pgimport_e8db29355b9a43249b91047cfe26b524`: 54/54;
+- `mova doctor`: 22 pass, 0 warn, 0 fail; watchdog activo; safety `safe_to_wait`;
+- readiness: 12 pass, 6 pending, 0 blocked sobre 18;
+  `SNAPSHOT_REJECTION_PROVEN=pass`, elegibilidad conservada en A0;
+- backup posterior: job `job_cd4e60e92d0c458a8d240b7f94aeb175`, ruta
+  `/opt/orbital/backups/mova-fpl/20260831T021639Z`.
