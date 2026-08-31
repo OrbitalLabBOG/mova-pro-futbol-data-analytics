@@ -110,6 +110,8 @@ foreign keys activas y estados protegidos por `CHECK`.
 | `research_signals` | claims citados, TTL y conflicto | player/claim/source/observed versionado |
 | `agent_runs` | task/backend/model y consumo de cada corrida | run+attempt unique; hashes y status |
 | `agent_run_steps` | estados interiores resumidos | run+step+attempt unique; sin contenido/prompt |
+| `agent_attempt_authorizations` | permiso host→worker por llamada física | subject/hash/ordinal/budget/deadline/expiración |
+| `agent_worker_attempt_events` | receipts started/finished del worker | attempt+event unique; authorization enlazada |
 | `research_queries` | queries ejecutadas y discovery | run+query hash unique |
 | `research_documents` | evidencia web normalizada | canonical URL+hash; tier/TTL/storage policy |
 | `research_signal_sources` | corroboración many-to-many | signal+document unique |

@@ -793,6 +793,20 @@ consumo físico ya liquidado. El despliegue conservó exactamente los totales hi
 GW3 `666818` tokens y `16` usos comprometidos; no se fabricó una inferencia para probarlo.
 Evidencia: [HV1-10C physical attempt accounting](52-hv1-10c-physical-attempt-accounting.md).
 
+### Corte de autorización previa por intento — 31 de agosto de 2026
+
+HV1-10D mueve el gate al lugar correcto: antes de cada llamada física. El host elige un subject
+durable y revalida estado queued, ausencia de éxito, ordinal máximo dos, cutoff final, reserva
+activa y límites proyectados por job/GW/mes. Si pasa, sella un permiso inmutable de diez minutos
+ligado a `subject_id`, `request_sha256`, ordinal, deadline y hash del snapshot presupuestal. Sin
+ese archivo válido el worker termina 75 antes de Codex y no produce receipts.
+
+Receipts v2 incluyen `authorization_id`; el importador exige que identidad y permiso coincidan,
+rechaza un permiso alterado y mueve el lifecycle `authorized→started→finished`. Autorizaciones y
+bloqueos son idempotentes y aparecen en CLI/API, auditoría, Prometheus y PostgreSQL shadow.
+SQLite 21 y PostgreSQL 24 conservan el ledger. Evidencia:
+[HV1-10D pre-attempt authorization](53-hv1-10d-pre-attempt-authorization.md).
+
 ## 11. Definition of Done del harness v1
 
 - un ciclo completo puede ejecutarse, reanudarse y explicarse desde `mova`;

@@ -22,7 +22,7 @@ PM de construcción del proyecto.
 
 | Campo | Valor |
 | --- | --- |
-| Versión | 0.30 |
+| Versión | 0.31 |
 | Estado | `active-shadow` |
 | Riesgo | alto: cuenta externa, deadlines irreversibles y sesión autenticada |
 | Business owner | Julián Zuluaga |
@@ -85,6 +85,7 @@ PM de construcción del proyecto.
 | [50-hv1-09i-agent-queue-watchdog.md](50-hv1-09i-agent-queue-watchdog.md) | Watchdog independiente de cola agentic, incidente P1, API, métricas y drill 10/10 |
 | [51-hv1-09j-agent-attempt-ledger.md](51-hv1-09j-agent-attempt-ledger.md) | Recibos append-only, logs por intento y replay automático limitado a dos ejecuciones |
 | [52-hv1-10c-physical-attempt-accounting.md](52-hv1-10c-physical-attempt-accounting.md) | Presupuesto por ejecución física, estimación conservadora y compatibilidad legacy sin doble conteo |
+| [53-hv1-10d-pre-attempt-authorization.md](53-hv1-10d-pre-attempt-authorization.md) | Permiso host→worker por intento con budget, deadline, expiración e identidad sellada |
 | [contracts/](contracts/) | JSON Schemas máquina para request, result y signal |
 | [decisions/](decisions/) | decisiones arquitectónicas propuestas |
 | [workpacks/](workpacks/) | unidades de implementación y criterios todavía pendientes |

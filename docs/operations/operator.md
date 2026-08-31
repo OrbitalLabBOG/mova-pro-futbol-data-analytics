@@ -109,6 +109,13 @@ El presupuesto se liquida por starts físicos. Si todos los receipts terminales 
 `charged_estimate_tokens` sólo como su porción estimada. Un resultado lógico con retries no se
 suma otra vez desde `cost_ledger`.
 
+Antes de levantar el contenedor aislado, `research-cycle.sh` ejecuta `mova strategy attempts
+authorize`. El comando revalida estado, hash, máximo dos intentos, cutoff final y presupuesto
+proyectado; produce un permiso de diez minutos sólo si todo pasa. El worker requiere ese permiso y
+emite receipts v2 con `authorization_id`. Exit 75 con `status=skipped|blocked` significa que no se
+llamó Codex. No crees permisos manualmente ni edites los existentes: el importador verifica su SHA
+y pone cualquier receipt ligado a un permiso alterado en cuarentena.
+
 El claim del outbox usa lease recuperable, la entrega ocurre fuera de SQLite y los fallos reintentan con backoff hasta
 estado `dead`. `sent` confirma entrega al sink local, no lectura humana. `acknowledge` reconoce el
 incidente con actor y razón; resolverlo sigue exigiendo que la condición causal haya desaparecido.
