@@ -988,6 +988,26 @@ MIGRATION_016 = (
     "ON browser_rehearsals(capability,contract_version,observed_at DESC)",
 )
 
+MIGRATION_017 = (
+    "ALTER TABLE decision_deliberations ADD COLUMN semantic_input_sha256 TEXT",
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_decision_deliberations_semantic_once "
+    "ON decision_deliberations(cycle_id,provider,semantic_input_sha256) "
+    "WHERE semantic_input_sha256 IS NOT NULL",
+    """
+    CREATE TABLE IF NOT EXISTS decision_deliberation_bindings (
+        envelope_id TEXT PRIMARY KEY REFERENCES decision_envelopes(envelope_id)
+          ON DELETE CASCADE,
+        deliberation_id TEXT NOT NULL REFERENCES decision_deliberations(deliberation_id)
+          ON DELETE CASCADE,
+        semantic_input_sha256 TEXT NOT NULL,
+        binding_type TEXT NOT NULL CHECK (binding_type IN ('original','semantic_reuse')),
+        created_at TEXT NOT NULL
+    ) STRICT
+    """,
+    "CREATE INDEX IF NOT EXISTS idx_deliberation_bindings_deliberation "
+    "ON decision_deliberation_bindings(deliberation_id,created_at DESC)",
+)
+
 MIGRATIONS = (
     (1, "initial_ops_schema", MIGRATION_001),
     (2, "team_state_artifact_provenance", MIGRATION_002),
@@ -1005,4 +1025,5 @@ MIGRATIONS = (
     (14, "strategic_memory_snapshots", MIGRATION_014),
     (15, "sealed_research_evidence_and_coverage", MIGRATION_015),
     (16, "browser_rehearsal_evidence_ledger", MIGRATION_016),
+    (17, "semantic_deliberation_idempotency", MIGRATION_017),
 )

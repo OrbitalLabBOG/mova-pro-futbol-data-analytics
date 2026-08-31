@@ -1778,6 +1778,36 @@ class OpsDB:
             ).fetchone()
             if existing:
                 return {**dict(existing), "reused": True}
+            # Legacy fixtures/callers still receive a one-request-only binding. They do
+            # not gain cross-envelope reuse until they provide the explicit semantic SHA.
+            semantic_sha = payload.get("semantic_input_sha256") or payload["request_sha256"]
+            semantic_dedupe_enabled = bool(payload.get("semantic_input_sha256"))
+            semantic = con.execute(
+                "SELECT * FROM decision_deliberations WHERE cycle_id=? AND provider=? "
+                "AND semantic_input_sha256=? ORDER BY queued_at DESC LIMIT 1",
+                (payload["cycle_id"], payload["provider"], semantic_sha),
+            ).fetchone() if semantic_dedupe_enabled else None
+            if semantic:
+                con.execute(
+                    """INSERT INTO decision_deliberation_bindings(
+                    envelope_id,deliberation_id,semantic_input_sha256,binding_type,created_at)
+                    VALUES(?,?,?,'semantic_reuse',?)""",
+                    (payload["envelope_id"], semantic["deliberation_id"], semantic_sha, now),
+                )
+                self.append_audit(
+                    "decision_deliberation_semantically_reused", actor="mova-strategy",
+                    cycle_id=payload["cycle_id"], subject_type="decision_deliberation",
+                    subject_id=semantic["deliberation_id"], payload={
+                        "source_envelope_id": semantic["envelope_id"],
+                        "bound_envelope_id": payload["envelope_id"],
+                        "semantic_input_sha256": semantic_sha,
+                        "budget_reserved": False,
+                    }, con=con,
+                )
+                return {**dict(semantic), "reused": True, "semantic_reused": True,
+                        "source_envelope_id": semantic["envelope_id"],
+                        "bound_envelope_id": payload["envelope_id"],
+                        "budget_reserved": False}
             budget = self._reserve_agent_budget(
                 con, cycle_id=payload["cycle_id"], subject_type="deliberation",
                 subject_id=payload["deliberation_id"], provider=payload["provider"],
@@ -1790,11 +1820,17 @@ class OpsDB:
             con.execute(
                 """INSERT INTO decision_deliberations(
                 deliberation_id,cycle_id,envelope_id,manifest_id,provider,status,
-                request_path,request_sha256,queued_at)
-                VALUES(?,?,?,?,?,'queued',?,?,?)""",
+                request_path,request_sha256,semantic_input_sha256,queued_at)
+                VALUES(?,?,?,?,?,'queued',?,?,?,?)""",
                 (payload["deliberation_id"], payload["cycle_id"], payload["envelope_id"],
                  payload["manifest_id"], payload["provider"], payload["request_path"],
-                 payload["request_sha256"], now),
+                 payload["request_sha256"], semantic_sha, now),
+            )
+            con.execute(
+                """INSERT INTO decision_deliberation_bindings(
+                envelope_id,deliberation_id,semantic_input_sha256,binding_type,created_at)
+                VALUES(?,?,?,'original',?)""",
+                (payload["envelope_id"], payload["deliberation_id"], semantic_sha, now),
             )
             self.append_audit(
                 "decision_deliberation_queued", actor="mova-strategy",
@@ -1807,7 +1843,8 @@ class OpsDB:
                 }, con=con,
             )
         return {"deliberation_id": payload["deliberation_id"], "status": "queued",
-                "queued_at": now, "budget": budget, "reused": False}
+                "queued_at": now, "budget": budget, "reused": False,
+                "semantic_reused": False, "budget_reserved": bool(budget)}
 
     def reject_decision_deliberation(self, deliberation_id: str, *, error_code: str,
                                      error_detail: str) -> None:
@@ -2322,6 +2359,17 @@ class OpsDB:
                 "FROM agent_budget_reservations WHERE substr(created_at,1,7)=? "
                 "AND status='charged'", (observed_month,),
             ).fetchone()
+            gw_semantic_reuses = int(con.execute(
+                "SELECT COUNT(*) FROM decision_deliberation_bindings b "
+                "JOIN decision_deliberations d ON d.deliberation_id=b.deliberation_id "
+                "WHERE d.cycle_id=? AND b.binding_type='semantic_reuse'",
+                (cycle_id,),
+            ).fetchone()[0]) if cycle_id else 0
+            month_semantic_reuses = int(con.execute(
+                "SELECT COUNT(*) FROM decision_deliberation_bindings "
+                "WHERE binding_type='semantic_reuse' AND substr(created_at,1,7)=?",
+                (observed_month,),
+            ).fetchone()[0])
             gw_overruns = con.execute(
                 """SELECT COUNT(*) uses,
                 COALESCE(SUM(actual_tokens - CAST(
@@ -2420,6 +2468,10 @@ class OpsDB:
                 "gameweek": dict(gw_orphans),
                 "month": {"month": observed_month, **dict(month_orphans)},
             },
+            "semantic_reuse": {
+                "gameweek_avoided_uses": gw_semantic_reuses,
+                "month_avoided_uses": month_semantic_reuses,
+            },
             "by_category": [dict(row) for row in by_category],
             "latest_reservations": [dict(row) for row in latest],
         }
@@ -2439,6 +2491,8 @@ class OpsDB:
             "# TYPE mova_agent_budget_job_overrun_tokens gauge",
             "# HELP mova_agent_budget_orphaned_reservations Reserved budgets without queued jobs.",
             "# TYPE mova_agent_budget_orphaned_reservations gauge",
+            "# HELP mova_agent_deliberation_semantic_reuses Agent calls avoided by semantic idempotency.",
+            "# TYPE mova_agent_deliberation_semantic_reuses counter",
         ]
         for scope_name, scope in (("gameweek", report["gameweek"]),
                                   ("month", report["month"])):
@@ -2475,6 +2529,11 @@ class OpsDB:
             lines.append(
                 f'mova_agent_budget_orphaned_reservations{{scope="{scope_name}"}} '
                 f'{report["orphaned_reservations"][scope_name]["uses"]}'
+            )
+            avoided_key = f"{scope_name}_avoided_uses"
+            lines.append(
+                f'mova_agent_deliberation_semantic_reuses{{scope="{scope_name}"}} '
+                f'{report["semantic_reuse"][avoided_key]}'
             )
         return "\n".join(lines) + "\n"
 
@@ -2997,7 +3056,8 @@ class OpsDB:
                    "source_snapshots", "team_state_snapshots", "decision_runs",
                    "decision_envelopes", "decision_candidates",
                    "decision_validation_checks",
-                   "decision_deliberations", "decision_deliberation_risks",
+                   "decision_deliberations", "decision_deliberation_bindings",
+                   "decision_deliberation_risks",
                    "execution_plans", "execution_preflight_checks",
                    "execution_attempts", "execution_attempt_events",
                    "outbox_events", "chip_strategy_runs", "gameweek_settlements",
@@ -3018,6 +3078,7 @@ class OpsDB:
             "decision_candidates": "rowid",
             "decision_validation_checks": "created_at",
             "decision_deliberations": "queued_at",
+            "decision_deliberation_bindings": "created_at",
             "decision_deliberation_risks": "created_at",
             "execution_plans": "created_at",
             "execution_preflight_checks": "created_at",

@@ -121,6 +121,8 @@ TABLES = (
                        "intervention_json": "intervention", "usage_json": "usage"},
               json_columns=frozenset({"strategist_json", "critic_json",
                                       "intervention_json", "usage_json"})),
+    TableSpec("ops", "decision_deliberation_bindings",
+              "agent.decision_deliberation_bindings"),
     TableSpec("ops", "decision_deliberation_risks",
               "agent.decision_deliberation_risks"),
     TableSpec("ops", "execution_plans", "agent.execution_plans"),

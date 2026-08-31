@@ -6,7 +6,11 @@ import pytest
 
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB, sha256_json
-from mova_fpl.ops.deliberation import DecisionDeliberationService, normalize_result
+from mova_fpl.ops.deliberation import (
+    DecisionDeliberationService,
+    normalize_result,
+    semantic_deliberation_input,
+)
 
 
 def _request(*, blockers=()):
@@ -188,6 +192,123 @@ def test_deliberation_request_receives_sealed_strategic_memory(tmp_path: Path):
     assert request["cycle_context"]["season_plan"]["revision"] == 2
     assert request["guardrails"]["no_new_facts"] is True
     assert fake_db.queued["request_sha256"] == request["request_sha256"]
+    assert len(fake_db.queued["semantic_input_sha256"]) == 64
+
+
+def test_semantic_input_ignores_provenance_churn_but_detects_material_change():
+    first = _request(blockers=("PRIOR_GAMEWEEK_SETTLED",))
+    first["envelope"].update({
+        "schema": "mova-decision-envelope-v1", "policy_version": "fixture",
+        "status": "blocked", "selected_candidate_key": "do_nothing",
+        "selected_fingerprint": "squad-a", "comparisons": [], "controls": {},
+        "event_context": {"prior_settled": False},
+        "team_state": {"fingerprint": "team-a", "free_transfers": 2},
+        "validation": {
+            "status": "blocked", "blocking_codes": ["PRIOR_GAMEWEEK_SETTLED"],
+            "checks": [{"code": "PRIOR_GAMEWEEK_SETTLED", "severity": "block",
+                        "passed": False, "detail": {"manifest_id": "old"}}],
+        },
+        "engine": {"git_sha": "deploy-a"},
+    })
+    first["cycle_context"] = {
+        "phase": "baseline", "deadline_at": "2026-09-04T17:30:00+00:00",
+        "analytics_manifest": {"status": "approved", "batch_id": "batch-a",
+                               "model_versions": {"minutes": "v1"},
+                               "player_count": 600, "target_gw": 3},
+        "research_summary": {"focus": [], "previous_active_signals": [],
+                             "signals": [], "unresolved_conflicts": 0},
+        "strategic_memory": {"content_sha256": "memory-a"},
+        "season_plan": {"revision": 1, "content_sha256": "plan-a"},
+    }
+    second = json.loads(json.dumps(first))
+    second.update({"envelope_id": "envelope_" + "9" * 24,
+                   "manifest_id": "manifest_" + "8" * 32,
+                   "manifest_sha256": "7" * 64,
+                   "requested_at": "2026-09-04T15:15:00+00:00"})
+    second["envelope"]["engine"]["git_sha"] = "deploy-b"
+    second["cycle_context"]["analytics_manifest"]["batch_id"] = "batch-b"
+
+    assert sha256_json(semantic_deliberation_input(first)) == sha256_json(
+        semantic_deliberation_input(second)
+    )
+    second["envelope"]["candidates"][0]["decision"]["squad_15"][0] = 999
+    assert sha256_json(semantic_deliberation_input(first)) != sha256_json(
+        semantic_deliberation_input(second)
+    )
+
+
+def test_semantic_binding_avoids_second_budget_reservation(tmp_path: Path):
+    db = OpsDB(tmp_path / "ops.db", enforce_version=False)
+    db.migrate()
+    cycle_id = db.upsert_cycle(
+        "2026-27", 3, "2026-09-04T17:30:00+00:00", phase="baseline"
+    )
+    manifest_ids = ["manifest_" + char * 32 for char in ("a", "b")]
+    envelope_ids = ["envelope_" + char * 24 for char in ("c", "d")]
+    with db.transaction() as con:
+        for revision, (manifest_id, envelope_id) in enumerate(
+            zip(manifest_ids, envelope_ids), start=1
+        ):
+            job_id = f"job_semantic_{revision}"
+            decision_id = f"decision_semantic_{revision}"
+            con.execute(
+                """INSERT INTO job_runs(job_id,job_type,idempotency_key,correlation_id,
+                cycle_id,status,started_at) VALUES(?,?,?,?,?,'completed',?)""",
+                (job_id, "tick", f"semantic:{revision}", f"corr:{revision}", cycle_id,
+                 f"2026-09-04T15:0{revision}:00+00:00"),
+            )
+            con.execute(
+                """INSERT INTO cycle_manifests(manifest_id,cycle_id,revision,as_of_at,
+                deadline_at,phase,source_manifest_json,analytics_manifest_json,
+                research_summary_json,memory_summary_json,artifact_path,content_sha256,
+                created_at) VALUES(?,?,?,?,?,'baseline','[]','{}','{}','{}',?,?,?)""",
+                (manifest_id, cycle_id, revision, f"2026-09-04T15:0{revision}:00+00:00",
+                 "2026-09-04T17:30:00+00:00", f"manifest-{revision}.json",
+                 str(revision) * 64, f"2026-09-04T15:0{revision}:00+00:00"),
+            )
+            con.execute(
+                """INSERT INTO decision_runs(decision_id,job_id,cycle_id,revision,mode,
+                policy_version,status,expected_points,fingerprint,manifest_sha256,
+                artifact_path,created_at) VALUES(?,?,?,?,'shadow','fixture','staged',50,
+                ?,?,?,?)""",
+                (decision_id, job_id, cycle_id, revision, f"fingerprint-{revision}",
+                 str(revision) * 64, f"decision-{revision}.json",
+                 f"2026-09-04T15:0{revision}:00+00:00"),
+            )
+            con.execute(
+                """INSERT INTO decision_envelopes(envelope_id,job_id,cycle_id,decision_id,
+                manifest_id,schema_version,policy_version,status,selected_candidate_key,
+                content_sha256,artifact_path,artifact_sha256,created_at) VALUES(?,?,?,?,?,
+                'v1','fixture','staged','do_nothing',?,?,?,?)""",
+                (envelope_id, job_id, cycle_id, decision_id, manifest_id,
+                 (str(revision + 2) * 64), f"envelope-{revision}.json",
+                 str(revision + 4) * 64, f"2026-09-04T15:0{revision}:00+00:00"),
+            )
+    policy = RuntimeConfig().agent_budget_policy()
+    semantic_sha = "f" * 64
+    first = db.queue_decision_deliberation({
+        "deliberation_id": "deliberation_" + "1" * 32, "cycle_id": cycle_id,
+        "envelope_id": envelope_ids[0], "manifest_id": manifest_ids[0],
+        "provider": "fixture", "request_path": "one.json", "request_sha256": "2" * 64,
+        "semantic_input_sha256": semantic_sha, "budget_policy": policy,
+    })
+    second = db.queue_decision_deliberation({
+        "deliberation_id": "deliberation_" + "3" * 32, "cycle_id": cycle_id,
+        "envelope_id": envelope_ids[1], "manifest_id": manifest_ids[1],
+        "provider": "fixture", "request_path": "two.json", "request_sha256": "4" * 64,
+        "semantic_input_sha256": semantic_sha, "budget_policy": policy,
+    })
+
+    assert first["status"] == "queued"
+    assert second["semantic_reused"] is True
+    assert second["bound_envelope_id"] == envelope_ids[1]
+    with db.connect(readonly=True) as con:
+        assert con.execute("SELECT COUNT(*) FROM decision_deliberations").fetchone()[0] == 1
+        assert con.execute("SELECT COUNT(*) FROM agent_budget_reservations").fetchone()[0] == 1
+        bindings = con.execute(
+            "SELECT binding_type FROM decision_deliberation_bindings ORDER BY created_at"
+        ).fetchall()
+        assert {row["binding_type"] for row in bindings} == {"original", "semantic_reuse"}
 
 
 def test_deliberation_persistence_records_risks_intervention_and_cost(tmp_path: Path):
