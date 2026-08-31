@@ -73,3 +73,14 @@ El resultado dejó de ser sólo evidencia consultable: `mova readiness` incorpor
 `RESILIENCE_DRILL_PROVEN` para A1/A2/A3. El gate consulta el último job real, exige seis checks
 completos y falla cerrado ante ausencia o fallo. Esta extensión se despliega como una revisión
 posterior y su evidencia viva se anexará sin alterar los resultados anteriores.
+
+La extensión quedó verificada en producción `ac19809`:
+
+- suite completa: `1085 passed, 1 skipped, 79 deselected`;
+- readiness: 10 pass, 6 pending, 0 blocked sobre 16 gates;
+- `RESILIENCE_DRILL_PROVEN=pass`, ligado a
+  `job_78df34f7522d40498d1fd18cb00e930c`, 6/6 y hash de resultado persistido;
+- elegibilidad permaneció A0 y los seis pendientes temporales no cambiaron;
+- doctor 22/22 y watchdog systemd `ok`, cero outbox `dead`;
+- PostgreSQL `pgimport_3a68294801ee459f9ae59487a6009ab1`, paridad 54/54;
+- backup postdeploy `/opt/orbital/backups/mova-fpl/20260831T013232Z`.
