@@ -236,6 +236,11 @@ el fallback público. El fallo de autenticación queda aislado:
 no borra el último snapshot, no habilita writes y no toca el perfil. Para reautenticar,
 usar el procedimiento de login humano de la sección siguiente.
 
+El wrapper host carga primero `runtime.env` y después `deploy.env`. Este orden es deliberado:
+Compose necesita rutas host como `/etc/mova-fpl/alert-webhook.json`, mientras el contenedor usa
+rutas bajo `/run/secrets`. Invertir la precedencia puede convertir una ruta interna en la fuente de
+un bind mount y hacer fallar el collector antes de abrir Chromium.
+
 En un arranque en frío el wrapper espera explícitamente `DOMContentLoaded` y el origin FPL,
 valida schema/15 picks y reintenta hasta tres veces. Una salida vacía nunca llega al ingestor.
 

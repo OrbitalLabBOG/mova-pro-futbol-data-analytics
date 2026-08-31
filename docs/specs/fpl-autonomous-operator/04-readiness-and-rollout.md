@@ -2,7 +2,7 @@
 type: project
 name: "MOVA FPL Autonomous Operator 2026/27 — Readiness and Rollout"
 created: 2026-08-21
-updated: 2026-08-30
+updated: 2026-08-31
 tags: [mova, fpl, readiness, rollout]
 status: active-shadow
 ---
@@ -25,9 +25,10 @@ La evidencia verificable del corte está en
 como baseline del diagnóstico previo al despliegue.
 
 Desde el 30 de agosto, el veredicto también es máquina-legible mediante `mova readiness` y
-`/api/v1/readiness`. El primer reporte vivo conserva A0 técnico: 8 de 14 gates pasan, 5 esperan
-evidencia temporal y R3 permanece bloqueado por contrato ausente. Esto no reemplaza esta política
-ni concede autoridad. Ver [acta HV1-09](27-hv1-09-autonomy-readiness-rollout.md).
+`/api/v1/readiness`. El corte vivo del 31 de agosto conserva A0 técnico: 15 de 25 gates pasan,
+10 esperan evidencia temporal o una integración externa autorizada y ninguno está bloqueado por
+un fallo abierto. Esto no reemplaza esta política ni concede autoridad. Ver
+[acta HV1-09M](57-hv1-09m-final-runtime-closeout.md).
 
 ## Checkpoint vigente — 2026-08-22
 
@@ -100,9 +101,10 @@ No se modificó el host durante esta inspección.
 - dashboard Now/Operations y alertas P0/P1 con acuse;
 - caos básico: reboot, API caída, DB caída, snapshot inválido.
 
-API, PostgreSQL, browser y outage combinado ya tienen evidencia viva. Desde HV1-09L el gate host
-exige además `reboot_recovery`; el wrapper y la unidad de verificación están desplegados, pero el
-reboot real permanece pendiente de autorización. Cuatro escenarios no vuelven a satisfacer G2.
+API, PostgreSQL, browser, outage combinado y reboot real tienen evidencia viva. El reinicio
+autorizado del 31 de agosto cambió el boot ID, reanudó el scheduler y pasó 11/11 checks sin mutar
+el estado FPL. `HOST_RECOVERY_DRILLS_PROVEN` está completo 5/5. G2 conserva como pendientes de
+operación el destino externo de alertas y el backup cifrado off-host; no son fallos del runtime.
 
 ### G3 — Shadow season loop
 

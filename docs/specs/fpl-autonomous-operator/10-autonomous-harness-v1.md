@@ -57,9 +57,9 @@ Verificación viva del corte al 31 de agosto:
 - API y PostgreSQL healthy, doctor 23/23 y cero incidentes abiertos;
 - GW3, deadline oficial `2026-09-04T17:30:00Z`, todavía preliminar;
 - último team state válido: 15 jugadores y sesión browser persistente;
-- runtime engine/API y checkout exactos en `a005ab9`; browser conserva su imagen aislada;
-- readiness: 14 pass, 11 pending y 0 blocked sobre 25 gates; reboot y off-host/restore se
-  observan separadamente y no se infieren desde pruebas parciales;
+- runtime engine/API y checkout exactos en `b4ca25b`; browser conserva su imagen aislada;
+- readiness: 15 pass, 10 pending y 0 blocked sobre 25 gates; recuperación host completa 5/5 y
+  off-host/restore todavía separados, sin inferir evidencia desde pruebas parciales;
 - scorecard del harness: operaciones pass; las otras seis dimensiones pendientes, A0 intacto.
 
 Gaps reales restantes:
@@ -70,7 +70,8 @@ Gaps reales restantes:
 3. mantener lineup y R3 sin entrypoint hasta satisfacer evidencia multi-GW y aprobación;
 4. elegir destinos autorizados para alertas externas y backup cifrado off-host; ambos contratos
    opt-in ya están implementados, pero no provisionados;
-5. ensayar un reboot completo del VPS y aprobar compliance/promoción de forma explícita.
+5. aprobar compliance/promoción de forma explícita; el reboot completo ya fue demostrado y no
+   concede por sí solo autoridad de escritura.
 
 La dispersión operativa original ya quedó encapsulada por `mova`, PostgreSQL shadow, manifests y
 artifacts sellados. Research, deliberación multirol, reviewer causal, costos y calidad ahora son
@@ -852,6 +853,21 @@ por el ledger host, incluida restauración de ambas bases, hashes y runtime inta
 ambos están `pending`: la unidad está instalada pero deshabilitada, no existe configuración y no
 se realizó tráfico externo. El total pasa de 23 a 25 gates, con 14 pass y 11 pending. Evidencia:
 [HV1-02D offsite backup readiness](56-hv1-02d-offsite-backup-readiness.md).
+
+### Corte de recuperación final del runtime — 31 de agosto de 2026
+
+HV1-09M corrigió dos fallos de integración que sólo aparecieron en el host real. Los directorios
+compartidos de permisos y recibos ahora se crean con grupo heredable y ownership del worker; el
+script host de estado privado aplica después la configuración del host para que una ruta interna
+del contenedor no reemplace el archivo fuente de `/etc/mova-fpl`. Ambos contratos tienen tests de
+regresión y quedaron desplegados en `b4ca25b`.
+
+Una inferencia física real escribió `started` y `finished`, consumió presupuesto exacto y dejó la
+cola con cero requests y cero anomalías. El refresh autenticado posterior conservó 15 jugadores,
+dos transferencias libres, cuatro chips y el fingerprint previo. Finalmente, un reboot real cambió
+el boot ID y pasó los once checks de recuperación en 221 segundos; readiness quedó 15/25, con 10
+pendientes longitudinales o externos y cero blockers. Evidencia:
+[HV1-09M final runtime closeout](57-hv1-09m-final-runtime-closeout.md).
 
 ## 11. Definition of Done del harness v1
 

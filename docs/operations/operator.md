@@ -122,6 +122,12 @@ emite receipts v2 con `authorization_id`. Exit 75 con `status=skipped|blocked` s
 llamó Codex. No crees permisos manualmente ni edites los existentes: el importador verifica su SHA
 y pone cualquier receipt ligado a un permiso alterado en cuarentena.
 
+`research/permits` y `research/receipts` son directorios compartidos entre el engine `uid=10001` y
+el worker `uid=10002`. Bootstrap y cada ciclo deben conservar `uid=10002`, grupo `10001` y modo
+`2770`; un `2750` deja al worker sin capacidad de publicar evidencia y el watchdog abrirá P1. No
+arregles el síntoma borrando permisos: reejecuta el script desplegado, verifica ambos ownerships y
+confirma luego cero requests/anomalías con `mova watchdog`.
+
 El claim del outbox usa lease recuperable, la entrega ocurre fuera de SQLite y los fallos reintentan con backoff hasta
 estado `dead`. `sent` confirma entrega al sink local, no lectura humana. `acknowledge` reconoce el
 incidente con actor y razón; resolverlo sigue exigiendo que la condición causal haya desaparecido.
