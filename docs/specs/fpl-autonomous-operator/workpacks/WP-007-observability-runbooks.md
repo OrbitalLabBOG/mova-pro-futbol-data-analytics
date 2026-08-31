@@ -66,6 +66,12 @@ readiness separa `ALERT_CHANNEL_DRILL_PROVEN` de `EXTERNAL_ALERT_CHANNEL_CONFIGU
 entrega viva con acuse. Hasta entonces el estado correcto es `local_only`; journald conserva la
 ruta local y A1+ permanece bloqueado por evidencia pendiente.
 
+HV1-12B corrigió un falso positivo residual: un secreto sintácticamente válido ya no basta para
+promoción. `mova alerts test` crea un P3 auditado, reclama sólo su outbox_id y liga el 2xx al
+fingerprint de 128 bits del destino. Replay no llama red; identidad distinta colisiona; rotar el
+destino invalida la evidencia previa. Readiness agrega `EXTERNAL_ALERT_CHANNEL_LIVE_PROVEN` y el
+scorecard agrupa los tres gates bajo `alerting` en vez de `other_readiness`.
+
 HV1-09B endurece el scheduler muerto: `mova watchdog` abre/deduplica P0, intenta la entrega y
 devuelve fallo también cuando el sink falla o existe outbox `dead`. `mova alerts retry` ofrece
 recuperación explícita y auditada; reconocer un incidente también puede cerrar un evento `dead`

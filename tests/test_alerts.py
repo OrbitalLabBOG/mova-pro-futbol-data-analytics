@@ -7,8 +7,8 @@ from pathlib import Path
 import json
 
 from mova_fpl.ops.alerts import (
-    WebhookSettings, channel_drill, channel_prometheus, channel_status, dispatch,
-    webhook_sink,
+    WebhookSettings, channel_drill, channel_prometheus, channel_report, channel_status,
+    dispatch, live_ping, webhook_sink,
 )
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB
@@ -92,11 +92,15 @@ def test_dead_event_requires_audited_retry_or_ack(tmp_path):
 
 
 def test_alert_channel_is_local_only_without_secret(tmp_path):
-    status = channel_status(RuntimeConfig(alert_webhook_config_file=tmp_path / "missing"))
+    config = RuntimeConfig(alert_webhook_config_file=tmp_path / "missing")
+    status = channel_status(config)
     assert status == {"schema": "mova-alert-channel-v1", "status": "local_only",
                       "configured": False, "external_delivery": False,
                       "owner": None, "channel": "journald"}
-    assert "mova_alert_channel_configured 0" in channel_prometheus(status)
+    report = channel_report(config, _db(tmp_path))
+    assert report["live_test"]["status"] == "missing"
+    assert "mova_alert_channel_configured 0" in channel_prometheus(report)
+    assert "mova_alert_channel_live_proven 0" in channel_prometheus(report)
 
 
 def test_alert_channel_status_never_exposes_webhook_url(tmp_path):
@@ -132,3 +136,71 @@ def test_alert_channel_drill_is_hermetic_and_complete():
     assert result["external_calls"] == 0
     assert result["runtime_mutated"] is False
     assert all(result["checks"].values())
+
+
+def _configured(tmp_path) -> RuntimeConfig:
+    secret = tmp_path / "webhook.json"
+    secret.write_text(json.dumps({
+        "version": 1, "enabled": True,
+        "url": "https://alerts.example.test/private/token",
+        "owner": "operator", "channel": "test",
+    }))
+    return RuntimeConfig(alert_webhook_config_file=secret)
+
+
+def test_live_ping_is_fail_closed_without_config_and_does_not_create_job(tmp_path):
+    db = _db(tmp_path)
+    result = live_ping(
+        RuntimeConfig(alert_webhook_config_file=tmp_path / "missing"), db,
+        actor="operator", reason="prove", idempotency_key="ping-v1",
+    )
+    assert result["status"] == "not_configured"
+    assert result["runtime_mutated"] is False
+    assert db.alert_channel_live_status()["status"] == "missing"
+
+
+def test_live_ping_isolated_delivery_replay_and_identity_conflict(tmp_path):
+    db = _db(tmp_path)
+    config = _configured(tmp_path)
+    incident_id = db.open_incident("P0", "neighbor must remain pending")
+    delivered = []
+    sink = lambda event: delivered.append(event["event_key"])
+    first = live_ping(
+        config, db, actor="operator", reason="prove", idempotency_key="ping-v1",
+        sink=sink,
+    )
+    replay = live_ping(
+        config, db, actor="operator", reason="prove", idempotency_key="ping-v1",
+        sink=sink,
+    )
+    conflict = live_ping(
+        config, db, actor="operator", reason="different", idempotency_key="ping-v1",
+        sink=sink,
+    )
+    assert first["status"] == "pass" and first["delivered"] is True
+    assert replay["status"] == "reused" and replay["external_calls"] == 0
+    assert conflict["status"] == "conflict" and conflict["external_calls"] == 0
+    assert delivered == [f"alert_probe:{first['job_id']}"]
+    with db.connect(readonly=True) as con:
+        neighbor = con.execute(
+            "SELECT status,attempts FROM outbox_events WHERE event_key=?",
+            (f"incident:{incident_id}",),
+        ).fetchone()
+    assert (neighbor["status"], neighbor["attempts"]) == ("pending", 0)
+    status = db.alert_channel_live_status(first["destination_fingerprint"])
+    assert status["status"] == "completed" and status["delivered"] is True
+    assert channel_report(config, db)["live_test"]["job_id"] == first["job_id"]
+
+
+def test_live_ping_failure_stays_auditable_and_retriable(tmp_path):
+    db = _db(tmp_path)
+    result = live_ping(
+        _configured(tmp_path), db, actor="operator", reason="prove failure",
+        idempotency_key="ping-fail",
+        sink=lambda _event: (_ for _ in ()).throw(RuntimeError("secret detail")),
+    )
+    assert result["status"] == "failed" and result["delivered"] is False
+    assert result["outbox"]["status"] == "pending"
+    assert result["outbox"]["last_error"] == "RuntimeError"
+    assert "secret detail" not in json.dumps(result)
+    assert db.alert_channel_live_status()["status"] == "failed"

@@ -56,6 +56,9 @@ def test_scorecard_groups_quality_cost_and_learning_without_granting_authority()
             _gate("RESEARCH_EVIDENCE_CALIBRATED", "pending"),
             _gate("CAPTAINCY_DRIVER_PROVEN", "pending"),
             _gate("POSTGRES_SHADOW_PARITY"),
+            _gate("ALERT_CHANNEL_DRILL_PROVEN"),
+            _gate("EXTERNAL_ALERT_CHANNEL_CONFIGURED", "pending"),
+            _gate("EXTERNAL_ALERT_CHANNEL_LIVE_PROVEN", "pending"),
         ),
         cost_report=_cost(), improvement=_improvement(),
         deliberation={"status": "accepted", "provider": "codex"},
@@ -65,8 +68,8 @@ def test_scorecard_groups_quality_cost_and_learning_without_granting_authority()
     assert report["schema"] == "mova-harness-scorecard-v1"
     assert report["overall_status"] == "pending"
     assert report["quality"] == {
-        "readiness_pass_ratio": 0.5,
-        "gates": {"pass": 2, "pending": 2, "blocked": 0, "total": 4},
+        "readiness_pass_ratio": 0.4286,
+        "gates": {"pass": 3, "pending": 4, "blocked": 0, "total": 7},
         "technical_eligible_level": "A0",
     }
     assert report["authority"]["promotion_is_automatic"] is False
@@ -74,9 +77,11 @@ def test_scorecard_groups_quality_cost_and_learning_without_granting_authority()
     dimensions = {row["name"]: row for row in report["dimensions"]}
     assert dimensions["economics"]["status"] == "pass"
     assert dimensions["continuous_learning"]["status"] == "pass"
+    assert dimensions["alerting"]["status"] == "pending"
     assert dimensions["agentic_decision"]["deliberation"]["terminal"] is True
     assert [item["code"] for item in report["next_actions"]] == [
         "RESEARCH_EVIDENCE_CALIBRATED", "CAPTAINCY_DRIVER_PROVEN",
+        "EXTERNAL_ALERT_CHANNEL_CONFIGURED", "EXTERNAL_ALERT_CHANNEL_LIVE_PROVEN",
     ]
 
 

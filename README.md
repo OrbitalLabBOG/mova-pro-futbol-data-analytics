@@ -58,6 +58,8 @@ mova drill browser-failure --actor codex --reason dom-save-boundary \
 mova drill orchestration --actor codex --reason agent-graph \
   --idempotency-key orchestration-v1
 mova alerts channel
+mova alerts test --actor codex --reason live-delivery \
+  --idempotency-key alert-live-v1
 mova drill alert-channel --actor codex --reason alert-contract \
   --idempotency-key alert-channel-v1
 
@@ -122,6 +124,10 @@ CycleManifest + memoria estratégica durable → modelos causales → matriz xP 
   permanece opt-in mediante un secreto Docker; sin configuración, journald sigue funcionando y
   readiness declara pendiente el canal externo. El drill prueba payload mínimo, redacción y
   propagación de fallos sin DNS ni llamadas externas.
+- `mova alerts test` crea un P3 de prueba en el outbox, reclama exclusivamente ese evento y
+  persiste una entrega 2xx ligada al fingerprint vigente. Replay exacto no repite la llamada;
+  cambiar identidad con la misma clave falla por conflicto. Configurar el secreto no basta para
+  A1: readiness exige también este live-ping.
 - El tick no interpreta Markdown: persiste un `DecisionEnvelope` JSON ligado al manifest real.
 - Una propuesta sin GW previa asentada, proyección aprobada, team state fresco o ventana válida
   queda `blocked`; solo una que supera todos los hard gates queda `staged`.

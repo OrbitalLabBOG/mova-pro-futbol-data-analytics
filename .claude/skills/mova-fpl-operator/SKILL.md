@@ -118,6 +118,14 @@ adaptador, no un destino real: `EXTERNAL_ALERT_CHANNEL_CONFIGURED` sólo pasa cu
 webhook autorizado están provisionados en `/etc/mova-fpl/alert-webhook.json` y ensayados en vivo.
 No copies esa URL a logs, Git, actas o argumentos de proceso.
 
+Después de provisionar el secreto ejecuta una sola vez `mova alerts test --actor ... --reason
+... --idempotency-key ...`. Debe devolver `pass`, `delivered=true`, un outbox `sent` y el
+fingerprint mostrado por `mova alerts channel`. Replay exacto debe ser `reused` con
+`external_calls=0`; nunca cambies la clave sólo para ocultar un fallo. La prueba reclama únicamente
+su P3 y no debe despachar alertas vecinas. Si falla, repara el sink, deja que el outbox conserve
+retry y usa una clave nueva para producir evidencia limpia. Readiness sólo pasa
+`EXTERNAL_ALERT_CHANNEL_LIVE_PROVEN` para el fingerprint actualmente configurado.
+
 El chaos drill real del API se ejecuta exclusivamente desde el host con
 `deploy/bin/api-recovery-drill.sh ACTOR REASON IDEMPOTENCY_KEY`; no improvises `docker stop` sin
 su trap. El script importa evidencia mediante `mova drill import-host`. Confirma después

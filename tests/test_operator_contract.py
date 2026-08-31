@@ -244,6 +244,11 @@ def test_cli_exposes_human_and_json_operator_modes():
     assert parser().parse_args(["safety"]).command == "safety"
     assert parser().parse_args(["alerts", "dispatch"]).limit == 20
     assert parser().parse_args(["alerts", "channel"]).alerts_command == "channel"
+    parsed_alert_test = parser().parse_args([
+        "alerts", "test", "--actor", "codex", "--reason", "prove",
+        "--idempotency-key", "ping-v1",
+    ])
+    assert parsed_alert_test.alerts_command == "test"
     retry = parser().parse_args([
         "alerts", "retry", "--outbox-id", "outbox_test",
         "--actor", "operator", "--reason", "sink restored",

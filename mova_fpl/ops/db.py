@@ -1202,6 +1202,66 @@ class OpsDB:
             "due": int(due), "latest": [dict(row) for row in latest],
         }
 
+    def enqueue_alert_probe(self, *, job_id: str, correlation_id: str,
+                            destination_fingerprint: str) -> str:
+        """Crea una prueba P3 idempotente sin fingir un incidente operativo."""
+        event_key = f"alert_probe:{job_id}"
+        with self.transaction() as con:
+            existing = con.execute(
+                "SELECT outbox_id FROM outbox_events WHERE event_key=?", (event_key,),
+            ).fetchone()
+            if existing:
+                return str(existing["outbox_id"])
+            outbox_id = new_id("outbox")
+            con.execute(
+                "INSERT INTO outbox_events(outbox_id,event_key,created_at,available_at,"
+                "event_type,severity,status,payload_json) VALUES(?,?,?,?,?,?,'pending',?)",
+                (outbox_id, event_key, utcnow(), utcnow(), "alert_channel_probe", "P3",
+                 canonical_json({
+                     "probe_id": job_id,
+                     "title": "MOVA alert channel live ping",
+                     "destination_fingerprint": destination_fingerprint,
+                 })),
+            )
+            self.append_audit(
+                "alert_channel_probe_enqueued", actor="mova-alert-dispatcher",
+                correlation_id=correlation_id, job_id=job_id,
+                subject_type="outbox_event", subject_id=outbox_id,
+                payload={"destination_fingerprint": destination_fingerprint}, con=con,
+            )
+        return outbox_id
+
+    def claim_outbox_by_id(self, outbox_id: str, *, lease_seconds: int = 120) -> dict | None:
+        """Reclama exclusivamente el probe solicitado; nunca drena alertas vecinas."""
+        now = datetime.now(timezone.utc)
+        available = now.isoformat(timespec="milliseconds")
+        lease_until = (now + timedelta(seconds=lease_seconds)).isoformat(timespec="milliseconds")
+        with self.transaction() as con:
+            row = con.execute(
+                "SELECT * FROM outbox_events WHERE outbox_id=?", (outbox_id,),
+            ).fetchone()
+            if not row or row["status"] not in {"pending", "sending"}:
+                return None
+            if str(row["available_at"]) > available:
+                return None
+            con.execute(
+                "UPDATE outbox_events SET status='sending',attempts=attempts+1,available_at=? "
+                "WHERE outbox_id=?", (lease_until, outbox_id),
+            )
+            item = dict(row)
+            item["attempts"] = int(item["attempts"]) + 1
+            item["available_at"] = lease_until
+            return item
+
+    def outbox_event_status(self, outbox_id: str) -> dict | None:
+        with self.connect(readonly=True) as con:
+            row = con.execute(
+                "SELECT outbox_id,event_key,created_at,event_type,severity,status,attempts,"
+                "sent_at,acknowledged_at,last_error FROM outbox_events WHERE outbox_id=?",
+                (outbox_id,),
+            ).fetchone()
+        return dict(row) if row else None
+
     def claim_outbox(self, *, limit: int = 20, lease_seconds: int = 120) -> list[dict]:
         """Reclama eventos vencidos con lease; un crash permite reintento posterior."""
         now = datetime.now(timezone.utc)
@@ -1409,6 +1469,28 @@ class OpsDB:
             "passed": int(metrics.get("passed") or 0),
         })
         return payload
+
+    def alert_channel_live_status(self, destination_fingerprint: str | None = None) -> dict:
+        with self.connect(readonly=True) as con:
+            rows = con.execute(
+                "SELECT job_id,status,started_at,finished_at,output_sha256,metrics_json,"
+                "error_code FROM job_runs WHERE job_type='alert_channel_live_ping' "
+                "ORDER BY started_at DESC LIMIT 100"
+            ).fetchall()
+        for row in rows:
+            payload = dict(row)
+            metrics = json.loads(payload.pop("metrics_json") or "{}")
+            if (destination_fingerprint is not None
+                    and metrics.get("destination_fingerprint") != destination_fingerprint):
+                continue
+            payload.update({
+                "destination_fingerprint": metrics.get("destination_fingerprint"),
+                "delivered": bool(metrics.get("delivered")),
+                "external_calls": int(metrics.get("external_calls") or 0),
+                "outbox_id": metrics.get("outbox_id"),
+            })
+            return payload
+        return {"status": "missing", "delivered": False, "external_calls": 0}
 
     def snapshot_rejection_drill_status(self) -> dict:
         with self.connect(readonly=True) as con:

@@ -393,6 +393,7 @@ no borra evidencia previa y nunca amplía autonomía.
 | HV1-10 ✅ | scorecard unificado de calidad, costos, roles, aprendizaje y autoridad | completado | HV1-08/09 |
 | HV1-11 ✅ | grafo agentic read-only + rehearsal de orden/fail-closed/deadline | completado | HV1-06/08/09 |
 | HV1-12 🟡 | adaptador P0/P1 externo + redacción + rehearsal; falta destino/owner y ping vivo | decisión operativa | HV1-01/09 |
+| HV1-12B ✅ | live-ping apply-once ligado al fingerprint + outbox aislado + gate | completado | HV1-12 |
 
 No es necesario completar 64–92 horas antes de obtener valor. Cortes de entrega:
 
@@ -728,6 +729,13 @@ Readiness exige tanto `ALERT_CHANNEL_DRILL_PROVEN` como
 `EXTERNAL_ALERT_CHANNEL_CONFIGURED`; el segundo permanecerá pending hasta escoger un destino,
 owner y completar un ping vivo con acuse. Evidencia:
 [HV1-12 canal externo](47-hv1-12-external-alert-channel.md).
+
+HV1-12B endurece esa frontera: configuración ya no implica entrega. Un P3 de prueba recorre el
+outbox y el sink real bajo una clave idempotente, sin reclamar alertas vecinas; sólo un 2xx queda
+como evidencia para el fingerprint vigente. Replay no repite la llamada y una rotación de URL
+invalida el pass anterior. El destino sigue sin elegirse y, por eso, el live gate permanece
+pending en producción. Evidencia:
+[HV1-12B prueba viva de alertas](48-hv1-12b-live-alert-proof.md).
 
 ## 11. Definition of Done del harness v1
 

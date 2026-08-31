@@ -39,6 +39,7 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
                        orchestration_evidence: dict | None = None,
                        alert_channel: dict | None = None,
                        alert_channel_evidence: dict | None = None,
+                       alert_channel_live_evidence: dict | None = None,
                        host_recovery_evidence: dict | None = None,
                        snapshot_rejection_evidence: dict | None = None,
                        browser_failure_evidence: dict | None = None,
@@ -96,6 +97,15 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
         alert_drill.get("status") == "completed"
         and int(alert_drill.get("checks") or 0) >= 6
         and int(alert_drill.get("passed") or 0) == int(alert_drill.get("checks") or 0)
+    )
+    alert_live = alert_channel_live_evidence or {
+        "status": "missing", "delivered": False, "external_calls": 0,
+    }
+    alert_live_passed = (
+        alert_live.get("status") == "completed"
+        and alert_live.get("delivered") is True
+        and alert_live.get("destination_fingerprint")
+        == alert_channel_state.get("destination_fingerprint")
     )
     host_recovery = host_recovery_evidence or {
         "status": "incomplete", "completed": 0, "required": 4, "scenarios": {},
@@ -260,6 +270,21 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
             required={"configured": True, "external_delivery": True},
             source="mova alerts channel",
             next_action="elegir destino/owner y provisionar alert-webhook.json; luego hacer live ping",
+        ),
+        _gate(
+            "EXTERNAL_ALERT_CHANNEL_LIVE_PROVEN",
+            "pass" if alert_live_passed else
+            "blocked" if alert_live.get("status") == "failed" else "pending",
+            "el destino externo vigente aceptó un live ping auditado",
+            levels=("A1", "A2", "A3"),
+            observed={key: alert_live.get(key) for key in (
+                "job_id", "status", "finished_at", "output_sha256",
+                "destination_fingerprint", "delivered", "external_calls",
+            )},
+            required={"status": "completed", "delivered": True,
+                      "destination": alert_channel_state.get("destination_fingerprint")},
+            source="job_runs.alert_channel_live_ping",
+            next_action="ejecutar mova alerts test y verificar recepción en el destino vigente",
         ),
         _gate(
             "HOST_RECOVERY_DRILLS_PROVEN",
@@ -435,14 +460,20 @@ def build_readiness(config: RuntimeConfig, db: OpsDB, *,
     status = build_status(config, db, now=current)
     from mova_fpl.ops.alerts import channel_status
 
+    current_channel = channel_status(config)
+    fingerprint = current_channel.get("destination_fingerprint")
     return evaluate_readiness(
         operator_status=status,
         research_coverage=db.research_coverage(),
         execution_status=ExecutionService(config, db).status(),
         resilience_evidence=db.resilience_drill_status(),
         orchestration_evidence=db.orchestration_drill_status(),
-        alert_channel=channel_status(config),
+        alert_channel=current_channel,
         alert_channel_evidence=db.alert_channel_drill_status(),
+        alert_channel_live_evidence=(
+            db.alert_channel_live_status(str(fingerprint)) if fingerprint else
+            {"status": "missing", "delivered": False, "external_calls": 0}
+        ),
         host_recovery_evidence=db.host_recovery_drill_status(),
         snapshot_rejection_evidence=db.snapshot_rejection_drill_status(),
         browser_failure_evidence=db.browser_failure_drill_status(),

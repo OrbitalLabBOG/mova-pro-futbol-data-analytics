@@ -99,8 +99,8 @@ def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
                     return
                 if parsed.path == "/metrics":
                     metrics = db.prometheus()
-                    from mova_fpl.ops.alerts import channel_prometheus, channel_status
-                    metrics += channel_prometheus(channel_status(runtime))
+                    from mova_fpl.ops.alerts import channel_prometheus, channel_report
+                    metrics += channel_prometheus(channel_report(runtime, db))
                     metrics += db.cost_prometheus(
                         runtime.agent_budget_policy(), season=runtime.season
                     )
@@ -275,10 +275,10 @@ def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
                     )
                     return
                 if parsed.path == "/api/v1/alert-channel":
-                    from mova_fpl.ops.alerts import channel_status
+                    from mova_fpl.ops.alerts import channel_report
 
                     self._send(
-                        HTTPStatus.OK, _json_bytes(channel_status(runtime)),
+                        HTTPStatus.OK, _json_bytes(channel_report(runtime, db)),
                         "application/json; charset=utf-8",
                     )
                     return

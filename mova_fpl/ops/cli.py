@@ -272,6 +272,12 @@ def parser() -> argparse.ArgumentParser:
     alert_commands = alerts.add_subparsers(dest="alerts_command", required=True)
     alert_commands.add_parser("status", help="estado sanitizado del outbox")
     alert_commands.add_parser("channel", help="estado sanitizado del canal externo")
+    alert_test = alert_commands.add_parser(
+        "test", help="live ping idempotente al destino externo configurado"
+    )
+    alert_test.add_argument("--actor", required=True)
+    alert_test.add_argument("--reason", required=True)
+    alert_test.add_argument("--idempotency-key", required=True)
     alert_dispatch = alert_commands.add_parser("dispatch", help="entrega alertas vencidas")
     alert_dispatch.add_argument("--limit", type=int, default=20)
     alert_ack = alert_commands.add_parser("acknowledge", help="reconoce un incidente")
@@ -772,8 +778,14 @@ def main(argv: list[str] | None = None) -> int:
         if args.alerts_command == "status":
             payload = db.outbox_status()
         elif args.alerts_command == "channel":
-            from mova_fpl.ops.alerts import channel_status
-            payload = channel_status(config)
+            from mova_fpl.ops.alerts import channel_report
+            payload = channel_report(config, db)
+        elif args.alerts_command == "test":
+            from mova_fpl.ops.alerts import live_ping
+            payload = live_ping(
+                config, db, actor=args.actor, reason=args.reason,
+                idempotency_key=args.idempotency_key,
+            )
         elif args.alerts_command == "dispatch":
             from mova_fpl.ops.alerts import configured_sink, dispatch
             payload = dispatch(db, limit=args.limit, sink=configured_sink(config))
@@ -786,6 +798,8 @@ def main(argv: list[str] | None = None) -> int:
                 args.outbox_id, actor=args.actor, reason=args.reason,
             )
         print(json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str))
+        if args.alerts_command == "test":
+            return 0 if payload.get("status") in {"pass", "reused"} else 2
     elif args.command == "maintenance":
         from mova_fpl.ops.maintenance import cleanup
 

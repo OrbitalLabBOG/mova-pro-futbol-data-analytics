@@ -15,7 +15,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from mova_fpl.ops.config import RuntimeConfig
-from mova_fpl.ops.db import OpsDB
+from mova_fpl.ops.db import OpsDB, new_id, sha256_json
 
 LOG = logging.getLogger(__name__)
 
@@ -78,6 +78,8 @@ def _payload(event: dict, settings: WebhookSettings) -> dict:
         "created_at": str(event["created_at"]),
         "attempt": int(event["attempts"]),
         "incident_id": source.get("incident_id"),
+        "probe_id": source.get("probe_id"),
+        "destination_fingerprint": source.get("destination_fingerprint"),
         "title": source.get("title"),
         "owner": settings.owner,
         "channel": settings.channel,
@@ -137,11 +139,20 @@ def channel_status(config: RuntimeConfig) -> dict:
         return {"schema": "mova-alert-channel-v1", "status": "local_only",
                 "configured": False, "external_delivery": False,
                 "owner": None, "channel": "journald"}
-    fingerprint = hashlib.sha256(settings.url.encode()).hexdigest()[:12]
+    # 128 bits ligan evidencia al destino sin revelar su URL.
+    fingerprint = hashlib.sha256(settings.url.encode()).hexdigest()[:32]
     return {"schema": "mova-alert-channel-v1", "status": "configured",
             "configured": True, "external_delivery": True,
             "owner": settings.owner, "channel": settings.channel,
             "destination_fingerprint": fingerprint}
+
+
+def channel_report(config: RuntimeConfig, db: OpsDB) -> dict:
+    report = channel_status(config)
+    fingerprint = report.get("destination_fingerprint")
+    live = (db.alert_channel_live_status(str(fingerprint)) if fingerprint else
+            {"status": "missing", "delivered": False, "external_calls": 0})
+    return {**report, "live_test": live}
 
 
 def channel_prometheus(status: dict) -> str:
@@ -153,6 +164,9 @@ def channel_prometheus(status: dict) -> str:
         "# HELP mova_alert_channel_status Sanitized external alert channel state.",
         "# TYPE mova_alert_channel_status gauge",
         f'mova_alert_channel_status{{status="{state}"}} 1',
+        "# HELP mova_alert_channel_live_proven Current destination has a successful live ping.",
+        "# TYPE mova_alert_channel_live_proven gauge",
+        f"mova_alert_channel_live_proven {1 if (status.get('live_test') or {}).get('delivered') else 0}",
         "",
     ))
 
@@ -191,7 +205,7 @@ def channel_drill() -> dict:
         "delivery_contract": len(captured) == 1,
         "minimal_allowlist": set(payload) == {
             "schema", "event_key", "event_type", "severity", "created_at", "attempt",
-            "incident_id", "title", "owner", "channel",
+            "incident_id", "probe_id", "destination_fingerprint", "title", "owner", "channel",
         },
         "private_fields_redacted": "private_team" not in payload and "token" not in payload,
         "destination_secret_redacted": "url" not in payload,
@@ -213,9 +227,10 @@ def journal_sink(event: dict) -> None:
     }})
 
 
-def dispatch(db: OpsDB, *, limit: int = 20,
+def dispatch(db: OpsDB, *, limit: int = 20, outbox_id: str | None = None,
              sink: Callable[[dict], None] = journal_sink) -> dict:
-    claimed = db.claim_outbox(limit=limit)
+    claimed = ([event] if (outbox_id and (event := db.claim_outbox_by_id(outbox_id)))
+               else [] if outbox_id else db.claim_outbox(limit=limit))
     delivered = failed = dead = 0
     for event in claimed:
         try:
@@ -231,3 +246,74 @@ def dispatch(db: OpsDB, *, limit: int = 20,
             delivered += 1
     return {"schema": "mova-alert-dispatch-v1", "claimed": len(claimed),
             "delivered": delivered, "failed": failed, "dead": dead}
+
+
+def live_ping(config: RuntimeConfig, db: OpsDB, *, actor: str, reason: str,
+              idempotency_key: str,
+              sink: Callable[[dict], None] | None = None) -> dict:
+    """Prueba el destino configurado una vez, con ledger y outbox aislado."""
+    try:
+        settings = _load_settings(config)
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        return {"schema": "mova-alert-live-ping-v1", "status": "not_configured",
+                "channel_status": "invalid", "error_code": type(exc).__name__,
+                "runtime_mutated": False, "external_calls": 0}
+    if settings is None:
+        return {"schema": "mova-alert-live-ping-v1", "status": "not_configured",
+                "channel_status": "local_only", "runtime_mutated": False,
+                "external_calls": 0}
+    fingerprint = hashlib.sha256(settings.url.encode()).hexdigest()[:32]
+    identity = sha256_json({
+        "actor": actor, "reason": reason, "idempotency_key": idempotency_key,
+        "destination_fingerprint": fingerprint,
+    })
+    job_key = f"alert_channel_live_ping:{idempotency_key}"
+    job_id, reused = db.start_job(
+        "alert_channel_live_ping", job_key, new_id("corr"), input_sha256=identity,
+    )
+    if reused:
+        prior = db.get_job_by_key(job_key) or {}
+        if prior.get("input_sha256") not in (None, identity):
+            return {"schema": "mova-alert-live-ping-v1", "status": "conflict",
+                    "error_code": "idempotency_identity_mismatch",
+                    "runtime_mutated": False, "external_calls": 0}
+        prior_metrics = json.loads(prior.get("metrics_json") or "{}")
+        return {"schema": "mova-alert-live-ping-v1",
+                "status": "reused" if prior.get("status") == "completed" else prior.get("status"),
+                "job_id": job_id, "destination_fingerprint": fingerprint,
+                "delivered": prior_metrics.get("delivered") is True,
+                "external_calls": 0, "runtime_mutated": False}
+    db.append_audit(
+        "alert_channel_live_ping_requested", actor=actor, job_id=job_id,
+        subject_type="alert_channel", subject_id=fingerprint,
+        payload={"reason": reason, "destination_fingerprint": fingerprint},
+    )
+    try:
+        outbox_id = db.enqueue_alert_probe(
+            job_id=job_id, correlation_id=str(
+                (db.get_job_by_key(job_key) or {}).get("correlation_id") or ""
+            ), destination_fingerprint=fingerprint,
+        )
+        result = dispatch(
+            db, outbox_id=outbox_id, sink=sink or webhook_sink(settings),
+        )
+    except Exception as exc:  # ledger terminal incluso ante una falla interna
+        db.finish_job(job_id, "failed", error_code=type(exc).__name__)
+        return {"schema": "mova-alert-live-ping-v1", "status": "failed",
+                "job_id": job_id, "destination_fingerprint": fingerprint,
+                "delivered": False, "external_calls": 0,
+                "runtime_mutated": True, "error_code": type(exc).__name__}
+    delivered = result["delivered"] == 1 and result["failed"] == 0
+    metrics = {"destination_fingerprint": fingerprint, "delivered": delivered,
+               "external_calls": result["claimed"], "outbox_id": outbox_id}
+    payload = {"schema": "mova-alert-live-ping-v1",
+               "status": "pass" if delivered else "failed", "job_id": job_id,
+               "destination_fingerprint": fingerprint, "delivered": delivered,
+               "external_calls": result["claimed"], "runtime_mutated": True,
+               "outbox": db.outbox_event_status(outbox_id)}
+    db.finish_job(
+        job_id, "completed" if delivered else "failed",
+        output_sha256=sha256_json(payload), metrics=metrics,
+        error_code=None if delivered else "AlertDeliveryFailed",
+    )
+    return payload
