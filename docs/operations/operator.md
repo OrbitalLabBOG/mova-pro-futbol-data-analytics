@@ -167,9 +167,16 @@ fallo del tick. Contrato, checks y recuperación en
 HV1-06B reutiliza el mismo worker one-shot para una request `deliberation_*` sin web search. La
 cola queda bajo `mova strategy deliberate enqueue|import|status`; el timer de research procesa
 como máximo una request pendiente por invocación y conserva retries por archivo. La API añade
-`/api/v1/deliberations` y `/api/v1/deliberation-risks`; Prometheus publica
+`/api/v1/deliberations`, `/api/v1/deliberation-bindings` y
+`/api/v1/deliberation-risks`; Prometheus publica
 `mova_deliberation_status` y `mova_deliberation_blocking_risks`. Ningún estado de deliberación
 habilita ejecución: toda intervención persiste con `applied=false`.
+
+La idempotencia agentic usa un hash semántico separado del hash de provenance. Envelopes nuevos
+con la misma decisión, blockers, equipo, research, memoria, plan y modelos se enlazan al resultado
+existente sin reservar tokens. Audita `decision_deliberation_bindings`, el evento
+`decision_deliberation_semantically_reused` y
+`mova_agent_deliberation_semantic_reuses`; un cambio material siempre abre un trabajo nuevo.
 
 HV1-07A/B añade `mova execute preflight`, `/api/v1/execution-plans`,
 `/api/v1/execution-preflight-checks` y métricas `mova_execution_*`. El comando sella autorización

@@ -383,6 +383,7 @@ no borra evidencia previa y nunca amplía autonomía.
 | HV1-05 🟡 | news/research con fetch/locator sellado, cobertura y utilidad; faltan 3 GWs medidos | ciclos reales | HV1-02/03 |
 | HV1-06A ✅ | bundle máquina, `do_nothing`, alternativa, Validator y DecisionEnvelope | completado | HV1-03/04/05 |
 | HV1-06B ✅ | Strategist + Critic acotados sobre `Intervention`, sin autoridad directa | completado | HV1-06A |
+| HV1-06C ✅ | idempotencia semántica, bindings auditables y costo evitado | completado | HV1-06B |
 | HV1-07 🟡 | policy/apply-once/verifier; R2/R3 tipados pero sin promoción; faltan entrypoints/rehearsals | 3–6 h | HV1-06 |
 | HV1-08 ✅ | reviewer causal, budgets, propuesta→lección y release de modelos con shadow/rollback | completado | HV1-03/06 |
 | HV1-09 ✅ | gate consolidado de readiness, elegibilidad técnica, API/CLI y métricas | completado | HV1-02/03/05/07 |
@@ -497,6 +498,19 @@ validación detectó y corrigió una falsa alerta histórica de presupuesto caus
 plantilla apreciada contra las £100M iniciales. El envelope nuevo concilió precios de venta,
 compras y banco; los tres candidatos quedaron sin violaciones financieras. La evidencia completa
 está en [HV1-06B](17-hv1-06b-deliberation-evidence.md).
+
+### Corte idempotencia agentic — 30 de agosto de 2026
+
+HV1-06C separa identidad de provenance e identidad semántica. Cada `DecisionEnvelope` conserva
+su evidencia completa, pero Strategist+Critic solo vuelven a consumir presupuesto cuando cambia
+algún input decisional: candidatos, gates, equipo, fase, research, memoria, plan o modelos. IDs,
+timestamps, rutas, batch IDs y SHA de despliegue no disparan por sí solos una inferencia.
+
+SQLite migration 017 y PostgreSQL migration 020 añaden el hash y bindings envelope→deliberación.
+El binding, audit event, API, reporte de costo y métrica Prometheus muestran las llamadas evitadas;
+no se escribe un request huérfano ni se reserva presupuesto. Contrato y recuperación viven en
+[lifecycle de decisión](../../operations/decision-lifecycle.md). Evidencia de rollout:
+[HV1-06C](35-hv1-06c-semantic-agent-idempotency.md).
 
 ### Corte AutonomyPolicy + ExecutionPlan — 30 de agosto de 2026
 

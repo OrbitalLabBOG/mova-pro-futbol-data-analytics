@@ -22,7 +22,7 @@ snapshot + team state + projection + plan + research
   → live decision candidates JSON
   → deterministic validator
   → DecisionEnvelope blocked|staged
-  → request sellada → Strategist → Critic → validación determinista
+  → binding semántico → request sellada → Strategist → Critic → validación determinista
   → deliberation accepted|review_required|blocked + Intervention applied=false
   → ExecutionPlan + deterministic preflight (sin apply)
   → decision_runs + players + candidates + checks + audit
@@ -41,6 +41,14 @@ El acta Markdown es una vista para humanos. El tick consume el JSON producido po
 La deliberación es hija del envelope y no lo modifica. El worker one-shot recibe únicamente el
 envelope, su contexto sellado, el plan y señales ya incluidas en el manifest. Para este rol se
 deshabilita web search: descubrir hechos nuevos pertenece exclusivamente al Researcher.
+
+Antes de reservar presupuesto, el servicio calcula `semantic_input_sha256`. El hash incluye los
+tres candidatos, validaciones, estado real del equipo, fase, research, memoria, plan y versiones
+de modelo. Excluye IDs de envelope/manifest, timestamps de captura, rutas, batch IDs y SHA del
+despliegue. Un envelope nuevo que solo difiere en esa provenance crea un binding
+`semantic_reuse`, reutiliza el resultado anterior y no crea archivo de inbox, reserva ni llamada
+LLM. Cualquier cambio material produce una deliberación nueva. Los envelopes siguen siendo
+inmutables y cada reutilización queda auditada.
 
 ## Contrato Strategist + Critic
 
@@ -95,8 +103,10 @@ curl -s http://127.0.0.1:8787/api/v1/decision-envelopes?limit=5 | jq
 curl -s http://127.0.0.1:8787/api/v1/decision-candidates?limit=20 | jq
 curl -s http://127.0.0.1:8787/api/v1/decision-checks?limit=30 | jq
 curl -s http://127.0.0.1:8787/api/v1/deliberations?limit=5 | jq
+curl -s http://127.0.0.1:8787/api/v1/deliberation-bindings?limit=20 | jq
 curl -s http://127.0.0.1:8787/api/v1/deliberation-risks?limit=30 | jq
 curl -s http://127.0.0.1:8787/metrics | grep '^mova_decision_'
+curl -s http://127.0.0.1:8787/metrics | grep '^mova_agent_deliberation_semantic_reuses'
 ```
 
 El contrato está en
@@ -113,6 +123,7 @@ blocked → nueva evidencia/manifest → nuevo envelope
 staged  → revisión/autoridad posterior → approved/executed en HV1-07
 blocked|staged anterior → superseded al sellar una revisión nueva
 envelope vigente → deliberation queued → accepted|review_required|blocked
+envelope semánticamente equivalente → binding semantic_reuse → resultado previo, cero presupuesto
 output inválido → rejected + quarantine; nunca intervención parcial
 ```
 

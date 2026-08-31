@@ -57,6 +57,9 @@ consulta ordinaria: `mova` y `/api/v1/status` son el contrato estable.
     `mova improve release` para bundles `minutes+points`, tras shadow pareado; no sirve para código,
     guardrails ni permisos. Antes de encolar trabajo agentic,
     consulta `mova cost report`; un `agent_budget_exceeded` es un bloqueo real, no se fuerza.
+    Revisa `semantic_reuse.*_avoided_uses` y `/api/v1/deliberation-bindings` cuando la
+    deliberación parezca repetitiva. Un binding `semantic_reuse` es éxito idempotente: no vuelvas
+    a encolar ni borres el ledger para forzar otra llamada.
     `mova review auto` solo procede con settlement final y scorecard baseline; `not_ready` es el
     resultado correcto para una GW preliminar.
 11. Para diagnosticar persistencia, ejecuta `mova postgres status` y `mova postgres verify`, y

@@ -30,6 +30,98 @@ LIFECYCLE_BY_VERDICT = {
 }
 
 
+def _research_signal_semantics(item: object) -> dict:
+    raw = item if isinstance(item, dict) else {}
+    return {
+        key: raw.get(key) for key in (
+            "player_element", "claim_type", "claim_text", "source_url", "source_tier",
+            "published_at", "confidence", "conflict_status", "content_sha256",
+        ) if raw.get(key) is not None
+    }
+
+
+def semantic_deliberation_input(request: dict) -> dict:
+    """Decision-relevant input, intentionally excluding provenance churn.
+
+    Envelope/manifest IDs, collection timestamps, artifact paths, deployment SHA and
+    analytics batch IDs remain in the sealed request, but cannot spend agent budget by
+    themselves. Any material decision, blocker, team, research, memory or model change
+    still produces a different digest.
+    """
+    envelope = request["envelope"]
+    context = request["cycle_context"]
+    validation = envelope.get("validation") or {}
+    analytics = context.get("analytics_manifest") or {}
+    research = context.get("research_summary") or {}
+    memory = context.get("strategic_memory") or {}
+    plan = context.get("season_plan") or {}
+    checks = [
+        {key: item.get(key) for key in ("code", "severity", "passed")}
+        for item in validation.get("checks", []) if isinstance(item, dict)
+    ]
+    signals = [
+        _research_signal_semantics(item)
+        for field in ("signals", "previous_active_signals")
+        for item in research.get(field, [])
+    ]
+    signals.sort(key=canonical_json)
+    return {
+        "schema": "mova-deliberation-semantic-input-v1",
+        "request_schema": request.get("schema"),
+        "season": request.get("season"),
+        "gw": request.get("gw"),
+        "phase": context.get("phase"),
+        "deadline_at": context.get("deadline_at"),
+        "envelope": {
+            "schema": envelope.get("schema"),
+            "policy_version": envelope.get("policy_version"),
+            "status": envelope.get("status"),
+            "selected_candidate_key": envelope.get("selected_candidate_key"),
+            "selected_fingerprint": envelope.get("selected_fingerprint"),
+            "candidates": envelope.get("candidates", []),
+            "comparisons": envelope.get("comparisons", []),
+            "controls": envelope.get("controls", {}),
+            "event_context": envelope.get("event_context", {}),
+            "team_state": {
+                key: (envelope.get("team_state") or {}).get(key)
+                for key in ("fingerprint", "free_transfers", "bank_tenths", "bank",
+                            "chips", "chips_available", "quality_status", "source",
+                            "squad_size")
+            },
+            "validation": {
+                "status": validation.get("status"),
+                "blocking_codes": sorted(validation.get("blocking_codes", [])),
+                "checks": sorted(checks, key=canonical_json),
+            },
+        },
+        "analytics": {
+            key: analytics.get(key) for key in (
+                "status", "service_status", "model_versions", "player_count", "season",
+                "target_gw", "variant", "source",
+            )
+        },
+        "research": {
+            "focus": research.get("focus", []),
+            "unresolved_conflicts": research.get("unresolved_conflicts", 0),
+            "signals": signals,
+        },
+        "strategic_memory": {
+            key: memory.get(key) for key in (
+                "schema", "status", "content_sha256", "lessons", "season_plan_revision",
+            ) if memory.get(key) is not None
+        },
+        "season_plan": {
+            key: plan.get(key) for key in (
+                "revision", "content_sha256", "status", "horizon_gws", "chip_windows",
+                "transfer_posture", "strategic_principles",
+            ) if plan.get(key) is not None
+        },
+        "owned_player_elements": request.get("owned_player_elements", []),
+        "allowed_player_elements": request.get("allowed_player_elements", []),
+        "policy_version": POLICY_VERSION,
+    }
+
+
 def _atomic_json(path: Path, payload: dict) -> str:
     path.parent.mkdir(parents=True, exist_ok=True)
     encoded = (canonical_json(payload) + "\n").encode("utf-8")
@@ -382,6 +474,7 @@ class DecisionDeliberationService:
         }
         request_sha = sha256_json(request)
         request["request_sha256"] = request_sha
+        semantic_sha = sha256_json(semantic_deliberation_input(request))
         path = self.config.research_root / "inbox" / f"{deliberation_id}.request.json"
         file_sha = _atomic_json(path, request)
         queued = self.db.queue_decision_deliberation({
@@ -392,8 +485,12 @@ class DecisionDeliberationService:
             "provider": self.config.research_provider,
             "request_path": str(path),
             "request_sha256": request_sha,
+            "semantic_input_sha256": semantic_sha,
             "budget_policy": self.config.agent_budget_policy(),
         })
+        if queued.get("semantic_reused"):
+            path.unlink(missing_ok=True)
+            return {**queued, "request_path": None, "request_file_sha256": None}
         if queued.get("status") == "blocked":
             path.unlink(missing_ok=True)
             return {**queued, "request_path": None, "request_file_sha256": None}
