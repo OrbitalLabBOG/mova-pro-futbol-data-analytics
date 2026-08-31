@@ -1063,6 +1063,21 @@ MIGRATION_019 = (
     "ON agent_worker_attempt_events(subject_type,subject_id,occurred_at)",
 )
 
+MIGRATION_020 = (
+    "ALTER TABLE agent_budget_reservations ADD COLUMN accounting_mode TEXT "
+    "CHECK (accounting_mode IS NULL OR accounting_mode IN ('exact','conservative','legacy'))",
+    "ALTER TABLE agent_budget_reservations ADD COLUMN attempt_count INTEGER "
+    "CHECK (attempt_count IS NULL OR attempt_count >= 1)",
+    "ALTER TABLE agent_budget_reservations ADD COLUMN estimated_tokens INTEGER "
+    "CHECK (estimated_tokens IS NULL OR estimated_tokens >= 0)",
+    "UPDATE agent_budget_reservations SET accounting_mode=CASE "
+    "WHEN status='charged' THEN 'conservative' WHEN status='settled' THEN 'legacy' END, "
+    "attempt_count=CASE WHEN status IN ('charged','settled') THEN 1 END, "
+    "estimated_tokens=CASE WHEN status='charged' THEN reserved_tokens "
+    "WHEN status='settled' THEN 0 END "
+    "WHERE accounting_mode IS NULL",
+)
+
 MIGRATIONS = (
     (1, "initial_ops_schema", MIGRATION_001),
     (2, "team_state_artifact_provenance", MIGRATION_002),
@@ -1083,4 +1098,5 @@ MIGRATIONS = (
     (17, "semantic_deliberation_idempotency", MIGRATION_017),
     (18, "agent_budget_overrun_lifecycle", MIGRATION_018),
     (19, "agent_worker_attempt_ledger", MIGRATION_019),
+    (20, "physical_attempt_budget_accounting", MIGRATION_020),
 )

@@ -100,9 +100,13 @@ def test_dos_intentos_fallidos_terminalizan_request_y_cargan_estimate(tmp_path):
     assert not request_path.exists()
     with db.connect(readonly=True) as con:
         reservation = con.execute(
-            "SELECT status,actual_tokens FROM agent_budget_reservations"
+            "SELECT status,actual_tokens,attempt_count,accounting_mode,estimated_tokens "
+            "FROM agent_budget_reservations"
         ).fetchone()
-        assert dict(reservation) == {"status": "charged", "actual_tokens": 100}
+        assert dict(reservation) == {
+            "status": "charged", "actual_tokens": 24, "attempt_count": 2,
+            "accounting_mode": "exact", "estimated_tokens": 0,
+        }
         assert con.execute(
             "SELECT COUNT(*) FROM agent_worker_attempt_events"
         ).fetchone()[0] == 4
@@ -125,3 +129,46 @@ def test_success_receipt_impide_terminalizar_aunque_haya_dos_starts(tmp_path):
     assert 'mova_agent_worker_attempts{status="started"} 2' in metrics
     assert 'mova_agent_worker_attempts{status="failed"} 1' in metrics
     assert 'mova_agent_worker_attempts{status="succeeded"} 1' in metrics
+
+
+def test_resultado_logico_suma_ambos_intentos_sin_doble_conteo(tmp_path):
+    config, db, run_id, request_sha, _ = _runtime(tmp_path)
+    for index, status in (("5" * 32, "failed"), ("6" * 32, "succeeded")):
+        attempt = f"attempt_{index}"
+        _receipt(config, run_id, request_sha, attempt, "started", "running")
+        _receipt(config, run_id, request_sha, attempt, "finished", status,
+                 input_tokens=10, output_tokens=2, duration_ms=50,
+                 error_code="codex_exec_failed" if status == "failed" else None,
+                 output_present=status == "succeeded")
+    AgentAttemptService(config, db).import_ready()
+    imported = db.import_research_result(run_id, {
+        "documents": [], "signals": [], "conflicts": [],
+        "usage": {"model": "fixture", "input_tokens": 10, "output_tokens": 2},
+    }, result_path="result.json", result_sha256="c" * 64)
+
+    assert imported["budget_settlement"]["actual_tokens"] == 24
+    assert imported["budget_settlement"]["attempt_count"] == 2
+    assert imported["budget_settlement"]["accounting_mode"] == "exact"
+    report = db.cost_report({"reservation_tokens": 100, "job_tokens": 120,
+                             "gw_tokens": 300, "month_tokens": 600,
+                             "gw_uses": 3, "month_uses": 6},
+                            season="2026-27", gw=3)
+    assert report["gameweek"]["consumed_tokens"] == 24
+    assert report["gameweek"]["consumed_uses"] == 2
+    assert report["gameweek"]["committed_tokens"] == 24
+
+
+def test_intentos_sin_fin_se_cargan_conservadoramente_por_intento(tmp_path):
+    config, db, run_id, request_sha, _ = _runtime(tmp_path)
+    for value in ("7" * 32, "8" * 32):
+        _receipt(config, run_id, request_sha, f"attempt_{value}", "started", "running")
+    AgentAttemptService(config, db).import_ready()
+
+    report = db.cost_report({"reservation_tokens": 100, "job_tokens": 120,
+                             "gw_tokens": 300, "month_tokens": 600,
+                             "gw_uses": 3, "month_uses": 6},
+                            season="2026-27", gw=3)
+    assert report["gameweek"]["charged_tokens"] == 200
+    assert report["gameweek"]["charged_uses"] == 2
+    assert report["gameweek"]["charged_estimate_tokens"] == 200
+    assert report["gameweek"]["charged_estimate_uses"] == 2

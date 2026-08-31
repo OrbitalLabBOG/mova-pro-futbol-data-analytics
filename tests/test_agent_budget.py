@@ -136,7 +136,8 @@ def test_overrun_real_del_job_es_visible_sin_contarlo_como_reserva(tmp_path):
     assert imported["budget_settlement"] == {
         "status": "settled", "reservation_id": imported["budget_settlement"]["reservation_id"],
         "reserved_tokens": 100, "actual_tokens": 130, "job_limit": 120,
-        "overrun": True, "reused": False,
+        "overrun": True, "attempt_count": 1, "accounting_mode": "legacy",
+        "reused": False,
     }
 
     report = db.cost_report(POLICY, season="2026-27", gw=3)

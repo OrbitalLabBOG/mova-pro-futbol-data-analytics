@@ -1733,6 +1733,56 @@ class OpsDB:
                 "content_sha256": content_sha, "reused": False,
                 "artifact_path": artifact_path}
 
+    @staticmethod
+    def _agent_budget_aggregates(con: sqlite3.Connection, *,
+                                 cycle_id: str | None = None,
+                                 month: str | None = None) -> dict:
+        """Return physical-call accounting while retaining pre-budget ledger rows."""
+        if (cycle_id is None) == (month is None):
+            raise ValueError("budget scope requiere exactamente cycle_id o month")
+        if cycle_id is not None:
+            reservation_where, ledger_where = "r.cycle_id=?", "c.cycle_id=?"
+            params = (cycle_id,)
+        else:
+            reservation_where = "substr(r.created_at,1,7)=?"
+            ledger_where = "substr(c.occurred_at,1,7)=?"
+            params = (month,)
+        settled = con.execute(
+            f"""WITH accounted(tokens,uses) AS (
+              SELECT COALESCE(r.actual_tokens,0),COALESCE(r.attempt_count,1)
+              FROM agent_budget_reservations r
+              WHERE r.status='settled' AND {reservation_where}
+              UNION ALL
+              SELECT COALESCE(c.input_tokens,0)+COALESCE(c.output_tokens,0),1
+              FROM cost_ledger c WHERE {ledger_where}
+                AND NOT EXISTS (SELECT 1 FROM agent_budget_reservations r
+                  WHERE r.subject_id=c.subject_id AND r.status='settled')
+            ) SELECT COALESCE(SUM(tokens),0) tokens,COALESCE(SUM(uses),0) uses
+            FROM accounted""", (*params, *params),
+        ).fetchone()
+        reserved = con.execute(
+            f"""SELECT COUNT(*) uses,COALESCE(SUM(reserved_tokens),0) tokens
+            FROM agent_budget_reservations r
+            WHERE r.status='reserved' AND {reservation_where}""", params,
+        ).fetchone()
+        charged = con.execute(
+            f"""SELECT COALESCE(SUM(COALESCE(attempt_count,1)),0) uses,
+            COALESCE(SUM(COALESCE(actual_tokens,reserved_tokens)),0) tokens,
+            COALESCE(SUM(COALESCE(estimated_tokens,
+              CASE WHEN accounting_mode='conservative' THEN actual_tokens ELSE 0 END)),0)
+              estimated_tokens,
+            COALESCE(SUM(CASE WHEN COALESCE(estimated_tokens,0)>0
+              THEN COALESCE(attempt_count,1) ELSE 0 END),0) estimated_uses
+            FROM agent_budget_reservations r
+            WHERE r.status='charged' AND {reservation_where}""", params,
+        ).fetchone()
+        cost = con.execute(
+            f"""SELECT SUM(c.estimated_cost_usd) estimated_cost_usd
+            FROM cost_ledger c WHERE {ledger_where}""", params,
+        ).fetchone()
+        return {"settled": settled, "reserved": reserved, "charged": charged,
+                "estimated_cost_usd": cost["estimated_cost_usd"]}
+
     def _reserve_agent_budget(self, con: sqlite3.Connection, *, cycle_id: str,
                               subject_type: str, subject_id: str, provider: str,
                               policy: dict | None, actor: str, now: str,
@@ -1752,30 +1802,17 @@ class OpsDB:
         if existing:
             return {**dict(existing), "reused": True}
         month = now[:7]
-        consumed_gw = con.execute(
-            "SELECT COALESCE(SUM(COALESCE(input_tokens,0)+COALESCE(output_tokens,0)),0),"
-            "COUNT(*) FROM cost_ledger WHERE cycle_id=?", (cycle_id,),
-        ).fetchone()
-        reserved_gw = con.execute(
-            "SELECT COALESCE(SUM(reserved_tokens),0),COUNT(*) "
-            "FROM agent_budget_reservations WHERE cycle_id=? "
-            "AND status IN ('reserved','charged')",
-            (cycle_id,),
-        ).fetchone()
-        consumed_month = con.execute(
-            "SELECT COALESCE(SUM(COALESCE(input_tokens,0)+COALESCE(output_tokens,0)),0),"
-            "COUNT(*) FROM cost_ledger WHERE substr(occurred_at,1,7)=?", (month,),
-        ).fetchone()
-        reserved_month = con.execute(
-            "SELECT COALESCE(SUM(reserved_tokens),0),COUNT(*) "
-            "FROM agent_budget_reservations WHERE substr(created_at,1,7)=? "
-            "AND status IN ('reserved','charged')", (month,),
-        ).fetchone()
+        gw_accounting = self._agent_budget_aggregates(con, cycle_id=cycle_id)
+        month_accounting = self._agent_budget_aggregates(con, month=month)
         estimate = int(policy["reservation_tokens"])
-        gw_tokens = int(consumed_gw[0]) + int(reserved_gw[0])
-        month_tokens = int(consumed_month[0]) + int(reserved_month[0])
-        gw_uses = int(consumed_gw[1]) + int(reserved_gw[1])
-        month_uses = int(consumed_month[1]) + int(reserved_month[1])
+        gw_tokens = sum(int(gw_accounting[k]["tokens"])
+                        for k in ("settled", "reserved", "charged"))
+        month_tokens = sum(int(month_accounting[k]["tokens"])
+                           for k in ("settled", "reserved", "charged"))
+        gw_uses = sum(int(gw_accounting[k]["uses"])
+                      for k in ("settled", "reserved", "charged"))
+        month_uses = sum(int(month_accounting[k]["uses"])
+                         for k in ("settled", "reserved", "charged"))
         checks = {
             "job_tokens": {"used": estimate, "limit": policy["job_tokens"],
                            "passed": estimate <= policy["job_tokens"]},
@@ -1817,6 +1854,59 @@ class OpsDB:
         )
         return {**result, "reservation_id": reservation_id}
 
+    @staticmethod
+    def _physical_attempt_accounting(con: sqlite3.Connection, *, reservation,
+                                     usage: dict | None = None) -> dict:
+        """Account every physical start; estimate only attempts without token evidence."""
+        rows = con.execute(
+            """SELECT attempt_id,status,input_tokens,output_tokens
+            FROM agent_worker_attempt_events
+            WHERE subject_id=? AND event_type='finished' ORDER BY occurred_at""",
+            (reservation["subject_id"],),
+        ).fetchall()
+        starts = int(con.execute(
+            "SELECT COUNT(DISTINCT attempt_id) FROM agent_worker_attempt_events "
+            "WHERE subject_id=? AND event_type='started'",
+            (reservation["subject_id"],),
+        ).fetchone()[0])
+        raw_input = int((usage or {}).get("input_tokens") or 0)
+        raw_output = int((usage or {}).get("output_tokens") or 0)
+        observed_input = 0
+        observed_output = 0
+        unknown = 0
+        used_result_fallback = False
+        for row in rows:
+            if row["input_tokens"] is not None and row["output_tokens"] is not None:
+                observed_input += int(row["input_tokens"])
+                observed_output += int(row["output_tokens"])
+            elif row["status"] == "succeeded" and usage is not None and not used_result_fallback:
+                observed_input += raw_input
+                observed_output += raw_output
+                used_result_fallback = True
+            else:
+                unknown += 1
+        unknown += max(0, starts - len(rows))
+        if starts == 0:
+            if usage is not None:
+                return {
+                    "accounted_tokens": raw_input + raw_output,
+                    "observed_tokens": raw_input + raw_output,
+                    "estimated_tokens": 0, "attempt_count": 1,
+                    "finished_attempts": 0, "accounting_mode": "legacy",
+                }
+            unknown = 1
+            starts = 1
+        estimate = unknown * int(reservation["reserved_tokens"])
+        observed = observed_input + observed_output
+        return {
+            "accounted_tokens": observed + estimate,
+            "observed_tokens": observed,
+            "estimated_tokens": estimate,
+            "attempt_count": starts,
+            "finished_attempts": len(rows),
+            "accounting_mode": "exact" if unknown == 0 else "conservative",
+        }
+
     def _settle_agent_budget(self, con: sqlite3.Connection, *, subject_id: str,
                              usage: dict, cycle_id: str, actor: str, now: str,
                              job_id: str | None = None) -> dict | None:
@@ -1825,22 +1915,32 @@ class OpsDB:
         ).fetchone()
         if not reservation:
             return None
+        accounting = self._physical_attempt_accounting(
+            con, reservation=reservation, usage=usage
+        )
         actual = (int(reservation["actual_tokens"])
                   if reservation["status"] == "settled"
-                  else int(usage.get("input_tokens") or 0)
-                  + int(usage.get("output_tokens") or 0))
+                  else int(accounting["accounted_tokens"]))
         policy = json.loads(reservation["policy_json"])
         overrun = actual > int(policy["job_tokens"])
         result = {"status": "settled", "reservation_id": reservation["reservation_id"],
                   "reserved_tokens": int(reservation["reserved_tokens"]),
                   "actual_tokens": actual, "job_limit": int(policy["job_tokens"]),
-                  "overrun": overrun}
+                  "overrun": overrun,
+                  "attempt_count": int(reservation["attempt_count"] or 1)
+                  if reservation["status"] == "settled"
+                  else accounting["attempt_count"],
+                  "accounting_mode": reservation["accounting_mode"] or "legacy"
+                  if reservation["status"] == "settled"
+                  else accounting["accounting_mode"]}
         if reservation["status"] == "settled":
             return {**result, "reused": True}
         con.execute(
             "UPDATE agent_budget_reservations SET status='settled',actual_tokens=?,"
-            "settled_at=? WHERE reservation_id=?",
-            (actual, now, reservation["reservation_id"]),
+            "accounting_mode=?,attempt_count=?,estimated_tokens=?,settled_at=? "
+            "WHERE reservation_id=?",
+            (actual, accounting["accounting_mode"], accounting["attempt_count"],
+             accounting["estimated_tokens"], now, reservation["reservation_id"]),
         )
         self.append_audit(
             "agent_budget_settled", actor=actor,
@@ -1859,17 +1959,27 @@ class OpsDB:
         ).fetchone()
         if not reservation or reservation["status"] != "reserved":
             return
+        accounting = self._physical_attempt_accounting(con, reservation=reservation)
         con.execute(
             "UPDATE agent_budget_reservations SET status='charged',actual_tokens=?,"
-            "settled_at=? WHERE reservation_id=?",
-            (reservation["reserved_tokens"], now, reservation["reservation_id"]),
+            "accounting_mode=?,attempt_count=?,estimated_tokens=?,settled_at=? "
+            "WHERE reservation_id=?",
+            (accounting["accounted_tokens"], accounting["accounting_mode"],
+             accounting["attempt_count"], accounting["estimated_tokens"], now,
+             reservation["reservation_id"]),
         )
         self.append_audit(
-            "agent_budget_charged_estimate", actor=actor, severity="warning",
+            ("agent_budget_charged" if accounting["accounting_mode"] == "exact"
+             else "agent_budget_charged_estimate"),
+            actor=actor, severity="warning",
             cycle_id=cycle_id, job_id=job_id,
             subject_type=reservation["subject_type"], subject_id=subject_id,
             payload={"reservation_id": reservation["reservation_id"],
-                     "estimated_tokens": reservation["reserved_tokens"],
+                     "accounted_tokens": accounting["accounted_tokens"],
+                     "observed_tokens": accounting["observed_tokens"],
+                     "estimated_tokens": accounting["estimated_tokens"],
+                     "attempt_count": accounting["attempt_count"],
+                     "accounting_mode": accounting["accounting_mode"],
                      "reason": "result_unavailable_or_rejected"}, con=con,
         )
 
@@ -2933,40 +3043,14 @@ class OpsDB:
                     "ORDER BY deadline_at DESC LIMIT 1"
                 ).fetchone()
             cycle_id = cycle["cycle_id"] if cycle else None
-            gw_cost = con.execute(
-                """SELECT COUNT(*) uses,
-                COALESCE(SUM(COALESCE(input_tokens,0)+COALESCE(output_tokens,0)),0) tokens,
-                SUM(estimated_cost_usd) estimated_cost_usd
-                FROM cost_ledger WHERE cycle_id=?""", (cycle_id,),
-            ).fetchone() if cycle_id else {"uses": 0, "tokens": 0,
-                                           "estimated_cost_usd": None}
-            gw_reserved = con.execute(
-                "SELECT COUNT(*) uses,COALESCE(SUM(reserved_tokens),0) tokens "
-                "FROM agent_budget_reservations WHERE cycle_id=? "
-                "AND status='reserved'",
-                (cycle_id,),
-            ).fetchone() if cycle_id else {"uses": 0, "tokens": 0}
-            gw_charged = con.execute(
-                "SELECT COUNT(*) uses,COALESCE(SUM(reserved_tokens),0) tokens "
-                "FROM agent_budget_reservations WHERE cycle_id=? AND status='charged'",
-                (cycle_id,),
-            ).fetchone() if cycle_id else {"uses": 0, "tokens": 0}
-            month_cost = con.execute(
-                """SELECT COUNT(*) uses,
-                COALESCE(SUM(COALESCE(input_tokens,0)+COALESCE(output_tokens,0)),0) tokens,
-                SUM(estimated_cost_usd) estimated_cost_usd
-                FROM cost_ledger WHERE substr(occurred_at,1,7)=?""", (observed_month,),
-            ).fetchone()
-            month_reserved = con.execute(
-                "SELECT COUNT(*) uses,COALESCE(SUM(reserved_tokens),0) tokens "
-                "FROM agent_budget_reservations WHERE substr(created_at,1,7)=? "
-                "AND status='reserved'", (observed_month,),
-            ).fetchone()
-            month_charged = con.execute(
-                "SELECT COUNT(*) uses,COALESCE(SUM(reserved_tokens),0) tokens "
-                "FROM agent_budget_reservations WHERE substr(created_at,1,7)=? "
-                "AND status='charged'", (observed_month,),
-            ).fetchone()
+            if cycle_id:
+                gw_accounting = self._agent_budget_aggregates(con, cycle_id=cycle_id)
+            else:
+                empty = {"uses": 0, "tokens": 0, "estimated_tokens": 0,
+                         "estimated_uses": 0}
+                gw_accounting = {"settled": empty, "reserved": empty,
+                                 "charged": empty, "estimated_cost_usd": None}
+            month_accounting = self._agent_budget_aggregates(con, month=observed_month)
             gw_semantic_reuses = int(con.execute(
                 "SELECT COUNT(*) FROM decision_deliberation_bindings b "
                 "JOIN decision_deliberations d ON d.deliberation_id=b.deliberation_id "
@@ -2997,12 +3081,27 @@ class OpsDB:
                 AND {orphan_predicate}""", (observed_month,),
             ).fetchone()
             by_category = con.execute(
-                """SELECT COALESCE(category,'unknown') category,COUNT(*) uses,
-                COALESCE(SUM(COALESCE(input_tokens,0)+COALESCE(output_tokens,0)),0) tokens,
-                SUM(estimated_cost_usd) estimated_cost_usd
-                FROM cost_ledger WHERE substr(occurred_at,1,7)=?
-                GROUP BY COALESCE(category,'unknown') ORDER BY category""",
-                (observed_month,),
+                """WITH physical(category,uses,tokens,estimated_cost_usd) AS (
+                  SELECT COALESCE(c.category,'unknown'),
+                    COALESCE(r.attempt_count,1),
+                    COALESCE(r.actual_tokens,
+                      COALESCE(c.input_tokens,0)+COALESCE(c.output_tokens,0)),
+                    c.estimated_cost_usd
+                  FROM cost_ledger c
+                  LEFT JOIN agent_budget_reservations r
+                    ON r.subject_id=c.subject_id AND r.status='settled'
+                  WHERE substr(c.occurred_at,1,7)=?
+                  UNION ALL
+                  SELECT CASE r.subject_type WHEN 'research' THEN 'news_research'
+                    WHEN 'deliberation' THEN 'strategy_critic' ELSE 'unknown' END,
+                    COALESCE(r.attempt_count,1),
+                    COALESCE(r.actual_tokens,r.reserved_tokens),NULL
+                  FROM agent_budget_reservations r
+                  WHERE substr(r.created_at,1,7)=? AND r.status='charged'
+                ) SELECT category,COALESCE(SUM(uses),0) uses,
+                  COALESCE(SUM(tokens),0) tokens,SUM(estimated_cost_usd) estimated_cost_usd
+                FROM physical GROUP BY category ORDER BY category""",
+                (observed_month, observed_month),
             ).fetchall()
             latest = con.execute(
                 "SELECT * FROM agent_budget_reservations ORDER BY created_at DESC LIMIT 20"
@@ -3030,8 +3129,11 @@ class OpsDB:
                 (cycle_id, observed_month),
             ).fetchall()
 
-        def scope(consumed, reserved, charged, *, token_limit: int,
+        def scope(accounting, *, token_limit: int,
                   use_limit: int) -> dict:
+            consumed = accounting["settled"]
+            reserved = accounting["reserved"]
+            charged = accounting["charged"]
             tokens = (int(consumed["tokens"]) + int(reserved["tokens"])
                       + int(charged["tokens"]))
             uses = (int(consumed["uses"]) + int(reserved["uses"])
@@ -3039,15 +3141,17 @@ class OpsDB:
             return {
                 "consumed_tokens": int(consumed["tokens"]),
                 "reserved_tokens": int(reserved["tokens"]), "committed_tokens": tokens,
-                "charged_estimate_tokens": int(charged["tokens"]),
+                "charged_tokens": int(charged["tokens"]),
+                "charged_estimate_tokens": int(charged["estimated_tokens"]),
                 "token_limit": token_limit, "remaining_tokens": max(0, token_limit - tokens),
                 "consumed_uses": int(consumed["uses"]),
                 "reserved_uses": int(reserved["uses"]), "committed_uses": uses,
-                "charged_estimate_uses": int(charged["uses"]),
+                "charged_uses": int(charged["uses"]),
+                "charged_estimate_uses": int(charged["estimated_uses"]),
                 "use_limit": use_limit, "remaining_uses": max(0, use_limit - uses),
                 "status": "within_budget" if tokens <= token_limit and uses <= use_limit
                 else "exceeded",
-                "estimated_cost_usd": consumed["estimated_cost_usd"],
+                "estimated_cost_usd": accounting["estimated_cost_usd"],
             }
 
         overrun_items = [dict(row) for row in overrun_rows]
@@ -3092,10 +3196,10 @@ class OpsDB:
             "schema": "mova-agent-cost-report-v1", "observed_at": utcnow(),
             "status": report_status,
             "policy": dict(policy), "cycle": dict(cycle) if cycle else None,
-            "gameweek": scope(gw_cost, gw_reserved, gw_charged,
+            "gameweek": scope(gw_accounting,
                               token_limit=policy["gw_tokens"], use_limit=policy["gw_uses"]),
             "month": {"month": observed_month, **scope(
-                month_cost, month_reserved, month_charged,
+                month_accounting,
                 token_limit=policy["month_tokens"],
                 use_limit=policy["month_uses"])},
             "job_overruns": {
@@ -3144,7 +3248,8 @@ class OpsDB:
         ]
         for scope_name, scope in (("gameweek", report["gameweek"]),
                                   ("month", report["month"])):
-            for kind in ("consumed", "reserved", "charged_estimate", "remaining"):
+            for kind in ("consumed", "reserved", "charged", "charged_estimate",
+                         "remaining"):
                 lines.append(
                     f'mova_agent_budget_tokens{{scope="{scope_name}",kind="{kind}"}} '
                     f'{scope[f"{kind}_tokens"]}'
