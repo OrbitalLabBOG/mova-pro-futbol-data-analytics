@@ -22,7 +22,7 @@ PM de construcción del proyecto.
 
 | Campo | Valor |
 | --- | --- |
-| Versión | 0.20 |
+| Versión | 0.21 |
 | Estado | `active-shadow` |
 | Riesgo | alto: cuenta externa, deadlines irreversibles y sesión autenticada |
 | Business owner | Julián Zuluaga |
@@ -75,6 +75,7 @@ PM de construcción del proyecto.
 | [40-hv1-09e-snapshot-rejection-drill.md](40-hv1-09e-snapshot-rejection-drill.md) | Rechazo hermético de snapshots alterados, corruptos, traversal y symlinks |
 | [41-hv1-09f-browser-failure-drill.md](41-hv1-09f-browser-failure-drill.md) | Deriva DOM, pre-state cambiado y save ambiguo con apply-once fail-closed |
 | [42-hv1-09g-browser-recovery-drill.md](42-hv1-09g-browser-recovery-drill.md) | Caída real de Chromium/noVNC, recuperación de sesión y restauración on-demand |
+| [43-hv1-09h-combined-recovery-drill.md](43-hv1-09h-combined-recovery-drill.md) | Outage conjunto API+PostgreSQL+browser con continuidad SQLite y restore completo |
 | [contracts/](contracts/) | JSON Schemas máquina para request, result y signal |
 | [decisions/](decisions/) | decisiones arquitectónicas propuestas |
 | [workpacks/](workpacks/) | unidades de implementación y criterios todavía pendientes |

@@ -58,6 +58,7 @@ mova drill browser-failure --actor codex --reason dom-save-boundary \
 sudo deploy/bin/api-recovery-drill.sh codex "api recovery" hv1-api-v1
 sudo deploy/bin/postgres-recovery-drill.sh codex "postgres recovery" hv1-postgres-v1
 sudo deploy/bin/browser-recovery-drill.sh codex "browser recovery read-only" hv1-browser-v1
+sudo deploy/bin/combined-recovery-drill.sh codex "combined recovery" hv1-combined-v1
 
 # collector público sellado
 python -m mova_fpl.cli.collect_live --season 2026-27 --gw 2

@@ -138,6 +138,18 @@ El drill bloquea el collector privado, valida sesión antes/después, detiene no
 fingerprint del equipo y no persiste el payload privado. No lo agendes ni lo uses durante una
 ejecución browser autorizada.
 
+El escenario combinado detiene API, PostgreSQL y browser, pero conserva SQLite como control plane
+local:
+
+```bash
+sudo deploy/bin/combined-recovery-drill.sh codex \
+  "combined control-plane recovery" "hv1-combined-v1"
+```
+
+Sólo se ejecuta manualmente, con backup previo y controles A0. Exit 75 significa que un writer
+está activo y el outage no comenzó. Repetir una clave completada devuelve el job sin tomar locks
+de servicio ni detener contenedores.
+
 Los logs de containers rotan a 5 × 10 MiB por servicio. Los timers y fallos conservan su
 diagnóstico en journald. Cada tick sella bytes fuente y hashes; `ops.db` conserva jobs,
 pasos, fuentes, decisiones, controles, salud, incidentes y outbox.

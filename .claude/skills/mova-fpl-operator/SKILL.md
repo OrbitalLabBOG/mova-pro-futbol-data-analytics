@@ -113,7 +113,13 @@ La recuperación real del perfil browser usa exclusivamente
 `deploy/bin/browser-recovery-drill.sh ACTOR REASON IDEMPOTENCY_KEY`. Sólo es válida con controles
 fail-closed A0; realiza lecturas autenticadas antes/después, prueba noVNC/CDP indisponibles,
 conserva el fingerprint privado y restaura el estado inicial on-demand. No captures ni copies su
-estado temporal. Readiness exige API+PostgreSQL+browser en `HOST_RECOVERY_DRILLS_PROVEN`.
+estado temporal. Readiness exige los aislados y el combinado en `HOST_RECOVERY_DRILLS_PROVEN`.
+
+El outage conjunto usa `deploy/bin/combined-recovery-drill.sh ACTOR REASON IDEMPOTENCY_KEY` y
+requiere backup previo. Detiene API+PostgreSQL+browser bajo locks, conserva SQLite, recupera los
+tres y compara paridad/fingerprints. `HOST_RECOVERY_DRILLS_PROVEN` exige cuatro escenarios:
+API, PostgreSQL, browser y combinado. Replay/conflict debe resolverse antes de pedir locks de
+servicio; si un replay retorna 75, hay drift del wrapper y no debe improvisarse otro outage.
 
 Para probar snapshot inválido usa `mova drill snapshot --actor ... --reason ...
 --idempotency-key ...`. Es hermético y debe declarar diez checks, `fixture_only=true` y
