@@ -85,9 +85,21 @@ def _database_snapshot(db: OpsDB) -> dict:
         envelope = con.execute(
             "SELECT * FROM decision_envelopes ORDER BY created_at DESC LIMIT 1"
         ).fetchone()
+        # The operator summary follows the active decision envelope binding. A
+        # newer failed repair row remains auditable, but must not replace the
+        # canonical deliberation shown to operators and downstream agents.
         deliberation = con.execute(
-            "SELECT * FROM decision_deliberations ORDER BY queued_at DESC LIMIT 1"
+            """SELECT d.*,b.binding_type,b.envelope_id AS bound_envelope_id
+            FROM decision_envelopes e
+            JOIN decision_deliberation_bindings b ON b.envelope_id=e.envelope_id
+            JOIN decision_deliberations d ON d.deliberation_id=b.deliberation_id
+            WHERE e.status IN ('blocked','staged')
+            ORDER BY e.created_at DESC LIMIT 1"""
         ).fetchone()
+        if not deliberation:
+            deliberation = con.execute(
+                "SELECT * FROM decision_deliberations ORDER BY queued_at DESC LIMIT 1"
+            ).fetchone()
         projection = con.execute(
             "SELECT * FROM projection_runs ORDER BY created_at DESC LIMIT 1"
         ).fetchone()
@@ -453,7 +465,7 @@ def build_status(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
             "deliberation_id", "cycle_id", "envelope_id", "manifest_id", "provider",
             "status", "preferred_candidate_key", "critic_verdict", "request_sha256",
             "result_sha256", "intervention_sha256", "queued_at", "imported_at",
-            "error_code"
+            "error_code", "binding_type", "bound_envelope_id"
         )} if state["deliberation"] else None),
         "projection": ({key: state["projection"].get(key) for key in (
             "projection_id", "cycle_id", "input_manifest_sha256", "artifact_sha256",
