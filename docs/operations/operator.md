@@ -28,6 +28,7 @@ mova alerts acknowledge --incident-id incident_... --actor julian --reason "tria
 mova alerts retry --outbox-id outbox_... --actor julian --reason "sink restaurado"
 mova drill resilience --actor codex --reason "rehearsal P0" --idempotency-key "..."
 mova drill snapshot --actor codex --reason "snapshot boundary" --idempotency-key "..."
+mova drill browser-failure --actor codex --reason "DOM/save boundary" --idempotency-key "..."
 mova drill import-host --file /var/lib/mova-fpl/artifacts/host-drills/inbox/api.json \
   --scenario api_recovery --actor codex --reason "api recovery" --idempotency-key "..."
 mova maintenance cleanup
@@ -80,6 +81,13 @@ invocación y su hash sí quedan como job auditado en el ledger operativo.
 schema, tamaño, DB corrupta, nombres duplicados, traversal y symlinks. No conecta PostgreSQL ni
 abre artifacts vivos. Publica diez checks, `fixture_only=true` y `runtime_mutated=false`; el gate
 `SNAPSHOT_REJECTION_PROVEN` sólo pasa con el job completo.
+
+`drill browser-failure` levanta dos control planes desechables con adapter `fixture`; no abre
+Chrome, CDP ni FPL. Prueba el contrato DOM válido, versiones/orden/controles accesibles alterados,
+el bloqueo de un pre-state nuevo antes de `applying`, el estado `ambiguous` ante mismatch
+post-reload, la apertura P0 y la prohibición de reclamar el intento otra vez. Publica once checks,
+`fixture_only=true` y `runtime_mutated=false`. `BROWSER_FAILURE_DRILL_PROVEN` exige al menos diez
+checks completos y no sustituye los rehearsals vivos por gameweek.
 
 `drill import-host` no ejecuta Docker. Sólo consume evidencia producida por scripts privilegiados
 del host, exige path dentro de `host-drills/inbox`, escenario allowlisted, checks exactos, revisión

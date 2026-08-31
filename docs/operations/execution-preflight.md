@@ -249,6 +249,12 @@ permanece bloqueada.
 reconstruya exactamente el fingerprint de la decisión. Un mismatch queda `ambiguous`, abre un P0
 y prohíbe retry automático. Transfers, hits y chips no tendrán un rollback automático ficticio.
 
+`begin` vuelve a comparar el fingerprint del pre-state recién observado con el fingerprint
+autorizado. `OBSERVED_PRE_STATE_CHANGED` termina el intento como `blocked` antes de `applying`;
+no basta con que el snapshot persistido previo siga coincidiendo. El comportamiento de deriva DOM
+y save ambiguo se ensaya sin browser con `mova drill browser-failure --actor ... --reason ...
+--idempotency-key ...`.
+
 ## Recuperación
 
 - `TEAM_STATE_FRESH` o `TEAM_STATE_FINGERPRINT_MATCH`: refrescar estado privado, regenerar

@@ -114,6 +114,12 @@ Para probar snapshot inválido usa `mova drill snapshot --actor ... --reason ...
 `runtime_mutated=false`; no improvises corrupción sobre `postgres-imports/`. Readiness sólo pasa
 `SNAPSHOT_REJECTION_PROVEN` con un job completado y no acepta una nota Markdown como sustituto.
 
+Para ensayar deriva DOM y save ambiguo usa `mova drill browser-failure --actor ... --reason ...
+--idempotency-key ...`. Debe declarar al menos diez checks completos, `fixture_only=true` y
+`runtime_mutated=false`; no abre el browser ni autoriza clicks. Confirma después
+`BROWSER_FAILURE_DRILL_PROVEN=pass`, `doctor`, `safety` y los controles A0 intactos. Esta evidencia
+no aumenta los contadores de rehearsals vivos.
+
 ## Fuentes de verdad
 
 - Git: código, contratos, configuración de ejemplo, skills y runbooks.

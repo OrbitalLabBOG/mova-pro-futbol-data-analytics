@@ -2,7 +2,7 @@
 type: workpack
 name: "WP-006 — Executor browser y verificación"
 created: 2026-08-21
-updated: 2026-08-30
+updated: 2026-08-31
 tags: [mova, fpl, workpack, agent-browser, verification]
 status: in_progress
 ---
@@ -45,5 +45,7 @@ WP-001..003, WP-005, compliance gate aprobado y autorización externa explícita
 - el probe DOM sanitizado cruza GET privado, orden posicional y 15 controles visibles;
 - el planner puro genera swaps mínimos sin guardar refs accessibility;
 - el commit se limita a un click y permanece deshabilitado si existe cualquier blocker;
-- captain/vice todavía están fail-closed: falta observar y fijar su control semántico vivo;
-- R3 y los tres rehearsals supervisados siguen pendientes; no se promovieron controles.
+- captain/vice tienen control semántico vivo y un primer rehearsal; autonomía no promovida;
+- XI/banca y R3 tienen contrato y un primer probe, pero entrypoints y promoción siguen cerrados;
+- el drill hermético DOM/save prueba deriva, pre-state nuevo, `ambiguous`, P0 y no-retry;
+- los tres rehearsals supervisados por capacidad siguen pendientes; no se promovieron controles.

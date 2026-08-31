@@ -2,7 +2,7 @@
 type: project
 name: "MOVA FPL Autonomous Operator 2026/27 — Specification Index"
 created: 2026-08-21
-updated: 2026-08-30
+updated: 2026-08-31
 tags: [mova, fpl, autonomy, observability, specification]
 status: active-shadow
 ---
@@ -22,7 +22,7 @@ PM de construcción del proyecto.
 
 | Campo | Valor |
 | --- | --- |
-| Versión | 0.18 |
+| Versión | 0.19 |
 | Estado | `active-shadow` |
 | Riesgo | alto: cuenta externa, deadlines irreversibles y sesión autenticada |
 | Business owner | Julián Zuluaga |
@@ -73,6 +73,7 @@ PM de construcción del proyecto.
 | [38-hv1-09c-api-recovery-drill.md](38-hv1-09c-api-recovery-drill.md) | Caída real del API, recuperación automática e import de evidencia allowlisted |
 | [39-hv1-09d-postgres-recovery-drill.md](39-hv1-09d-postgres-recovery-drill.md) | Caída real del PostgreSQL shadow, continuidad SQLite y recuperación con paridad |
 | [40-hv1-09e-snapshot-rejection-drill.md](40-hv1-09e-snapshot-rejection-drill.md) | Rechazo hermético de snapshots alterados, corruptos, traversal y symlinks |
+| [41-hv1-09f-browser-failure-drill.md](41-hv1-09f-browser-failure-drill.md) | Deriva DOM, pre-state cambiado y save ambiguo con apply-once fail-closed |
 | [contracts/](contracts/) | JSON Schemas máquina para request, result y signal |
 | [decisions/](decisions/) | decisiones arquitectónicas propuestas |
 | [workpacks/](workpacks/) | unidades de implementación y criterios todavía pendientes |

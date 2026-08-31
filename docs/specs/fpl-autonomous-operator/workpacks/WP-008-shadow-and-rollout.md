@@ -51,7 +51,9 @@ PostgreSQL en 7 s con locks de writers,
 continuidad SQLite/API, fingerprint del team state, paridad 54/54 y replay sin segunda caída. El
 gate máquina conjunto `HOST_RECOVERY_DRILLS_PROVEN` pasa API+DB. HV1-09E implementa el rechazo
 hermético y verificó en el VPS diez de diez checks para snapshots alterados, corruptos, tamaños,
-nombres duplicados, traversal y symlinks; `SNAPSHOT_REJECTION_PROVEN` pasa. Continúan pendientes
-browser/DOM/save ambiguo, escenarios combinados, un reboot real, los ciclos
+nombres duplicados, traversal y symlinks; `SNAPSHOT_REJECTION_PROVEN` pasa. HV1-09F verificó once
+de once checks de deriva DOM, pre-state cambiado, save ambiguo, P0 y no-retry;
+`BROWSER_FAILURE_DRILL_PROVEN` pasa. Continúan pendientes la caída real del servicio browser,
+escenarios combinados, un reboot real, los ciclos
 independientes y las aprobaciones; por ello el workpack permanece `active-shadow` y no recomienda
 promoción.
