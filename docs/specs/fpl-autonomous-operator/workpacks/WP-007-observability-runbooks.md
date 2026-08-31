@@ -57,8 +57,14 @@ resultado reúne deadline, gates, frescura, incidentes y outbox en una sola lect
 tests de entrega/fallo, el outbox recupera leases, reintenta y permite acuse auditado. `mova
 maintenance cleanup` opera por defecto en dry-run y su allowlist sólo considera `.tmp`,
 `.partial` y `.tmp-*`; symlinks y evidencia canónica quedan fuera. El workpack conserva
-`active-shadow`: falta elegir y ensayar un canal externo de notificación si journald no basta para
-la operación desatendida, y comprobar el flujo durante ciclos vivos.
+HV1-12 implementó el adaptador externo sin elegir proveedor: secreto Docker opt-in, HTTPS
+credential-free, destino público, payload allowlisted, timeout, error hacia el outbox y estado
+sanitizado por CLI/API/Prometheus. `mova drill alert-channel` prueba seis invariantes sin red y
+readiness separa `ALERT_CHANNEL_DRILL_PROVEN` de `EXTERNAL_ALERT_CHANNEL_CONFIGURED`.
+
+`active-shadow`: falta elegir owner/destino autorizado, provisionar el secreto y ensayar una
+entrega viva con acuse. Hasta entonces el estado correcto es `local_only`; journald conserva la
+ruta local y A1+ permanece bloqueado por evidencia pendiente.
 
 HV1-09B endurece el scheduler muerto: `mova watchdog` abre/deduplica P0, intenta la entrega y
 devuelve fallo también cuando el sink falla o existe outbox `dead`. `mova alerts retry` ofrece

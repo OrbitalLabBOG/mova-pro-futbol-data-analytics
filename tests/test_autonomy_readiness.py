@@ -68,6 +68,19 @@ def _orchestration() -> dict:
             "output_sha256": "d" * 64}
 
 
+def _alert_channel() -> dict:
+    return {"schema": "mova-alert-channel-v1", "status": "configured",
+            "configured": True, "external_delivery": True,
+            "owner": "operator", "channel": "personal",
+            "destination_fingerprint": "abcdef123456"}
+
+
+def _alert_channel_drill() -> dict:
+    return {"job_id": "job_alert", "status": "completed", "checks": 6,
+            "passed": 6, "finished_at": "2026-08-31T04:00:00+00:00",
+            "output_sha256": "e" * 64}
+
+
 def _host_recovery() -> dict:
     return {
         "status": "completed", "completed": 4, "required": 4,
@@ -101,6 +114,8 @@ def test_readiness_separates_technical_eligibility_from_authority() -> None:
         operator_status=_operator(), research_coverage=_research(),
         execution_status=_execution(), resilience_evidence=_resilience(),
         orchestration_evidence=_orchestration(),
+        alert_channel=_alert_channel(),
+        alert_channel_evidence=_alert_channel_drill(),
         host_recovery_evidence=_host_recovery(),
         snapshot_rejection_evidence=_snapshot_rejection(),
         browser_failure_evidence=_browser_failure(),
@@ -113,7 +128,7 @@ def test_readiness_separates_technical_eligibility_from_authority() -> None:
     assert report["activation"]["current_action_level"] == "A0"
     assert report["activation"]["promotion_is_automatic"] is False
     assert "EXPLICIT_PROMOTION_REQUIRED" in report["activation"]["activation_blockers"]
-    assert report["summary"] == {"pass": 20, "pending": 0, "blocked": 0, "total": 20}
+    assert report["summary"] == {"pass": 22, "pending": 0, "blocked": 0, "total": 22}
 
 
 def test_readiness_fails_closed_and_reports_specific_evidence_gaps() -> None:
@@ -136,6 +151,9 @@ def test_readiness_fails_closed_and_reports_specific_evidence_gaps() -> None:
         operator_status=operator, research_coverage=research,
         execution_status=execution, resilience_evidence={"status": "missing"},
         orchestration_evidence={"status": "missing"},
+        alert_channel={"status": "local_only", "configured": False,
+                       "external_delivery": False},
+        alert_channel_evidence={"status": "missing"},
         host_recovery_evidence={"status": "incomplete", "completed": 0, "required": 4},
         snapshot_rejection_evidence={"status": "missing"},
         browser_failure_evidence={"status": "missing"},
@@ -151,6 +169,8 @@ def test_readiness_fails_closed_and_reports_specific_evidence_gaps() -> None:
     assert by_code["POSTGRES_ROLE_SEPARATION"]["status"] == "pass"
     assert by_code["RESILIENCE_DRILL_PROVEN"]["status"] == "pending"
     assert by_code["ORCHESTRATION_DRILL_PROVEN"]["status"] == "pending"
+    assert by_code["ALERT_CHANNEL_DRILL_PROVEN"]["status"] == "pending"
+    assert by_code["EXTERNAL_ALERT_CHANNEL_CONFIGURED"]["status"] == "pending"
     assert by_code["HOST_RECOVERY_DRILLS_PROVEN"]["status"] == "pending"
     assert by_code["SNAPSHOT_REJECTION_PROVEN"]["status"] == "pending"
     assert by_code["BROWSER_FAILURE_DRILL_PROVEN"]["status"] == "pending"
@@ -164,10 +184,12 @@ def test_readiness_cli_can_be_used_as_a_level_gate_and_metrics_are_bounded() -> 
         operator_status=_operator(), research_coverage=_research(),
         execution_status=_execution(), resilience_evidence=_resilience(),
         orchestration_evidence=_orchestration(),
+        alert_channel=_alert_channel(),
+        alert_channel_evidence=_alert_channel_drill(),
         host_recovery_evidence=_host_recovery(),
         snapshot_rejection_evidence=_snapshot_rejection(),
         browser_failure_evidence=_browser_failure(),
     )
     metrics = prometheus(report)
     assert 'mova_autonomy_technical_eligible_level{level="A3"} 1' in metrics
-    assert 'mova_autonomy_readiness_gates{status="pass"} 20' in metrics
+    assert 'mova_autonomy_readiness_gates{status="pass"} 22' in metrics

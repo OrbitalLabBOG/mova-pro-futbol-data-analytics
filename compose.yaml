@@ -25,6 +25,7 @@ x-engine: &engine
     MOVA_POSTGRES_READONLY_USER: ${MOVA_POSTGRES_READONLY_USER:-mova_readonly_runtime}
     MOVA_POSTGRES_READONLY_CREDENTIAL_FILE: /run/secrets/postgres_readonly_password
     MOVA_ODDS_API_CREDENTIAL_FILE: /run/secrets/odds_api_key
+    MOVA_ALERT_WEBHOOK_CONFIG_FILE: /run/secrets/alert_webhook_config
     MOVA_COLLECTOR_BROWSER_PATH: /usr/bin/chromium
   security_opt:
     - no-new-privileges:true
@@ -122,6 +123,7 @@ services:
       - postgres_app_password
       - postgres_readonly_password
       - odds_api_key
+      - alert_webhook_config
     volumes:
       - ${MOVA_DATA_ROOT:-/var/lib/mova-fpl}:/var/lib/mova-fpl
       - ${MOVA_BACKUP_ROOT:-/opt/orbital/backups/mova-fpl}:/opt/orbital/backups/mova-fpl
@@ -215,3 +217,5 @@ secrets:
     file: ${MOVA_POSTGRES_READONLY_PASSWORD_FILE:-/etc/mova-fpl/postgres-readonly-password}
   odds_api_key:
     file: ${MOVA_ODDS_API_KEY_FILE:-/etc/mova-fpl/odds-api-key}
+  alert_webhook_config:
+    file: ${MOVA_ALERT_WEBHOOK_CONFIG_FILE:-/etc/mova-fpl/alert-webhook.json}

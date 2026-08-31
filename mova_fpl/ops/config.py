@@ -72,6 +72,8 @@ class RuntimeConfig:
     odds_api_markets: str = "h2h,totals"
     odds_api_reserve_credits: int = 150
     odds_api_hard_reserve_credits: int = 75
+    alert_webhook_config_file: Path = Path("/run/secrets/alert_webhook_config")
+    alert_webhook_timeout_seconds: int = 5
     postgres_host: str = "postgres"
     postgres_port: int = 5432
     postgres_db: str = "mova"
@@ -203,6 +205,13 @@ class RuntimeConfig:
             odds_api_hard_reserve_credits=int(os.environ.get(
                 "MOVA_ODDS_API_HARD_RESERVE_CREDITS", "75"
             )),
+            alert_webhook_config_file=Path(os.environ.get(
+                "MOVA_ALERT_WEBHOOK_CONFIG_FILE",
+                "/run/secrets/alert_webhook_config",
+            )),
+            alert_webhook_timeout_seconds=int(os.environ.get(
+                "MOVA_ALERT_WEBHOOK_TIMEOUT_SECONDS", "5"
+            )),
             postgres_host=os.environ.get("MOVA_POSTGRES_HOST", "postgres"),
             postgres_port=int(os.environ.get("MOVA_POSTGRES_PORT", "5432")),
             postgres_db=os.environ.get("MOVA_POSTGRES_DB", "mova"),
@@ -298,6 +307,10 @@ class RuntimeConfig:
             raise ValueError("consulta The Odds API excede el guardrail de 4 créditos")
         if not 0 < self.odds_api_hard_reserve_credits < self.odds_api_reserve_credits:
             raise ValueError("reservas de cuota The Odds API inválidas")
+        if not self.alert_webhook_config_file.is_absolute():
+            raise ValueError("MOVA_ALERT_WEBHOOK_CONFIG_FILE debe ser absoluto")
+        if not 1 <= self.alert_webhook_timeout_seconds <= 15:
+            raise ValueError("MOVA_ALERT_WEBHOOK_TIMEOUT_SECONDS debe estar entre 1 y 15")
 
     def validate_postgres(self) -> None:
         """Valida solo la configuración del store shadow, sin abrir red."""

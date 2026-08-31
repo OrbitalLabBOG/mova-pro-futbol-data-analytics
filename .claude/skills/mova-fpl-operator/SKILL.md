@@ -95,8 +95,10 @@ FPL; usa `--no-network` cuando la ejecución deba ser hermética. Un `FAIL` requ
 código 1 y bloquea decisiones o despliegues dependientes. Un `WARN` se declara y se evalúa por
 contexto; nunca se presenta como `PASS`.
 
-Las alertas se consultan con `mova alerts status`. El watchdog entrega automáticamente las
-pendientes al journal usando leases y retry; una entrega `sent` no equivale a acuse humano. Para
+Las alertas se consultan con `mova alerts status`; `mova alerts channel` muestra si el destino
+externo está `configured`, `local_only` o `invalid` sin revelar URL ni token. El watchdog entrega
+automáticamente las pendientes usando leases y retry: conserva journald y, sólo si el secreto
+opt-in es válido, exige también un webhook HTTPS. Una entrega `sent` no equivale a acuse humano. Para
 reconocer un incidente usa `mova alerts acknowledge --incident-id ... --actor ... --reason ...`.
 No marques como resuelto lo que sólo fue reconocido. Para revisar basura transitoria usa `mova
 maintenance cleanup`; el modo normal es dry-run. `--apply` exige actor, razón e idempotency key y
@@ -109,6 +111,12 @@ retry --outbox-id ... --actor ... --reason ...`; nunca reintentes un evento `sen
 resilience` con actor, razón e idempotency key. El resultado válido declara
 `runtime_mutated=false` y todos sus checks en true. `mova readiness` debe reflejarlo como
 `RESILIENCE_DRILL_PROVEN=pass`; un acta Markdown no sustituye ese job.
+
+Antes de A1 ejecuta `mova drill alert-channel --actor ... --reason ... --idempotency-key ...`.
+Debe declarar seis checks, `external_calls=0` y `runtime_mutated=false`. Ese pass cubre el
+adaptador, no un destino real: `EXTERNAL_ALERT_CHANNEL_CONFIGURED` sólo pasa cuando un owner y un
+webhook autorizado están provisionados en `/etc/mova-fpl/alert-webhook.json` y ensayados en vivo.
+No copies esa URL a logs, Git, actas o argumentos de proceso.
 
 El chaos drill real del API se ejecuta exclusivamente desde el host con
 `deploy/bin/api-recovery-drill.sh ACTOR REASON IDEMPOTENCY_KEY`; no improvises `docker stop` sin

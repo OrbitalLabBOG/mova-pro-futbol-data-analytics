@@ -7,7 +7,8 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from mova_fpl.ops.alerts import dispatch, journal_sink
+from mova_fpl.ops.alerts import configured_sink, dispatch, journal_sink
+from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB
 
 INCIDENT_TITLE = "Scheduler heartbeat unhealthy"
@@ -37,7 +38,8 @@ def assess(db: OpsDB, *, max_age_seconds: int = 1200,
 
 def run(db: OpsDB, *, max_age_seconds: int = 1200,
         now: datetime | None = None,
-        sink: Callable[[dict], None] = journal_sink) -> dict:
+        sink: Callable[[dict], None] | None = None,
+        config: RuntimeConfig | None = None) -> dict:
     state = assess(db, max_age_seconds=max_age_seconds, now=now)
     if state["healthy"]:
         resolved = db.resolve_incidents(
@@ -52,7 +54,7 @@ def run(db: OpsDB, *, max_age_seconds: int = 1200,
             )},
         )
         resolved = 0
-    alerts = dispatch(db, sink=sink)
+    alerts = dispatch(db, sink=sink or configured_sink(config or RuntimeConfig()))
     outbox = db.outbox_status()
     dead = sum((outbox["counts"].get("dead") or {}).values())
     operational_status = (

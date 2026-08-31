@@ -243,6 +243,7 @@ def test_cli_exposes_human_and_json_operator_modes():
     assert doctor.no_network is True
     assert parser().parse_args(["safety"]).command == "safety"
     assert parser().parse_args(["alerts", "dispatch"]).limit == 20
+    assert parser().parse_args(["alerts", "channel"]).alerts_command == "channel"
     retry = parser().parse_args([
         "alerts", "retry", "--outbox-id", "outbox_test",
         "--actor", "operator", "--reason", "sink restored",

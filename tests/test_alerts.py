@@ -4,7 +4,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from mova_fpl.ops.alerts import dispatch
+import json
+
+from mova_fpl.ops.alerts import (
+    WebhookSettings, channel_drill, channel_prometheus, channel_status, dispatch,
+    webhook_sink,
+)
+from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB
 
 
@@ -83,3 +89,46 @@ def test_dead_event_requires_audited_retry_or_ack(tmp_path):
     db.finish_outbox(event["outbox_id"], delivered=False, max_attempts=1)
     db.acknowledge_incident(incident, actor="operator", reason="triaged elsewhere")
     assert db.outbox_status()["latest"][0]["status"] == "acknowledged"
+
+
+def test_alert_channel_is_local_only_without_secret(tmp_path):
+    status = channel_status(RuntimeConfig(alert_webhook_config_file=tmp_path / "missing"))
+    assert status == {"schema": "mova-alert-channel-v1", "status": "local_only",
+                      "configured": False, "external_delivery": False,
+                      "owner": None, "channel": "journald"}
+    assert "mova_alert_channel_configured 0" in channel_prometheus(status)
+
+
+def test_alert_channel_status_never_exposes_webhook_url(tmp_path):
+    secret = tmp_path / "webhook.json"
+    secret.write_text(json.dumps({
+        "version": 1, "enabled": True,
+        "url": "https://alerts.example.test/private/token",
+        "owner": "operator", "channel": "personal",
+    }))
+    status = channel_status(RuntimeConfig(alert_webhook_config_file=secret))
+    assert status["status"] == "configured"
+    assert status["owner"] == "operator"
+    assert "url" not in status and "token" not in json.dumps(status)
+
+
+def test_webhook_sink_uses_minimal_payload():
+    bodies = []
+    sink = webhook_sink(
+        WebhookSettings("https://alerts.example.test/private", "owner", "channel"),
+        transport=lambda _settings, body: bodies.append(json.loads(body)) or 204,
+    )
+    sink({"outbox_id": "o", "event_key": "incident:i", "event_type": "opened",
+          "severity": "P0", "created_at": "now", "attempts": 1,
+          "payload_json": json.dumps({"incident_id": "i", "title": "down",
+                                      "secret": "never"})})
+    assert bodies[0]["incident_id"] == "i"
+    assert "secret" not in bodies[0]
+
+
+def test_alert_channel_drill_is_hermetic_and_complete():
+    result = channel_drill()
+    assert result["status"] == "pass"
+    assert result["external_calls"] == 0
+    assert result["runtime_mutated"] is False
+    assert all(result["checks"].values())

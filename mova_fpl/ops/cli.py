@@ -271,6 +271,7 @@ def parser() -> argparse.ArgumentParser:
     alerts = commands.add_parser("alerts", help="entrega y reconocimiento de alertas")
     alert_commands = alerts.add_subparsers(dest="alerts_command", required=True)
     alert_commands.add_parser("status", help="estado sanitizado del outbox")
+    alert_commands.add_parser("channel", help="estado sanitizado del canal externo")
     alert_dispatch = alert_commands.add_parser("dispatch", help="entrega alertas vencidas")
     alert_dispatch.add_argument("--limit", type=int, default=20)
     alert_ack = alert_commands.add_parser("acknowledge", help="reconoce un incidente")
@@ -323,6 +324,13 @@ def parser() -> argparse.ArgumentParser:
     orchestration.add_argument("--actor", required=True)
     orchestration.add_argument("--reason", required=True)
     orchestration.add_argument("--idempotency-key", required=True)
+    alert_channel = drill_commands.add_parser(
+        "alert-channel",
+        help="payload, redacción y fallo del webhook sin IO externo",
+    )
+    alert_channel.add_argument("--actor", required=True)
+    alert_channel.add_argument("--reason", required=True)
+    alert_channel.add_argument("--idempotency-key", required=True)
     snapshot_drill = drill_commands.add_parser(
         "snapshot", help="rechazo hermético de snapshots alterados o inseguros"
     )
@@ -763,9 +771,12 @@ def main(argv: list[str] | None = None) -> int:
         db.migrate()
         if args.alerts_command == "status":
             payload = db.outbox_status()
+        elif args.alerts_command == "channel":
+            from mova_fpl.ops.alerts import channel_status
+            payload = channel_status(config)
         elif args.alerts_command == "dispatch":
-            from mova_fpl.ops.alerts import dispatch
-            payload = dispatch(db, limit=args.limit)
+            from mova_fpl.ops.alerts import configured_sink, dispatch
+            payload = dispatch(db, limit=args.limit, sink=configured_sink(config))
         elif args.alerts_command == "acknowledge":
             payload = db.acknowledge_incident(
                 args.incident_id, actor=args.actor, reason=args.reason,
@@ -852,7 +863,7 @@ def main(argv: list[str] | None = None) -> int:
         from mova_fpl.ops.watchdog import run
 
         try:
-            payload = run(db, max_age_seconds=args.max_age_seconds)
+            payload = run(db, max_age_seconds=args.max_age_seconds, config=config)
         except Exception as exc:  # DB rota puede impedir persistir; journald conserva el fallo
             payload = {"schema": "mova-watchdog-v2", "status": "down",
                        "reason": "control_plane_unavailable",
@@ -902,12 +913,14 @@ def main(argv: list[str] | None = None) -> int:
         correlation_id = new_id("corr")
         is_resilience = args.drill_command == "resilience"
         is_orchestration = args.drill_command == "orchestration"
+        is_alert_channel = args.drill_command == "alert-channel"
         is_snapshot = args.drill_command == "snapshot"
         is_browser_failure = args.drill_command == "browser-failure"
         is_host = args.drill_command == "import-host"
         job_type = (
             "resilience_drill" if is_resilience else
             "orchestration_drill" if is_orchestration else
+            "alert_channel_drill" if is_alert_channel else
             "snapshot_rejection_drill" if is_snapshot else
             "browser_failure_drill" if is_browser_failure else
             "host_recovery_drill"
@@ -915,6 +928,7 @@ def main(argv: list[str] | None = None) -> int:
         schema = (
             "mova-resilience-drill-v1" if is_resilience else
             "mova-orchestration-drill-v1" if is_orchestration else
+            "mova-alert-channel-drill-v1" if is_alert_channel else
             "mova-snapshot-rejection-drill-v1" if is_snapshot else
             "mova-browser-failure-drill-v1" if is_browser_failure else
             "mova-host-drill-v1"
@@ -922,6 +936,7 @@ def main(argv: list[str] | None = None) -> int:
         scenario = (
             "scheduler_p0_recovery" if is_resilience else
             "agent_orchestration_deadline" if is_orchestration else
+            "alert_channel_contract" if is_alert_channel else
             "snapshot_rejection" if is_snapshot else
             "dom_drift_ambiguous_save" if is_browser_failure else args.scenario
         )
@@ -963,6 +978,9 @@ def main(argv: list[str] | None = None) -> int:
                 elif is_orchestration:
                     from mova_fpl.ops.orchestration import orchestration_drill
                     payload = orchestration_drill()
+                elif is_alert_channel:
+                    from mova_fpl.ops.alerts import channel_drill
+                    payload = channel_drill()
                 elif is_snapshot:
                     from mova_fpl.ops.snapshot_drill import run as snapshot_rejection_drill
                     payload = snapshot_rejection_drill()

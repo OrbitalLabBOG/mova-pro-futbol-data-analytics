@@ -392,6 +392,7 @@ no borra evidencia previa y nunca amplía autonomía.
 | HV1-09 ✅ | gate consolidado de readiness, elegibilidad técnica, API/CLI y métricas | completado | HV1-02/03/05/07 |
 | HV1-10 ✅ | scorecard unificado de calidad, costos, roles, aprendizaje y autoridad | completado | HV1-08/09 |
 | HV1-11 ✅ | grafo agentic read-only + rehearsal de orden/fail-closed/deadline | completado | HV1-06/08/09 |
+| HV1-12 🟡 | adaptador P0/P1 externo + redacción + rehearsal; falta destino/owner y ping vivo | decisión operativa | HV1-01/09 |
 
 No es necesario completar 64–92 horas antes de obtener valor. Cortes de entrega:
 
@@ -715,6 +716,18 @@ policy fail-closed, plan autorizado sin ejecución, verificación, orden causal 
 deadline. El primer rehearsal vivo pasó 12/12, con cero IO externo y sin mutar runtime. Readiness
 añadió `ORCHESTRATION_DRILL_PROVEN` y quedó 14/20 pass, seis pending, cero blocked. Evidencia:
 [HV1-11 auditoría de orquestación](46-hv1-11-orchestration-audit.md).
+
+### Corte de canal externo de alertas — 31 de agosto de 2026
+
+El outbox puede entregar a journald y a un webhook HTTPS opt-in sin exponer su URL. El payload
+tiene allowlist, owner/canal explícitos, timeout y rechazo de destinos no públicos; cualquier
+fallo vuelve al retry/dead-letter durable. CLI, API y Prometheus publican sólo estado sanitizado.
+
+`mova drill alert-channel` separa seis pruebas herméticas del adaptador de la activación real.
+Readiness exige tanto `ALERT_CHANNEL_DRILL_PROVEN` como
+`EXTERNAL_ALERT_CHANNEL_CONFIGURED`; el segundo permanecerá pending hasta escoger un destino,
+owner y completar un ping vivo con acuse. Evidencia:
+[HV1-12 canal externo](47-hv1-12-external-alert-channel.md).
 
 ## 11. Definition of Done del harness v1
 

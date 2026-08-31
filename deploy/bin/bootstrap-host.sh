@@ -51,5 +51,12 @@ if [[ -e /etc/mova-fpl/odds-api-key ]]; then
 else
   echo "warning: /etc/mova-fpl/odds-api-key is absent; market_odds will remain degraded"
 fi
+if [[ ! -e /etc/mova-fpl/alert-webhook.json ]]; then
+  install -m 0640 -o root -g 10001 \
+    deploy/alert-webhook.disabled.json /etc/mova-fpl/alert-webhook.json
+  echo "created disabled /etc/mova-fpl/alert-webhook.json"
+fi
+chown root:10001 /etc/mova-fpl/alert-webhook.json
+chmod 0640 /etc/mova-fpl/alert-webhook.json
 
 echo "host directories ready; existing runtime.env/deploy.env were preserved"

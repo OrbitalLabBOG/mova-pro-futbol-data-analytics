@@ -37,6 +37,8 @@ def _gate(code: str, status: str, summary: str, *, levels: tuple[str, ...],
 def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
                        execution_status: dict, resilience_evidence: dict | None = None,
                        orchestration_evidence: dict | None = None,
+                       alert_channel: dict | None = None,
+                       alert_channel_evidence: dict | None = None,
                        host_recovery_evidence: dict | None = None,
                        snapshot_rejection_evidence: dict | None = None,
                        browser_failure_evidence: dict | None = None,
@@ -83,6 +85,17 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
         and int(orchestration.get("checks") or 0) >= 12
         and int(orchestration.get("passed") or 0)
         == int(orchestration.get("checks") or 0)
+    )
+    alert_channel_state = alert_channel or {
+        "status": "local_only", "configured": False, "external_delivery": False,
+    }
+    alert_drill = alert_channel_evidence or {
+        "status": "missing", "checks": 0, "passed": 0,
+    }
+    alert_drill_passed = (
+        alert_drill.get("status") == "completed"
+        and int(alert_drill.get("checks") or 0) >= 6
+        and int(alert_drill.get("passed") or 0) == int(alert_drill.get("checks") or 0)
     )
     host_recovery = host_recovery_evidence or {
         "status": "incomplete", "completed": 0, "required": 4, "scenarios": {},
@@ -223,6 +236,30 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
             required={"status": "completed", "checks": ">=12", "all_passed": True},
             source="job_runs.orchestration_drill",
             next_action="ejecutar mova drill orchestration con una clave idempotente nueva",
+        ),
+        _gate(
+            "ALERT_CHANNEL_DRILL_PROVEN",
+            "pass" if alert_drill_passed else
+            "blocked" if alert_drill.get("status") == "failed" else "pending",
+            "contrato, redacción y fallo del canal externo ensayados sin red",
+            levels=("A1", "A2", "A3"),
+            observed={key: alert_drill.get(key) for key in (
+                "job_id", "status", "checks", "passed", "finished_at", "output_sha256"
+            )},
+            required={"status": "completed", "checks": ">=6", "all_passed": True},
+            source="job_runs.alert_channel_drill",
+            next_action="ejecutar mova drill alert-channel con una clave idempotente nueva",
+        ),
+        _gate(
+            "EXTERNAL_ALERT_CHANNEL_CONFIGURED",
+            "pass" if alert_channel_state.get("configured") is True
+            and alert_channel_state.get("external_delivery") is True else
+            "blocked" if alert_channel_state.get("status") == "invalid" else "pending",
+            "P0/P1 tienen destino externo y owner explícitos",
+            levels=("A1", "A2", "A3"), observed=alert_channel_state,
+            required={"configured": True, "external_delivery": True},
+            source="mova alerts channel",
+            next_action="elegir destino/owner y provisionar alert-webhook.json; luego hacer live ping",
         ),
         _gate(
             "HOST_RECOVERY_DRILLS_PROVEN",
@@ -396,12 +433,16 @@ def build_readiness(config: RuntimeConfig, db: OpsDB, *,
                     now: datetime | None = None) -> dict:
     current = now or datetime.now(timezone.utc)
     status = build_status(config, db, now=current)
+    from mova_fpl.ops.alerts import channel_status
+
     return evaluate_readiness(
         operator_status=status,
         research_coverage=db.research_coverage(),
         execution_status=ExecutionService(config, db).status(),
         resilience_evidence=db.resilience_drill_status(),
         orchestration_evidence=db.orchestration_drill_status(),
+        alert_channel=channel_status(config),
+        alert_channel_evidence=db.alert_channel_drill_status(),
         host_recovery_evidence=db.host_recovery_drill_status(),
         snapshot_rejection_evidence=db.snapshot_rejection_drill_status(),
         browser_failure_evidence=db.browser_failure_drill_status(),

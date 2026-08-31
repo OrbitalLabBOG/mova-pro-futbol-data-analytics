@@ -57,6 +57,9 @@ mova drill browser-failure --actor codex --reason dom-save-boundary \
   --idempotency-key browser-failure-v1
 mova drill orchestration --actor codex --reason agent-graph \
   --idempotency-key orchestration-v1
+mova alerts channel
+mova drill alert-channel --actor codex --reason alert-contract \
+  --idempotency-key alert-channel-v1
 
 # chaos host-only, manual y reversible (no se agenda)
 sudo deploy/bin/api-recovery-drill.sh codex "api recovery" hv1-api-v1
@@ -115,6 +118,10 @@ CycleManifest + memoria estratégica durable → modelos causales → matriz xP 
 - `mova harness workflow` reconstruye el grafo vigente desde el ledger y separa una terminación
   segura por policy de una falla real de dependencias. El drill hermético comprueba orden,
   fail-closed, deadline e idempotencia sin llamar agentes ni tocar FPL.
+- `mova alerts channel` expone sólo estado, owner y fingerprint del destino. El webhook externo
+  permanece opt-in mediante un secreto Docker; sin configuración, journald sigue funcionando y
+  readiness declara pendiente el canal externo. El drill prueba payload mínimo, redacción y
+  propagación de fallos sin DNS ni llamadas externas.
 - El tick no interpreta Markdown: persiste un `DecisionEnvelope` JSON ligado al manifest real.
 - Una propuesta sin GW previa asentada, proyección aprobada, team state fresco o ventana válida
   queda `blocked`; solo una que supera todos los hard gates queda `staged`.
