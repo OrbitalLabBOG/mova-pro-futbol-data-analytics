@@ -1,5 +1,6 @@
 import hashlib
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -11,6 +12,7 @@ from mova_fpl.ops.deliberation import (
     normalize_result,
     semantic_deliberation_input,
 )
+from mova_fpl.ops.operator import build_status
 
 
 def _request(*, blockers=()):
@@ -342,6 +344,18 @@ def test_semantic_binding_avoids_second_budget_reservation(tmp_path: Path):
     status = db.deliberation_status(cycle_id)
     assert status["latest"]["deliberation_id"] == "deliberation_" + "1" * 32
     assert status["latest"]["bound_envelope_id"] == envelope_ids[1]
+    operator_status = build_status(
+        RuntimeConfig(
+            ops_db=tmp_path / "ops.db", canonical_db=tmp_path / "canonical.db",
+            trace_db=tmp_path / "trace.db", artifact_root=tmp_path / "artifacts",
+        ),
+        db,
+        now=datetime(2026, 9, 4, 16, 1, tzinfo=timezone.utc),
+    )
+    assert operator_status["deliberation"]["deliberation_id"] == (
+        "deliberation_" + "1" * 32
+    )
+    assert operator_status["deliberation"]["bound_envelope_id"] == envelope_ids[1]
 
 
 def test_deliberation_persistence_records_risks_intervention_and_cost(tmp_path: Path):
