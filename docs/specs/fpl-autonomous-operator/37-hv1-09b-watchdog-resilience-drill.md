@@ -4,7 +4,7 @@ name: "HV1-09B — Watchdog P0 y resilience drill"
 created: 2026-08-31
 updated: 2026-08-31
 tags: [mova, fpl, watchdog, resilience, alerts, idempotency]
-status: implemented-pending-live-rollout
+status: verified-live
 ---
 
 # HV1-09B — Watchdog P0 y resilience drill
@@ -43,3 +43,26 @@ simula GWs para satisfacer readiness y no reemplaza un reboot/chaos drill vivo.
 
 La suite completa, Docker, el drill vivo, retry idempotente, doctor, PostgreSQL y backup se
 anexarán sólo después de verificarlos en el VPS.
+
+## Rollout vivo
+
+El commit `a01b0a7` se construyó y desplegó en el VPS con tag y label iguales. Evidencia:
+
+- predeploy backup: `/opt/orbital/backups/mova-fpl/20260831T012244Z`;
+- smoke dentro de la imagen: seis checks true y `runtime_mutated=false`;
+- replay con la misma clave: `status=reused`, mismo job
+  `job_258060e4e6d74b50842f3183042337d3`;
+- segundo drill vivo independiente: seis checks true, job
+  `job_78df34f7522d40498d1fd18cb00e930c`;
+- watchdog systemd real: heartbeat `ok`, cero claims/fallos/dead, exit exitoso;
+- DB deliberadamente ausente en contenedor hermético: exit 1 y resultado sanitizado
+  `control_plane_unavailable/OperationalError`, sin traceback en el contrato JSON;
+- doctor: 22 pass, 0 warn, 0 fail; checkout/imagen `a01b0a7`;
+- safety: `safe_to_wait`, cero incidentes y cero delivery pendiente;
+- readiness: 9 pass, 6 pending temporales, 0 blocked; nivel A0;
+- PostgreSQL import `pgimport_6b7e5a9c090642a1a7d6c6dc3f1eb24b`: paridad 54/54,
+  cero fallos;
+- postdeploy backup: `/opt/orbital/backups/mova-fpl/20260831T012733Z`.
+
+No se creó un P0 falso en la DB productiva: el fallo y recuperación ocurrieron dentro de la base
+efímera del drill. Los controles y el browser permanecieron intactos.
