@@ -562,6 +562,15 @@ Prometheus lo hacen operable, pero el rollout sigue en A0 y no promueve ningún 
 El primer probe vivo de GW3 dejó captaincy en `1/3`, fue reproducible e idempotente y mantuvo el
 browser apagado al finalizar. Evidencia: [HV1-07F rehearsal ledger](31-hv1-07f-browser-rehearsal-ledger-rollout.md).
 
+HV1-07G elimina la construcción manual de evidencia para las capacidades todavía cerradas.
+`rehearsal-capability-probe` deriva lineup exclusivamente del probe pick-team allowlisted y R3
+del probe transfers allowlisted con targets explícitos. Ambos validan identidad física, team_id,
+timestamps, controles y hashes antes de escribir el ledger. El primer corte vivo dejó las tres
+capacidades en `1/3` sobre GW3, con squad idéntico entre superficies, replays idempotentes y las
+tres filas copiadas con paridad exacta a PostgreSQL shadow. Esto prueba cobertura de lectura, no
+swaps, commit ni confirmación irreversible: lineup/R3 siguen sin entrypoint y A0 permanece intacto.
+Evidencia: [HV1-07G probes de capacidades](34-hv1-07g-capability-probes-rollout.md).
+
 ### Corte de mejora continua fail-closed — 30 de agosto de 2026
 
 SQLite migration `011` y PostgreSQL migration `013` añaden evaluaciones idempotentes y lecciones
