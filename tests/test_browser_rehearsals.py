@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from mova_fpl.ops.browser_driver import DRIVER_CONTRACT_VERSION
+from mova_fpl.ops.browser_driver import DRIVER_CONTRACT_VERSION, R3_DRIVER_CONTRACT_VERSION
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.cli import parser
 from mova_fpl.ops.db import OpsDB, sha256_json
@@ -86,6 +86,53 @@ def _captaincy_probe(service: ExecutionService, *, valid: bool = True) -> Path:
         },
     }
     path = service.config.artifact_root / "browser-probes" / "captaincy.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(probe) + "\n")
+    return path
+
+
+def _lineup_probe(service: ExecutionService, *, valid: bool = True) -> Path:
+    path = _captaincy_probe(service, valid=valid)
+    probe = json.loads(path.read_text())
+    probe["slots"] = [
+        {
+            "position": index + 1, "element": index + 1,
+            "web_name": f"Player {index + 1}", "player_button_index": index,
+            "switch_button_index": index, "label_matches": valid,
+        }
+        for index in range(15)
+    ]
+    path.write_text(json.dumps(probe) + "\n")
+    return path
+
+
+def _r3_probe(service: ExecutionService, *, valid: bool = True) -> Path:
+    checks = {
+        "signed_in": valid, "fifteen_api_picks": True,
+        "squad_remove_controls_present": True, "squad_labels_complete": True,
+        "targets_complete": True, "make_transfers": True, "player_search": True,
+        "wildcard": True, "free_hit": True,
+    }
+    probe = {
+        "schema": "mova-browser-transfer-dom-probe-v1",
+        "contract_version": "fpl-transfers-a11y-2026.08.1",
+        "observed_at": NOW.isoformat(), "team_id": service.config.team_id,
+        "status": "pass" if valid else "fail", "checks": checks,
+        "squad": [
+            {"element": index + 1, "position": index + 1,
+             "web_name": f"Player {index + 1}"}
+            for index in range(15)
+        ],
+        "targets": [{
+            "element": 101, "element_type": 3, "web_name": "Target",
+            "team": "ARS", "price": 75,
+        }],
+        "controls": {
+            "make_transfers": "Make Transfers", "player_search": "Find a player",
+            "chip_buttons": ["Wildcard Play", "Free Hit Play"],
+        },
+    }
+    path = service.config.artifact_root / "browser-probes" / "r3.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(probe) + "\n")
     return path
@@ -207,3 +254,58 @@ def test_failed_captaincy_probe_cannot_be_sealed_as_passed(tmp_path: Path):
             actor="test", reason="failed probe", idempotency_key="captaincy-probe:failed",
             now=NOW,
         )
+
+
+@pytest.mark.parametrize(
+    ("capability", "probe_factory", "contract"),
+    [
+        ("lineup", _lineup_probe, DRIVER_CONTRACT_VERSION),
+        ("r3", _r3_probe, R3_DRIVER_CONTRACT_VERSION),
+    ],
+)
+def test_capability_probe_is_allowlisted_sealed_and_counted(
+    tmp_path: Path, capability: str, probe_factory, contract: str,
+):
+    service, cycle_id = _service(tmp_path)
+    result = service.record_capability_probe(
+        source_file=probe_factory(service), cycle_id=cycle_id,
+        capability=capability, actor="test", reason="live read-only selector proof",
+        idempotency_key=f"probe:{capability}:gw3", now=NOW,
+    )
+    assert result["status"] == "passed"
+    assert result["contract_version"] == contract
+    assert result["browser_writes_performed"] is False
+    evidence = json.loads(Path(result["evidence_path"]).read_text())
+    assert evidence["capability"] == capability
+    assert evidence["writes_attempted"] is False
+    assert service.status()["browser_driver"][capability]["observed_rehearsals"] == 1
+
+
+def test_capability_probe_rejects_failed_or_incomplete_sources(tmp_path: Path):
+    service, cycle_id = _service(tmp_path)
+    with pytest.raises(ValueError, match="lineup no supera"):
+        service.record_capability_probe(
+            source_file=_lineup_probe(service, valid=False), cycle_id=cycle_id,
+            capability="lineup", actor="test", reason="invalid",
+            idempotency_key="probe:lineup:failed", now=NOW,
+        )
+    r3 = _r3_probe(service)
+    payload = json.loads(r3.read_text())
+    payload["targets"] = []
+    r3.write_text(json.dumps(payload) + "\n")
+    with pytest.raises(ValueError, match="R3 no supera"):
+        service.record_capability_probe(
+            source_file=r3, cycle_id=cycle_id, capability="r3", actor="test",
+            reason="missing target", idempotency_key="probe:r3:empty", now=NOW,
+        )
+
+
+def test_cli_parses_capability_probe_command():
+    parsed = parser().parse_args([
+        "execute", "rehearsal-capability-probe", "--source", "probe.json",
+        "--cycle-id", "2026-27-gw03", "--capability", "r3",
+        "--actor", "operator", "--reason", "read only",
+        "--idempotency-key", "probe:r3:gw3",
+    ])
+    assert parsed.execute_command == "rehearsal-capability-probe"
+    assert parsed.capability == "r3"

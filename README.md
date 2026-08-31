@@ -82,6 +82,8 @@ CycleManifest + memoria estratégica durable → modelos causales → matriz xP 
   falla cerrado. Los controles efectivos siguen bloqueando escrituras.
 - `mova execute rehearsal` importa evidencia browser read-only sellada. Readiness cuenta una sola
   prueba aprobada por GW/capacidad/versión y rechaza fuentes alteradas o intentos de escritura.
+- `mova execute rehearsal-capability-probe` deriva evidencia de lineup/R3 exclusivamente desde
+  probes DOM allowlisted y conciliados; observar controles nunca habilita entrypoints ni commits.
 - `mova postgres drill` ensaya el read-path PostgreSQL y su rollback a SQLite con hashes, artifact,
   idempotencia y métricas, sin cambiar el writer productivo.
 - `mova postgres roles` rota y prueba identidades separadas para aplicación y sólo lectura;

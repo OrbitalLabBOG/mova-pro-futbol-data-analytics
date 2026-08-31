@@ -174,6 +174,16 @@ def parser() -> argparse.ArgumentParser:
     captaincy_probe.add_argument("--actor", required=True)
     captaincy_probe.add_argument("--reason", required=True)
     captaincy_probe.add_argument("--idempotency-key", required=True)
+    capability_probe = execute_commands.add_parser(
+        "rehearsal-capability-probe",
+        help="sella e importa un probe vivo sanitizado de lineup o R3",
+    )
+    capability_probe.add_argument("--source", required=True)
+    capability_probe.add_argument("--cycle-id", required=True)
+    capability_probe.add_argument("--capability", choices=("lineup", "r3"), required=True)
+    capability_probe.add_argument("--actor", required=True)
+    capability_probe.add_argument("--reason", required=True)
+    capability_probe.add_argument("--idempotency-key", required=True)
     preflight = execute_commands.add_parser(
         "preflight", help="sella el diff y evalúa autorización sin operar el browser"
     )
@@ -521,6 +531,12 @@ def main(argv: list[str] | None = None) -> int:
             payload = service.record_captaincy_probe(
                 source_file=Path(args.source), cycle_id=args.cycle_id, actor=args.actor,
                 reason=args.reason, idempotency_key=args.idempotency_key,
+            )
+        elif args.execute_command == "rehearsal-capability-probe":
+            payload = service.record_capability_probe(
+                source_file=Path(args.source), cycle_id=args.cycle_id,
+                capability=args.capability, actor=args.actor, reason=args.reason,
+                idempotency_key=args.idempotency_key,
             )
         elif args.execute_command == "preflight":
             payload = service.preflight(
