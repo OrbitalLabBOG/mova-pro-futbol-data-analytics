@@ -108,6 +108,11 @@ def test_shadow_migration_is_versioned_and_contains_required_schemas() -> None:
     ).lower()
     assert "agent.attempt_authorizations" in authorization_sql
     assert "authorization_id" in authorization_sql
+    authorization_mapping = next(
+        item for item in TABLES if item.source_table == "agent_attempt_authorizations"
+    )
+    assert "budget_snapshot_json" in authorization_mapping.json_columns
+    assert "budget_snapshot_json" not in authorization_mapping.renames
     role_sql = (MIGRATIONS / "019_login_role_separation.sql").read_text(
         encoding="utf-8"
     ).lower()
