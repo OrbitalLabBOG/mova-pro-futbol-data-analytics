@@ -312,9 +312,17 @@ def test_semantic_binding_avoids_second_budget_reservation(tmp_path: Path):
         "provider": "fixture", "request_path": "two.json", "request_sha256": "4" * 64,
         "semantic_input_sha256": semantic_sha, "budget_policy": policy,
     })
+    replay = db.queue_decision_deliberation({
+        "deliberation_id": "deliberation_" + "5" * 32, "cycle_id": cycle_id,
+        "envelope_id": envelope_ids[1], "manifest_id": manifest_ids[1],
+        "provider": "fixture", "request_path": "three.json", "request_sha256": "6" * 64,
+        "semantic_input_sha256": semantic_sha, "budget_policy": policy,
+    })
 
     assert first["status"] == "queued"
     assert second["semantic_reused"] is True
+    assert replay["semantic_reused"] is True
+    assert replay["bound_envelope_id"] == envelope_ids[1]
     assert second["bound_envelope_id"] == envelope_ids[1]
     with db.connect(readonly=True) as con:
         assert con.execute("SELECT COUNT(*) FROM decision_deliberations").fetchone()[0] == 1
