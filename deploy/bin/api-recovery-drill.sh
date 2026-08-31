@@ -34,10 +34,17 @@ fi
 api_url="http://127.0.0.1:${MOVA_API_PORT:-8787}/readyz"
 artifact_root=${MOVA_DATA_ROOT:-/var/lib/mova-fpl}/artifacts
 inbox="$artifact_root/host-drills/inbox"
+imported="$artifact_root/host-drills/imported"
 revision=$(git rev-parse --short HEAD)
 started_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 started_epoch=$(date -u +%s)
 recovered=0
+
+# Provision every directory the unprivileged runtime must write before the
+# deliberate outage. A missing/incorrectly owned import directory must fail the
+# preflight, not leave an otherwise successful recovery without its evidence.
+install -d -m 0750 -o 10001 -g 10001 "$inbox" "$imported"
+[[ -w "$inbox" && -w "$imported" ]]
 
 recover_api() {
   if [[ "$recovered" -eq 0 ]]; then
@@ -68,7 +75,6 @@ image_revision=$(docker inspect mova-fpl-api-1 --format \
 
 finished_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 downtime_seconds=$(( $(date -u +%s) - started_epoch ))
-install -d -m 0750 -o 10001 -g 10001 "$inbox"
 host_path="$inbox/api-recovery-${revision}-${started_epoch}.json"
 python3 - "$host_path" "$started_at" "$finished_at" "$downtime_seconds" "$revision" <<'PY'
 import json

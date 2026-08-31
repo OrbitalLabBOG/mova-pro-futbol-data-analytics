@@ -72,5 +72,7 @@ def test_host_script_has_recovery_trap_and_never_mentions_fpl_writes():
     assert "flock -n 9" in script
     assert "drill host-status" in script
     assert "docker compose stop --timeout 10 api" in script
+    assert '"$inbox" "$imported"' in script
+    assert '[[ -w "$inbox" && -w "$imported" ]]' in script
     assert "fpl_state_mutated" in script
     assert not any(token in script for token in ("my-team", "transfers", "agent-browser"))
