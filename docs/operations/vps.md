@@ -127,6 +127,17 @@ docker compose ps
 docker compose logs --tail=100 api
 ```
 
+La caída real del browser se ejecuta sólo en A0 y restaura su estado on-demand original:
+
+```bash
+sudo deploy/bin/browser-recovery-drill.sh codex \
+  "browser recovery read-only" "hv1-browser-v1"
+```
+
+El drill bloquea el collector privado, valida sesión antes/después, detiene noVNC/CDP, conserva el
+fingerprint del equipo y no persiste el payload privado. No lo agendes ni lo uses durante una
+ejecución browser autorizada.
+
 Los logs de containers rotan a 5 × 10 MiB por servicio. Los timers y fallos conservan su
 diagnóstico en journald. Cada tick sella bytes fuente y hashes; `ops.db` conserva jobs,
 pasos, fuentes, decisiones, controles, salud, incidentes y outbox.

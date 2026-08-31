@@ -48,4 +48,5 @@ WP-001..003, WP-005, compliance gate aprobado y autorización externa explícita
 - captain/vice tienen control semántico vivo y un primer rehearsal; autonomía no promovida;
 - XI/banca y R3 tienen contrato y un primer probe, pero entrypoints y promoción siguen cerrados;
 - el drill hermético DOM/save prueba deriva, pre-state nuevo, `ambiguous`, P0 y no-retry;
+- el drill host browser prueba caída real, sesión persistente, fingerprint y restore on-demand;
 - los tres rehearsals supervisados por capacidad siguen pendientes; no se promovieron controles.

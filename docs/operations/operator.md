@@ -95,6 +95,13 @@ igual a la imagen, timing acotado y `fpl_state_mutated=false`. PostgreSQL exige 
 iguales del estado privado antes/después. Persiste un artifact canónico por hash, consume el inbox
 y registra `host_recovery_drill` con identidad e idempotencia separadas por escenario.
 
+La recuperación real del browser usa únicamente `deploy/bin/browser-recovery-drill.sh ACTOR
+REASON IDEMPOTENCY_KEY`. Toma el lock del collector privado, exige controles fail-closed A0, inicia
+el perfil on-demand, captura dos estados privados sólo en `/run`, detiene noVNC/CDP, recupera la
+misma imagen y sesión, compara fingerprints y restaura el estado inicial del contenedor. El
+artifact no contiene picks, cookies, storage ni DOM. `HOST_RECOVERY_DRILLS_PROVEN` exige API,
+PostgreSQL y browser completos.
+
 `maintenance cleanup` sólo presenta candidatos `.tmp`, `.partial` o `.tmp-*` con más de 24 horas.
 No sigue symlinks ni considera evidencia canónica. Para borrar exige `--apply --actor --reason
 --idempotency-key`; toda aplicación queda como job y audit event.

@@ -53,7 +53,8 @@ gate máquina conjunto `HOST_RECOVERY_DRILLS_PROVEN` pasa API+DB. HV1-09E implem
 hermético y verificó en el VPS diez de diez checks para snapshots alterados, corruptos, tamaños,
 nombres duplicados, traversal y symlinks; `SNAPSHOT_REJECTION_PROVEN` pasa. HV1-09F verificó once
 de once checks de deriva DOM, pre-state cambiado, save ambiguo, P0 y no-retry;
-`BROWSER_FAILURE_DRILL_PROVEN` pasa. Continúan pendientes la caída real del servicio browser,
-escenarios combinados, un reboot real, los ciclos
+`BROWSER_FAILURE_DRILL_PROVEN` pasa. HV1-09G recuperó una caída real del browser en 10 s,
+con sesión/fingerprint intactos y estado on-demand restaurado; el gate host exige y pasa los tres
+escenarios API+PostgreSQL+browser. Continúan pendientes escenarios combinados, un reboot real, los ciclos
 independientes y las aprobaciones; por ello el workpack permanece `active-shadow` y no recomienda
 promoción.

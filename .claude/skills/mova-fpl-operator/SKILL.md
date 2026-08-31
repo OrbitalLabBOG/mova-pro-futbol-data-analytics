@@ -109,6 +109,12 @@ exit 75 significa que difirió sin detener el servicio. `mova readiness` sólo p
 `HOST_RECOVERY_DRILLS_PROVEN` cuando API y PostgreSQL tienen jobs canónicos aprobados. El drill no
 prueba snapshot corrupto, DOM/save ambiguo, combinación de fallos ni reboot.
 
+La recuperación real del perfil browser usa exclusivamente
+`deploy/bin/browser-recovery-drill.sh ACTOR REASON IDEMPOTENCY_KEY`. Sólo es válida con controles
+fail-closed A0; realiza lecturas autenticadas antes/después, prueba noVNC/CDP indisponibles,
+conserva el fingerprint privado y restaura el estado inicial on-demand. No captures ni copies su
+estado temporal. Readiness exige API+PostgreSQL+browser en `HOST_RECOVERY_DRILLS_PROVEN`.
+
 Para probar snapshot inválido usa `mova drill snapshot --actor ... --reason ...
 --idempotency-key ...`. Es hermético y debe declarar diez checks, `fixture_only=true` y
 `runtime_mutated=false`; no improvises corrupción sobre `postgres-imports/`. Readiness sólo pasa
