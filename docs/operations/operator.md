@@ -69,7 +69,8 @@ P0/P1 o una contradicción de permisos. No reemplaza el gate `readiness` ni auto
 durabilidad, browser y aprendizaje en conjunto. Consume los gates de `readiness`; no los duplica
 ni promueve autoridad. Está también en `/api/v1/harness-scorecard` y sus métricas usan el prefijo
 `mova_harness_`. Un overrun histórico queda `pending` si los presupuestos agregados siguen dentro
-del límite; exceso GW/mes o reservas huérfanas quedan `blocked`.
+del límite; exceso GW/mes o reservas huérfanas quedan `blocked`. Revísalo con `mova cost overrun`;
+no lo declares resuelto sin una ejecución posterior equivalente y liquidada dentro del límite.
 
 El watchdog despacha el outbox vencido a journald después de validar el heartbeat. El claim usa
 lease recuperable, la entrega ocurre fuera de SQLite y los fallos reintentan con backoff hasta

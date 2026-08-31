@@ -109,7 +109,11 @@ El presupuesto agentic se consulta de forma independiente:
 
 ```bash
 mova cost report --season 2026-27 --gw 3 --month 2026-08
+mova cost overrun --reservation-id <reservation_id> --to reviewed \
+  --action optimize_prompt --actor <actor> --reason <reason> \
+  --idempotency-key <key>
 curl --fail --silent http://127.0.0.1:8787/api/v1/costs
+curl --fail --silent http://127.0.0.1:8787/api/v1/budget-overrun-events
 ```
 
 La política inicial reserva 120.000 tokens por llamada y limita cada job a 160.000, cada GW a
@@ -127,11 +131,19 @@ el resultado conserva su validación deportiva pero el settlement emite warning,
 llamada ya terminada. Una reserva `reserved` cuyo subject ya no está queued se expone como
 `orphaned_reservation_observed`; sigue comprometida y exige diagnóstico, no borrado manual.
 
+Cada overrun individual recorre un ledger inmutable `open -> reviewed -> resolved|waived`.
+`reviewed` exige acción y razón; `resolved` exige una reserva posterior del mismo tipo de trabajo
+y proveedor, liquidada dentro del límite, enlazada con `--followup-reservation-id`. `waived` es
+una excepción humana explícita y nunca se automatiza. Replay con la misma clave y semántica
+reutiliza evidencia; una clave reutilizada con otra transición falla sin mutar. El scorecard
+mantiene economics en pending mientras exista un caso `reviewed_pending`.
+
 La API `/api/v1/budget-reservations` expone las últimas reservas y Prometheus publica
 `mova_agent_budget_tokens`, `mova_agent_budget_uses` y
 `mova_agent_budget_within_limit`, por scope `gameweek|month`. También publica
 `mova_agent_budget_job_overruns`, `mova_agent_budget_job_overrun_tokens` y
-`mova_agent_budget_orphaned_reservations`.
+`mova_agent_budget_orphaned_reservations`. El lifecycle publica además
+`mova_agent_budget_overrun_reviews{scope,status}` con labels acotados.
 
 ## Recuperación y límites
 

@@ -43,6 +43,11 @@ Logs JSON, correlation/job IDs, health persistido, Prometheus, doctor/readiness 
 operan en shadow. El ledger agentic distingue consumo real, reservas activas y cargos estimados;
 además detecta overruns por job y reservas huérfanas sin liberar presupuesto.
 
+HV1-10B convirtió los overruns detectados en un lifecycle auditable, idempotente y replicado a
+PostgreSQL. El scorecard diferencia `open`, `reviewed_pending` y `closed`; sólo una corrida
+posterior equivalente dentro del límite permite resolver. El primer caso real permanece
+`reviewed_pending` hasta obtener esa evidencia temporal.
+
 HV1-01B agregó `mova safety`, `/api/v1/safety` y la tarjeta de seguridad del dashboard; el
 resultado reúne deadline, gates, frescura, incidentes y outbox en una sola lectura. P0 y P1 tienen
 tests de entrega/fallo, el outbox recupera leases, reintenta y permite acuse auditado. `mova

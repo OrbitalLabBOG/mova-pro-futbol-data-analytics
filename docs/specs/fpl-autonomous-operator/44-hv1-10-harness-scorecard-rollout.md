@@ -55,5 +55,5 @@ para siempre si los límites agregados siguen sanos.
 ## Pendientes explícitos
 
 El scorecard no resuelve evidencia temporal ni autoridad. Quedan pendientes settlement GW3,
-calibración/rehearsals/ciclos multi-GW, revisión del overrun, primera lección completa, canal de
+calibración/rehearsals/ciclos multi-GW, follow-up medido del overrun ya revisado, primera lección completa, canal de
 alertas externo, backup off-host, reboot real y aprobaciones de promoción/compliance.

@@ -64,7 +64,11 @@ consulta ordinaria: `mova` y `/api/v1/status` son el contrato estable.
     guardrails ni permisos. Antes de encolar trabajo agentic,
     consulta `mova cost report`; un exceso agregado o reserva huérfana es un bloqueo real y no se
     fuerza. Un `job_overrun_observed` histórico exige revisar prompt/budget con evidencia, pero no
-    se presenta como exceso agregado mientras GW y mes sigan `within_budget`.
+    se presenta como exceso agregado mientras GW y mes sigan `within_budget`. Registra la
+    revisión con `mova cost overrun --reservation-id ... --to reviewed --action ... --actor ...
+    --reason ... --idempotency-key ...`. No uses `waived` automáticamente ni declares
+    `resolved` sin `--followup-reservation-id`: la base exige una corrida posterior equivalente,
+    liquidada y dentro del límite.
     Revisa `semantic_reuse.*_avoided_uses` y `/api/v1/deliberation-bindings` cuando la
     deliberación parezca repetitiva. Un binding `semantic_reuse` es éxito idempotente: no vuelvas
     a encolar ni borres el ledger para forzar otra llamada.

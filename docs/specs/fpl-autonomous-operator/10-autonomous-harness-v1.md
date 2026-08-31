@@ -687,6 +687,20 @@ histórico exige revisión pero no paraliza indefinidamente el sistema. También
 tres propuestas post-GW, pero todavía ninguna lección/evaluación completa. Evidencia:
 [HV1-10 harness scorecard](44-hv1-10-harness-scorecard-rollout.md).
 
+### Corte de revisión de overruns — 31 de agosto de 2026
+
+El hallazgo del scorecard ya tiene un ciclo durable `open -> reviewed -> resolved|waived` en
+SQLite y PostgreSQL, operable mediante `mova cost overrun` y observable por API y Prometheus.
+Replay exacto reutiliza la evidencia; reutilizar la clave con otra intención falla sin mutar. La
+resolución exige una reserva posterior equivalente, liquidada y dentro del límite individual;
+una nota humana no puede fabricar ese cierre.
+
+El overrun vivo de GW3 quedó `reviewed` con acción `optimize_prompt`. El contrato del Researcher
+se acotó a diez consultas, doce documentos finales y salida más pequeña, sin elevar presupuesto.
+El gate económico permanece pending hasta que la próxima investigación legítima compruebe el
+resultado. Evidencia:
+[HV1-10B lifecycle de overrun](45-hv1-10b-budget-overrun-lifecycle.md).
+
 ## 11. Definition of Done del harness v1
 
 - un ciclo completo puede ejecutarse, reanudarse y explicarse desde `mova`;
