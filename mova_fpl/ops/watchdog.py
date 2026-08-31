@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -20,6 +21,7 @@ MAX_REQUEST_BYTES = 1_048_576
 REQUEST_ID = re.compile(r"(?:research|deliberation)_[0-9a-f]{32}")
 ACTIVE_RESEARCH_STATUSES = {"queued", "running", "completed"}
 ACTIVE_DELIBERATION_STATUSES = {"queued", "running"}
+MAX_PERMIT_BYTES = 65_536
 
 
 def assess(db: OpsDB, *, max_age_seconds: int = 1200,
@@ -47,15 +49,14 @@ def assess(db: OpsDB, *, max_age_seconds: int = 1200,
 def assess_agent_queue(config: RuntimeConfig, db: OpsDB, *,
                        now: datetime | None = None,
                        orphan_grace_seconds: int = 60,
-                       max_registered_age_seconds: int = 2100) -> dict:
+                       max_registered_age_seconds: int = 2100,
+                       max_started_age_seconds: int = 900) -> dict:
     """Inspect the filesystem queue independently from the agent importer."""
     current = now or datetime.now(timezone.utc)
     inbox = config.research_root / "inbox"
-    if not inbox.exists():
-        return {"healthy": True, "present": False, "requests": 0, "anomalies": []}
     anomalies = []
     request_count = 0
-    for path in sorted(inbox.glob("*.request.json")):
+    for path in sorted(inbox.glob("*.request.json")) if inbox.exists() else ():
         request_count += 1
         try:
             stat = path.lstat()
@@ -125,11 +126,104 @@ def assess_agent_queue(config: RuntimeConfig, db: OpsDB, *,
                 "request_id": path.name[:80], "reason": type(exc).__name__,
                 "age_seconds": None,
             })
+
+    permits = config.research_root / "permits"
+    authorization_rows = db.agent_attempt_authorizations()
+    referenced_paths = {str(Path(row["permit_path"]).absolute()) for row in authorization_rows}
+    authorization_counts: dict[str, int] = {}
+    permit_count = 0
+    for row in authorization_rows:
+        status = str(row["status"])
+        authorization_counts[status] = authorization_counts.get(status, 0) + 1
+        if status not in {"preparing", "authorized", "started"}:
+            continue
+        authorization_id = str(row["authorization_id"])
+        created = datetime.fromisoformat(
+            str(row["created_at"]).replace("Z", "+00:00")
+        ).astimezone(timezone.utc)
+        age = max(0, int((current - created).total_seconds()))
+        expires = datetime.fromisoformat(
+            str(row["expires_at"]).replace("Z", "+00:00")
+        ).astimezone(timezone.utc)
+        reason = None
+        path = Path(row["permit_path"])
+        expected_name = f"{row['subject_id']}.{authorization_id}.permit.json"
+        if status == "preparing":
+            if age >= orphan_grace_seconds:
+                reason = "authorization_preparing_stale"
+        elif status == "authorized" and expires <= current:
+            reason = "authorization_expired_unreconciled"
+        else:
+            try:
+                if (path.name != expected_name or path.is_symlink()
+                        or not path.is_file()
+                        or path.absolute().parent != permits.absolute()):
+                    reason = "authorization_permit_missing_or_unsafe"
+                elif path.stat().st_size > MAX_PERMIT_BYTES:
+                    reason = "authorization_permit_too_large"
+                else:
+                    raw = path.read_bytes()
+                    digest = hashlib.sha256(raw).hexdigest()
+                    if digest != row["permit_sha256"]:
+                        reason = "authorization_permit_hash_mismatch"
+            except OSError:
+                reason = "authorization_permit_unreadable"
+            if reason is None:
+                try:
+                    payload = json.loads(raw)
+                except (UnicodeDecodeError, json.JSONDecodeError):
+                    payload = None
+                if not isinstance(payload, dict) or any((
+                    payload.get("schema") != "mova-agent-attempt-permit-v1",
+                    payload.get("authorization_id") != authorization_id,
+                    payload.get("subject_type") != row["subject_type"],
+                    payload.get("subject_id") != row["subject_id"],
+                    payload.get("request_sha256") != row["request_sha256"],
+                    payload.get("attempt_number") != int(row["attempt_number"]),
+                    payload.get("expires_at") != row["expires_at"],
+                )):
+                    reason = "authorization_permit_identity_mismatch"
+        if reason is None and status == "started":
+            if not row["started_at"] or not row["attempt_id"]:
+                reason = "authorization_started_identity_missing"
+            else:
+                started = datetime.fromisoformat(
+                    str(row["started_at"]).replace("Z", "+00:00")
+                ).astimezone(timezone.utc)
+                started_age = max(0, int((current - started).total_seconds()))
+                if started_age >= max_started_age_seconds:
+                    reason = "authorization_started_stale"
+                    age = started_age
+        if reason:
+            anomalies.append({
+                "authorization_id": authorization_id,
+                "subject_id": str(row["subject_id"])[:80],
+                "reason": reason, "age_seconds": age,
+            })
+
+    for path in sorted(permits.glob("*.permit.json")) if permits.exists() else ():
+        permit_count += 1
+        try:
+            stat = path.lstat()
+            age = max(0, int(current.timestamp() - stat.st_mtime))
+            if str(path.absolute()) not in referenced_paths and age >= orphan_grace_seconds:
+                anomalies.append({
+                    "authorization_id": None, "subject_id": path.name[:80],
+                    "reason": "orphan_permit", "age_seconds": age,
+                })
+        except OSError as exc:
+            anomalies.append({
+                "authorization_id": None, "subject_id": path.name[:80],
+                "reason": type(exc).__name__, "age_seconds": None,
+            })
     return {
-        "healthy": not anomalies, "present": True, "requests": request_count,
+        "healthy": not anomalies, "present": inbox.exists() or permits.exists(),
+        "requests": request_count, "permits": permit_count,
+        "authorizations": authorization_counts,
         "anomalies": anomalies[:20], "anomaly_count": len(anomalies),
         "orphan_grace_seconds": orphan_grace_seconds,
         "max_registered_age_seconds": max_registered_age_seconds,
+        "max_started_age_seconds": max_started_age_seconds,
     }
 
 
@@ -141,6 +235,9 @@ def agent_queue_prometheus(state: dict) -> str:
         "# HELP mova_agent_queue_requests Request files currently visible to the worker.",
         "# TYPE mova_agent_queue_requests gauge",
         f"mova_agent_queue_requests {int(state.get('requests') or 0)}",
+        "# HELP mova_agent_queue_permits Permit files currently visible to the worker.",
+        "# TYPE mova_agent_queue_permits gauge",
+        f"mova_agent_queue_permits {int(state.get('permits') or 0)}",
         "# HELP mova_agent_queue_anomalies Requests that violate queue lifecycle invariants.",
         "# TYPE mova_agent_queue_anomalies gauge",
         f"mova_agent_queue_anomalies {int(state.get('anomaly_count') or 0)}",
@@ -154,6 +251,9 @@ def run(db: OpsDB, *, max_age_seconds: int = 1200,
         config: RuntimeConfig | None = None) -> dict:
     effective_config = config or RuntimeConfig()
     state = assess(db, max_age_seconds=max_age_seconds, now=now)
+    expired_authorizations = db.expire_agent_attempt_authorizations(
+        now=now or datetime.now(timezone.utc)
+    )
     agent_queue = assess_agent_queue(effective_config, db, now=now)
     if state["healthy"]:
         scheduler_resolved = db.resolve_incidents(
@@ -202,6 +302,7 @@ def run(db: OpsDB, *, max_age_seconds: int = 1200,
             "scheduler": scheduler_resolved, "agent_queue": queue_resolved,
         },
         "agent_queue": agent_queue,
+        "expired_authorizations": expired_authorizations,
         "alerts": alerts,
         "outbox_dead": dead,
     }

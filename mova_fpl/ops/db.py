@@ -2272,6 +2272,61 @@ class OpsDB:
             ).fetchone()
         return dict(row) if row else None
 
+    def agent_attempt_authorizations(self) -> list[dict]:
+        """Return the durable permit ledger for independent integrity checks."""
+        with self.connect(readonly=True) as con:
+            rows = con.execute(
+                "SELECT * FROM agent_attempt_authorizations "
+                "ORDER BY created_at,authorization_id"
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+    def expire_agent_attempt_authorizations(self, *, now: datetime) -> list[dict]:
+        """Close unused permits after their TTL, recording each transition once."""
+        current = now.astimezone(timezone.utc)
+        expired: list[dict] = []
+        with self.transaction() as con:
+            rows = con.execute(
+                "SELECT * FROM agent_attempt_authorizations "
+                "WHERE status IN ('preparing','authorized') ORDER BY created_at"
+            ).fetchall()
+            for row in rows:
+                expires = datetime.fromisoformat(
+                    str(row["expires_at"]).replace("Z", "+00:00")
+                ).astimezone(timezone.utc)
+                if expires > current:
+                    continue
+                changed = con.execute(
+                    "UPDATE agent_attempt_authorizations SET status='expired' "
+                    "WHERE authorization_id=? AND status IN ('preparing','authorized')",
+                    (row["authorization_id"],),
+                ).rowcount
+                if not changed:
+                    continue
+                subject = con.execute(
+                    ("SELECT cycle_id FROM research_runs WHERE research_run_id=?" if
+                     row["subject_type"] == "research" else
+                     "SELECT cycle_id FROM decision_deliberations WHERE deliberation_id=?"),
+                    (row["subject_id"],),
+                ).fetchone()
+                self.append_audit(
+                    "agent_attempt_authorization_expired", actor="mova-watchdog",
+                    severity="info", cycle_id=subject["cycle_id"] if subject else None,
+                    subject_type=row["subject_type"], subject_id=row["subject_id"],
+                    payload={
+                        "authorization_id": row["authorization_id"],
+                        "attempt_number": int(row["attempt_number"]),
+                        "expires_at": row["expires_at"],
+                    }, con=con,
+                )
+                expired.append({
+                    "authorization_id": row["authorization_id"],
+                    "subject_type": row["subject_type"],
+                    "subject_id": row["subject_id"],
+                    "previous_status": row["status"],
+                })
+        return expired
+
     def record_agent_worker_attempt_event(self, payload: dict, *, receipt_path: str,
                                           receipt_sha256: str) -> dict:
         event_id = "agentattempt_" + hashlib.sha256(
