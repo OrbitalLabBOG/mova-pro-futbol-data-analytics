@@ -29,6 +29,7 @@ inputs deportivos y blockers fueran equivalentes. Cada revisión volvía a reser
   exponen llamadas evitadas.
 - Repetir `enqueue` sobre un envelope ya enlazado resuelve el binding existente y no intenta
   insertarlo otra vez; retries del timer son apply-once.
+- Status y métricas siguen el binding del envelope vigente, no una fila de reparación más nueva.
 - Un cambio material produce un hash distinto y vuelve a encolar normalmente.
 
 ## Verificación

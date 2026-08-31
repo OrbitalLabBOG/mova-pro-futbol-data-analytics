@@ -1994,9 +1994,18 @@ class OpsDB:
             if not cycle_id:
                 return {"status": "empty", "cycle_id": None, "latest": None}
             latest = con.execute(
-                "SELECT * FROM decision_deliberations WHERE cycle_id=? "
-                "ORDER BY queued_at DESC LIMIT 1", (cycle_id,),
+                """SELECT d.*,b.binding_type,b.envelope_id AS bound_envelope_id
+                FROM decision_envelopes e
+                JOIN decision_deliberation_bindings b ON b.envelope_id=e.envelope_id
+                JOIN decision_deliberations d ON d.deliberation_id=b.deliberation_id
+                WHERE e.cycle_id=? AND e.status IN ('blocked','staged')
+                ORDER BY e.created_at DESC LIMIT 1""", (cycle_id,),
             ).fetchone()
+            if not latest:
+                latest = con.execute(
+                    "SELECT * FROM decision_deliberations WHERE cycle_id=? "
+                    "ORDER BY queued_at DESC LIMIT 1", (cycle_id,),
+                ).fetchone()
             risks = []
             if latest:
                 risks = con.execute(
@@ -3360,9 +3369,18 @@ class OpsDB:
                 ).fetchall()
             }
             latest_deliberation = con.execute(
-                "SELECT deliberation_id,status FROM decision_deliberations "
-                "ORDER BY queued_at DESC LIMIT 1"
+                """SELECT d.deliberation_id,d.status
+                FROM decision_envelopes e
+                JOIN decision_deliberation_bindings b ON b.envelope_id=e.envelope_id
+                JOIN decision_deliberations d ON d.deliberation_id=b.deliberation_id
+                WHERE e.status IN ('blocked','staged')
+                ORDER BY e.created_at DESC LIMIT 1"""
             ).fetchone()
+            if not latest_deliberation:
+                latest_deliberation = con.execute(
+                    "SELECT deliberation_id,status FROM decision_deliberations "
+                    "ORDER BY queued_at DESC LIMIT 1"
+                ).fetchone()
             if latest_deliberation:
                 deliberation_status = str(latest_deliberation["status"])
                 deliberation_blocking_risks = int(con.execute(
