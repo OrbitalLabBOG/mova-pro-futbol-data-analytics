@@ -20,6 +20,8 @@ inputs deportivos y blockers fueran equivalentes. Cada revisión volvía a reser
 - `semantic_input_sha256` incluye candidatos completos, checks, equipo, fase, research, memoria,
   plan y versiones de modelo.
 - Provenance volátil sigue sellada en el request, pero queda fuera de la identidad semántica.
+- La memoria excluye únicamente `as_of_at` y su hash derivado; decisiones, reviews, lecciones,
+  cobertura, plan history y policy siguen siendo materiales.
 - `decision_deliberation_bindings` enlaza cada envelope con la deliberación original y distingue
   `original` de `semantic_reuse`.
 - La reutilización ocurre dentro de la misma transacción y antes de reservar presupuesto.
