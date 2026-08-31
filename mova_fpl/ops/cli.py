@@ -809,9 +809,12 @@ def main(argv: list[str] | None = None) -> int:
                     "idempotency_key": args.idempotency_key,
                 })
                 if row.get("input_sha256") not in (None, identity):
-                    raise ValueError(
-                        "host drill idempotency key reused with different identity"
-                    )
+                    print(json.dumps({
+                        "schema": "mova-host-drill-status-v1",
+                        "status": "conflict", "scenario": args.scenario,
+                        "error_code": "idempotency_identity_mismatch",
+                    }, sort_keys=True))
+                    return 2
             if not row:
                 print(json.dumps({
                     "schema": "mova-host-drill-status-v1", "status": "due",
@@ -841,7 +844,12 @@ def main(argv: list[str] | None = None) -> int:
         if reused:
             prior = db.get_job_by_key(job_key) or {}
             if prior.get("input_sha256") not in (None, identity):
-                raise ValueError("drill idempotency key reused with different identity")
+                print(json.dumps({
+                    "schema": schema, "status": "conflict",
+                    "scenario": scenario,
+                    "error_code": "idempotency_identity_mismatch",
+                }, sort_keys=True))
+                return 2
             prior_status = str(prior.get("status") or "unknown")
             print(json.dumps({"schema": schema, "status": (
                 "reused" if prior_status == "completed" else prior_status

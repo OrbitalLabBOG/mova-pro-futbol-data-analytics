@@ -196,5 +196,11 @@ def test_host_cli_binds_scenario_and_identity(tmp_path: Path, monkeypatch, capsy
 
     changed_identity = [*status_arguments]
     changed_identity[changed_identity.index("database recovery")] = "different reason"
-    with pytest.raises(ValueError, match="different identity"):
-        main(changed_identity)
+    assert main(changed_identity) == 2
+    conflict = json.loads(capsys.readouterr().out)
+    assert conflict == {
+        "schema": "mova-host-drill-status-v1",
+        "status": "conflict",
+        "scenario": "postgres_recovery",
+        "error_code": "idempotency_identity_mismatch",
+    }
