@@ -142,6 +142,17 @@ El drill verifica el hash, crea una base temporal con prefijo validado `mova_res
 con `--exit-on-error`, valida los siete schemas y tablas núcleo, y siempre elimina solo esa base
 temporal. Nunca restaura encima de `mova`.
 
+Para ensayar evidencia inválida sin tocar un import real:
+
+```bash
+mova drill snapshot \
+  --actor codex --reason "snapshot boundary" --idempotency-key "snapshot-drill-v1"
+```
+
+El rehearsal usa fixtures efímeros y exige rechazo de manifest/hash/tamaño corruptos, DB inválida,
+nombres duplicados, path traversal y symlinks. Un pass queda en el ledger y alimenta readiness;
+no cambia el último import ni la paridad viva.
+
 ## Diagnóstico y rollback
 
 ```bash

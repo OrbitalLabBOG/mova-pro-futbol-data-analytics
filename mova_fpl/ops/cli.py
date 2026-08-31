@@ -292,6 +292,12 @@ def parser() -> argparse.ArgumentParser:
     resilience.add_argument("--actor", required=True)
     resilience.add_argument("--reason", required=True)
     resilience.add_argument("--idempotency-key", required=True)
+    snapshot_drill = drill_commands.add_parser(
+        "snapshot", help="rechazo hermético de snapshots alterados o inseguros"
+    )
+    snapshot_drill.add_argument("--actor", required=True)
+    snapshot_drill.add_argument("--reason", required=True)
+    snapshot_drill.add_argument("--idempotency-key", required=True)
     host_drill = drill_commands.add_parser(
         "import-host", help="valida e importa evidencia allowlisted del host"
     )
@@ -829,15 +835,28 @@ def main(argv: list[str] | None = None) -> int:
             return 0 if row["status"] == "completed" else 2
         correlation_id = new_id("corr")
         is_resilience = args.drill_command == "resilience"
-        job_type = "resilience_drill" if is_resilience else "host_recovery_drill"
-        schema = "mova-resilience-drill-v1" if is_resilience else "mova-host-drill-v1"
-        scenario = "scheduler_p0_recovery" if is_resilience else args.scenario
+        is_snapshot = args.drill_command == "snapshot"
+        is_host = args.drill_command == "import-host"
+        job_type = (
+            "resilience_drill" if is_resilience else
+            "snapshot_rejection_drill" if is_snapshot else
+            "host_recovery_drill"
+        )
+        schema = (
+            "mova-resilience-drill-v1" if is_resilience else
+            "mova-snapshot-rejection-drill-v1" if is_snapshot else
+            "mova-host-drill-v1"
+        )
+        scenario = (
+            "scheduler_p0_recovery" if is_resilience else
+            "snapshot_rejection" if is_snapshot else args.scenario
+        )
         identity = sha256_json({
             "scenario": scenario, "actor": args.actor, "reason": args.reason,
             "idempotency_key": args.idempotency_key,
         })
-        job_key = (f"{job_type}:{args.idempotency_key}" if is_resilience else
-                   f"{job_type}:{scenario}:{args.idempotency_key}")
+        job_key = (f"{job_type}:{scenario}:{args.idempotency_key}" if is_host else
+                   f"{job_type}:{args.idempotency_key}")
         job_id, reused = db.start_job(
             job_type, job_key, correlation_id, input_sha256=identity,
         )
@@ -867,6 +886,9 @@ def main(argv: list[str] | None = None) -> int:
                 if is_resilience:
                     from mova_fpl.ops.watchdog import resilience_drill
                     payload = resilience_drill()
+                elif is_snapshot:
+                    from mova_fpl.ops.snapshot_drill import run as snapshot_rejection_drill
+                    payload = snapshot_rejection_drill()
                 else:
                     from pathlib import Path
                     from mova_fpl.ops.host_drill import import_evidence

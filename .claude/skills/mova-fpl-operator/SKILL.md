@@ -109,6 +109,11 @@ exit 75 significa que difirió sin detener el servicio. `mova readiness` sólo p
 `HOST_RECOVERY_DRILLS_PROVEN` cuando API y PostgreSQL tienen jobs canónicos aprobados. El drill no
 prueba snapshot corrupto, DOM/save ambiguo, combinación de fallos ni reboot.
 
+Para probar snapshot inválido usa `mova drill snapshot --actor ... --reason ...
+--idempotency-key ...`. Es hermético y debe declarar diez checks, `fixture_only=true` y
+`runtime_mutated=false`; no improvises corrupción sobre `postgres-imports/`. Readiness sólo pasa
+`SNAPSHOT_REJECTION_PROVEN` con un job completado y no acepta una nota Markdown como sustituto.
+
 ## Fuentes de verdad
 
 - Git: código, contratos, configuración de ejemplo, skills y runbooks.

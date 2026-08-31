@@ -27,6 +27,7 @@ mova alerts dispatch
 mova alerts acknowledge --incident-id incident_... --actor julian --reason "triage confirmado"
 mova alerts retry --outbox-id outbox_... --actor julian --reason "sink restaurado"
 mova drill resilience --actor codex --reason "rehearsal P0" --idempotency-key "..."
+mova drill snapshot --actor codex --reason "snapshot boundary" --idempotency-key "..."
 mova drill import-host --file /var/lib/mova-fpl/artifacts/host-drills/inbox/api.json \
   --scenario api_recovery --actor codex --reason "api recovery" --idempotency-key "..."
 mova maintenance cleanup
@@ -74,6 +75,11 @@ o ya reconocidos no pueden repetirse.
 `drill resilience` usa una base efímera para probar ausencia de tick, P0, delivery, deduplicación
 y recuperación. No altera controles ni datos deportivos (`runtime_mutated=false`), pero la
 invocación y su hash sí quedan como job auditado en el ledger operativo.
+
+`drill snapshot` crea exclusivamente fixtures SQLite temporales y demuestra rechazo de checksum,
+schema, tamaño, DB corrupta, nombres duplicados, traversal y symlinks. No conecta PostgreSQL ni
+abre artifacts vivos. Publica diez checks, `fixture_only=true` y `runtime_mutated=false`; el gate
+`SNAPSHOT_REJECTION_PROVEN` sólo pasa con el job completo.
 
 `drill import-host` no ejecuta Docker. Sólo consume evidencia producida por scripts privilegiados
 del host, exige path dentro de `host-drills/inbox`, escenario allowlisted, checks exactos, revisión

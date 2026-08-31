@@ -46,10 +46,11 @@ Ya existen readiness consolidado, rehearsals browser por capacidad, cutover/roll
 restore drills e idempotencia de agentes. HV1-09B añade un escenario hermético repetible para
 scheduler ausente, P0, delivery, deduplicación y recuperación. HV1-09C verificó en producción una
 caída real y recuperación del contenedor API en 7 s, con trap host, integridad posterior, import
-allowlisted y replay sin segunda caída. Continúan pendientes los escenarios combinados
-HV1-09D verificó en producción la caída real de PostgreSQL en 7 s con locks de writers,
+allowlisted y replay sin segunda caída. HV1-09D verificó en producción la caída real de
+PostgreSQL en 7 s con locks de writers,
 continuidad SQLite/API, fingerprint del team state, paridad 54/54 y replay sin segunda caída. El
-gate máquina conjunto `HOST_RECOVERY_DRILLS_PROVEN` pasa API+DB. Continúan pendientes snapshot
-inválido, browser/DOM/save ambiguo, escenarios combinados, un reboot real, los ciclos
+gate máquina conjunto `HOST_RECOVERY_DRILLS_PROVEN` pasa API+DB. HV1-09E implementa el rechazo
+hermético de snapshots alterados, corruptos, traversal y symlinks; espera rollout vivo. Continúan
+pendientes browser/DOM/save ambiguo, escenarios combinados, un reboot real, los ciclos
 independientes y las aprobaciones; por ello el workpack permanece `active-shadow` y no recomienda
 promoción.

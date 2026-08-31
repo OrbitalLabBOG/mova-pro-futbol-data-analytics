@@ -50,6 +50,7 @@ mova postgres status
 mova postgres verify
 mova postgres drill --actor codex --reason read-cutover --idempotency-key gw03-v1
 mova postgres roles --actor codex --reason least-privilege --idempotency-key gw03-roles-v1
+mova drill snapshot --actor codex --reason snapshot-boundary --idempotency-key snapshot-v1
 
 # chaos host-only, manual y reversible (no se agenda)
 sudo deploy/bin/api-recovery-drill.sh codex "api recovery" hv1-api-v1

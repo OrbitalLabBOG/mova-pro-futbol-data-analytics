@@ -37,6 +37,7 @@ def _gate(code: str, status: str, summary: str, *, levels: tuple[str, ...],
 def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
                        execution_status: dict, resilience_evidence: dict | None = None,
                        host_recovery_evidence: dict | None = None,
+                       snapshot_rejection_evidence: dict | None = None,
                        generated_at: str | None = None) -> dict:
     """Evalúa únicamente snapshots ya observados; no ejecuta IO ni mutaciones."""
     gameweek = operator_status.get("gameweek") or {}
@@ -79,6 +80,15 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
         host_recovery.get("status") == "completed"
         and int(host_recovery.get("completed") or 0)
         == int(host_recovery.get("required") or 2)
+    )
+    snapshot_rejection = snapshot_rejection_evidence or {
+        "status": "missing", "checks": 0, "passed": 0,
+    }
+    snapshot_rejection_passed = (
+        snapshot_rejection.get("status") == "completed"
+        and int(snapshot_rejection.get("checks") or 0) >= 10
+        and int(snapshot_rejection.get("passed") or 0)
+        == int(snapshot_rejection.get("checks") or 0)
     )
 
     gates = [
@@ -198,6 +208,19 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
             ]},
             source="job_runs.host_recovery_drill",
             next_action="ejecutar los drills host allowlisted de API y PostgreSQL",
+        ),
+        _gate(
+            "SNAPSHOT_REJECTION_PROVEN",
+            "pass" if snapshot_rejection_passed else
+            "blocked" if snapshot_rejection.get("status") == "failed" else "pending",
+            "snapshots alterados, corruptos y paths inseguros rechazados",
+            levels=("A1", "A2", "A3"),
+            observed={key: snapshot_rejection.get(key) for key in (
+                "job_id", "status", "checks", "passed", "finished_at", "output_sha256"
+            )},
+            required={"status": "completed", "checks": ">=10", "all_passed": True},
+            source="job_runs.snapshot_rejection_drill",
+            next_action="ejecutar mova drill snapshot con una clave idempotente nueva",
         ),
         _gate(
             "CAPTAINCY_DRIVER_PROVEN",
@@ -332,6 +355,7 @@ def build_readiness(config: RuntimeConfig, db: OpsDB, *,
         execution_status=ExecutionService(config, db).status(),
         resilience_evidence=db.resilience_drill_status(),
         host_recovery_evidence=db.host_recovery_drill_status(),
+        snapshot_rejection_evidence=db.snapshot_rejection_drill_status(),
         generated_at=current.astimezone(timezone.utc).isoformat(timespec="seconds"),
     )
 

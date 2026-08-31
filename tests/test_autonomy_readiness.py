@@ -72,11 +72,20 @@ def _host_recovery() -> dict:
     }
 
 
+def _snapshot_rejection() -> dict:
+    return {
+        "job_id": "job_snapshot", "status": "completed", "checks": 10,
+        "passed": 10, "finished_at": "2026-08-31T02:10:00+00:00",
+        "output_sha256": "b" * 64,
+    }
+
+
 def test_readiness_separates_technical_eligibility_from_authority() -> None:
     report = evaluate_readiness(
         operator_status=_operator(), research_coverage=_research(),
         execution_status=_execution(), resilience_evidence=_resilience(),
         host_recovery_evidence=_host_recovery(),
+        snapshot_rejection_evidence=_snapshot_rejection(),
         generated_at="2026-08-30T22:00:00+00:00",
     )
 
@@ -86,7 +95,7 @@ def test_readiness_separates_technical_eligibility_from_authority() -> None:
     assert report["activation"]["current_action_level"] == "A0"
     assert report["activation"]["promotion_is_automatic"] is False
     assert "EXPLICIT_PROMOTION_REQUIRED" in report["activation"]["activation_blockers"]
-    assert report["summary"] == {"pass": 17, "pending": 0, "blocked": 0, "total": 17}
+    assert report["summary"] == {"pass": 18, "pending": 0, "blocked": 0, "total": 18}
 
 
 def test_readiness_fails_closed_and_reports_specific_evidence_gaps() -> None:
@@ -109,6 +118,7 @@ def test_readiness_fails_closed_and_reports_specific_evidence_gaps() -> None:
         operator_status=operator, research_coverage=research,
         execution_status=execution, resilience_evidence={"status": "missing"},
         host_recovery_evidence={"status": "incomplete", "completed": 0, "required": 2},
+        snapshot_rejection_evidence={"status": "missing"},
     )
     by_code = {gate["code"]: gate for gate in report["gates"]}
 
@@ -121,6 +131,7 @@ def test_readiness_fails_closed_and_reports_specific_evidence_gaps() -> None:
     assert by_code["POSTGRES_ROLE_SEPARATION"]["status"] == "pass"
     assert by_code["RESILIENCE_DRILL_PROVEN"]["status"] == "pending"
     assert by_code["HOST_RECOVERY_DRILLS_PROVEN"]["status"] == "pending"
+    assert by_code["SNAPSHOT_REJECTION_PROVEN"]["status"] == "pending"
     assert all(item["next_action"] for item in report["next_actions"])
 
 
@@ -131,7 +142,8 @@ def test_readiness_cli_can_be_used_as_a_level_gate_and_metrics_are_bounded() -> 
         operator_status=_operator(), research_coverage=_research(),
         execution_status=_execution(), resilience_evidence=_resilience(),
         host_recovery_evidence=_host_recovery(),
+        snapshot_rejection_evidence=_snapshot_rejection(),
     )
     metrics = prometheus(report)
     assert 'mova_autonomy_technical_eligible_level{level="A3"} 1' in metrics
-    assert 'mova_autonomy_readiness_gates{status="pass"} 17' in metrics
+    assert 'mova_autonomy_readiness_gates{status="pass"} 18' in metrics

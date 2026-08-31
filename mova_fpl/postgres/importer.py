@@ -8,6 +8,7 @@ import math
 import os
 import shutil
 import sqlite3
+import stat
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -550,7 +551,7 @@ def sync_shadow(config: ImportConfig) -> dict:
 
 def _verify_manifest(artifact_path: Path, expected_sha256: str) -> dict:
     manifest_path = artifact_path / "manifest.json"
-    if not manifest_path.is_file():
+    if manifest_path.is_symlink() or not manifest_path.is_file():
         return {"status": "fail", "reason": "manifest_missing", "path": str(manifest_path)}
     observed_manifest_sha = _sha256(manifest_path)
     try:
@@ -559,18 +560,53 @@ def _verify_manifest(artifact_path: Path, expected_sha256: str) -> dict:
         return {"status": "fail", "reason": "manifest_invalid",
                 "error": type(exc).__name__}
     files = manifest.get("files") if isinstance(manifest, dict) else None
-    if observed_manifest_sha != expected_sha256 or not isinstance(files, dict):
+    expected_digest_valid = (
+        isinstance(expected_sha256, str) and len(expected_sha256) == 64
+        and all(char in "0123456789abcdef" for char in expected_sha256)
+    )
+    if not expected_digest_valid or observed_manifest_sha != expected_sha256:
         return {"status": "fail", "reason": "manifest_checksum_mismatch",
                 "expected": expected_sha256, "observed": observed_manifest_sha}
+    if (not isinstance(manifest, dict)
+            or manifest.get("schema") != "mova-postgres-import-source-v1"
+            or not isinstance(files, dict)
+            or set(files) != {"ops", "canonical", "trace"}):
+        return {"status": "fail", "reason": "manifest_contract_invalid"}
     file_checks = {}
+    artifact_root = artifact_path.resolve()
+    seen_names: set[str] = set()
     for source_db in ("ops", "canonical", "trace"):
         item = files.get(source_db)
-        if not isinstance(item, dict) or not isinstance(item.get("name"), str):
+        if (not isinstance(item, dict) or set(item) != {"name", "bytes", "sha256"}
+                or not isinstance(item.get("name"), str)):
             file_checks[source_db] = {"status": "fail", "reason": "entry_missing"}
             continue
-        path = artifact_path / item["name"]
-        if not path.is_file():
+        name = item["name"]
+        path = artifact_path / name
+        safe_name = name == Path(name).name and name not in seen_names
+        seen_names.add(name)
+        if not safe_name:
+            file_checks[source_db] = {"status": "fail", "reason": "unsafe_path"}
+            continue
+        if path.is_symlink():
+            file_checks[source_db] = {"status": "fail", "reason": "symlink_rejected"}
+            continue
+        if path.resolve(strict=False).parent != artifact_root:
+            file_checks[source_db] = {"status": "fail", "reason": "unsafe_path"}
+            continue
+        try:
+            metadata = path.stat()
+        except OSError:
+            metadata = None
+        if metadata is None or not stat.S_ISREG(metadata.st_mode):
             file_checks[source_db] = {"status": "fail", "reason": "file_missing"}
+            continue
+        expected_file_sha = item.get("sha256")
+        expected_bytes = item.get("bytes")
+        if (not isinstance(expected_file_sha, str) or len(expected_file_sha) != 64
+                or any(char not in "0123456789abcdef" for char in expected_file_sha)
+                or type(expected_bytes) is not int or expected_bytes < 0):
+            file_checks[source_db] = {"status": "fail", "reason": "entry_invalid"}
             continue
         observed = _sha256(path)
         integrity = None
@@ -582,7 +618,8 @@ def _verify_manifest(artifact_path: Path, expected_sha256: str) -> dict:
                 con.close()
         except sqlite3.Error:
             integrity = "error"
-        passed = observed == item.get("sha256") and integrity == "ok"
+        passed = (observed == expected_file_sha and integrity == "ok"
+                  and metadata.st_size == expected_bytes)
         file_checks[source_db] = {
             "status": "pass" if passed else "fail",
             "bytes": path.stat().st_size,
