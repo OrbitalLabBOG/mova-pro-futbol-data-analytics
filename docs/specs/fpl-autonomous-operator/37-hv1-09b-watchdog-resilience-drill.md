@@ -66,3 +66,10 @@ El commit `a01b0a7` se construyó y desplegó en el VPS con tag y label iguales.
 
 No se creó un P0 falso en la DB productiva: el fallo y recuperación ocurrieron dentro de la base
 efímera del drill. Los controles y el browser permanecieron intactos.
+
+## Gate de promoción
+
+El resultado dejó de ser sólo evidencia consultable: `mova readiness` incorpora
+`RESILIENCE_DRILL_PROVEN` para A1/A2/A3. El gate consulta el último job real, exige seis checks
+completos y falla cerrado ante ausencia o fallo. Esta extensión se despliega como una revisión
+posterior y su evidencia viva se anexará sin alterar los resultados anteriores.

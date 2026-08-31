@@ -56,10 +56,17 @@ def _execution() -> dict:
     }}
 
 
+def _resilience() -> dict:
+    return {"job_id": "job_drill", "status": "completed", "checks": 6,
+            "passed": 6, "finished_at": "2026-08-30T22:00:00+00:00",
+            "output_sha256": "a" * 64}
+
+
 def test_readiness_separates_technical_eligibility_from_authority() -> None:
     report = evaluate_readiness(
         operator_status=_operator(), research_coverage=_research(),
-        execution_status=_execution(), generated_at="2026-08-30T22:00:00+00:00",
+        execution_status=_execution(), resilience_evidence=_resilience(),
+        generated_at="2026-08-30T22:00:00+00:00",
     )
 
     assert report["schema"] == "mova-autonomy-readiness-v1"
@@ -68,7 +75,7 @@ def test_readiness_separates_technical_eligibility_from_authority() -> None:
     assert report["activation"]["current_action_level"] == "A0"
     assert report["activation"]["promotion_is_automatic"] is False
     assert "EXPLICIT_PROMOTION_REQUIRED" in report["activation"]["activation_blockers"]
-    assert report["summary"] == {"pass": 15, "pending": 0, "blocked": 0, "total": 15}
+    assert report["summary"] == {"pass": 16, "pending": 0, "blocked": 0, "total": 16}
 
 
 def test_readiness_fails_closed_and_reports_specific_evidence_gaps() -> None:
@@ -89,7 +96,7 @@ def test_readiness_fails_closed_and_reports_specific_evidence_gaps() -> None:
 
     report = evaluate_readiness(
         operator_status=operator, research_coverage=research,
-        execution_status=execution,
+        execution_status=execution, resilience_evidence={"status": "missing"},
     )
     by_code = {gate["code"]: gate for gate in report["gates"]}
 
@@ -100,6 +107,7 @@ def test_readiness_fails_closed_and_reports_specific_evidence_gaps() -> None:
     assert by_code["R3_DRIVER_PROVEN"]["status"] == "blocked"
     assert by_code["POSTGRES_THREE_GAMEWEEK_CYCLES"]["observed"] == 1
     assert by_code["POSTGRES_ROLE_SEPARATION"]["status"] == "pass"
+    assert by_code["RESILIENCE_DRILL_PROVEN"]["status"] == "pending"
     assert all(item["next_action"] for item in report["next_actions"])
 
 
@@ -108,8 +116,8 @@ def test_readiness_cli_can_be_used_as_a_level_gate_and_metrics_are_bounded() -> 
     assert parsed.command == "readiness" and parsed.require_level == "A2"
     report = evaluate_readiness(
         operator_status=_operator(), research_coverage=_research(),
-        execution_status=_execution(),
+        execution_status=_execution(), resilience_evidence=_resilience(),
     )
     metrics = prometheus(report)
     assert 'mova_autonomy_technical_eligible_level{level="A3"} 1' in metrics
-    assert 'mova_autonomy_readiness_gates{status="pass"} 15' in metrics
+    assert 'mova_autonomy_readiness_gates{status="pass"} 16' in metrics

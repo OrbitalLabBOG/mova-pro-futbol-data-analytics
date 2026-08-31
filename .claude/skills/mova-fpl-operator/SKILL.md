@@ -93,7 +93,8 @@ estar sano pero la entrega falló o existe un evento `dead`. Tras reparar el sin
 retry --outbox-id ... --actor ... --reason ...`; nunca reintentes un evento `sent` o
 `acknowledged`. Para comprobar la ruta sin falsificar un incidente vivo ejecuta `mova drill
 resilience` con actor, razón e idempotency key. El resultado válido declara
-`runtime_mutated=false` y todos sus checks en true.
+`runtime_mutated=false` y todos sus checks en true. `mova readiness` debe reflejarlo como
+`RESILIENCE_DRILL_PROVEN=pass`; un acta Markdown no sustituye ese job.
 
 ## Fuentes de verdad
 

@@ -35,7 +35,7 @@ def _gate(code: str, status: str, summary: str, *, levels: tuple[str, ...],
 
 
 def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
-                       execution_status: dict,
+                       execution_status: dict, resilience_evidence: dict | None = None,
                        generated_at: str | None = None) -> dict:
     """Evalúa únicamente snapshots ya observados; no ejecuta IO ni mutaciones."""
     gameweek = operator_status.get("gameweek") or {}
@@ -64,6 +64,12 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
     distinct_pg_cycles = int(pg_history.get("distinct_gameweek_cycles") or 0)
     required_research = int(
         (research_coverage.get("policy") or {}).get("minimum_measured_gameweeks") or 3
+    )
+    resilience = resilience_evidence or {"status": "missing", "checks": 0, "passed": 0}
+    resilience_passed = (
+        resilience.get("status") == "completed"
+        and int(resilience.get("checks") or 0) >= 6
+        and int(resilience.get("passed") or 0) == int(resilience.get("checks") or 0)
     )
 
     gates = [
@@ -152,6 +158,19 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
             levels=("A1", "A2", "A3"),
             observed=len(operations.get("open_incidents") or []), required=0,
             source="incidents", next_action="resolver incidentes críticos antes de promover",
+        ),
+        _gate(
+            "RESILIENCE_DRILL_PROVEN",
+            "pass" if resilience_passed else
+            "blocked" if resilience.get("status") == "failed" else "pending",
+            "scheduler P0, delivery, dedup y recovery ensayados",
+            levels=("A1", "A2", "A3"),
+            observed={key: resilience.get(key) for key in (
+                "job_id", "status", "checks", "passed", "finished_at", "output_sha256"
+            )},
+            required={"status": "completed", "checks": ">=6", "all_passed": True},
+            source="job_runs.resilience_drill",
+            next_action="ejecutar mova drill resilience con una clave idempotente nueva",
         ),
         _gate(
             "CAPTAINCY_DRIVER_PROVEN",
@@ -284,6 +303,7 @@ def build_readiness(config: RuntimeConfig, db: OpsDB, *,
         operator_status=status,
         research_coverage=db.research_coverage(),
         execution_status=ExecutionService(config, db).status(),
+        resilience_evidence=db.resilience_drill_status(),
         generated_at=current.astimezone(timezone.utc).isoformat(timespec="seconds"),
     )
 

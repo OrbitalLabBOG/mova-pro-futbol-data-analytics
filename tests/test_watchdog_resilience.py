@@ -70,3 +70,16 @@ def test_resilience_drill_is_hermetic_and_complete():
     assert result["status"] == "pass"
     assert result["runtime_mutated"] is False
     assert all(result["checks"].values())
+
+
+def test_resilience_status_is_machine_readable(tmp_path):
+    db = OpsDB(tmp_path / "ops.db", enforce_version=False)
+    db.migrate()
+    assert db.resilience_drill_status() == {"status": "missing", "checks": 0, "passed": 0}
+    job_id, _ = db.start_job("resilience_drill", "drill:status", "corr_status")
+    db.finish_job(job_id, "completed", output_sha256="a" * 64,
+                  metrics={"checks": 6, "passed": 6})
+    status = db.resilience_drill_status()
+    assert status["job_id"] == job_id
+    assert status["status"] == "completed"
+    assert status["checks"] == status["passed"] == 6

@@ -2,7 +2,7 @@
 type: evidence
 name: "HV1-09 — autonomy readiness consolidado"
 created: 2026-08-30
-updated: 2026-08-30
+updated: 2026-08-31
 tags: [mova, fpl, autonomy, readiness, observability, rollout]
 status: deployed-shadow
 ---
@@ -71,3 +71,12 @@ HV1-09 queda completo como control transversal. No cierra HV1-02, HV1-05 ni HV1-
 dependencias observables y consumibles por el agente sin fingir que el tiempo o los rehearsals ya
 ocurrieron. Cualquier promoción futura exige que los gates pasen y, además, una aprobación
 explícita separada que cambie los controles auditados.
+
+## Evolución HV1-09B
+
+Readiness incorpora `RESILIENCE_DRILL_PROVEN` como gate número 16, obligatorio desde A1. Lee el
+último job `resilience_drill` y exige `completed`, al menos seis checks y todos aprobados. Un drill
+ausente queda `pending`; uno fallido queda `blocked`. La evidencia no se infiere de documentación
+ni de un test aislado y no cambia controles. Tras el rollout vivo de HV1-09B, el reporte esperado
+pasa de 9/6/0 sobre 15 gates a 10/6/0 sobre 16, sin cambiar elegibilidad A0 mientras continúen los
+gates temporales.
