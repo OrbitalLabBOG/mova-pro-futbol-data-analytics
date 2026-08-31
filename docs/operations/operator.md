@@ -72,6 +72,13 @@ ni promueve autoridad. Está también en `/api/v1/harness-scorecard` y sus métr
 del límite; exceso GW/mes o reservas huérfanas quedan `blocked`. Revísalo con `mova cost overrun`;
 no lo declares resuelto sin una ejecución posterior equivalente y liquidada dentro del límite.
 
+`mova harness workflow` y `/api/v1/orchestration` reconstruyen el ciclo vigente desde el ledger.
+No confundir `outcome=blocked` con una falla: un envelope o preflight bloqueado por policy puede
+estar `complete`, y entonces `execute_verify=skipped_policy` es la terminación correcta. El
+reporte sólo bloquea por stages fallidos, dependencias inválidas, intento sin plan autorizado,
+review sin settlement o reserva agentic huérfana. Prometheus publica stages y violaciones con
+labels cerrados; el comando siempre declara `runtime_mutated=false`.
+
 El watchdog despacha el outbox vencido a journald después de validar el heartbeat. El claim usa
 lease recuperable, la entrega ocurre fuera de SQLite y los fallos reintentan con backoff hasta
 estado `dead`. `sent` confirma entrega al sink local, no lectura humana. `acknowledge` reconoce el

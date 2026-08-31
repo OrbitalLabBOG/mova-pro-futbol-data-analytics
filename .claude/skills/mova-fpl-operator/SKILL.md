@@ -17,7 +17,8 @@ consulta ordinaria: `mova` y `/api/v1/status` son el contrato estable.
 ## Orientación mínima
 
 1. Lee `AGENTS.md` del repo.
-2. Ejecuta `mova status --json`, `mova readiness` y `mova harness scorecard`; conserva `schema_version`,
+2. Ejecuta `mova status --json`, `mova readiness`, `mova harness scorecard` y
+   `mova harness workflow`; conserva `schema_version`,
    `generated_at`, `overall_status` y `activation.technical_eligible_level` al reportar.
    `readiness` separa capacidad técnica de autoridad: nunca interpreta elegibilidad como
    promoción. Usa `mova readiness --require-level A1|A2|A3` como gate automatizable; exit 2
@@ -25,6 +26,10 @@ consulta ordinaria: `mova` y `/api/v1/status` son el contrato estable.
    calidad, costo, aprendizaje y roles sin crear policy nueva. `blocked` exige atención;
    `pending` puede ser evidencia temporal pendiente. Nunca confundas su `readiness_pass_ratio`
    con probabilidad de éxito ni con permiso de ejecución.
+   El workflow explica el orden de Researcher → Optimizer/Validator → Strategist/Critic →
+   Policy → Executor/Verifier → Reviewer. Un stage `complete` con outcome `blocked` y un
+   `execute_verify=skipped_policy` es fail-closed correcto; una fila en `violations` sí es una
+   contradicción operativa y bloquea. `runtime_mutated=false` debe permanecer explícito.
 3. Si el estado es degradado, incompleto o contradictorio, ejecuta `mova doctor --json`.
    Para una respuesta compacta usa `mova safety` o `/api/v1/safety`: `unsafe` exige atención
    inmediata, `attention_required` exige leer `reasons`, y `safe_to_wait` sólo describe el estado
@@ -140,6 +145,12 @@ Para ensayar deriva DOM y save ambiguo usa `mova drill browser-failure --actor .
 `runtime_mutated=false`; no abre el browser ni autoriza clicks. Confirma después
 `BROWSER_FAILURE_DRILL_PROVEN=pass`, `doctor`, `safety` y los controles A0 intactos. Esta evidencia
 no aumenta los contadores de rehearsals vivos.
+
+Para comprobar el grafo agentic sin gastar tokens ni fabricar una GW usa `mova drill
+orchestration --actor ... --reason ... --idempotency-key ...`. Debe pasar al menos doce checks,
+declarar `external_calls=0` y `runtime_mutated=false`. Replay exacto reutiliza el job; la misma
+clave con actor/razón distintos es conflicto. Este drill prueba policy y dependencias, no cuenta
+como research, rehearsal browser, settlement ni aprobación de autonomía.
 
 ## Fuentes de verdad
 

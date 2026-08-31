@@ -59,3 +59,7 @@ API+PostgreSQL+browser en 19 s, con SQLite y fingerprint intactos; el gate host 
 escenarios. Continúan pendientes un reboot real, los ciclos
 independientes y las aprobaciones; por ello el workpack permanece `active-shadow` y no recomienda
 promoción.
+
+HV1-11 cubrió el escenario acelerado de orden agentic y deadline: doce checks herméticos prueban
+fail-closed, dependencias, degradación del Researcher, ejecución autorizada/omitida y settlement
+no fabricado. El drill no reemplaza GWs ni rehearsals vivos y no modifica la recomendación A0.

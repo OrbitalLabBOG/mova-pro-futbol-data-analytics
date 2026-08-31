@@ -57,15 +57,15 @@ Verificación viva del corte al 31 de agosto:
 - API y PostgreSQL healthy, doctor 22/22 y cero incidentes abiertos;
 - GW3, deadline oficial `2026-09-04T17:30:00Z`, todavía preliminar;
 - último team state válido: 15 jugadores y sesión browser persistente;
-- runtime engine/browser y checkout exactos en `884cb32`;
-- readiness: 13 pass, 6 pending y 0 blocked sobre 19 gates;
+- runtime engine/browser y checkout exactos en `266849c`;
+- readiness: 14 pass, 6 pending y 0 blocked sobre 20 gates;
 - scorecard del harness: operaciones pass; las otras seis dimensiones pendientes, A0 intacto.
 
 Gaps reales restantes:
 
 1. acumular tres GWs independientes para research, rehearsals browser y ciclos PostgreSQL;
-2. revisar el overrun histórico de 7.678 tokens del Researcher y completar el primer loop hasta
-   una lección persistida;
+2. medir el follow-up del overrun ya revisado y completar el primer loop hasta una lección
+   persistida;
 3. mantener lineup y R3 sin entrypoint hasta satisfacer evidencia multi-GW y aprobación;
 4. elegir destinos autorizados para alertas externas y backup cifrado off-host;
 5. ensayar un reboot completo del VPS y aprobar compliance/promoción de forma explícita.
@@ -391,6 +391,7 @@ no borra evidencia previa y nunca amplía autonomía.
 | HV1-08 ✅ | reviewer causal, budgets, propuesta→lección y release de modelos con shadow/rollback | completado | HV1-03/06 |
 | HV1-09 ✅ | gate consolidado de readiness, elegibilidad técnica, API/CLI y métricas | completado | HV1-02/03/05/07 |
 | HV1-10 ✅ | scorecard unificado de calidad, costos, roles, aprendizaje y autoridad | completado | HV1-08/09 |
+| HV1-11 ✅ | grafo agentic read-only + rehearsal de orden/fail-closed/deadline | completado | HV1-06/08/09 |
 
 No es necesario completar 64–92 horas antes de obtener valor. Cortes de entrega:
 
@@ -700,6 +701,20 @@ se acotó a diez consultas, doce documentos finales y salida más pequeña, sin 
 El gate económico permanece pending hasta que la próxima investigación legítima compruebe el
 resultado. Evidencia:
 [HV1-10B lifecycle de overrun](45-hv1-10b-budget-overrun-lifecycle.md).
+
+### Corte de auditoría de orquestación — 31 de agosto de 2026
+
+`mova harness workflow` y `/api/v1/orchestration` traducen el ledger del ciclo en nueve stages
+acotados con owner, outcome, siguiente acción y contradicciones. El contrato reconoce que un
+envelope/preflight bloqueado por policy es una terminación válida: no lo confunde con falla del
+agente ni intenta ejecutar. También incorpora presupuesto y detecta ejecuciones sin autorización,
+reviews sin settlement y reservas agentic huérfanas.
+
+`mova drill orchestration` ensaya con fixtures el flujo válido, degradación del Researcher,
+policy fail-closed, plan autorizado sin ejecución, verificación, orden causal y transición del
+deadline. El primer rehearsal vivo pasó 12/12, con cero IO externo y sin mutar runtime. Readiness
+añadió `ORCHESTRATION_DRILL_PROVEN` y quedó 14/20 pass, seis pending, cero blocked. Evidencia:
+[HV1-11 auditoría de orquestación](46-hv1-11-orchestration-audit.md).
 
 ## 11. Definition of Done del harness v1
 

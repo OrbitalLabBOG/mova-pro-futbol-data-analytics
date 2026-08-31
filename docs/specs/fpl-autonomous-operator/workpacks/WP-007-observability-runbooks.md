@@ -48,6 +48,10 @@ PostgreSQL. El scorecard diferencia `open`, `reviewed_pending` y `closed`; sólo
 posterior equivalente dentro del límite permite resolver. El primer caso real permanece
 `reviewed_pending` hasta obtener esa evidencia temporal.
 
+HV1-11 añadió una lectura unificada del grafo agentic por CLI/API/Prometheus. Distingue stages
+completos con outcome fail-closed de violaciones causales, y enlaza roles LLM con coordinador,
+policy, executor, verifier y reviewer deterministas sin capturar contenido de inferencia.
+
 HV1-01B agregó `mova safety`, `/api/v1/safety` y la tarjeta de seguridad del dashboard; el
 resultado reúne deadline, gates, frescura, incidentes y outbox en una sola lectura. P0 y P1 tienen
 tests de entrega/fallo, el outbox recupera leases, reintenta y permite acuse auditado. `mova

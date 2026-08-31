@@ -22,7 +22,7 @@ PM de construcción del proyecto.
 
 | Campo | Valor |
 | --- | --- |
-| Versión | 0.23 |
+| Versión | 0.24 |
 | Estado | `active-shadow` |
 | Riesgo | alto: cuenta externa, deadlines irreversibles y sesión autenticada |
 | Business owner | Julián Zuluaga |
@@ -78,6 +78,7 @@ PM de construcción del proyecto.
 | [43-hv1-09h-combined-recovery-drill.md](43-hv1-09h-combined-recovery-drill.md) | Outage conjunto API+PostgreSQL+browser con continuidad SQLite y restore completo |
 | [44-hv1-10-harness-scorecard-rollout.md](44-hv1-10-harness-scorecard-rollout.md) | Scorecard unificado de calidad, costo, aprendizaje y autoridad del harness |
 | [45-hv1-10b-budget-overrun-lifecycle.md](45-hv1-10b-budget-overrun-lifecycle.md) | Ledger auditable de revisión de overruns y optimización acotada del Researcher |
+| [46-hv1-11-orchestration-audit.md](46-hv1-11-orchestration-audit.md) | Grafo agentic observable y rehearsal hermético de orden, fail-closed y deadline |
 | [contracts/](contracts/) | JSON Schemas máquina para request, result y signal |
 | [decisions/](decisions/) | decisiones arquitectónicas propuestas |
 | [workpacks/](workpacks/) | unidades de implementación y criterios todavía pendientes |

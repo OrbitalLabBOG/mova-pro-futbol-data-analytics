@@ -47,6 +47,7 @@ mova strategy research due
 mova strategy deliberate status
 mova improve status --season 2026-27
 mova harness scorecard
+mova harness workflow
 mova postgres status
 mova postgres verify
 mova postgres drill --actor codex --reason read-cutover --idempotency-key gw03-v1
@@ -54,6 +55,8 @@ mova postgres roles --actor codex --reason least-privilege --idempotency-key gw0
 mova drill snapshot --actor codex --reason snapshot-boundary --idempotency-key snapshot-v1
 mova drill browser-failure --actor codex --reason dom-save-boundary \
   --idempotency-key browser-failure-v1
+mova drill orchestration --actor codex --reason agent-graph \
+  --idempotency-key orchestration-v1
 
 # chaos host-only, manual y reversible (no se agenda)
 sudo deploy/bin/api-recovery-drill.sh codex "api recovery" hv1-api-v1
@@ -109,6 +112,9 @@ CycleManifest + memoria estratégica durable → modelos causales → matriz xP 
   deliberación reservan capacidad atómicamente antes de entrar a la cola.
 - `mova review auto` atribuye causas después del scorecard final y exige recurrencia multi-GW
   antes de crear una propuesta experimental.
+- `mova harness workflow` reconstruye el grafo vigente desde el ledger y separa una terminación
+  segura por policy de una falla real de dependencias. El drill hermético comprueba orden,
+  fail-closed, deadline e idempotencia sin llamar agentes ni tocar FPL.
 - El tick no interpreta Markdown: persiste un `DecisionEnvelope` JSON ligado al manifest real.
 - Una propuesta sin GW previa asentada, proyección aprobada, team state fresco o ventana válida
   queda `blocked`; solo una que supera todos los hard gates queda `staged`.
