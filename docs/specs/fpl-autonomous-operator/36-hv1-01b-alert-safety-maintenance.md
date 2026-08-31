@@ -4,7 +4,7 @@ name: "HV1-01B — Alertas, safety summary y mantenimiento"
 created: 2026-08-31
 updated: 2026-08-31
 tags: [mova, fpl, observability, alerts, maintenance]
-status: tested-pending-live-rollout
+status: verified-live
 ---
 
 # HV1-01B — Alertas, safety summary y mantenimiento
@@ -47,3 +47,28 @@ resultados exactos se anexarán después del despliegue; no se anticipan aquí.
 - `compileall`, `git diff --check` y sintaxis de scripts shell: pass;
 - build Docker local: no ejecutable porque ese host no tiene el plugin `docker-buildx`; se difiere
   al builder provisionado del VPS y no se considera evidencia de éxito.
+
+## Rollout vivo
+
+El 31 de agosto de 2026 se promovió el commit de código `203f4fe` al VPS después de backup
+predeploy. El primer intento de smoke reveló que Compose había construido `local` mientras el
+wrapper conservaba el tag `7a946ee`; se corrigió sin ocultarlo, alineando explícitamente
+`MOVA_IMAGE_TAG`, `MOVA_GIT_SHA`, checkout e imagen antes de certificar.
+
+Evidencia final:
+
+- checkout e imagen: `203f4fe`, check `deployment_revision=PASS`;
+- Docker build del engine y smoke de `safety`, `alerts status` y cleanup: pass;
+- doctor: 22 pass, 0 warn, 0 fail;
+- readiness: 9 pass, 6 pending temporales, 0 blocked; nivel técnico A0;
+- `GET /api/v1/safety`: `safe_to_wait`, cero incidentes abiertos y cero entregas pendientes;
+- dos eventos históricos —P1 tick y P2 collector— entregados a journald, un intento cada uno,
+  cero fallos y cero `dead`; no se marcaron falsamente como acuse humano;
+- watchdog real: heartbeat `ok`, dispatcher integrado, cero eventos vencidos tras el drain;
+- cleanup vivo dry-run: cero candidatos y cero bytes, sin mutación;
+- import PostgreSQL `pgimport_5483d778101445f5820a29095063a157`: 54/54 tablas, paridad
+  `pass`, cero fallos;
+- backup postdeploy: `/opt/orbital/backups/mova-fpl/20260831T011303Z`.
+
+No cambió ningún control ni se operó el navegador. El canal sigue siendo journald local; una
+notificación externa y su owner permanecen como decisión separada antes de autonomía desatendida.
