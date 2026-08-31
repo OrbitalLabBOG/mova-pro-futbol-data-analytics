@@ -47,6 +47,8 @@ mova strategy prepare
 mova strategy research due
 mova strategy research enqueue
 mova strategy research import
+mova strategy attempts import
+mova strategy attempts status
 mova execute status
 mova execute preflight --actor codex --reason "..." --idempotency-key "..."
 mova review gw --package /app/decisions/fpl/2026-27/gwNN_closeout.json \
@@ -86,6 +88,19 @@ sin progreso por 35 minutos abre un único P1 `Agent queue integrity unhealthy`.
 resuelve el incidente; nunca borra ni repara el artefacto desde el watchdog. `doctor` lo muestra como
 `agent_queue_integrity`, `/api/v1/agent-queue` responde 200/503 y Prometheus publica
 `mova_agent_queue_healthy`, `requests` y `anomalies` sin contenido del prompt.
+
+El worker Codex escribe un receipt inmutable `started` antes de ejecutar y otro `finished` al
+terminar. Eventos, errores y normalización incluyen `attempt_id`, por lo que un retry no sobrescribe
+la evidencia anterior. `research-cycle.sh` importa esos receipts incluso si el contenedor devuelve
+error. `mova strategy attempts status` resume intentos, fallos, éxitos y subjects agotados; API
+`/api/v1/agent-attempts`, `/api/v1/agent-attempt-events` y métricas
+`mova_agent_worker_*` exponen el mismo ledger sin prompts ni stderr.
+
+Cada request admite como máximo dos starts automáticos. Al alcanzar el límite sin éxito, el host
+marca la corrida `rejected`, carga la reserva conservadora ya existente y mueve sólo la request
+allowlisted del inbox a cuarentena. Un éxito terminal impide ese cierre. No borres receipts para
+forzar un retry: diagnostica la causa, genera una request nueva mediante el control plane y conserva
+la evidencia anterior.
 
 El claim del outbox usa lease recuperable, la entrega ocurre fuera de SQLite y los fallos reintentan con backoff hasta
 estado `dead`. `sent` confirma entrega al sink local, no lectura humana. `acknowledge` reconoce el

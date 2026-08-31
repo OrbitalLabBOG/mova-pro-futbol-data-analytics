@@ -767,6 +767,18 @@ invalida el pass anterior. El destino sigue sin elegirse y, por eso, el live gat
 pending en producción. Evidencia:
 [HV1-12B prueba viva de alertas](48-hv1-12b-live-alert-proof.md).
 
+### Corte de recibos agentic y replay acotado — 31 de agosto de 2026
+
+Cada ejecución del worker aislado emite eventos append-only `started/finished` ligados a
+`request_sha256` y a un `attempt_id` único. Los logs ya no reutilizan el ID de la corrida y el host
+importa los receipts aun cuando Codex devuelve error. SQLite 19 y PostgreSQL shadow 22 conservan el
+ledger; CLI, API y Prometheus lo hacen consultable sin prompt, auth ni stderr.
+
+Una request puede iniciar como máximo dos intentos automáticos. Si no existe un éxito, el
+reconciliador rechaza la corrida, conserva el cargo estimado ya reservado y pone la request en
+cuarentena. El límite cuenta también un proceso muerto que sólo alcanzó a escribir `started`.
+Evidencia: [HV1-09J agent attempt ledger](51-hv1-09j-agent-attempt-ledger.md).
+
 ## 11. Definition of Done del harness v1
 
 - un ciclo completo puede ejecutarse, reanudarse y explicarse desde `mova`;

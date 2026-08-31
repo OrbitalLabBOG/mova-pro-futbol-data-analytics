@@ -45,6 +45,7 @@ mova model evaluate --actor codex --reason settlement --idempotency-key gw02-v1
 mova strategy status
 mova strategy research due
 mova strategy deliberate status
+mova strategy attempts status
 mova watchdog
 mova improve status --season 2026-27
 mova harness scorecard
