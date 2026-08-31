@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from mova_fpl.ops.config import RuntimeConfig
+from mova_fpl.ops.db import OpsDB
 from mova_fpl.ops.host_drill import import_evidence, validate
 
 
@@ -19,6 +20,29 @@ def _payload() -> dict:
             "ready_before": True, "unavailable_during": True, "ready_after": True,
             "revision_unchanged": True, "sqlite_integrity_after": True,
         },
+        "fpl_state_mutated": False,
+    }
+
+
+def _postgres_payload() -> dict:
+    fingerprint = "a" * 64
+    return {
+        "schema": "mova-host-drill-v1", "scenario": "postgres_recovery",
+        "status": "pass", "started_at": "2026-08-31T01:00:00Z",
+        "finished_at": "2026-08-31T01:00:45Z", "downtime_seconds": 12,
+        "revision": "abc1234",
+        "checks": {
+            "postgres_ready_before": True,
+            "postgres_unavailable_during": True,
+            "api_ready_during": True,
+            "sqlite_integrity_during": True,
+            "postgres_ready_after": True,
+            "postgres_parity_after": True,
+            "revision_unchanged": True,
+            "team_state_unchanged": True,
+        },
+        "team_state_sha256_before": fingerprint,
+        "team_state_sha256_after": fingerprint,
         "fpl_state_mutated": False,
     }
 
@@ -66,6 +90,40 @@ def test_host_drill_rejects_files_outside_inbox(tmp_path: Path):
         import_evidence(config, source)
 
 
+def test_postgres_host_drill_is_allowlisted_and_binds_state_fingerprint():
+    result = validate(
+        _postgres_payload(), expected_revision="abc1234",
+        expected_scenario="postgres_recovery",
+    )
+    assert result["scenario"] == "postgres_recovery"
+    assert len(result["checks"]) == 8
+    assert result["team_state_sha256_before"] == "a" * 64
+    assert result["team_state_sha256_after"] == result["team_state_sha256_before"]
+
+
+@pytest.mark.parametrize("mutation", [
+    {"team_state_sha256_after": "b" * 64},
+    {"team_state_sha256_before": "not-a-digest"},
+    {"downtime_seconds": 181},
+    {"checks": {"postgres_ready_before": True}},
+])
+def test_postgres_host_drill_rejects_drift_or_invalid_contract(mutation):
+    payload = {**_postgres_payload(), **mutation}
+    with pytest.raises(ValueError):
+        validate(
+            payload, expected_revision="abc1234",
+            expected_scenario="postgres_recovery",
+        )
+
+
+def test_host_drill_rejects_scenario_substitution():
+    with pytest.raises(ValueError, match="scenario mismatch"):
+        validate(
+            _postgres_payload(), expected_revision="abc1234",
+            expected_scenario="api_recovery",
+        )
+
+
 def test_host_script_has_recovery_trap_and_never_mentions_fpl_writes():
     script = Path("deploy/bin/api-recovery-drill.sh").read_text(encoding="utf-8")
     assert "trap recover_api EXIT" in script
@@ -76,3 +134,67 @@ def test_host_script_has_recovery_trap_and_never_mentions_fpl_writes():
     assert '[[ -w "$inbox" && -w "$imported" ]]' in script
     assert "fpl_state_mutated" in script
     assert not any(token in script for token in ("my-team", "transfers", "agent-browser"))
+
+
+def test_postgres_host_script_locks_writers_and_proves_recovery():
+    script = Path("deploy/bin/postgres-recovery-drill.sh").read_text(encoding="utf-8")
+    assert "trap recover_postgres EXIT" in script
+    assert "docker compose stop --timeout 20 postgres" in script
+    assert "mova-fpl-worker.lock" in script
+    assert "mova-fpl-collector-host.lock" in script
+    assert "mova-fpl-private-state.lock" in script
+    assert "timeout 20 /usr/local/bin/mova postgres status" in script
+    assert script.count("/usr/local/bin/mova postgres verify") == 2
+    assert "team_state_hash" in script
+    assert "fpl_state_mutated" in script
+    assert not any(token in script for token in ("my-team", "transfers", "agent-browser"))
+
+
+def test_host_cli_binds_scenario_and_identity(tmp_path: Path, monkeypatch, capsys):
+    from mova_fpl.ops.cli import main
+
+    config = RuntimeConfig(
+        ops_db=tmp_path / "db" / "ops.db",
+        artifact_root=tmp_path / "artifacts",
+        git_sha="abc1234",
+        sqlite_min_version="3.40.0",
+    )
+    config.ops_db.parent.mkdir(parents=True)
+    OpsDB(config.ops_db, minimum_version=config.sqlite_min_version).migrate()
+    source = config.artifact_root / "host-drills" / "inbox" / "postgres.json"
+    source.parent.mkdir(parents=True)
+    source.write_text(json.dumps(_postgres_payload()), encoding="utf-8")
+    monkeypatch.setattr(
+        RuntimeConfig, "from_env", classmethod(lambda cls: config),
+    )
+    arguments = [
+        "drill", "import-host", "--file", str(source),
+        "--scenario", "postgres_recovery", "--actor", "operator",
+        "--reason", "database recovery", "--idempotency-key", "pg-drill-1",
+    ]
+
+    assert main(arguments) == 0
+    imported = json.loads(capsys.readouterr().out)
+    assert imported["scenario"] == "postgres_recovery"
+    assert imported["status"] == "pass"
+    host_summary = OpsDB(
+        config.ops_db, minimum_version=config.sqlite_min_version,
+    ).host_recovery_drill_status()
+    assert host_summary["status"] == "incomplete"
+    assert host_summary["completed"] == 1
+    assert host_summary["scenarios"]["postgres_recovery"]["checks"] == 8
+
+    status_arguments = [
+        "drill", "host-status", "--scenario", "postgres_recovery",
+        "--actor", "operator", "--reason", "database recovery",
+        "--idempotency-key", "pg-drill-1",
+    ]
+    assert main(status_arguments) == 0
+    status = json.loads(capsys.readouterr().out)
+    assert status["status"] == "completed"
+    assert status["reused"] is True
+
+    changed_identity = [*status_arguments]
+    changed_identity[changed_identity.index("database recovery")] = "different reason"
+    with pytest.raises(ValueError, match="different identity"):
+        main(changed_identity)

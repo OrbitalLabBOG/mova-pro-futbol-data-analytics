@@ -36,6 +36,7 @@ def _gate(code: str, status: str, summary: str, *, levels: tuple[str, ...],
 
 def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
                        execution_status: dict, resilience_evidence: dict | None = None,
+                       host_recovery_evidence: dict | None = None,
                        generated_at: str | None = None) -> dict:
     """Evalúa únicamente snapshots ya observados; no ejecuta IO ni mutaciones."""
     gameweek = operator_status.get("gameweek") or {}
@@ -70,6 +71,14 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
         resilience.get("status") == "completed"
         and int(resilience.get("checks") or 0) >= 6
         and int(resilience.get("passed") or 0) == int(resilience.get("checks") or 0)
+    )
+    host_recovery = host_recovery_evidence or {
+        "status": "incomplete", "completed": 0, "required": 2, "scenarios": {},
+    }
+    host_recovery_passed = (
+        host_recovery.get("status") == "completed"
+        and int(host_recovery.get("completed") or 0)
+        == int(host_recovery.get("required") or 2)
     )
 
     gates = [
@@ -171,6 +180,24 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
             required={"status": "completed", "checks": ">=6", "all_passed": True},
             source="job_runs.resilience_drill",
             next_action="ejecutar mova drill resilience con una clave idempotente nueva",
+        ),
+        _gate(
+            "HOST_RECOVERY_DRILLS_PROVEN",
+            "pass" if host_recovery_passed else
+            "blocked" if host_recovery.get("status") == "failed" else "pending",
+            "caídas reales de API y PostgreSQL recuperadas sin mutar FPL",
+            levels=("A1", "A2", "A3"),
+            observed={
+                "status": host_recovery.get("status"),
+                "completed": host_recovery.get("completed"),
+                "required": host_recovery.get("required"),
+                "scenarios": host_recovery.get("scenarios") or {},
+            },
+            required={"status": "completed", "scenarios": [
+                "api_recovery", "postgres_recovery",
+            ]},
+            source="job_runs.host_recovery_drill",
+            next_action="ejecutar los drills host allowlisted de API y PostgreSQL",
         ),
         _gate(
             "CAPTAINCY_DRIVER_PROVEN",
@@ -304,6 +331,7 @@ def build_readiness(config: RuntimeConfig, db: OpsDB, *,
         research_coverage=db.research_coverage(),
         execution_status=ExecutionService(config, db).status(),
         resilience_evidence=db.resilience_drill_status(),
+        host_recovery_evidence=db.host_recovery_drill_status(),
         generated_at=current.astimezone(timezone.utc).isoformat(timespec="seconds"),
     )
 

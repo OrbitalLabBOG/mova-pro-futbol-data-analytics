@@ -260,6 +260,9 @@ def test_cli_exposes_human_and_json_operator_modes():
     ])
     assert host_drill.drill_command == "import-host"
     host_status = parser().parse_args([
-        "drill", "host-status", "--idempotency-key", "host-drill-1",
+        "drill", "host-status", "--scenario", "postgres_recovery",
+        "--actor", "operator", "--reason", "database recovery",
+        "--idempotency-key", "host-drill-1",
     ])
     assert host_status.drill_command == "host-status"
+    assert host_status.scenario == "postgres_recovery"

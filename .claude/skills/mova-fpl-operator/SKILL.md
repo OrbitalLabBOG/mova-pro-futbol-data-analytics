@@ -102,6 +102,13 @@ su trap. El script importa evidencia mediante `mova drill import-host`. Confirma
 `doctor`, revisión checkout/imagen, watchdog y paridad PostgreSQL. Este drill no cubre DB,
 browser, DOM, save ambiguo ni reboot.
 
+La caída real de PostgreSQL usa exclusivamente
+`deploy/bin/postgres-recovery-drill.sh ACTOR REASON IDEMPOTENCY_KEY`. El script toma todos los
+locks de writers, conserva API/SQLite, verifica el fingerprint privado y exige paridad posterior;
+exit 75 significa que difirió sin detener el servicio. `mova readiness` sólo pasa
+`HOST_RECOVERY_DRILLS_PROVEN` cuando API y PostgreSQL tienen jobs canónicos aprobados. El drill no
+prueba snapshot corrupto, DOM/save ambiguo, combinación de fallos ni reboot.
+
 ## Fuentes de verdad
 
 - Git: código, contratos, configuración de ejemplo, skills y runbooks.

@@ -12,9 +12,23 @@ from pathlib import Path
 from mova_fpl.ops.config import RuntimeConfig
 
 SCHEMA = "mova-host-drill-v1"
-REQUIRED_CHECKS = {
-    "ready_before", "unavailable_during", "ready_after",
-    "revision_unchanged", "sqlite_integrity_after",
+SCENARIOS = {
+    "api_recovery": {
+        "checks": {
+            "ready_before", "unavailable_during", "ready_after",
+            "revision_unchanged", "sqlite_integrity_after",
+        },
+        "max_downtime_seconds": 120,
+    },
+    "postgres_recovery": {
+        "checks": {
+            "postgres_ready_before", "postgres_unavailable_during",
+            "api_ready_during", "sqlite_integrity_during",
+            "postgres_ready_after", "postgres_parity_after",
+            "revision_unchanged", "team_state_unchanged",
+        },
+        "max_downtime_seconds": 180,
+    },
 }
 MAX_BYTES = 64 * 1024
 
@@ -26,12 +40,17 @@ def _time(value: object) -> datetime:
     return parsed.astimezone(timezone.utc)
 
 
-def validate(payload: dict, *, expected_revision: str) -> dict:
+def validate(payload: dict, *, expected_revision: str,
+             expected_scenario: str | None = None) -> dict:
     if not isinstance(payload, dict) or payload.get("schema") != SCHEMA:
         raise ValueError("invalid host drill schema")
-    if payload.get("scenario") != "api_recovery":
+    scenario = str(payload.get("scenario") or "")
+    contract = SCENARIOS.get(scenario)
+    if not contract:
         raise ValueError("unsupported host drill scenario")
-    if set(payload.get("checks") or {}) != REQUIRED_CHECKS:
+    if expected_scenario is not None and scenario != expected_scenario:
+        raise ValueError("host drill scenario mismatch")
+    if set(payload.get("checks") or {}) != contract["checks"]:
         raise ValueError("host drill checks must match allowlist")
     checks = {key: bool(value) for key, value in payload["checks"].items()}
     if not all(checks.values()) or payload.get("status") != "pass":
@@ -42,20 +61,33 @@ def validate(payload: dict, *, expected_revision: str) -> dict:
     started = _time(payload.get("started_at"))
     finished = _time(payload.get("finished_at"))
     duration = int(payload.get("downtime_seconds") or 0)
-    if finished < started or not 0 <= duration <= 120:
+    if (finished < started
+            or not 0 <= duration <= int(contract["max_downtime_seconds"])):
         raise ValueError("host drill timing invalid")
     if payload.get("fpl_state_mutated") is not False:
         raise ValueError("host drill must prove FPL state remained untouched")
-    return {
-        "schema": SCHEMA, "scenario": "api_recovery", "status": "pass",
+    normalized = {
+        "schema": SCHEMA, "scenario": scenario, "status": "pass",
         "started_at": started.isoformat(timespec="seconds"),
         "finished_at": finished.isoformat(timespec="seconds"),
         "downtime_seconds": duration, "revision": revision, "checks": checks,
         "fpl_state_mutated": False, "host_service_restarted": True,
     }
+    if scenario == "postgres_recovery":
+        before = str(payload.get("team_state_sha256_before") or "")
+        after = str(payload.get("team_state_sha256_after") or "")
+        if (len(before) != 64 or any(char not in "0123456789abcdef" for char in before)
+                or before != after):
+            raise ValueError("host drill team state fingerprint mismatch")
+        normalized.update({
+            "team_state_sha256_before": before,
+            "team_state_sha256_after": after,
+        })
+    return normalized
 
 
-def import_evidence(config: RuntimeConfig, path: Path) -> dict:
+def import_evidence(config: RuntimeConfig, path: Path, *,
+                    expected_scenario: str | None = None) -> dict:
     inbox = (config.artifact_root / "host-drills" / "inbox").resolve()
     source = path.resolve()
     if inbox not in source.parents or not source.is_file() or source.is_symlink():
@@ -63,7 +95,10 @@ def import_evidence(config: RuntimeConfig, path: Path) -> dict:
     raw = source.read_bytes()
     if not raw or len(raw) > MAX_BYTES:
         raise ValueError("host drill evidence size invalid")
-    payload = validate(json.loads(raw), expected_revision=config.git_sha)
+    payload = validate(
+        json.loads(raw), expected_revision=config.git_sha,
+        expected_scenario=expected_scenario,
+    )
     canonical = (json.dumps(payload, ensure_ascii=False, sort_keys=True,
                             separators=(",", ":")) + "\n").encode()
     digest = hashlib.sha256(canonical).hexdigest()

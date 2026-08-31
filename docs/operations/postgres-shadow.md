@@ -151,6 +151,18 @@ docker compose ps postgres
 docker compose logs --tail=100 postgres
 ```
 
+Para probar indisponibilidad y recuperación reales sin improvisar stops:
+
+```bash
+sudo deploy/bin/postgres-recovery-drill.sh \
+  codex "chaos PostgreSQL shadow" "hv1-09d-live-YYYYMMDD"
+```
+
+El host toma todos los locks de writers, verifica paridad, detiene sólo PostgreSQL, prueba que el
+cliente falle mientras API y SQLite siguen disponibles, recupera la misma imagen y vuelve a
+validar 54 contratos. La evidencia se importa como `postgres_recovery`; repetir la identidad
+completada no provoca otra caída. Un exit 75 difiere el ensayo porque existe un writer activo.
+
 Ante fallo, detener nuevos imports y conservar el artefacto fallido. Como SQLite sigue siendo
 writer, el rollback operativo es deshabilitar `mova-fpl-postgres-sync.timer` y detener
 `postgres`; collector, modelos y decisiones continúan leyendo SQLite. La API declarará el shadow

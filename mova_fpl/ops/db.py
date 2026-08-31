@@ -1376,6 +1376,47 @@ class OpsDB:
                         "passed": int(metrics.get("passed") or 0)})
         return payload
 
+    def host_recovery_drill_status(self) -> dict:
+        """Resume la evidencia más reciente por escenario host requerido."""
+        required = ("api_recovery", "postgres_recovery")
+        with self.connect(readonly=True) as con:
+            rows = con.execute(
+                "SELECT job_id,status,started_at,finished_at,output_sha256,metrics_json,"
+                "error_code FROM job_runs WHERE job_type='host_recovery_drill' "
+                "ORDER BY started_at DESC"
+            ).fetchall()
+        scenarios: dict[str, dict] = {}
+        for raw in rows:
+            row = dict(raw)
+            metrics = json.loads(row.pop("metrics_json") or "{}")
+            scenario = str(metrics.get("scenario") or "")
+            if scenario not in required or scenario in scenarios:
+                continue
+            row.update({
+                "checks": int(metrics.get("checks") or 0),
+                "passed": int(metrics.get("passed") or 0),
+                "downtime_seconds": metrics.get("downtime_seconds"),
+            })
+            scenarios[scenario] = row
+        completed = sum(
+            (scenarios.get(name) or {}).get("status") == "completed"
+            and int((scenarios.get(name) or {}).get("checks") or 0) > 0
+            and int((scenarios.get(name) or {}).get("passed") or 0)
+            == int((scenarios.get(name) or {}).get("checks") or 0)
+            for name in required
+        )
+        failed = any(
+            (scenarios.get(name) or {}).get("status") == "failed"
+            for name in required
+        )
+        return {
+            "status": "completed" if completed == len(required) else
+                      "failed" if failed else "incomplete",
+            "completed": completed,
+            "required": len(required),
+            "scenarios": scenarios,
+        }
+
     def latest_snapshot(self, cycle_id: str) -> dict | None:
         with self.connect(readonly=True) as con:
             row = con.execute(

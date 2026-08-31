@@ -51,6 +51,10 @@ mova postgres verify
 mova postgres drill --actor codex --reason read-cutover --idempotency-key gw03-v1
 mova postgres roles --actor codex --reason least-privilege --idempotency-key gw03-roles-v1
 
+# chaos host-only, manual y reversible (no se agenda)
+sudo deploy/bin/api-recovery-drill.sh codex "api recovery" hv1-api-v1
+sudo deploy/bin/postgres-recovery-drill.sh codex "postgres recovery" hv1-postgres-v1
+
 # collector público sellado
 python -m mova_fpl.cli.collect_live --season 2026-27 --gw 2
 
@@ -88,6 +92,8 @@ CycleManifest + memoria estratégica durable → modelos causales → matriz xP 
   idempotencia y métricas, sin cambiar el writer productivo.
 - `mova postgres roles` rota y prueba identidades separadas para aplicación y sólo lectura;
   owner queda reservado a migraciones/imports y ningún secreto entra a logs o artifacts.
+- Los scripts host de recuperación API/PostgreSQL toman locks, instalan traps, importan evidencia
+  allowlisted y son idempotentes; nunca se ejecutan mediante timer ni amplían autoridad FPL.
 - `mova improve` registra experimentos, evaluaciones, lecciones y uso/costo. Aceptar una lección
   no modifica el runtime; `mova improve release` es el único camino que puede activar un bundle
   `minutes+points`, después de hashes válidos, shadow multi-GW y gate determinista.

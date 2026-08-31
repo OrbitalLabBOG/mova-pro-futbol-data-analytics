@@ -177,6 +177,12 @@ timers o browser y declara `fpl_state_mutated=false`; no usarlo dentro de una ej
 El script toma un `flock` y consulta `mova drill host-status` antes de detener el servicio: repetir
 la misma clave completada retorna el job anterior sin provocar otra caída.
 
+`postgres-recovery-drill.sh` aplica el mismo patrón al shadow PostgreSQL, pero antes toma también
+los locks de worker, collector, analytics, research y private state. Verifica paridad antes y
+después, demuestra que un cliente pierde conexión mientras API/SQLite continúan sanos y compara
+el fingerprint del último team state. Si un writer está activo retorna 75 sin detener nada. El
+trap levanta únicamente `postgres`; no borra ni restaura el volumen.
+
 ## Estado privado del equipo — API-first
 
 El browser no raspa el DOM para conocer la plantilla. Con la sesión humana persistente hace

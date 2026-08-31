@@ -47,5 +47,8 @@ restore drills e idempotencia de agentes. HV1-09B añade un escenario hermético
 scheduler ausente, P0, delivery, deduplicación y recuperación. HV1-09C verificó en producción una
 caída real y recuperación del contenedor API en 7 s, con trap host, integridad posterior, import
 allowlisted y replay sin segunda caída. Continúan pendientes los escenarios combinados
-DB/browser/DOM/save ambiguo, un reboot real, los ciclos independientes y las aprobaciones; por ello
-el workpack permanece `active-shadow` y no recomienda promoción.
+HV1-09D incorpora el contrato para caída real de PostgreSQL con locks de writers, continuidad
+SQLite/API, fingerprint del team state, paridad posterior y gate máquina conjunto API+DB.
+Continúan pendientes su rollout vivo, snapshot inválido, browser/DOM/save ambiguo, escenarios
+combinados, un reboot real, los ciclos independientes y las aprobaciones; por ello el workpack
+permanece `active-shadow` y no recomienda promoción.

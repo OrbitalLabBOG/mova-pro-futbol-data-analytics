@@ -299,10 +299,20 @@ def parser() -> argparse.ArgumentParser:
     host_drill.add_argument("--actor", required=True)
     host_drill.add_argument("--reason", required=True)
     host_drill.add_argument("--idempotency-key", required=True)
+    host_drill.add_argument(
+        "--scenario", choices=("api_recovery", "postgres_recovery"),
+        default="api_recovery",
+    )
     host_status = drill_commands.add_parser(
         "host-status", help="consulta idempotencia antes de mutar un servicio host"
     )
     host_status.add_argument("--idempotency-key", required=True)
+    host_status.add_argument(
+        "--scenario", choices=("api_recovery", "postgres_recovery"),
+        default="api_recovery",
+    )
+    host_status.add_argument("--actor")
+    host_status.add_argument("--reason")
     backup = commands.add_parser("backup")
     backup.add_argument("--retention-days", type=int, default=35)
     backup.add_argument("--force", action="store_true",
@@ -780,32 +790,69 @@ def main(argv: list[str] | None = None) -> int:
             return 1
     elif args.command == "drill":
         if args.drill_command == "host-status":
-            row = db.get_job_by_key(f"host_recovery_drill:{args.idempotency_key}")
+            if bool(args.actor) != bool(args.reason):
+                raise ValueError("host-status actor y reason deben venir juntos")
+            key = (
+                f"host_recovery_drill:{args.scenario}:{args.idempotency_key}"
+            )
+            row = db.get_job_by_key(key)
+            if not row and args.scenario == "api_recovery":
+                # Compatibilidad con la única evidencia importada antes de
+                # separar la identidad por escenario.
+                row = db.get_job_by_key(
+                    f"host_recovery_drill:{args.idempotency_key}"
+                )
+            if row and args.actor:
+                identity = sha256_json({
+                    "scenario": args.scenario, "actor": args.actor,
+                    "reason": args.reason,
+                    "idempotency_key": args.idempotency_key,
+                })
+                if row.get("input_sha256") not in (None, identity):
+                    raise ValueError(
+                        "host drill idempotency key reused with different identity"
+                    )
             if not row:
-                print(json.dumps({"schema": "mova-host-drill-status-v1", "status": "due"}))
+                print(json.dumps({
+                    "schema": "mova-host-drill-status-v1", "status": "due",
+                    "scenario": args.scenario,
+                }))
                 return 75
             print(json.dumps({
                 "schema": "mova-host-drill-status-v1", "status": row["status"],
-                "job_id": row["job_id"], "reused": row["status"] == "completed",
+                "scenario": args.scenario, "job_id": row["job_id"],
+                "reused": row["status"] == "completed",
             }, sort_keys=True))
             return 0 if row["status"] == "completed" else 2
         correlation_id = new_id("corr")
         is_resilience = args.drill_command == "resilience"
         job_type = "resilience_drill" if is_resilience else "host_recovery_drill"
         schema = "mova-resilience-drill-v1" if is_resilience else "mova-host-drill-v1"
+        scenario = "scheduler_p0_recovery" if is_resilience else args.scenario
+        identity = sha256_json({
+            "scenario": scenario, "actor": args.actor, "reason": args.reason,
+            "idempotency_key": args.idempotency_key,
+        })
+        job_key = (f"{job_type}:{args.idempotency_key}" if is_resilience else
+                   f"{job_type}:{scenario}:{args.idempotency_key}")
         job_id, reused = db.start_job(
-            job_type, f"{job_type}:{args.idempotency_key}", correlation_id,
+            job_type, job_key, correlation_id, input_sha256=identity,
         )
         if reused:
-            print(json.dumps({"schema": schema, "status": "reused",
-                              "job_id": job_id}))
+            prior = db.get_job_by_key(job_key) or {}
+            if prior.get("input_sha256") not in (None, identity):
+                raise ValueError("drill idempotency key reused with different identity")
+            prior_status = str(prior.get("status") or "unknown")
+            print(json.dumps({"schema": schema, "status": (
+                "reused" if prior_status == "completed" else prior_status
+            ), "job_id": job_id}))
+            if prior_status != "completed":
+                return 2
         else:
             db.append_audit(
                 f"{job_type}_requested", actor=args.actor,
                 correlation_id=correlation_id, job_id=job_id,
-                subject_type="drill", subject_id=(
-                    "scheduler_p0_recovery" if is_resilience else "api_recovery"
-                ),
+                subject_type="drill", subject_id=scenario,
                 payload={"reason": args.reason},
             )
             try:
@@ -815,7 +862,9 @@ def main(argv: list[str] | None = None) -> int:
                 else:
                     from pathlib import Path
                     from mova_fpl.ops.host_drill import import_evidence
-                    payload = import_evidence(config, Path(args.file))
+                    payload = import_evidence(
+                        config, Path(args.file), expected_scenario=scenario,
+                    )
             except Exception as exc:
                 db.finish_job(job_id, "failed", error_code=type(exc).__name__,
                               error_detail=str(exc)[:2000])

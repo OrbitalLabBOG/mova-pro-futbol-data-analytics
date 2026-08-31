@@ -19,7 +19,8 @@ if ! flock -n 9; then
 fi
 
 set +e
-existing=$(/usr/local/bin/mova drill host-status --idempotency-key "$idempotency_key")
+existing=$(/usr/local/bin/mova drill host-status --scenario api_recovery \
+  --actor "$actor" --reason "$reason" --idempotency-key "$idempotency_key")
 existing_rc=$?
 set -e
 if [[ "$existing_rc" -eq 0 ]]; then
@@ -107,4 +108,4 @@ os.replace(temporary, path)
 PY
 
 /usr/local/bin/mova drill import-host --file "$host_path" --actor "$actor" \
-  --reason "$reason" --idempotency-key "$idempotency_key"
+  --reason "$reason" --scenario api_recovery --idempotency-key "$idempotency_key"
