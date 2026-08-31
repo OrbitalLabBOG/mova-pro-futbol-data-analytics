@@ -70,7 +70,34 @@ El importador aplica una allowlist estricta al JSON del probe, exige sesión, 15
 orden posicional, once player sheets y selecciones C/VC conciliadas con el GET privado. Abrir y
 cerrar esos sheets no cambia el equipo ni pulsa `Save`. El wrapper reserva stdout exclusivamente
 para el JSON; mensajes de Compose van a stderr para que un primer build/recreate no contamine el
-artifact. Para otras fuentes ya selladas se usa:
+artifact.
+
+El mismo probe de pick-team puede sellar evidencia independiente de lineup: valida los quince
+slots, identidades, índices de ambos controles y orden visual, sin ejecutar swaps ni pulsar
+`Save`. El probe de transfers exige al menos un target explícito, quince picks, búsqueda,
+controles de salida, ambos poderes y `Make Transfers`; observarlos no equivale a pulsarlos.
+
+```bash
+mova execute rehearsal-capability-probe \
+  --source /var/lib/mova-fpl/artifacts/browser-probes/2026-27-gw03-pick-team.json \
+  --cycle-id 2026-27-gw03 --capability lineup \
+  --actor mova-operator --reason "DOM de lineup read-only conciliado" \
+  --idempotency-key "rehearsal:2026-27:gw03:lineup:r2-2026.08.2"
+
+deploy/bin/browser-session.sh probe-transfers 4,82,84 \
+  > /var/lib/mova-fpl/artifacts/browser-probes/2026-27-gw03-r3.json
+mova execute rehearsal-capability-probe \
+  --source /var/lib/mova-fpl/artifacts/browser-probes/2026-27-gw03-r3.json \
+  --cycle-id 2026-27-gw03 --capability r3 \
+  --actor mova-operator --reason "superficie R3 read-only conciliada" \
+  --idempotency-key "rehearsal:2026-27:gw03:r3:r3-2026.08.1"
+deploy/bin/browser-session.sh stop
+```
+
+Estos ensayos prueban cobertura física de lectura y tamper resistance, no el commit. No cambian
+`host_entrypoint_enabled`, `autonomy_promoted`, A0 ni controles. Las tres GWs son necesarias pero
+no suficientes para promover una capacidad; la aprobación y el entrypoint siguen siendo gates
+independientes. Para otras fuentes ya selladas se usa:
 
 ```bash
 mova execute rehearsal \

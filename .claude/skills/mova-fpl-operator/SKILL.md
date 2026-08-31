@@ -48,6 +48,9 @@ consulta ordinaria: `mova` y `/api/v1/status` son el contrato estable.
    DOM después del claim. Consulta `mova execute status.browser_driver`: capitanía tiene entrypoint
    pero no autonomía promovida; XI/banca tiene contrato tipado con entrypoint deshabilitado hasta
    rehearsals; R3 y controles DOM no probados permanecen fail-closed.
+   Para registrar cobertura browser viva de XI/R3 usa `mova execute rehearsal-capability-probe`
+   únicamente sobre probes sanitizados generados por el host. Esto no prueba el commit ni promueve
+   entrypoints, autonomía o controles.
 10. Para revisar propuestas, uso/costo, memoria validada o releases de modelos, lee
     [docs/operations/continuous-improvement.md](../../../docs/operations/continuous-improvement.md).
     `mova improve transition` nunca aplica la hipótesis al runtime. El único aplicador soportado es

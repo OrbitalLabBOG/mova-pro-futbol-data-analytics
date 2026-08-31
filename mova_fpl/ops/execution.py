@@ -37,6 +37,8 @@ MAX_REHEARSAL_BYTES = 1024 * 1024
 REHEARSAL_SCHEMA = "mova-browser-rehearsal-evidence-v1"
 CAPTAINCY_PROBE_SCHEMA = "mova-browser-dom-probe-v1"
 CAPTAINCY_PROBE_CONTRACT = "fpl-pick-team-a11y-2026.08.2"
+TRANSFER_PROBE_SCHEMA = "mova-browser-transfer-dom-probe-v1"
+TRANSFER_PROBE_CONTRACT = "fpl-transfers-a11y-2026.08.1"
 REHEARSAL_CONTRACTS = {
     "captaincy": DRIVER_CONTRACT_VERSION,
     "lineup": DRIVER_CONTRACT_VERSION,
@@ -514,6 +516,169 @@ class ExecutionService:
             evidence_file=target, actor=actor, reason=reason,
             idempotency_key=idempotency_key, now=current,
         )
+
+    def record_capability_probe(self, *, source_file: str | Path, cycle_id: str,
+                                capability: str, actor: str, reason: str,
+                                idempotency_key: str,
+                                now: datetime | None = None) -> dict:
+        """Seal an allowlisted live DOM probe for lineup or R3 evidence.
+
+        These probes prove authenticated selector/identity coverage without
+        clicking a commit control. They never promote a capability or change
+        browser controls; readiness still requires independent gameweeks and
+        an explicitly enabled host entrypoint.
+        """
+        if capability not in {"lineup", "r3"}:
+            raise ValueError("capability de probe debe ser lineup o r3")
+        source = Path(source_file)
+        if not source.is_file():
+            raise FileNotFoundError(source)
+        resolved = source.resolve()
+        root = self.config.artifact_root.resolve()
+        if not resolved.is_relative_to(root):
+            raise ValueError("probe browser fuera del artifact root autorizado")
+        if source.stat().st_size > MAX_REHEARSAL_BYTES:
+            raise ValueError("probe browser excede 1 MiB")
+        probe = json.loads(source.read_text(encoding="utf-8"))
+        if capability == "lineup":
+            checks = self._validate_lineup_probe(probe)
+            contract_version = DRIVER_CONTRACT_VERSION
+        else:
+            checks = self._validate_r3_probe(probe)
+            contract_version = R3_DRIVER_CONTRACT_VERSION
+        observed = _parse_time(probe.get("observed_at"))
+        current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+        if observed > current + timedelta(minutes=5):
+            raise ValueError("observed_at del probe browser está en el futuro")
+        evidence = {
+            "schema": REHEARSAL_SCHEMA,
+            "cycle_id": cycle_id,
+            "capability": capability,
+            "contract_version": contract_version,
+            "observed_at": observed.isoformat(),
+            "mode": "read_only_probe",
+            "status": "passed",
+            "writes_attempted": False,
+            "checks": checks,
+            "source_artifacts": [{
+                "path": str(resolved.relative_to(root)),
+                "sha256": self._file_sha(source),
+            }],
+        }
+        evidence["content_sha256"] = sha256_json(evidence)
+        target = (root / "browser-rehearsals" / cycle_id
+                  / f"{capability}-{evidence['content_sha256'][:16]}.json")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        temporary = target.with_suffix(".json.tmp")
+        temporary.write_text(
+            json.dumps(evidence, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        os.replace(temporary, target)
+        return self.record_rehearsal(
+            evidence_file=target, actor=actor, reason=reason,
+            idempotency_key=idempotency_key, now=current,
+        )
+
+    def _validate_lineup_probe(self, probe: dict) -> list[dict]:
+        allowed = {
+            "schema", "contract_version", "observed_at", "team_id", "status",
+            "checks", "slots", "captain_controls",
+        }
+        if set(probe) != allowed:
+            raise ValueError("campos del probe de lineup no coinciden con la allowlist")
+        if (probe.get("schema") != CAPTAINCY_PROBE_SCHEMA
+                or probe.get("contract_version") != CAPTAINCY_PROBE_CONTRACT):
+            raise ValueError("contrato del probe de lineup no soportado")
+        if int(probe.get("team_id") or 0) != self.config.team_id:
+            raise ValueError("team_id del probe de lineup no coincide")
+        checks = probe.get("checks")
+        required_checks = {
+            "signed_in", "fifteen_api_picks", "fifteen_player_controls",
+            "fifteen_switch_controls", "positional_order_matches", "captain_controls",
+        }
+        slots = probe.get("slots")
+        slot_fields = {
+            "position", "element", "web_name", "player_button_index",
+            "switch_button_index", "label_matches",
+        }
+        valid_slots = (
+            isinstance(slots, list) and len(slots) == 15
+            and all(isinstance(row, dict) and set(row) == slot_fields for row in slots)
+            and [int(row["position"]) for row in slots] == list(range(1, 16))
+            and [int(row["player_button_index"]) for row in slots] == list(range(15))
+            and [int(row["switch_button_index"]) for row in slots] == list(range(15))
+            and len({int(row["element"]) for row in slots}) == 15
+            and all(str(row["web_name"] or "").strip() and row["label_matches"] is True
+                    for row in slots)
+        )
+        if (set(checks or {}) != required_checks or probe.get("status") != "pass"
+                or not all(type(value) is bool and value for value in checks.values())
+                or not valid_slots):
+            raise ValueError("probe de lineup no supera todos los checks read-only")
+        return [
+            {"code": f"lineup:{code}", "passed": value}
+            for code, value in sorted(checks.items())
+        ] + [{"code": "lineup:slot_identity_allowlist", "passed": True}]
+
+    def _validate_r3_probe(self, probe: dict) -> list[dict]:
+        allowed = {
+            "schema", "contract_version", "observed_at", "team_id", "status",
+            "checks", "squad", "targets", "controls",
+        }
+        if set(probe) != allowed:
+            raise ValueError("campos del probe R3 no coinciden con la allowlist")
+        if (probe.get("schema") != TRANSFER_PROBE_SCHEMA
+                or probe.get("contract_version") != TRANSFER_PROBE_CONTRACT):
+            raise ValueError("contrato del probe R3 no soportado")
+        if int(probe.get("team_id") or 0) != self.config.team_id:
+            raise ValueError("team_id del probe R3 no coincide")
+        checks = probe.get("checks")
+        required_checks = {
+            "signed_in", "fifteen_api_picks", "squad_remove_controls_present",
+            "squad_labels_complete", "targets_complete", "make_transfers",
+            "player_search", "wildcard", "free_hit",
+        }
+        squad = probe.get("squad")
+        targets = probe.get("targets")
+        controls = probe.get("controls")
+        valid_squad = (
+            isinstance(squad, list) and len(squad) == 15
+            and all(isinstance(row, dict)
+                    and set(row) == {"element", "position", "web_name"} for row in squad)
+            and [int(row["position"]) for row in squad] == list(range(1, 16))
+            and len({int(row["element"]) for row in squad}) == 15
+            and all(str(row["web_name"] or "").strip() for row in squad)
+        )
+        valid_targets = (
+            isinstance(targets, list) and bool(targets)
+            and all(isinstance(row, dict) and set(row) == {
+                "element", "element_type", "web_name", "team", "price",
+            } for row in targets)
+            and len({int(row["element"]) for row in targets}) == len(targets)
+            and all(int(row["element"]) > 0 and 1 <= int(row["element_type"]) <= 4
+                    and int(row["price"]) > 0 and str(row["web_name"] or "").strip()
+                    and str(row["team"] or "").strip() for row in targets)
+        )
+        valid_controls = (
+            isinstance(controls, dict)
+            and set(controls) == {"make_transfers", "player_search", "chip_buttons"}
+            and controls["make_transfers"] == "Make Transfers"
+            and controls["player_search"] == "Find a player"
+            and set(controls["chip_buttons"] or ()) == {"Wildcard Play", "Free Hit Play"}
+        )
+        if (set(checks or {}) != required_checks or probe.get("status") != "pass"
+                or not all(type(value) is bool and value for value in checks.values())
+                or not valid_squad or not valid_targets or not valid_controls):
+            raise ValueError("probe R3 no supera todos los checks read-only")
+        return [
+            {"code": f"r3:{code}", "passed": value}
+            for code, value in sorted(checks.items())
+        ] + [
+            {"code": "r3:squad_identity_allowlist", "passed": True},
+            {"code": "r3:target_identity_allowlist", "passed": True},
+            {"code": "r3:commit_controls_observed_not_clicked", "passed": True},
+        ]
 
     def _load_plan(self, row: dict) -> dict:
         artifact = Path(str(row["artifact_path"]))
