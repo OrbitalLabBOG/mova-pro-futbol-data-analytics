@@ -11,7 +11,7 @@ from urllib.parse import parse_qs, urlparse
 
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB
-from mova_fpl.ops.operator import build_status
+from mova_fpl.ops.operator import build_safety, build_status
 
 LOG = logging.getLogger(__name__)
 
@@ -22,6 +22,7 @@ def _json_bytes(value) -> bytes:
 
 def _dashboard(status: dict) -> bytes:
     cycle = status.get("gameweek") or {}
+    safety = status.get("safety") or {}
     operations = status.get("operations") or {}
     tick = operations.get("latest_tick") or {}
     controls = (status.get("runtime") or {}).get("controls") or {}
@@ -51,6 +52,7 @@ a {{ color:#72a7ff }}
 </style></head><body>
 <h1>MOVA Fantasy Fútbol</h1><div class="muted">Control plane local · solo lectura · refresca cada 30 s</div>
 <div class="grid">
+<div class="card"><div class="muted">Seguridad operativa</div><div class="value">{html.escape(str(safety.get('verdict','—')))}</div><div>{html.escape(', '.join(safety.get('reasons') or ['sin bloqueos']))}</div></div>
 <div class="card"><div class="muted">Jornada</div><div class="value">GW {html.escape(str(cycle.get('gw','—')))}</div><div>{html.escape(str(cycle.get('phase','sin ciclo')))}</div></div>
 <div class="card"><div class="muted">Último tick</div><div class="value">{html.escape(str(tick.get('status','sin datos')))}</div><div>{html.escape(str(tick.get('started_at','')))}</div></div>
 <div class="card"><div class="muted">Incidentes abiertos</div><div class="value">{len(operations.get('open_incidents',[]))}</div><div>{html.escape(status.get('overall_status','unknown'))}</div></div>
@@ -60,7 +62,7 @@ a {{ color:#72a7ff }}
 <div class="card"><div class="muted">Dual-read PostgreSQL</div><div class="value">{html.escape(str(parity.get('status','sin paridad')))}</div><div>{html.escape(str(parity.get('checked_tables',0)))} tablas · roles {html.escape(str(role_separation.get('status','sin verificar')))}</div></div>
 </div>
 <h2>Controles efectivos</h2><table><thead><tr><th>Control</th><th>Valor</th></tr></thead><tbody>{control_rows}</tbody></table>
-<p><a href="/api/v1/status">status JSON</a> · <a href="/api/v1/readiness">autonomy readiness</a> · <a href="/api/v1/analytics">analytics</a> · <a href="/api/v1/strategy">strategy</a> · <a href="/api/v1/improvement">learning</a> · <a href="/api/v1/costs">costos</a> · <a href="/metrics">métricas</a> · <a href="/api/v1/audit">auditoría</a> · <a href="/api/v1/jobs">jobs</a> · <a href="/api/v1/steps">steps</a></p>
+<p><a href="/api/v1/safety">safety JSON</a> · <a href="/api/v1/status">status JSON</a> · <a href="/api/v1/readiness">autonomy readiness</a> · <a href="/api/v1/analytics">analytics</a> · <a href="/api/v1/strategy">strategy</a> · <a href="/api/v1/improvement">learning</a> · <a href="/api/v1/costs">costos</a> · <a href="/metrics">métricas</a> · <a href="/api/v1/audit">auditoría</a> · <a href="/api/v1/jobs">jobs</a> · <a href="/api/v1/steps">steps</a></p>
 </body></html>"""
     return body.encode("utf-8")
 
@@ -145,7 +147,9 @@ def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
                                "text/plain; version=0.0.4; charset=utf-8")
                     return
                 if parsed.path in {"/", "/dashboard"}:
-                    self._send(HTTPStatus.OK, _dashboard(build_status(runtime, db)),
+                    status = build_status(runtime, db)
+                    status["safety"] = build_safety(runtime, db)
+                    self._send(HTTPStatus.OK, _dashboard(status),
                                "text/html; charset=utf-8")
                     return
                 if parsed.path == "/api/v1/data":
@@ -252,6 +256,7 @@ def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
                     return
                 routes = {
                     "/api/v1/status": None,
+                    "/api/v1/safety": "safety_summary",
                     "/api/v1/strategy": "strategic_status",
                     "/api/v1/jobs": "job_runs",
                     "/api/v1/steps": "job_steps",
@@ -289,6 +294,8 @@ def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
                     return
                 if routes[parsed.path] is None:
                     payload = build_status(runtime, db)
+                elif routes[parsed.path] == "safety_summary":
+                    payload = build_safety(runtime, db)
                 elif routes[parsed.path] == "strategic_status":
                     payload = db.strategic_status()
                 else:

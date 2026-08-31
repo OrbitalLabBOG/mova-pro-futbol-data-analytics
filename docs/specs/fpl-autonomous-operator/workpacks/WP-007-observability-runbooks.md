@@ -2,7 +2,7 @@
 type: workpack
 name: "WP-007 — Observabilidad, alertas y runbooks"
 created: 2026-08-21
-updated: 2026-08-30
+updated: 2026-08-31
 tags: [mova, fpl, workpack, observability, runbooks]
 status: active-shadow
 ---
@@ -41,6 +41,12 @@ WP-001/002; instrumentación incremental de WP-003..006.
 
 Logs JSON, correlation/job IDs, health persistido, Prometheus, doctor/readiness y runbooks ya
 operan en shadow. El ledger agentic distingue consumo real, reservas activas y cargos estimados;
-además detecta overruns por job y reservas huérfanas sin liberar presupuesto. Continúan pendientes
-el test explícito de cada alerta P0/P1, el dashboard agregado <60s y el cleanup dry-run, por lo que
-el workpack permanece `active-shadow`.
+además detecta overruns por job y reservas huérfanas sin liberar presupuesto.
+
+HV1-01B agregó `mova safety`, `/api/v1/safety` y la tarjeta de seguridad del dashboard; el
+resultado reúne deadline, gates, frescura, incidentes y outbox en una sola lectura. P0 y P1 tienen
+tests de entrega/fallo, el outbox recupera leases, reintenta y permite acuse auditado. `mova
+maintenance cleanup` opera por defecto en dry-run y su allowlist sólo considera `.tmp`,
+`.partial` y `.tmp-*`; symlinks y evidencia canónica quedan fuera. El workpack conserva
+`active-shadow`: falta elegir y ensayar un canal externo de notificación si journald no basta para
+la operación desatendida, y comprobar el flujo durante ciclos vivos.

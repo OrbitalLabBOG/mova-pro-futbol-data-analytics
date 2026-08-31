@@ -5,7 +5,7 @@ metadata:
   vertical: mova
   type: skill
   repo: mova-pro-futbol-data-analytics
-  updated: 2026-08-30
+  updated: 2026-08-31
 ---
 
 # MOVA FPL Operator
@@ -23,6 +23,9 @@ consulta ordinaria: `mova` y `/api/v1/status` son el contrato estable.
    promoción. Usa `mova readiness --require-level A1|A2|A3` como gate automatizable; exit 2
    significa evidencia insuficiente, no un permiso para rebajar requisitos.
 3. Si el estado es degradado, incompleto o contradictorio, ejecuta `mova doctor --json`.
+   Para una respuesta compacta usa `mova safety` o `/api/v1/safety`: `unsafe` exige atención
+   inmediata, `attention_required` exige leer `reasons`, y `safe_to_wait` sólo describe el estado
+   observado; nunca eleva permisos ni reemplaza `readiness`.
 4. Lee [docs/operations/operator.md](../../../docs/operations/operator.md) para interpretar
    el contrato y [docs/operations/vps.md](../../../docs/operations/vps.md) solo si hay que
    desplegar, revisar systemd, backups o browser.
@@ -77,6 +80,13 @@ consulta ordinaria: `mova` y `/api/v1/status` son el contrato estable.
 FPL; usa `--no-network` cuando la ejecución deba ser hermética. Un `FAIL` requerido devuelve
 código 1 y bloquea decisiones o despliegues dependientes. Un `WARN` se declara y se evalúa por
 contexto; nunca se presenta como `PASS`.
+
+Las alertas se consultan con `mova alerts status`. El watchdog entrega automáticamente las
+pendientes al journal usando leases y retry; una entrega `sent` no equivale a acuse humano. Para
+reconocer un incidente usa `mova alerts acknowledge --incident-id ... --actor ... --reason ...`.
+No marques como resuelto lo que sólo fue reconocido. Para revisar basura transitoria usa `mova
+maintenance cleanup`; el modo normal es dry-run. `--apply` exige actor, razón e idempotency key y
+nunca debe ampliarse a formatos de evidencia.
 
 ## Fuentes de verdad
 

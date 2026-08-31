@@ -10,7 +10,9 @@ from pathlib import Path
 from mova_fpl.ops.cli import parser
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB
-from mova_fpl.ops.operator import build_doctor, build_status, render_doctor, render_status
+from mova_fpl.ops.operator import (
+    build_doctor, build_safety, build_status, render_doctor, render_status,
+)
 from mova_fpl.postgres.store import publish_status as publish_postgres_status
 
 
@@ -118,6 +120,12 @@ def test_status_contract_is_versioned_and_sanitized(tmp_path):
     }
     assert "squad_json" not in json.dumps(payload)
     assert "MOVA FPL · HEALTHY" in render_status(payload)
+
+    safety = build_safety(config, db, now=now + timedelta(seconds=10))
+    assert safety["schema"] == "mova-safety-summary-v1"
+    assert safety["verdict"] == "safe_to_wait"
+    assert safety["controls"]["kill_switch"] is True
+    assert "squad_json" not in json.dumps(safety)
 
 
 def test_status_degrades_when_heartbeat_is_stale(tmp_path):
@@ -233,3 +241,5 @@ def test_cli_exposes_human_and_json_operator_modes():
     doctor = parser().parse_args(["doctor", "--json", "--no-network"])
     assert doctor.as_json is True
     assert doctor.no_network is True
+    assert parser().parse_args(["safety"]).command == "safety"
+    assert parser().parse_args(["alerts", "dispatch"]).limit == 20
