@@ -102,6 +102,13 @@ allowlisted del inbox a cuarentena. Un éxito terminal impide ese cierre. No bor
 forzar un retry: diagnostica la causa, genera una request nueva mediante el control plane y conserva
 la evidencia anterior.
 
+El presupuesto se liquida por starts físicos. Si todos los receipts terminales incluyen tokens,
+`accounting_mode=exact`; si falta el terminal o sus tokens, el faltante se carga con
+`reserved_tokens` por intento y queda `conservative`; las corridas previas a este ledger son
+`legacy`. `mova cost report` muestra `charged_tokens` como cargo total y
+`charged_estimate_tokens` sólo como su porción estimada. Un resultado lógico con retries no se
+suma otra vez desde `cost_ledger`.
+
 El claim del outbox usa lease recuperable, la entrega ocurre fuera de SQLite y los fallos reintentan con backoff hasta
 estado `dead`. `sent` confirma entrega al sink local, no lectura humana. `acknowledge` reconoce el
 incidente con actor y razón; resolverlo sigue exigiendo que la condición causal haya desaparecido.

@@ -54,11 +54,11 @@ La base de desarrollo también quedó saneada antes de iniciar el harness:
 
 Verificación viva del corte al 31 de agosto:
 
-- API y PostgreSQL healthy, doctor 22/22 y cero incidentes abiertos;
+- API y PostgreSQL healthy, doctor 23/23 y cero incidentes abiertos;
 - GW3, deadline oficial `2026-09-04T17:30:00Z`, todavía preliminar;
 - último team state válido: 15 jugadores y sesión browser persistente;
-- runtime engine/browser y checkout exactos en `266849c`;
-- readiness: 14 pass, 6 pending y 0 blocked sobre 20 gates;
+- runtime engine/browser y checkout exactos en `f7260d0`;
+- readiness: 15 pass, 8 pending y 0 blocked sobre 23 gates;
 - scorecard del harness: operaciones pass; las otras seis dimensiones pendientes, A0 intacto.
 
 Gaps reales restantes:
@@ -778,6 +778,20 @@ Una request puede iniciar como máximo dos intentos automáticos. Si no existe u
 reconciliador rechaza la corrida, conserva el cargo estimado ya reservado y pone la request en
 cuarentena. El límite cuenta también un proceso muerto que sólo alcanzó a escribir `started`.
 Evidencia: [HV1-09J agent attempt ledger](51-hv1-09j-agent-attempt-ledger.md).
+
+### Corte de contabilidad física de inferencias — 31 de agosto de 2026
+
+HV1-10C enlaza cada reserva agentic con el ledger de intentos físicos. Un resultado lógico que
+necesitó dos ejecuciones consume dos usos y la suma de sus tokens, sin volver a sumar la fila de
+`cost_ledger`. Los intentos terminados con telemetría se cargan de forma exacta; un proceso muerto
+sin tokens se valora conservadoramente con la reserva por cada `started`; los resultados anteriores
+al ledger conservan modo `legacy`.
+
+SQLite 20 y PostgreSQL 23 añaden `accounting_mode`, `attempt_count` y `estimated_tokens`. El
+reporte separa el cargo total de la porción estimada, y la siguiente reserva se evalúa contra el
+consumo físico ya liquidado. El despliegue conservó exactamente los totales históricos:
+GW3 `666818` tokens y `16` usos comprometidos; no se fabricó una inferencia para probarlo.
+Evidencia: [HV1-10C physical attempt accounting](52-hv1-10c-physical-attempt-accounting.md).
 
 ## 11. Definition of Done del harness v1
 
