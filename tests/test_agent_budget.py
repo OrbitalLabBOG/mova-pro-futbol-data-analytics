@@ -191,6 +191,8 @@ def test_overrun_review_transition_is_idempotent_and_requires_verified_followup(
     assert reviewed["to_status"] == "reviewed"
     assert reviewed["runtime_mutated"] is False
     assert replay["status"] == "reused"
+    assert "evidence_json" not in replay
+    assert "idempotency_key" not in replay
     assert db.cost_report(policy, season="2026-27", gw=3)["job_overruns"][
         "status"
     ] == "reviewed_pending"

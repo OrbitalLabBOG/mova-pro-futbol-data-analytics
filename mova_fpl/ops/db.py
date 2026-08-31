@@ -2580,7 +2580,19 @@ class OpsDB:
                         or existing["followup_reservation_id"] != followup_reservation_id
                         or existing["actor"] != actor or existing["reason"] != reason):
                     raise ValueError("idempotency_key ya usada con otro contenido")
-                return {**dict(existing), "status": "reused", "runtime_mutated": False}
+                return {
+                    "status": "reused", "event_id": existing["event_id"],
+                    "reservation_id": existing["reservation_id"],
+                    "sequence": int(existing["sequence"]),
+                    "from_status": existing["from_status"],
+                    "to_status": existing["to_status"], "action": existing["action"],
+                    "followup_reservation_id": existing["followup_reservation_id"],
+                    "actual_tokens": int(existing["actual_tokens"]),
+                    "job_limit": int(existing["job_limit"]),
+                    "excess_tokens": int(existing["excess_tokens"]),
+                    "evidence_sha256": existing["evidence_sha256"],
+                    "runtime_mutated": False,
+                }
             reservation = con.execute(
                 "SELECT * FROM agent_budget_reservations WHERE reservation_id=?",
                 (reservation_id,),
