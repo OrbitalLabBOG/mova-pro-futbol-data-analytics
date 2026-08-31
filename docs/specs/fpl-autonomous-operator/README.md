@@ -22,7 +22,7 @@ PM de construcción del proyecto.
 
 | Campo | Valor |
 | --- | --- |
-| Versión | 0.35 |
+| Versión | 0.36 |
 | Estado | `active-shadow` |
 | Riesgo | alto: cuenta externa, deadlines irreversibles y sesión autenticada |
 | Business owner | Julián Zuluaga |
@@ -30,6 +30,7 @@ PM de construcción del proyecto.
 | Temporada | 2026/27 |
 | Equipo | `losmillosFPL`, `entry_id=3609854` |
 | Primera aplicación prevista | GW2; GW1 ya fue montada y sellada manualmente |
+| Corte de construcción | Harness read-only A0 cerrado; operación y evidencia longitudinal continúan |
 
 ## Documentos
 

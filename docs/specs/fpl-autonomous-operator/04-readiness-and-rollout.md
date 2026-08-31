@@ -202,3 +202,24 @@ confirmado. Esos efectos son del juego y se tratan como incidente/estado nuevo.
 La implementación y operación `shadow A0` están activas. Sigue sin estar autorizada la
 ejecución sobre FPL. Cualquier promoción requiere evidencia de los gates G3/G4, decisión
 registrada sobre compliance y aprobación explícita separada.
+
+## Estado de cierre — 31 de agosto de 2026
+
+La construcción técnica del harness read-only A0 está cerrada. “Cerrada” significa que collector,
+modelos, estado privado, research, decisión multirol, validación, memoria, costos, PostgreSQL
+shadow, observabilidad, backups locales, browser aislado y recuperación host tienen contratos,
+runtime y evidencia verificable. No significa que el producto haya recibido autoridad para
+escribir en FPL.
+
+Los diez gates pendientes se dividen por causa y no deben mezclarse en una sola cifra de progreso:
+
+| Grupo | Gates | Estado / desbloqueo |
+| --- | --- | --- |
+| Settlement | `GAMEWEEK_INPUTS_READY` | automático al cerrar oficialmente GW2 y refrescar GW3 |
+| Longitudinal | research, capitanía, lineup, R3 y tres ciclos PostgreSQL | acumular tres GWs distintas; repetir GW3 no cuenta |
+| Integración externa | canal/live-ping de alertas y backup/restore off-host | Julián elige destino y owner; luego se provisionan secretos root-only y se prueba |
+| Autoridad | compliance y promoción A1/A2/A3 | decisión humana separada después de que pasen los gates técnicos aplicables |
+
+Mientras tanto, el estado operacional esperado es `not_ready` con cero blockers: el scheduler debe
+seguir recolectando y produciendo evidencia en A0. Un pending longitudinal no abre incidente; una
+falla de salud, integridad, cola o frescura sí debe hacerlo.

@@ -891,3 +891,61 @@ pendientes longitudinales o externos y cero blockers. Evidencia:
 - migrar logs crudos completos a PostgreSQL;
 - cambiar el equipo mientras el sistema permanezca en `A0`;
 - permitir que el Reviewer modifique producción sin evaluación.
+
+## 13. Cierre de construcción y continuación operativa
+
+### 13.1 Qué está terminado
+
+El harness read-only A0 se considera construido en `b4ca25b` y documentado en `084541e`:
+
+| Capacidad | Estado | Evidencia de aceptación |
+| --- | --- | --- |
+| Collector FPL/odds/WhoScored | construido y operando | health por fuente, cobertura, cadencia y logs |
+| Modelos y MLOps | construido y operando | train/predict/explain/evaluate, scorecard, drift y release gate |
+| Estado privado | construido y operando | GET autenticado allowlisted, freshness y fingerprint |
+| Research agentic | construido y operando A0 | request/permit/receipts, dos intentos, budget y cola vigilada |
+| Estrategia/criticism/validation | construido y operando A0 | manifest, tres candidatos, deliberación y fail-closed |
+| Memoria y mejora continua | construido | review causal, proposals, lessons y promotion gate |
+| Browser executor | contrato construido | R2/R3 fail-closed; promoción depende de rehearsals y autoridad |
+| Observabilidad y resiliencia | construido y verificado | doctor 23/23, watchdog, alert outbox y recovery host 5/5 |
+| Persistencia | construida | SQLite writer, PostgreSQL shadow 57/57 y backups locales |
+
+“Terminado” aquí describe capacidad de software y operación A0. No convierte automáticamente un
+contrato browser en permiso de escritura, una jornada repetida en evidencia multi-GW ni un backup
+local en copia off-host.
+
+### 13.2 Qué continúa sin desarrollo adicional
+
+El scheduler debe acumular naturalmente settlement, research calibrado, rehearsals y ciclos
+PostgreSQL. ORBIX revisa `mova readiness` después de cada cambio de GW y sólo actúa sobre el
+`next_action` emitido por el gate. No se crean corridas artificiales para subir contadores.
+
+| Trigger | Acción automática/read-only | Evidencia esperada |
+| --- | --- | --- |
+| settlement oficial de GW2 | refrescar ciclo GW3, evaluar modelos y review | `GAMEWEEK_INPUTS_READY=pass` |
+| cada nueva GW | collector, research v2, manifest, decisión y rehearsal autorizado | contador por GW/capacidad, máximo uno válido |
+| cierre de cada GW | evaluate, drift, causal review y propuestas | scorecard y feedback reproducibles |
+| timer semanal PostgreSQL | import idempotente y paridad | tres `cycle_id` distintos, no tres reintentos |
+
+### 13.3 Decisiones externas todavía necesarias
+
+Sólo quedan dos decisiones de infraestructura que no deben inferirse: destino/owner del webhook de
+alertas y repositorio/owner del backup cifrado off-host. Una vez Julián los elija, el procedimiento
+ya está implementado: provisionar secretos root-only, live-ping o backup, verificar recepción y
+ejecutar restore aislado. Supabase conserva el tracking PM; nunca recibe estos secretos ni datos
+operativos.
+
+Compliance y cada promoción de autoridad son decisiones distintas. Incluso con 25/25 gates, A1,
+A2 o A3 sólo cambian mediante control append-only con actor, razón y aprobación explícita. El
+estado seguro por defecto sigue siendo `shadow`, `A0`, `kill_switch=true` y
+`browser_writes=false`.
+
+### 13.4 Definición práctica de cierre del proyecto
+
+- **Construcción A0:** cerrada y versionada.
+- **Commissioning autónomo read-only:** activo durante la temporada.
+- **Readiness técnico para A1:** pendiente de diez gates observables.
+- **Autonomía con escritura:** no autorizada; no puede declararse finalizada antes de evidencia y
+  aprobación separadas.
+- **Mantenimiento:** cualquier incidente, drift o cambio de contrato abre una iteración nueva con
+  commit, evidencia VPS y update PM idempotente.
