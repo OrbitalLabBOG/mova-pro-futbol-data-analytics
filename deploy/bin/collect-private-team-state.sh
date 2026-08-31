@@ -16,7 +16,10 @@ elif [[ $# -gt 0 ]]; then
   exit 2
 fi
 
-for env_file in "$deploy_env" "$runtime_env"; do
+# runtime.env contiene rutas vistas dentro del worker (por ejemplo /run/secrets).
+# deploy.env contiene las rutas fuente del host que Compose debe interpolar. Se
+# carga al final para que una ruta container-only nunca sustituya un bind source.
+for env_file in "$runtime_env" "$deploy_env"; do
   if [[ -r "$env_file" ]]; then
     set -a
     # shellcheck disable=SC1090
