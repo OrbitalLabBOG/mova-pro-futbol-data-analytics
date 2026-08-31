@@ -79,8 +79,15 @@ reporte sólo bloquea por stages fallidos, dependencias inválidas, intento sin 
 review sin settlement o reserva agentic huérfana. Prometheus publica stages y violaciones con
 labels cerrados; el comando siempre declara `runtime_mutated=false`.
 
-El watchdog despacha el outbox vencido a journald después de validar el heartbeat. El claim usa
-lease recuperable, la entrega ocurre fuera de SQLite y los fallos reintentan con backoff hasta
+El watchdog despacha el outbox vencido a journald después de validar el heartbeat. Además inspecciona
+la cola agentic sin depender de sus importadores: nombre, tipo, tamaño, JSON, identidad, fila durable,
+estado, edad y tombstones. Un request huérfano con más de 60 segundos, terminal, inválido o registrado
+sin progreso por 35 minutos abre un único P1 `Agent queue integrity unhealthy`. La recuperación causal
+resuelve el incidente; nunca borra ni repara el artefacto desde el watchdog. `doctor` lo muestra como
+`agent_queue_integrity`, `/api/v1/agent-queue` responde 200/503 y Prometheus publica
+`mova_agent_queue_healthy`, `requests` y `anomalies` sin contenido del prompt.
+
+El claim del outbox usa lease recuperable, la entrega ocurre fuera de SQLite y los fallos reintentan con backoff hasta
 estado `dead`. `sent` confirma entrega al sink local, no lectura humana. `acknowledge` reconoce el
 incidente con actor y razón; resolverlo sigue exigiendo que la condición causal haya desaparecido.
 Si falta un tick, el último tick venció o su estado falló, el watchdog abre un único incidente P0,
@@ -88,8 +95,9 @@ lo entrega y termina non-zero. También falla si el sink rechaza la entrega o ex
 `dead`. Tras reparar el sink, `alerts retry` reabre el evento de manera auditada; eventos enviados
 o ya reconocidos no pueden repetirse.
 
-`drill resilience` usa una base efímera para probar ausencia de tick, P0, delivery, deduplicación
-y recuperación. No altera controles ni datos deportivos (`runtime_mutated=false`), pero la
+`drill resilience` usa una base y cola efímeras para probar ausencia de tick, P0, request huérfano,
+P1, delivery, deduplicación y recuperación de ambos dominios. No altera controles ni datos deportivos
+(`runtime_mutated=false`), pero la
 invocación y su hash sí quedan como job auditado en el ledger operativo.
 
 `drill snapshot` crea exclusivamente fixtures SQLite temporales y demuestra rechazo de checksum,

@@ -391,6 +391,7 @@ no borra evidencia previa y nunca amplía autonomía.
 | HV1-07 🟡 | policy/apply-once/verifier; R2/R3 tipados pero sin promoción; faltan entrypoints/rehearsals | 3–6 h | HV1-06 |
 | HV1-08 ✅ | reviewer causal, budgets, propuesta→lección y release de modelos con shadow/rollback | completado | HV1-03/06 |
 | HV1-09 ✅ | gate consolidado de readiness, elegibilidad técnica, API/CLI y métricas | completado | HV1-02/03/05/07 |
+| HV1-09I ✅ | integridad de cola agentic independiente, P1 y drill de recuperación | completado | HV1-06D/09 |
 | HV1-10 ✅ | scorecard unificado de calidad, costos, roles, aprendizaje y autoridad | completado | HV1-08/09 |
 | HV1-11 ✅ | grafo agentic read-only + rehearsal de orden/fail-closed/deadline | completado | HV1-06/08/09 |
 | HV1-12 🟡 | adaptador P0/P1 externo + redacción + rehearsal; falta destino/owner y ping vivo | decisión operativa | HV1-01/09 |
@@ -533,6 +534,20 @@ tombstone terminal y jamás vuelve a consumir inferencia. La recuperación es id
 pasada limpia, segunda pasada no muta; ningún mecanismo amplía autoridad ni habilita browser
 writes. Incidente, causa, pruebas y rollout están en
 [HV1-06D](49-hv1-06d-orphan-deliberation-recovery.md).
+
+### Corte de observabilidad de cola — 31 de agosto de 2026
+
+HV1-09I elimina el punto ciego que permitió replays costosos con un runtime aparentemente sano.
+El watchdog inspecciona la cola directamente, sin confiar en Researcher ni DeliberationImporter:
+valida paths, tamaño, JSON, schema, identidad, registro durable, lifecycle, edad, archive y
+quarantine. Un huérfano persiste solo durante la gracia anti-race de 60 segundos; un request
+registrado sin resultado puede esperar dos cadencias antes de considerarse estancado.
+
+Una anomalía abre un P1 deduplicado y degrada el watchdog; al desaparecer la causa, el incidente
+se resuelve de forma auditada. `doctor`, `/api/v1/agent-queue` y tres gauges Prometheus exponen el
+estado sanitizado. El drill de resiliencia ahora prueba scheduler P0 y cola P1 en diez checks,
+incluidos delivery, dedupe, recuperación e idempotencia. Evidencia viva:
+[HV1-09I](50-hv1-09i-agent-queue-watchdog.md).
 
 ### Corte AutonomyPolicy + ExecutionPlan — 30 de agosto de 2026
 

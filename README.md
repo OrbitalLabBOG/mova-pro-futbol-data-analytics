@@ -45,6 +45,7 @@ mova model evaluate --actor codex --reason settlement --idempotency-key gw02-v1
 mova strategy status
 mova strategy research due
 mova strategy deliberate status
+mova watchdog
 mova improve status --season 2026-27
 mova harness scorecard
 mova harness workflow
@@ -120,6 +121,10 @@ CycleManifest + memoria estratégica durable → modelos causales → matriz xP 
 - `mova harness workflow` reconstruye el grafo vigente desde el ledger y separa una terminación
   segura por policy de una falla real de dependencias. El drill hermético comprueba orden,
   fail-closed, deadline e idempotencia sin llamar agentes ni tocar FPL.
+- `mova watchdog` inspecciona el heartbeat y, de forma independiente al importador, la cola
+  aislada de agentes. Requests huérfanos, terminales, inválidos, demasiado viejos o ligados a un
+  tombstone abren un P1 deduplicado; la API `/api/v1/agent-queue`, `doctor` y las métricas
+  `mova_agent_queue_*` exponen el estado sin publicar prompts.
 - `mova alerts channel` expone sólo estado, owner y fingerprint del destino. El webhook externo
   permanece opt-in mediante un secreto Docker; sin configuración, journald sigue funcionando y
   readiness declara pendiente el canal externo. El drill prueba payload mínimo, redacción y
