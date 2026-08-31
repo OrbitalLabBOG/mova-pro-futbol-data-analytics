@@ -97,14 +97,27 @@ def evaluate_scorecard(*, readiness: dict, cost_report: dict,
 
     gw_cost = cost_report.get("gameweek") or {}
     month_cost = cost_report.get("month") or {}
+    orphaned = (cost_report.get("orphaned_reservations") or {}).get("status") == "observed"
+    overrun = (cost_report.get("job_overruns") or {}).get("status") == "observed"
     cost_blocked = (
-        cost_report.get("status") != "within_budget"
-        or gw_cost.get("status") == "exceeded"
+        orphaned or gw_cost.get("status") == "exceeded"
         or month_cost.get("status") == "exceeded"
     )
+    cost_status = "blocked" if cost_blocked else "pending" if overrun else "pass"
+    cost_unmet = []
+    if cost_blocked:
+        cost_unmet.append({
+            "code": "AGENT_BUDGET_HEALTHY", "status": "blocked",
+            "next_action": "resolver exceso agregado o reserva huérfana antes de otra inferencia",
+        })
+    elif overrun:
+        cost_unmet.append({
+            "code": "AGENT_JOB_OVERRUN_REVIEWED", "status": "pending",
+            "next_action": "revisar el job que excedió su límite y ajustar prompt o budget con evidencia",
+        })
     cost_dimension = {
         "name": "economics",
-        "status": "blocked" if cost_blocked else "pass",
+        "status": cost_status,
         "report_status": cost_report.get("status"),
         "gameweek": {key: gw_cost.get(key) for key in (
             "committed_tokens", "token_limit", "remaining_tokens",
@@ -115,10 +128,9 @@ def evaluate_scorecard(*, readiness: dict, cost_report: dict,
             "committed_uses", "use_limit", "remaining_uses", "status",
         )},
         "semantic_reuse": cost_report.get("semantic_reuse") or {},
-        "unmet": ([] if not cost_blocked else [{
-            "code": "AGENT_BUDGET_HEALTHY", "status": "blocked",
-            "next_action": "resolver exceso, overrun o reserva huérfana antes de otra inferencia",
-        }]),
+        "job_overruns": cost_report.get("job_overruns") or {},
+        "orphaned_reservations": cost_report.get("orphaned_reservations") or {},
+        "unmet": cost_unmet,
     }
     dimensions.append(cost_dimension)
 

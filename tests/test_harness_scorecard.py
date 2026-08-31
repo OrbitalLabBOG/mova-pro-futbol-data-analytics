@@ -20,7 +20,7 @@ def _readiness(*gates: dict) -> dict:
 
 
 def _cost(status: str = "within_budget") -> dict:
-    scope_status = "exceeded" if status != "within_budget" else "within_budget"
+    scope_status = "exceeded" if status == "aggregate_exceeded" else "within_budget"
     return {
         "status": status,
         "gameweek": {"committed_tokens": 10, "token_limit": 100,
@@ -31,6 +31,12 @@ def _cost(status: str = "within_budget") -> dict:
                   "committed_uses": 2, "use_limit": 20,
                   "remaining_uses": 18, "status": scope_status},
         "semantic_reuse": {"gameweek_avoided_uses": 1, "month_avoided_uses": 2},
+        "job_overruns": {"status": (
+            "observed" if status == "job_overrun_observed" else "none"
+        )},
+        "orphaned_reservations": {"status": (
+            "observed" if status == "orphaned_reservation_observed" else "none"
+        )},
     }
 
 
@@ -90,6 +96,19 @@ def test_scorecard_fails_closed_for_missing_deliberation_and_bad_budget():
         "TERMINAL_DELIBERATION_PRESENT", "AGENT_BUDGET_HEALTHY",
         "LEARNING_LOOP_OBSERVED",
     }
+
+
+def test_historical_job_overrun_is_pending_but_aggregate_budget_stays_available():
+    report = evaluate_scorecard(
+        readiness=_readiness(_gate("RUNTIME_HEALTHY")),
+        cost_report=_cost("job_overrun_observed"),
+        improvement=_improvement(), deliberation={"status": "accepted"},
+    )
+
+    economics = next(row for row in report["dimensions"] if row["name"] == "economics")
+    assert economics["status"] == "pending"
+    assert economics["unmet"][0]["code"] == "AGENT_JOB_OVERRUN_REVIEWED"
+    assert report["overall_status"] == "pending"
 
 
 def test_scorecard_prometheus_has_bounded_labels():
