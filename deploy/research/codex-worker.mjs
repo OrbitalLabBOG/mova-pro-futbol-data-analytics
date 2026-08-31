@@ -18,8 +18,11 @@ const maxRequestBytes = 1024 * 1024;
 const inbox = join(root, "inbox");
 const outbox = join(root, "outbox");
 const archive = join(root, "archive");
+const quarantine = join(root, "quarantine");
 const logs = join(root, "logs");
-for (const path of [inbox, outbox, archive, logs]) mkdirSync(path, {recursive: true});
+for (const path of [inbox, outbox, archive, quarantine, logs]) {
+  mkdirSync(path, {recursive: true});
+}
 mkdirSync("/tmp/mova-research", {recursive: true});
 
 let lock;
@@ -73,6 +76,12 @@ try {
     } catch {}
     try {
       statSync(join(outbox, `${id}.result.json`));
+      continue;
+    } catch {}
+    // A rejected result is a terminal tombstone. The host importer will move the
+    // matching request, but the isolated worker independently refuses to spend on it.
+    try {
+      statSync(join(quarantine, `${id}.result.json`));
       continue;
     } catch {}
     selected = name;
