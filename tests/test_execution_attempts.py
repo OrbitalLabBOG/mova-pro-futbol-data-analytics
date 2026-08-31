@@ -509,6 +509,26 @@ def test_runtime_gate_change_after_claim_blocks_before_applying(tmp_path: Path):
     assert "KILL_SWITCH_ON" in result["blocking_codes"]
 
 
+def test_observed_pre_state_drift_blocks_before_applying(tmp_path: Path):
+    service, plan, _ = _seed_authorized_service(tmp_path)
+    prepared = service.prepare(
+        plan_id=plan["plan_id"], adapter="fixture", actor="test",
+        reason="observed state drift", idempotency_key="execute:observed-drift", now=NOW,
+    )
+    claim = service.claim(execution_id=prepared["execution_id"], actor="fixture",
+                          reason="claim", now=NOW)
+    changed = _private_state([2, 1] + list(range(3, 16)), captain=1, vice=2)
+
+    result = service.begin(
+        execution_id=prepared["execution_id"], claim_token=claim["claim_token"],
+        pre_state=changed, actor="fixture", reason="must stop before write",
+        now=NOW + timedelta(seconds=1),
+    )
+
+    assert result["status"] == "blocked"
+    assert "OBSERVED_PRE_STATE_CHANGED" in result["blocking_codes"]
+
+
 def test_command_bundle_tamper_prevents_claim(tmp_path: Path):
     service, plan, _ = _seed_authorized_service(tmp_path)
     prepared = service.prepare(

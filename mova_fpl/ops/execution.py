@@ -906,6 +906,8 @@ class ExecutionService:
             raise RuntimeError("pre-state pertenece a otra gameweek")
         current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
         blockers = self._runtime_blockers(source, now=current)
+        if quality["fingerprint"] != str(plan["action"]["expected_pre_team_fingerprint"]):
+            blockers.append("OBSERVED_PRE_STATE_CHANGED")
         if blockers:
             result_sha = sha256_json({"status": "blocked", "blocking_codes": blockers})
             result = self.db.finish_execution_attempt(

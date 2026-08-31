@@ -38,6 +38,7 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
                        execution_status: dict, resilience_evidence: dict | None = None,
                        host_recovery_evidence: dict | None = None,
                        snapshot_rejection_evidence: dict | None = None,
+                       browser_failure_evidence: dict | None = None,
                        generated_at: str | None = None) -> dict:
     """Evalúa únicamente snapshots ya observados; no ejecuta IO ni mutaciones."""
     gameweek = operator_status.get("gameweek") or {}
@@ -89,6 +90,15 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
         and int(snapshot_rejection.get("checks") or 0) >= 10
         and int(snapshot_rejection.get("passed") or 0)
         == int(snapshot_rejection.get("checks") or 0)
+    )
+    browser_failure = browser_failure_evidence or {
+        "status": "missing", "checks": 0, "passed": 0,
+    }
+    browser_failure_passed = (
+        browser_failure.get("status") == "completed"
+        and int(browser_failure.get("checks") or 0) >= 10
+        and int(browser_failure.get("passed") or 0)
+        == int(browser_failure.get("checks") or 0)
     )
 
     gates = [
@@ -221,6 +231,19 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
             required={"status": "completed", "checks": ">=10", "all_passed": True},
             source="job_runs.snapshot_rejection_drill",
             next_action="ejecutar mova drill snapshot con una clave idempotente nueva",
+        ),
+        _gate(
+            "BROWSER_FAILURE_DRILL_PROVEN",
+            "pass" if browser_failure_passed else
+            "blocked" if browser_failure.get("status") == "failed" else "pending",
+            "deriva DOM y guardado post-commit ambiguo fallan cerrados",
+            levels=("A1", "A2", "A3"),
+            observed={key: browser_failure.get(key) for key in (
+                "job_id", "status", "checks", "passed", "finished_at", "output_sha256"
+            )},
+            required={"status": "completed", "checks": ">=10", "all_passed": True},
+            source="job_runs.browser_failure_drill",
+            next_action="ejecutar mova drill browser-failure con clave idempotente nueva",
         ),
         _gate(
             "CAPTAINCY_DRIVER_PROVEN",
@@ -356,6 +379,7 @@ def build_readiness(config: RuntimeConfig, db: OpsDB, *,
         resilience_evidence=db.resilience_drill_status(),
         host_recovery_evidence=db.host_recovery_drill_status(),
         snapshot_rejection_evidence=db.snapshot_rejection_drill_status(),
+        browser_failure_evidence=db.browser_failure_drill_status(),
         generated_at=current.astimezone(timezone.utc).isoformat(timespec="seconds"),
     )
 

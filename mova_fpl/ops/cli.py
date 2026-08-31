@@ -298,6 +298,13 @@ def parser() -> argparse.ArgumentParser:
     snapshot_drill.add_argument("--actor", required=True)
     snapshot_drill.add_argument("--reason", required=True)
     snapshot_drill.add_argument("--idempotency-key", required=True)
+    browser_drill = drill_commands.add_parser(
+        "browser-failure",
+        help="deriva DOM y guardado ambiguo en fixtures sin tocar FPL",
+    )
+    browser_drill.add_argument("--actor", required=True)
+    browser_drill.add_argument("--reason", required=True)
+    browser_drill.add_argument("--idempotency-key", required=True)
     host_drill = drill_commands.add_parser(
         "import-host", help="valida e importa evidencia allowlisted del host"
     )
@@ -836,20 +843,24 @@ def main(argv: list[str] | None = None) -> int:
         correlation_id = new_id("corr")
         is_resilience = args.drill_command == "resilience"
         is_snapshot = args.drill_command == "snapshot"
+        is_browser_failure = args.drill_command == "browser-failure"
         is_host = args.drill_command == "import-host"
         job_type = (
             "resilience_drill" if is_resilience else
             "snapshot_rejection_drill" if is_snapshot else
+            "browser_failure_drill" if is_browser_failure else
             "host_recovery_drill"
         )
         schema = (
             "mova-resilience-drill-v1" if is_resilience else
             "mova-snapshot-rejection-drill-v1" if is_snapshot else
+            "mova-browser-failure-drill-v1" if is_browser_failure else
             "mova-host-drill-v1"
         )
         scenario = (
             "scheduler_p0_recovery" if is_resilience else
-            "snapshot_rejection" if is_snapshot else args.scenario
+            "snapshot_rejection" if is_snapshot else
+            "dom_drift_ambiguous_save" if is_browser_failure else args.scenario
         )
         identity = sha256_json({
             "scenario": scenario, "actor": args.actor, "reason": args.reason,
@@ -889,6 +900,9 @@ def main(argv: list[str] | None = None) -> int:
                 elif is_snapshot:
                     from mova_fpl.ops.snapshot_drill import run as snapshot_rejection_drill
                     payload = snapshot_rejection_drill()
+                elif is_browser_failure:
+                    from mova_fpl.ops.browser_failure_drill import run as browser_failure_drill
+                    payload = browser_failure_drill()
                 else:
                     from pathlib import Path
                     from mova_fpl.ops.host_drill import import_evidence
