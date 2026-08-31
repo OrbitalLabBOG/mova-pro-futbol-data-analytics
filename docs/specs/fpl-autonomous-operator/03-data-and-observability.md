@@ -238,11 +238,14 @@ no tiene hoy esa plataforma y ya ejecuta once contenedores. La primera versión 
 2. logs JSON correlacionados por IDs;
 3. `health_samples` con retención;
 4. API privada `mova-api` con `/healthz`, `/readyz`, `/metrics` y dashboard mínimo;
-5. watchdog systemd independiente que puede alertar aunque el stack esté caído;
+5. watchdog systemd independiente que puede alertar aunque el stack esté caído y reconcilia
+   permisos agentic vencidos sin ejecutar inferencias;
 6. `sysstat` y métricas Docker/host como diagnóstico complementario.
 
 El endpoint `/metrics` es Prometheus-compatible para conectar un backend después sin cambiar
-el dominio.
+el dominio. La cola publica requests, permisos y anomalías; un permiso `authorized` alterado o
+ausente, un archivo sin fila durable y un `started` sin terminal durante 15 minutos degradan el
+servicio y abren el P1 deduplicado de integridad agentic.
 
 ### Cadencia adaptativa del estado privado
 

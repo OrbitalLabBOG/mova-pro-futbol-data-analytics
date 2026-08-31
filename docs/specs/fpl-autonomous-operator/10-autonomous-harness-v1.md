@@ -807,6 +807,19 @@ bloqueos son idempotentes y aparecen en CLI/API, auditoría, Prometheus y Postgr
 SQLite 21 y PostgreSQL 24 conservan el ledger. Evidencia:
 [HV1-10D pre-attempt authorization](53-hv1-10d-pre-attempt-authorization.md).
 
+### Corte de reconciliación y vigilancia de permisos — 31 de agosto de 2026
+
+HV1-09K completa el lifecycle cuando el proceso muere fuera del camino feliz. En cada watchdog,
+`preparing|authorized` cuyo TTL terminó pasa una sola vez a `expired` con audit append-only; esto
+no borra el permiso ni autoriza una inferencia. La inspección independiente cruza el ledger con
+`artifacts/research/permits/` y valida path allowlisted, nombre, tamaño, SHA, schema e identidad.
+
+Permiso faltante/alterado, archivo huérfano después de 60 segundos, preparación estancada o
+`started` sin `finished` durante 15 minutos abre el mismo P1 deduplicado de integridad de cola.
+La recuperación causal lo resuelve; API/doctor y `mova_agent_queue_permits` exponen sólo conteos y
+causas sanitizadas. No cambia SQLite/PostgreSQL schema ni A0. Evidencia:
+[HV1-09K attempt permit watchdog](54-hv1-09k-attempt-permit-watchdog.md).
+
 ## 11. Definition of Done del harness v1
 
 - un ciclo completo puede ejecutarse, reanudarse y explicarse desde `mova`;

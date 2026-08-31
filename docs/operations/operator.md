@@ -87,7 +87,13 @@ estado, edad y tombstones. Un request huérfano con más de 60 segundos, termina
 sin progreso por 35 minutos abre un único P1 `Agent queue integrity unhealthy`. La recuperación causal
 resuelve el incidente; nunca borra ni repara el artefacto desde el watchdog. `doctor` lo muestra como
 `agent_queue_integrity`, `/api/v1/agent-queue` responde 200/503 y Prometheus publica
-`mova_agent_queue_healthy`, `requests` y `anomalies` sin contenido del prompt.
+`mova_agent_queue_healthy`, `requests`, `permits` y `anomalies` sin contenido del prompt.
+
+El mismo watchdog cruza cada autorización activa con su permiso: path, nombre, tamaño, SHA, schema e
+identidad. Reconciliar un `preparing|authorized` cuyo TTL venció sólo cambia su estado durable a
+`expired` y agrega un audit event; no borra archivos ni llama Codex. Un permiso faltante/alterado,
+un archivo sin fila después de 60 segundos o un `started` sin terminal durante 15 minutos abre el P1.
+Antes de reintentar, diagnostica el worker y conserva permiso/receipts como evidencia.
 
 El worker Codex escribe un receipt inmutable `started` antes de ejecutar y otro `finished` al
 terminar. Eventos, errores y normalización incluyen `attempt_id`, por lo que un retry no sobrescribe

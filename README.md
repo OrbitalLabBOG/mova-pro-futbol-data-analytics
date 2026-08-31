@@ -125,7 +125,8 @@ CycleManifest + memoria estratégica durable → modelos causales → matriz xP 
 - `mova watchdog` inspecciona el heartbeat y, de forma independiente al importador, la cola
   aislada de agentes. Requests huérfanos, terminales, inválidos, demasiado viejos o ligados a un
   tombstone abren un P1 deduplicado; la API `/api/v1/agent-queue`, `doctor` y las métricas
-  `mova_agent_queue_*` exponen el estado sin publicar prompts.
+  `mova_agent_queue_*` exponen el estado sin publicar prompts. También expira permisos no usados
+  de forma idempotente y detecta permisos ausentes/alterados/huérfanos o starts sin cierre.
 - `mova alerts channel` expone sólo estado, owner y fingerprint del destino. El webhook externo
   permanece opt-in mediante un secreto Docker; sin configuración, journald sigue funcionando y
   readiness declara pendiente el canal externo. El drill prueba payload mínimo, redacción y

@@ -53,6 +53,11 @@ host con budget/deadline recalculados. El worker falla 75 sin permiso; receipts 
 lifecycle del permiso y las métricas publican estados `preparing|authorized|started|finished|expired`.
 Bloqueos repetidos del mismo subject/ordinal/causa reutilizan evidencia y no inflan auditoría.
 
+HV1-09K cubre crashes entre esos estados. El watchdog expira permisos no consumidos de forma
+idempotente y alerta P1 ante SHA/identidad alterados, archivo durable ausente, permiso huérfano,
+`preparing` estancado o `started` sin terminal por 15 minutos. No elimina evidencia ni reintenta
+Codex: sólo reconcilia el TTL y hace visible el incidente.
+
 HV1-10B convirtió los overruns detectados en un lifecycle auditable, idempotente y replicado a
 PostgreSQL. El scorecard diferencia `open`, `reviewed_pending` y `closed`; sólo una corrida
 posterior equivalente dentro del límite permite resolver. El primer caso real permanece
