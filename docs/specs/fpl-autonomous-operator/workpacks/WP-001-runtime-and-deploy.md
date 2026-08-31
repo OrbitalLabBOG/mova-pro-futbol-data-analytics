@@ -50,4 +50,6 @@ resuelve el incidente tras recuperación. El rehearsal hermético prueba esa cad
 runtime. HV1-09L desplegó la preparación con TTL, backups y estado sellado, más una unidad boot-time
 que exige stack, ocho timers, tick posterior, integridad, paridad, revisión, controles, fingerprint
 e idempotencia antes de importar el escenario. El workpack permanece `active-shadow`: falta
-autorizar y ejecutar el reboot real; la copia cifrada off-host sigue sujeta a Q-04.
+autorizar y ejecutar el reboot real. HV1-02D añadió servicio/timer `restic` opt-in, probe
+sanitizado y restore evidence allowlisted; la unidad está instalada pero deshabilitada porque el
+destino/owner de Q-04 y la transferencia externa requieren autorización explícita.

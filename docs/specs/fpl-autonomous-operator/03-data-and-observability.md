@@ -226,8 +226,11 @@ Un timer systemd diario ejecuta, bajo el mismo `flock` y dentro de `mova-engine`
 7. retención propuesta: 14 diarios y 8 semanales.
 
 No se copia una base viva con `cp` ignorando WAL. El perfil browser/cookies se excluye: su
-recuperación es reautenticación humana. Al estar todo en un solo VPS, una falla total de
-disco sigue siendo riesgo residual hasta autorizar backup off-host.
+recuperación es reautenticación humana. El mecanismo off-host está implementado como servicio
+`restic` opt-in: sólo acepta un destino remoto allowlisted, owner explícito y credenciales
+root-only; transfiere los backups locales ya verificados y excluye perfil browser/Codex. Hasta
+autorizar destino, habilitar el timer y completar un restore drill desde esa copia, una falla
+total de disco sigue siendo riesgo residual.
 
 ## Observabilidad local
 

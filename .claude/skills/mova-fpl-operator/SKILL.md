@@ -89,6 +89,11 @@ consulta ordinaria: `mova` y `/api/v1/status` son el contrato estable.
     sellados; un pass no cambia el writer ni autoriza promoción.
     Antes del drill, `mova postgres roles` debe mostrar separación `pass`: owner para
     migraciones/imports, app sin DELETE y readonly con transacciones read-only por defecto.
+    Para off-host revisa `status.host.offsite_backup` y los gates
+    `OFF_HOST_BACKUP_CONFIGURED`/`OFF_HOST_RESTORE_PROVEN`. Configurado no significa restaurable:
+    exige además evidencia `offsite_restore` de ocho checks. No muestres repository/password,
+    no actives el timer sin destino y owner autorizados, y nunca incluyas browser-profile ni
+    `CODEX_HOME` en la copia.
 
 `status` no prueba red ni muta estado. `doctor` hace checks acotados y un único GET público a
 FPL; usa `--no-network` cuando la ejecución deba ser hermética. Un `FAIL` requerido devuelve

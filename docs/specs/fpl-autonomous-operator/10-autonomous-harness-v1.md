@@ -57,9 +57,9 @@ Verificación viva del corte al 31 de agosto:
 - API y PostgreSQL healthy, doctor 23/23 y cero incidentes abiertos;
 - GW3, deadline oficial `2026-09-04T17:30:00Z`, todavía preliminar;
 - último team state válido: 15 jugadores y sesión browser persistente;
-- runtime engine/browser y checkout exactos en `f7260d0`;
-- readiness: 14 pass, 9 pending y 0 blocked sobre 23 gates; el reboot ya no queda absorbido
-  incorrectamente por los cuatro chaos drills de servicios;
+- runtime engine/API y checkout exactos en `a005ab9`; browser conserva su imagen aislada;
+- readiness: 14 pass, 11 pending y 0 blocked sobre 25 gates; reboot y off-host/restore se
+  observan separadamente y no se infieren desde pruebas parciales;
 - scorecard del harness: operaciones pass; las otras seis dimensiones pendientes, A0 intacto.
 
 Gaps reales restantes:
@@ -68,7 +68,8 @@ Gaps reales restantes:
 2. medir el follow-up del overrun ya revisado y completar el primer loop hasta una lección
    persistida;
 3. mantener lineup y R3 sin entrypoint hasta satisfacer evidencia multi-GW y aprobación;
-4. elegir destinos autorizados para alertas externas y backup cifrado off-host;
+4. elegir destinos autorizados para alertas externas y backup cifrado off-host; ambos contratos
+   opt-in ya están implementados, pero no provisionados;
 5. ensayar un reboot completo del VPS y aprobar compliance/promoción de forma explícita.
 
 La dispersión operativa original ya quedó encapsulada por `mova`, PostgreSQL shadow, manifests y
@@ -380,7 +381,7 @@ no borra evidencia previa y nunca amplía autonomía.
 | --- | --- | ---: | --- |
 | HV1-00 ✅ | reset del repo, archivo de legado, packaging y CI hermético | completado | baseline actual |
 | HV1-01 ✅ | contrato `mova`, status/doctor y skill del operador | completado | HV1-00 |
-| HV1-02 🟡 | shadow + dual-read + roles + cutover/rollback de lectura; faltan 3 ciclos, off-host y aprobación de writer | ciclos + Q-04 | HV1-01 |
+| HV1-02 🟡 | shadow + dual-read + roles + cutover/rollback; off-host ya es operable pero falta destino, restore, 3 ciclos y aprobación de writer | ciclos + Q-04 | HV1-01 |
 | HV1-03a ✅ | collector/data quality autónomo | completado | HV1-02 |
 | HV1-03b ✅ | facade uniforme train/predict/explain/evaluate, scorecard, drift y candidato fail-closed | completado | HV1-03a |
 | HV1-04 ✅ | team state, season plan y memoria estratégica longitudinal sellada | completado | HV1-02 |
@@ -835,6 +836,22 @@ integridad/paridad, revisión, controles, estado FPL e idempotencia antes de imp
 allowlisted. Un pending tardío expira sin contar. El tooling está desplegado; el escenario sigue
 pendiente hasta autorización y reboot real. Evidencia:
 [HV1-09L reboot recovery gate](55-hv1-09l-reboot-recovery-gate.md).
+
+### Corte de backup cifrado off-host — 31 de agosto de 2026
+
+HV1-02D convierte Q-04 en un contrato operable sin escoger unilateralmente un proveedor. El host
+acepta únicamente configuración exacta para `restic`, owner explícito, archivos bajo
+`/etc/mova-fpl` con propietario root y permisos sin acceso group/other, repositorio remoto
+allowlisted y timer activo. `mova status` sólo expone provider, owner, fingerprint truncado y
+razones sanitizadas: nunca URL, ruta o password.
+
+La unidad opt-in crea primero backups locales verificados SQLite/PostgreSQL y transfiere sólo ese
+set; perfil browser y `CODEX_HOME` permanecen fuera. Readiness añade
+`OFF_HOST_BACKUP_CONFIGURED` y `OFF_HOST_RESTORE_PROVEN`; este último exige ocho checks importados
+por el ledger host, incluida restauración de ambas bases, hashes y runtime intacto. En producción
+ambos están `pending`: la unidad está instalada pero deshabilitada, no existe configuración y no
+se realizó tráfico externo. El total pasa de 23 a 25 gates, con 14 pass y 11 pending. Evidencia:
+[HV1-02D offsite backup readiness](56-hv1-02d-offsite-backup-readiness.md).
 
 ## 11. Definition of Done del harness v1
 

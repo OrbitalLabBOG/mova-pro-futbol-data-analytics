@@ -272,7 +272,23 @@ sudo deploy/bin/postgres-shadow-restore-drill.sh "$pg_latest"
 El backup usa SQLite Online Backup API y ejecuta `quick_check`; nunca hace `cp` de una base
 viva ignorando WAL. PostgreSQL usa `pg_dump -Fc`, valida el catálogo del dump y conserva un
 manifest SHA-256. El timer diario ejecuta ambos. Retención local: 35 días.
-La copia off-host cifrada sigue siendo una decisión pendiente.
+La copia off-host cifrada ya tiene implementación opt-in, pero no un destino autorizado. No
+habilites el timer sólo porque la unidad exista. Para provisionarla:
+
+1. instala `restic` desde el paquete aprobado del host;
+2. crea `/etc/mova-fpl/offsite-repository`, `/etc/mova-fpl/offsite-password` y
+   `/etc/mova-fpl/offsite-backup.json` como `root:root 0600`, partiendo de
+   `deploy/offsite-backup.example.json`;
+3. usa exclusivamente un repositorio remoto soportado (`s3:`, `sftp:`, `rest:`, `b2:`, `azure:`,
+   `gs:`, `rclone:` o `swift:`) y registra owner; una ruta local no satisface off-host;
+4. inicializa el repositorio bajo autorización, ejecuta una vez
+   `mova-fpl-offsite-backup.service`, revisa journald y sólo entonces habilita
+   `mova-fpl-offsite-backup.timer`;
+5. completa un restore aislado y registra ocho checks con `mova drill import-host --scenario
+   offsite_restore`; nunca restaures sobre runtime ni incluyas browser-profile/CODEX_HOME.
+
+`mova status --json` debe mostrar únicamente estado sanitizado y fingerprint. El gate permanece
+`pending` si falta config/timer/evidencia y `blocked` si la configuración existe pero es insegura.
 
 ## Reboot recovery controlado
 

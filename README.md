@@ -54,6 +54,9 @@ mova postgres status
 mova postgres verify
 mova postgres drill --actor codex --reason read-cutover --idempotency-key gw03-v1
 mova postgres roles --actor codex --reason least-privilege --idempotency-key gw03-roles-v1
+mova status --json                 # host.offsite_backup nunca expone URL/password
+mova drill host-status --scenario offsite_restore --actor codex \
+  --reason restore-evidence --idempotency-key offsite-restore-v1
 mova drill snapshot --actor codex --reason snapshot-boundary --idempotency-key snapshot-v1
 mova drill browser-failure --actor codex --reason dom-save-boundary \
   --idempotency-key browser-failure-v1

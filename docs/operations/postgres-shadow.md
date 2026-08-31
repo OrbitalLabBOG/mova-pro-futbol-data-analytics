@@ -142,6 +142,12 @@ El drill verifica el hash, crea una base temporal con prefijo validado `mova_res
 con `--exit-on-error`, valida los siete schemas y tablas núcleo, y siempre elimina solo esa base
 temporal. Nunca restaura encima de `mova`.
 
+El servicio opcional `mova-fpl-offsite-backup.service` ejecuta ambos backups locales antes de
+enviar el set cifrado con restic. Su timer no se habilita en la instalación normal: requiere
+destino remoto y owner autorizados. Un snapshot remoto no cierra el gate por sí solo; el escenario
+`offsite_restore` debe demostrar manifest, restauración SQLite/PostgreSQL, hashes, limpieza de
+credenciales y runtime sin cambios.
+
 Para ensayar evidencia inválida sin tocar un import real:
 
 ```bash
