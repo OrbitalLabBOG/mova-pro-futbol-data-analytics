@@ -393,6 +393,11 @@ def normalize_result(payload: dict, request: dict) -> dict:
 
 
 class DecisionDeliberationService:
+    _ORPHAN_REQUEST_GRACE_SECONDS = 60
+    _TERMINAL_STATUSES = {
+        "completed", "accepted", "review_required", "blocked", "rejected", "failed",
+    }
+
     def __init__(self, config: RuntimeConfig, db: OpsDB):
         self.config = config
         self.db = db
@@ -499,23 +504,89 @@ class DecisionDeliberationService:
         self.db.migrate()
         outbox = self.config.research_root / "outbox"
         results = []
+        quarantined_requests = self._quarantine_terminal_requests()
         for path in sorted(outbox.glob("deliberation_*.result.json")):
             try:
                 results.append(self._import_one(path))
             except Exception as exc:  # cada output no confiable se aísla
-                quarantine = self.config.research_root / "quarantine" / path.name
-                quarantine.parent.mkdir(parents=True, exist_ok=True)
-                path.replace(quarantine)
+                quarantine = self._quarantine_path(path)
                 candidate_id = path.name.removesuffix(".result.json")
                 if re.fullmatch(r"deliberation_[0-9a-f]{32}", candidate_id):
                     self.db.reject_decision_deliberation(
                         candidate_id, error_code=type(exc).__name__, error_detail=str(exc)
                     )
+                    request_quarantine = self._quarantine_request(candidate_id)
+                else:
+                    request_quarantine = None
                 results.append({
                     "status": "rejected", "path": str(quarantine),
+                    "request_path": request_quarantine,
                     "error_code": type(exc).__name__, "error": str(exc)[:500],
                 })
-        return {"status": "completed", "processed": len(results), "results": results}
+        return {
+            "status": "completed", "processed": len(results), "results": results,
+            "terminal_requests_quarantined": len(quarantined_requests),
+            "quarantined_requests": quarantined_requests,
+        }
+
+    def _quarantine_terminal_requests(self) -> list[dict]:
+        """Remove requests which can never produce an importable result.
+
+        Request files are written immediately before their database row.  The grace
+        period avoids racing a concurrent enqueue while still making a crashed enqueue
+        fail closed before the next scheduled worker run.
+        """
+        quarantined = []
+        inbox = self.config.research_root / "inbox"
+        now = datetime.now(timezone.utc).timestamp()
+        for path in sorted(inbox.glob("deliberation_*.request.json")):
+            deliberation_id = path.name.removesuffix(".request.json")
+            if not re.fullmatch(r"deliberation_[0-9a-f]{32}", deliberation_id):
+                continue
+            pending_result = (
+                self.config.research_root / "outbox" /
+                f"{deliberation_id}.result.json"
+            )
+            if pending_result.is_file():
+                continue
+            run = self.db.decision_deliberation(deliberation_id)
+            reason = None
+            if run and run.get("status") in self._TERMINAL_STATUSES:
+                reason = f"terminal_status:{run['status']}"
+            elif not run and now - path.stat().st_mtime >= self._ORPHAN_REQUEST_GRACE_SECONDS:
+                reason = "unregistered_request"
+            if reason:
+                target = self._quarantine_path(path)
+                quarantined.append({
+                    "deliberation_id": deliberation_id,
+                    "reason": reason,
+                    "path": str(target),
+                })
+        return quarantined
+
+    def _quarantine_request(self, deliberation_id: str) -> str | None:
+        source = (
+            self.config.research_root / "inbox" /
+            f"{deliberation_id}.request.json"
+        )
+        if not source.is_file():
+            return None
+        return str(self._quarantine_path(source))
+
+    def _quarantine_path(self, source: Path) -> Path:
+        target = self.config.research_root / "quarantine" / source.name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        if target.exists():
+            digest = hashlib.sha256(source.read_bytes()).hexdigest()[:12]
+            target = target.with_name(f"{source.stem}-{digest}{source.suffix}")
+            sequence = 1
+            while target.exists():
+                target = target.with_name(
+                    f"{source.stem}-{digest}-{sequence}{source.suffix}"
+                )
+                sequence += 1
+        source.replace(target)
+        return target
 
     def _import_one(self, path: Path) -> dict:
         if path.stat().st_size > MAX_RESULT_BYTES:

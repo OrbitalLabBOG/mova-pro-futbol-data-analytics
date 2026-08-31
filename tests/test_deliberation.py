@@ -1,5 +1,7 @@
 import hashlib
 import json
+import os
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -426,3 +428,96 @@ def test_deliberation_persistence_records_risks_intervention_and_cost(tmp_path: 
         ).fetchone()[0] == 1
         assert con.execute("SELECT COUNT(*) FROM intervention_runs").fetchone()[0] == 1
         assert con.execute("SELECT COUNT(*) FROM cost_ledger").fetchone()[0] == 1
+
+
+def test_import_sweeps_old_unregistered_request_before_worker(tmp_path: Path):
+    class FakeDB:
+        def migrate(self):
+            return []
+
+        def decision_deliberation(self, _deliberation_id):
+            return None
+
+    root = tmp_path / "research"
+    request_id = "deliberation_" + "1" * 32
+    request_path = root / "inbox" / f"{request_id}.request.json"
+    request_path.parent.mkdir(parents=True)
+    request_path.write_text("{}\n", encoding="utf-8")
+    old = time.time() - 120
+    os.utime(request_path, (old, old))
+
+    imported = DecisionDeliberationService(
+        RuntimeConfig(research_root=root), FakeDB()
+    ).import_ready()
+
+    assert imported["processed"] == 0
+    assert imported["terminal_requests_quarantined"] == 1
+    assert imported["quarantined_requests"][0]["reason"] == "unregistered_request"
+    assert not request_path.exists()
+    assert Path(imported["quarantined_requests"][0]["path"]).is_file()
+
+
+def test_import_does_not_sweep_fresh_unregistered_request(tmp_path: Path):
+    class FakeDB:
+        def migrate(self):
+            return []
+
+        def decision_deliberation(self, _deliberation_id):
+            return None
+
+    root = tmp_path / "research"
+    request_id = "deliberation_" + "2" * 32
+    request_path = root / "inbox" / f"{request_id}.request.json"
+    request_path.parent.mkdir(parents=True)
+    request_path.write_text("{}\n", encoding="utf-8")
+
+    imported = DecisionDeliberationService(
+        RuntimeConfig(research_root=root), FakeDB()
+    ).import_ready()
+
+    assert imported["terminal_requests_quarantined"] == 0
+    assert request_path.is_file()
+
+
+def test_rejected_orphan_result_quarantines_matching_request_without_overwrite(
+    tmp_path: Path,
+):
+    class FakeDB:
+        rejected = []
+
+        def migrate(self):
+            return []
+
+        def decision_deliberation(self, _deliberation_id):
+            return None
+
+        def reject_decision_deliberation(self, deliberation_id, **detail):
+            self.rejected.append((deliberation_id, detail))
+
+    root = tmp_path / "research"
+    request_id = "deliberation_" + "3" * 32
+    inbox = root / "inbox"
+    outbox = root / "outbox"
+    quarantine = root / "quarantine"
+    for directory in (inbox, outbox, quarantine):
+        directory.mkdir(parents=True)
+    request_path = inbox / f"{request_id}.request.json"
+    request_path.write_text("{}\n", encoding="utf-8")
+    result_path = outbox / f"{request_id}.result.json"
+    result_path.write_text(json.dumps({"deliberation_id": request_id}), encoding="utf-8")
+    prior_evidence = quarantine / result_path.name
+    prior_evidence.write_text('{"prior":true}\n', encoding="utf-8")
+    db = FakeDB()
+
+    imported = DecisionDeliberationService(
+        RuntimeConfig(research_root=root), db
+    ).import_ready()
+
+    rejection = imported["results"][0]
+    assert rejection["status"] == "rejected"
+    assert Path(rejection["request_path"]).is_file()
+    assert Path(rejection["path"]).is_file()
+    assert Path(rejection["path"]) != prior_evidence
+    assert prior_evidence.read_text(encoding="utf-8") == '{"prior":true}\n'
+    assert not request_path.exists()
+    assert db.rejected[0][0] == request_id
