@@ -58,7 +58,8 @@ Verificación viva del corte al 31 de agosto:
 - GW3, deadline oficial `2026-09-04T17:30:00Z`, todavía preliminar;
 - último team state válido: 15 jugadores y sesión browser persistente;
 - runtime engine/browser y checkout exactos en `f7260d0`;
-- readiness: 15 pass, 8 pending y 0 blocked sobre 23 gates;
+- readiness: 14 pass, 9 pending y 0 blocked sobre 23 gates; el reboot ya no queda absorbido
+  incorrectamente por los cuatro chaos drills de servicios;
 - scorecard del harness: operaciones pass; las otras seis dimensiones pendientes, A0 intacto.
 
 Gaps reales restantes:
@@ -819,6 +820,21 @@ Permiso faltante/alterado, archivo huérfano después de 60 segundos, preparaci�
 La recuperación causal lo resuelve; API/doctor y `mova_agent_queue_permits` exponen sólo conteos y
 causas sanitizadas. No cambia SQLite/PostgreSQL schema ni A0. Evidencia:
 [HV1-09K attempt permit watchdog](54-hv1-09k-attempt-permit-watchdog.md).
+
+### Corte de gate para reboot real — 31 de agosto de 2026
+
+HV1-09L corrige un falso positivo de G2: API, PostgreSQL, browser y outage combinado no prueban
+que systemd/Docker/timers retomen después de reiniciar el kernel. `HOST_RECOVERY_DRILLS_PROVEN`
+exige ahora cinco escenarios y producción observa 4/5, por lo que readiness baja honestamente a
+14/23 pass y 9 pending sin crear un blocker ni alterar A0.
+
+El workflow host es bifásico. La preparación verifica el estado sano, crea backups y sella durante
+diez minutos boot ID, revisión, último tick, controles y fingerprint privado; explícitamente no
+ejecuta el reboot. En el siguiente boot, systemd prueba servicios, ocho timers, tick nuevo,
+integridad/paridad, revisión, controles, estado FPL e idempotencia antes de importar evidencia
+allowlisted. Un pending tardío expira sin contar. El tooling está desplegado; el escenario sigue
+pendiente hasta autorización y reboot real. Evidencia:
+[HV1-09L reboot recovery gate](55-hv1-09l-reboot-recovery-gate.md).
 
 ## 11. Definition of Done del harness v1
 

@@ -274,6 +274,35 @@ viva ignorando WAL. PostgreSQL usa `pg_dump -Fc`, valida el catálogo del dump y
 manifest SHA-256. El timer diario ejecuta ambos. Retención local: 35 días.
 La copia off-host cifrada sigue siendo una decisión pendiente.
 
+## Reboot recovery controlado
+
+El quinto escenario host se prepara sin reiniciar ni ampliar autoridad:
+
+```bash
+sudo deploy/bin/reboot-recovery-prepare.sh codex \
+  "validar recuperación real" hv1-reboot-v1
+```
+
+La salida debe declarar `prepared`, `reboot_executed=false`, backups presentes y expiración a diez
+minutos. En este punto se detiene el procedimiento hasta obtener autorización explícita para
+reiniciar el VPS. No encadenar el reboot al wrapper ni guardar la orden en un timer.
+
+Si el host reinicia dentro del TTL, `mova-fpl-reboot-recovery.service` verifica automáticamente
+stack, PostgreSQL, ocho timers, nuevo tick, SQLite, paridad, revisión, controles A0, fingerprint
+privado e idempotencia. La evidencia allowlisted se importa como `reboot_recovery`; el pending se
+archiva como completed. Si el reboot empieza después del TTL, se archiva como expired y readiness
+permanece pendiente. Confirmar después:
+
+```bash
+mova readiness
+mova doctor
+mova safety
+systemctl status mova-fpl-reboot-recovery.service --no-pager
+```
+
+La unidad instalada e inactiva sin pending es el estado normal. Preparar no autoriza reiniciar;
+un reboot afecta todos los servicios del VPS y siempre requiere una decisión separada.
+
 El import y la verificación PostgreSQL se describen en el
 [runbook shadow](postgres-shadow.md). SQLite continúa como writer oficial.
 

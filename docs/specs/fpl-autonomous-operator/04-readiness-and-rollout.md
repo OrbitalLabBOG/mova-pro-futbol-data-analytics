@@ -100,6 +100,10 @@ No se modificó el host durante esta inspección.
 - dashboard Now/Operations y alertas P0/P1 con acuse;
 - caos básico: reboot, API caída, DB caída, snapshot inválido.
 
+API, PostgreSQL, browser y outage combinado ya tienen evidencia viva. Desde HV1-09L el gate host
+exige además `reboot_recovery`; el wrapper y la unidad de verificación están desplegados, pero el
+reboot real permanece pendiente de autorización. Cuatro escenarios no vuelven a satisfacer G2.
+
 ### G3 — Shadow season loop
 
 - mínimo 3 GWs completas o equivalente de rehearsals con todos los estados;

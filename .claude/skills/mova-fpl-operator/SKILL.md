@@ -135,9 +135,9 @@ browser, DOM, save ambiguo ni reboot.
 La caída real de PostgreSQL usa exclusivamente
 `deploy/bin/postgres-recovery-drill.sh ACTOR REASON IDEMPOTENCY_KEY`. El script toma todos los
 locks de writers, conserva API/SQLite, verifica el fingerprint privado y exige paridad posterior;
-exit 75 significa que difirió sin detener el servicio. `mova readiness` sólo pasa
-`HOST_RECOVERY_DRILLS_PROVEN` cuando API y PostgreSQL tienen jobs canónicos aprobados. El drill no
-prueba snapshot corrupto, DOM/save ambiguo, combinación de fallos ni reboot.
+exit 75 significa que difirió sin detener el servicio. Su job canónico cubre únicamente el
+escenario PostgreSQL; no basta para `HOST_RECOVERY_DRILLS_PROVEN` y no prueba snapshot corrupto,
+DOM/save ambiguo, combinación de fallos ni reboot.
 
 La recuperación real del perfil browser usa exclusivamente
 `deploy/bin/browser-recovery-drill.sh ACTOR REASON IDEMPOTENCY_KEY`. Sólo es válida con controles
@@ -147,9 +147,17 @@ estado temporal. Readiness exige los aislados y el combinado en `HOST_RECOVERY_D
 
 El outage conjunto usa `deploy/bin/combined-recovery-drill.sh ACTOR REASON IDEMPOTENCY_KEY` y
 requiere backup previo. Detiene API+PostgreSQL+browser bajo locks, conserva SQLite, recupera los
-tres y compara paridad/fingerprints. `HOST_RECOVERY_DRILLS_PROVEN` exige cuatro escenarios:
-API, PostgreSQL, browser y combinado. Replay/conflict debe resolverse antes de pedir locks de
-servicio; si un replay retorna 75, hay drift del wrapper y no debe improvisarse otro outage.
+tres y compara paridad/fingerprints. `HOST_RECOVERY_DRILLS_PROVEN` exige cinco escenarios:
+API, PostgreSQL, browser, combinado y reboot real. Replay/conflict debe resolverse antes de pedir
+locks de servicio; si un replay retorna 75, hay drift del wrapper y no debe improvisarse otro
+outage.
+
+El reboot real tiene dos fases. `deploy/bin/reboot-recovery-prepare.sh ACTOR REASON
+IDEMPOTENCY_KEY` sólo valida A0, crea backups y sella estado con TTL de diez minutos; jamás reinicia
+el VPS. Detente ahí hasta obtener autorización explícita separada. Al volver de un reboot iniciado
+dentro del TTL, la unidad `mova-fpl-reboot-recovery.service` exige boot ID distinto, stack/timers,
+tick nuevo, SQLite/PostgreSQL, revisión, controles, team state e idempotencia intactos antes de
+importar evidencia. Un pending expirado no cuenta y no se repara inventando timestamps.
 
 Para probar snapshot inválido usa `mova drill snapshot --actor ... --reason ...
 --idempotency-key ...`. Es hermético y debe declarar diez checks, `fixture_only=true` y

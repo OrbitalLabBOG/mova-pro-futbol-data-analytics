@@ -55,8 +55,9 @@ nombres duplicados, traversal y symlinks; `SNAPSHOT_REJECTION_PROVEN` pasa. HV1-
 de once checks de deriva DOM, pre-state cambiado, save ambiguo, P0 y no-retry;
 `BROWSER_FAILURE_DRILL_PROVEN` pasa. HV1-09G recuperó una caída real del browser en 10 s,
 con sesión/fingerprint intactos y estado on-demand restaurado. HV1-09H recuperó el outage conjunto
-API+PostgreSQL+browser en 19 s, con SQLite y fingerprint intactos; el gate host exige y pasa cuatro
-escenarios. Continúan pendientes un reboot real, los ciclos
+API+PostgreSQL+browser en 19 s, con SQLite y fingerprint intactos. HV1-09L corrigió el gate para
+exigir un quinto escenario `reboot_recovery`: el workflow está desplegado y los cuatro anteriores
+ya no producen un falso pass. Continúan pendientes el reboot real, los ciclos
 independientes y las aprobaciones; por ello el workpack permanece `active-shadow` y no recomienda
 promoción.
 

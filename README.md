@@ -70,6 +70,9 @@ sudo deploy/bin/api-recovery-drill.sh codex "api recovery" hv1-api-v1
 sudo deploy/bin/postgres-recovery-drill.sh codex "postgres recovery" hv1-postgres-v1
 sudo deploy/bin/browser-recovery-drill.sh codex "browser recovery read-only" hv1-browser-v1
 sudo deploy/bin/combined-recovery-drill.sh codex "combined recovery" hv1-combined-v1
+# Fase 1 solamente: prepara backup/estado sellado; NO reinicia el VPS.
+sudo deploy/bin/reboot-recovery-prepare.sh codex "real reboot recovery" hv1-reboot-v1
+# Tras autorización separada, el operador reinicia el host; systemd verifica/importa al volver.
 
 # collector público sellado
 python -m mova_fpl.cli.collect_live --season 2026-27 --gw 2
@@ -127,6 +130,10 @@ CycleManifest + memoria estratégica durable → modelos causales → matriz xP 
   tombstone abren un P1 deduplicado; la API `/api/v1/agent-queue`, `doctor` y las métricas
   `mova_agent_queue_*` exponen el estado sin publicar prompts. También expira permisos no usados
   de forma idempotente y detecta permisos ausentes/alterados/huérfanos o starts sin cierre.
+- `HOST_RECOVERY_DRILLS_PROVEN` exige cinco escenarios: API, PostgreSQL, browser, outage
+  combinado y reboot real. El wrapper de preparación sella backups, boot ID, revisión, tick,
+  controles y team state, pero nunca ejecuta el reboot; un servicio systemd valida la recuperación
+  en el boot siguiente y deja el gate pendiente si no existe evidencia importada.
 - `mova alerts channel` expone sólo estado, owner y fingerprint del destino. El webhook externo
   permanece opt-in mediante un secreto Docker; sin configuración, journald sigue funcionando y
   readiness declara pendiente el canal externo. El drill prueba payload mínimo, redacción y

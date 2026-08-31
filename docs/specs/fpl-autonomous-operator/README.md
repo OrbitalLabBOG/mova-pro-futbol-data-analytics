@@ -22,7 +22,7 @@ PM de construcción del proyecto.
 
 | Campo | Valor |
 | --- | --- |
-| Versión | 0.32 |
+| Versión | 0.33 |
 | Estado | `active-shadow` |
 | Riesgo | alto: cuenta externa, deadlines irreversibles y sesión autenticada |
 | Business owner | Julián Zuluaga |
@@ -87,6 +87,7 @@ PM de construcción del proyecto.
 | [52-hv1-10c-physical-attempt-accounting.md](52-hv1-10c-physical-attempt-accounting.md) | Presupuesto por ejecución física, estimación conservadora y compatibilidad legacy sin doble conteo |
 | [53-hv1-10d-pre-attempt-authorization.md](53-hv1-10d-pre-attempt-authorization.md) | Permiso host→worker por intento con budget, deadline, expiración e identidad sellada |
 | [54-hv1-09k-attempt-permit-watchdog.md](54-hv1-09k-attempt-permit-watchdog.md) | Reconciliación de permisos vencidos y detección P1 de permisos alterados, huérfanos o starts estancados |
+| [55-hv1-09l-reboot-recovery-gate.md](55-hv1-09l-reboot-recovery-gate.md) | Workflow bifásico y gate honesto para recuperación tras un reboot real del VPS |
 | [contracts/](contracts/) | JSON Schemas máquina para request, result y signal |
 | [decisions/](decisions/) | decisiones arquitectónicas propuestas |
 | [workpacks/](workpacks/) | unidades de implementación y criterios todavía pendientes |

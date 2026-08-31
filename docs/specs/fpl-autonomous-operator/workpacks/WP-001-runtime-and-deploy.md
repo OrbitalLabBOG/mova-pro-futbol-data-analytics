@@ -47,5 +47,7 @@ Engine/browser fijados, Compose hardened, secrets externos, límites, healthchec
 persistentes, backup/restore, SHA/digest y gates de recursos operan en el VPS. El watchdog v2
 abre un único P0 cuando falta o vence el heartbeat, entrega el outbox fuera de la transacción y
 resuelve el incidente tras recuperación. El rehearsal hermético prueba esa cadena sin mutar el
-runtime. El workpack permanece `active-shadow`: falta un reboot controlado del host que pruebe
-retoma sin duplicados y la copia cifrada off-host sigue sujeta a Q-04.
+runtime. HV1-09L desplegó la preparación con TTL, backups y estado sellado, más una unidad boot-time
+que exige stack, ocho timers, tick posterior, integridad, paridad, revisión, controles, fingerprint
+e idempotencia antes de importar el escenario. El workpack permanece `active-shadow`: falta
+autorizar y ejecutar el reboot real; la copia cifrada off-host sigue sujeta a Q-04.

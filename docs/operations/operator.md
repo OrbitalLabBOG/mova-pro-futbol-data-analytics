@@ -158,13 +158,21 @@ REASON IDEMPOTENCY_KEY`. Toma el lock del collector privado, exige controles fai
 el perfil on-demand, captura dos estados privados sólo en `/run`, detiene noVNC/CDP, recupera la
 misma imagen y sesión, compara fingerprints y restaura el estado inicial del contenedor. El
 artifact no contiene picks, cookies, storage ni DOM. `HOST_RECOVERY_DRILLS_PROVEN` exige API,
-PostgreSQL, browser y el escenario combinado completos.
+PostgreSQL, browser, escenario combinado y reboot real completos.
 
 `deploy/bin/combined-recovery-drill.sh ACTOR REASON IDEMPOTENCY_KEY` corta simultáneamente API,
 PostgreSQL y browser tras tomar todos los locks de writers. Prueba indisponibilidad conjunta,
 continuidad/quick-check de SQLite, estado privado inmutable y recuperación con paridad. Los
 wrappers consultan idempotencia inmediatamente después del lock exclusivo del drill: un replay o
 conflict nunca espera locks de collectors porque no puede iniciar un outage.
+
+El reboot usa dos fases y nunca se improvisa. `deploy/bin/reboot-recovery-prepare.sh ACTOR REASON
+IDEMPOTENCY_KEY` verifica A0, servicios y ocho timers, crea backups pre-drill y sella boot ID,
+revisión, último tick, controles y fingerprint privado en un pending con TTL de diez minutos. El
+wrapper no reinicia el host. Después de autorización separada, un reboot iniciado dentro del TTL
+activa `mova-fpl-reboot-recovery.service`: exige boot ID distinto, API/PostgreSQL, ocho timers,
+tick nuevo, quick-check, paridad, revisión/controles/fingerprint intactos e idempotencia única.
+Sólo entonces importa `reboot_recovery`; un pending vencido se archiva sin fabricar evidencia.
 
 `maintenance cleanup` sólo presenta candidatos `.tmp`, `.partial` o `.tmp-*` con más de 24 horas.
 No sigue symlinks ni considera evidencia canónica. Para borrar exige `--apply --actor --reason
