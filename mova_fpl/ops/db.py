@@ -1756,9 +1756,17 @@ class OpsDB:
     def decision_deliberation_for_envelope(self, envelope_id: str) -> dict | None:
         with self.connect(readonly=True) as con:
             row = con.execute(
-                "SELECT * FROM decision_deliberations WHERE envelope_id=?",
+                """SELECT d.*,b.binding_type,b.envelope_id AS bound_envelope_id
+                FROM decision_deliberation_bindings b
+                JOIN decision_deliberations d ON d.deliberation_id=b.deliberation_id
+                WHERE b.envelope_id=?""",
                 (envelope_id,),
             ).fetchone()
+            if not row:  # filas legacy anteriores a migration 017
+                row = con.execute(
+                    "SELECT * FROM decision_deliberations WHERE envelope_id=?",
+                    (envelope_id,),
+                ).fetchone()
         return dict(row) if row else None
 
     def decision_deliberation(self, deliberation_id: str) -> dict | None:
@@ -1773,11 +1781,22 @@ class OpsDB:
         now = utcnow()
         with self.transaction() as con:
             existing = con.execute(
-                "SELECT * FROM decision_deliberations WHERE envelope_id=?",
+                """SELECT d.*,b.binding_type,b.envelope_id AS bound_envelope_id
+                FROM decision_deliberation_bindings b
+                JOIN decision_deliberations d ON d.deliberation_id=b.deliberation_id
+                WHERE b.envelope_id=?""",
                 (payload["envelope_id"],),
             ).fetchone()
+            if not existing:  # filas legacy anteriores a migration 017
+                existing = con.execute(
+                    "SELECT * FROM decision_deliberations WHERE envelope_id=?",
+                    (payload["envelope_id"],),
+                ).fetchone()
             if existing:
-                return {**dict(existing), "reused": True}
+                binding_type = existing["binding_type"] if "binding_type" in existing.keys() else None
+                return {**dict(existing), "reused": True,
+                        "semantic_reused": binding_type == "semantic_reuse",
+                        "budget_reserved": False}
             # Legacy fixtures/callers still receive a one-request-only binding. They do
             # not gain cross-envelope reuse until they provide the explicit semantic SHA.
             semantic_sha = payload.get("semantic_input_sha256") or payload["request_sha256"]

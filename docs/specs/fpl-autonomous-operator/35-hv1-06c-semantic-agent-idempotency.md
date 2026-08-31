@@ -27,6 +27,8 @@ inputs deportivos y blockers fueran equivalentes. Cada revisión volvía a reser
 - La reutilización ocurre dentro de la misma transacción y antes de reservar presupuesto.
 - Toda reutilización emite `decision_deliberation_semantically_reused`; API, costo y Prometheus
   exponen llamadas evitadas.
+- Repetir `enqueue` sobre un envelope ya enlazado resuelve el binding existente y no intenta
+  insertarlo otra vez; retries del timer son apply-once.
 - Un cambio material produce un hash distinto y vuelve a encolar normalmente.
 
 ## Verificación
