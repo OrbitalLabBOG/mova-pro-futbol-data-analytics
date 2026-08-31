@@ -292,6 +292,17 @@ def parser() -> argparse.ArgumentParser:
     resilience.add_argument("--actor", required=True)
     resilience.add_argument("--reason", required=True)
     resilience.add_argument("--idempotency-key", required=True)
+    host_drill = drill_commands.add_parser(
+        "import-host", help="valida e importa evidencia allowlisted del host"
+    )
+    host_drill.add_argument("--file", required=True)
+    host_drill.add_argument("--actor", required=True)
+    host_drill.add_argument("--reason", required=True)
+    host_drill.add_argument("--idempotency-key", required=True)
+    host_status = drill_commands.add_parser(
+        "host-status", help="consulta idempotencia antes de mutar un servicio host"
+    )
+    host_status.add_argument("--idempotency-key", required=True)
     backup = commands.add_parser("backup")
     backup.add_argument("--retention-days", type=int, default=35)
     backup.add_argument("--force", action="store_true",
@@ -768,33 +779,55 @@ def main(argv: list[str] | None = None) -> int:
         if payload["status"] != "ok":
             return 1
     elif args.command == "drill":
-        from mova_fpl.ops.watchdog import resilience_drill
-
+        if args.drill_command == "host-status":
+            row = db.get_job_by_key(f"host_recovery_drill:{args.idempotency_key}")
+            if not row:
+                print(json.dumps({"schema": "mova-host-drill-status-v1", "status": "due"}))
+                return 75
+            print(json.dumps({
+                "schema": "mova-host-drill-status-v1", "status": row["status"],
+                "job_id": row["job_id"], "reused": row["status"] == "completed",
+            }, sort_keys=True))
+            return 0 if row["status"] == "completed" else 2
         correlation_id = new_id("corr")
+        is_resilience = args.drill_command == "resilience"
+        job_type = "resilience_drill" if is_resilience else "host_recovery_drill"
+        schema = "mova-resilience-drill-v1" if is_resilience else "mova-host-drill-v1"
         job_id, reused = db.start_job(
-            "resilience_drill", f"resilience-drill:{args.idempotency_key}", correlation_id,
+            job_type, f"{job_type}:{args.idempotency_key}", correlation_id,
         )
         if reused:
-            print(json.dumps({"schema": "mova-resilience-drill-v1", "status": "reused",
+            print(json.dumps({"schema": schema, "status": "reused",
                               "job_id": job_id}))
         else:
             db.append_audit(
-                "resilience_drill_requested", actor=args.actor,
+                f"{job_type}_requested", actor=args.actor,
                 correlation_id=correlation_id, job_id=job_id,
-                subject_type="drill", subject_id="scheduler_p0_recovery",
+                subject_type="drill", subject_id=(
+                    "scheduler_p0_recovery" if is_resilience else "api_recovery"
+                ),
                 payload={"reason": args.reason},
             )
             try:
-                payload = resilience_drill()
+                if is_resilience:
+                    from mova_fpl.ops.watchdog import resilience_drill
+                    payload = resilience_drill()
+                else:
+                    from pathlib import Path
+                    from mova_fpl.ops.host_drill import import_evidence
+                    payload = import_evidence(config, Path(args.file))
             except Exception as exc:
                 db.finish_job(job_id, "failed", error_code=type(exc).__name__,
                               error_detail=str(exc)[:2000])
                 raise
             result_status = "completed" if payload["status"] == "pass" else "failed"
+            checks = payload["checks"]
             db.finish_job(
-                job_id, result_status, output_sha256=sha256_json(payload),
-                metrics={"checks": len(payload["checks"]),
-                         "passed": sum(payload["checks"].values())},
+                job_id, result_status,
+                output_sha256=payload.get("artifact_sha256") or sha256_json(payload),
+                metrics={"scenario": payload.get("scenario") or "scheduler_p0_recovery",
+                         "checks": len(checks), "passed": sum(checks.values()),
+                         "downtime_seconds": payload.get("downtime_seconds")},
                 error_code=None if result_status == "completed" else "DrillFailed",
             )
             print(json.dumps({"job_id": job_id, **payload}, ensure_ascii=False,

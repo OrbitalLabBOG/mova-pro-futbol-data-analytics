@@ -27,6 +27,8 @@ mova alerts dispatch
 mova alerts acknowledge --incident-id incident_... --actor julian --reason "triage confirmado"
 mova alerts retry --outbox-id outbox_... --actor julian --reason "sink restaurado"
 mova drill resilience --actor codex --reason "rehearsal P0" --idempotency-key "..."
+mova drill import-host --file /var/lib/mova-fpl/artifacts/host-drills/inbox/api.json \
+  --actor codex --reason "api recovery" --idempotency-key "..."
 mova maintenance cleanup
 mova doctor
 mova doctor --json
@@ -72,6 +74,11 @@ o ya reconocidos no pueden repetirse.
 `drill resilience` usa una base efímera para probar ausencia de tick, P0, delivery, deduplicación
 y recuperación. No altera controles ni datos deportivos (`runtime_mutated=false`), pero la
 invocación y su hash sí quedan como job auditado en el ledger operativo.
+
+`drill import-host` no ejecuta Docker. Sólo consume evidencia producida por el script privilegiado
+del host, exige path dentro de `host-drills/inbox`, schema y checks exactos, revisión igual a la
+imagen, downtime ≤120 s y `fpl_state_mutated=false`. Persiste un artifact canónico por hash,
+consume el archivo inbox y registra `host_recovery_drill` idempotente.
 
 `maintenance cleanup` sólo presenta candidatos `.tmp`, `.partial` o `.tmp-*` con más de 24 horas.
 No sigue symlinks ni considera evidencia canónica. Para borrar exige `--apply --actor --reason

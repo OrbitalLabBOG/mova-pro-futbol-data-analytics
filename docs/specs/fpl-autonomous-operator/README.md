@@ -22,7 +22,7 @@ PM de construcción del proyecto.
 
 | Campo | Valor |
 | --- | --- |
-| Versión | 0.15 |
+| Versión | 0.16 |
 | Estado | `active-shadow` |
 | Riesgo | alto: cuenta externa, deadlines irreversibles y sesión autenticada |
 | Business owner | Julián Zuluaga |
@@ -70,6 +70,7 @@ PM de construcción del proyecto.
 | [34-hv1-07g-capability-probes-rollout.md](34-hv1-07g-capability-probes-rollout.md) | Importadores allowlisted y primeros probes vivos de lineup/R3 |
 | [36-hv1-01b-alert-safety-maintenance.md](36-hv1-01b-alert-safety-maintenance.md) | Outbox recuperable, acuse, safety summary y cleanup conservador |
 | [37-hv1-09b-watchdog-resilience-drill.md](37-hv1-09b-watchdog-resilience-drill.md) | P0 de scheduler, delivery fail-closed y rehearsal hermético de recuperación |
+| [38-hv1-09c-api-recovery-drill.md](38-hv1-09c-api-recovery-drill.md) | Caída real del API, recuperación automática e import de evidencia allowlisted |
 | [contracts/](contracts/) | JSON Schemas máquina para request, result y signal |
 | [decisions/](decisions/) | decisiones arquitectónicas propuestas |
 | [workpacks/](workpacks/) | unidades de implementación y criterios todavía pendientes |

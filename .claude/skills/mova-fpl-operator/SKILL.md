@@ -96,6 +96,12 @@ resilience` con actor, razón e idempotency key. El resultado válido declara
 `runtime_mutated=false` y todos sus checks en true. `mova readiness` debe reflejarlo como
 `RESILIENCE_DRILL_PROVEN=pass`; un acta Markdown no sustituye ese job.
 
+El chaos drill real del API se ejecuta exclusivamente desde el host con
+`deploy/bin/api-recovery-drill.sh ACTOR REASON IDEMPOTENCY_KEY`; no improvises `docker stop` sin
+su trap. El script importa evidencia mediante `mova drill import-host`. Confirma después
+`doctor`, revisión checkout/imagen, watchdog y paridad PostgreSQL. Este drill no cubre DB,
+browser, DOM, save ambiguo ni reboot.
+
 ## Fuentes de verdad
 
 - Git: código, contratos, configuración de ejemplo, skills y runbooks.

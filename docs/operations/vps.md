@@ -104,6 +104,10 @@ curl -s http://127.0.0.1:8787/api/v1/analytics | python -m json.tool
 sudo systemctl start mova-fpl-tick.service
 sudo journalctl -u mova-fpl-tick.service -n 100 --no-pager
 
+# Chaos drill reversible: corta sólo el API local y garantiza restart por trap
+sudo deploy/bin/api-recovery-drill.sh codex \
+  "ensayo de caída y recuperación del API" "api-recovery:<fecha>:<sha>"
+
 # Captura adicional auditada después de una migración en la misma hora
 mova backup --force --actor codex --reason "captura post-migración" \
   --idempotency-key "backup:post-migration:<git-sha>"
@@ -164,6 +168,14 @@ proyección, manifest, research, incidentes, drivers y PostgreSQL en un contrato
 `technical_eligible_level` no cambia `action_level`, compliance, kill switch, modo ni browser
 writes. La promoción siempre es explícita; `--require-level` permite que CI o un agente fallen
 cerrados cuando el nivel solicitado todavía no tiene evidencia.
+
+`api-recovery-drill.sh` exige que `/readyz` funcione antes, detiene únicamente el contenedor API,
+prueba que el endpoint deje de responder, lo recrea con la misma revisión, espera `/readyz`, corre
+integridad SQLite e importa un JSON allowlisted con `mova drill import-host`. Un trap intenta
+restaurar el API ante cualquier error intermedio. El script no detiene PostgreSQL, workers,
+timers o browser y declara `fpl_state_mutated=false`; no usarlo dentro de una ejecución browser.
+El script toma un `flock` y consulta `mova drill host-status` antes de detener el servicio: repetir
+la misma clave completada retorna el job anterior sin provocar otra caída.
 
 ## Estado privado del equipo — API-first
 
