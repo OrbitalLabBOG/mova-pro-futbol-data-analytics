@@ -22,7 +22,7 @@ PM de construcción del proyecto.
 
 | Campo | Valor |
 | --- | --- |
-| Versión | 0.26 |
+| Versión | 0.27 |
 | Estado | `active-shadow` |
 | Riesgo | alto: cuenta externa, deadlines irreversibles y sesión autenticada |
 | Business owner | Julián Zuluaga |
@@ -81,6 +81,7 @@ PM de construcción del proyecto.
 | [46-hv1-11-orchestration-audit.md](46-hv1-11-orchestration-audit.md) | Grafo agentic observable y rehearsal hermético de orden, fail-closed y deadline |
 | [47-hv1-12-external-alert-channel.md](47-hv1-12-external-alert-channel.md) | Adaptador webhook opt-in, redacción, rehearsal hermético y gate de destino real |
 | [48-hv1-12b-live-alert-proof.md](48-hv1-12b-live-alert-proof.md) | Live-ping apply-once ligado al destino, outbox aislado y gate contra falsa configuración |
+| [49-hv1-06d-orphan-deliberation-recovery.md](49-hv1-06d-orphan-deliberation-recovery.md) | Recuperación de request huérfano, corte de replay costoso y doble barrera pre-worker |
 | [contracts/](contracts/) | JSON Schemas máquina para request, result y signal |
 | [decisions/](decisions/) | decisiones arquitectónicas propuestas |
 | [workpacks/](workpacks/) | unidades de implementación y criterios todavía pendientes |

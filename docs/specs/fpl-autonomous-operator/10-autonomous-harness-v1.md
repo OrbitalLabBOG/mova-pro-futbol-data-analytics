@@ -387,6 +387,7 @@ no borra evidencia previa y nunca amplía autonomía.
 | HV1-06A ✅ | bundle máquina, `do_nothing`, alternativa, Validator y DecisionEnvelope | completado | HV1-03/04/05 |
 | HV1-06B ✅ | Strategist + Critic acotados sobre `Intervention`, sin autoridad directa | completado | HV1-06A |
 | HV1-06C ✅ | idempotencia semántica, bindings auditables y costo evitado | completado | HV1-06B |
+| HV1-06D ✅ | lifecycle request/result, cuarentena auditable y tombstone pre-worker | completado | HV1-06C |
 | HV1-07 🟡 | policy/apply-once/verifier; R2/R3 tipados pero sin promoción; faltan entrypoints/rehearsals | 3–6 h | HV1-06 |
 | HV1-08 ✅ | reviewer causal, budgets, propuesta→lección y release de modelos con shadow/rollback | completado | HV1-03/06 |
 | HV1-09 ✅ | gate consolidado de readiness, elegibilidad técnica, API/CLI y métricas | completado | HV1-02/03/05/07 |
@@ -518,6 +519,20 @@ El binding, audit event, API, reporte de costo y métrica Prometheus muestran la
 no se escribe un request huérfano ni se reserva presupuesto. Contrato y recuperación viven en
 [lifecycle de decisión](../../operations/decision-lifecycle.md). Evidencia de rollout:
 [HV1-06C](35-hv1-06c-semantic-agent-idempotency.md).
+
+### Corte de recuperación agentic — 31 de agosto de 2026
+
+HV1-06D cierra el crash-window entre escribir un request y registrar su deliberación. Antes de
+invocar Codex, el importador retira requests sin fila durable con una gracia de 60 segundos y
+requests cuyo lifecycle ya es terminal. Un resultado rechazado mueve en la misma pasada su
+request asociado; las colisiones de nombre preservan cada evidencia y la cuarentena genera un
+`audit_event` estructurado con hashes, motivo e identidad, sin contenido del prompt.
+
+El worker aislado agrega una segunda barrera: un resultado del mismo ID en `quarantine/` es un
+tombstone terminal y jamás vuelve a consumir inferencia. La recuperación es idempotente: primera
+pasada limpia, segunda pasada no muta; ningún mecanismo amplía autoridad ni habilita browser
+writes. Incidente, causa, pruebas y rollout están en
+[HV1-06D](49-hv1-06d-orphan-deliberation-recovery.md).
 
 ### Corte AutonomyPolicy + ExecutionPlan — 30 de agosto de 2026
 

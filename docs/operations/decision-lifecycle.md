@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — lifecycle de decisión shadow"
 created: 2026-08-28
-updated: 2026-08-30
+updated: 2026-08-31
 tags: [mova, fpl, decision-envelope, validator, shadow]
 status: active
 ---
@@ -118,9 +118,18 @@ blocked|staged anterior → superseded al sellar una revisión nueva
 envelope vigente → deliberation queued → accepted|review_required|blocked
 envelope semánticamente equivalente → binding semantic_reuse → resultado previo, cero presupuesto
 output inválido → rejected + quarantine; nunca intervención parcial
+request sin fila durable (>60 s) → quarantine antes del worker; cero inferencia
+resultado ya en quarantine → tombstone terminal; el worker omite ese ID
 ```
 
 Un `blocked` esperado no degrada el worker ni abre un incidente: demuestra que el gate detuvo una
 propuesta inmadura. Un fallo al generar, validar o persistir el envelope sí falla el job y usa el
 runbook general del operador. Los artefactos anteriores no se editan; el replay usa
 `manifest.content_sha256`, versiones del engine y los tres candidatos sellados.
+
+`mova strategy deliberate import` es también el reconciliador pre-worker. Retira requests
+huérfanos o terminales, mueve conjuntamente el request de un resultado rechazado y emite
+`decision_deliberation_request_quarantined` o
+`decision_deliberation_artifacts_quarantined` en `audit_events`. Una segunda pasada debe reportar
+cero procesados y cero cuarentenas. No borrar manualmente evidencia: las colisiones se conservan
+con hash y secuencia.
