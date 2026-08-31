@@ -509,15 +509,31 @@ class DecisionDeliberationService:
             try:
                 results.append(self._import_one(path))
             except Exception as exc:  # cada output no confiable se aísla
+                result_sha256 = hashlib.sha256(path.read_bytes()).hexdigest()
                 quarantine = self._quarantine_path(path)
                 candidate_id = path.name.removesuffix(".result.json")
+                run = None
                 if re.fullmatch(r"deliberation_[0-9a-f]{32}", candidate_id):
+                    run = self.db.decision_deliberation(candidate_id)
                     self.db.reject_decision_deliberation(
                         candidate_id, error_code=type(exc).__name__, error_detail=str(exc)
                     )
                     request_quarantine = self._quarantine_request(candidate_id)
                 else:
                     request_quarantine = None
+                self.db.append_audit(
+                    "decision_deliberation_artifacts_quarantined",
+                    actor="mova-deliberation-validator", severity="warning",
+                    cycle_id=run.get("cycle_id") if run else None,
+                    subject_type="decision_deliberation", subject_id=candidate_id,
+                    payload={
+                        "reason": "result_rejected",
+                        "error_code": type(exc).__name__,
+                        "result_sha256": result_sha256,
+                        "result_path": str(quarantine),
+                        "request_path": request_quarantine,
+                    },
+                )
                 results.append({
                     "status": "rejected", "path": str(quarantine),
                     "request_path": request_quarantine,
@@ -556,7 +572,19 @@ class DecisionDeliberationService:
             elif not run and now - path.stat().st_mtime >= self._ORPHAN_REQUEST_GRACE_SECONDS:
                 reason = "unregistered_request"
             if reason:
+                request_sha256 = hashlib.sha256(path.read_bytes()).hexdigest()
                 target = self._quarantine_path(path)
+                self.db.append_audit(
+                    "decision_deliberation_request_quarantined",
+                    actor="mova-deliberation-validator", severity="warning",
+                    cycle_id=run.get("cycle_id") if run else None,
+                    subject_type="decision_deliberation", subject_id=deliberation_id,
+                    payload={
+                        "reason": reason,
+                        "request_sha256": request_sha256,
+                        "request_path": str(target),
+                    },
+                )
                 quarantined.append({
                     "deliberation_id": deliberation_id,
                     "reason": reason,

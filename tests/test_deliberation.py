@@ -432,11 +432,16 @@ def test_deliberation_persistence_records_risks_intervention_and_cost(tmp_path: 
 
 def test_import_sweeps_old_unregistered_request_before_worker(tmp_path: Path):
     class FakeDB:
+        audits = []
+
         def migrate(self):
             return []
 
         def decision_deliberation(self, _deliberation_id):
             return None
+
+        def append_audit(self, event_type, **detail):
+            self.audits.append((event_type, detail))
 
     root = tmp_path / "research"
     request_id = "deliberation_" + "1" * 32
@@ -455,15 +460,21 @@ def test_import_sweeps_old_unregistered_request_before_worker(tmp_path: Path):
     assert imported["quarantined_requests"][0]["reason"] == "unregistered_request"
     assert not request_path.exists()
     assert Path(imported["quarantined_requests"][0]["path"]).is_file()
+    assert FakeDB.audits[-1][0] == "decision_deliberation_request_quarantined"
 
 
 def test_import_does_not_sweep_fresh_unregistered_request(tmp_path: Path):
     class FakeDB:
+        audits = []
+
         def migrate(self):
             return []
 
         def decision_deliberation(self, _deliberation_id):
             return None
+
+        def append_audit(self, event_type, **detail):
+            self.audits.append((event_type, detail))
 
     root = tmp_path / "research"
     request_id = "deliberation_" + "2" * 32
@@ -484,6 +495,7 @@ def test_rejected_orphan_result_quarantines_matching_request_without_overwrite(
 ):
     class FakeDB:
         rejected = []
+        audits = []
 
         def migrate(self):
             return []
@@ -493,6 +505,9 @@ def test_rejected_orphan_result_quarantines_matching_request_without_overwrite(
 
         def reject_decision_deliberation(self, deliberation_id, **detail):
             self.rejected.append((deliberation_id, detail))
+
+        def append_audit(self, event_type, **detail):
+            self.audits.append((event_type, detail))
 
     root = tmp_path / "research"
     request_id = "deliberation_" + "3" * 32
@@ -521,3 +536,4 @@ def test_rejected_orphan_result_quarantines_matching_request_without_overwrite(
     assert prior_evidence.read_text(encoding="utf-8") == '{"prior":true}\n'
     assert not request_path.exists()
     assert db.rejected[0][0] == request_id
+    assert db.audits[-1][0] == "decision_deliberation_artifacts_quarantined"
