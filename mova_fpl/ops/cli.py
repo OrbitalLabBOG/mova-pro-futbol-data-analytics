@@ -135,6 +135,13 @@ def parser() -> argparse.ArgumentParser:
     cost_report.add_argument("--season")
     cost_report.add_argument("--gw", type=int)
     cost_report.add_argument("--month", help="mes UTC YYYY-MM")
+    harness = commands.add_parser(
+        "harness", help="calidad, costo y autonomía del sistema agentic"
+    )
+    harness_commands = harness.add_subparsers(dest="harness_command", required=True)
+    harness_commands.add_parser(
+        "scorecard", help="evaluación read-only consolidada del harness"
+    )
     strategy = commands.add_parser(
         "strategy", help="plan, manifiesto e investigación verificable"
     )
@@ -535,6 +542,14 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(payload, ensure_ascii=False, default=str))
         return 2 if any(payload[key]["status"] == "exceeded"
                         for key in ("gameweek", "month")) else 0
+
+    if args.command == "harness":
+        from mova_fpl.ops.harness_scorecard import build_scorecard
+
+        db = OpsDB(config.ops_db, minimum_version=config.sqlite_min_version)
+        payload = build_scorecard(config, db)
+        print(json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str))
+        return 2 if payload["overall_status"] == "blocked" else 0
 
     if args.command == "strategy":
         from pathlib import Path

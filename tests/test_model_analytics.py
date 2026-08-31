@@ -155,12 +155,17 @@ def test_read_only_api_exposes_analytics_and_prometheus(tmp_path: Path):
             readiness = json.load(response)
             assert readiness["schema"] == "mova-autonomy-readiness-v1"
             assert readiness["activation"]["promotion_is_automatic"] is False
+        with urllib.request.urlopen(base + "/api/v1/harness-scorecard", timeout=2) as response:
+            scorecard = json.load(response)
+            assert scorecard["schema"] == "mova-harness-scorecard-v1"
+            assert scorecard["authority"]["promotion_is_automatic"] is False
         with urllib.request.urlopen(base + "/metrics", timeout=2) as response:
             metrics = response.read().decode()
             assert "mova_analytics_service_up 1" in metrics
             assert "mova_agent_budget_within_limit" in metrics
             assert "mova_model_bundle_pointer_present 0" in metrics
             assert "mova_autonomy_readiness_up 1" in metrics
+            assert "mova_harness_scorecard_up 1" in metrics
     finally:
         server.shutdown()
         server.server_close()

@@ -62,7 +62,7 @@ a {{ color:#72a7ff }}
 <div class="card"><div class="muted">Dual-read PostgreSQL</div><div class="value">{html.escape(str(parity.get('status','sin paridad')))}</div><div>{html.escape(str(parity.get('checked_tables',0)))} tablas · roles {html.escape(str(role_separation.get('status','sin verificar')))}</div></div>
 </div>
 <h2>Controles efectivos</h2><table><thead><tr><th>Control</th><th>Valor</th></tr></thead><tbody>{control_rows}</tbody></table>
-<p><a href="/api/v1/safety">safety JSON</a> · <a href="/api/v1/status">status JSON</a> · <a href="/api/v1/readiness">autonomy readiness</a> · <a href="/api/v1/analytics">analytics</a> · <a href="/api/v1/strategy">strategy</a> · <a href="/api/v1/improvement">learning</a> · <a href="/api/v1/costs">costos</a> · <a href="/metrics">métricas</a> · <a href="/api/v1/audit">auditoría</a> · <a href="/api/v1/jobs">jobs</a> · <a href="/api/v1/steps">steps</a></p>
+<p><a href="/api/v1/safety">safety JSON</a> · <a href="/api/v1/status">status JSON</a> · <a href="/api/v1/readiness">autonomy readiness</a> · <a href="/api/v1/harness-scorecard">harness scorecard</a> · <a href="/api/v1/analytics">analytics</a> · <a href="/api/v1/strategy">strategy</a> · <a href="/api/v1/improvement">learning</a> · <a href="/api/v1/costs">costos</a> · <a href="/metrics">métricas</a> · <a href="/api/v1/audit">auditoría</a> · <a href="/api/v1/jobs">jobs</a> · <a href="/api/v1/steps">steps</a></p>
 </body></html>"""
     return body.encode("utf-8")
 
@@ -103,6 +103,13 @@ def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
                         runtime.agent_budget_policy(), season=runtime.season
                     )
                     metrics += db.model_release_prometheus()
+                    try:
+                        from mova_fpl.ops.harness_scorecard import (
+                            build_scorecard, prometheus as harness_prometheus,
+                        )
+                        metrics += harness_prometheus(build_scorecard(runtime, db))
+                    except Exception:
+                        metrics += "mova_harness_scorecard_up 0\n"
                     try:
                         from mova_fpl.postgres.store import (
                             prometheus as postgres_prometheus,
@@ -239,6 +246,14 @@ def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
 
                     self._send(
                         HTTPStatus.OK, _json_bytes(build_readiness(runtime, db)),
+                        "application/json; charset=utf-8",
+                    )
+                    return
+                if parsed.path == "/api/v1/harness-scorecard":
+                    from mova_fpl.ops.harness_scorecard import build_scorecard
+
+                    self._send(
+                        HTTPStatus.OK, _json_bytes(build_scorecard(runtime, db)),
                         "application/json; charset=utf-8",
                     )
                     return
