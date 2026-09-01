@@ -12,6 +12,7 @@ from mova_fpl.analytics.drift import assess_drift
 from mova_fpl.analytics.metrics import COMPONENTS, evaluate_gameweek
 from mova_fpl.analytics.market import build_context, canonical_team
 from mova_fpl.ops.analytics_store import prometheus, publish_status, read_status
+from mova_fpl.ops.analytics_service import AnalyticsService
 from mova_fpl.ops.api import make_handler
 from mova_fpl.ops.cli import parser
 from mova_fpl.ops.config import RuntimeConfig
@@ -113,6 +114,36 @@ def test_analytics_cli_is_agent_operable():
     ])
     assert release.improve_command == "release"
     assert release.release_command == "promote"
+
+
+def test_successful_analytics_replay_resolves_prior_failure_incident(
+    tmp_path: Path, monkeypatch,
+):
+    config = RuntimeConfig(
+        ops_db=tmp_path / "ops.db", analytics_root=tmp_path / "analytics",
+        analytics_lock_path=tmp_path / "analytics.lock",
+    )
+    monkeypatch.setattr(RuntimeConfig, "validate", lambda self: None)
+    monkeypatch.setattr(RuntimeConfig, "validate_postgres", lambda self: None)
+    db = OpsDB(config.ops_db, enforce_version=False)
+    db.migrate()
+    key = "analytics:recovered"
+    job_id, _ = db.start_job("model_analytics", key, "corr_recovered")
+    db.finish_job(job_id, "completed")
+    db.open_incident_once("P2", "Analytics service MOVA falló")
+
+    result = AnalyticsService(config, db).run(
+        actor="test", reason="replay confirmado", idempotency_key=key,
+    )
+
+    assert result == {"status": "reused", "job_id": job_id}
+    with db.connect(readonly=True) as con:
+        incident = con.execute(
+            "SELECT status,resolution FROM incidents "
+            "WHERE title='Analytics service MOVA falló'"
+        ).fetchone()
+    assert incident["status"] == "resolved"
+    assert job_id in incident["resolution"]
 
 
 def test_analytics_defaults_match_approved_decision_models():

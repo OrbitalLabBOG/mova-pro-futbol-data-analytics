@@ -195,6 +195,35 @@ def test_closeout_is_queryable_through_supported_runtime(tmp_path: Path):
     assert len(status["change_proposals"]) == 3
 
 
+def test_successful_closeout_replay_resolves_prior_failure_incident(tmp_path: Path):
+    path, package = _package()
+    config = RuntimeConfig(
+        ops_db=tmp_path / "ops.db", artifact_root=tmp_path / "artifacts",
+        lock_path=tmp_path / "ops.lock",
+    )
+    db = OpsDB(config.ops_db, enforce_version=False)
+    db.migrate()
+    cycle_id = db.upsert_cycle(
+        package["season"], package["gw"], package["deadline_at"], phase="settlement"
+    )
+    key = "gw1:recovered-closeout"
+    job_id, _ = db.start_job("gameweek_review", key, "corr_recovered", cycle_id=cycle_id)
+    db.finish_job(job_id, "completed")
+    db.open_incident_once("P2", "Settlement GW1 falló")
+
+    result = GameweekReviewService(config, db).run(
+        package_path=path, actor="test", reason="replay confirmado", idempotency_key=key,
+    )
+
+    assert result["status"] == "reused"
+    with db.connect(readonly=True) as con:
+        incident = con.execute(
+            "SELECT status,resolution FROM incidents WHERE title='Settlement GW1 falló'"
+        ).fetchone()
+    assert incident["status"] == "resolved"
+    assert job_id in incident["resolution"]
+
+
 def test_closeout_reuses_matching_verified_execution(tmp_path: Path):
     path, package = _package()
     config = RuntimeConfig(artifact_root=tmp_path / "artifacts")

@@ -97,6 +97,12 @@ class GameweekReviewService:
             )
             if reused:
                 existing = self.db.get_job_by_key(idempotency_key) or {}
+                if existing.get("status") == "completed":
+                    self.db.resolve_incidents(
+                        f"Settlement GW{package['gw']} falló",
+                        resolution=f"settlement recuperado por job exitoso {job_id}",
+                        actor=actor,
+                    )
                 return {"status": "reused", "job_id": job_id,
                         "existing_status": existing.get("status")}
             harness = Harness(self.db, job_id, correlation_id=correlation_id, cycle_id=cycle_id)
@@ -140,6 +146,11 @@ class GameweekReviewService:
                 "comparator_points": result["comparator_score"]["points"],
                 "causal_scorecard_created": False,
             })
+            self.db.resolve_incidents(
+                f"Settlement GW{package['gw']} falló",
+                resolution=f"settlement recuperado por job exitoso {job_id}",
+                actor=actor,
+            )
             return output
 
     def _build(self, package: dict, official: dict, package_path: Path, job_id: str,

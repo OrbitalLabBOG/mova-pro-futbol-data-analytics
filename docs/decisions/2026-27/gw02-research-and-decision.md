@@ -138,21 +138,20 @@ Durante el cierre se corrigieron tres gaps de operabilidad sin alterar la decisi
 El doctor final reportó 22 PASS, 0 WARN y 0 FAIL; API, PostgreSQL y browser quedaron
 saludables, con los timers de tick, estado privado y watchdog activos.
 
-## Resultado provisional y feedback post-GW2
+## Resultado final y feedback causal post-GW2
 
-Al corte `2026-09-01T03:16:10Z` los diez partidos habían terminado de forma provisional, pero la
-API oficial todavía conservaba `finished=false` y `data_checked=false`. Por ese motivo estas cifras
-se auditan como **provisionales** y no se persiste aún el settlement final ni se ejecuta el reviewer
-causal. El package versionado `decisions/fpl/2026-27/gw02_closeout.json` queda preparado para correr
-tan pronto el collector observe ambos flags.
+La API oficial cerró GW2 con `finished=true` y `data_checked=true`. El collector refrescó la
+fuente, analytics evaluó los dos batches predeadline y el reviewer selló el settlement y la
+revisión causal. La operación queda cerrada con 15 picks, 30 outcomes pareados y siete checks de
+verificación.
 
-| Métrica provisional | Resultado |
+| Métrica final | Resultado |
 | --- | ---: |
 | Puntos del equipo | **113** |
-| Promedio oficial | 79 |
-| Delta vs promedio | **+34** |
-| Rank de jornada | 370.475 |
-| Rank general | 816.941 |
+| Promedio oficial | 81 |
+| Delta vs promedio | **+32** |
+| Rank de jornada | 390.687 |
+| Rank general | 845.574 |
 | Comparador MILP + Wildcard | 96 |
 | Delta decisión revisada vs comparador | **+17** |
 | Banca | 22 |
@@ -171,11 +170,16 @@ Tzolis contradijo también el orden cuantitativo predeadline —xP 1,22 y P60 19
 un override de XI debe mostrar explícitamente el delta contra el orden del modelo, no limitarse a
 confirmar disponibilidad.
 
-El score bruto del modelo también quedó corto: 40,89 xP para la selección frente a 113 puntos,
-MAE provisional de jugador 5,54 y Brier P60 de 0,214. Las probabilidades de 60 minutos fallaron
-materialmente para Haaland (40%→90'), Sangaré (14%→90'), Thomas (7%→77') y Calafiori (50%→90');
-en Tzolis (19%→45') la señal de riesgo sí fue correcta. No se reentrena ni promueve nada con esta
-muestra; analytics debe calcular el scorecard de los 626 jugadores después del settlement.
+El score del equipo también quedó corto: 40,89 xP frente a 113 puntos. En los 620 jugadores
+emparejados, el baseline obtuvo MAE 1,297, RMSE 2,362 y Spearman 0,566, con sesgo total de
+-138,22 puntos (-15,55%). La subestimación se concentró en aparición (-17,88%), goles (-23,33%),
+asistencias (-31,40%) y bonus (-30,05%); clean sheets quedó cerca del total real (+1,78%). Las
+probabilidades de 60 minutos fallaron materialmente para Haaland (40%→90'), Sangaré (14%→90'),
+Thomas (7%→77') y Calafiori (50%→90'); en Tzolis (19%→45') la señal de riesgo sí fue correcta.
+
+El shadow de odds mejoró el MAE sólo en 0,0009 y Spearman en 0,0028, pero empeoró el Brier de
+clean sheet de 0,0727 a 0,0741. No se promueve. El drift permanece `insufficient`: el gate exige
+seis jornadas de referencia y una sola GW final no autoriza reentrenamiento ni cambios de policy.
 
 La auditoría agentic detectó y corrigió un lifecycle defectuoso: una deliberación fallida no podía
 reintentarse por presupuesto, pero quedaba `queued` indefinidamente y abrió un P1. El authorizer
@@ -184,6 +188,22 @@ request a cuarentena. La verificación viva cerró el incidente causalmente, dej
 23/23 y `safe_to_wait`. El costo GW3, sin embargo, ya comprometió 835.790/900.000 tokens y 19/20
 usos antes de la ventana final; no se amplía el budget. La siguiente mejora debe reducir la
 cadencia/materialidad de deliberaciones, no comprar más capacidad.
+
+La corrida final encontró además seis defectos operativos y los dejó cubiertos por regresión:
+
+- normalización `GK`/`GKP` sin producir la posición inválida `GKPP`;
+- package GW2 con evidencia de montaje completa y validada;
+- reutilización de la ejecución browser verificada durante el closeout;
+- rank de jornada tomado de `history.current.rank`, separado del rank general;
+- recurrencia causal contada entre jornadas distintas, no entre correcciones de una misma GW;
+- cierre causal de incidentes de analytics y settlement cuando un job exitoso demuestra
+  recuperación, incluido el replay idempotente.
+
+La evidencia canónica final es `settlement_22170fc5f94add404131de56`,
+`causalreview_259632a756a08fe6673e2d6a` y el artefacto causal
+`bbba37551e477f92b6f7d6c10a0f28646e1e53e3e3faf86797e37e267eb0b1e9`. PostgreSQL importó
+57 tablas con paridad completa y el backup local final quedó en
+`/opt/orbital/backups/mova-fpl/20260901T194052Z`.
 
 ## Condiciones de invalidez
 

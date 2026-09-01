@@ -55,6 +55,13 @@ class AnalyticsService:
         with exclusive_lock(self.config.analytics_lock_path):
             job_id, reused = self.db.start_job("model_analytics", key, correlation_id)
             if reused:
+                existing = self.db.get_job_by_key(key) or {}
+                if existing.get("status") == "completed":
+                    self.db.resolve_incidents(
+                        "Analytics service MOVA falló",
+                        resolution=f"servicio recuperado por job exitoso {job_id}",
+                        actor=actor or "mova-analytics",
+                    )
                 return {"status": "reused", "job_id": job_id}
             if actor is not None:
                 self.db.append_audit(
@@ -104,6 +111,11 @@ class AnalyticsService:
                 result["analytics_status"] = state["status"]
                 self.db.finish_job(job_id, "completed", output_sha256=sha256_json(result),
                                    metrics=result)
+                self.db.resolve_incidents(
+                    "Analytics service MOVA falló",
+                    resolution=f"servicio recuperado por job exitoso {job_id}",
+                    actor=actor or "mova-analytics",
+                )
                 return {"job_id": job_id, "correlation_id": correlation_id, **result}
             except Exception as exc:
                 self.db.finish_job(job_id, "failed", error_code=type(exc).__name__,
