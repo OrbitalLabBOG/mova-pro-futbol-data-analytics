@@ -62,6 +62,9 @@ class AgentAttemptService:
                     final_cutoff_seconds=self.config.research_final_cutoff_seconds,
                 )
                 if prepared["status"] in {"blocked", "skipped"}:
+                    terminal = self._terminalize_unretryable(subject, prepared)
+                    if terminal:
+                        prepared = {**prepared, "terminalized": terminal}
                     blocked.append(prepared)
                     continue
                 budget = prepared.get("budget_snapshot") or json.loads(
@@ -103,6 +106,54 @@ class AgentAttemptService:
                                 "reason": type(exc).__name__, "detail": str(exc)[:300]})
         return {"status": "skipped" if not blocked else "blocked",
                 "reason": "no_authorized_subject", "blocked_candidates": blocked}
+
+    def _terminalize_unretryable(self, subject: dict, gate: dict) -> dict | None:
+        """Close a queued request when no future automatic attempt can pass its gate.
+
+        Budget commitments and the final deadline only move in one direction. Leaving one of
+        these requests queued makes the independent watchdog report a stale request forever,
+        even though the authorizer has already proved that it cannot run again.
+        """
+        reason = str(gate.get("reason") or "")
+        checks = gate.get("checks") or {}
+        permanent_budget_block = reason == "pre_attempt_budget_exceeded"
+        final_cutoff_reached = (
+            reason == "pre_attempt_gate_failed"
+            and checks.get("deadline_open", {}).get("passed") is False
+        )
+        if not (permanent_budget_block or final_cutoff_reached):
+            return None
+
+        error_code = (
+            "agent_retry_budget_exhausted" if permanent_budget_block
+            else "agent_retry_deadline_closed"
+        )
+        detail = (
+            "no existe otro intento automático admisible; "
+            f"gate={reason}; attempt={gate.get('attempt_number')}"
+        )
+        if subject["subject_type"] == "research":
+            self.db.reject_research_run(
+                subject["subject_id"], error_code=error_code, error_detail=detail
+            )
+        else:
+            self.db.reject_decision_deliberation(
+                subject["subject_id"], error_code=error_code, error_detail=detail
+            )
+
+        request = Path(subject["request_path"])
+        target = None
+        if request.is_file():
+            inbox = (self.config.research_root / "inbox").resolve()
+            if request.is_symlink() or request.resolve().parent != inbox:
+                raise ValueError("request no reintentable fuera del inbox permitido")
+            target = self._quarantine(request)
+        return {
+            "subject_type": subject["subject_type"],
+            "subject_id": subject["subject_id"],
+            "error_code": error_code,
+            "request_path": str(target) if target else None,
+        }
 
     def import_ready(self) -> dict:
         self.db.migrate()

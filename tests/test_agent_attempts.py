@@ -212,7 +212,7 @@ def test_permiso_por_intento_es_idempotente_y_cierra_con_receipts_v2(tmp_path):
 
 
 def test_retry_se_bloquea_antes_de_codex_si_excede_job_budget(tmp_path):
-    config, db, run_id, request_sha, _ = _runtime(tmp_path)
+    config, db, run_id, request_sha, request_path = _runtime(tmp_path)
     service = AgentAttemptService(config, db)
     first = service.authorize_next()
     attempt = "attempt_" + "a" * 32
@@ -231,7 +231,14 @@ def test_retry_se_bloquea_antes_de_codex_si_excede_job_budget(tmp_path):
     assert candidate["checks"]["job_tokens"] == {
         "passed": False, "used": 130, "limit": 120,
     }
-    assert service.authorize_next()["status"] == "blocked"
+    assert candidate["terminalized"] == {
+        "subject_type": "research", "subject_id": run_id,
+        "error_code": "agent_retry_budget_exhausted",
+        "request_path": str(config.research_root / "quarantine" / request_path.name),
+    }
+    assert db.research_run(run_id)["status"] == "rejected"
+    assert not request_path.exists()
+    assert service.authorize_next()["status"] == "skipped"
     with db.connect(readonly=True) as con:
         assert con.execute(
             "SELECT COUNT(*) FROM agent_attempt_authorizations"
@@ -240,6 +247,26 @@ def test_retry_se_bloquea_antes_de_codex_si_excede_job_budget(tmp_path):
             "SELECT COUNT(*) FROM audit_events "
             "WHERE event_type='agent_attempt_authorization_blocked'"
         ).fetchone()[0] == 1
+        reservation = con.execute(
+            "SELECT status,actual_tokens,attempt_count,accounting_mode "
+            "FROM agent_budget_reservations"
+        ).fetchone()
+        assert dict(reservation) == {
+            "status": "charged", "actual_tokens": 30, "attempt_count": 1,
+            "accounting_mode": "exact",
+        }
+
+
+def test_request_se_terminaliza_al_cerrar_cutoff_final(tmp_path):
+    config, db, run_id, _, request_path = _runtime(tmp_path)
+    result = AgentAttemptService(config, db).authorize_next(
+        now=datetime(2026, 9, 4, 16, 30, tzinfo=timezone.utc)
+    )
+    candidate = result["blocked_candidates"][0]
+    assert candidate["reason"] == "pre_attempt_gate_failed"
+    assert candidate["terminalized"]["error_code"] == "agent_retry_deadline_closed"
+    assert db.research_run(run_id)["status"] == "rejected"
+    assert not request_path.exists()
 
 
 def test_receipt_v2_rechaza_permiso_alterado_y_no_crea_evento(tmp_path):

@@ -122,6 +122,13 @@ emite receipts v2 con `authorization_id`. Exit 75 con `status=skipped|blocked` s
 llamó Codex. No crees permisos manualmente ni edites los existentes: el importador verifica su SHA
 y pone cualquier receipt ligado a un permiso alterado en cuarentena.
 
+Si el authorizer demuestra que un request pendiente ya no podrá ejecutar otro intento —porque el
+presupuesto comprometido excede un límite monotónico o porque cerró el cutoff final— lo termina
+como `rejected`, liquida la reserva con los receipts físicos existentes y mueve únicamente el
+request allowlisted a cuarentena. El resultado incluye `terminalized`; la siguiente pasada debe
+ser `skipped` y el watchdog resuelve causalmente cualquier P1 de cola stale. No se amplían límites
+ni se pierde la evidencia del intento fallido.
+
 `research/permits` y `research/receipts` son directorios compartidos entre el engine `uid=10001` y
 el worker `uid=10002`. Bootstrap y cada ciclo deben conservar `uid=10002`, grupo `10001` y modo
 `2770`; un `2750` deja al worker sin capacidad de publicar evidencia y el watchdog abrirá P1. No
