@@ -892,7 +892,9 @@ La policy `bounded-deliberation-1.1.0` convierte la cadencia en un gate determin
 
 El techo normal queda en tres investigaciones y tres deliberaciones por GW; el budget ledger
 sigue siendo el circuito final y no se aumenta. La política no cambia autoridad, no toca FPL y
-mantiene `shadow/A0`.
+mantiene `shadow/A0`. El rollout `69d12e1` pasó 1218 pruebas, doctor 23/23 y un ciclo systemd
+real sin request, reserva ni llamada Codex; evidencia:
+[HV1-08C agent cadence](58-hv1-08c-agent-cadence-rollout.md).
 
 ## 11. Definition of Done del harness v1
 
