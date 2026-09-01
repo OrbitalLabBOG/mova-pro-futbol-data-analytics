@@ -138,6 +138,53 @@ Durante el cierre se corrigieron tres gaps de operabilidad sin alterar la decisi
 El doctor final reportó 22 PASS, 0 WARN y 0 FAIL; API, PostgreSQL y browser quedaron
 saludables, con los timers de tick, estado privado y watchdog activos.
 
+## Resultado provisional y feedback post-GW2
+
+Al corte `2026-09-01T03:16:10Z` los diez partidos habían terminado de forma provisional, pero la
+API oficial todavía conservaba `finished=false` y `data_checked=false`. Por ese motivo estas cifras
+se auditan como **provisionales** y no se persiste aún el settlement final ni se ejecuta el reviewer
+causal. El package versionado `decisions/fpl/2026-27/gw02_closeout.json` queda preparado para correr
+tan pronto el collector observe ambos flags.
+
+| Métrica provisional | Resultado |
+| --- | ---: |
+| Puntos del equipo | **113** |
+| Promedio oficial | 79 |
+| Delta vs promedio | **+34** |
+| Rank de jornada | 370.475 |
+| Rank general | 816.941 |
+| Comparador MILP + Wildcard | 96 |
+| Delta decisión revisada vs comparador | **+17** |
+| Banca | 22 |
+| Oráculo ex post sobre la misma plantilla | 130 |
+
+La decisión estructural funcionó: rechazar la Wildcard y conservar Haaland, Mbeumo, Sangaré y
+Calvert-Lewin superó por 17 puntos al comparador que el motor prefería. La capitanía de Bruno
+produjo 46 puntos y ganó 10 frente a capitanear a Haaland. Esto respalda el uso de contexto para
+corregir el cold start del modelo, pero una sola jornada no demuestra que todo override humano sea
+superior.
+
+El error principal fue la alineación: Groß hizo 13 en banca mientras Tzolis hizo 0; además Thomas
+hizo 8 frente a los 4 de Maguire. El regret de XI ex post fue 17 puntos. En particular, iniciar a
+Tzolis contradijo también el orden cuantitativo predeadline —xP 1,22 y P60 19% frente a Groß xP
+3,57 y P60 92%—, por lo que no debe atribuirse sólo a varianza. La regla práctica pendiente es que
+un override de XI debe mostrar explícitamente el delta contra el orden del modelo, no limitarse a
+confirmar disponibilidad.
+
+El score bruto del modelo también quedó corto: 40,89 xP para la selección frente a 113 puntos,
+MAE provisional de jugador 5,54 y Brier P60 de 0,214. Las probabilidades de 60 minutos fallaron
+materialmente para Haaland (40%→90'), Sangaré (14%→90'), Thomas (7%→77') y Calafiori (50%→90');
+en Tzolis (19%→45') la señal de riesgo sí fue correcta. No se reentrena ni promueve nada con esta
+muestra; analytics debe calcular el scorecard de los 626 jugadores después del settlement.
+
+La auditoría agentic detectó y corrigió un lifecycle defectuoso: una deliberación fallida no podía
+reintentarse por presupuesto, pero quedaba `queued` indefinidamente y abrió un P1. El authorizer
+ahora termina esos requests como `rejected`, liquida la reserva, conserva receipts y mueve sólo el
+request a cuarentena. La verificación viva cerró el incidente causalmente, dejó cola 0/0, doctor
+23/23 y `safe_to_wait`. El costo GW3, sin embargo, ya comprometió 835.790/900.000 tokens y 19/20
+usos antes de la ventana final; no se amplía el budget. La siguiente mejora debe reducir la
+cadencia/materialidad de deliberaciones, no comprar más capacidad.
+
 ## Condiciones de invalidez
 
 - cambio de estado o precio en el equipo privado antes de guardar;
