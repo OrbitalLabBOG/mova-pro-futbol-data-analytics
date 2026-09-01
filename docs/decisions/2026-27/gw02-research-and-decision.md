@@ -202,8 +202,8 @@ La corrida final encontró además seis defectos operativos y los dejó cubierto
 La evidencia canónica final es `settlement_22170fc5f94add404131de56`,
 `causalreview_259632a756a08fe6673e2d6a` y el artefacto causal
 `bbba37551e477f92b6f7d6c10a0f28646e1e53e3e3faf86797e37e267eb0b1e9`. PostgreSQL importó
-57 tablas con paridad completa y el backup local final quedó en
-`/opt/orbital/backups/mova-fpl/20260901T194052Z`.
+57 tablas con paridad completa en `pgimport_e94462b2f2114777801901c8881a3833`; el backup local
+final quedó en `/opt/orbital/backups/mova-fpl/20260901T195033Z`.
 
 ## Condiciones de invalidez
 
