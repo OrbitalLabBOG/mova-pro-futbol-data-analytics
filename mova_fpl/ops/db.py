@@ -957,6 +957,21 @@ class OpsDB:
                 "last_observed_at=?,revision=revision+1 WHERE cycle_id=?",
                 (now, cycle["cycle_id"]),
             )
+            existing_execution = con.execute(
+                """SELECT e.execution_id,e.decision_id FROM web_executions e
+                JOIN decision_runs d ON d.decision_id=e.decision_id
+                WHERE d.cycle_id=? AND e.status='verified' AND e.evidence_sha256=?
+                ORDER BY e.finished_at DESC,e.rowid DESC LIMIT 1""",
+                (cycle["cycle_id"], payload["execution"]["evidence_sha256"]),
+            ).fetchone()
+            effective_decision_id = (
+                str(existing_execution["decision_id"])
+                if existing_execution else decision["decision_id"]
+            )
+            effective_execution_id = (
+                str(existing_execution["execution_id"])
+                if existing_execution else payload["execution"]["execution_id"]
+            )
             source = payload["source_snapshot"]
             con.execute(
                 """INSERT OR IGNORE INTO source_snapshots(
@@ -1002,26 +1017,31 @@ class OpsDB:
                  hashlib.sha256(intervention["rationale"].encode("utf-8")).hexdigest(),
                  intervention["created_at"]),
             )
-            con.execute(
-                """INSERT OR IGNORE INTO decision_runs(
-                decision_id,job_id,cycle_id,revision,mode,policy_version,status,
-                expected_points,chip,fingerprint,manifest_sha256,artifact_path,created_at)
-                VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-                (decision["decision_id"], payload["job_id"], cycle["cycle_id"],
-                 decision["revision"], decision["mode"], decision["policy_version"],
-                 "reconciled", decision["expected_points"], decision.get("chip"),
-                 decision["fingerprint"], decision["manifest_sha256"],
-                 decision["artifact_path"], decision["created_at"]),
-            )
-            for player in decision["players"]:
+            if not existing_execution:
+                revision = int(con.execute(
+                    "SELECT COALESCE(MAX(revision),0)+1 FROM decision_runs WHERE cycle_id=?",
+                    (cycle["cycle_id"],),
+                ).fetchone()[0])
                 con.execute(
-                    """INSERT OR IGNORE INTO decision_players(
-                    decision_id,element,squad_position,role,is_captain,is_vice_captain,
-                    transfer_direction,expected_points) VALUES(?,?,?,?,?,?,?,?)""",
-                    (decision["decision_id"], player["element"], player["squad_position"],
-                     player["role"], int(player["is_captain"]),
-                     int(player["is_vice_captain"]), None, player["expected_points"]),
+                    """INSERT INTO decision_runs(
+                    decision_id,job_id,cycle_id,revision,mode,policy_version,status,
+                    expected_points,chip,fingerprint,manifest_sha256,artifact_path,created_at)
+                    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    (effective_decision_id, payload["job_id"], cycle["cycle_id"],
+                     revision, decision["mode"], decision["policy_version"],
+                     "reconciled", decision["expected_points"], decision.get("chip"),
+                     decision["fingerprint"], decision["manifest_sha256"],
+                     decision["artifact_path"], decision["created_at"]),
                 )
+                for player in decision["players"]:
+                    con.execute(
+                        """INSERT INTO decision_players(
+                        decision_id,element,squad_position,role,is_captain,is_vice_captain,
+                        transfer_direction,expected_points) VALUES(?,?,?,?,?,?,?,?)""",
+                        (effective_decision_id, player["element"], player["squad_position"],
+                         player["role"], int(player["is_captain"]),
+                         int(player["is_vice_captain"]), None, player["expected_points"]),
+                    )
             strategy = payload["chip_strategy"]
             con.execute(
                 """INSERT OR IGNORE INTO chip_strategy_runs(
@@ -1034,21 +1054,22 @@ class OpsDB:
                  strategy["manifest_sha256"], strategy["created_at"]),
             )
             execution = payload["execution"]
-            con.execute(
-                """INSERT OR IGNORE INTO web_executions(
-                execution_id,decision_id,action_level,envelope_sha256,status,started_at,
-                finished_at,evidence_path,evidence_sha256) VALUES(?,?,?,?,?,?,?,?,?)""",
-                (execution["execution_id"], decision["decision_id"], "manual_attestation",
-                 execution["envelope_sha256"], "verified", execution["started_at"],
-                 execution["finished_at"], execution["evidence_path"],
-                 execution["evidence_sha256"]),
-            )
+            if not existing_execution:
+                con.execute(
+                    """INSERT INTO web_executions(
+                    execution_id,decision_id,action_level,envelope_sha256,status,started_at,
+                    finished_at,evidence_path,evidence_sha256) VALUES(?,?,?,?,?,?,?,?,?)""",
+                    (effective_execution_id, effective_decision_id, "manual_attestation",
+                     execution["envelope_sha256"], "verified", execution["started_at"],
+                     execution["finished_at"], execution["evidence_path"],
+                     execution["evidence_sha256"]),
+                )
             for check in execution["checks"]:
                 con.execute(
                     """INSERT OR IGNORE INTO verification_checks(
                     check_id,execution_id,check_name,expected_json,observed_json,passed,checked_at)
                     VALUES(?,?,?,?,?,?,?)""",
-                    (check["check_id"], execution["execution_id"], check["check_name"],
+                    (check["check_id"], effective_execution_id, check["check_name"],
                      canonical_json(check["expected"]), canonical_json(check["observed"]),
                      int(check["passed"]), execution["finished_at"]),
                 )
@@ -1074,7 +1095,7 @@ class OpsDB:
                 artifact_path,artifact_sha256,created_at)
                 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                 (review["review_id"], payload["job_id"], settlement["settlement_id"],
-                 decision["decision_id"], "retrospective",
+                 effective_decision_id, "retrospective",
                  "not_eligible_no_predeadline_batch", review["expected_points"],
                  review["actual_points"], review["comparator_label"],
                  review["comparator_expected_points"], review["comparator_actual_points"],
@@ -1113,7 +1134,9 @@ class OpsDB:
                          "causal_scorecard_created": False}, con=con,
             )
         return {
-            "cycle_id": cycle["cycle_id"], "decision_id": decision["decision_id"],
+            "cycle_id": cycle["cycle_id"], "decision_id": effective_decision_id,
+            "execution_id": effective_execution_id,
+            "reused_verified_execution": bool(existing_execution),
             "settlement_id": settlement["settlement_id"], "review_id": review["review_id"],
             "player_outcomes": len(review["player_outcomes"]),
             "proposals": len(review["proposals"]),

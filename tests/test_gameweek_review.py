@@ -195,6 +195,52 @@ def test_closeout_is_queryable_through_supported_runtime(tmp_path: Path):
     assert len(status["change_proposals"]) == 3
 
 
+def test_closeout_reuses_matching_verified_execution(tmp_path: Path):
+    path, package = _package()
+    config = RuntimeConfig(artifact_root=tmp_path / "artifacts")
+    db = OpsDB(tmp_path / "ops.db", enforce_version=False)
+    db.migrate()
+    cycle_id = db.upsert_cycle(
+        package["season"], package["gw"], package["deadline_at"], phase="settlement"
+    )
+    job_id, _ = db.start_job(
+        "gameweek_review", "gw1:reuse-execution", "corr_reuse", cycle_id=cycle_id
+    )
+    result = GameweekReviewService(config, db)._build(
+        package, _official(package), path, job_id, cycle_id, "corr_reuse",
+        "julian", "cerrar con ejecución previa", "gw1:reuse-execution",
+    )
+    with db.transaction() as con:
+        con.execute(
+            """INSERT INTO decision_runs(
+            decision_id,job_id,cycle_id,revision,mode,policy_version,status,created_at)
+            VALUES('decision_existing',?,?,1,'guarded','human-reviewed','executed_verified',?)""",
+            (job_id, cycle_id, package["mounted_at"]),
+        )
+        con.execute(
+            """INSERT INTO web_executions(
+            execution_id,decision_id,action_level,envelope_sha256,status,started_at,
+            finished_at,evidence_path,evidence_sha256)
+            VALUES('execution_existing','decision_existing','A1','envelope','verified',?,?,?,?)""",
+            (package["mounted_at"], package["mounted_at"], package["mount_evidence_path"],
+             package["mount_evidence_sha256"]),
+        )
+
+    persisted = db.record_gameweek_closeout(result["ledger"])
+
+    assert persisted["decision_id"] == "decision_existing"
+    assert persisted["execution_id"] == "execution_existing"
+    assert persisted["reused_verified_execution"] is True
+    with db.connect(readonly=True) as con:
+        assert con.execute(
+            "SELECT COUNT(*) FROM decision_runs WHERE cycle_id=?", (cycle_id,)
+        ).fetchone()[0] == 1
+        assert con.execute(
+            "SELECT decision_id FROM gameweek_reviews WHERE review_id=?",
+            (persisted["review_id"],),
+        ).fetchone()[0] == "decision_existing"
+
+
 def _persisted_review(tmp_path: Path) -> tuple[OpsDB, str]:
     path, package = _package()
     config = RuntimeConfig(artifact_root=tmp_path / "artifacts")
