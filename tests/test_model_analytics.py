@@ -47,6 +47,23 @@ def test_gameweek_scorecard_reconciles_points_minutes_and_components():
     assert {item["component"] for item in result["components"]} == set(COMPONENTS)
 
 
+def test_gameweek_scorecard_accepts_goalkeeper_alias_and_canonical_position():
+    for position in ("GK", "GKP"):
+        predictions = pd.DataFrame([
+            {"element": 1, "position": position, "xp": 2.0, "p_play": .9, "p_60": .8,
+             "components": _components(2.0)},
+        ])
+        actual = pd.DataFrame([
+            {"element": 1, "total_points": 2, "minutes": 90,
+             "stats": {"total_points": 2, "minutes": 90}},
+        ])
+
+        result = evaluate_gameweek(predictions, actual, get_rules("2026-27").SCORING)
+
+        assert result["metrics"]["coverage"]["matched_players"] == 1
+        assert result["metrics"]["points"]["actual_total"] == 2
+
+
 def test_drift_requires_history_then_exposes_reasons():
     metrics = {"points": {"mae": 3.0, "rmse": 4.0, "spearman": .1,
                            "relative_bias": .25},

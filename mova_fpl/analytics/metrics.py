@@ -42,7 +42,7 @@ def actual_components(actual: pd.DataFrame, scoring) -> pd.DataFrame:
     rows = []
     for row in actual.to_dict("records"):
         stats = row.get("stats") or {}
-        position = Position.parse(str(row["position"]).replace("GK", "GKP"))
+        position = Position.parse(row["position"])
         minutes = _safe_float(stats.get("minutes", row.get("minutes")))
         defensive = _safe_float(stats.get("defensive_contribution"))
         threshold = scoring.defcon_thresholds.get(position, 0)
@@ -110,7 +110,7 @@ def evaluate_gameweek(predictions: pd.DataFrame, actual: pd.DataFrame, scoring) 
     # de CS es la probabilidad marginal incluyendo minutos. Condicionar por P60
     # evita evaluar dos veces la disponibilidad.
     cs_points = frame.loc[eligible, "position"].map(
-        lambda pos: scoring.clean_sheet_points.get(Position.parse(str(pos).replace("GK", "GKP")), 0)
+        lambda pos: scoring.clean_sheet_points.get(Position.parse(pos), 0)
     ).astype(float)
     fallback = (frame.loc[eligible, "pts_cs_pred"] / cs_points.replace(0, np.nan)).fillna(0)
     contexts = (frame["context"] if "context" in frame else pd.Series(
