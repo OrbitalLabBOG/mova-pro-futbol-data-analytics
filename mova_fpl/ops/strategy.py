@@ -420,39 +420,47 @@ class StrategicContextService:
             return {"due": False, "reason": "final_cutoff_passed",
                     "deadline_seconds": seconds,
                     "final_cutoff_seconds": self.config.research_final_cutoff_seconds}
-        run_kind = (
-            "final" if seconds <= self.config.research_final_window_seconds else "routine"
-        )
+        if seconds <= self.config.research_final_window_seconds:
+            run_kind = "final"
+            slot_start = deadline - timedelta(
+                seconds=self.config.research_final_window_seconds
+            )
+        elif seconds <= 6 * 3600:
+            run_kind = "refresh"
+            slot_start = deadline - timedelta(hours=6)
+        else:
+            run_kind = "broad"
+            slot_start = deadline - timedelta(
+                seconds=self.config.research_deadline_window_seconds
+            )
         with self.db.connect(readonly=True) as con:
             latest = con.execute(
                 "SELECT status,queued_at,imported_at FROM research_runs WHERE cycle_id=? "
                 "ORDER BY queued_at DESC LIMIT 1", (cycle["cycle_id"],),
+            ).fetchone()
+            attempted_in_slot = con.execute(
+                "SELECT status,queued_at,imported_at FROM research_runs WHERE cycle_id=? "
+                "AND queued_at>=? ORDER BY queued_at DESC LIMIT 1",
+                (cycle["cycle_id"], slot_start.isoformat()),
             ).fetchone()
         if latest:
             if latest["status"] in {"queued", "running", "completed"}:
                 return {"due": False, "reason": "previous_run_not_terminal",
                         "latest_status": latest["status"], "deadline_seconds": seconds,
                         "run_kind": run_kind}
-            if run_kind == "final":
-                queued_at = _parse_time(latest["queued_at"], field="research_queued_at")
-                final_started_at = deadline - timedelta(
-                    seconds=self.config.research_final_window_seconds
-                )
-                if queued_at >= final_started_at:
-                    return {"due": False, "reason": "final_already_completed",
-                            "latest_status": latest["status"],
-                            "deadline_seconds": seconds, "run_kind": run_kind}
-            observed = _parse_time(
-                latest["imported_at"] or latest["queued_at"], field="research_observed_at"
-            )
-            age = int((current - observed).total_seconds())
-            if run_kind == "routine" and age < self.config.research_min_interval_seconds:
-                return {"due": False, "reason": "cadence_not_due", "age_seconds": age,
-                        "cadence_seconds": self.config.research_min_interval_seconds,
-                        "latest_status": latest["status"], "deadline_seconds": seconds,
-                        "run_kind": run_kind}
-        return {"due": True, "reason": "deadline_window", "deadline_seconds": seconds,
-                "cycle_id": cycle["cycle_id"], "run_kind": run_kind}
+        if attempted_in_slot:
+            return {
+                "due": False, "reason": "slot_already_attempted",
+                "latest_status": attempted_in_slot["status"],
+                "latest_queued_at": attempted_in_slot["queued_at"],
+                "deadline_seconds": seconds, "run_kind": run_kind,
+                "slot_started_at": slot_start.isoformat(),
+            }
+        return {
+            "due": True, "reason": "cadence_slot_due", "deadline_seconds": seconds,
+            "cycle_id": cycle["cycle_id"], "run_kind": run_kind,
+            "slot_started_at": slot_start.isoformat(),
+        }
 
     def enqueue(self, *, force: bool = False, actor: str = "mova-research",
                 reason: str | None = None, idempotency_key: str | None = None) -> dict:

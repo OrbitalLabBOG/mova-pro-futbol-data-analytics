@@ -2,7 +2,7 @@
 type: project
 name: "MOVA FPL — Autonomous Harness v1"
 created: 2026-08-23
-updated: 2026-08-31
+updated: 2026-09-01
 tags: [mova, fpl, autonomy, postgres, agents, observability, continuous-improvement]
 status: active-shadow
 ---
@@ -449,9 +449,9 @@ como candidato o conflicto, nunca como hecho operativo. El rollout conserva `sha
 
 El corte de servicio posterior eliminó el barrido genérico: el request recibe la plantilla,
 hasta diez candidatos del modelo y las notas oficiales FPL, más las señales activas previas para
-investigar solo deltas. La agenda conserva la rutina de seis horas y añade una corrida final
-obligatoria entre T-120 y T-70; ticks sin request ya no levantan Codex. El health global permanece
-visible al cambiar de jornada.
+investigar solo deltas. Desde el corte de cadencia GW2, la agenda permite como máximo una corrida
+amplia T-30h…T-6h, un refresh T-6h…T-2h y una final T-120…T-70; ticks sin request ya no levantan
+Codex. El health global permanece visible al cambiar de jornada.
 
 El hardening posterior implementó el contrato v2: search solo descubre, el importador hace fetch
 HTTPS independiente con defensa SSRF, sella excerpt mínimo + locator + hashes y exige evidencia
@@ -868,6 +868,31 @@ dos transferencias libres, cuatro chips y el fingerprint previo. Finalmente, un 
 el boot ID y pasó los once checks de recuperación en 221 segundos; readiness quedó 15/25, con 10
 pendientes longitudinales o externos y cero blockers. Evidencia:
 [HV1-09M final runtime closeout](57-hv1-09m-final-runtime-closeout.md).
+
+### Corte de cadencia agentic — 1 de septiembre de 2026
+
+El feedback provisional de GW2 mostró una decisión deportiva fuerte, pero también consumo
+prematuro: GW3 alcanzó 19/20 usos antes de su ventana final. El presupuesto duro evitó gasto
+adicional, aunque no impedía que envelopes materialmente distintos intentaran abrir trabajo en
+baseline ni que la rutina de seis horas consumiera varias parejas Researcher + Strategist/Critic.
+
+La policy `bounded-deliberation-1.1.0` convierte la cadencia en un gate determinista:
+
+- research tiene tres slots no acumulables: `broad`, `refresh` y `final`; cada intento físico,
+  incluido uno terminalmente fallido, consume su slot;
+- baseline y settlement consumen cero inferencias automáticas;
+- Strategist/Critic sólo corre una vez por research `imported` y espera que un manifest/envelope
+  posterior ya incorpore sus señales;
+- semantic reuse conserva prioridad y crea el binding sin reservar presupuesto;
+- `outside_deliberation_window`, `research_not_imported`, `envelope_predates_research`,
+  `research_already_deliberated`, `slot_already_attempted` y `final_cutoff_passed` son estados
+  observables de espera segura;
+- `--force` de research conserva su excepción auditada, pero su intento cuenta para impedir que
+  el scheduler lo duplique después.
+
+El techo normal queda en tres investigaciones y tres deliberaciones por GW; el budget ledger
+sigue siendo el circuito final y no se aumenta. La política no cambia autoridad, no toca FPL y
+mantiene `shadow/A0`.
 
 ## 11. Definition of Done del harness v1
 

@@ -86,10 +86,12 @@ mova strategy research enqueue --force --actor julian \
   --idempotency-key "research:gw02:press-final"
 ~~~
 
-due y una cadencia no vencida devuelven código 75. El timer evalúa cada 15 minutos, pero solo
-encola dentro de las 30 horas pre-deadline y como máximo una vez cada seis horas. Entre T-120 y
-T-70 minutos exige una corrida final aunque la cadencia rutinaria aún no venza; después de T-70
-no inicia research nuevo. Un tick sin request pendiente no levanta el contenedor Codex. El
+due y un slot ya consumido devuelven código 75. El timer evalúa cada 15 minutos, pero Codex sólo
+puede abrir una corrida en cada uno de tres slots: investigación amplia entre T-30h y T-6h,
+refresco dirigido entre T-6h y T-2h, y corrida final entre T-120 y T-70 minutos. Baseline no
+consume agente y después de T-70 no inicia research nuevo. Un fallo terminal consume el slot;
+no se crean IDs nuevos para ocultarlo ni se eleva el presupuesto. Un tick sin request pendiente
+no levanta el contenedor Codex. El
 worker usa un lock exclusivo y procesa una solicitud; el importador procesa todos los resultados
 listos. El límite del worker es ocho minutos y systemd conserva diez minutos para importación y
 cleanup; timeout o salida 0 sin artefacto se registran como errores tipados y nunca como brief.

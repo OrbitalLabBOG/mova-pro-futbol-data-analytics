@@ -20,7 +20,7 @@ from mova_fpl.ops.db import OpsDB, canonical_json, sha256_json, utcnow
 
 REQUEST_SCHEMA = "mova-decision-deliberation-request-v1"
 RESULT_SCHEMA = "mova-decision-deliberation-v1"
-POLICY_VERSION = "bounded-deliberation-1.0.0"
+POLICY_VERSION = "bounded-deliberation-1.1.0"
 MAX_RESULT_BYTES = 1_048_576
 CHIPS = {"wildcard", "free_hit", "bench_boost", "triple_captain"}
 VERDICTS = {"accept", "revise", "block"}
@@ -402,7 +402,7 @@ class DecisionDeliberationService:
         self.config = config
         self.db = db
 
-    def enqueue(self) -> dict:
+    def enqueue(self, *, now: datetime | None = None) -> dict:
         self.db.migrate()
         source = self.db.deliberation_source()
         if not source:
@@ -479,6 +479,27 @@ class DecisionDeliberationService:
         request_sha = sha256_json(request)
         request["request_sha256"] = request_sha
         semantic_sha = sha256_json(semantic_deliberation_input(request))
+        semantic = self.db.decision_deliberation_for_semantic(
+            source["cycle_id"], self.config.research_provider, semantic_sha,
+        )
+        cadence = (
+            {"due": True, "reason": "semantic_reuse",
+             "deliberation_id": semantic["deliberation_id"]}
+            if semantic else self.db.deliberation_cadence(
+                source["cycle_id"], deadline_at=str(manifest["deadline_at"]),
+                manifest_as_of_at=str(manifest["as_of_at"]),
+                now=(now or datetime.now(timezone.utc)),
+                deadline_window_seconds=self.config.research_deadline_window_seconds,
+                final_cutoff_seconds=self.config.research_final_cutoff_seconds,
+            )
+        )
+        if not cadence["due"]:
+            return {"status": "skipped", **cadence}
+        request["cadence"] = cadence
+        request.pop("request_sha256", None)
+        request_sha = sha256_json(request)
+        request["request_sha256"] = request_sha
+        semantic_sha = sha256_json(semantic_deliberation_input(request))
         path = self.config.research_root / "inbox" / f"{deliberation_id}.request.json"
         file_sha = _atomic_json(path, request)
         queued = self.db.queue_decision_deliberation({
@@ -498,7 +519,8 @@ class DecisionDeliberationService:
         if queued.get("status") == "blocked":
             path.unlink(missing_ok=True)
             return {**queued, "request_path": None, "request_file_sha256": None}
-        return {**queued, "request_path": str(path), "request_file_sha256": file_sha}
+        return {**queued, "request_path": str(path), "request_file_sha256": file_sha,
+                "cadence": cadence}
 
     def import_ready(self) -> dict:
         self.db.migrate()

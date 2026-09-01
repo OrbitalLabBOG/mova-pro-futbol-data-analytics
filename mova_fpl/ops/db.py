@@ -2675,6 +2675,84 @@ class OpsDB:
                 ).fetchone()
         return dict(row) if row else None
 
+    def decision_deliberation_for_semantic(
+        self, cycle_id: str, provider: str, semantic_input_sha256: str,
+    ) -> dict | None:
+        """Busca una inferencia reusable antes de aplicar el gate de cadencia."""
+        with self.connect(readonly=True) as con:
+            row = con.execute(
+                "SELECT * FROM decision_deliberations WHERE cycle_id=? AND provider=? "
+                "AND semantic_input_sha256=? ORDER BY queued_at DESC LIMIT 1",
+                (cycle_id, provider, semantic_input_sha256),
+            ).fetchone()
+        return dict(row) if row else None
+
+    def deliberation_cadence(
+        self, cycle_id: str, *, deadline_at: str, manifest_as_of_at: str,
+        now: datetime, deadline_window_seconds: int = 30 * 3600,
+        final_cutoff_seconds: int = 70 * 60,
+    ) -> dict:
+        """Autoriza una deliberación nueva sólo para research ya sellado en el envelope.
+
+        Researcher y Strategist/Critic forman una pareja de costo. El segundo no debe
+        ejecutarse en baseline, antes del import, sobre un envelope anterior al import ni
+        más de una vez para el mismo research importado.
+        """
+        current = now.astimezone(timezone.utc)
+        deadline = datetime.fromisoformat(deadline_at.replace("Z", "+00:00"))
+        seconds = int((deadline - current).total_seconds())
+        if seconds <= 0:
+            return {"due": False, "reason": "deadline_passed",
+                    "deadline_seconds": seconds}
+        if seconds > deadline_window_seconds:
+            return {"due": False, "reason": "outside_deliberation_window",
+                    "deadline_seconds": seconds}
+        if seconds <= final_cutoff_seconds:
+            return {"due": False, "reason": "final_cutoff_passed",
+                    "deadline_seconds": seconds}
+        with self.connect(readonly=True) as con:
+            research = con.execute(
+                "SELECT research_run_id,imported_at FROM research_runs "
+                "WHERE cycle_id=? AND status='imported' AND imported_at IS NOT NULL "
+                "ORDER BY imported_at DESC LIMIT 1", (cycle_id,),
+            ).fetchone()
+            latest = con.execute(
+                "SELECT deliberation_id,queued_at FROM decision_deliberations "
+                "WHERE cycle_id=? ORDER BY queued_at DESC LIMIT 1", (cycle_id,),
+            ).fetchone()
+        if not research:
+            return {"due": False, "reason": "research_not_imported",
+                    "deadline_seconds": seconds}
+        imported_at = datetime.fromisoformat(
+            str(research["imported_at"]).replace("Z", "+00:00")
+        )
+        manifest_at = datetime.fromisoformat(manifest_as_of_at.replace("Z", "+00:00"))
+        if manifest_at < imported_at:
+            return {
+                "due": False, "reason": "envelope_predates_research",
+                "research_run_id": research["research_run_id"],
+                "research_imported_at": research["imported_at"],
+                "manifest_as_of_at": manifest_as_of_at,
+                "deadline_seconds": seconds,
+            }
+        if latest:
+            queued_at = datetime.fromisoformat(
+                str(latest["queued_at"]).replace("Z", "+00:00")
+            )
+            if queued_at >= imported_at:
+                return {
+                    "due": False, "reason": "research_already_deliberated",
+                    "research_run_id": research["research_run_id"],
+                    "deliberation_id": latest["deliberation_id"],
+                    "deadline_seconds": seconds,
+                }
+        return {
+            "due": True, "reason": "new_imported_research",
+            "research_run_id": research["research_run_id"],
+            "research_imported_at": research["imported_at"],
+            "deadline_seconds": seconds,
+        }
+
     def decision_deliberation(self, deliberation_id: str) -> dict | None:
         with self.connect(readonly=True) as con:
             row = con.execute(

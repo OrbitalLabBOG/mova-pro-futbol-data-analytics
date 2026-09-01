@@ -47,8 +47,9 @@ tres candidatos, validaciones, estado real del equipo, fase, research, memoria, 
 de modelo. Excluye IDs de envelope/manifest, timestamps de captura, rutas, batch IDs y SHA del
 despliegue. Un envelope nuevo que solo difiere en esa provenance crea un binding
 `semantic_reuse`, reutiliza el resultado anterior y no crea archivo de inbox, reserva ni llamada
-LLM. Cualquier cambio material produce una deliberación nueva. Los envelopes siguen siendo
-inmutables y cada reutilización queda auditada.
+LLM. Un cambio material produce una identidad semántica nueva, pero sólo se encola cuando el
+gate de cadencia observa research importado nuevo y un envelope posterior que ya lo contiene.
+Los envelopes siguen siendo inmutables y cada reutilización o skip queda explicado.
 
 ## Contrato Strategist + Critic
 

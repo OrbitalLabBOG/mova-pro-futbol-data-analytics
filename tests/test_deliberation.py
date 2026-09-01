@@ -2,7 +2,7 @@ import hashlib
 import json
 import os
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -171,9 +171,17 @@ def test_deliberation_request_receives_sealed_strategic_memory(tmp_path: Path):
         def decision_deliberation_for_envelope(self, _envelope_id):
             return None
 
+        def decision_deliberation_for_semantic(self, _cycle_id, _provider, _semantic_sha):
+            return None
+
+        def deliberation_cadence(self, _cycle_id, **_kwargs):
+            return {"due": True, "reason": "new_imported_research",
+                    "research_run_id": "research_fixture"}
+
         def latest_cycle_manifest(self, _cycle_id):
             return {
                 "manifest_id": manifest_id, "phase": "preflight",
+                "as_of_at": "2026-09-04T15:00:00+00:00",
                 "deadline_at": "2026-09-04T17:30:00+00:00",
                 "analytics_manifest": {"status": "approved"},
                 "research_summary": {"previous_active_signals": []},
@@ -195,8 +203,64 @@ def test_deliberation_request_receives_sealed_strategic_memory(tmp_path: Path):
     assert request["cycle_context"]["strategic_memory"] == memory
     assert request["cycle_context"]["season_plan"]["revision"] == 2
     assert request["guardrails"]["no_new_facts"] is True
+    assert request["cadence"]["research_run_id"] == "research_fixture"
     assert fake_db.queued["request_sha256"] == request["request_sha256"]
     assert len(fake_db.queued["semantic_input_sha256"]) == 64
+
+
+def test_deliberation_waits_for_import_and_fresh_envelope(tmp_path: Path):
+    now = datetime.now(timezone.utc).replace(microsecond=0)
+    deadline = now + timedelta(hours=5)
+    db = OpsDB(tmp_path / "ops.db", enforce_version=False)
+    db.migrate()
+    cycle_id = db.upsert_cycle(
+        "2026-27", 3, deadline.isoformat(), phase="preflight",
+    )
+    manifest = db.add_cycle_manifest({
+        "cycle_id": cycle_id, "as_of_at": now.isoformat(),
+        "deadline_at": deadline.isoformat(), "phase": "preflight",
+        "source_manifest": [], "analytics_manifest": {},
+        "research_summary": {}, "memory_summary": {},
+        "artifact_path": str(tmp_path / "manifest.json"),
+    })
+
+    missing = db.deliberation_cadence(
+        cycle_id, deadline_at=deadline.isoformat(),
+        manifest_as_of_at=now.isoformat(), now=now,
+    )
+    assert missing == {
+        "due": False, "reason": "research_not_imported",
+        "deadline_seconds": 18000,
+    }
+
+    imported_at = now - timedelta(minutes=5)
+    with db.transaction() as con:
+        con.execute(
+            """INSERT INTO research_runs(
+            research_run_id,cycle_id,manifest_id,provider,status,request_path,
+            request_sha256,queued_at,finished_at,imported_at)
+            VALUES('research_cadence',?,?,'fixture','imported',
+            '/tmp/request','aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+            ?,?,?)""",
+            (cycle_id, manifest["manifest_id"],
+             (now - timedelta(minutes=20)).isoformat(),
+             imported_at.isoformat(), imported_at.isoformat()),
+        )
+
+    stale = db.deliberation_cadence(
+        cycle_id, deadline_at=deadline.isoformat(),
+        manifest_as_of_at=(now - timedelta(minutes=10)).isoformat(), now=now,
+    )
+    assert stale["due"] is False
+    assert stale["reason"] == "envelope_predates_research"
+
+    fresh = db.deliberation_cadence(
+        cycle_id, deadline_at=deadline.isoformat(),
+        manifest_as_of_at=now.isoformat(), now=now,
+    )
+    assert fresh["due"] is True
+    assert fresh["reason"] == "new_imported_research"
+    assert fresh["research_run_id"] == "research_cadence"
 
 
 def test_semantic_input_ignores_provenance_churn_but_detects_material_change():

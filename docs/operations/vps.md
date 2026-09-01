@@ -168,10 +168,12 @@ versiones ya fueron sellados; tampoco evalúa hasta que la API oficial marque `d
 Cada ejecución queda como job `model_analytics`, con pasos, duración, hashes e incidentes. Ver
 [servicio analítico](analytics-service.md).
 
-`mova-fpl-research.timer` evalúa cada 15 minutos, pero la cadencia efectiva es seis horas y
-solo dentro de las 30 horas anteriores al deadline. Ejecuta un contenedor one-shot sin DB,
-runtime env, navegador ni secretos de collector. La preparación, auth, validación y recuperación
-están en [contexto estratégico](strategic-research.md).
+`mova-fpl-research.timer` evalúa cada 15 minutos, pero sólo abre una corrida en cada slot:
+amplia T-30h…T-6h, refresh T-6h…T-2h y final T-120…T-70 minutos. Fuera de esas ventanas no
+consume Codex. Strategist/Critic corre una vez por research importado y espera un envelope que
+ya lo incorpore. El contenedor one-shot no recibe DB, runtime env, navegador ni secretos de
+collector. La preparación, auth, validación y recuperación están en
+[contexto estratégico](strategic-research.md).
 
 La credencial de odds no pertenece a `runtime.env`. Se instala como
 `/etc/mova-fpl/odds-api-key`, propietario `root`, grupo del worker `10001`, modo `0640`, y Compose

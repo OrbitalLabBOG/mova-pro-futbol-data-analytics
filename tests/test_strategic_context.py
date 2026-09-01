@@ -389,7 +389,40 @@ def test_slot_final_es_obligatorio_aunque_cadencia_rutina_no_venza(tmp_path):
         )
     completed = service.due(now=current)
     assert completed["due"] is False
-    assert completed["reason"] == "final_already_completed"
+    assert completed["reason"] == "slot_already_attempted"
+
+
+def test_research_usa_un_solo_intento_por_slot_y_abre_refresh(tmp_path):
+    _config, db, service, cycle_id = _runtime(tmp_path)
+    current = datetime.now(timezone.utc).replace(microsecond=0)
+    queued = service.enqueue(
+        force=True, actor="test", reason="corrida amplia",
+        idempotency_key="research:broad-slot",
+    )
+    deadline = current + timedelta(hours=20)
+    broad_observed = current - timedelta(hours=1)
+    with db.transaction() as con:
+        con.execute(
+            "UPDATE gameweek_cycles SET deadline_at=? WHERE cycle_id=?",
+            (deadline.isoformat(), cycle_id),
+        )
+        con.execute(
+            "UPDATE research_runs SET status='imported',queued_at=?,finished_at=?,"
+            "imported_at=? WHERE research_run_id=?",
+            (broad_observed.isoformat(), broad_observed.isoformat(),
+             broad_observed.isoformat(), queued["research_run_id"]),
+        )
+
+    same_slot = service.due(now=current)
+    assert same_slot["due"] is False
+    assert same_slot["reason"] == "slot_already_attempted"
+    assert same_slot["run_kind"] == "broad"
+
+    refresh_now = deadline - timedelta(hours=5)
+    refresh = service.due(now=refresh_now)
+    assert refresh["due"] is True
+    assert refresh["reason"] == "cadence_slot_due"
+    assert refresh["run_kind"] == "refresh"
 
 
 def test_research_no_arranca_despues_del_cutoff_final(tmp_path):

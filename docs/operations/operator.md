@@ -318,7 +318,13 @@ La idempotencia agentic usa un hash semántico separado del hash de provenance. 
 con la misma decisión, blockers, equipo, research, memoria, plan y modelos se enlazan al resultado
 existente sin reservar tokens. Audita `decision_deliberation_bindings`, el evento
 `decision_deliberation_semantically_reused` y
-`mova_agent_deliberation_semantic_reuses`; un cambio material siempre abre un trabajo nuevo.
+`mova_agent_deliberation_semantic_reuses`; un cambio material crea identidad nueva, pero su
+ejecución sigue sujeta al gate temporal y de research.
+La cadencia añade un segundo límite: sólo existe una corrida de research por slot (amplio,
+T-6h y final), y Strategist/Critic sólo se encola una vez por research importado después de que
+un envelope nuevo ya lo incorpore. Un cambio de fase o provenance por sí solo no adelanta gasto;
+`outside_deliberation_window`, `envelope_predates_research` y
+`research_already_deliberated` son skips seguros, no fallas.
 
 HV1-07A/B añade `mova execute preflight`, `/api/v1/execution-plans`,
 `/api/v1/execution-preflight-checks` y métricas `mova_execution_*`. El comando sella autorización
