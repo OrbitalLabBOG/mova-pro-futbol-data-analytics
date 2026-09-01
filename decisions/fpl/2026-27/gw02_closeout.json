@@ -1,0 +1,80 @@
+{
+  "schema": "mova-fpl-manual-closeout-v1",
+  "season": "2026-27",
+  "gw": 2,
+  "entry_id": 3609854,
+  "deadline_at": "2026-08-28T17:30:00Z",
+  "reviewed_at": "2026-08-28T15:38:37.764Z",
+  "mounted_at": "2026-08-28T15:56:46.245Z",
+  "trace_run_id": "2026-27-live-human-reviewed-h5",
+  "decision_acta_path": "docs/decisions/2026-27/gw02-research-and-decision.md",
+  "mount_evidence_path": "/var/lib/mova-fpl/artifacts/evidence/gw02/after.png",
+  "mount_evidence_sha256": "e415d031dd34f677146786c8b64a90a846eca757d321575fae8073e50feb482e",
+  "chip_inventory": [
+    {"name": "wildcard", "window": "H1", "status": "available"},
+    {"name": "free_hit", "window": "H1", "status": "available"},
+    {"name": "bench_boost", "window": "H1", "status": "available"},
+    {"name": "triple_captain", "window": "H1", "status": "available"}
+  ],
+  "selected": {
+    "label": "gw02-research-reviewed-roll-v1",
+    "policy_version": "human-reviewed-override-v1",
+    "expected_points": 40.888,
+    "total_cost": 100.0,
+    "bank_after": 0.0,
+    "captain": 426,
+    "vice_captain": 411,
+    "bench_order": [109, 124, 329, 173],
+    "players": [
+      {"element": 496, "name": "Kinsky", "team": "Spurs", "position": "GKP", "price": 4.5, "role": "starter", "expected_points": 2.786, "p60": 0.920},
+      {"element": 8, "name": "Calafiori", "team": "Arsenal", "position": "DEF", "price": 5.5, "role": "starter", "expected_points": 2.297, "p60": 0.497},
+      {"element": 418, "name": "Maguire", "team": "Man Utd", "position": "DEF", "price": 5.0, "role": "starter", "expected_points": 3.460, "p60": 0.865},
+      {"element": 11, "name": "Mosquera", "team": "Arsenal", "position": "DEF", "price": 5.5, "role": "starter", "expected_points": 3.265, "p60": 0.772},
+      {"element": 557, "name": "Tzolis", "team": "Arsenal", "position": "MID", "price": 6.5, "role": "starter", "expected_points": 1.215, "p60": 0.192},
+      {"element": 426, "name": "B.Fernandes", "team": "Man Utd", "position": "MID", "price": 12.0, "role": "starter", "expected_points": 5.681, "p60": 0.847},
+      {"element": 427, "name": "Mbeumo", "team": "Man Utd", "position": "MID", "price": 8.0, "role": "starter", "expected_points": 4.271, "p60": 0.762},
+      {"element": 565, "name": "M.Sangaré", "team": "Brentford", "position": "MID", "price": 5.5, "role": "starter", "expected_points": 1.005, "p60": 0.135},
+      {"element": 346, "name": "Calvert-Lewin", "team": "Leeds", "position": "FWD", "price": 6.0, "role": "starter", "expected_points": 4.371, "p60": 0.910},
+      {"element": 165, "name": "João Pedro", "team": "Chelsea", "position": "FWD", "price": 7.5, "role": "starter", "expected_points": 4.504, "p60": 0.876},
+      {"element": 411, "name": "Haaland", "team": "Man City", "position": "FWD", "price": 15.5, "role": "starter", "expected_points": 2.352, "p60": 0.398},
+      {"element": 109, "name": "Verbruggen", "team": "Brighton", "position": "GKP", "price": 4.5, "role": "bench", "expected_points": 2.950, "p60": 0.926},
+      {"element": 124, "name": "Groß", "team": "Brighton", "position": "MID", "price": 5.5, "role": "bench", "expected_points": 3.566, "p60": 0.921},
+      {"element": 329, "name": "Rodon", "team": "Leeds", "position": "DEF", "price": 4.5, "role": "bench", "expected_points": 3.207, "p60": 0.869},
+      {"element": 173, "name": "Thomas", "team": "Coventry City", "position": "DEF", "price": 4.0, "role": "bench", "expected_points": 0.301, "p60": 0.071}
+    ]
+  },
+  "comparator": {
+    "label": "pure-milp-points-1.1.0-h3-wildcard",
+    "policy_version": "milp-points-1.1.0-h3-chips",
+    "expected_points": 54.708,
+    "total_cost": 100.1,
+    "bank_after": 0.2,
+    "captain": 426,
+    "vice_captain": 155,
+    "bench_order": [2, 68, 61, 332],
+    "players": [
+      {"element": 529, "name": "Roefs", "team": "Sunderland", "position": "GKP", "price": 5.0, "role": "starter", "expected_points": 3.905, "p60": 0.937},
+      {"element": 356, "name": "Virgil", "team": "Liverpool", "position": "DEF", "price": 6.5, "role": "starter", "expected_points": 4.337, "p60": 0.939},
+      {"element": 498, "name": "Senesi", "team": "Spurs", "position": "DEF", "price": 6.0, "role": "starter", "expected_points": 4.315, "p60": 0.923},
+      {"element": 533, "name": "Mukiele", "team": "Sunderland", "position": "DEF", "price": 5.5, "role": "starter", "expected_points": 4.252, "p60": 0.906},
+      {"element": 426, "name": "B.Fernandes", "team": "Man Utd", "position": "MID", "price": 12.0, "role": "starter", "expected_points": 5.681, "p60": 0.847},
+      {"element": 155, "name": "Enzo", "team": "Chelsea", "position": "MID", "price": 7.0, "role": "starter", "expected_points": 4.557, "p60": 0.954},
+      {"element": 542, "name": "E.Le Fée", "team": "Sunderland", "position": "MID", "price": 6.0, "role": "starter", "expected_points": 4.446, "p60": 0.954},
+      {"element": 154, "name": "Palmer", "team": "Chelsea", "position": "MID", "price": 9.5, "role": "starter", "expected_points": 4.383, "p60": 0.876},
+      {"element": 165, "name": "João Pedro", "team": "Chelsea", "position": "FWD", "price": 7.6, "role": "starter", "expected_points": 4.504, "p60": 0.876},
+      {"element": 346, "name": "Calvert-Lewin", "team": "Leeds", "position": "FWD", "price": 6.0, "role": "starter", "expected_points": 4.371, "p60": 0.910},
+      {"element": 106, "name": "Thiago", "team": "Brentford", "position": "FWD", "price": 8.0, "role": "starter", "expected_points": 4.306, "p60": 0.907},
+      {"element": 2, "name": "Arrizabalaga", "team": "Arsenal", "position": "GKP", "price": 5.0, "role": "bench", "expected_points": 3.521, "p60": 0.867},
+      {"element": 68, "name": "Tavernier", "team": "Bournemouth", "position": "MID", "price": 6.0, "role": "bench", "expected_points": 4.227, "p60": 0.883},
+      {"element": 61, "name": "Truffert", "team": "Bournemouth", "position": "DEF", "price": 5.5, "role": "bench", "expected_points": 4.012, "p60": 0.923},
+      {"element": 332, "name": "Justin", "team": "Leeds", "position": "DEF", "price": 4.5, "role": "bench", "expected_points": 3.674, "p60": 0.916}
+    ]
+  },
+  "intervention": {
+    "schema": "mova-manual-decision-intervention-v1",
+    "author": "julian+orbix",
+    "rationale": "Se rechazó la Wildcard MILP y se guardó la FT porque su ventaja dependía de probabilidades de minutos contradichas por GW1; se mantuvo la estructura, se corrigieron XI, banca y capitanía con evidencia oficial y se conservaron todos los chips."
+  },
+  "research_signals": [],
+  "proposals": []
+}

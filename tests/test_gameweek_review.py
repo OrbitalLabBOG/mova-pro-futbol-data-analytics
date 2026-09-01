@@ -81,11 +81,38 @@ def test_gw1_retrospective_scores_selected_and_pure_model(tmp_path: Path):
     assert metrics["bench_points"] == 25
     assert metrics["intervention"] == {"expected_delta": -12.33, "realized_delta": -12}
     assert metrics["causal_scorecard_created"] is False
+    assert metrics["causality_reason"] == "not_eligible_no_predeadline_batch"
     assert metrics["same_squad_oracle_fixed_captain"] == 69
     assert metrics["same_squad_oracle_free_captain"] == 81
     artifact = Path(result["ledger"]["review"]["artifact_path"])
     assert artifact.is_file()
-    assert json.loads(artifact.read_text())["metrics"]["entry"]["points"] == 50
+    payload = json.loads(artifact.read_text())
+    assert payload["metrics"]["entry"]["points"] == 50
+    assert [item["code"] for item in payload["findings"]] == [
+        "ENTRY_RESULT_AT_AVERAGE",
+        "INTERVENTION_PAIRED_NEGATIVE_VALUE",
+        "EARLY_SEASON_MINUTES_UNDERCALIBRATED",
+        "BENCH_POINTS_NOT_CHIP_CAUSALITY",
+        "CAPTAIN_CHOICE_TIED_COMPARATOR",
+    ]
+
+
+def test_review_with_predeadline_batch_defers_causal_scorecard_to_analytics(tmp_path: Path):
+    path, package = _package()
+    official = _official(package)
+    official["projection_count"] = 2
+    config = RuntimeConfig(artifact_root=tmp_path / "artifacts")
+    result = GameweekReviewService(
+        config, OpsDB(tmp_path / "ops.db", enforce_version=False)
+    )._build(
+        package, official, path, "job_test", "2026-27-gw01", "corr_test",
+        "test", "batch causal", "gw1:causal-routing:v1",
+    )
+    metrics = result["ledger"]["review"]["metrics"]
+    assert metrics["predeadline_projection_batches"] == 2
+    assert metrics["causality_reason"] == (
+        "analytics_reconcile_required_for_predeadline_batches"
+    )
 
 
 def test_closeout_package_reproduces_documented_fingerprints():

@@ -154,6 +154,9 @@ class GameweekReviewService:
         comparator_score = analysis["comparator_score"]
         selected_rows = analysis["selected_rows"]
         comparator_rows = analysis["comparator_rows"]
+        live_points = {
+            int(row["element"]): int(row["total_points"]) for row in official["live"]
+        }
         official_picks = {int(row["element"]): int(row["multiplier"]) for row in official["picks"]}
         selected_ids = {int(row["element"]) for row in package["selected"]["players"]}
         if selected_ids != set(official_picks):
@@ -176,15 +179,20 @@ class GameweekReviewService:
             for row in selected_rows if row["p60"] is not None and row["p60"] < .6
             and row["minutes"] >= 60
         ]
+        projection_count = int(official["projection_count"])
+        average_points = int(official["event"]["payload"]["average_entry_score"])
         metrics = {
             "schema": "mova-fpl-retrospective-review-v1",
             "causal_scorecard_created": False,
-            "causality_reason": "no_predeadline_projection_batch_for_gw1",
-            "predeadline_projection_batches": int(official["projection_count"]),
+            "causality_reason": (
+                "analytics_reconcile_required_for_predeadline_batches"
+                if projection_count else "not_eligible_no_predeadline_batch"
+            ),
+            "predeadline_projection_batches": projection_count,
             "selected": selected_score,
             "comparator": comparator_score,
             "entry": {"points": official_points, "rank": official["entry"]["event_rank"],
-                      "average_points": int(official["event"]["payload"]["average_entry_score"])},
+                      "average_points": average_points},
             "bench_points": bench_points,
             "same_squad_oracle_fixed_captain": oracle_fixed,
             "same_squad_oracle_free_captain": oracle_free,
@@ -196,23 +204,47 @@ class GameweekReviewService:
             },
             "low_p60_players_who_reached_60": low_p60_success,
         }
+        average_delta = official_points - average_points
+        paired_delta = selected_score["points"] - comparator_score["points"]
+        selected_captain_points = live_points[selected.captain]
+        comparator_captain_points = live_points[comparator.captain]
+        captain_delta = selected_captain_points - comparator_captain_points
+        result_relation = "ABOVE" if average_delta > 0 else "BELOW" if average_delta < 0 else "AT"
+        intervention_relation = (
+            "POSITIVE" if paired_delta > 0 else "NEGATIVE" if paired_delta < 0 else "TIED"
+        )
+        captain_relation = (
+            "POSITIVE" if captain_delta > 0 else "NEGATIVE" if captain_delta < 0 else "TIED"
+        )
+        result_summary = (
+            f"El equipo hizo {official_points}, {abs(average_delta)} puntos "
+            f"{'por encima' if average_delta > 0 else 'por debajo'} del promedio oficial "
+            f"de {average_points}."
+            if average_delta else
+            f"El equipo hizo {official_points}, igual al promedio oficial."
+        )
         findings = [
-            {"code": "GW1_RESULT_AT_AVERAGE", "category": "variance",
-             "summary": f"El equipo hizo {official_points}, igual al promedio oficial."},
-            {"code": "HUMAN_OVERRIDE_NEGATIVE_PAIRED_VALUE", "category": "strategy",
-             "summary": ("La intervención humana produjo "
-                         f"{comparator_score['points'] - selected_score['points']} puntos menos "
-                         "que el MILP puro v1.1.0."),
-             "actionable": True},
+            {"code": f"ENTRY_RESULT_{result_relation}_AVERAGE", "category": "outcome",
+             "summary": result_summary,
+             "actionable": False},
+            {"code": f"INTERVENTION_PAIRED_{intervention_relation}_VALUE",
+             "category": "strategy",
+             "summary": (f"La decisión seleccionada produjo {selected_score['points']} puntos "
+                         f"contra {comparator_score['points']} del comparador; delta pareado "
+                         f"{paired_delta:+d}."),
+             "actionable": paired_delta != 0},
             {"code": "EARLY_SEASON_MINUTES_UNDERCALIBRATED", "category": "model",
              "summary": f"{len(low_p60_success)} jugadores con P60 < 60% alcanzaron 60 minutos.",
-             "actionable": True},
+             "actionable": bool(low_p60_success)},
             {"code": "BENCH_POINTS_NOT_CHIP_CAUSALITY", "category": "variance",
              "summary": f"La banca sumó {bench_points}; eso no demuestra ex ante que Bench Boost era correcto.",
              "actionable": False},
-            {"code": "CAPTAIN_CHOICE_TIED_COMPARATOR", "category": "strategy",
-             "summary": "Haaland y Gibbs-White hicieron dos puntos; la capitanía no explica el delta.",
-             "actionable": False},
+            {"code": f"CAPTAIN_CHOICE_{captain_relation}_COMPARATOR", "category": "strategy",
+             "summary": (f"El capitán seleccionado ({selected.captain}) hizo "
+                         f"{selected_captain_points} puntos base; el del comparador "
+                         f"({comparator.captain}) hizo {comparator_captain_points}; "
+                         f"delta base {captain_delta:+d}."),
+             "actionable": captain_delta != 0},
         ]
         created_at = utcnow()
         ids = {name: _deterministic_id(prefix, idempotency_key, name) for name, prefix in {
