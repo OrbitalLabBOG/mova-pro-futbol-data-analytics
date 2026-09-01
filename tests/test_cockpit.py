@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 
-from mova_fpl.ops.api import _dashboard
+from mova_fpl.ops.api import _dashboard, _human_deadline
 from mova_fpl.ops.cli import parser
 from mova_fpl.ops.cockpit import evaluate_cockpit, render_cockpit
 
@@ -111,14 +111,48 @@ def test_cockpit_surfaces_critical_incident_and_budget_without_enabling_writes()
     assert payload["authority"]["writes_enabled"] is False
 
 
-def test_dashboard_renders_action_center_and_machine_links():
+def test_dashboard_renders_owner_summary_in_colombia_time():
     page = _dashboard(evaluate_cockpit(**_inputs())).decode()
 
     assert "MOVA Fantasy Fútbol" in page
-    assert "Ciclo agentic" in page
-    assert "Funciones y activaciones" in page
-    assert "/api/v1/cockpit" in page
-    assert "solo lectura" in page
+    assert "Todo está funcionando" in page
+    assert "Tu acción" in page
+    assert "Ninguna" in page
+    assert "Viernes 4 de septiembre · 12:30 p. m." in page
+    assert "Ver información técnica" in page
+    assert "/api/v1/cockpit" not in page
+    assert "Ciclo agentic" not in page
+
+
+def test_dashboard_only_asks_owner_for_help_on_actionable_problem():
+    values = _inputs()
+    values["operator_status"]["operations"]["open_incidents"] = [{
+        "incident_id": "incident_test", "severity": "P1", "status": "open",
+        "title": "El colector dejó de responder",
+    }]
+    page = _dashboard(evaluate_cockpit(**values)).decode()
+
+    assert "Necesito que avises a ORBIX" in page
+    assert "Avísame ahora" in page
+    assert "El colector dejó de responder" in page
+
+
+def test_noncritical_internal_pending_does_not_alarm_owner():
+    values = _inputs()
+    values["alert_channel"] = {"configured": False, "status": "local_only"}
+    values["costs"]["gameweek"]["remaining_uses"] = 1
+    page = _dashboard(evaluate_cockpit(**values)).decode()
+
+    assert "Todo está funcionando" in page
+    assert "2 pendientes internos bajo control" in page
+    assert "Necesito que avises a ORBIX" not in page
+
+
+def test_human_deadline_handles_relative_time_and_invalid_input():
+    label, relative = _human_deadline("2026-09-04T17:30:00Z", 183660)
+    assert label == "Viernes 4 de septiembre · 12:30 p. m."
+    assert relative == "Faltan 2 días y 3 horas"
+    assert _human_deadline(None, -1) == ("Por confirmar", "El plazo ya venció")
 
 
 def test_cli_exposes_cockpit_watch_and_incident_triage():

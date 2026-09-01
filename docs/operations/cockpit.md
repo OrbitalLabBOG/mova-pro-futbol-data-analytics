@@ -31,13 +31,14 @@ mova triage --incident-id incident_...
 mova triage --incident-id incident_... --json
 ```
 
-La interfaz web autenticada está en `https://mova.72-60-245-2.sslip.io`. El API continúa ligado a
-`127.0.0.1:8787`; Caddy termina TLS y exige autenticación antes de hacer reverse proxy. No abrir el
-puerto 8787 en el firewall ni cambiar el bind para publicar el dashboard.
+La interfaz humana está en `https://mova.72-60-245-2.sslip.io` y no requiere contraseña. Está
+diseñada para el owner: una señal dominante, próxima fecha y acción requerida. Un pendiente P2
+interno no alarma a Julián; sólo un P0/P1, safety inseguro o una capa core degradada cambia la
+pantalla a rojo y pide avisar a ORBIX.
 
-Las credenciales web son un secreto del host, no de Git. El operador autorizado las recupera por
-SSH desde `/etc/mova-fpl/dashboard-credentials`; nunca debe copiarlas a actas, logs, Supabase,
-issues o argumentos de proceso. El hash bcrypt vive en el environment root-only de Caddy.
+El API continúa ligado a `127.0.0.1:8787`. Caddy sólo publica `/` y `/dashboard`; bloquea con 404
+`/api/*`, `/metrics`, health y cualquier otra ruta. No abrir el puerto 8787 ni ampliar el matcher
+público para resolver una necesidad de diagnóstico.
 
 ## Qué responde el cockpit
 
@@ -112,14 +113,17 @@ browser writes, reiniciar el host o cambiar el equipo requiere la aprobación co
 
 | Endpoint | Uso |
 | --- | --- |
-| `/` o `/dashboard` | interfaz humana |
+| `/` o `/dashboard` | interfaz humana pública y deliberadamente mínima |
 | `/api/v1/cockpit` | panorama completo y estable |
 | `/api/v1/triage` | paquete de diagnóstico general |
 | `/api/v1/triage?incident_id=...` | diagnóstico de un incidente |
 | `/api/v1/orchestration` | stages y dependencias completas |
 | `/api/v1/costs` | ledger económico detallado |
 | `/api/v1/incidents` | historial operativo |
-| `/metrics` | Prometheus; acceso autenticado por Caddy |
+| `/metrics` | Prometheus; sólo loopback/SSH |
+
+La tabla anterior describe el API local. Desde Internet únicamente existen las dos rutas del
+dashboard; los demás endpoints responden `404` antes de llegar al servicio Python.
 
 Las respuestas usan `Cache-Control: no-store`, `nosniff` y nunca incluyen cookies, prompts,
 tokens, webhook URL, perfil browser ni squad JSON completo.
@@ -133,15 +137,16 @@ se integra al Caddyfile administrado del host. Antes de recargar:
 sudo caddy validate --config /etc/caddy/Caddyfile
 sudo systemctl reload caddy
 curl --fail --silent http://127.0.0.1:8787/readyz
-curl --fail --silent --user "$USER:$PASSWORD" \
+curl --fail --silent https://mova.72-60-245-2.sslip.io/
+curl --silent --output /dev/null --write-out '%{http_code}\n' \
   https://mova.72-60-245-2.sslip.io/api/v1/cockpit
 ```
 
 Pruebas obligatorias:
 
-- sin credenciales: HTTP 401;
-- credenciales válidas: dashboard 200 y `schema=mova-cockpit-v1`;
-- POST autenticado: HTTP 405;
+- dashboard público: HTTP 200 y resumen humano, sin JSON técnico;
+- API, métricas y health públicos: HTTP 404;
+- API local mantiene `schema=mova-cockpit-v1` y POST local responde 405;
 - `readyz` local continúa 200;
 - Caddy y API permanecen activos después de reload.
 

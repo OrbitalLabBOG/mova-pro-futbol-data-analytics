@@ -1,13 +1,21 @@
-# MOVA FPL cockpit. The API remains bound to loopback; Caddy is the only ingress.
-# MOVA_DASHBOARD_PASSWORD_HASH is injected by the root-only systemd EnvironmentFile.
+# MOVA FPL owner dashboard. Only the two human HTML routes are public; the
+# diagnostic API and metrics remain reachable exclusively from VPS loopback.
 mova.72-60-245-2.sslip.io {
 	encode gzip
 
-	basic_auth {
-		julian {$MOVA_DASHBOARD_PASSWORD_HASH}
+	@owner_dashboard path / /dashboard
+	handle @owner_dashboard {
+		reverse_proxy 127.0.0.1:8787
 	}
 
-	reverse_proxy 127.0.0.1:8787
+	handle {
+		respond "Not found" 404
+	}
+
+	handle_errors {
+		@server_error expression {err.status_code} >= 500
+		respond @server_error "MOVA no está respondiendo. Avísale a ORBIX." 503
+	}
 
 	header {
 		X-Content-Type-Options nosniff

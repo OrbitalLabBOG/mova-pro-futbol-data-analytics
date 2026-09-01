@@ -5,9 +5,11 @@ from __future__ import annotations
 import html
 import json
 import logging
+from datetime import datetime
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
+from zoneinfo import ZoneInfo
 
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB
@@ -20,6 +22,37 @@ def _json_bytes(value) -> bytes:
     return json.dumps(value, ensure_ascii=False, sort_keys=True, default=str).encode("utf-8")
 
 
+def _human_deadline(value: str | None, seconds: int | None) -> tuple[str, str]:
+    """Convierte el deadline técnico en una frase breve para el owner."""
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        local = parsed.astimezone(ZoneInfo("America/Bogota"))
+        days = ("lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo")
+        months = ("enero", "febrero", "marzo", "abril", "mayo", "junio",
+                  "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre")
+        hour = local.hour % 12 or 12
+        period = "a. m." if local.hour < 12 else "p. m."
+        label = (f"{days[local.weekday()].capitalize()} {local.day} de "
+                 f"{months[local.month - 1]} · {hour}:{local.minute:02d} {period}")
+    except (TypeError, ValueError):
+        label = "Por confirmar"
+
+    remaining = int(seconds or 0)
+    if remaining <= 0:
+        relative = "El plazo ya venció"
+    elif remaining >= 86400:
+        whole_days, remainder = divmod(remaining, 86400)
+        hours = remainder // 3600
+        relative = f"Faltan {whole_days} días" + (f" y {hours} horas" if hours else "")
+    elif remaining >= 3600:
+        hours, remainder = divmod(remaining, 3600)
+        minutes = remainder // 60
+        relative = f"Faltan {hours} horas" + (f" y {minutes} min" if minutes else "")
+    else:
+        relative = f"Faltan {max(1, remaining // 60)} minutos"
+    return label, relative
+
+
 def _dashboard(cockpit: dict) -> bytes:
     esc = lambda value: html.escape(str(value if value is not None else "—"))
     gameweek = cockpit.get("gameweek") or {}
@@ -28,62 +61,68 @@ def _dashboard(cockpit: dict) -> bytes:
     economics = cockpit.get("economics") or {}
     gw_cost = economics.get("gameweek") or {}
     alerts = (cockpit.get("alerts") or {}).get("items") or []
-    verdict = str(cockpit.get("verdict") or "attention_required")
-    tone = "danger" if verdict == "critical" else "warning" if alerts else "ok"
-    alert_rows = "".join(
-        f'<div class="alert {"danger" if row.get("severity") in {"P0", "P1"} else "warning"}">'
-        f'<strong>{esc(row.get("severity"))} · {esc(row.get("title"))}</strong>'
-        f'<code>{esc(row.get("action"))}</code></div>' for row in alerts
-    ) or '<div class="alert ok"><strong>Sin alertas accionables</strong></div>'
-    functions = "".join(
-        f'<tr><td><span class="dot {"on" if row.get("enabled") else "off"}"></span>'
-        f'{esc(row.get("name"))}</td><td>{esc(row.get("status"))}</td>'
-        f'<td><code>{esc(row.get("mode"))}</code></td></tr>'
-        for row in cockpit.get("functions") or []
+    critical = [row for row in alerts if row.get("severity") in {"P0", "P1"}]
+    core_states = [quality.get(key) for key in ("operator", "data", "analytics", "postgres")]
+    core_unhealthy = any(value not in {"healthy", "pass"} for value in core_states)
+    needs_help = bool(critical or core_unhealthy or quality.get("safety") != "safe_to_wait")
+    tone = "danger" if needs_help else "ok"
+    status_title = "Necesito que avises a ORBIX" if needs_help else "Todo está funcionando"
+    status_copy = (
+        "Hay un problema que requiere revisión. Envíame una captura de esta pantalla."
+        if needs_help else "No necesitas hacer nada ahora. Yo sigo vigilando el sistema."
     )
-    stages = "".join(
-        f'<div class="stage"><span>{esc(row.get("name"))}</span>'
-        f'<strong class="state-{esc(row.get("status"))}">{esc(row.get("status"))}</strong>'
-        f'<small>{esc(row.get("outcome"))}</small></div>'
-        for row in (cockpit.get("workflow") or {}).get("stages") or []
+    action_value = "Avísame ahora" if needs_help else "Ninguna"
+    action_copy = "Envíame esta pantalla" if needs_help else "Sólo vuelve si esta pantalla cambia a rojo"
+    deadline, deadline_relative = _human_deadline(
+        gameweek.get("deadline_at"), gameweek.get("seconds_to_deadline"),
     )
+    internal_summary = (
+        f"{len(alerts)} pendientes internos bajo control"
+        if alerts else "Sin pendientes internos"
+    )
+    problem_rows = "".join(
+        f"<li>{esc(row.get('title'))}</li>" for row in critical[:3]
+    )
+    if not problem_rows:
+        problem_rows = "<li>No hay fallos que requieran tu intervención.</li>"
     body = f"""<!doctype html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
-<meta http-equiv="refresh" content="30"><title>MOVA · Cockpit</title>
+<meta http-equiv="refresh" content="30"><title>MOVA · Estado</title>
 <style>
-:root {{ color-scheme:dark; font-family:Inter,ui-sans-serif,system-ui,sans-serif; background:#071019;color:#edf5ff }}
-* {{ box-sizing:border-box }} body {{ max-width:1240px;margin:0 auto;padding:2rem 1.25rem 4rem }}
-h1,h2 {{ margin:.2rem 0 }} h2 {{ font-size:1.05rem;margin-top:2rem }} .muted,small {{ color:#8fa2b8 }}
-.hero {{ display:flex;justify-content:space-between;gap:1rem;align-items:flex-end;margin-bottom:1.4rem }}
-.pill {{ padding:.45rem .75rem;border-radius:999px;font-weight:750;text-transform:uppercase;font-size:.76rem }}
-.pill.ok {{ background:#103d31;color:#79efc2 }} .pill.warning {{ background:#493813;color:#ffd876 }} .pill.danger {{ background:#4d1821;color:#ff99a6 }}
-.banner {{ border:1px solid #26384b;background:#0e1a27;border-radius:16px;padding:1rem 1.15rem;margin:1rem 0 }}
-.banner.warning {{ border-color:#82631d }} .banner.danger {{ border-color:#a83948 }}
-.grid {{ display:grid;grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:.85rem;margin:1rem 0 }}
-.card {{ background:#0e1a27;border:1px solid #26384b;border-radius:14px;padding:1rem;min-height:112px }}
-.value {{ font-size:1.55rem;font-weight:760;margin:.35rem 0 }} .label {{ color:#8fa2b8;font-size:.82rem;text-transform:uppercase;letter-spacing:.06em }}
-.alerts {{ display:grid;gap:.6rem }} .alert {{ display:flex;justify-content:space-between;gap:1rem;align-items:center;padding:.8rem 1rem;border-radius:10px;background:#10253a;border-left:4px solid #4e8ac8 }}
-.alert.warning {{ border-color:#e2aa32 }} .alert.danger {{ border-color:#f05d6f }} .alert.ok {{ border-color:#35c99a }}
-code {{ color:#8de6c6;font-size:.82rem }} table {{ width:100%;border-collapse:collapse;background:#0e1a27;border:1px solid #26384b;border-radius:12px;overflow:hidden }}
-td,th {{ text-align:left;padding:.72rem;border-bottom:1px solid #26384b }} .dot {{ display:inline-block;width:.58rem;height:.58rem;border-radius:50%;margin-right:.55rem }} .dot.on {{ background:#35c99a }} .dot.off {{ background:#697b8e }}
-.pipeline {{ display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:.55rem }} .stage {{ background:#0e1a27;border:1px solid #26384b;border-radius:10px;padding:.75rem;display:grid;gap:.25rem }}
-.stage strong {{ font-size:.82rem }} .state-complete,.state-skipped_policy {{ color:#64ddb3 }} .state-degraded,.state-pending {{ color:#f1c75b }} .state-blocked {{ color:#ff7585 }}
-.links {{ line-height:2 }} a {{ color:#82b7ff;text-decoration:none }} @media(max-width:700px) {{ .hero,.alert {{ align-items:flex-start;flex-direction:column }} }}
+:root {{ color-scheme:dark;background:#071019;color:#f4f8fc;font-family:"Trebuchet MS",sans-serif }}
+* {{ box-sizing:border-box }} body {{ margin:0;min-height:100vh }}
+.shell {{ width:min(980px,calc(100% - 32px));margin:0 auto;padding:34px 0 48px }}
+header {{ display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:28px }}
+.brand {{ font-family:Georgia,serif;font-size:1.45rem;font-weight:700;letter-spacing:-.02em }}
+.refresh {{ color:#87a0b8;font-size:.84rem }}
+.status {{ display:grid;grid-template-columns:84px 1fr;gap:24px;align-items:center;border:1px solid #28594b;background:#0b211c;border-radius:28px;padding:34px;margin-bottom:22px }}
+.status.danger {{ border-color:#8f3540;background:#2a1015 }}
+.beacon {{ width:76px;height:76px;border-radius:50%;display:grid;place-items:center;background:#36d39a;color:#052319;font:700 2.4rem Georgia,serif;box-shadow:0 0 0 12px rgba(54,211,154,.09) }}
+.danger .beacon {{ background:#ff7182;color:#2a0710;box-shadow:0 0 0 12px rgba(255,113,130,.09) }}
+h1 {{ font:700 clamp(2rem,5vw,3.7rem)/1.02 Georgia,serif;letter-spacing:-.045em;margin:0 0 10px }}
+.status p {{ color:#b7c9c2;font-size:1.12rem;line-height:1.5;margin:0 }} .danger p {{ color:#f1bcc2 }}
+.cards {{ display:grid;grid-template-columns:repeat(3,1fr);gap:14px }}
+.card {{ min-height:172px;padding:24px;border:1px solid #23384a;background:#0d1925;border-radius:20px;display:flex;flex-direction:column;justify-content:space-between }}
+.label {{ color:#88a2bb;font-size:.76rem;letter-spacing:.12em;text-transform:uppercase }}
+.value {{ font:700 clamp(1.55rem,3vw,2.2rem)/1.08 Georgia,serif;margin:14px 0 8px;letter-spacing:-.025em }}
+.card p {{ color:#afc1d1;line-height:1.45;margin:0 }} .card.action {{ border-color:#28594b }} .danger + .cards .card.action {{ border-color:#8f3540 }}
+.under-control {{ text-align:center;color:#7890a6;font-size:.86rem;margin:20px 0 0 }}
+details {{ margin-top:34px;border-top:1px solid #1d3041;padding-top:18px;color:#8fa5b9 }}
+summary {{ cursor:pointer;width:max-content;min-height:44px;display:flex;align-items:center;color:#9bb2c7;font-weight:700 }}
+details p,details li {{ font-size:.9rem;line-height:1.55 }}
+footer {{ color:#60778d;font-size:.75rem;margin-top:26px }}
+@media(max-width:720px) {{ .shell {{ width:min(100% - 22px,980px);padding-top:22px }} header {{ align-items:flex-start }} .refresh {{ text-align:right }} .status {{ grid-template-columns:1fr;padding:26px }} .beacon {{ width:58px;height:58px;font-size:1.8rem }} .cards {{ grid-template-columns:1fr }} .card {{ min-height:132px }} }}
+@media(prefers-reduced-motion:reduce) {{ * {{ scroll-behavior:auto!important }} }}
 </style></head><body>
-<header class="hero"><div><h1>MOVA Fantasy Fútbol</h1><div class="muted">Cockpit autónomo · solo lectura · refresca cada 30 s</div></div><span class="pill {tone}">{esc(verdict)}</span></header>
-<section class="banner {tone}"><strong>{esc(cockpit.get('headline'))}</strong><div class="muted">Snapshot {esc(cockpit.get('generated_at'))} · revisión {esc((cockpit.get('runtime') or {}).get('git_sha'))}</div></section>
-<div class="grid">
-<div class="card"><div class="label">Jornada</div><div class="value">GW {esc(gameweek.get('gw'))}</div><div>{esc(gameweek.get('phase'))} · {esc(gameweek.get('readiness'))}</div></div>
-<div class="card"><div class="label">Deadline UTC</div><div class="value">{esc(gameweek.get('deadline_at'))}</div><div>{esc(gameweek.get('seconds_to_deadline'))} segundos</div></div>
-<div class="card"><div class="label">Autoridad</div><div class="value">{esc(authority.get('current_action_level'))}</div><div>writes {esc(authority.get('writes_enabled'))} · kill switch {esc(authority.get('kill_switch'))}</div></div>
-<div class="card"><div class="label">Readiness</div><div class="value">{esc(quality.get('readiness'))}</div><div>elegible técnicamente {esc(authority.get('technical_eligible_level'))}</div></div>
-<div class="card"><div class="label">Presupuesto GW</div><div class="value">{esc(gw_cost.get('committed_uses'))}/{esc(gw_cost.get('use_limit'))}</div><div>{esc(gw_cost.get('remaining_tokens'))} tokens restantes</div></div>
-<div class="card"><div class="label">Incidentes críticos</div><div class="value">{esc((cockpit.get('alerts') or {}).get('critical_open'))}</div><div>outbox due {esc((cockpit.get('alerts') or {}).get('outbox_due'))}</div></div>
-</div>
-<h2>Alertas y acciones</h2><div class="alerts">{alert_rows}</div>
-<h2>Ciclo agentic</h2><div class="pipeline">{stages}</div>
-<h2>Funciones y activaciones</h2><table><thead><tr><th>Función</th><th>Estado</th><th>Modo</th></tr></thead><tbody>{functions}</tbody></table>
-<h2>Diagnóstico</h2><div class="links"><a href="/api/v1/cockpit">cockpit JSON</a> · <a href="/api/v1/triage">triage JSON</a> · <a href="/api/v1/status">status</a> · <a href="/api/v1/readiness">readiness</a> · <a href="/api/v1/harness-scorecard">scorecard</a> · <a href="/api/v1/orchestration">workflow</a> · <a href="/api/v1/costs">costos</a> · <a href="/api/v1/incidents">incidentes</a></div>
+<div class="shell"><header><div class="brand">MOVA Fantasy Fútbol</div><div class="refresh">Estado en vivo · se actualiza solo</div></header>
+<main><section class="status {tone}" aria-labelledby="main-status"><div class="beacon" aria-hidden="true">{"!" if needs_help else "✓"}</div><div><h1 id="main-status">{status_title}</h1><p>{status_copy}</p></div></section>
+<section class="cards" aria-label="Resumen principal">
+<article class="card"><div><div class="label">Sistema</div><div class="value">{"Requiere revisión" if needs_help else "En línea"}</div></div><p>{"Detecté un problema importante" if needs_help else "Datos, modelos y automatización responden bien"}</p></article>
+<article class="card"><div><div class="label">Próximo cierre · GW {esc(gameweek.get('gw'))}</div><div class="value">{esc(deadline)}</div></div><p>{esc(deadline_relative)}</p></article>
+<article class="card action"><div><div class="label">Tu acción</div><div class="value">{action_value}</div></div><p>{action_copy}</p></article>
+</section><p class="under-control">{esc(internal_summary)}</p>
+<details><summary>Ver información técnica</summary><p>Autoridad {esc(authority.get('current_action_level'))} · escrituras desactivadas · revisión {esc((cockpit.get('runtime') or {}).get('git_sha'))}</p><p>Presupuesto interno: {esc(gw_cost.get('committed_uses'))}/{esc(gw_cost.get('use_limit'))} ejecuciones en esta jornada.</p><ul>{problem_rows}</ul></details>
+</main><footer>Lectura segura · última comprobación {esc(cockpit.get('generated_at'))}</footer></div>
 </body></html>"""
     return body.encode("utf-8")
 

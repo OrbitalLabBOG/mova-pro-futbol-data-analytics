@@ -7,7 +7,8 @@ VPS y contratos de operación segura.
 
 El stack autónomo está desplegado en modo `shadow / A0`: puede recolectar, modelar, decidir
 y auditar, pero los cambios en la cuenta continúan bloqueados por controles explícitos.
-El cockpit read-only comparte un único contrato entre CLI, API y dashboard web autenticado;
+El cockpit read-only comparte un único contrato entre CLI y API. Su dashboard ejecutivo público
+sólo expone tres indicadores humanos; diagnóstico, métricas y JSON permanecen en loopback.
 Supabase sólo refleja seguimiento PM y nunca recibe estado operativo.
 
 ## Empezar
@@ -141,7 +142,7 @@ CycleManifest + memoria estratégica durable → modelos causales → matriz xP 
   de forma idempotente y detecta permisos ausentes/alterados/huérfanos o starts sin cierre.
 - `mova cockpit` compone funciones, autoridad, workflow, costos, readiness y alertas para humanos
   y agentes. `mova triage` enlaza incidentes con jobs/correlations sin ejecutar reparaciones. El
-  dashboard autenticado usa ese mismo contrato; no tiene endpoints mutables.
+  dashboard ejecutivo resume ese contrato sin exponer endpoints técnicos ni controles mutables.
 - El sentinel deadline-aware sólo abre incidentes cuando faltan hitos dentro de T−6h/T−3h o una
   ejecución entra en estado terminal inseguro; las esperas normales siguen observables sin ruido.
 - `HOST_RECOVERY_DRILLS_PROVEN` exige cinco escenarios: API, PostgreSQL, browser, outage
@@ -184,7 +185,7 @@ Documentos principales:
 - [Índice técnico](docs/README.md)
 - [Operar una jornada](docs/operations/gameweek.md)
 - [Contrato `mova` y diagnóstico](docs/operations/operator.md)
-- [Cockpit, triage y dashboard autenticado](docs/operations/cockpit.md)
+- [Cockpit, triage y dashboard ejecutivo](docs/operations/cockpit.md)
 - [Servicio autónomo de datos](docs/operations/data-service.md)
 - [Servicio analítico y operaciones del modelo](docs/operations/analytics-service.md)
 - [Operar el VPS](docs/operations/vps.md)

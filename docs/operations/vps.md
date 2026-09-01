@@ -35,7 +35,7 @@ VPS. Supabase se reserva para seguimiento externo de construcción del proyecto.
 | perfil browser | `/var/lib/mova-fpl/browser-profile` (`0700`, sin backup general) |
 | backups | `/opt/orbital/backups/mova-fpl/<UTC>/` |
 | dashboard/API origen | `127.0.0.1:8787` del VPS |
-| cockpit web autenticado | `https://mova.72-60-245-2.sslip.io` vía Caddy |
+| cockpit web ejecutivo | `https://mova.72-60-245-2.sslip.io` vía Caddy; sólo `/` y `/dashboard` públicos |
 | noVNC | `127.0.0.1:6080` del VPS, solo cuando se activa el perfil browser |
 
 La imagen engine contiene Python 3.13.5, CBC y SQLite 3.53.4. Ninguna herramienta del host
@@ -131,18 +131,21 @@ docker compose ps
 docker compose logs --tail=100 api
 ```
 
-El sitio público no cambia el bind del API. Caddy termina TLS, exige basic auth y sólo después
-envía tráfico a loopback. La contraseña no vive en Git: el operador autorizado la consulta por
-SSH en `/etc/mova-fpl/dashboard-credentials`; el hash bcrypt se inyecta a Caddy desde un archivo
-root-only. Ver [cockpit, triage y acceso web](cockpit.md).
+El sitio público no cambia el bind del API. Caddy termina TLS y sólo publica las rutas humanas
+`/` y `/dashboard`; `/api/*`, `/metrics`, health y cualquier otra ruta responden `404` desde
+Internet. El JSON técnico continúa disponible por loopback/SSH. Ver
+[cockpit, triage y acceso web](cockpit.md).
 
 Validación mínima tras deploy o reload:
 
 ```bash
 curl --fail --silent http://127.0.0.1:8787/readyz
-# sin auth debe responder 401
+# la página humana es pública y debe responder 200
 curl --silent --output /dev/null --write-out '%{http_code}\n' \
   https://mova.72-60-245-2.sslip.io/
+# el API técnico externo debe responder 404
+curl --silent --output /dev/null --write-out '%{http_code}\n' \
+  https://mova.72-60-245-2.sslip.io/api/v1/cockpit
 sudo caddy validate --config /etc/caddy/Caddyfile
 ```
 
