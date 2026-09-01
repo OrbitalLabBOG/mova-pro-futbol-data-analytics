@@ -123,6 +123,16 @@ def test_closeout_package_reproduces_documented_fingerprints():
     assert comparator.fingerprint() == package["intervention"]["base_fingerprint"]
 
 
+def test_closeout_package_rejects_missing_mount_verification(tmp_path: Path):
+    _, package = _package()
+    package.pop("mount_verification")
+    path = tmp_path / "missing-verification.json"
+    path.write_text(json.dumps(package), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="package de cierre sin mount_verification"):
+        load_closeout_package(path)
+
+
 def test_all_gw1_players_validate_and_score_without_autosubs():
     _, package = _package()
     official = _official(package)

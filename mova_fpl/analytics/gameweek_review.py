@@ -19,9 +19,20 @@ def load_closeout_package(path: Path) -> dict:
     payload = json.loads(path.read_text(encoding="utf-8"))
     if payload.get("schema") != "mova-fpl-manual-closeout-v1":
         raise ValueError("package de cierre no cumple mova-fpl-manual-closeout-v1")
-    for key in ("season", "gw", "deadline_at", "entry_id", "selected", "comparator"):
+    for key in (
+        "season", "gw", "deadline_at", "entry_id", "reviewed_at", "mounted_at",
+        "trace_run_id", "decision_acta_path", "mount_evidence_path",
+        "mount_evidence_sha256", "chip_inventory", "selected", "comparator",
+        "intervention", "mount_verification", "proposals",
+    ):
         if key not in payload:
             raise ValueError(f"package de cierre sin {key}")
+    verification = payload["mount_verification"]
+    if not isinstance(verification, dict):
+        raise ValueError("mount_verification debe ser un objeto")
+    for key in ("squad", "xi", "captain", "vice_captain", "bench_order", "budget", "no_chip"):
+        if key not in verification:
+            raise ValueError(f"mount_verification sin {key}")
     return payload
 
 

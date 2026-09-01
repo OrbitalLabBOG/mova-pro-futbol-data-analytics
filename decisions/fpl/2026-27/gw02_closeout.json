@@ -75,6 +75,15 @@
     "author": "julian+orbix",
     "rationale": "Se rechazó la Wildcard MILP y se guardó la FT porque su ventaja dependía de probabilidades de minutos contradichas por GW1; se mantuvo la estructura, se corrigieron XI, banca y capitanía con evidencia oficial y se conservaron todos los chips."
   },
+  "mount_verification": {
+    "squad": [496, 109, 8, 11, 418, 329, 173, 426, 427, 557, 124, 565, 411, 165, 346],
+    "xi": [496, 418, 8, 11, 557, 426, 427, 565, 411, 165, 346],
+    "captain": 426,
+    "vice_captain": 411,
+    "bench_order": [109, 124, 329, 173],
+    "budget": {"total_cost": 100.0, "bank": 0.0},
+    "no_chip": true
+  },
   "research_signals": [],
   "proposals": []
 }
