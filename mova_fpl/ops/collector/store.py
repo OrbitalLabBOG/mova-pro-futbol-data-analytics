@@ -25,6 +25,15 @@ def _number(value, cast=float):
         return None
 
 
+def latest_history_event(history: dict) -> dict:
+    """Devuelve la última fila sin confundir el rank de GW con el overall."""
+    return max(
+        list(history.get("current") or []),
+        key=lambda item: int(item.get("event") or 0),
+        default={},
+    )
+
+
 def cursor_is_due(row: dict | None, cadence_seconds: int, *, now: datetime,
                   force: bool = False) -> bool:
     """Respeta cadencia desde el último intento fallido o último éxito."""
@@ -225,11 +234,11 @@ class CollectorStore:
             Jsonb(item.get("stats") or []), Jsonb(item),
         ) for item in fixtures]
         current = list(history.get("current") or [])
-        latest = max(current, key=lambda item: int(item.get("event") or 0), default={})
+        latest = latest_history_event(history)
         entry_row = (
             artifact_id, season, observed_at, int(entry["id"]),
             entry.get("summary_overall_points"), entry.get("summary_overall_rank"),
-            latest.get("points"), latest.get("overall_rank"), latest.get("event"),
+            latest.get("points"), latest.get("rank"), latest.get("event"),
             Jsonb(entry), Jsonb(history),
         )
         pick_rows = []

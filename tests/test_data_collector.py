@@ -19,7 +19,9 @@ from mova_fpl.ops.collector.whoscored import (
     validate_schedule,
 )
 from mova_fpl.ops.config import RuntimeConfig
-from mova_fpl.ops.collector.store import cursor_is_due, publish_coverage, read_coverage
+from mova_fpl.ops.collector.store import (
+    cursor_is_due, latest_history_event, publish_coverage, read_coverage,
+)
 from mova_fpl.postgres.store import MIGRATIONS, latest_version
 
 
@@ -47,6 +49,17 @@ def test_fpl_bundle_rejects_partial_fixture_payload():
     boot, fixtures, entry, history = _fpl_bundle()
     with pytest.raises(ValueError, match="fixtures_380"):
         validate_bundle(boot, fixtures[:-1], entry, history, 99)
+
+
+def test_latest_history_event_keeps_gameweek_rank_distinct_from_overall_rank():
+    latest = latest_history_event({"current": [
+        {"event": 1, "points": 50, "rank": 4_000_000, "overall_rank": 4_000_000},
+        {"event": 2, "points": 113, "rank": 390_687, "overall_rank": 845_574},
+    ]})
+
+    assert latest["event"] == 2
+    assert latest["rank"] == 390_687
+    assert latest["overall_rank"] == 845_574
 
 
 def _odds_payload() -> bytes:
