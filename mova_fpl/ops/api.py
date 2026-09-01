@@ -111,7 +111,7 @@ details {{ margin-top:34px;border-top:1px solid #1d3041;padding-top:18px;color:#
 summary {{ cursor:pointer;width:max-content;min-height:44px;display:flex;align-items:center;color:#9bb2c7;font-weight:700 }}
 details p,details li {{ font-size:.9rem;line-height:1.55 }}
 footer {{ color:#60778d;font-size:.75rem;margin-top:26px }}
-@media(max-width:720px) {{ .shell {{ width:min(100% - 22px,980px);padding-top:22px }} header {{ align-items:flex-start }} .refresh {{ text-align:right }} .status {{ grid-template-columns:1fr;padding:26px }} .beacon {{ width:58px;height:58px;font-size:1.8rem }} .cards {{ grid-template-columns:1fr }} .card {{ min-height:132px }} }}
+@media(max-width:720px) {{ .shell {{ width:min(100% - 22px,980px);padding-top:22px }} header {{ display:block }} .refresh {{ margin-top:7px;text-align:left }} .status {{ grid-template-columns:1fr;padding:26px }} .beacon {{ width:58px;height:58px;font-size:1.8rem }} .cards {{ grid-template-columns:1fr }} .card {{ min-height:132px }} }}
 @media(prefers-reduced-motion:reduce) {{ * {{ scroll-behavior:auto!important }} }}
 </style></head><body>
 <div class="shell"><header><div class="brand">MOVA Fantasy Fútbol</div><div class="refresh">Estado en vivo · se actualiza solo</div></header>
@@ -122,7 +122,7 @@ footer {{ color:#60778d;font-size:.75rem;margin-top:26px }}
 <article class="card action"><div><div class="label">Tu acción</div><div class="value">{action_value}</div></div><p>{action_copy}</p></article>
 </section><p class="under-control">{esc(internal_summary)}</p>
 <details><summary>Ver información técnica</summary><p>Autoridad {esc(authority.get('current_action_level'))} · escrituras desactivadas · revisión {esc((cockpit.get('runtime') or {}).get('git_sha'))}</p><p>Presupuesto interno: {esc(gw_cost.get('committed_uses'))}/{esc(gw_cost.get('use_limit'))} ejecuciones en esta jornada.</p><ul>{problem_rows}</ul></details>
-</main><footer>Lectura segura · última comprobación {esc(cockpit.get('generated_at'))}</footer></div>
+</main><footer>Lectura segura · se actualiza automáticamente cada 30 segundos</footer></div>
 </body></html>"""
     return body.encode("utf-8")
 
