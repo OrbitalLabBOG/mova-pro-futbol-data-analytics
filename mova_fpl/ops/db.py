@@ -3251,6 +3251,11 @@ class OpsDB:
 
     def causal_review_context(self, cycle_id: str) -> dict:
         with self.connect(readonly=True) as con:
+            current = con.execute(
+                "SELECT season,gw FROM gameweek_cycles WHERE cycle_id=?", (cycle_id,),
+            ).fetchone()
+            if not current:
+                raise ValueError(f"ciclo inexistente: {cycle_id}")
             conflicts = con.execute(
                 "SELECT COUNT(*) FROM research_conflicts WHERE cycle_id=? AND status='unresolved'",
                 (cycle_id,),
@@ -3267,13 +3272,21 @@ class OpsDB:
                 WHERE p.cycle_id=? AND a.status IN ('failed','ambiguous')""", (cycle_id,),
             ).fetchone()[0]
             reviews = con.execute(
-                "SELECT findings_json FROM gameweek_reviews WHERE review_type='causal'"
+                """SELECT c.gw,r.findings_json FROM gameweek_reviews r
+                JOIN gameweek_settlements s ON s.settlement_id=r.settlement_id
+                JOIN gameweek_cycles c ON c.cycle_id=s.cycle_id
+                WHERE r.review_type='causal' AND c.season=? AND c.gw<?""",
+                (current["season"], int(current["gw"])),
             ).fetchall()
-        occurrences: dict[str, int] = {}
+        gameweeks_by_category: dict[str, set[int]] = {}
         for row in reviews:
             for finding in json.loads(row["findings_json"]):
                 category = str(finding.get("category") or "")
-                occurrences[category] = occurrences.get(category, 0) + 1
+                if category:
+                    gameweeks_by_category.setdefault(category, set()).add(int(row["gw"]))
+        occurrences = {
+            category: len(gameweeks) for category, gameweeks in gameweeks_by_category.items()
+        }
         return {"unresolved_research_conflicts": int(conflicts),
                 "failed_validation_checks": int(checks),
                 "execution_failures": int(executions),

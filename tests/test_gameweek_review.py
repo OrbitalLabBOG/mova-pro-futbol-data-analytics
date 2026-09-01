@@ -556,3 +556,38 @@ def test_causal_reviewer_is_idempotent_and_does_not_optimize_one_gw(tmp_path: Pa
     status = db.gameweek_review_status("2026-27", 1)
     assert status["review"]["review_type"] == "causal"
     assert len(status["change_proposals"]) == 3  # conserva propuestas retrospectivas
+
+
+def test_causal_reviewer_does_not_count_same_gameweek_corrections_as_recurrence(tmp_path: Path):
+    db, _proposal = _persisted_review(tmp_path)
+    config = RuntimeConfig(artifact_root=tmp_path / "artifacts")
+    state = {"latest_scorecards": [{
+        "season": "2026-27", "gw": 1, "variant": "baseline",
+        "drift_status": "ok", "metrics": {"points_mae": 2.1},
+    }]}
+    service = CausalReviewerService(config, db)
+    first = service.run(
+        gw=1, actor="test", reason="primer cierre",
+        idempotency_key="causal:gw1:first", analytics_state=state,
+    )
+    path, package = _package()
+    cycle_id = "2026-27-gw01"
+    job_id, _ = db.start_job(
+        "gameweek_review", "gw1:corrected-closeout", "corr_corrected", cycle_id=cycle_id,
+    )
+    corrected_official = json.loads(json.dumps(_official(package)))
+    corrected_official["source"]["artifact_id"] = "artifact_gw1_corrected"
+    corrected_official["source"]["artifact_path"] = "/artifacts/gw1-corrected"
+    corrected = GameweekReviewService(config, db)._build(
+        package, corrected_official, path, job_id, cycle_id, "corr_corrected",
+        "test", "corrección oficial", "gw1:corrected-closeout",
+    )
+    db.record_gameweek_closeout(corrected["ledger"])
+    second = service.run(
+        gw=1, actor="test", reason="cierre corregido",
+        idempotency_key="causal:gw1:corrected", analytics_state=state,
+    )
+
+    assert first["proposals"] == 0
+    assert second["proposals"] == 0
+    assert all(item["prior_occurrences"] == 0 for item in second["findings"])
