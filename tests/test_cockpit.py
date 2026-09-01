@@ -87,6 +87,9 @@ def test_cockpit_contract_is_shared_sanitized_and_read_only():
     assert payload["authority"]["writes_enabled"] is False
     assert payload["runtime_mutated"] is False
     assert len(payload["functions"]) == 8
+    functions = {row["code"]: row for row in payload["functions"]}
+    assert functions["research"]["status"] == "healthy"
+    assert functions["backup"]["status"] == "active_local"
     assert payload["economics"]["gameweek"]["remaining_uses"] == 18
     assert "url" not in json.dumps(payload).lower()
     assert "MOVA COCKPIT · HEALTHY" in render_cockpit(payload)

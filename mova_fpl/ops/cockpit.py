@@ -44,6 +44,7 @@ def evaluate_cockpit(*, operator_status: dict, safety: dict, readiness: dict,
     data = operator_status.get("data") or {}
     analytics = operator_status.get("analytics") or {}
     storage = operator_status.get("storage") or {}
+    research = operator_status.get("research") or {}
     activation = readiness.get("activation") or {}
     stages = _stage_map(workflow)
     open_incidents = operations.get("open_incidents") or []
@@ -111,7 +112,11 @@ def evaluate_cockpit(*, operator_status: dict, safety: dict, readiness: dict,
         {
             "code": "research", "name": "Investigación agentic",
             "enabled": _unit_active(host, "mova-fpl-research.timer"),
-            "status": (operator_status.get("research") or {}).get("service_status"),
+            "status": (
+                research.get("service_status")
+                or ("conflicts" if research.get("conflicts") else None)
+                or ("signals_ready" if research.get("signals") else "idle")
+            ),
             "mode": "bounded_windows",
         },
         {
@@ -140,7 +145,10 @@ def evaluate_cockpit(*, operator_status: dict, safety: dict, readiness: dict,
         {
             "code": "backup", "name": "Backup local",
             "enabled": _unit_active(host, "mova-fpl-backup.timer"),
-            "status": (host.get("offsite_backup") or {}).get("status", "local_only"),
+            "status": (
+                "active_local" if _unit_active(host, "mova-fpl-backup.timer")
+                else "inactive"
+            ),
             "mode": "scheduled",
         },
     ]
