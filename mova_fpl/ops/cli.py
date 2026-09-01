@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import time
 from datetime import datetime, timezone
 
 from mova_fpl.ops.api import serve
@@ -271,6 +272,19 @@ def parser() -> argparse.ArgumentParser:
     fail_execution.add_argument("--claim-token-stdin", action="store_true", required=True)
     status = commands.add_parser("status", help="estado operativo consolidado")
     status.add_argument("--json", action="store_true", dest="as_json")
+    cockpit = commands.add_parser(
+        "cockpit", help="tablero read-only de funciones, costos y ciclo agentic"
+    )
+    cockpit.add_argument("--json", action="store_true", dest="as_json")
+    cockpit.add_argument(
+        "--watch", type=int, metavar="SECONDS",
+        help="refresca la vista humana; mínimo 5 segundos",
+    )
+    triage = commands.add_parser(
+        "triage", help="paquete read-only para diagnosticar un incidente"
+    )
+    triage.add_argument("--incident-id")
+    triage.add_argument("--json", action="store_true", dest="as_json")
     commands.add_parser("safety", help="resumen read-only: ¿es seguro esperar?")
     alerts = commands.add_parser("alerts", help="entrega y reconocimiento de alertas")
     alert_commands = alerts.add_subparsers(dest="alerts_command", required=True)
@@ -790,6 +804,29 @@ def main(argv: list[str] | None = None) -> int:
         payload = build_status(config, db)
         print(json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str)
               if args.as_json else render_status(payload))
+    elif args.command == "cockpit":
+        from mova_fpl.ops.cockpit import build_cockpit, render_cockpit
+
+        if args.watch is not None and args.watch < 5:
+            raise SystemExit("cockpit --watch exige al menos 5 segundos")
+        while True:
+            payload = build_cockpit(config, db)
+            output = (json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str)
+                      if args.as_json else render_cockpit(payload))
+            if args.watch is None:
+                print(output)
+                break
+            print("\033[2J\033[H" + output, flush=True)
+            try:
+                time.sleep(args.watch)
+            except KeyboardInterrupt:
+                return 0
+    elif args.command == "triage":
+        from mova_fpl.ops.cockpit import build_triage, render_triage
+
+        payload = build_triage(config, db, incident_id=args.incident_id)
+        print(json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str)
+              if args.as_json else render_triage(payload))
     elif args.command == "safety":
         print(json.dumps(build_safety(config, db), ensure_ascii=False,
                          sort_keys=True, default=str))

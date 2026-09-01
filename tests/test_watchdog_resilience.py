@@ -11,9 +11,64 @@ from mova_fpl.ops.watchdog import (
     AGENT_QUEUE_INCIDENT_TITLE,
     INCIDENT_TITLE,
     assess_agent_queue,
+    evaluate_workflow_deadline,
     resilience_drill,
     run,
+    workflow_deadline_prometheus,
 )
+
+
+def _workflow(*, deliberation: str = "complete", execution: str = "skipped_policy",
+              violations: list | None = None) -> dict:
+    return {
+        "verdict": "safe_to_wait" if not violations else "blocked",
+        "violations": violations or [],
+        "stages": [
+            {"name": name, "status": status, "outcome": "fixture"}
+            for name, status in (
+                ("observe", "complete"), ("contextualize", "complete"),
+                ("research", "complete"), ("propose_validate", "complete"),
+                ("deliberate", deliberation), ("preflight", "complete"),
+                ("execute_verify", execution),
+            )
+        ],
+    }
+
+
+def test_workflow_sentinel_ignores_recoverable_degradation_outside_window():
+    report = evaluate_workflow_deadline(
+        _workflow(deliberation="degraded"), seconds_to_deadline=30 * 3600 + 1,
+    )
+
+    assert report["healthy"] is True
+    assert report["reasons"] == []
+    assert report["runtime_mutated"] is False
+
+
+def test_workflow_sentinel_opens_p1_when_deliberation_is_late():
+    report = evaluate_workflow_deadline(
+        _workflow(deliberation="degraded"), seconds_to_deadline=6 * 3600,
+    )
+
+    assert report["healthy"] is False
+    assert report["severity"] == "P1"
+    assert report["reasons"][0]["code"] == "deliberate_not_terminal_t_minus_6h"
+    metrics = workflow_deadline_prometheus(report)
+    assert "mova_workflow_deadline_healthy 0" in metrics
+    assert 'mova_workflow_deadline_risks{severity="P1"} 1' in metrics
+
+
+def test_workflow_sentinel_treats_dependency_or_execution_failure_as_p0():
+    report = evaluate_workflow_deadline(
+        _workflow(execution="blocked", violations=[{"code": "INVALID"}]),
+        seconds_to_deadline=6 * 3600,
+    )
+
+    assert report["healthy"] is False
+    assert report["severity"] == "P0"
+    assert {row["code"] for row in report["reasons"]} == {
+        "workflow_dependency_violation", "execution_terminal_failure",
+    }
 
 
 def _runtime_with_authorization(tmp_path):

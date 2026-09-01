@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — operación del stack VPS"
 created: 2026-08-22
-updated: 2026-08-27
+updated: 2026-09-01
 tags: [mova, fpl, vps, docker, systemd, observability]
 status: active
 ---
@@ -34,7 +34,8 @@ VPS. Supabase se reserva para seguimiento externo de construcción del proyecto.
 | auth Codex dedicada | `/var/lib/mova-fpl/codex-home/auth.json` (fuera de backups) |
 | perfil browser | `/var/lib/mova-fpl/browser-profile` (`0700`, sin backup general) |
 | backups | `/opt/orbital/backups/mova-fpl/<UTC>/` |
-| dashboard | `127.0.0.1:8787` del VPS |
+| dashboard/API origen | `127.0.0.1:8787` del VPS |
+| cockpit web autenticado | `https://mova.72-60-245-2.sslip.io` vía Caddy |
 | noVNC | `127.0.0.1:6080` del VPS, solo cuando se activa el perfil browser |
 
 La imagen engine contiene Python 3.13.5, CBC y SQLite 3.53.4. Ninguna herramienta del host
@@ -81,6 +82,9 @@ Antes de activar el primer tick, colocar por canal seguro —no Git—:
 
 ```bash
 # Contrato estable: el wrapper incorpora checks sanitizados del host
+mova cockpit
+mova cockpit --json
+mova triage
 mova status
 mova status --json
 mova readiness
@@ -125,6 +129,21 @@ curl -s 'http://127.0.0.1:8787/api/v1/audit?limit=50' | python -m json.tool
 systemctl list-timers --all 'mova-fpl-*'
 docker compose ps
 docker compose logs --tail=100 api
+```
+
+El sitio público no cambia el bind del API. Caddy termina TLS, exige basic auth y sólo después
+envía tráfico a loopback. La contraseña no vive en Git: el operador autorizado la consulta por
+SSH en `/etc/mova-fpl/dashboard-credentials`; el hash bcrypt se inyecta a Caddy desde un archivo
+root-only. Ver [cockpit, triage y acceso web](cockpit.md).
+
+Validación mínima tras deploy o reload:
+
+```bash
+curl --fail --silent http://127.0.0.1:8787/readyz
+# sin auth debe responder 401
+curl --silent --output /dev/null --write-out '%{http_code}\n' \
+  https://mova.72-60-245-2.sslip.io/
+sudo caddy validate --config /etc/caddy/Caddyfile
 ```
 
 La caída real del browser se ejecuta sólo en A0 y restaura su estado on-demand original:

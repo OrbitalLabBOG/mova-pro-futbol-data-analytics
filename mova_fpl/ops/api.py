@@ -20,49 +20,70 @@ def _json_bytes(value) -> bytes:
     return json.dumps(value, ensure_ascii=False, sort_keys=True, default=str).encode("utf-8")
 
 
-def _dashboard(status: dict) -> bytes:
-    cycle = status.get("gameweek") or {}
-    safety = status.get("safety") or {}
-    operations = status.get("operations") or {}
-    tick = operations.get("latest_tick") or {}
-    controls = (status.get("runtime") or {}).get("controls") or {}
-    team_state = (status.get("data") or {}).get("team_state") or {}
-    scorecard = ((status.get("analytics") or {}).get("latest_scorecards") or [{}])[0]
-    parity = (((status.get("storage") or {}).get("postgres") or {}).get(
-        "read_parity"
-    ) or {})
-    role_separation = (((status.get("storage") or {}).get("postgres") or {}).get(
-        "role_separation"
-    ) or {})
-    control_rows = "".join(
-        f"<tr><td>{html.escape(key)}</td><td><code>{html.escape(json.dumps(value))}</code></td></tr>"
-        for key, value in controls.items()
+def _dashboard(cockpit: dict) -> bytes:
+    esc = lambda value: html.escape(str(value if value is not None else "—"))
+    gameweek = cockpit.get("gameweek") or {}
+    authority = cockpit.get("authority") or {}
+    quality = cockpit.get("quality") or {}
+    economics = cockpit.get("economics") or {}
+    gw_cost = economics.get("gameweek") or {}
+    alerts = (cockpit.get("alerts") or {}).get("items") or []
+    verdict = str(cockpit.get("verdict") or "attention_required")
+    tone = "danger" if verdict == "critical" else "warning" if alerts else "ok"
+    alert_rows = "".join(
+        f'<div class="alert {"danger" if row.get("severity") in {"P0", "P1"} else "warning"}">'
+        f'<strong>{esc(row.get("severity"))} · {esc(row.get("title"))}</strong>'
+        f'<code>{esc(row.get("action"))}</code></div>' for row in alerts
+    ) or '<div class="alert ok"><strong>Sin alertas accionables</strong></div>'
+    functions = "".join(
+        f'<tr><td><span class="dot {"on" if row.get("enabled") else "off"}"></span>'
+        f'{esc(row.get("name"))}</td><td>{esc(row.get("status"))}</td>'
+        f'<td><code>{esc(row.get("mode"))}</code></td></tr>'
+        for row in cockpit.get("functions") or []
+    )
+    stages = "".join(
+        f'<div class="stage"><span>{esc(row.get("name"))}</span>'
+        f'<strong class="state-{esc(row.get("status"))}">{esc(row.get("status"))}</strong>'
+        f'<small>{esc(row.get("outcome"))}</small></div>'
+        for row in (cockpit.get("workflow") or {}).get("stages") or []
     )
     body = f"""<!doctype html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
-<meta http-equiv="refresh" content="30"><title>MOVA FPL Control Plane</title>
+<meta http-equiv="refresh" content="30"><title>MOVA · Cockpit</title>
 <style>
-:root {{ color-scheme: dark; font-family: Inter,system-ui,sans-serif; background:#0c111b; color:#e8edf6 }}
-body {{ max-width:1100px; margin:3rem auto; padding:0 1.25rem }}
-h1 {{ margin-bottom:.25rem }} .muted {{ color:#98a6ba }} .grid {{ display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:1rem;margin:2rem 0 }}
-.card {{ background:#151d2a;border:1px solid #28344a;border-radius:12px;padding:1rem }}
-.value {{ font-size:1.55rem;font-weight:700;margin-top:.4rem }} table {{ width:100%;border-collapse:collapse;background:#151d2a }}
-td,th {{ text-align:left;padding:.75rem;border-bottom:1px solid #28344a }} code {{ color:#7fe0c3 }}
-a {{ color:#72a7ff }}
+:root {{ color-scheme:dark; font-family:Inter,ui-sans-serif,system-ui,sans-serif; background:#071019;color:#edf5ff }}
+* {{ box-sizing:border-box }} body {{ max-width:1240px;margin:0 auto;padding:2rem 1.25rem 4rem }}
+h1,h2 {{ margin:.2rem 0 }} h2 {{ font-size:1.05rem;margin-top:2rem }} .muted,small {{ color:#8fa2b8 }}
+.hero {{ display:flex;justify-content:space-between;gap:1rem;align-items:flex-end;margin-bottom:1.4rem }}
+.pill {{ padding:.45rem .75rem;border-radius:999px;font-weight:750;text-transform:uppercase;font-size:.76rem }}
+.pill.ok {{ background:#103d31;color:#79efc2 }} .pill.warning {{ background:#493813;color:#ffd876 }} .pill.danger {{ background:#4d1821;color:#ff99a6 }}
+.banner {{ border:1px solid #26384b;background:#0e1a27;border-radius:16px;padding:1rem 1.15rem;margin:1rem 0 }}
+.banner.warning {{ border-color:#82631d }} .banner.danger {{ border-color:#a83948 }}
+.grid {{ display:grid;grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:.85rem;margin:1rem 0 }}
+.card {{ background:#0e1a27;border:1px solid #26384b;border-radius:14px;padding:1rem;min-height:112px }}
+.value {{ font-size:1.55rem;font-weight:760;margin:.35rem 0 }} .label {{ color:#8fa2b8;font-size:.82rem;text-transform:uppercase;letter-spacing:.06em }}
+.alerts {{ display:grid;gap:.6rem }} .alert {{ display:flex;justify-content:space-between;gap:1rem;align-items:center;padding:.8rem 1rem;border-radius:10px;background:#10253a;border-left:4px solid #4e8ac8 }}
+.alert.warning {{ border-color:#e2aa32 }} .alert.danger {{ border-color:#f05d6f }} .alert.ok {{ border-color:#35c99a }}
+code {{ color:#8de6c6;font-size:.82rem }} table {{ width:100%;border-collapse:collapse;background:#0e1a27;border:1px solid #26384b;border-radius:12px;overflow:hidden }}
+td,th {{ text-align:left;padding:.72rem;border-bottom:1px solid #26384b }} .dot {{ display:inline-block;width:.58rem;height:.58rem;border-radius:50%;margin-right:.55rem }} .dot.on {{ background:#35c99a }} .dot.off {{ background:#697b8e }}
+.pipeline {{ display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:.55rem }} .stage {{ background:#0e1a27;border:1px solid #26384b;border-radius:10px;padding:.75rem;display:grid;gap:.25rem }}
+.stage strong {{ font-size:.82rem }} .state-complete,.state-skipped_policy {{ color:#64ddb3 }} .state-degraded,.state-pending {{ color:#f1c75b }} .state-blocked {{ color:#ff7585 }}
+.links {{ line-height:2 }} a {{ color:#82b7ff;text-decoration:none }} @media(max-width:700px) {{ .hero,.alert {{ align-items:flex-start;flex-direction:column }} }}
 </style></head><body>
-<h1>MOVA Fantasy Fútbol</h1><div class="muted">Control plane local · solo lectura · refresca cada 30 s</div>
+<header class="hero"><div><h1>MOVA Fantasy Fútbol</h1><div class="muted">Cockpit autónomo · solo lectura · refresca cada 30 s</div></div><span class="pill {tone}">{esc(verdict)}</span></header>
+<section class="banner {tone}"><strong>{esc(cockpit.get('headline'))}</strong><div class="muted">Snapshot {esc(cockpit.get('generated_at'))} · revisión {esc((cockpit.get('runtime') or {}).get('git_sha'))}</div></section>
 <div class="grid">
-<div class="card"><div class="muted">Seguridad operativa</div><div class="value">{html.escape(str(safety.get('verdict','—')))}</div><div>{html.escape(', '.join(safety.get('reasons') or ['sin bloqueos']))}</div></div>
-<div class="card"><div class="muted">Jornada</div><div class="value">GW {html.escape(str(cycle.get('gw','—')))}</div><div>{html.escape(str(cycle.get('phase','sin ciclo')))}</div></div>
-<div class="card"><div class="muted">Último tick</div><div class="value">{html.escape(str(tick.get('status','sin datos')))}</div><div>{html.escape(str(tick.get('started_at','')))}</div></div>
-<div class="card"><div class="muted">Incidentes abiertos</div><div class="value">{len(operations.get('open_incidents',[]))}</div><div>{html.escape(status.get('overall_status','unknown'))}</div></div>
-<div class="card"><div class="muted">Alertas pendientes</div><div class="value">{operations.get('outbox_pending',0)}</div><div>SQLite {html.escape(str((status.get('runtime') or {}).get('sqlite_version','')))}</div></div>
-<div class="card"><div class="muted">Estado privado</div><div class="value">{html.escape(str(team_state.get('quality','sin datos')))}</div><div>{html.escape(str(team_state.get('observed_at','')))} · FT {html.escape(str(team_state.get('free_transfers','—')))}</div></div>
-<div class="card"><div class="muted">Drift del modelo</div><div class="value">{html.escape(str(scorecard.get('drift_status','sin scorecard')))}</div><div>GW {html.escape(str(scorecard.get('gw','—')))} · {html.escape(str(scorecard.get('variant','')))}</div></div>
-<div class="card"><div class="muted">Dual-read PostgreSQL</div><div class="value">{html.escape(str(parity.get('status','sin paridad')))}</div><div>{html.escape(str(parity.get('checked_tables',0)))} tablas · roles {html.escape(str(role_separation.get('status','sin verificar')))}</div></div>
+<div class="card"><div class="label">Jornada</div><div class="value">GW {esc(gameweek.get('gw'))}</div><div>{esc(gameweek.get('phase'))} · {esc(gameweek.get('readiness'))}</div></div>
+<div class="card"><div class="label">Deadline UTC</div><div class="value">{esc(gameweek.get('deadline_at'))}</div><div>{esc(gameweek.get('seconds_to_deadline'))} segundos</div></div>
+<div class="card"><div class="label">Autoridad</div><div class="value">{esc(authority.get('current_action_level'))}</div><div>writes {esc(authority.get('writes_enabled'))} · kill switch {esc(authority.get('kill_switch'))}</div></div>
+<div class="card"><div class="label">Readiness</div><div class="value">{esc(quality.get('readiness'))}</div><div>elegible técnicamente {esc(authority.get('technical_eligible_level'))}</div></div>
+<div class="card"><div class="label">Presupuesto GW</div><div class="value">{esc(gw_cost.get('committed_uses'))}/{esc(gw_cost.get('use_limit'))}</div><div>{esc(gw_cost.get('remaining_tokens'))} tokens restantes</div></div>
+<div class="card"><div class="label">Incidentes críticos</div><div class="value">{esc((cockpit.get('alerts') or {}).get('critical_open'))}</div><div>outbox due {esc((cockpit.get('alerts') or {}).get('outbox_due'))}</div></div>
 </div>
-<h2>Controles efectivos</h2><table><thead><tr><th>Control</th><th>Valor</th></tr></thead><tbody>{control_rows}</tbody></table>
-<p><a href="/api/v1/safety">safety JSON</a> · <a href="/api/v1/status">status JSON</a> · <a href="/api/v1/readiness">autonomy readiness</a> · <a href="/api/v1/harness-scorecard">harness scorecard</a> · <a href="/api/v1/analytics">analytics</a> · <a href="/api/v1/strategy">strategy</a> · <a href="/api/v1/improvement">learning</a> · <a href="/api/v1/costs">costos</a> · <a href="/metrics">métricas</a> · <a href="/api/v1/audit">auditoría</a> · <a href="/api/v1/jobs">jobs</a> · <a href="/api/v1/steps">steps</a></p>
+<h2>Alertas y acciones</h2><div class="alerts">{alert_rows}</div>
+<h2>Ciclo agentic</h2><div class="pipeline">{stages}</div>
+<h2>Funciones y activaciones</h2><table><thead><tr><th>Función</th><th>Estado</th><th>Modo</th></tr></thead><tbody>{functions}</tbody></table>
+<h2>Diagnóstico</h2><div class="links"><a href="/api/v1/cockpit">cockpit JSON</a> · <a href="/api/v1/triage">triage JSON</a> · <a href="/api/v1/status">status</a> · <a href="/api/v1/readiness">readiness</a> · <a href="/api/v1/harness-scorecard">scorecard</a> · <a href="/api/v1/orchestration">workflow</a> · <a href="/api/v1/costs">costos</a> · <a href="/api/v1/incidents">incidentes</a></div>
 </body></html>"""
     return body.encode("utf-8")
 
@@ -101,9 +122,13 @@ def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
                     metrics = db.prometheus()
                     from mova_fpl.ops.watchdog import (
                         agent_queue_prometheus, assess_agent_queue,
+                        assess_workflow_deadline, workflow_deadline_prometheus,
                     )
                     metrics += agent_queue_prometheus(
                         assess_agent_queue(runtime, db)
+                    )
+                    metrics += workflow_deadline_prometheus(
+                        assess_workflow_deadline(runtime, db)
                     )
                     from mova_fpl.ops.alerts import channel_prometheus, channel_report
                     metrics += channel_prometheus(channel_report(runtime, db))
@@ -186,10 +211,28 @@ def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
                     )
                     return
                 if parsed.path in {"/", "/dashboard"}:
-                    status = build_status(runtime, db)
-                    status["safety"] = build_safety(runtime, db)
-                    self._send(HTTPStatus.OK, _dashboard(status),
+                    from mova_fpl.ops.cockpit import build_cockpit
+
+                    self._send(HTTPStatus.OK, _dashboard(build_cockpit(runtime, db)),
                                "text/html; charset=utf-8")
+                    return
+                if parsed.path == "/api/v1/cockpit":
+                    from mova_fpl.ops.cockpit import build_cockpit
+
+                    self._send(
+                        HTTPStatus.OK, _json_bytes(build_cockpit(runtime, db)),
+                        "application/json; charset=utf-8",
+                    )
+                    return
+                if parsed.path == "/api/v1/triage":
+                    from mova_fpl.ops.cockpit import build_triage
+
+                    incident_id = parse_qs(parsed.query).get("incident_id", [None])[0]
+                    self._send(
+                        HTTPStatus.OK,
+                        _json_bytes(build_triage(runtime, db, incident_id=incident_id)),
+                        "application/json; charset=utf-8",
+                    )
                     return
                 if parsed.path == "/api/v1/data":
                     from mova_fpl.ops.collector.store import CollectorStore, read_status

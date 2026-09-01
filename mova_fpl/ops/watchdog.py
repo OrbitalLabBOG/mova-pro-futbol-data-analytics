@@ -17,11 +17,109 @@ from mova_fpl.ops.db import OpsDB
 
 INCIDENT_TITLE = "Scheduler heartbeat unhealthy"
 AGENT_QUEUE_INCIDENT_TITLE = "Agent queue integrity unhealthy"
+WORKFLOW_INCIDENT_TITLE = "Autonomous cycle deadline risk"
 MAX_REQUEST_BYTES = 1_048_576
 REQUEST_ID = re.compile(r"(?:research|deliberation)_[0-9a-f]{32}")
 ACTIVE_RESEARCH_STATUSES = {"queued", "running", "completed"}
 ACTIVE_DELIBERATION_STATUSES = {"queued", "running"}
 MAX_PERMIT_BYTES = 65_536
+
+
+def evaluate_workflow_deadline(workflow: dict, *, seconds_to_deadline: int | None) -> dict:
+    """Evalúa hitos del negocio sin convertir espera normal en incidente."""
+    stages = {str(row.get("name")): row for row in workflow.get("stages") or []}
+    reasons: list[dict] = []
+    if (workflow.get("violations") and seconds_to_deadline is not None
+            and seconds_to_deadline <= 6 * 3600):
+        reasons.append({
+            "code": "workflow_dependency_violation", "severity": "P0",
+            "violations": workflow.get("violations"),
+        })
+    execution = stages.get("execute_verify") or {}
+    if execution.get("status") == "blocked":
+        reasons.append({
+            "code": "execution_terminal_failure", "severity": "P0",
+            "outcome": execution.get("outcome"),
+        })
+    if seconds_to_deadline is not None and 0 < seconds_to_deadline <= 6 * 3600:
+        for name in ("research", "deliberate"):
+            row = stages.get(name) or {}
+            if row.get("status") != "complete":
+                reasons.append({
+                    "code": f"{name}_not_terminal_t_minus_6h", "severity": "P1",
+                    "stage": name, "status": row.get("status"),
+                    "outcome": row.get("outcome"),
+                })
+    if seconds_to_deadline is not None and 0 < seconds_to_deadline <= 3 * 3600:
+        for name in ("contextualize", "propose_validate", "preflight"):
+            row = stages.get(name) or {}
+            if row.get("status") != "complete":
+                reasons.append({
+                    "code": f"{name}_incomplete_t_minus_3h", "severity": "P1",
+                    "stage": name, "status": row.get("status"),
+                    "outcome": row.get("outcome"),
+                })
+        if execution.get("status") == "pending":
+            reasons.append({
+                "code": "authorized_execution_pending_t_minus_3h", "severity": "P1",
+                "stage": "execute_verify", "outcome": execution.get("outcome"),
+            })
+    if seconds_to_deadline is not None and seconds_to_deadline <= 0:
+        if execution.get("status") == "pending":
+            reasons.append({
+                "code": "authorized_execution_pending_after_deadline", "severity": "P0",
+                "stage": "execute_verify", "outcome": execution.get("outcome"),
+            })
+    severity = (
+        "P0" if any(row["severity"] == "P0" for row in reasons) else
+        "P1" if reasons else None
+    )
+    return {
+        "schema": "mova-workflow-deadline-sentinel-v1",
+        "healthy": not reasons,
+        "status": "ok" if not reasons else "critical" if severity == "P0" else "degraded",
+        "severity": severity,
+        "seconds_to_deadline": seconds_to_deadline,
+        "workflow_verdict": workflow.get("verdict"),
+        "reasons": reasons,
+        "runtime_mutated": False,
+    }
+
+
+def assess_workflow_deadline(config: RuntimeConfig, db: OpsDB, *,
+                             now: datetime | None = None) -> dict:
+    current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+    cycle = db.status().get("cycle") or {}
+    deadline_raw = cycle.get("deadline_at")
+    seconds = None
+    if deadline_raw:
+        deadline = datetime.fromisoformat(str(deadline_raw).replace("Z", "+00:00"))
+        seconds = int((deadline - current).total_seconds())
+    from mova_fpl.ops.orchestration import build_workflow
+
+    report = evaluate_workflow_deadline(
+        build_workflow(config, db, now=current), seconds_to_deadline=seconds,
+    )
+    return {**report, "cycle_id": cycle.get("cycle_id"), "gw": cycle.get("gw")}
+
+
+def workflow_deadline_prometheus(state: dict) -> str:
+    seconds = state.get("seconds_to_deadline")
+    reasons = state.get("reasons") or []
+    return "\n".join((
+        "# HELP mova_workflow_deadline_healthy Business milestones are on time.",
+        "# TYPE mova_workflow_deadline_healthy gauge",
+        f"mova_workflow_deadline_healthy {1 if state.get('healthy') else 0}",
+        "# HELP mova_workflow_seconds_to_deadline Seconds until the current GW deadline.",
+        "# TYPE mova_workflow_seconds_to_deadline gauge",
+        f"mova_workflow_seconds_to_deadline {int(seconds or 0)}",
+        "# HELP mova_workflow_deadline_risks Active deadline risks by severity.",
+        "# TYPE mova_workflow_deadline_risks gauge",
+        *[f'mova_workflow_deadline_risks{{severity="{severity}"}} '
+          f'{sum(row.get("severity") == severity for row in reasons)}'
+          for severity in ("P0", "P1")],
+        "",
+    ))
 
 
 def assess(db: OpsDB, *, max_age_seconds: int = 1200,
@@ -255,6 +353,7 @@ def run(db: OpsDB, *, max_age_seconds: int = 1200,
         now=now or datetime.now(timezone.utc)
     )
     agent_queue = assess_agent_queue(effective_config, db, now=now)
+    workflow = assess_workflow_deadline(effective_config, db, now=now)
     if state["healthy"]:
         scheduler_resolved = db.resolve_incidents(
             INCIDENT_TITLE, resolution="scheduler heartbeat recovered",
@@ -282,26 +381,46 @@ def run(db: OpsDB, *, max_age_seconds: int = 1200,
             },
         )
         queue_resolved = 0
+    if workflow["healthy"]:
+        workflow_resolved = db.resolve_incidents(
+            WORKFLOW_INCIDENT_TITLE, resolution="autonomous cycle milestones recovered",
+            actor="mova-watchdog",
+        )
+    else:
+        db.open_incident_once(
+            str(workflow["severity"]), WORKFLOW_INCIDENT_TITLE,
+            cycle_id=workflow.get("cycle_id"),
+            detail={
+                "gw": workflow.get("gw"),
+                "seconds_to_deadline": workflow.get("seconds_to_deadline"),
+                "reasons": workflow.get("reasons"),
+            },
+        )
+        workflow_resolved = 0
     alerts = dispatch(db, sink=sink or configured_sink(effective_config))
     outbox = db.outbox_status()
     dead = sum((outbox["counts"].get("dead") or {}).values())
     operational_status = (
         "down" if not state["healthy"] else
-        "degraded" if not agent_queue["healthy"] or alerts["failed"] or dead else "ok"
+        "degraded" if (not agent_queue["healthy"] or not workflow["healthy"]
+                       or alerts["failed"] or dead) else "ok"
     )
     return {
         "schema": "mova-watchdog-v2",
         "status": operational_status,
         "reason": state["reason"] or (
-            None if agent_queue["healthy"] else "agent_queue_unhealthy"
+            "agent_queue_unhealthy" if not agent_queue["healthy"] else
+            "workflow_deadline_risk" if not workflow["healthy"] else None
         ),
         "tick_age_seconds": state["tick_age_seconds"],
         "latest_tick_status": state["latest_tick_status"],
-        "incidents_resolved": scheduler_resolved + queue_resolved,
+        "incidents_resolved": scheduler_resolved + queue_resolved + workflow_resolved,
         "resolved_by_domain": {
             "scheduler": scheduler_resolved, "agent_queue": queue_resolved,
+            "workflow": workflow_resolved,
         },
         "agent_queue": agent_queue,
+        "workflow": workflow,
         "expired_authorizations": expired_authorizations,
         "alerts": alerts,
         "outbox_dead": dead,

@@ -7,6 +7,8 @@ VPS y contratos de operación segura.
 
 El stack autónomo está desplegado en modo `shadow / A0`: puede recolectar, modelar, decidir
 y auditar, pero los cambios en la cuenta continúan bloqueados por controles explícitos.
+El cockpit read-only comparte un único contrato entre CLI, API y dashboard web autenticado;
+Supabase sólo refleja seguimiento PM y nunca recibe estado operativo.
 
 ## Empezar
 
@@ -32,6 +34,10 @@ pytest -m slow -q
 
 ```bash
 # estado consolidado y diagnóstico del control plane local/VPS
+mova cockpit
+mova cockpit --json
+mova cockpit --watch 30
+mova triage --incident-id incident_... --json
 mova status
 mova doctor
 
@@ -133,6 +139,11 @@ CycleManifest + memoria estratégica durable → modelos causales → matriz xP 
   tombstone abren un P1 deduplicado; la API `/api/v1/agent-queue`, `doctor` y las métricas
   `mova_agent_queue_*` exponen el estado sin publicar prompts. También expira permisos no usados
   de forma idempotente y detecta permisos ausentes/alterados/huérfanos o starts sin cierre.
+- `mova cockpit` compone funciones, autoridad, workflow, costos, readiness y alertas para humanos
+  y agentes. `mova triage` enlaza incidentes con jobs/correlations sin ejecutar reparaciones. El
+  dashboard autenticado usa ese mismo contrato; no tiene endpoints mutables.
+- El sentinel deadline-aware sólo abre incidentes cuando faltan hitos dentro de T−6h/T−3h o una
+  ejecución entra en estado terminal inseguro; las esperas normales siguen observables sin ruido.
 - `HOST_RECOVERY_DRILLS_PROVEN` exige cinco escenarios: API, PostgreSQL, browser, outage
   combinado y reboot real. El wrapper de preparación sella backups, boot ID, revisión, tick,
   controles y team state, pero nunca ejecuta el reboot; un servicio systemd valida la recuperación
@@ -173,6 +184,7 @@ Documentos principales:
 - [Índice técnico](docs/README.md)
 - [Operar una jornada](docs/operations/gameweek.md)
 - [Contrato `mova` y diagnóstico](docs/operations/operator.md)
+- [Cockpit, triage y dashboard autenticado](docs/operations/cockpit.md)
 - [Servicio autónomo de datos](docs/operations/data-service.md)
 - [Servicio analítico y operaciones del modelo](docs/operations/analytics-service.md)
 - [Operar el VPS](docs/operations/vps.md)

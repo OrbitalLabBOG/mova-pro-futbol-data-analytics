@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — contrato del operador"
 created: 2026-08-23
-updated: 2026-08-31
+updated: 2026-09-01
 tags: [mova, fpl, operator, cli, observability, contract]
 status: active
 ---
@@ -19,6 +19,11 @@ En el VPS, el wrapper obtiene un probe sanitizado de systemd/Docker y ejecuta el
 imagen aprobada:
 
 ```bash
+mova cockpit
+mova cockpit --json
+mova cockpit --watch 30
+mova triage
+mova triage --incident-id incident_... --json
 mova status
 mova status --json
 mova safety
@@ -55,6 +60,12 @@ mova review gw --package /app/decisions/fpl/2026-27/gwNN_closeout.json \
   --actor julian --reason "..." --idempotency-key "..."
 ```
 
+`cockpit` es la primera lectura recomendada: compone funciones, autoridad, workflow, economía,
+readiness y alertas bajo `schema=mova-cockpit-v1`. `triage` reduce ese snapshot a incidentes,
+jobs/correlations relacionados y siguientes comandos; ambos declaran `runtime_mutated=false`.
+CLI, `/api/v1/cockpit` y el dashboard usan el mismo contrato. Procedimiento completo:
+[cockpit, triage y acceso web](cockpit.md).
+
 En desarrollo, `mova` es el console script de `pyproject.toml`. Allí `host.available=false` es
 normal si no existe un probe; no se monta el socket Docker ni D-Bus dentro del engine.
 
@@ -88,6 +99,13 @@ sin progreso por 35 minutos abre un único P1 `Agent queue integrity unhealthy`.
 resuelve el incidente; nunca borra ni repara el artefacto desde el watchdog. `doctor` lo muestra como
 `agent_queue_integrity`, `/api/v1/agent-queue` responde 200/503 y Prometheus publica
 `mova_agent_queue_healthy`, `requests`, `permits` y `anomalies` sin contenido del prompt.
+
+El watchdog también evalúa hitos del ciclo contra el deadline. Antes de T−6h una deliberación
+degradada es visible pero no abre incidente; desde T−6h research/deliberación sin terminal abren
+P1, desde T−3h contexto/envelope/preflight o una ejecución autorizada pendientes abren P1, y una
+ejecución pendiente post-deadline o terminalmente fallida abre P0. El incidente deduplicado
+`Autonomous cycle deadline risk` se resuelve sólo cuando la condición desaparece. Prometheus
+expone `mova_workflow_deadline_*`; no se fabrican alerts por settlement aún no `data_checked`.
 
 El mismo watchdog cruza cada autorización activa con su permiso: path, nombre, tamaño, SHA, schema e
 identidad. Reconciliar un `preparing|authorized` cuyo TTL venció sólo cambia su estado durable a

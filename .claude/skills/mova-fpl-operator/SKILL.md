@@ -5,7 +5,7 @@ metadata:
   vertical: mova
   type: skill
   repo: mova-pro-futbol-data-analytics
-  updated: 2026-08-31
+  updated: 2026-09-01
 ---
 
 # MOVA FPL Operator
@@ -17,7 +17,12 @@ consulta ordinaria: `mova` y `/api/v1/status` son el contrato estable.
 ## Orientación mínima
 
 1. Lee `AGENTS.md` del repo.
-2. Ejecuta `mova status --json`, `mova readiness`, `mova harness scorecard` y
+2. Empieza por `mova cockpit --json`: es el snapshot común de funciones, autoridad, stages,
+   costos, alertas y revisión desplegada. Si hay P0/P1 o `verdict=critical`, ejecuta
+   `mova triage --incident-id ... --json` antes de bajar a comandos específicos. Lee
+   [docs/operations/cockpit.md](../../../docs/operations/cockpit.md) para interpretar el tablero,
+   el acceso web y el sentinel de deadline. El cockpit es read-only y nunca sustituye los gates.
+3. Ejecuta `mova status --json`, `mova readiness`, `mova harness scorecard` y
    `mova harness workflow`; conserva `schema_version`,
    `generated_at`, `overall_status` y `activation.technical_eligible_level` al reportar.
    `readiness` separa capacidad técnica de autoridad: nunca interpreta elegibilidad como
@@ -30,30 +35,30 @@ consulta ordinaria: `mova` y `/api/v1/status` son el contrato estable.
    Policy → Executor/Verifier → Reviewer. Un stage `complete` con outcome `blocked` y un
    `execute_verify=skipped_policy` es fail-closed correcto; una fila en `violations` sí es una
    contradicción operativa y bloquea. `runtime_mutated=false` debe permanecer explícito.
-3. Si el estado es degradado, incompleto o contradictorio, ejecuta `mova doctor --json`.
+4. Si el estado es degradado, incompleto o contradictorio, ejecuta `mova doctor --json`.
    Para una respuesta compacta usa `mova safety` o `/api/v1/safety`: `unsafe` exige atención
    inmediata, `attention_required` exige leer `reasons`, y `safe_to_wait` sólo describe el estado
    observado; nunca eleva permisos ni reemplaza `readiness`.
-4. Lee [docs/operations/operator.md](../../../docs/operations/operator.md) para interpretar
+5. Lee [docs/operations/operator.md](../../../docs/operations/operator.md) para interpretar
    el contrato y [docs/operations/vps.md](../../../docs/operations/vps.md) solo si hay que
    desplegar, revisar systemd, backups o browser.
-5. Para recolectar, revisar cobertura o diagnosticar FPL/odds/WhoScored, lee
+6. Para recolectar, revisar cobertura o diagnosticar FPL/odds/WhoScored, lee
    [docs/operations/data-service.md](../../../docs/operations/data-service.md).
-6. Para entrenar un candidato, proyectar, explicar, reconciliar una GW o interpretar
+7. Para entrenar un candidato, proyectar, explicar, reconciliar una GW o interpretar
    scorecards/drift, lee
    [docs/operations/analytics-service.md](../../../docs/operations/analytics-service.md).
    Usa `mova model status|train|predict|explain|evaluate`. `train` debe devolver
    `runtime_mutated=false`: jamás copies el candidato al bundle activo ni omitas el release gate.
-7. Para cerrar una GW, atribuir una intervención y registrar feedback, lee
+8. Para cerrar una GW, atribuir una intervención y registrar feedback, lee
    [docs/operations/gameweek.md](../../../docs/operations/gameweek.md). Ejecuta `mova review gw`
    solo con `finished + data_checked`, package versionado, actor, razón e idempotency key.
-8. Para activar un plan, sellar el manifiesto o investigar noticias, lee
+9. Para activar un plan, sellar el manifiesto o investigar noticias, lee
    [docs/operations/strategic-research.md](../../../docs/operations/strategic-research.md).
    Verifica `mova strategy status.memory_summary`: debe provenir de GWs anteriores y lecciones
    validadas; nunca se reemplaza con historial de chat. El brief de Codex es candidato hasta que
    el importador determinista lo valide. Consulta `mova strategy research coverage`: un brief v2
    exige fetch independiente, locator sellado y cobertura exacta del foco; v1 es legacy no medido.
-9. Para clasificar riesgo, sellar un diff o diagnosticar un bloqueo previo al browser, lee
+10. Para clasificar riesgo, sellar un diff o diagnosticar un bloqueo previo al browser, lee
    [docs/operations/execution-preflight.md](../../../docs/operations/execution-preflight.md).
    `mova execute` conserva preflight, lease apply-once y verifier; `execute ui-plan` sólo compila
    DOM después del claim. Consulta `mova execute status.browser_driver`: capitanía tiene entrypoint
@@ -62,7 +67,7 @@ consulta ordinaria: `mova` y `/api/v1/status` son el contrato estable.
    Para registrar cobertura browser viva de XI/R3 usa `mova execute rehearsal-capability-probe`
    únicamente sobre probes sanitizados generados por el host. Esto no prueba el commit ni promueve
    entrypoints, autonomía o controles.
-10. Para revisar propuestas, uso/costo, memoria validada o releases de modelos, lee
+11. Para revisar propuestas, uso/costo, memoria validada o releases de modelos, lee
     [docs/operations/continuous-improvement.md](../../../docs/operations/continuous-improvement.md).
     `mova improve transition` nunca aplica la hipótesis al runtime. El único aplicador soportado es
     `mova improve release` para bundles `minutes+points`, tras shadow pareado; no sirve para código,
@@ -79,7 +84,7 @@ consulta ordinaria: `mova` y `/api/v1/status` son el contrato estable.
     a encolar ni borres el ledger para forzar otra llamada.
     `mova review auto` solo procede con settlement final y scorecard baseline; `not_ready` es el
     resultado correcto para una GW preliminar.
-11. Para diagnosticar persistencia, ejecuta `mova postgres status` y `mova postgres verify`, y
+12. Para diagnosticar persistencia, ejecuta `mova postgres status` y `mova postgres verify`, y
     lee [docs/operations/postgres-shadow.md](../../../docs/operations/postgres-shadow.md).
     `storage.read_parity=pass` requiere hashes de contenido, no solo conteos. El gate de tres
     ciclos usa GWs distintas extraídas de las claves auditadas; snapshots y reintentos dentro de

@@ -1,0 +1,27 @@
+# MOVA FPL cockpit. The API remains bound to loopback; Caddy is the only ingress.
+# MOVA_DASHBOARD_PASSWORD_HASH is injected by the root-only systemd EnvironmentFile.
+mova.72-60-245-2.sslip.io {
+	encode gzip
+
+	basic_auth {
+		julian {$MOVA_DASHBOARD_PASSWORD_HASH}
+	}
+
+	reverse_proxy 127.0.0.1:8787
+
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy no-referrer
+		Cache-Control "no-store"
+		-Server
+	}
+
+	log {
+		output file /var/log/caddy/mova-fpl.log {
+			roll_size 10mb
+			roll_keep 5
+		}
+		format json
+	}
+}

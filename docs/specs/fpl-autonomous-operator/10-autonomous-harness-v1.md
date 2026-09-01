@@ -976,3 +976,20 @@ estado seguro por defecto sigue siendo `shadow`, `A0`, `kill_switch=true` y
   aprobación separadas.
 - **Mantenimiento:** cualquier incidente, drift o cambio de contrato abre una iteración nueva con
   commit, evidencia VPS y update PM idempotente.
+
+### 13.5 Cockpit y sentinel operativo
+
+La commissioning añade una superficie única sin crear un segundo control plane:
+
+- `mova cockpit`, `/api/v1/cockpit` y el dashboard comparten `mova-cockpit-v1`;
+- `mova triage` enlaza incidentes, jobs y correlation IDs para que ORBIX diagnostique con una
+  sola entrada;
+- funciones, autoridad, costos y stages se muestran juntos, pero la web permanece read-only;
+- Caddy publica únicamente el API loopback detrás de TLS y autenticación;
+- el watchdog abre `Autonomous cycle deadline risk` sólo cuando un stage incumple T−6h/T−3h,
+  una dependencia inválida llega a la ventana crítica o una ejecución es insegura;
+- Prometheus expone salud y segundos restantes del sentinel con labels cerrados.
+
+Este corte mejora detección y tiempo de diagnóstico; no eleva A0, no habilita browser writes y no
+sustituye el canal push externo. Contrato y procedimiento:
+[cockpit operativo](../../operations/cockpit.md).
