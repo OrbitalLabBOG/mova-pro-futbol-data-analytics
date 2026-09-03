@@ -152,3 +152,12 @@ discreto. Su salida es diagnóstica y no entra al optimizador ni al runtime.
 temporadas ya cerradas y lo conecta de manera opcional al shadow. El artefacto
 es NPZ tipado sin pickle, queda enlazado por SHA-256 y nunca modifica la xP que
 consume el optimizador.
+
+## Iteración 12: valor terminal de FT
+
+`EXP-MOVA-2026-012` prueba el sesgo de truncamiento del horizonte tres sin
+alargarlo ni modificar xP. El challenger asigna un valor de continuación fijo
+de un punto a cada transferencia libre disponible después de la última GW de la
+ventana. Es una sola hipótesis preregistrada —no un barrido— y siempre menor que
+el coste de cuatro puntos de un hit. Debe mejorar la media y ganar al menos tres
+de cuatro temporadas de desarrollo antes de abrir la evaluación 2025-26.

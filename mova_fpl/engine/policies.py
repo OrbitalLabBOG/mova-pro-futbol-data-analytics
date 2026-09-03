@@ -161,6 +161,9 @@ def optimizer_config(config, n_gws: int):
         max_hits_per_gw=getattr(config, "max_hits", 2),
         time_limit=getattr(config, "time_limit", 30),
         transfer_penalty=getattr(config, "transfer_penalty", 0.0),
+        terminal_free_transfer_value=getattr(
+            config, "terminal_free_transfer_value", 0.0,
+        ),
         uncertainty_transfer_weight=getattr(config, "uncertainty_transfer_weight", 0.0),
     )
 

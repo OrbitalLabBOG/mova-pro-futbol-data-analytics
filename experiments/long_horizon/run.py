@@ -419,6 +419,7 @@ def run_variant(args, store: Store, output: Path, manifest: dict, season: str,
         horizon=int(spec["horizon"]), seed=42, chip_policy="none",
         decay=float(spec["decay"]), top_k=args.top_k, time_limit=args.time_limit,
         transfer_penalty=float(spec["transfer_penalty"]),
+        terminal_free_transfer_value=float(spec.get("terminal_free_transfer_value", 0.0)),
         uncertainty_transfer_weight=float(spec["uncertainty_transfer_weight"]),
     )
     if projector is not None and not spec["fixture"]:

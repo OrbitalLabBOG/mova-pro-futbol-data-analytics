@@ -76,6 +76,9 @@ class OptimizerConfig:
     risk_lambda: float = 0.0          # Q-02: 0 = rank global, neutral al riesgo
     #: valor futuro de conservar una transferencia. Cero reproduce produccion.
     transfer_penalty: float = 0.0
+    #: valor de continuación de cada FT disponible después del último GW modelado.
+    #: Cero reproduce producción; debe ser menor al coste de un hit para no crear hits.
+    terminal_free_transfer_value: float = 0.0
     #: robustez epistemica: solo grava comprar/vender cuando la proyeccion es
     #: incierta; no castiga la varianza deportiva de quien ya esta elegido.
     uncertainty_transfer_weight: float = 0.0
@@ -114,6 +117,7 @@ class Solution:
     objective: float
     status: str
     shortlist: object
+    terminal_free_transfers: int | None = None
 
 
 # --------------------------------------------------------------------- modelo
@@ -132,6 +136,9 @@ def solve(state, xp_matrix: dict, config: OptimizerConfig | None = None, *,
         raise ValueError("xp_matrix vacia: no hay jornadas que optimizar")
     if gws[0] != state.gw:
         raise ValueError(f"la matriz empieza en gw={gws[0]} y el estado esta en gw={state.gw}")
+    terminal_value = float(config.terminal_free_transfer_value)
+    if not 0.0 <= terminal_value < float(rules["hit_cost"]):
+        raise ValueError("terminal_free_transfer_value debe estar entre 0 y hit_cost")
 
     pool = _pool(state)
     en_plantilla = {p.element for p in state.squad.players} if state.squad else set()
@@ -217,11 +224,28 @@ def solve(state, xp_matrix: dict, config: OptimizerConfig | None = None, *,
                 prob += (ft[sig] <= libres - usadas + hits[g] + 1 + indulto,
                          f"ftdin_{sig}")
 
+    terminal_ft = None
+    if terminal_value:
+        last = gws[-1]
+        terminal_ft = pulp.LpVariable(
+            "ft_terminal", lowBound=1, upBound=rules["max_free_transfers"],
+            cat="Integer",
+        )
+        libres = libres_hoy if len(gws) == 1 else ft[last]
+        usadas = pulp.lpSum(buy[i, last] for i in ids)
+        indulto = rules["size"] * chip.get(("wildcard", last), 0)
+        prob += terminal_ft <= libres + 1, "ft_terminal_max"
+        prob += (
+            terminal_ft <= libres - usadas + hits[last] + 1 + indulto,
+            "ft_terminal_dynamics",
+        )
+
     _restricciones_agente(prob, ids, gws, state, s, sell, en_plantilla)
     if first_stage is not None:
         _fijar_primera_etapa(prob, first_stage, ids, gws[0], s, e, cap, rules)
     prob += _objetivo(prob, ids, gws, xp_matrix, s, e, cap, buy, sell, hits, chip,
-                      precio, rules, config, getattr(state, "horizon_sd", None) or {}, frio)
+                      precio, rules, config, getattr(state, "horizon_sd", None) or {}, frio,
+                      terminal_ft)
 
     solver = pulp.PULP_CBC_CMD(msg=1 if config.solver_msg else 0,
                                timeLimit=config.time_limit, threads=1)
@@ -230,7 +254,10 @@ def solve(state, xp_matrix: dict, config: OptimizerConfig | None = None, *,
     if estado not in ("Optimal",):
         raise Infeasible(_diagnose(state, pool, rules, banco0, estado))
 
-    return _extract(prob, ids, gws, s, e, cap, buy, sell, hits, bank, chip, estado, informe)
+    return _extract(
+        prob, ids, gws, s, e, cap, buy, sell, hits, bank, chip, estado, informe,
+        terminal_ft,
+    )
 
 
 def _fijar_primera_etapa(prob, stage: FirstStage, ids: list[int], gw: int,
@@ -341,7 +368,7 @@ def _restricciones_plantilla(prob, ids, pos, club, s, e, cap, rules, g) -> None:
 
 
 def _objetivo(prob, ids, gws, xp_matrix, s, e, cap, buy, sell, hits, chip, precio,
-              rules, config, sd_matrix, cold_start):
+              rules, config, sd_matrix, cold_start, terminal_ft=None):
     """Puntos esperados del horizonte, descontados, menos el coste de los hits.
 
     Los chips entran como productos de binarias, linealizados. Para el bench boost
@@ -390,13 +417,16 @@ def _objetivo(prob, ids, gws, xp_matrix, s, e, cap, buy, sell, hits, chip, preci
                                               * (buy[i, g] + sell[i, g]) for i in ids))
     # ante empate, guardar el chip antes que quemarlo
     terminos += [-config.chip_epsilon * v for v in chip.values()]
+    if terminal_ft is not None:
+        terminos.append(float(config.terminal_free_transfer_value) * terminal_ft)
     # desempate: a igual xp prefiere la plantilla mas barata, que deja banco
     g0 = gws[0]
     terminos += [-config.tie_break * precio[i] * s[i, g0] for i in ids]
     return pulp.lpSum(terminos)
 
 
-def _extract(prob, ids, gws, s, e, cap, buy, sell, hits, bank, chip, estado, informe) -> Solution:
+def _extract(prob, ids, gws, s, e, cap, buy, sell, hits, bank, chip, estado, informe,
+             terminal_ft=None) -> Solution:
     on = lambda var: var.value() is not None and var.value() > 0.5
     jugado = {g: next((c for (c, gg), v in chip.items() if gg == g and on(v)), None)
               for g in gws}
@@ -411,6 +441,9 @@ def _extract(prob, ids, gws, s, e, cap, buy, sell, hits, bank, chip, estado, inf
         chips=jugado,
         objective=float(pulp.value(prob.objective) or 0.0),
         status=estado, shortlist=informe,
+        terminal_free_transfers=(
+            int(round(terminal_ft.value())) if terminal_ft is not None else None
+        ),
     )
 
 

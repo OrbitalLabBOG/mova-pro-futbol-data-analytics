@@ -163,6 +163,57 @@ def test_first_stage_invalida_falla_antes_del_solver():
         )
 
 
+def test_valor_terminal_conserva_una_ft_si_la_mejora_miope_es_menor():
+    cands = mercado(n_por_pos=(4, 10, 10, 6), precio_base=4.0, clubes=10)
+    initial = solve(
+        estado(cands),
+        {1: {candidate.element: candidate.xp for candidate in cands}},
+        OptimizerConfig(top_k=0, bench_weight=0.12, tie_break=0.0),
+    )
+    from mova_fpl.rules.base import Squad, SquadPlayer
+    attributes = {candidate.element: candidate for candidate in cands}
+    squad = Squad(players=tuple(
+        SquadPlayer(element=element, position=attributes[element].position,
+                    team=attributes[element].team, price=attributes[element].price)
+        for element in initial.squad[1]
+    ))
+    outside = next(
+        candidate for candidate in cands
+        if candidate.element not in initial.squad[1]
+        and candidate.position is Position.GKP
+    )
+    xp = {candidate.element: 0.0 for candidate in cands}
+    for element in initial.squad[1]:
+        xp[element] = 5.0
+    xp[outside.element] = 5.4
+    state = estado(cands, gw=2, squad=squad, ft=1)
+
+    myopic = solve(
+        state, {2: xp},
+        OptimizerConfig(top_k=0, bench_weight=0.12, tie_break=0.0),
+    )
+    continuation = solve(
+        state, {2: xp}, OptimizerConfig(
+            top_k=0, bench_weight=0.12, tie_break=0.0,
+            terminal_free_transfer_value=1.0,
+        ),
+    )
+
+    assert outside.element in myopic.buys[2]
+    assert continuation.buys[2] == ()
+    assert continuation.terminal_free_transfers == 2
+
+
+@pytest.mark.parametrize("value", [-0.1, RULES["hit_cost"]])
+def test_valor_terminal_invalido_no_puede_crear_arbitraje_de_hits(value):
+    cands = mercado()
+    with pytest.raises(ValueError, match="terminal_free_transfer_value"):
+        solve(
+            estado(cands), {1: {candidate.element: candidate.xp for candidate in cands}},
+            OptimizerConfig(top_k=0, terminal_free_transfer_value=value),
+        )
+
+
 # ----------------------------------------------------------------- AC-WP006-006
 
 def test_el_prefiltro_nunca_expulsa_a_la_plantilla_actual():

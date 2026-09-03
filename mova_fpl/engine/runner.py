@@ -31,6 +31,7 @@ class Config:
     max_hits: int = 2                 # tope de transferencias pagadas por jornada
     time_limit: int = 30              # segundos por jornada antes de rendirse
     transfer_penalty: float = 0.0     # valor de opcion de conservar un cambio
+    terminal_free_transfer_value: float = 0.0  # valor de continuación al truncar horizonte
     uncertainty_transfer_weight: float = 0.0  # robustez epistemica de compra/venta
 
 

@@ -13,6 +13,7 @@ from experiments.long_horizon.metrics import (
 from experiments.long_horizon.models import EventProxyGoalsModel
 from experiments.long_horizon.event_h3 import summarize_development
 from experiments.long_horizon.stochastic_recourse import _scenario_matrices
+from experiments.long_horizon.terminal_value import POLICY_NAME, summarize as summarize_terminal
 from experiments.long_horizon.discrete_uncertainty import (
     SUPPORT,
     discrete_metrics,
@@ -179,6 +180,25 @@ def test_policy_influence_rejects_missing_pairs():
 
     with pytest.raises(ValueError, match="exactamente las mismas"):
         paired_policy_influence(baseline, candidate)
+
+
+def test_terminal_value_challenger_requires_three_of_four_development_wins(tmp_path):
+    records = []
+    for season, delta in zip(("a", "b", "c", "d"), (1, 1, 1, -1)):
+        for variant, points in (("season_fixture_h3", 50), (POLICY_NAME, 50 + delta)):
+            records.append({
+                "season": season, "variant": variant, "points": points,
+                "gameweeks": [{"gw": 1, "points": points}],
+            })
+    manifest = {"experiment_id": "EXP-TEST", "source_sha256": "s",
+                "dataset": {"sha256": "d"}}
+
+    result = summarize_terminal(records, tmp_path, manifest)
+
+    assert result["wins"] == result["required_wins"] == 3
+    assert result["mean_delta"] > 0
+    assert result["challenger_accepted"] is True
+    assert result["selected_policy"] == POLICY_NAME
 
 
 def test_recourse_scenarios_preserve_each_frozen_player_mean_exactly():
