@@ -110,3 +110,13 @@ un hash inválido inicia una nueva racha y queda visible en el artefacto.
 
 Estas limitaciones son gates de interpretación, no permisos para ajustar sobre
 el holdout.
+
+## Iteración 4: eventos aislados sobre h3
+
+`EXP-MOVA-2026-004` elimina un confusor pendiente: en la iteración anterior los
+proxies `threat` y `creativity` solo se evaluaron dentro del horizonte seis. El
+módulo `experiments.long_horizon.event_h3` compara control, `season_fixture_h3`
+y `season_fixture_h3_events` manteniendo todo salvo los proxies constante. El
+peso 0,45 se hereda congelado; el challenger solo puede abrir la evaluación
+temporal 2025-26 si mejora la media y gana al menos dos de tres temporadas de
+desarrollo. Este experimento tampoco puede promover ni ejecutar decisiones.

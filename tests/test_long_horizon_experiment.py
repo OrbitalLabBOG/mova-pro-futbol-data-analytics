@@ -7,6 +7,7 @@ import pytest
 
 from experiments.long_horizon.metrics import normal_crps, paired_policy_bootstrap
 from experiments.long_horizon.models import EventProxyGoalsModel
+from experiments.long_horizon.event_h3 import summarize_development
 from mova_fpl.engine.baselines import _prepara
 from mova_fpl.models.features.minutes_features import FEATURES, build, build_targets
 from mova_fpl.models.features.points_features import player_rates
@@ -132,3 +133,58 @@ def test_policy_bootstrap_is_paired_and_reproducible():
     result = paired_policy_bootstrap(baseline, candidate, draws=100, block_size=2, seed=7)
     assert result["observed_by_season"] == {"a": 4.0}
     assert result["probability_positive"] == 1.0
+
+
+def test_event_h3_challenger_requires_two_wins_and_positive_mean(tmp_path):
+    records = []
+    totals = {
+        "control_h3": [50, 50, 50],
+        "season_fixture_h3": [51, 52, 53],
+        "season_fixture_h3_events": [53, 51, 54],
+    }
+    for season_index, season in enumerate(("a", "b", "c")):
+        for variant, points in totals.items():
+            records.append({
+                "season": season,
+                "variant": variant,
+                "points": points[season_index],
+                "gameweeks": [{"gw": 1, "points": points[season_index]}],
+            })
+    manifest = {
+        "experiment_id": "test",
+        "source_sha256": "source",
+        "dataset": {"sha256": "data"},
+        "challenger_gate": "two wins and positive mean",
+    }
+    result = summarize_development(records, tmp_path, manifest)
+    assert result["event_delta_vs_incumbent_by_season"] == {"a": 2, "b": -1, "c": 1}
+    assert result["event_wins_vs_incumbent"] == 2
+    assert result["event_mean_delta_vs_incumbent"] > 0
+    assert result["selected_policy"] == "season_fixture_h3_events"
+
+
+def test_event_h3_challenger_rejected_with_only_one_win(tmp_path):
+    records = []
+    totals = {
+        "control_h3": [50, 50, 50],
+        "season_fixture_h3": [51, 52, 53],
+        "season_fixture_h3_events": [56, 51, 52],
+    }
+    for season_index, season in enumerate(("a", "b", "c")):
+        for variant, points in totals.items():
+            records.append({
+                "season": season,
+                "variant": variant,
+                "points": points[season_index],
+                "gameweeks": [{"gw": 1, "points": points[season_index]}],
+            })
+    manifest = {
+        "experiment_id": "test",
+        "source_sha256": "source",
+        "dataset": {"sha256": "data"},
+        "challenger_gate": "two wins and positive mean",
+    }
+    result = summarize_development(records, tmp_path, manifest)
+    assert result["event_mean_delta_vs_incumbent"] > 0
+    assert result["event_wins_vs_incumbent"] == 1
+    assert result["selected_policy"] == "season_fixture_h3"

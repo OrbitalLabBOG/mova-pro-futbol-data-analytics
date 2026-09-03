@@ -426,7 +426,7 @@ def run_variant(args, store: Store, output: Path, manifest: dict, season: str,
     trace = TraceWriter(output / "traces" / f"{season}-{name}.db")
     report = replay(
         season, "named", config, store=store, trace=trace,
-        run_id=f"{EXPERIMENT_ID}-{season}-{name}", max_gw=38, verbose=False,
+        run_id=f"{manifest['experiment_id']}-{season}-{name}", max_gw=38, verbose=False,
         history_mode=spec["history_mode"], model_bundle=models,
         projection_fn=projector,
     )
@@ -447,7 +447,7 @@ def run_variant(args, store: Store, output: Path, manifest: dict, season: str,
                            index=False, compression="gzip")
         forecast = predictive_metrics(predictions)
     payload = {
-        "experiment_id": EXPERIMENT_ID,
+        "experiment_id": manifest["experiment_id"],
         "source_sha256": manifest["source_sha256"],
         "dataset_sha256": manifest["dataset"]["sha256"],
         "season": season,
@@ -492,7 +492,7 @@ def _policy_summary(records: list[dict], output: Path, manifest: dict) -> dict:
             eligible.append(name)
     selected = max(eligible, key=lambda name: float(mean[name])) if eligible else "control_h3"
     payload = {
-        "experiment_id": EXPERIMENT_ID,
+        "experiment_id": manifest["experiment_id"],
         "source_sha256": manifest["source_sha256"],
         "dataset_sha256": manifest["dataset"]["sha256"],
         "selection_only": True,
