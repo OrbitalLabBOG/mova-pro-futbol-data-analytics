@@ -92,6 +92,21 @@ y agrega únicamente gameweeks consecutivas. Al tercer cierre el estado es
 `review_required`, nunca promoción automática. Los resultados quedan dentro del
 review durable y en un artefacto de gate identificado por hash.
 
+La primera observación local también puede cerrarse sin conectar el sandbox a
+producción. `experiments.long_horizon.live_settlement` verifica los hashes del
+bundle congelado, consulta únicamente endpoints GET oficiales y se niega a
+puntuar antes de `finished + data_checked`. El resultado es content-addressed,
+declara cero writes de producción y admite como evidencia manual un JSON
+explícito o los picks públicos observados después del deadline:
+
+```bash
+python -m experiments.long_horizon.live_settlement probe \
+  --experiment-dir ../mova-fpl-experiments/EXP-MOVA-2026-008
+python -m experiments.long_horizon.live_settlement settle \
+  --experiment-dir ../mova-fpl-experiments/EXP-MOVA-2026-008 \
+  --team-id "$MOVA_FPL_TEAM_ID"
+```
+
 Para que ese acumulado corresponda a una política y no a decisiones aisladas,
 `mova_fpl.engine.virtual_shadow` arrastra por separado squad, precios de compra,
 banco y transferencias libres del control y el candidato. Una discontinuidad o
