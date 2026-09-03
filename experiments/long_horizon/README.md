@@ -2,7 +2,7 @@
 title: Laboratorio causal de estrategia FPL de largo horizonte
 status: experimental
 owner: MOVA Fantasy
-experiment_id: EXP-MOVA-2026-001
+experiment_id: EXP-MOVA-2026-002
 updated: 2026-09-03
 ---
 
@@ -35,18 +35,21 @@ objetivo. La última temporada pasada calibra minutos y no entra al clasificador
 base. En replay, `multi_season_as_of` conserva estado de jugadores entre
 temporadas sin mezclar ninguna fila del futuro.
 
-## Ablaciones
+## Iteración 2
+
+`EXP-MOVA-2026-001` demostró que incorporar la carrera completa al estado
+perjudicó 2021-22, incluso con recencia. La iteración 2 conserva el estado
+season-only del control y prueba estrategia intersemanal sin esa variable.
+
+## Ablaciones vigentes
 
 | Variante | Estado | Calendario | Horizonte | Eventos | Estabilidad |
 |---|---|---|---:|---|---|
 | `control_h3` | temporada | rival actual repetido | 3, decay .84 | no | no |
-| `state_h3` | multitemporada | rival actual repetido | 3, decay .84 | no | no |
-| `state_recency_h3` | multitemporada con recencia | rival actual repetido | 3, decay .84 | no | no |
-| `fixture_h3` | multitemporada | por fixture | 3, decay .84 | no | no |
-| `fixture_h6` | multitemporada | por fixture | 6, decay .84 | no | no |
-| `fixture_h6_nodiscount` | multitemporada | por fixture | 6, sin descuento | no | no |
-| `long_h6` | multitemporada | por fixture | 6, sin descuento | sí | no |
-| `long_h6_stable` | multitemporada | por fixture | 6, sin descuento | sí | sí |
+| `season_fixture_h3` | temporada | por fixture | 3, decay .84 | no | no |
+| `season_fixture_h6` | temporada | por fixture | 6, decay .84 | no | no |
+| `season_fixture_h6_events` | temporada | por fixture | 6, decay .84 | sí | no |
+| `season_fixture_h6_events_stable` | temporada | por fixture | 6, decay .84 | sí | sí |
 
 La secuencia evita atribuir a “IA” una mejora que en realidad venga de corregir
 el cold start o de mirar el rival correcto.
@@ -61,7 +64,7 @@ python -m experiments.long_horizon.run holdout --fpl-db /ruta/fpl_canonical.db
 ```
 
 La evidencia generada queda fuera del repo, en el directorio hermano
-`../mova-fpl-experiments/EXP-MOVA-2026-001/`:
+`../mova-fpl-experiments/EXP-MOVA-2026-002/`:
 manifest con hashes, artefactos por fold, predicciones, trazas, puntos por GW,
 bootstrap y acta del holdout.
 

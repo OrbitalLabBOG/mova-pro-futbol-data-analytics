@@ -35,7 +35,9 @@ from mova_fpl.engine.simulator import replay
 from mova_fpl.trace import TraceWriter
 
 
-EXPERIMENT_ID = "EXP-MOVA-2026-001"
+EXPERIMENT_ID = "EXP-MOVA-2026-002"
+PARENT_EXPERIMENT_ID = "EXP-MOVA-2026-001"
+INHERITED_EVENT_WEIGHT = 0.45
 DEFAULT_OUTPUT = (Path(__file__).resolve().parents[3] / "mova-fpl-experiments"
                   / EXPERIMENT_ID)
 SELECTION_SEASONS = ("2021-22", "2023-24", "2024-25")
@@ -45,47 +47,31 @@ RECENCY_HALF_LIVES = (8.0, 16.0, 32.0, 64.0, 96.0, 128.0)
 
 
 POLICY_VARIANTS = {
-    # Control causal del algoritmo vigente: estado solo de la temporada y rival
-    # actual repetido tres jornadas.
+    # V2 conserva el estado season-only que ganó en EXP-001 y añade una variable
+    # por escalón. Los parámetros de eventos vienen del screening del padre.
     "control_h3": {
         "history_mode": "season", "fixture": False, "horizon": 3, "decay": 0.84,
         "recency": False, "events": False, "transfer_penalty": 0.0,
         "uncertainty_transfer_weight": 0.0,
     },
-    # Ablaciones acumulativas: una sola variable conceptual por escalón.
-    "state_h3": {
-        "history_mode": "multi_season", "fixture": False, "horizon": 3, "decay": 0.84,
+    "season_fixture_h3": {
+        "history_mode": "season", "fixture": True, "horizon": 3, "decay": 0.84,
         "recency": False, "events": False, "transfer_penalty": 0.0,
         "uncertainty_transfer_weight": 0.0,
     },
-    "state_recency_h3": {
-        "history_mode": "multi_season", "fixture": False, "horizon": 3, "decay": 0.84,
-        "recency": True, "events": False, "transfer_penalty": 0.0,
+    "season_fixture_h6": {
+        "history_mode": "season", "fixture": True, "horizon": 6, "decay": 0.84,
+        "recency": False, "events": False, "transfer_penalty": 0.0,
         "uncertainty_transfer_weight": 0.0,
     },
-    "fixture_h3": {
-        "history_mode": "multi_season", "fixture": True, "horizon": 3, "decay": 0.84,
-        "recency": True, "events": False, "transfer_penalty": 0.0,
+    "season_fixture_h6_events": {
+        "history_mode": "season", "fixture": True, "horizon": 6, "decay": 0.84,
+        "recency": False, "events": True, "transfer_penalty": 0.0,
         "uncertainty_transfer_weight": 0.0,
     },
-    "fixture_h6": {
-        "history_mode": "multi_season", "fixture": True, "horizon": 6, "decay": 0.84,
-        "recency": True, "events": False, "transfer_penalty": 0.0,
-        "uncertainty_transfer_weight": 0.0,
-    },
-    "fixture_h6_nodiscount": {
-        "history_mode": "multi_season", "fixture": True, "horizon": 6, "decay": 1.0,
-        "recency": True, "events": False, "transfer_penalty": 0.0,
-        "uncertainty_transfer_weight": 0.0,
-    },
-    "long_h6": {
-        "history_mode": "multi_season", "fixture": True, "horizon": 6, "decay": 1.0,
-        "recency": True, "events": True, "transfer_penalty": 0.0,
-        "uncertainty_transfer_weight": 0.0,
-    },
-    "long_h6_stable": {
-        "history_mode": "multi_season", "fixture": True, "horizon": 6, "decay": 1.0,
-        "recency": True, "events": True, "transfer_penalty": 0.35,
+    "season_fixture_h6_events_stable": {
+        "history_mode": "season", "fixture": True, "horizon": 6, "decay": 0.84,
+        "recency": False, "events": True, "transfer_penalty": 0.35,
         "uncertainty_transfer_weight": 0.05,
     },
 }
@@ -187,6 +173,12 @@ def freeze_manifest(args, output: Path) -> dict:
     db = Path(args.fpl_db).resolve()
     manifest = {
         "experiment_id": EXPERIMENT_ID,
+        "parent_experiment_id": PARENT_EXPERIMENT_ID,
+        "inherited_hyperparameters": {
+            "event_proxy_weight": INHERITED_EVENT_WEIGHT,
+            "source_experiment": PARENT_EXPERIMENT_ID,
+            "selection_rule": "minimum goals+assists Poisson deviance on development seasons",
+        },
         "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "git_sha": _git_sha(root),
         "source_sha256": _source_sha(root),
@@ -515,7 +507,7 @@ def _policy_summary(records: list[dict], output: Path, manifest: dict) -> dict:
 
 
 def select_policy(args, store: Store, output: Path, manifest: dict) -> dict:
-    weight = _event_weight(output)
+    weight = float(manifest["inherited_hyperparameters"]["event_proxy_weight"])
     records = []
     for season in SELECTION_SEASONS:
         for name, spec in POLICY_VARIANTS.items():
@@ -540,7 +532,7 @@ def open_holdout(args, store: Store, output: Path, manifest: dict) -> dict:
                 and sealed.get("candidate") == candidate_name):
             return sealed
         raise RuntimeError("el holdout ya fue abierto bajo otro código/candidato; cree un nuevo experimento")
-    weight = _event_weight(output)
+    weight = float(manifest["inherited_hyperparameters"]["event_proxy_weight"])
     records = [
         run_variant(args, store, output, manifest, HOLDOUT_SEASON,
                     "control_h3", POLICY_VARIANTS["control_h3"], weight),
