@@ -22,7 +22,7 @@ from mova_fpl.data import live
 from mova_fpl.data.store import Store
 from mova_fpl.engine.planner import PlannerConfig, plan
 from mova_fpl.engine.policies import optimizer_config
-from mova_fpl.engine.projection import points_projection
+from mova_fpl.engine.projection import fixture_horizon_projection, points_projection
 from mova_fpl.engine.report import render
 from mova_fpl.engine.runner import Config, decide
 from mova_fpl.engine.simulator import _candidates
@@ -159,7 +159,9 @@ def _engine_violations(decision, state: State) -> list[dict]:
     actual_in = selected - previous_ids
     actual_out = previous_ids - selected
 
-    if decision.chip != "free_hit":
+    # Construir la plantilla inicial no es una transferencia: en cold start el
+    # MILP declara entradas/salidas vacías por contrato.
+    if state.squad is not None and decision.chip != "free_hit":
         declared_in = set(decision.transfers_in)
         declared_out = set(decision.transfers_out)
         if declared_in != actual_in or declared_out != actual_out:
@@ -245,6 +247,14 @@ def main() -> None:
     ap.add_argument(
         "--json-out",
         help="bundle máquina de baseline, do_nothing y alternativa; no reemplaza el acta",
+    )
+    ap.add_argument(
+        "--strategy-shadow",
+        choices=("season_fixture_h3",),
+        help=(
+            "añade un contrafactual no ejecutable del proyector fixture-a-fixture; "
+            "no cambia selected_candidate_key"
+        ),
     )
     ap.add_argument(
         "--as-of",
@@ -395,6 +405,94 @@ def main() -> None:
             },
             "report_artifact": {"path": str(destino), "sha256": report_sha},
         }
+        if args.strategy_shadow == "season_fixture_h3":
+            shadow_horizon = 3
+            shadow_cfg = replace(cfg, horizon=shadow_horizon, chip_policy="none")
+            control_matrix = build_xp_matrix(
+                candidatos,
+                live.team_schedule(
+                    fx, boot, args.gw, args.gw + shadow_horizon - 1,
+                ),
+                args.gw,
+                shadow_horizon,
+                decay=shadow_cfg.decay,
+            )
+            control_state = replace(
+                base_state,
+                chips_allowed={},
+                horizon_xp=control_matrix,
+                horizon_sd={},
+            )
+            shadow_control = decide(args.gw, control_state, shadow_cfg)
+            fixture_projection = fixture_horizon_projection(
+                history=historia,
+                roster=roster,
+                modelos=modelos,
+                season=args.season,
+                gw=args.gw,
+                horizon=shadow_horizon,
+                schedule=live.fixture_schedule(
+                    fx, boot, args.gw, args.gw + shadow_horizon - 1,
+                ),
+                decay=shadow_cfg.decay,
+                disponibilidad=roster["disponibilidad"].to_numpy(),
+            )
+            candidate_state = replace(
+                base_state,
+                chips_allowed={},
+                horizon_xp=fixture_projection.horizon_xp,
+                horizon_sd=fixture_projection.horizon_sd,
+            )
+            shadow_candidate = decide(args.gw, candidate_state, shadow_cfg)
+            control_row = _candidate(
+                "shadow_control_h3",
+                "Control causal: xP del rival actual repetido",
+                shadow_control,
+                control_state,
+            )
+            candidate_row = _candidate(
+                "shadow_season_fixture_h3",
+                "Candidato causal: rival y localía por fixture",
+                shadow_candidate,
+                candidate_state,
+            )
+            payload["strategy_shadow"] = {
+                "schema": "mova-strategy-shadow-v1",
+                "experiment_id": "EXP-MOVA-2026-003",
+                "strategy_key": "season_fixture_h3",
+                "status": "shadow_only",
+                "selected_for_execution": False,
+                "horizon": shadow_horizon,
+                "decay": shadow_cfg.decay,
+                "chips": "disabled_in_both_arms",
+                "controlled_variable": "future_fixture_opponent_and_home_context",
+                "information_set": (
+                    "single_predeadline_player_state_with_published_future_schedule"
+                ),
+                "control": control_row,
+                "candidate": candidate_row,
+                "comparison": {
+                    "fingerprint_changed": (
+                        shadow_control.fingerprint() != shadow_candidate.fingerprint()
+                    ),
+                    "current_gw_expected_points_delta": round(
+                        shadow_candidate.expected_points - shadow_control.expected_points,
+                        2,
+                    ),
+                    "control_transfers": len(shadow_control.transfers_in),
+                    "candidate_transfers": len(shadow_candidate.transfers_in),
+                    "control_hits": shadow_control.hits,
+                    "candidate_hits": shadow_candidate.hits,
+                },
+                # Se conservan las predicciones completas dentro del artefacto
+                # sellado para poder medir CRPS/calibración y atribuir el cambio
+                # cuando las jornadas se liquiden.
+                "projections": {
+                    "control_horizon_xp": control_matrix,
+                    "candidate_horizon_xp": fixture_projection.horizon_xp,
+                    "candidate_horizon_sd": fixture_projection.horizon_sd,
+                },
+            }
         json_path = Path(args.json_out)
         json_path.parent.mkdir(parents=True, exist_ok=True)
         json_path.write_text(

@@ -296,6 +296,8 @@ class TickRunner:
             "--chips", "--lookahead", "6", "--dry-run", "--out", str(out),
             "--json-out", str(bundle_path), "--as-of", prepared_manifest["manifest"]["as_of_at"],
         ]
+        if self.config.enable_long_horizon_shadow:
+            argv.extend(["--strategy-shadow", "season_fixture_h3"])
         private_state = self.db.latest_team_state(cycle_id)
         private_state_used = None
         if private_state and private_state.get("artifact_path"):
@@ -375,4 +377,12 @@ class TickRunner:
             "expected_points": selected["expected_points"],
             "fingerprint": selected["fingerprint"],
             "chip": selected["chip"],
+            "strategy_shadow": (
+                {
+                    "strategy_key": bundle["strategy_shadow"]["strategy_key"],
+                    "status": bundle["strategy_shadow"]["status"],
+                    **bundle["strategy_shadow"]["comparison"],
+                }
+                if bundle.get("strategy_shadow") else None
+            ),
         }

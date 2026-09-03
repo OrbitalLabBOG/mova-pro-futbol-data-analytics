@@ -143,6 +143,37 @@ def _comparisons(candidates: list[dict]) -> list[dict]:
     return rows
 
 
+def _strategy_shadow_check(shadow: dict) -> dict:
+    """Valida evidencia experimental sin convertirla en autoridad operativa."""
+    errors: list[dict] = []
+    if shadow.get("schema") != "mova-strategy-shadow-v1":
+        errors.append({"code": "SCHEMA", "detail": "schema experimental incompatible"})
+    if shadow.get("selected_for_execution") is not False:
+        errors.append({
+            "code": "EXECUTION_AUTHORITY",
+            "detail": "el contrafactual debe declarar selected_for_execution=false",
+        })
+    for arm in ("control", "candidate"):
+        row = dict(shadow.get(arm) or {})
+        decision = dict(row.get("decision") or {})
+        shape = validate_decision_shape(decision) if decision else [
+            {"code": "MISSING_DECISION", "detail": arm}
+        ]
+        errors.extend({"arm": arm, **item} for item in shape)
+        errors.extend(
+            {"arm": arm, **item} for item in (row.get("violations") or [])
+        )
+    return _check(
+        "STRATEGY_SHADOW_VALID_NON_EXECUTABLE",
+        not errors,
+        "warning",
+        "el par experimental es legal y carece de autoridad de ejecución",
+        errors=errors,
+        strategy_key=shadow.get("strategy_key"),
+        experiment_id=shadow.get("experiment_id"),
+    )
+
+
 def build_envelope(*, bundle: dict, manifest: dict, manifest_id: str,
                    manifest_sha256: str, controls: dict) -> dict:
     """Sella un envelope reproducible y aplica gates sin IO ni heurística LLM."""
@@ -281,6 +312,10 @@ def build_envelope(*, bundle: dict, manifest: dict, manifest_id: str,
         controls=controls,
     ))
 
+    strategy_shadow = dict(bundle.get("strategy_shadow") or {})
+    if strategy_shadow:
+        checks.append(_strategy_shadow_check(strategy_shadow))
+
     blocked = [item["code"] for item in checks if not item["passed"] and item["severity"] == "block"]
     status = "blocked" if blocked else "staged"
     body = {
@@ -308,6 +343,8 @@ def build_envelope(*, bundle: dict, manifest: dict, manifest_id: str,
         "team_state": dict(bundle.get("team_state") or {}),
         "report_artifact": bundle.get("report_artifact"),
     }
+    if strategy_shadow:
+        body["strategy_shadow"] = strategy_shadow
     # El manifest puede incorporar valores tipados por el driver de SQLite
     # (por ejemplo TIMESTAMP -> datetime). El envelope es un contrato JSON y no
     # debe depender de la representación interna del adaptador de persistencia.

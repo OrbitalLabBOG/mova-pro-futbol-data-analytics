@@ -72,6 +72,20 @@ La evidencia generada queda fuera del repo, en el directorio hermano
 manifest con hashes, artefactos por fold, predicciones, trazas, puntos por GW,
 bootstrap y acta del holdout.
 
+## Adaptador de shadow vivo
+
+El mismo proyector fixture-a-fixture usado por este replay vive ahora en
+`mova_fpl.engine.projection.fixture_horizon_projection`; el laboratorio solo lo
+adapta a `ProjectionBundle`. La CLI viva puede adjuntar el contrafactual con
+`--strategy-shadow season_fixture_h3`, sin modificar el candidato operativo
+seleccionado. El tick únicamente añade ese flag cuando
+`MOVA_ENABLE_LONG_HORIZON_SHADOW=1`; el default es apagado.
+
+El artefacto `mova-strategy-shadow-v1` contiene ambos fingerprints, diferencias
+de xP/transferencias/hits y todas las matrices de proyección de tres GW. Esto
+permite medir el comportamiento vivo con el information set exacto del deadline,
+en vez de reconstruirlo retrospectivamente.
+
 ## Límites conocidos
 
 1. El calendario histórico conoce la asignación final de aplazamientos (`L-01`).

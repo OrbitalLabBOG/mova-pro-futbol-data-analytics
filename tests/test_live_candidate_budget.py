@@ -96,3 +96,17 @@ def test_negative_reconciled_bank_is_blocked_even_if_declared_nonnegative():
     violations = _engine_violations(decision, state)
 
     assert any(item["code"] == "BUDGET" for item in violations)
+
+
+def test_cold_start_squad_construction_is_not_reported_as_transfers():
+    players = _players()
+    state = _state(players)
+    state = State(
+        season=state.season, gw=1, candidates=state.candidates, squad=None,
+        bank=0.0, rules=state.rules,
+    )
+    decision = _decision(players, bank_after=25.0)
+
+    violations = _engine_violations(decision, state)
+
+    assert not any(item["code"] == "TRANSFER_DIFF" for item in violations)

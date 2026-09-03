@@ -51,6 +51,14 @@ def _official_sources() -> tuple[bytes, bytes]:
     return json.dumps(boot).encode(), json.dumps(fixtures).encode()
 
 
+def test_long_horizon_shadow_is_explicit_opt_in(monkeypatch):
+    monkeypatch.delenv("MOVA_ENABLE_LONG_HORIZON_SHADOW", raising=False)
+    assert RuntimeConfig.from_env().enable_long_horizon_shadow is False
+
+    monkeypatch.setenv("MOVA_ENABLE_LONG_HORIZON_SHADOW", "1")
+    assert RuntimeConfig.from_env().enable_long_horizon_shadow is True
+
+
 def test_schema_controls_jobs_y_auditoria(tmp_path):
     config = _config(tmp_path)
     db = _db(config)

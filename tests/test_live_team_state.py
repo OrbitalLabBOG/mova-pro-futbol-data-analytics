@@ -181,6 +181,27 @@ def test_team_state_detecta_una_plantilla_incompleta(monkeypatch):
         live.team_state(123, 4, roster_de(boot, set(range(1, 15))), RULES, boot)
 
 
+def test_fixture_schedule_conserva_ambos_lados_y_contexto_futuro():
+    boot = bootstrap()
+    fx = [
+        {"id": 101, "event": 4, "team_h": 1, "team_a": 2,
+         "kickoff_time": "2026-09-10T19:00:00Z"},
+        {"id": 102, "event": 5, "team_h": 3, "team_a": 1,
+         "kickoff_time": "2026-09-17T19:00:00Z"},
+        {"id": 99, "event": 3, "team_h": 1, "team_a": 4},
+    ]
+
+    schedule = live.fixture_schedule(fx, boot, 4, 5)
+
+    assert len(schedule) == 4
+    assert schedule.groupby("fixture").size().to_dict() == {101: 2, 102: 2}
+    club1 = schedule[schedule["team"] == "Club1"].sort_values("gw")
+    assert club1[["gw", "opponent_team", "was_home"]].to_dict("records") == [
+        {"gw": 4, "opponent_team": 2, "was_home": 1},
+        {"gw": 5, "opponent_team": 3, "was_home": 0},
+    ]
+
+
 def test_un_equipo_sin_jornadas_jugadas_es_arranque_en_frio(monkeypatch):
     monkeypatch.setattr(live, "fetch_team_history",
                         lambda i: json.dumps({"chips": [], "current": [], "past": []}).encode())

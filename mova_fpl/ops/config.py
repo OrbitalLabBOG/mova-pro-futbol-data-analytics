@@ -22,6 +22,7 @@ class RuntimeConfig:
     action_level: str = "A0"
     compliance_gate: str = "pending"
     enable_shadow_decision: bool = True
+    enable_long_horizon_shadow: bool = False
     enable_browser_writes: bool = False
     ops_db: Path = Path("/var/lib/mova-fpl/db/ops.db")
     trace_db: Path = Path("/var/lib/mova-fpl/db/trace.db")
@@ -96,6 +97,7 @@ class RuntimeConfig:
             action_level=os.environ.get("MOVA_ACTION_LEVEL", "A0"),
             compliance_gate=os.environ.get("MOVA_COMPLIANCE_GATE", "pending"),
             enable_shadow_decision=_bool("MOVA_ENABLE_SHADOW_DECISION", True),
+            enable_long_horizon_shadow=_bool("MOVA_ENABLE_LONG_HORIZON_SHADOW", False),
             enable_browser_writes=_bool("MOVA_ENABLE_BROWSER_WRITES", False),
             ops_db=Path(os.environ.get("MOVA_OPS_DB", "/var/lib/mova-fpl/db/ops.db")),
             trace_db=Path(os.environ.get("MOVA_TRACE_DB", "/var/lib/mova-fpl/db/trace.db")),

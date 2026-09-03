@@ -112,6 +112,39 @@ def test_envelope_normalizes_typed_database_timestamps_to_json():
     json.dumps(envelope)
 
 
+def test_envelope_preserves_non_executable_strategy_shadow_without_selecting_it():
+    bundle = _bundle()
+    control = _decision(xp=52.0).to_dict()
+    candidate = _decision(captain=2, xp=51.5).to_dict()
+    bundle["strategy_shadow"] = {
+        "schema": "mova-strategy-shadow-v1",
+        "experiment_id": "EXP-MOVA-2026-003",
+        "strategy_key": "season_fixture_h3",
+        "status": "shadow_only",
+        "selected_for_execution": False,
+        "control": {"candidate_key": "shadow_control_h3", "label": "control",
+                    "decision": control, "violations": []},
+        "candidate": {"candidate_key": "shadow_season_fixture_h3", "label": "candidate",
+                      "decision": candidate, "violations": []},
+        "comparison": {"fingerprint_changed": True},
+        "projections": {"control_horizon_xp": {}, "candidate_horizon_xp": {}},
+    }
+
+    envelope = build_envelope(
+        bundle=bundle, manifest=_manifest(), manifest_id="manifest_1",
+        manifest_sha256="b" * 64, controls=CONTROLS,
+    )
+
+    assert envelope["selected_candidate_key"] == "milp_baseline"
+    assert envelope["strategy_shadow"] == bundle["strategy_shadow"]
+    check = next(
+        item for item in envelope["validation"]["checks"]
+        if item["code"] == "STRATEGY_SHADOW_VALID_NON_EXECUTABLE"
+    )
+    assert check["passed"] is True
+    assert envelope["status"] == "staged"
+
+
 def test_preliminary_without_projection_blocks_wildcard():
     envelope = build_envelope(
         bundle=_bundle(preliminary=True), manifest=_manifest(phase="baseline", analytics=False),

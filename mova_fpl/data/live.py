@@ -127,6 +127,42 @@ def team_schedule(fx: list, boot: dict, gw_desde: int, gw_hasta: int) -> dict:
     return conteo
 
 
+def fixture_schedule(fx: list, boot: dict, gw_desde: int, gw_hasta: int) -> pd.DataFrame:
+    """Calendario vivo con una fila por club y fixture, sin resultados.
+
+    Es la forma equivalente a ``Store.team_fixtures`` para que el mismo
+    proyector causal pueda usarse en backtest y en sombra. El rival conserva su
+    id anual de FPL; el par de filas del partido permite traducirlo al nombre de
+    club sin depender de ids históricos.
+    """
+    clubes = teams(boot)
+    rows = []
+    for item in fx:
+        event = item.get("event")
+        if event is None or not (int(gw_desde) <= int(event) <= int(gw_hasta)):
+            continue
+        fixture = int(item["id"])
+        home, away = int(item["team_h"]), int(item["team_a"])
+        kickoff = item.get("kickoff_time")
+        rows.extend((
+            {
+                "season": None, "gw": int(event), "fixture": fixture,
+                "team": clubes.get(home, str(home)), "opponent_team": away,
+                "was_home": 1, "kickoff_time": kickoff,
+            },
+            {
+                "season": None, "gw": int(event), "fixture": fixture,
+                "team": clubes.get(away, str(away)), "opponent_team": home,
+                "was_home": 0, "kickoff_time": kickoff,
+            },
+        ))
+    columns = (
+        "season", "gw", "fixture", "team", "opponent_team", "was_home",
+        "kickoff_time",
+    )
+    return pd.DataFrame(rows, columns=columns)
+
+
 def aplicar_disponibilidad(proba, factores) -> "pd.DataFrame":
     """Reasigna masa de probabilidad de jugar hacia `no juega`, sin inventar nada.
 
