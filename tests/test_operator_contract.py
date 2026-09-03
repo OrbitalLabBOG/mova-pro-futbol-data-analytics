@@ -85,6 +85,18 @@ def _host_probe(config: RuntimeConfig, now: datetime) -> None:
             "mova-fpl-postgres-sync.timer",
         )
     }
+    units.update({
+        name: {
+            "active_state": "inactive", "sub_state": "dead",
+            "result": "success", "exec_main_status": 0,
+        }
+        for name in (
+            "mova-fpl-tick.service", "mova-fpl-private-state.service",
+            "mova-fpl-backup.service", "mova-fpl-watchdog.service",
+            "mova-fpl-collector.service", "mova-fpl-analytics.service",
+            "mova-fpl-research.service", "mova-fpl-postgres-sync.service",
+        )
+    })
     config.host_probe_path.write_text(json.dumps({
         "schema": "mova-host-probe-v1",
         "observed_at": now.isoformat(),
@@ -135,6 +147,31 @@ def test_status_degrades_when_heartbeat_is_stale(tmp_path):
     payload = build_status(config, db, now=now + timedelta(hours=1))
     assert payload["overall_status"] == "degraded"
     assert "latest_tick_stale" in payload["status_reasons"]
+
+
+def test_status_and_doctor_surface_failed_scheduled_service(tmp_path):
+    config, db, now = _seed(tmp_path)
+    _host_probe(config, now)
+    probe = json.loads(config.host_probe_path.read_text(encoding="utf-8"))
+    probe["systemd"]["mova-fpl-research.service"].update({
+        "active_state": "failed", "sub_state": "failed",
+        "result": "failed", "exec_main_status": 1,
+    })
+    config.host_probe_path.write_text(json.dumps(probe), encoding="utf-8")
+
+    status = build_status(config, db, now=now + timedelta(seconds=10))
+    doctor = build_doctor(
+        config, db, now=now + timedelta(seconds=10), network=False,
+    )
+    service_check = next(
+        item for item in doctor["checks"]
+        if item["name"] == "systemd_service_results"
+    )
+
+    assert status["overall_status"] == "degraded"
+    assert "failed_systemd_services" in status["status_reasons"]
+    assert service_check["status"] == "FAIL"
+    assert service_check["detail"]["failed"] == ["mova-fpl-research.service"]
 
 
 def test_status_keeps_failed_job_auditable_but_clears_recovered_failure(tmp_path):

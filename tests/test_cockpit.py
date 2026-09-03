@@ -148,6 +148,29 @@ def test_noncritical_internal_pending_does_not_alarm_owner():
     assert "Necesito que avises a ORBIX" not in page
 
 
+def test_cockpit_surfaces_failed_research_service_without_enabling_writes():
+    values = _inputs()
+    values["operator_status"]["overall_status"] = "degraded"
+    values["operator_status"]["status_reasons"] = ["failed_systemd_services"]
+    values["operator_status"]["host"]["systemd"][
+        "mova-fpl-research.service"
+    ] = {"active_state": "failed", "result": "failed", "exec_main_status": 1}
+    values["safety"] = {
+        "verdict": "attention_required", "reasons": ["failed_systemd_services"],
+    }
+
+    payload = evaluate_cockpit(**values)
+    functions = {row["code"]: row for row in payload["functions"]}
+
+    assert payload["verdict"] == "attention_required"
+    assert functions["research"]["status"] == "failed"
+    assert any(
+        row["code"] == "SYSTEMD_SERVICE_FAILED"
+        for row in payload["alerts"]["items"]
+    )
+    assert payload["authority"]["writes_enabled"] is False
+
+
 def test_human_deadline_handles_relative_time_and_invalid_input():
     label, relative = _human_deadline("2026-09-04T17:30:00Z", 183660)
     assert label == "Viernes 4 de septiembre · 12:30 p. m."

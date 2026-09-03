@@ -69,7 +69,10 @@ CLI, `/api/v1/cockpit` y el dashboard usan el mismo contrato. Procedimiento comp
 En desarrollo, `mova` es el console script de `pyproject.toml`. Allí `host.available=false` es
 normal si no existe un probe; no se monta el socket Docker ni D-Bus dentro del engine.
 
-`status` siempre es observación y no llama la red. `doctor` tampoco migra ni repara: valida
+`status` siempre es observación y no llama la red. El probe sanitizado incluye el último
+`Result` de los servicios one-shot; `failed_systemd_services` degrada status y
+`systemd_service_results` hace fallar doctor hasta observar una ejecución recuperada. `doctor`
+tampoco migra ni repara: valida
 configuración, SQLite, heartbeat, estado privado, datos/modelos, recursos, backup, servicios,
 revisión desplegada, PostgreSQL shadow cuando está configurado, perfil browser y un GET público a FPL. Retorna 1 cuando existe al menos un
 `FAIL` requerido; los `WARN` no cambian el exit code.

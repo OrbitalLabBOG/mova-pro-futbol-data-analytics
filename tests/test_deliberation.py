@@ -178,15 +178,20 @@ def test_deliberation_request_receives_sealed_strategic_memory(tmp_path: Path):
             return {"due": True, "reason": "new_imported_research",
                     "research_run_id": "research_fixture"}
 
-        def latest_cycle_manifest(self, _cycle_id):
+        def cycle_manifest(self, pinned_manifest_id):
+            assert pinned_manifest_id == manifest_id
             return {
-                "manifest_id": manifest_id, "phase": "preflight",
+                "manifest_id": manifest_id, "cycle_id": "2026-27-gw03",
+                "content_sha256": manifest_sha, "phase": "preflight",
                 "as_of_at": "2026-09-04T15:00:00+00:00",
                 "deadline_at": "2026-09-04T17:30:00+00:00",
                 "analytics_manifest": {"status": "approved"},
                 "research_summary": {"previous_active_signals": []},
                 "memory_summary": memory,
             }
+
+        def latest_cycle_manifest(self, _cycle_id):
+            raise AssertionError("deliberation must not follow manifest provenance churn")
 
         def active_season_plan(self, _season):
             return {"plan_id": "plan_current", "revision": 2}

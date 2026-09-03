@@ -7,5 +7,5 @@ After=docker.service
 Type=oneshot
 WorkingDirectory=@@REPO_DIR@@
 EnvironmentFile=-/etc/mova-fpl/deploy.env
-ExecStart=/usr/bin/docker compose --profile jobs run --rm --no-deps worker python -m mova_fpl.ops.cli watchdog --max-age-seconds 1200
+ExecStart=/usr/local/bin/mova watchdog --max-age-seconds 1200
 TimeoutStartSec=120

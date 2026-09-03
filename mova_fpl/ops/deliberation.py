@@ -421,9 +421,12 @@ class DecisionDeliberationService:
                 or envelope.get("manifest", {}).get("content_sha256")
                 != source["manifest_sha256"]):
             raise ValueError("artefacto DecisionEnvelope no coincide con ops.db")
-        manifest = self.db.latest_cycle_manifest(source["cycle_id"])
-        if not manifest or manifest["manifest_id"] != source["manifest_id"]:
+        manifest = self.db.cycle_manifest(source["manifest_id"])
+        if not manifest:
             raise ValueError("CycleManifest del envelope no está disponible")
+        if (manifest["cycle_id"] != source["cycle_id"]
+                or manifest["content_sha256"] != source["manifest_sha256"]):
+            raise ValueError("CycleManifest del envelope no coincide con ops.db")
         plan = self.db.active_season_plan(source["season"])
         candidate_elements = {
             int(element)

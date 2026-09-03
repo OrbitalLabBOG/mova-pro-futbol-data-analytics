@@ -135,7 +135,9 @@ CycleManifest + memoria estratégica durable → modelos causales → matriz xP 
 - `mova harness workflow` reconstruye el grafo vigente desde el ledger y separa una terminación
   segura por policy de una falla real de dependencias. El drill hermético comprueba orden,
   fail-closed, deadline e idempotencia sin llamar agentes ni tocar FPL.
-- `mova watchdog` inspecciona el heartbeat y, de forma independiente al importador, la cola
+- `mova watchdog` refresca primero un probe sanitizado del host y expone cualquier resultado
+  fallido de los servicios programados en status, doctor y cockpit. También inspecciona el
+  heartbeat y, de forma independiente al importador, la cola
   aislada de agentes. Requests huérfanos, terminales, inválidos, demasiado viejos o ligados a un
   tombstone abren un P1 deduplicado; la API `/api/v1/agent-queue`, `doctor` y las métricas
   `mova_agent_queue_*` exponen el estado sin publicar prompts. También expira permisos no usados

@@ -1711,12 +1711,8 @@ class OpsDB:
         return {"plan_id": plan_id, "revision": revision, "content_sha256": content_sha,
                 "reused": existing is not None}
 
-    def latest_cycle_manifest(self, cycle_id: str) -> dict | None:
-        with self.connect(readonly=True) as con:
-            row = con.execute(
-                "SELECT * FROM cycle_manifests WHERE cycle_id=? "
-                "ORDER BY revision DESC LIMIT 1", (cycle_id,),
-            ).fetchone()
+    @staticmethod
+    def _cycle_manifest_payload(row: sqlite3.Row | None) -> dict | None:
         if not row:
             return None
         payload = dict(row)
@@ -1724,6 +1720,22 @@ class OpsDB:
                     "research_summary_json", "memory_summary_json"):
             payload[key.removesuffix("_json")] = json.loads(payload.pop(key))
         return payload
+
+    def cycle_manifest(self, manifest_id: str) -> dict | None:
+        """Return the immutable manifest pinned by a downstream artifact."""
+        with self.connect(readonly=True) as con:
+            row = con.execute(
+                "SELECT * FROM cycle_manifests WHERE manifest_id=?", (manifest_id,),
+            ).fetchone()
+        return self._cycle_manifest_payload(row)
+
+    def latest_cycle_manifest(self, cycle_id: str) -> dict | None:
+        with self.connect(readonly=True) as con:
+            row = con.execute(
+                "SELECT * FROM cycle_manifests WHERE cycle_id=? "
+                "ORDER BY revision DESC LIMIT 1", (cycle_id,),
+            ).fetchone()
+        return self._cycle_manifest_payload(row)
 
     def add_cycle_manifest(self, payload: dict, *, actor: str = "mova-strategy") -> dict:
         body = {

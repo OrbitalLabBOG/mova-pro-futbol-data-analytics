@@ -17,13 +17,21 @@ from pathlib import Path
 
 UNITS = (
     "mova-fpl-stack.service",
+    "mova-fpl-tick.service",
     "mova-fpl-tick.timer",
+    "mova-fpl-private-state.service",
     "mova-fpl-private-state.timer",
+    "mova-fpl-backup.service",
     "mova-fpl-backup.timer",
+    "mova-fpl-watchdog.service",
     "mova-fpl-watchdog.timer",
+    "mova-fpl-collector.service",
     "mova-fpl-collector.timer",
+    "mova-fpl-analytics.service",
     "mova-fpl-analytics.timer",
+    "mova-fpl-research.service",
     "mova-fpl-research.timer",
+    "mova-fpl-postgres-sync.service",
     "mova-fpl-postgres-sync.timer",
 )
 OFFSITE_CONFIG_KEYS = {
@@ -46,7 +54,7 @@ def unit_state(name: str) -> dict:
     code, output = command([
         "systemctl", "show", name, "--no-pager",
         "--property=LoadState", "--property=ActiveState", "--property=SubState",
-        "--property=UnitFileState",
+        "--property=UnitFileState", "--property=Result", "--property=ExecMainStatus",
     ])
     values = {}
     for line in output.splitlines():
@@ -59,6 +67,11 @@ def unit_state(name: str) -> dict:
         "active_state": values.get("ActiveState"),
         "sub_state": values.get("SubState"),
         "unit_file_state": values.get("UnitFileState"),
+        "result": values.get("Result"),
+        "exec_main_status": (
+            int(values["ExecMainStatus"])
+            if values.get("ExecMainStatus", "").isdigit() else None
+        ),
     }
 
 

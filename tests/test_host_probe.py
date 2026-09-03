@@ -79,6 +79,29 @@ def test_offsite_probe_missing_config_is_explicitly_unconfigured(tmp_path):
     assert result["reasons"] == ["config_missing"]
 
 
+def test_unit_state_exposes_sanitized_oneshot_result(monkeypatch):
+    module = _module()
+    monkeypatch.setattr(module, "command", lambda _argv: (0, "\n".join((
+        "LoadState=loaded", "ActiveState=failed", "SubState=failed",
+        "UnitFileState=disabled", "Result=failed", "ExecMainStatus=1",
+    ))))
+
+    result = module.unit_state("mova-fpl-research.service")
+
+    assert result["active_state"] == "failed"
+    assert result["result"] == "failed"
+    assert result["exec_main_status"] == 1
+
+
+def test_watchdog_refreshes_host_probe_before_running():
+    wrapper = Path("deploy/bin/mova").read_text(encoding="utf-8")
+    service = Path("deploy/systemd/mova-fpl-watchdog.service").read_text(
+        encoding="utf-8"
+    )
+    assert '"${1:-}" == "watchdog"' in wrapper
+    assert "ExecStart=/usr/local/bin/mova watchdog" in service
+
+
 def test_offsite_service_is_opt_in_and_excludes_runtime_secrets():
     install = Path("deploy/bin/install-systemd.sh").read_text(encoding="utf-8")
     script = Path("deploy/bin/offsite-backup.sh").read_text(encoding="utf-8")

@@ -16,7 +16,7 @@ if [[ -r "$deploy_env" ]]; then
 fi
 
 cd "$repo_dir"
-if [[ "${1:-}" == "status" || "${1:-}" == "doctor" ]]; then
+if [[ "${1:-}" == "status" || "${1:-}" == "doctor" || "${1:-}" == "watchdog" ]]; then
   install -d -m 0750 -o 10001 -g 10001 "$data_root/runtime"
   python3 deploy/bin/host-probe.py \
     --repo "$repo_dir" \

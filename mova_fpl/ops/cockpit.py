@@ -27,6 +27,11 @@ def _unit_active(host: dict, unit: str) -> bool:
     return row.get("active_state") == "active"
 
 
+def _unit_failed(host: dict, unit: str) -> bool:
+    row = ((host.get("systemd") or {}).get(unit) or {})
+    return row.get("active_state") == "failed" or row.get("result") == "failed"
+
+
 def _stage_map(workflow: dict) -> dict[str, dict]:
     return {str(row.get("name")): row for row in workflow.get("stages") or []}
 
@@ -82,6 +87,19 @@ def evaluate_cockpit(*, operator_status: dict, safety: dict, readiness: dict,
             "title": "Queda una o menos llamadas agentic en esta GW",
             "action": "mova cost report",
         })
+    failed_services = sorted(
+        name for name, row in (host.get("systemd") or {}).items()
+        if name.endswith(".service") and (
+            row.get("active_state") == "failed" or row.get("result") == "failed"
+        )
+    )
+    if failed_services:
+        alerts.append({
+            "severity": "P2", "code": "SYSTEMD_SERVICE_FAILED",
+            "title": "Un servicio programado requiere diagnóstico",
+            "detail": failed_services,
+            "action": "mova doctor --json",
+        })
     if alert_channel.get("configured") is not True:
         alerts.append({
             "severity": "P2", "code": "EXTERNAL_ALERTS_LOCAL_ONLY",
@@ -113,6 +131,7 @@ def evaluate_cockpit(*, operator_status: dict, safety: dict, readiness: dict,
             "code": "research", "name": "Investigación agentic",
             "enabled": _unit_active(host, "mova-fpl-research.timer"),
             "status": (
+                "failed" if _unit_failed(host, "mova-fpl-research.service") else
                 research.get("service_status")
                 or ("conflicts" if research.get("conflicts") else None)
                 or ("signals_ready" if research.get("signals") else "idle")

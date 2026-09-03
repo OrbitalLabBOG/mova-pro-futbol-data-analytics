@@ -203,6 +203,16 @@ def _load_host_probe(path: Path, now: datetime) -> dict:
         return unavailable
 
 
+def _failed_systemd_services(host: dict) -> list[str]:
+    units = host.get("systemd") or {}
+    return sorted(
+        name for name, row in units.items()
+        if name.endswith(".service") and (
+            row.get("active_state") == "failed" or row.get("result") == "failed"
+        )
+    )
+
+
 def _controls(raw: dict, config: RuntimeConfig) -> dict:
     defaults = {
         "mode": config.mode,
@@ -385,6 +395,8 @@ def build_status(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
         elif ((host.get("postgres") or {}).get("container_state") == "running"
               and storage["postgres_role"] == "unavailable"):
             reasons.append("postgres_shadow_status_unavailable")
+        if _failed_systemd_services(host):
+            reasons.append("failed_systemd_services")
         if reasons:
             severity = "degraded"
 
@@ -798,6 +810,13 @@ def build_doctor(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
         checks.append(_check("systemd_units", "PASS" if not bad_units else "FAIL",
                              "required units are active" if not bad_units else "required units are inactive",
                              detail={"inactive": bad_units}))
+        failed_services = _failed_systemd_services(host)
+        checks.append(_check(
+            "systemd_service_results", "PASS" if not failed_services else "FAIL",
+            "scheduled services have no failed result" if not failed_services
+            else "one or more scheduled services failed",
+            detail={"failed": failed_services},
+        ))
         if "mova-fpl-collector.timer" in units:
             collector_timer_ok = (
                 (units.get("mova-fpl-collector.timer") or {}).get("active_state") == "active"

@@ -206,6 +206,10 @@ diagnosticarla. La salud y el saldo se verifican con `mova data status` o `/metr
 `--force` omite únicamente el control de cadencia: no evita el lock, los resource gates,
 la validación ni el modo shadow. Exige actor, razón y una clave idempotente explícitos.
 
+El watchdog refresca el probe sanitizado del host antes de cada evaluación para que status,
+doctor y cockpit observen el último resultado de los servicios programados sin montar D-Bus ni
+el socket Docker dentro del engine.
+
 `mova status` no llama la red ni escribe el ledger. `mova doctor` hace un GET público acotado y
 retorna código 1 ante un `FAIL` requerido. El probe del host no lee env, cookies, logs ni HTML;
 ver [contrato del operador](operator.md).
