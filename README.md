@@ -164,6 +164,8 @@ CycleManifest + memoria estratégica durable → modelos causales → matriz xP 
   queda `blocked`; solo una que supera todos los hard gates queda `staged`.
 - Strategist y Critic consumen el envelope sellado en un worker one-shot sin DB, browser ni
   secretos. Su `Intervention` es solo evidencia `shadow_only`; no modifica el envelope ni el MILP.
+- El worker enruta Researcher a `gpt-5.6-luna` con razonamiento `medium` y Strategist/Critic a
+  `gpt-5.6-terra` con razonamiento `high`; ambos usan la suscripción Codex, sin fallback a API.
 - `mova_fpl` solo hace HTTP `GET`; no escribe en FPL.
 - El browser autenticado vive aislado y sus mutaciones están gobernadas por controles.
 - Supabase no forma parte del runtime; se usa únicamente para seguimiento PM.

@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — operación del stack VPS"
 created: 2026-08-22
-updated: 2026-09-01
+updated: 2026-09-03
 tags: [mova, fpl, vps, docker, systemd, observability]
 status: active
 ---
@@ -196,6 +196,10 @@ consume Codex. Strategist/Critic corre una vez por research importado y espera u
 ya lo incorpore. El contenedor one-shot no recibe DB, runtime env, navegador ni secretos de
 collector. La preparación, auth, validación y recuperación están en
 [contexto estratégico](strategic-research.md).
+
+El contenedor enruta Researcher a `gpt-5.6-luna`/`medium` y Strategist/Critic a
+`gpt-5.6-terra`/`high`. Estos cuatro valores viven en `/etc/mova-fpl/deploy.env`; un cambio exige
+recrear la imagen `research` y verificar su entorno efectivo sin ejecutar una request agentic.
 
 La credencial de odds no pertenece a `runtime.env`. Se instala como
 `/etc/mova-fpl/odds-api-key`, propietario `root`, grupo del worker `10001`, modo `0640`, y Compose

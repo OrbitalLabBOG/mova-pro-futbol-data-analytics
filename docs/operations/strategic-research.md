@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — contexto estratégico e investigación"
 created: 2026-08-27
-updated: 2026-08-30
+updated: 2026-09-03
 tags: [mova, fpl, strategy, research, codex, evidence]
 status: active
 ---
@@ -36,6 +36,14 @@ El servicio tiene dos capas complementarias. El collector FPL conserva cada seis
 campo oficial `news`, `status` y `chance_of_playing_next_round`; el worker Codex hace
 investigación web profunda únicamente en ventanas de decisión. No existe un scraper de prensa
 residente ni una llamada LLM por tick.
+
+El routing del worker separa costo y juicio: Researcher usa `gpt-5.6-luna` con
+`reasoning_effort=medium`; la deliberación conjunta Strategist/Critic usa `gpt-5.6-terra` con
+`reasoning_effort=high`. Se configura con `MOVA_RESEARCH_MODEL`,
+`MOVA_RESEARCH_REASONING_EFFORT`, `MOVA_DELIBERATION_MODEL` y
+`MOVA_DELIBERATION_REASONING_EFFORT`. El worker pasa modelo y esfuerzo explícitamente a Codex,
+ignora la configuración personal y registra en cada resultado/receipt el modelo realmente usado.
+No existe fallback implícito ni `OPENAI_API_KEY`: la autenticación es la suscripción Codex montada.
 
 ## Contratos
 

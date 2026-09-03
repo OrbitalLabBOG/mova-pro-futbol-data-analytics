@@ -44,6 +44,14 @@ def test_worker_deshabilita_herramientas_que_podrian_leer_auth_o_actuar():
     assert '"codex_output_missing"' in worker
     assert '"codex_exec_timeout"' in worker
     assert "MOVA_RESEARCH_TIMEOUT_MS || 480000" in worker
+    assert 'MOVA_RESEARCH_MODEL || "gpt-5.6-luna"' in worker
+    assert 'MOVA_RESEARCH_REASONING_EFFORT || "medium"' in worker
+    assert 'MOVA_DELIBERATION_MODEL || "gpt-5.6-terra"' in worker
+    assert 'MOVA_DELIBERATION_REASONING_EFFORT || "high"' in worker
+    assert 'const model = isResearch ? researchModel : deliberationModel' in worker
+    assert '`model_reasoning_effort="${reasoningEffort}"`' in worker
+    assert '"started", model)' in worker
+    assert '"finished", model, {' in worker
     assert "fantasy.premierleague.com" not in worker
     assert "normalizeResearchBrief" in worker
     assert ".normalization.json" in worker
@@ -54,8 +62,8 @@ def test_worker_deshabilita_herramientas_que_podrian_leer_auth_o_actuar():
     assert "terminal tombstone" in worker
     assert "maxAutomaticAttempts = 2" in worker
     assert 'loadPermit(runId, request.request_sha256)' in worker
-    assert 'permit.authorization_id, request, "started")' in worker
-    assert 'permit.authorization_id, request, "finished"' in worker
+    assert 'permit.authorization_id, request, "started", model)' in worker
+    assert 'permit.authorization_id, request, "finished", model' in worker
     assert '"mova-agent-attempt-v2"' in worker
     assert '"mova-agent-attempt-permit-v1"' in worker
     assert "stderr_tail" not in worker
@@ -114,6 +122,10 @@ def test_compose_no_monta_db_browser_repo_ni_secretos_en_research():
     assert section.count("/research") >= 1
     assert "/home/research/.codex" in section
     assert "MOVA_RESEARCH_TIMEOUT_MS:-480000" in section
+    assert "MOVA_RESEARCH_MODEL:-gpt-5.6-luna" in section
+    assert "MOVA_RESEARCH_REASONING_EFFORT:-medium" in section
+    assert "MOVA_DELIBERATION_MODEL:-gpt-5.6-terra" in section
+    assert "MOVA_DELIBERATION_REASONING_EFFORT:-high" in section
     for forbidden in (
         "postgres_password", "odds_api_key", "browser-profile", "/var/lib/mova-fpl/db",
         "runtime.env", "network_mode: host", "/var/run/docker.sock",

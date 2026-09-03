@@ -14,7 +14,20 @@ const schemas = {
   "mova-decision-deliberation-request-v1":
     "/opt/mova-research/decision-deliberation.schema.json",
 };
-const model = process.env.MOVA_RESEARCH_MODEL || "gpt-5.4";
+const researchModel = process.env.MOVA_RESEARCH_MODEL || "gpt-5.6-luna";
+const researchReasoningEffort = process.env.MOVA_RESEARCH_REASONING_EFFORT || "medium";
+const deliberationModel = process.env.MOVA_DELIBERATION_MODEL || "gpt-5.6-terra";
+const deliberationReasoningEffort =
+  process.env.MOVA_DELIBERATION_REASONING_EFFORT || "high";
+const allowedReasoningEfforts = new Set(["none", "low", "medium", "high", "xhigh", "max"]);
+for (const [name, value] of [
+  ["MOVA_RESEARCH_REASONING_EFFORT", researchReasoningEffort],
+  ["MOVA_DELIBERATION_REASONING_EFFORT", deliberationReasoningEffort],
+]) {
+  if (!allowedReasoningEfforts.has(value)) {
+    throw new Error(`${name} inválido: ${value}`);
+  }
+}
 const maxRequestBytes = 1024 * 1024;
 const inbox = join(root, "inbox");
 const outbox = join(root, "outbox");
@@ -99,7 +112,7 @@ function loadPermit(runId, requestSha256) {
   return null;
 }
 
-function receipt(runId, attemptId, authorizationId, request, eventType, values = {}) {
+function receipt(runId, attemptId, authorizationId, request, eventType, model, values = {}) {
   const subjectType = request.schema === "mova-research-request-v1"
     ? "research" : "deliberation";
   atomicJson(join(receipts, `${runId}.${attemptId}.${eventType}.json`), {
@@ -161,6 +174,9 @@ try {
     const outputSchema = schemas[request.schema];
     if (!outputSchema) throw new Error("invalid_request_schema");
     const isResearch = request.schema === "mova-research-request-v1";
+    const model = isResearch ? researchModel : deliberationModel;
+    const reasoningEffort = isResearch
+      ? researchReasoningEffort : deliberationReasoningEffort;
     const runId = isResearch ? request.research_run_id : request.deliberation_id;
     const idPattern = isResearch
       ? /^research_[0-9a-f]{32}$/ : /^deliberation_[0-9a-f]{32}$/;
@@ -227,11 +243,12 @@ try {
       "--skip-git-repo-check", "--sandbox", "read-only",
       "--disable", "shell_tool", "--disable", "computer_use",
       "--disable", "browser_use", "--disable", "apps", "--disable", "multi_agent",
-      "--model", model, "--output-schema", outputSchema, "--json",
+      "--model", model, "--config", `model_reasoning_effort="${reasoningEffort}"`,
+      "--output-schema", outputSchema, "--json",
       "--output-last-message", finalTmp, "-",
     ];
     const startedAtMs = Date.now();
-    receipt(runId, attemptId, permit.authorization_id, request, "started");
+    receipt(runId, attemptId, permit.authorization_id, request, "started", model);
     const execution = spawnSync("codex", command, {
       input: prompt, encoding: "utf8", cwd: "/tmp/mova-research",
       timeout: Number(process.env.MOVA_RESEARCH_TIMEOUT_MS || 480000),
@@ -255,7 +272,7 @@ try {
         signal: execution.signal, error_code: errorCode,
         duration_ms: durationMs, output_present: outputPresent,
       });
-      receipt(runId, attemptId, permit.authorization_id, request, "finished", {
+      receipt(runId, attemptId, permit.authorization_id, request, "finished", model, {
         status: "failed", ...usage, duration_ms: durationMs,
         error_code: errorCode, output_present: outputPresent,
       });
@@ -292,7 +309,7 @@ try {
         search_requests: null,
       };
       atomicJson(join(outbox, `${runId}.result.json`), brief);
-      receipt(runId, attemptId, permit.authorization_id, request, "finished", {
+      receipt(runId, attemptId, permit.authorization_id, request, "finished", model, {
         status: "succeeded", ...usage, duration_ms: durationMs,
         output_present: true,
       });
