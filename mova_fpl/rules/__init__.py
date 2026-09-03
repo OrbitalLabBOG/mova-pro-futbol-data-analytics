@@ -9,6 +9,7 @@ from mova_fpl.rules.base import (PlayerStats, PointsBreakdown, Position, Scoring
 from mova_fpl.rules.scoring import score as _score
 
 _REGISTRY: dict[str, ModuleType] = {
+    "2020-21": season_2021_24,
     "2021-22": season_2021_24,
     "2023-24": season_2021_24,
     "2024-25": season_2024_25,

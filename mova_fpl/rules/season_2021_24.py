@@ -1,4 +1,4 @@
-"""Reglas históricas comparables de 2021/22 y 2023/24.
+"""Reglas históricas comparables de 2020/21, 2021/22 y 2023/24.
 
 2022/23 se excluye del harness principal porque la ventana de transferencias
 ilimitadas del Mundial entre GW16 y GW17 exige una transición especial que el
@@ -13,7 +13,7 @@ from mova_fpl.rules.base import Position, ScoringTable
 from mova_fpl.rules.bps import BPS_2025_26
 from mova_fpl.rules.chips import ChipCatalogue, ChipWindow
 
-SEASON = "2021-24-historical"
+SEASON = "2020-24-historical"
 HISTORICAL_CHIPS_SUPPORTED = False
 
 SCORING = ScoringTable(

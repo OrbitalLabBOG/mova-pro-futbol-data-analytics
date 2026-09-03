@@ -94,6 +94,8 @@ def test_recency_weights_recent_appearances_more_than_old_ones():
 
 
 def test_historical_rules_do_not_award_defcon_and_version_free_transfers():
+    assert get_rules("2020-21").SCORING.defcon_thresholds == {}
+    assert get_rules("2020-21").SQUAD["max_free_transfers"] == 2
     assert get_rules("2021-22").SCORING.defcon_thresholds == {}
     assert get_rules("2021-22").SQUAD["max_free_transfers"] == 2
     assert get_rules("2024-25").SQUAD["max_free_transfers"] == 5
