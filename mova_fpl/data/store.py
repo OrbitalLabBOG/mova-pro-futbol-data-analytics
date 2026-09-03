@@ -19,6 +19,11 @@ from mova_fpl.data.schema import ALL_COLUMNS, FORBIDDEN_AS_FEATURE, SEASONS
 
 DEFAULT_DB = Path(__file__).resolve().parents[2] / "data" / "processed" / "fpl_canonical.db"
 TABLE = "player_gameweek"
+# El chip Assistant Manager de 2024/25 aparece como activo ``AM`` en la fuente,
+# pero no es un futbolista ni pertenece a la plantilla base de 15. El runtime
+# vivo ya excluye ``element_type == 5``; el replay historico debe aplicar el
+# mismo limite de alcance al catalogo pre-deadline.
+PLAYABLE_POSITIONS = frozenset({"GK", "GKP", "DEF", "MID", "FWD"})
 
 
 class LeakageError(RuntimeError):
@@ -141,8 +146,11 @@ class Store:
         sql = f"SELECT {cols} FROM {TABLE} WHERE season = ? AND gw = ? ORDER BY element"
         with self._connect() as con:
             df = pd.read_sql_query(sql, con, params=(season, int(gw)))
-        # una fila por jugador: en doble jornada nos quedamos con el primer partido
-        return df.drop_duplicates(subset=["element"], keep="first")
+        # Una fila por jugador: en doble jornada nos quedamos con el primer partido.
+        # Activos especiales (por ahora ``AM``) permanecen en el dataset crudo para
+        # auditabilidad, pero estan fuera del universo optimizable de jugadores.
+        playable = df["position"].astype("string").str.upper().isin(PLAYABLE_POSITIONS)
+        return df.loc[playable].drop_duplicates(subset=["element"], keep="first")
 
     def results(self, season: str, gw: int) -> pd.DataFrame:
         """ORACULO DEL ENTORNO. Resultados reales de una gameweek YA jugada.

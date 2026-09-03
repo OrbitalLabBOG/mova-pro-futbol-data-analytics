@@ -7,6 +7,7 @@ import pytest
 
 from experiments.long_horizon.metrics import normal_crps, paired_policy_bootstrap
 from experiments.long_horizon.models import EventProxyGoalsModel
+from mova_fpl.engine.baselines import _prepara
 from mova_fpl.models.features.minutes_features import FEATURES, build, build_targets
 from mova_fpl.models.features.points_features import player_rates
 from mova_fpl.models.goals import GoalsModel
@@ -84,6 +85,40 @@ def test_historical_rules_do_not_award_defcon_and_version_free_transfers():
     assert get_rules("2021-22").SCORING.defcon_thresholds == {}
     assert get_rules("2021-22").SQUAD["max_free_transfers"] == 2
     assert get_rules("2024-25").SQUAD["max_free_transfers"] == 5
+
+
+def test_historical_baselines_exclude_assistant_manager_assets():
+    results = pd.DataFrame([
+        {"element": 1, "total_points": 6, "minutes": 90, "selected": 10,
+         "value": 50, "position": "MID", "team": "A"},
+        {"element": 2, "total_points": 12, "minutes": 0, "selected": 10,
+         "value": 15, "position": "AM", "team": "A"},
+    ])
+    prepared = _prepara(results)
+    assert prepared["element"].tolist() == [1]
+
+
+def test_2024_25_roster_excludes_assistant_manager_assets(tmp_path):
+    import sqlite3
+
+    from mova_fpl.data.store import Store
+
+    common = {"season": "2024-25", "gw": 38, "team": "A", "value": 50,
+              "opponent_team": 2, "was_home": 1, "fixture": 380,
+              "kickoff_time": "2025-05-25T15:00:00Z"}
+    rows = [
+        {**common, "element": 1, "player_key": "player", "name": "Player",
+         "position": "MID"},
+        {**common, "element": 2, "player_key": "manager", "name": "Manager",
+         "position": "AM"},
+    ]
+    db = tmp_path / "canonical.db"
+    with sqlite3.connect(db) as connection:
+        pd.DataFrame(rows).to_sql("player_gameweek", connection, index=False)
+
+    roster = Store(db).roster("2024-25", 38)
+    assert not (roster["position"] == "AM").any()
+    assert set(roster["position"].dropna()) <= {"GK", "GKP", "DEF", "MID", "FWD"}
 
 
 def test_normal_crps_degenerates_to_absolute_error():

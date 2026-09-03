@@ -35,8 +35,8 @@ from mova_fpl.engine.simulator import replay
 from mova_fpl.trace import TraceWriter
 
 
-EXPERIMENT_ID = "EXP-MOVA-2026-002"
-PARENT_EXPERIMENT_ID = "EXP-MOVA-2026-001"
+EXPERIMENT_ID = "EXP-MOVA-2026-003"
+PARENT_EXPERIMENT_ID = "EXP-MOVA-2026-002"
 INHERITED_EVENT_WEIGHT = 0.45
 DEFAULT_OUTPUT = (Path(__file__).resolve().parents[3] / "mova-fpl-experiments"
                   / EXPERIMENT_ID)
@@ -202,6 +202,7 @@ def freeze_manifest(args, output: Path) -> dict:
             "DGW fixture variances are conditionally summed; shared availability correlation pending",
             "Only four modern seasons have position/team coverage for full policy replay",
             "2022-23 excluded because the World Cup unlimited-transfer reset is not modeled",
+            "2024-25 Assistant Manager assets are excluded; historical chips are outside replay scope",
         ],
     }
     _write_json(output / "manifest.json", manifest)

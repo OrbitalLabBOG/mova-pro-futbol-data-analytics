@@ -2,7 +2,7 @@
 title: Laboratorio causal de estrategia FPL de largo horizonte
 status: experimental
 owner: MOVA Fantasy
-experiment_id: EXP-MOVA-2026-002
+experiment_id: EXP-MOVA-2026-003
 updated: 2026-09-03
 ---
 
@@ -35,11 +35,15 @@ objetivo. La última temporada pasada calibra minutos y no entra al clasificador
 base. En replay, `multi_season_as_of` conserva estado de jugadores entre
 temporadas sin mezclar ninguna fila del futuro.
 
-## Iteración 2
+## Iteración 3
 
 `EXP-MOVA-2026-001` demostró que incorporar la carrera completa al estado
 perjudicó 2021-22, incluso con recencia. La iteración 2 conserva el estado
 season-only del control y prueba estrategia intersemanal sin esa variable.
+`EXP-MOVA-2026-002` se detuvo de forma segura al encontrar los activos `AM` del
+chip Assistant Manager en 2024-25. Esta iteración repite el protocolo bajo un
+nuevo hash, excluye esos activos especiales del universo de jugadores y conserva
+su evidencia cruda para auditoría; no simula retrospectivamente ese chip.
 
 ## Ablaciones vigentes
 
@@ -64,7 +68,7 @@ python -m experiments.long_horizon.run holdout --fpl-db /ruta/fpl_canonical.db
 ```
 
 La evidencia generada queda fuera del repo, en el directorio hermano
-`../mova-fpl-experiments/EXP-MOVA-2026-002/`:
+`../mova-fpl-experiments/EXP-MOVA-2026-003/`:
 manifest con hashes, artefactos por fold, predicciones, trazas, puntos por GW,
 bootstrap y acta del holdout.
 
@@ -76,6 +80,8 @@ bootstrap y acta del holdout.
    correlación compartida de disponibilidad.
 4. Solo cuatro temporadas modernas tienen club y posición completos para un
    replay de política comparable.
+5. El chip Assistant Manager 2024/25 no se modela; sus activos `AM` quedan fuera
+   de plantillas y baselines, igual que `element_type == 5` en el runtime vivo.
 
 Estas limitaciones son gates de interpretación, no permisos para ajustar sobre
 el holdout.

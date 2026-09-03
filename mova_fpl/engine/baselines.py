@@ -60,7 +60,17 @@ def _prepara(results: pd.DataFrame) -> pd.DataFrame:
     df = df.dropna(subset=["position", "team"])
     if df.empty:
         return df
-    df["position"] = df["position"].map(Position.parse)
+    # 2024/25 contiene activos del chip Assistant Manager (posicion ``AM``).
+    # No forman parte de una plantilla normal de 15 y por tanto tampoco deben
+    # contaminar los baselines de jugadores.
+    def playable_position(raw):
+        try:
+            return Position.parse(raw)
+        except ValueError:
+            return None
+
+    df["position"] = df["position"].map(playable_position)
+    df = df.dropna(subset=["position"])
     df["price"] = df["value"] / 10.0
     return df
 
