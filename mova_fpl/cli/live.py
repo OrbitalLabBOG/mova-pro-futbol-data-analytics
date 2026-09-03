@@ -252,7 +252,9 @@ def _build_strategy_shadow(*, season: str, gw: int, cfg: Config,
                            candidatos, fx: list, boot: dict, base_state: State,
                            historia, roster, modelos: dict,
                            prior_path: str | None = None,
-                           prior_sha256: str | None = None) -> dict:
+                           prior_sha256: str | None = None,
+                           uncertainty_artifact: str | None = None,
+                           uncertainty_sha256: str | None = None) -> dict:
     """Construye dos trayectorias virtuales; ninguna puede ser seleccionada."""
     strategy_key = "season_fixture_h3"
     shadow_horizon = 3
@@ -311,6 +313,20 @@ def _build_strategy_shadow(*, season: str, gw: int, cfg: Config,
         "shadow_season_fixture_h3", "Candidato causal: rival y localía por fixture",
         shadow_candidate, candidate_state,
     )
+    projections = {
+        "control_horizon_xp": control_matrix,
+        "candidate_horizon_xp": fixture_projection.horizon_xp,
+        "candidate_horizon_sd": fixture_projection.horizon_sd,
+    }
+    if uncertainty_artifact:
+        if not uncertainty_sha256:
+            raise ValueError("calibrador discreto sin SHA-256 esperado")
+        from mova_fpl.engine.discrete_uncertainty import shadow_distribution
+        projections["candidate_current_distribution"] = shadow_distribution(
+            fixture_projection.current_detail,
+            artifact_path=Path(uncertainty_artifact),
+            artifact_sha256=uncertainty_sha256,
+        )
     return {
         "schema": "mova-strategy-shadow-v1",
         "experiment_id": "EXP-MOVA-2026-003",
@@ -340,11 +356,7 @@ def _build_strategy_shadow(*, season: str, gw: int, cfg: Config,
             "control_hits": shadow_control.hits,
             "candidate_hits": shadow_candidate.hits,
         },
-        "projections": {
-            "control_horizon_xp": control_matrix,
-            "candidate_horizon_xp": fixture_projection.horizon_xp,
-            "candidate_horizon_sd": fixture_projection.horizon_sd,
-        },
+        "projections": projections,
         "next_state": {
             "control": next_virtual_state(
                 shadow_control, state=control_state, boot=boot,
@@ -405,6 +417,14 @@ def main() -> None:
     ap.add_argument(
         "--strategy-shadow-state-sha256",
         help="SHA-256 esperado del archivo indicado por --strategy-shadow-state",
+    )
+    ap.add_argument(
+        "--strategy-shadow-uncertainty-artifact",
+        help="NPZ sin pickle del calibrador discreto, usado solo en shadow",
+    )
+    ap.add_argument(
+        "--strategy-shadow-uncertainty-sha256",
+        help="SHA-256 esperado del calibrador discreto",
     )
     ap.add_argument(
         "--as-of",
@@ -563,6 +583,8 @@ def main() -> None:
                     historia=historia, roster=roster, modelos=modelos,
                     prior_path=args.strategy_shadow_state,
                     prior_sha256=args.strategy_shadow_state_sha256,
+                    uncertainty_artifact=args.strategy_shadow_uncertainty_artifact,
+                    uncertainty_sha256=args.strategy_shadow_uncertainty_sha256,
                 )
             except Exception as exc:  # noqa: BLE001 - shadow no derriba la decisión vigente
                 payload["strategy_shadow"] = {

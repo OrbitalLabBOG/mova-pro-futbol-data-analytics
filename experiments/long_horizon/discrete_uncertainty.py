@@ -21,21 +21,24 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from scipy.special import ndtr
-from sklearn.neighbors import NearestNeighbors
 
 from experiments.long_horizon.run import _git_sha, _sha256, _source_sha, _write_json
+from mova_fpl.engine.discrete_uncertainty import (
+    NFIX_WEIGHT,
+    SUPPORT,
+    UNIFORM_PSEUDOCOUNT,
+    discrete_metrics,
+    knn_discrete_pmf,
+    normal_discrete_pmf,
+)
 
 
 EXPERIMENT_ID = "EXP-MOVA-2026-005"
 PARENT_EXPERIMENT_ID = "EXP-MOVA-2026-003"
-SUPPORT = np.arange(-6, 37, dtype=int)
 DEVELOPMENT_SEASONS = ("2021-22", "2023-24", "2024-25")
 EXTERNAL_SEASON = "2025-26"
 K_GRID = (50, 100, 200, 400)
 PRIOR_STRENGTH_GRID = (0.0, 25.0, 100.0)
-UNIFORM_PSEUDOCOUNT = 0.01
-NFIX_WEIGHT = 2.0
 DEFAULT_EXPERIMENTS = Path(__file__).resolve().parents[3] / "mova-fpl-experiments"
 DEFAULT_DEVELOPMENT_ROOT = DEFAULT_EXPERIMENTS / "EXP-MOVA-2026-004"
 DEFAULT_EXTERNAL_ROOT = DEFAULT_EXPERIMENTS / PARENT_EXPERIMENT_ID
@@ -132,138 +135,6 @@ def _verify_and_load(manifest: dict, season: str) -> pd.DataFrame:
     if actual.min() < SUPPORT[0] or actual.max() > SUPPORT[-1]:
         raise ValueError(f"resultado fuera del soporte congelado en {season}")
     return frame
-
-
-def normal_discrete_pmf(mean, sd, support: np.ndarray = SUPPORT) -> np.ndarray:
-    """Discretiza una Normal en intervalos unitarios y conserva sus dos colas."""
-    mu = np.asarray(mean, dtype=float)
-    sigma = np.asarray(sd, dtype=float)
-    if mu.shape != sigma.shape:
-        raise ValueError("mean y sd deben tener la misma forma")
-    if not np.isfinite(mu).all():
-        raise ValueError("mean debe ser finita")
-    out = np.zeros((len(mu), len(support)), dtype=float)
-    valid = np.isfinite(sigma) & (sigma > 1e-9)
-    if valid.any():
-        z_hi = ((support[None, :] + 0.5) - mu[valid, None]) / sigma[valid, None]
-        z_lo = ((support[None, :] - 0.5) - mu[valid, None]) / sigma[valid, None]
-        rows = ndtr(z_hi) - ndtr(z_lo)
-        rows[:, 0] = ndtr((support[0] + 0.5 - mu[valid]) / sigma[valid])
-        rows[:, -1] = 1.0 - ndtr(
-            (support[-1] - 0.5 - mu[valid]) / sigma[valid]
-        )
-        out[valid] = rows
-    invalid = ~valid
-    if invalid.any():
-        nearest = np.abs(support[None, :] - mu[invalid, None]).argmin(axis=1)
-        out[np.flatnonzero(invalid), nearest] = 1.0
-    sums = out.sum(axis=1, keepdims=True)
-    return out / np.where(sums > 0, sums, 1.0)
-
-
-def knn_discrete_pmf(calibration: pd.DataFrame, target: pd.DataFrame, *,
-                     neighbors: int, prior_strength: float,
-                     support: np.ndarray = SUPPORT) -> np.ndarray:
-    """PMF empírica causal, estratificada por posición y suavizada."""
-    if neighbors <= 0 or prior_strength < 0:
-        raise ValueError("neighbors y prior_strength inválidos")
-    out = np.zeros((len(target), len(support)), dtype=float)
-    positions = target["position"].fillna("UNKNOWN").astype(str)
-    calibration_positions = calibration["position"].fillna("UNKNOWN").astype(str)
-    for position in sorted(positions.unique()):
-        target_mask = (positions == position).to_numpy()
-        calibration_mask = (calibration_positions == position).to_numpy()
-        if not calibration_mask.any():
-            calibration_mask = np.ones(len(calibration), dtype=bool)
-        past = calibration.loc[calibration_mask]
-        future = target.loc[target_mask]
-
-        center = past[["xp", "xp_sd"]].mean().to_numpy(dtype=float)
-        scale = past[["xp", "xp_sd"]].std().to_numpy(dtype=float)
-        scale = np.where(np.isfinite(scale) & (scale > 1e-9), scale, 1.0)
-        past_x = (past[["xp", "xp_sd"]].to_numpy(dtype=float) - center) / scale
-        future_x = (future[["xp", "xp_sd"]].to_numpy(dtype=float) - center) / scale
-        past_x = np.column_stack([
-            past_x,
-            pd.to_numeric(past["n_fixtures"], errors="coerce").fillna(1.0)
-            .to_numpy(dtype=float) * NFIX_WEIGHT,
-        ])
-        future_x = np.column_stack([
-            future_x,
-            pd.to_numeric(future["n_fixtures"], errors="coerce").fillna(1.0)
-            .to_numpy(dtype=float) * NFIX_WEIGHT,
-        ])
-        k = min(int(neighbors), len(past))
-        indices = NearestNeighbors(n_neighbors=k).fit(past_x).kneighbors(
-            future_x, return_distance=False
-        )
-        actual_indices = (
-            pd.to_numeric(past["actual"], errors="raise").to_numpy(dtype=int)
-            - int(support[0])
-        )
-        if actual_indices.min() < 0 or actual_indices.max() >= len(support):
-            raise ValueError("calibration contiene resultados fuera del soporte")
-        counts = np.full(
-            (len(future), len(support)), UNIFORM_PSEUDOCOUNT, dtype=float
-        )
-        np.add.at(
-            counts,
-            (np.arange(len(future))[:, None], actual_indices[indices]),
-            1.0,
-        )
-        prior = np.bincount(actual_indices, minlength=len(support)).astype(float)
-        prior += UNIFORM_PSEUDOCOUNT
-        prior /= prior.sum()
-        counts += float(prior_strength) * prior
-        out[target_mask] = counts / counts.sum(axis=1, keepdims=True)
-    if not np.allclose(out.sum(axis=1), 1.0):
-        raise RuntimeError("PMF no normalizada")
-    return out
-
-
-def discrete_metrics(actual, pmf: np.ndarray,
-                     support: np.ndarray = SUPPORT) -> dict:
-    """Proper scores, calibración y sharpness para una PMF de puntos enteros."""
-    y = np.asarray(actual, dtype=int)
-    probabilities = np.asarray(pmf, dtype=float)
-    if probabilities.shape != (len(y), len(support)):
-        raise ValueError("dimensiones incompatibles entre actual y PMF")
-    if (probabilities < 0).any() or not np.allclose(probabilities.sum(axis=1), 1.0):
-        raise ValueError("PMF inválida")
-    if y.min() < support[0] or y.max() > support[-1]:
-        raise ValueError("actual fuera del soporte")
-    cdf = np.cumsum(probabilities, axis=1)
-    observed_cdf = support[None, :] >= y[:, None]
-    crps = np.sum((cdf - observed_cdf) ** 2, axis=1)
-    indices = y - int(support[0])
-    row = np.arange(len(y))
-    mean = probabilities @ support.astype(float)
-    variance = probabilities @ (support.astype(float) ** 2) - mean ** 2
-    result = {
-        "rows": int(len(y)),
-        "crps_discrete": float(crps.mean()),
-        "log_score": float(-np.log(np.clip(probabilities[row, indices], 1e-15, 1.0)).mean()),
-        "mean_mae": float(np.abs(mean - y).mean()),
-        "mean_rmse": float(np.sqrt(np.mean((mean - y) ** 2))),
-        "mean_bias": float(np.mean(mean - y)),
-        "predictive_sd_mean": float(np.sqrt(np.clip(variance, 0.0, None)).mean()),
-    }
-    zero_index = int(np.flatnonzero(support == 0)[0])
-    p_zero = probabilities[:, zero_index]
-    y_zero = (y == 0).astype(float)
-    result |= {
-        "zero_brier": float(np.mean((p_zero - y_zero) ** 2)),
-        "predicted_zero_rate": float(p_zero.mean()),
-        "observed_zero_rate": float(y_zero.mean()),
-    }
-    for label, level in (("50", 0.50), ("80", 0.80), ("90", 0.90)):
-        lower_q = (1.0 - level) / 2.0
-        upper_q = 1.0 - lower_q
-        lower = support[np.argmax(cdf >= lower_q, axis=1)]
-        upper = support[np.argmax(cdf >= upper_q, axis=1)]
-        result[f"coverage_{label}"] = float(np.mean((y >= lower) & (y <= upper)))
-        result[f"interval_width_{label}"] = float(np.mean(upper - lower))
-    return result
 
 
 def select_calibrator(manifest: dict, output: Path) -> dict:

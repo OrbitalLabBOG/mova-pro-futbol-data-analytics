@@ -93,3 +93,19 @@ Incluso al completar tres GW, el gate solo puede devolver `review_required` y
 `promotion_authorized=false`. Una brecha entre jornadas reinicia la racha; un
 envelope ausente, alterado o ejecutable queda como evidencia inválida y no se
 rellena retrospectivamente.
+
+### Distribución discreta opcional
+
+`EXP-MOVA-2026-005` seleccionó una PMF empírica condicionada por posición, xP,
+desviación y número de fixtures. `EXP-MOVA-2026-006` la empaqueta como NPZ
+tipado, cargado con `allow_pickle=False`. Solo se adjunta al shadow cuando están
+definidos `MOVA_LONG_HORIZON_UNCERTAINTY_ARTIFACT` y su SHA-256 esperado en
+`MOVA_LONG_HORIZON_UNCERTAINTY_SHA256`.
+
+La PMF conserva explícitamente el soporte entero, `p(cero)` y cuantiles. No
+reemplaza la media usada por el MILP y declara
+`optimization_mean_unchanged=true` y `selected_for_execution=false`. El
+envelope verifica hash, soporte, elementos, normalización y correspondencia con
+la xP antes de aceptarla. Después de la jornada, el settlement contrasta CRPS,
+log score y Brier contra la Normal discretizada. Cualquier error invalida solo
+el comparador opcional; el baseline operativo continúa sin cambios.

@@ -14,6 +14,11 @@ from experiments.long_horizon.discrete_uncertainty import (
     knn_discrete_pmf,
     normal_discrete_pmf,
 )
+from mova_fpl.engine.discrete_uncertainty import (
+    load_calibration_artifact,
+    shadow_distribution,
+    write_calibration_artifact,
+)
 from mova_fpl.engine.baselines import _prepara
 from mova_fpl.models.features.minutes_features import FEATURES, build, build_targets
 from mova_fpl.models.features.points_features import player_rates
@@ -232,3 +237,33 @@ def test_discrete_metrics_rewards_exact_distribution():
     assert metrics["crps_discrete"] == pytest.approx(0.0)
     assert metrics["log_score"] == pytest.approx(0.0)
     assert metrics["coverage_90"] == 1.0
+
+
+def test_discrete_calibration_artifact_is_hash_bound_and_pickle_free(tmp_path):
+    calibration = pd.DataFrame({
+        "position": ["GK", "GK", "FWD", "FWD"],
+        "xp": [1.0, 2.0, 3.0, 4.0],
+        "xp_sd": [1.0, 1.5, 2.0, 2.5],
+        "n_fixtures": [1, 1, 1, 2],
+        "actual": [0, 1, 2, 8],
+    })
+    path = tmp_path / "calibrator.npz"
+    descriptor = write_calibration_artifact(
+        path, calibration,
+        metadata={"experiment_id": "exp", "selected_for_execution": False},
+    )
+    loaded, metadata = load_calibration_artifact(path, descriptor["sha256"])
+    assert loaded.to_dict("list") == calibration.to_dict("list")
+    assert metadata["schema"] == "mova-discrete-calibrator-v1"
+
+    target = calibration.drop(columns="actual").assign(element=[1, 2, 3, 4])
+    result = shadow_distribution(
+        target, artifact_path=path, artifact_sha256=descriptor["sha256"], neighbors=2,
+    )
+    assert result["selected_for_execution"] is False
+    assert result["optimization_mean_unchanged"] is True
+    assert result["row_count"] == 4
+    assert sum(result["rows"]["1"]["pmf"]) == pytest.approx(1.0)
+
+    with pytest.raises(ValueError, match="SHA-256"):
+        load_calibration_artifact(path, "0" * 64)

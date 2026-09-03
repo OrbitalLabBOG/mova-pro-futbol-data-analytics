@@ -6,6 +6,9 @@ from math import erf, pi, sqrt
 import numpy as np
 import pandas as pd
 
+from mova_fpl.engine.discrete_uncertainty import (
+    discrete_metrics, normal_discrete_pmf,
+)
 from mova_fpl.engine.evaluate import collapse_results, score_decision
 from mova_fpl.engine.state import Decision
 from mova_fpl.rules import get as get_rules
@@ -74,6 +77,49 @@ def _forecast_metrics(mean: dict[int, float], actual: dict[int, int],
         covered = np.abs(observed - expected) <= z_value * sigma
         metrics[f"coverage_{label}"] = round(float(np.mean(covered)), 7)
     return metrics
+
+
+def _discrete_forecast_metrics(distribution: dict, *, mean: dict[int, float],
+                               sd: dict[int, float], actual: dict[int, int]) -> dict:
+    if distribution.get("schema") != "mova-discrete-shadow-v1":
+        raise ValueError("distribución discreta incompatible")
+    if (distribution.get("selected_for_execution") is not False
+            or distribution.get("optimization_mean_unchanged") is not True):
+        raise ValueError("distribución discreta adquirió autoridad operativa")
+    support = np.asarray(distribution.get("support") or (), dtype=int)
+    rows = {int(element): row for element, row in (distribution.get("rows") or {}).items()}
+    ids = sorted(mean)
+    if set(rows) != set(ids):
+        raise ValueError("distribución discreta no cubre los mismos elementos")
+    if any(element not in actual for element in ids):
+        raise ValueError("faltan resultados oficiales para distribución discreta")
+    probabilities = np.asarray([rows[element]["pmf"] for element in ids], dtype=float)
+    observed = np.asarray([actual[element] for element in ids], dtype=int)
+    candidate = discrete_metrics(observed, probabilities, support)
+    baseline = discrete_metrics(
+        observed,
+        normal_discrete_pmf(
+            [mean[element] for element in ids],
+            [sd[element] for element in ids],
+            support,
+        ),
+        support,
+    )
+
+    def rounded(payload: dict) -> dict:
+        return {
+            key: (round(float(value), 7) if isinstance(value, (float, np.floating)) else value)
+            for key, value in payload.items()
+        }
+
+    return {
+        "artifact_sha256": distribution.get("artifact_sha256"),
+        "candidate": rounded(candidate),
+        "discretized_normal": rounded(baseline),
+        "crps_delta_vs_normal": round(
+            candidate["crps_discrete"] - baseline["crps_discrete"], 7
+        ),
+    }
 
 
 def _roster(players: list[dict]) -> dict[int, dict]:
@@ -147,6 +193,12 @@ def settle_strategy_shadow(shadow: dict, *, season: str, gw: int,
     control_outcome = _outcome(control, results, rules, roster)
     candidate_outcome = _outcome(candidate, results, rules, roster)
 
+    candidate_forecast = _forecast_metrics(candidate_xp, actual, candidate_sd)
+    discrete = projections.get("candidate_current_distribution")
+    if discrete:
+        candidate_forecast["discrete"] = _discrete_forecast_metrics(
+            discrete, mean=candidate_xp, sd=candidate_sd, actual=actual
+        )
     payload = {
         "schema": SCHEMA,
         "experiment_id": shadow.get("experiment_id"),
@@ -165,7 +217,7 @@ def settle_strategy_shadow(shadow: dict, *, season: str, gw: int,
         },
         "candidate": {
             "decision": candidate_outcome,
-            "forecast": _forecast_metrics(candidate_xp, actual, candidate_sd),
+            "forecast": candidate_forecast,
         },
         "comparison": {
             "realized_points_delta": (
@@ -298,4 +350,22 @@ def _aggregate_forecasts(rows: list[dict]) -> dict:
     for name in ("crps_normal", "coverage_50", "coverage_80", "coverage_90"):
         if all(name in row for row in rows):
             output[name] = round(weighted(name), 7)
+    if all(row.get("discrete") for row in rows):
+        discrete_rows = [row["discrete"] for row in rows]
+        output["discrete"] = {
+            "artifact_sha256": discrete_rows[-1].get("artifact_sha256"),
+            "crps_delta_vs_normal": round(sum(
+                float(row["crps_delta_vs_normal"]) * int(source["rows"])
+                for row, source in zip(discrete_rows, rows)
+            ) / total, 7),
+        }
+        for arm in ("candidate", "discretized_normal"):
+            output["discrete"][arm] = {}
+            for name in ("crps_discrete", "log_score", "zero_brier",
+                         "predicted_zero_rate", "observed_zero_rate",
+                         "coverage_50", "coverage_80", "coverage_90"):
+                output["discrete"][arm][name] = round(sum(
+                    float(row[arm][name]) * int(source["rows"])
+                    for row, source in zip(discrete_rows, rows)
+                ) / total, 7)
     return output

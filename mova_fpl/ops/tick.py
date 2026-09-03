@@ -298,6 +298,16 @@ class TickRunner:
         ]
         if self.config.enable_long_horizon_shadow:
             argv.extend(["--strategy-shadow", "season_fixture_h3"])
+            if self.config.long_horizon_uncertainty_artifact:
+                argv.extend([
+                    "--strategy-shadow-uncertainty-artifact",
+                    str(self.config.long_horizon_uncertainty_artifact),
+                ])
+                if self.config.long_horizon_uncertainty_sha256:
+                    argv.extend([
+                        "--strategy-shadow-uncertainty-sha256",
+                        self.config.long_horizon_uncertainty_sha256,
+                    ])
             if gw > 1:
                 prior_envelope = self.db.latest_decision_envelope(
                     f"{self.config.season}-gw{gw - 1:02d}"

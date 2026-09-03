@@ -85,6 +85,40 @@ def test_settlement_scores_paired_policy_forecasts_and_manual_decision():
     assert result["manual"]["candidate_realized_delta"] == 11
 
 
+def test_settlement_scores_optional_discrete_distribution_against_normal():
+    shadow = _shadow()
+    support = list(range(-6, 37))
+    live = _live()
+    actual = {row["element"]: row["total_points"] for row in live}
+    rows = {}
+    for element in range(1, 16):
+        pmf = [0.0] * len(support)
+        pmf[actual[element] - support[0]] = 1.0
+        rows[str(element)] = {
+            "optimization_xp": element / 10.0 + 0.2,
+            "pmf": pmf,
+        }
+    shadow["projections"]["candidate_current_distribution"] = {
+        "schema": "mova-discrete-shadow-v1",
+        "experiment_id": "EXP-MOVA-2026-006",
+        "artifact_sha256": "d" * 64,
+        "support": support,
+        "rows": rows,
+        "row_count": len(rows),
+        "optimization_mean_unchanged": True,
+        "selected_for_execution": False,
+    }
+
+    result = settle_strategy_shadow(
+        shadow, season="2026-27", gw=4, live=live, players=_players(),
+    )
+
+    discrete = result["candidate"]["forecast"]["discrete"]
+    assert discrete["candidate"]["crps_discrete"] == 0.0
+    assert discrete["candidate"]["zero_brier"] == 0.0
+    assert discrete["crps_delta_vs_normal"] < 0
+
+
 def test_settlement_rejects_any_execution_authority():
     shadow = _shadow()
     shadow["selected_for_execution"] = True

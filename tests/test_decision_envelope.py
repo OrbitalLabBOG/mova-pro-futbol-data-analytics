@@ -131,6 +131,7 @@ def test_envelope_preserves_non_executable_strategy_shadow_without_selecting_it(
         "schema": "mova-strategy-shadow-v1",
         "experiment_id": "EXP-MOVA-2026-003",
         "strategy_key": "season_fixture_h3",
+        "gw": 3,
         "status": "shadow_only",
         "selected_for_execution": False,
         "virtual_trajectory": True,
@@ -139,7 +140,22 @@ def test_envelope_preserves_non_executable_strategy_shadow_without_selecting_it(
         "candidate": {"candidate_key": "shadow_season_fixture_h3", "label": "candidate",
                       "decision": candidate, "violations": []},
         "comparison": {"fingerprint_changed": True},
-        "projections": {"control_horizon_xp": {}, "candidate_horizon_xp": {}},
+        "projections": {
+            "control_horizon_xp": {},
+            "candidate_horizon_xp": {"3": {"1": 1.0}},
+            "candidate_current_distribution": {
+                "schema": "mova-discrete-shadow-v1",
+                "experiment_id": "EXP-MOVA-2026-006",
+                "artifact_sha256": "d" * 64,
+                "support": [-1, 0, 1],
+                "neighbors": 200,
+                "prior_strength": 0.0,
+                "rows": {"1": {"optimization_xp": 1.0, "pmf": [0.1, 0.8, 0.1]}},
+                "row_count": 1,
+                "optimization_mean_unchanged": True,
+                "selected_for_execution": False,
+            },
+        },
         "next_state": next_state,
     }
 

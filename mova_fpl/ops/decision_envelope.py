@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 from datetime import datetime, timezone
 
 from mova_fpl.ops.schedule import private_state_cadence_seconds
@@ -174,6 +175,51 @@ def _strategy_shadow_check(shadow: dict) -> dict:
             key: value for key, value in state.items() if key != "state_fingerprint"
         }):
             errors.append({"arm": arm, "code": "NEXT_STATE_FINGERPRINT"})
+    distribution = dict(
+        (shadow.get("projections") or {}).get("candidate_current_distribution") or {}
+    )
+    if distribution:
+        support = distribution.get("support") or []
+        rows = dict(distribution.get("rows") or {})
+        current = dict(
+            ((shadow.get("projections") or {}).get("candidate_horizon_xp") or {}).get(
+                str(shadow.get("gw")),
+                ((shadow.get("projections") or {}).get("candidate_horizon_xp") or {}).get(
+                    shadow.get("gw"), {}
+                ),
+            ) or {}
+        )
+        if distribution.get("schema") != "mova-discrete-shadow-v1":
+            errors.append({"code": "DISCRETE_SCHEMA"})
+        if (distribution.get("selected_for_execution") is not False
+                or distribution.get("optimization_mean_unchanged") is not True):
+            errors.append({"code": "DISCRETE_AUTHORITY"})
+        if len(str(distribution.get("artifact_sha256") or "")) != 64:
+            errors.append({"code": "DISCRETE_ARTIFACT_SHA"})
+        if (not support or 0 not in support
+                or any(int(right) - int(left) != 1
+                       for left, right in zip(support, support[1:]))):
+            errors.append({"code": "DISCRETE_SUPPORT"})
+        if int(distribution.get("row_count") or 0) != len(rows):
+            errors.append({"code": "DISCRETE_ROW_COUNT"})
+        if {str(key) for key in current} != set(rows):
+            errors.append({"code": "DISCRETE_ELEMENTS"})
+        for element, item in rows.items():
+            probabilities = item.get("pmf") or []
+            try:
+                valid = (
+                    len(probabilities) == len(support)
+                    and all(math.isfinite(float(value)) and float(value) >= 0
+                            for value in probabilities)
+                    and abs(sum(float(value) for value in probabilities) - 1.0) <= 1e-6
+                    and abs(float(item["optimization_xp"])
+                            - float(current[element])) <= 1e-8
+                )
+            except (KeyError, TypeError, ValueError):
+                valid = False
+            if not valid:
+                errors.append({"code": "DISCRETE_PMF", "element": element})
+                break
     return _check(
         "STRATEGY_SHADOW_VALID_NON_EXECUTABLE",
         not errors,

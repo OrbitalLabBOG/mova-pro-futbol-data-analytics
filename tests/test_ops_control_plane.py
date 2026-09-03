@@ -59,6 +59,20 @@ def test_long_horizon_shadow_is_explicit_opt_in(monkeypatch):
     assert RuntimeConfig.from_env().enable_long_horizon_shadow is True
 
 
+def test_long_horizon_uncertainty_artifact_is_optional_and_hash_bound(monkeypatch):
+    monkeypatch.delenv("MOVA_LONG_HORIZON_UNCERTAINTY_ARTIFACT", raising=False)
+    monkeypatch.delenv("MOVA_LONG_HORIZON_UNCERTAINTY_SHA256", raising=False)
+    config = RuntimeConfig.from_env()
+    assert config.long_horizon_uncertainty_artifact is None
+    assert config.long_horizon_uncertainty_sha256 is None
+
+    monkeypatch.setenv("MOVA_LONG_HORIZON_UNCERTAINTY_ARTIFACT", "/tmp/calibrator.npz")
+    monkeypatch.setenv("MOVA_LONG_HORIZON_UNCERTAINTY_SHA256", "a" * 64)
+    config = RuntimeConfig.from_env()
+    assert config.long_horizon_uncertainty_artifact == Path("/tmp/calibrator.npz")
+    assert config.long_horizon_uncertainty_sha256 == "a" * 64
+
+
 def test_schema_controls_jobs_y_auditoria(tmp_path):
     config = _config(tmp_path)
     db = _db(config)

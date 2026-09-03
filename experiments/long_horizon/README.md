@@ -129,3 +129,8 @@ calibrador busca vecinos históricos dentro de la misma posición usando xP,
 desviación y número de fixtures; por construcción puede asignar masa explícita
 a cero y a resultados negativos. La selección usa folds temporales y CRPS
 discreto. Su salida es diagnóstica y no entra al optimizador ni al runtime.
+
+`EXP-MOVA-2026-006` entrena el artefacto causal para 2026-27 con las cuatro
+temporadas ya cerradas y lo conecta de manera opcional al shadow. El artefacto
+es NPZ tipado sin pickle, queda enlazado por SHA-256 y nunca modifica la xP que
+consume el optimizador.
