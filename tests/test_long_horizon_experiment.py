@@ -5,7 +5,11 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from experiments.long_horizon.metrics import normal_crps, paired_policy_bootstrap
+from experiments.long_horizon.metrics import (
+    normal_crps,
+    paired_policy_bootstrap,
+    paired_policy_influence,
+)
 from experiments.long_horizon.models import EventProxyGoalsModel
 from experiments.long_horizon.event_h3 import summarize_development
 from experiments.long_horizon.stochastic_recourse import _scenario_matrices
@@ -149,6 +153,32 @@ def test_policy_bootstrap_is_paired_and_reproducible():
     result = paired_policy_bootstrap(baseline, candidate, draws=100, block_size=2, seed=7)
     assert result["observed_by_season"] == {"a": 4.0}
     assert result["probability_positive"] == 1.0
+    assert result["influence"]["by_season"]["a"]["through_penultimate_gw"] == 3.0
+
+
+def test_policy_influence_exposes_a_single_gameweek_sign_reversal():
+    baseline = pd.DataFrame({"season": ["a"] * 4 + ["b"] * 4,
+                             "gw": [1, 2, 3, 4] * 2,
+                             "points": [50] * 8})
+    candidate = baseline.assign(points=[55, 55, 55, 14, 52, 52, 52, 52])
+
+    result = paired_policy_influence(baseline, candidate)
+
+    assert result["by_season"]["a"]["delta"] == -21
+    assert result["by_season"]["a"]["through_penultimate_gw"] == 15
+    assert result["by_season"]["a"]["worst_gw"] == {"gw": 4, "delta": -36.0}
+    assert result["by_season"]["a"]["loss_reversal_by_one_gw"] is True
+    assert result["loss_reversal_seasons"] == ["a"]
+    assert result["leave_one_season_out_mean"] == {"a": 8.0, "b": -21.0}
+
+
+def test_policy_influence_rejects_missing_pairs():
+    baseline = pd.DataFrame({"season": ["a", "a"], "gw": [1, 2],
+                             "points": [50, 50]})
+    candidate = pd.DataFrame({"season": ["a"], "gw": [1], "points": [51]})
+
+    with pytest.raises(ValueError, match="exactamente las mismas"):
+        paired_policy_influence(baseline, candidate)
 
 
 def test_recourse_scenarios_preserve_each_frozen_player_mean_exactly():

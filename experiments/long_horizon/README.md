@@ -24,6 +24,9 @@ ni modifica la selección activa del runtime.
   contra el control sobre los mismos partidos.
 - **Incertidumbre:** CRPS, coberturas 50/80/90%, bootstrap pareado por bloques y
   penalización de transferencias sustentadas por alta desviación predictiva.
+- **Fragilidad:** `paired_policy_influence_v1` informa leave-one-season-out,
+  extremos por GW y si una sola jornada invierte el signo de una temporada. Es
+  un guardrail de interpretación y nunca una regla para excluir resultados.
 - **Eventos:** `threat` y `creativity` históricos como proxies jugador-partido.
   Los eventos WhoScored solo cubren parte de 2025-26 y permanecen como ablation
   secundaria; no pueden justificar promoción multitemporada.
