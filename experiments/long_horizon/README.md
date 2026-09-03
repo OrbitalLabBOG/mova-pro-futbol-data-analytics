@@ -86,6 +86,17 @@ de xP/transferencias/hits y todas las matrices de proyección de tres GW. Esto
 permite medir el comportamiento vivo con el information set exacto del deadline,
 en vez de reconstruirlo retrospectivamente.
 
+`mova_fpl.analytics.strategy_shadow` completa el ciclo después de cada jornada:
+puntúa el par contra resultados oficiales, lo contrasta con la decisión manual
+y agrega únicamente gameweeks consecutivas. Al tercer cierre el estado es
+`review_required`, nunca promoción automática. Los resultados quedan dentro del
+review durable y en un artefacto de gate identificado por hash.
+
+Para que ese acumulado corresponda a una política y no a decisiones aisladas,
+`mova_fpl.engine.virtual_shadow` arrastra por separado squad, precios de compra,
+banco y transferencias libres del control y el candidato. Una discontinuidad o
+un hash inválido inicia una nueva racha y queda visible en el artefacto.
+
 ## Límites conocidos
 
 1. El calendario histórico conoce la asignación final de aplazamientos (`L-01`).

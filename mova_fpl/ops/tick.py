@@ -298,6 +298,16 @@ class TickRunner:
         ]
         if self.config.enable_long_horizon_shadow:
             argv.extend(["--strategy-shadow", "season_fixture_h3"])
+            if gw > 1:
+                prior_envelope = self.db.latest_decision_envelope(
+                    f"{self.config.season}-gw{gw - 1:02d}"
+                )
+                if prior_envelope:
+                    argv.extend([
+                        "--strategy-shadow-state", str(prior_envelope["artifact_path"]),
+                        "--strategy-shadow-state-sha256",
+                        str(prior_envelope["artifact_sha256"]),
+                    ])
         private_state = self.db.latest_team_state(cycle_id)
         private_state_used = None
         if private_state and private_state.get("artifact_path"):
@@ -381,7 +391,9 @@ class TickRunner:
                 {
                     "strategy_key": bundle["strategy_shadow"]["strategy_key"],
                     "status": bundle["strategy_shadow"]["status"],
-                    **bundle["strategy_shadow"]["comparison"],
+                    "trajectory": bundle["strategy_shadow"].get("trajectory"),
+                    "error": bundle["strategy_shadow"].get("error"),
+                    **(bundle["strategy_shadow"].get("comparison") or {}),
                 }
                 if bundle.get("strategy_shadow") else None
             ),

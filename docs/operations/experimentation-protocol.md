@@ -61,13 +61,35 @@ par control/candidato con estas garantías:
 
 - el `selected_candidate_key` continúa siendo `milp_baseline`;
 - ambos brazos usan el mismo snapshot, bundle de modelos, plantilla, banco,
-  transferencias libres y política sin chips;
+  transferencias libres y política sin chips al iniciar la prueba;
 - el control repite el xP del rival inmediato y el candidato proyecta rival y
   localía fixture-a-fixture durante tres GW;
 - `selected_for_execution=false` queda sellado en el envelope;
 - las matrices completas de xP y desviación estándar quedan en el JSON para su
   liquidación posterior.
 
+Después del primer deadline, control y candidato mantienen **ledgers virtuales
+separados** de plantilla, precio de compra, banco y transferencias libres. Cada
+GW aplica solo la primera acción de su brazo y sella el estado siguiente con
+fingerprint; el tick solo restaura el envelope de la GW inmediatamente anterior
+y verifica antes su SHA-256. Así el acumulado mide dos políticas receding-horizon
+reales, no recomendaciones independientes sobre la plantilla manual.
+
 El flag permanece en `0` por defecto y no es una promoción. Para superar el gate
 se requieren tres deadlines consecutivos, revisión contra la decisión manual y
 una nueva autorización explícita.
+
+Al cerrar una GW, el review retrospectivo busca el último envelope del ciclo,
+verifica el SHA-256 del archivo y liquida ambos brazos con el resultado oficial
+`finished + data_checked`. Guarda:
+
+- puntos reales con autosustituciones, capitán efectivo e hits;
+- delta candidato − control y candidato − decisión manual;
+- MAE, RMSE, sesgo y Spearman para ambos brazos;
+- CRPS Normal y coberturas 50/80/90 del candidato;
+- un gate acumulado sobre la racha más reciente de GW consecutivas.
+
+Incluso al completar tres GW, el gate solo puede devolver `review_required` y
+`promotion_authorized=false`. Una brecha entre jornadas reinicia la racha; un
+envelope ausente, alterado o ejecutable queda como evidencia inválida y no se
+rellena retrospectivamente.

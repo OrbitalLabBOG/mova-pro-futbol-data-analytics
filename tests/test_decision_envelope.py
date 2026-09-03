@@ -7,6 +7,7 @@ import pandas as pd
 from mova_fpl.ops.decision_envelope import build_envelope, validate_decision_shape
 from mova_fpl.engine.evaluate import score_decision
 from mova_fpl.engine.state import Decision
+from mova_fpl.engine.virtual_shadow import state_fingerprint
 from mova_fpl.ops.db import OpsDB
 
 
@@ -116,18 +117,30 @@ def test_envelope_preserves_non_executable_strategy_shadow_without_selecting_it(
     bundle = _bundle()
     control = _decision(xp=52.0).to_dict()
     candidate = _decision(captain=2, xp=51.5).to_dict()
+    next_state = {}
+    for arm, decision in (("control", control), ("candidate", candidate)):
+        state = {
+            "schema": "mova-strategy-virtual-state-v1",
+            "strategy_key": "season_fixture_h3", "arm": arm,
+            "season": "2026-27", "applied_gw": 3,
+            "decision_fingerprint": decision["fingerprint"],
+            "squad": [], "bank": 1.0, "free_transfers": 1,
+        }
+        next_state[arm] = {**state, "state_fingerprint": state_fingerprint(state)}
     bundle["strategy_shadow"] = {
         "schema": "mova-strategy-shadow-v1",
         "experiment_id": "EXP-MOVA-2026-003",
         "strategy_key": "season_fixture_h3",
         "status": "shadow_only",
         "selected_for_execution": False,
+        "virtual_trajectory": True,
         "control": {"candidate_key": "shadow_control_h3", "label": "control",
                     "decision": control, "violations": []},
         "candidate": {"candidate_key": "shadow_season_fixture_h3", "label": "candidate",
                       "decision": candidate, "violations": []},
         "comparison": {"fingerprint_changed": True},
         "projections": {"control_horizon_xp": {}, "candidate_horizon_xp": {}},
+        "next_state": next_state,
     }
 
     envelope = build_envelope(
@@ -143,6 +156,33 @@ def test_envelope_preserves_non_executable_strategy_shadow_without_selecting_it(
     )
     assert check["passed"] is True
     assert envelope["status"] == "staged"
+
+
+def test_invalid_optional_shadow_is_visible_but_does_not_block_baseline():
+    bundle = _bundle()
+    bundle["strategy_shadow"] = {
+        "schema": "mova-strategy-shadow-v1",
+        "experiment_id": "EXP-MOVA-2026-003",
+        "strategy_key": "season_fixture_h3",
+        "status": "invalid",
+        "selected_for_execution": False,
+        "virtual_trajectory": True,
+        "error": {"type": "ValueError", "detail": "tampered prior state"},
+    }
+
+    envelope = build_envelope(
+        bundle=bundle, manifest=_manifest(), manifest_id="manifest_1",
+        manifest_sha256="b" * 64, controls=CONTROLS,
+    )
+
+    check = next(
+        item for item in envelope["validation"]["checks"]
+        if item["code"] == "STRATEGY_SHADOW_VALID_NON_EXECUTABLE"
+    )
+    assert check["passed"] is False
+    assert check["severity"] == "warning"
+    assert envelope["status"] == "staged"
+    assert envelope["selected_candidate_key"] == "milp_baseline"
 
 
 def test_preliminary_without_projection_blocks_wildcard():

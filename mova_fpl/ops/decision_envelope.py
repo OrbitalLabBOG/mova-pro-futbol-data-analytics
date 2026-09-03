@@ -153,6 +153,10 @@ def _strategy_shadow_check(shadow: dict) -> dict:
             "code": "EXECUTION_AUTHORITY",
             "detail": "el contrafactual debe declarar selected_for_execution=false",
         })
+    if shadow.get("status") != "shadow_only":
+        errors.append({"code": "STATUS", "detail": shadow.get("status")})
+    if shadow.get("virtual_trajectory") is not True:
+        errors.append({"code": "TRAJECTORY", "detail": "trayectoria virtual ausente"})
     for arm in ("control", "candidate"):
         row = dict(shadow.get(arm) or {})
         decision = dict(row.get("decision") or {})
@@ -163,6 +167,13 @@ def _strategy_shadow_check(shadow: dict) -> dict:
         errors.extend(
             {"arm": arm, **item} for item in (row.get("violations") or [])
         )
+        state = dict((shadow.get("next_state") or {}).get(arm) or {})
+        if not state:
+            errors.append({"arm": arm, "code": "NEXT_STATE_MISSING"})
+        elif state.get("state_fingerprint") != sha256_json({
+            key: value for key, value in state.items() if key != "state_fingerprint"
+        }):
+            errors.append({"arm": arm, "code": "NEXT_STATE_FINGERPRINT"})
     return _check(
         "STRATEGY_SHADOW_VALID_NON_EXECUTABLE",
         not errors,

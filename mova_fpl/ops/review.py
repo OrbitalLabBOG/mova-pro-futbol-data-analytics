@@ -11,6 +11,9 @@ from pathlib import Path
 from mova_fpl.analytics.gameweek_review import (
     analyze_scenarios, load_closeout_package,
 )
+from mova_fpl.analytics.strategy_shadow import (
+    aggregate_strategy_shadow, settle_strategy_shadow,
+)
 from mova_fpl.ops.collector.contracts import canonical_bytes, write_atomic
 from mova_fpl.ops.db import OpsDB, sha256_json, utcnow
 from mova_fpl.ops.harness import Harness
@@ -72,6 +75,37 @@ def _official_state(config, season: str, gw: int, entry_id: int) -> dict:
     }
 
 
+def _load_strategy_shadow(db: OpsDB, cycle_id: str) -> dict | None:
+    """Lee el último envelope del ciclo y verifica su artefacto sellado."""
+    row = db.latest_decision_envelope(cycle_id)
+    if not row:
+        return None
+    path = Path(str(row["artifact_path"]))
+    if not path.is_file():
+        return {"status": "invalid", "reason": "envelope_artifact_missing",
+                "envelope_id": row["envelope_id"]}
+    digest = hashlib.sha256(path.read_bytes()).hexdigest()
+    if digest != str(row["artifact_sha256"]):
+        return {"status": "invalid", "reason": "envelope_artifact_sha256_mismatch",
+                "envelope_id": row["envelope_id"]}
+    try:
+        envelope = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return {"status": "invalid",
+                "reason": f"envelope_json_invalid:{type(exc).__name__}",
+                "envelope_id": row["envelope_id"]}
+    if str(envelope.get("content_sha256")) != str(row["content_sha256"]):
+        return {"status": "invalid", "reason": "envelope_content_sha256_mismatch",
+                "envelope_id": row["envelope_id"]}
+    shadow = envelope.get("strategy_shadow")
+    if not shadow:
+        return None
+    return {
+        "status": "ready", "envelope_id": row["envelope_id"],
+        "envelope_sha256": row["content_sha256"], "shadow": shadow,
+    }
+
+
 class GameweekReviewService:
     def __init__(self, config, db: OpsDB):
         self.config = config
@@ -110,9 +144,13 @@ class GameweekReviewService:
                 official = harness.call("load_official_settlement", lambda: _official_state(
                     self.config, package["season"], int(package["gw"]), int(package["entry_id"])
                 ))
+                strategy_shadow = harness.call(
+                    "load_strategy_shadow",
+                    lambda: _load_strategy_shadow(self.db, cycle_id),
+                )
                 result = harness.call("validate_and_score", lambda: self._build(
                     package, official, package_path, job_id, cycle_id, correlation_id,
-                    actor, reason, idempotency_key,
+                    actor, reason, idempotency_key, strategy_shadow,
                 ))
                 trace_result = harness.command(
                     "export_trace",
@@ -128,6 +166,20 @@ class GameweekReviewService:
                 persisted = harness.call(
                     "persist_closeout", lambda: self.db.record_gameweek_closeout(result["ledger"])
                 )
+                shadow_gate = None
+                shadow_gate_artifact = None
+                if (result.get("strategy_shadow") or {}).get("status") == "settled":
+                    shadow_gate = aggregate_strategy_shadow(
+                        self.db.strategy_shadow_settlements(package["season"])
+                    )
+                    gate_bytes = canonical_bytes(shadow_gate)
+                    gate_sha = hashlib.sha256(gate_bytes).hexdigest()
+                    gate_path = (
+                        self.config.artifact_root / "reviews" / package["season"]
+                        / "strategy-shadow-gates" / f"{gate_sha}.json"
+                    )
+                    write_atomic(gate_path, gate_bytes)
+                    shadow_gate_artifact = {"path": str(gate_path), "sha256": gate_sha}
             except Exception as exc:
                 self.db.finish_job(job_id, "failed", error_code=type(exc).__name__,
                                    error_detail=str(exc)[:2000])
@@ -141,11 +193,27 @@ class GameweekReviewService:
                       "correlation_id": correlation_id, **persisted, "trace": trace,
                       "artifact_path": result["ledger"]["review"]["artifact_path"],
                       "artifact_sha256": result["ledger"]["review"]["artifact_sha256"]}
-            self.db.finish_job(job_id, "completed", output_sha256=sha256_json(output), metrics={
+            if result.get("strategy_shadow"):
+                output.update({
+                    "strategy_shadow": result["strategy_shadow"],
+                    "strategy_shadow_gate": shadow_gate,
+                    "strategy_shadow_gate_artifact": shadow_gate_artifact,
+                })
+            job_metrics = {
                 "gw": package["gw"], "entry_points": result["selected_score"]["points"],
                 "comparator_points": result["comparator_score"]["points"],
                 "causal_scorecard_created": False,
-            })
+            }
+            if result.get("strategy_shadow"):
+                job_metrics.update({
+                    "strategy_shadow_status": result["strategy_shadow"].get("status"),
+                    "strategy_shadow_realized_delta": result[
+                        "strategy_shadow"
+                    ].get("comparison", {}).get("realized_points_delta"),
+                })
+            self.db.finish_job(
+                job_id, "completed", output_sha256=sha256_json(output), metrics=job_metrics,
+            )
             self.db.resolve_incidents(
                 f"Settlement GW{package['gw']} falló",
                 resolution=f"settlement recuperado por job exitoso {job_id}",
@@ -155,7 +223,7 @@ class GameweekReviewService:
 
     def _build(self, package: dict, official: dict, package_path: Path, job_id: str,
                cycle_id: str, correlation_id: str, actor: str, reason: str,
-               idempotency_key: str) -> dict:
+               idempotency_key: str, strategy_shadow_source: dict | None = None) -> dict:
         gw = int(package["gw"])
         analysis = analyze_scenarios(package, official)
         rules = analysis["rules"]
@@ -165,6 +233,36 @@ class GameweekReviewService:
         comparator_score = analysis["comparator_score"]
         selected_rows = analysis["selected_rows"]
         comparator_rows = analysis["comparator_rows"]
+        strategy_shadow = None
+        if strategy_shadow_source:
+            if strategy_shadow_source.get("status") != "ready":
+                strategy_shadow = {
+                    **strategy_shadow_source,
+                    "season": package["season"], "gw": gw,
+                }
+            else:
+                try:
+                    strategy_shadow = settle_strategy_shadow(
+                        strategy_shadow_source["shadow"],
+                        season=package["season"], gw=gw,
+                        live=official["live"], players=official["players"],
+                        envelope_id=strategy_shadow_source["envelope_id"],
+                        envelope_sha256=strategy_shadow_source["envelope_sha256"],
+                        manual={
+                            "fingerprint": selected.fingerprint(),
+                            "expected_points": selected.expected_points,
+                            "actual_points": selected_score["points"],
+                        },
+                    )
+                except (KeyError, TypeError, ValueError) as exc:
+                    strategy_shadow = {
+                        "status": "invalid",
+                        "season": package["season"], "gw": gw,
+                        "reason": (
+                            f"shadow_settlement_invalid:{type(exc).__name__}:{exc}"
+                        ),
+                        "envelope_id": strategy_shadow_source.get("envelope_id"),
+                    }
         live_points = {
             int(row["element"]): int(row["total_points"]) for row in official["live"]
         }
@@ -215,6 +313,8 @@ class GameweekReviewService:
             },
             "low_p60_players_who_reached_60": low_p60_success,
         }
+        if strategy_shadow:
+            metrics["strategy_shadow"] = strategy_shadow
         average_delta = official_points - average_points
         paired_delta = selected_score["points"] - comparator_score["points"]
         selected_captain_points = live_points[selected.captain]
@@ -257,6 +357,34 @@ class GameweekReviewService:
                          f"delta base {captain_delta:+d}."),
              "actionable": captain_delta != 0},
         ]
+        if strategy_shadow:
+            if strategy_shadow.get("status") == "settled":
+                shadow_delta = int(
+                    strategy_shadow["comparison"]["realized_points_delta"]
+                )
+                shadow_relation = (
+                    "POSITIVE" if shadow_delta > 0
+                    else "NEGATIVE" if shadow_delta < 0 else "TIED"
+                )
+                findings.append({
+                    "code": f"LONG_HORIZON_SHADOW_{shadow_relation}",
+                    "category": "strategy",
+                    "summary": (
+                        f"season_fixture_h3 produjo {shadow_delta:+d} puntos contra su "
+                        "control pareado; evidencia viva acumulable, no autorización "
+                        "de promoción."
+                    ),
+                    "actionable": False,
+                })
+            else:
+                findings.append({
+                    "code": "LONG_HORIZON_SHADOW_NOT_SETTLED",
+                    "category": "data",
+                    "summary": (
+                        f"No se pudo liquidar shadow: {strategy_shadow.get('reason')}"
+                    ),
+                    "actionable": True,
+                })
         created_at = utcnow()
         ids = {name: _deterministic_id(prefix, idempotency_key, name) for name, prefix in {
             "snapshot": "snapshot", "team_state": "teamstate", "intervention": "intervention",
@@ -386,4 +514,5 @@ class GameweekReviewService:
         }
         return {"rules": rules, "selected_decision": selected,
                 "comparator_decision": comparator, "selected_score": selected_score,
-                "comparator_score": comparator_score, "ledger": ledger}
+                "comparator_score": comparator_score, "ledger": ledger,
+                "strategy_shadow": strategy_shadow}

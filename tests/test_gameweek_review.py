@@ -97,6 +97,63 @@ def test_gw1_retrospective_scores_selected_and_pure_model(tmp_path: Path):
     ]
 
 
+def test_retrospective_review_settles_strategy_shadow_against_manual(tmp_path: Path):
+    path, package = _package()
+    official = _official(package)
+    control = build_decision(package["comparator"], package["season"], package["gw"])
+    candidate = build_decision(package["selected"], package["season"], package["gw"])
+    ids = [int(row["element"]) for row in official["live"]]
+    shadow_source = {
+        "status": "ready", "envelope_id": "envelope_shadow",
+        "envelope_sha256": "e" * 64,
+        "shadow": {
+            "schema": "mova-strategy-shadow-v1",
+            "experiment_id": "EXP-MOVA-2026-003",
+            "strategy_key": "season_fixture_h3",
+            "selected_for_execution": False,
+            "virtual_trajectory": True,
+            "trajectory": {"mode": "initialized_from_observed"},
+            "chips": "disabled_in_both_arms",
+            "control": {"decision": control.to_dict(), "violations": []},
+            "candidate": {"decision": candidate.to_dict(), "violations": []},
+            "projections": {
+                "control_horizon_xp": {"1": {str(i): 2.0 for i in ids}},
+                "candidate_horizon_xp": {"1": {str(i): 2.1 for i in ids}},
+                "candidate_horizon_sd": {"1": {str(i): 1.5 for i in ids}},
+            },
+        },
+    }
+    config = RuntimeConfig(artifact_root=tmp_path / "artifacts")
+    db = OpsDB(tmp_path / "ops.db", enforce_version=False)
+    db.migrate()
+    cycle_id = db.upsert_cycle(
+        package["season"], package["gw"], package["deadline_at"], phase="settlement"
+    )
+    job_id, _ = db.start_job(
+        "gameweek_review", "gw1:shadow:v1", "corr_test", cycle_id=cycle_id
+    )
+
+    result = GameweekReviewService(
+        config, db
+    )._build(
+        package, official, path, job_id, cycle_id, "corr_test",
+        "julian", "cerrar GW1", "gw1:shadow:v1", shadow_source,
+    )
+    db.record_gameweek_closeout(result["ledger"])
+
+    shadow = result["strategy_shadow"]
+    assert shadow["status"] == "settled"
+    assert shadow["comparison"]["realized_points_delta"] == -12
+    assert shadow["manual"]["candidate_realized_delta"] == 0
+    assert result["ledger"]["review"]["metrics"]["strategy_shadow"] == shadow
+    assert result["ledger"]["review"]["findings"][-1]["code"] == (
+        "LONG_HORIZON_SHADOW_NEGATIVE"
+    )
+    stored = db.strategy_shadow_settlements("2026-27")
+    assert len(stored) == 1
+    assert stored[0]["comparison"]["realized_points_delta"] == -12
+
+
 def test_review_with_predeadline_batch_defers_causal_scorecard_to_analytics(tmp_path: Path):
     path, package = _package()
     official = _official(package)

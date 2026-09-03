@@ -27,6 +27,7 @@ from mova_fpl.engine.report import render
 from mova_fpl.engine.runner import Config, decide
 from mova_fpl.engine.simulator import _candidates
 from mova_fpl.engine.state import State
+from mova_fpl.engine.virtual_shadow import next_virtual_state, restore_virtual_state
 from mova_fpl.models.registry import git_sha, load
 from mova_fpl.optimizer.horizon import build_xp_matrix
 from mova_fpl.rules import get as get_rules
@@ -216,6 +217,147 @@ def _candidate(key: str, label: str, decision, state: State) -> dict:
     }
 
 
+def _prior_virtual_states(path: str | None, expected_sha256: str | None,
+                          *, season: str, gw: int) -> tuple[dict | None, dict]:
+    """Carga el ledger virtual previo; ausencia o brecha inicia una racha nueva."""
+    if not path:
+        return None, {"mode": "initialized_from_observed", "reason": "no_prior_state"}
+    if not expected_sha256 or len(expected_sha256) != 64:
+        raise ValueError("estado virtual previo sin SHA-256 esperado")
+    raw = Path(path).read_bytes()
+    observed_sha = hashlib.sha256(raw).hexdigest()
+    if observed_sha != expected_sha256:
+        raise ValueError("SHA-256 del envelope virtual previo no coincide")
+    envelope = json.loads(raw)
+    shadow = envelope.get("strategy_shadow") or {}
+    next_state = shadow.get("next_state")
+    if (shadow.get("strategy_key") != "season_fixture_h3" or not next_state
+            or str(shadow.get("season")) != str(season)
+            or int(shadow.get("gw", 0)) != int(gw) - 1):
+        return None, {
+            "mode": "initialized_from_observed",
+            "reason": "prior_state_missing_or_nonconsecutive",
+            "prior_artifact_sha256": observed_sha,
+        }
+    return next_state, {
+        "mode": "carried_from_previous",
+        "reason": "consecutive_virtual_ledger",
+        "prior_gw": int(gw) - 1,
+        "prior_artifact_sha256": observed_sha,
+        "prior_envelope_id": envelope.get("envelope_id"),
+    }
+
+
+def _build_strategy_shadow(*, season: str, gw: int, cfg: Config,
+                           candidatos, fx: list, boot: dict, base_state: State,
+                           historia, roster, modelos: dict,
+                           prior_path: str | None = None,
+                           prior_sha256: str | None = None) -> dict:
+    """Construye dos trayectorias virtuales; ninguna puede ser seleccionada."""
+    strategy_key = "season_fixture_h3"
+    shadow_horizon = 3
+    shadow_cfg = replace(cfg, horizon=shadow_horizon, chip_policy="none")
+    previous, continuity = _prior_virtual_states(
+        prior_path, prior_sha256, season=season, gw=gw,
+    )
+    control_base = base_state
+    candidate_base = base_state
+    if previous:
+        control_base = restore_virtual_state(
+            previous["control"], base_state=base_state, boot=boot,
+            expected_strategy=strategy_key, expected_arm="control",
+            expected_previous_gw=gw - 1,
+        )
+        candidate_base = restore_virtual_state(
+            previous["candidate"], base_state=base_state, boot=boot,
+            expected_strategy=strategy_key, expected_arm="candidate",
+            expected_previous_gw=gw - 1,
+        )
+
+    control_matrix = build_xp_matrix(
+        candidatos,
+        live.team_schedule(fx, boot, gw, gw + shadow_horizon - 1),
+        gw,
+        shadow_horizon,
+        decay=shadow_cfg.decay,
+    )
+    control_state = replace(
+        control_base, chips_allowed={}, horizon_xp=control_matrix, horizon_sd={},
+    )
+    shadow_control = decide(gw, control_state, shadow_cfg)
+    fixture_projection = fixture_horizon_projection(
+        history=historia,
+        roster=roster,
+        modelos=modelos,
+        season=season,
+        gw=gw,
+        horizon=shadow_horizon,
+        schedule=live.fixture_schedule(fx, boot, gw, gw + shadow_horizon - 1),
+        decay=shadow_cfg.decay,
+        disponibilidad=roster["disponibilidad"].to_numpy(),
+    )
+    candidate_state = replace(
+        candidate_base,
+        chips_allowed={},
+        horizon_xp=fixture_projection.horizon_xp,
+        horizon_sd=fixture_projection.horizon_sd,
+    )
+    shadow_candidate = decide(gw, candidate_state, shadow_cfg)
+    control_row = _candidate(
+        "shadow_control_h3", "Control causal: xP del rival actual repetido",
+        shadow_control, control_state,
+    )
+    candidate_row = _candidate(
+        "shadow_season_fixture_h3", "Candidato causal: rival y localía por fixture",
+        shadow_candidate, candidate_state,
+    )
+    return {
+        "schema": "mova-strategy-shadow-v1",
+        "experiment_id": "EXP-MOVA-2026-003",
+        "strategy_key": strategy_key,
+        "season": season,
+        "gw": int(gw),
+        "status": "shadow_only",
+        "selected_for_execution": False,
+        "virtual_trajectory": True,
+        "trajectory": continuity,
+        "horizon": shadow_horizon,
+        "decay": shadow_cfg.decay,
+        "chips": "disabled_in_both_arms",
+        "controlled_variable": "future_fixture_opponent_and_home_context",
+        "information_set": "single_predeadline_player_state_with_published_future_schedule",
+        "control": control_row,
+        "candidate": candidate_row,
+        "comparison": {
+            "fingerprint_changed": (
+                shadow_control.fingerprint() != shadow_candidate.fingerprint()
+            ),
+            "current_gw_expected_points_delta": round(
+                shadow_candidate.expected_points - shadow_control.expected_points, 2,
+            ),
+            "control_transfers": len(shadow_control.transfers_in),
+            "candidate_transfers": len(shadow_candidate.transfers_in),
+            "control_hits": shadow_control.hits,
+            "candidate_hits": shadow_candidate.hits,
+        },
+        "projections": {
+            "control_horizon_xp": control_matrix,
+            "candidate_horizon_xp": fixture_projection.horizon_xp,
+            "candidate_horizon_sd": fixture_projection.horizon_sd,
+        },
+        "next_state": {
+            "control": next_virtual_state(
+                shadow_control, state=control_state, boot=boot,
+                strategy_key=strategy_key, arm="control",
+            ),
+            "candidate": next_virtual_state(
+                shadow_candidate, state=candidate_state, boot=boot,
+                strategy_key=strategy_key, arm="candidate",
+            ),
+        },
+    }
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description="Decision en vivo de una gameweek FPL")
     ap.add_argument("--season", default="2026-27")
@@ -255,6 +397,14 @@ def main() -> None:
             "añade un contrafactual no ejecutable del proyector fixture-a-fixture; "
             "no cambia selected_candidate_key"
         ),
+    )
+    ap.add_argument(
+        "--strategy-shadow-state",
+        help="envelope de la GW anterior con el ledger virtual de ambos brazos",
+    )
+    ap.add_argument(
+        "--strategy-shadow-state-sha256",
+        help="SHA-256 esperado del archivo indicado por --strategy-shadow-state",
     )
     ap.add_argument(
         "--as-of",
@@ -406,93 +556,26 @@ def main() -> None:
             "report_artifact": {"path": str(destino), "sha256": report_sha},
         }
         if args.strategy_shadow == "season_fixture_h3":
-            shadow_horizon = 3
-            shadow_cfg = replace(cfg, horizon=shadow_horizon, chip_policy="none")
-            control_matrix = build_xp_matrix(
-                candidatos,
-                live.team_schedule(
-                    fx, boot, args.gw, args.gw + shadow_horizon - 1,
-                ),
-                args.gw,
-                shadow_horizon,
-                decay=shadow_cfg.decay,
-            )
-            control_state = replace(
-                base_state,
-                chips_allowed={},
-                horizon_xp=control_matrix,
-                horizon_sd={},
-            )
-            shadow_control = decide(args.gw, control_state, shadow_cfg)
-            fixture_projection = fixture_horizon_projection(
-                history=historia,
-                roster=roster,
-                modelos=modelos,
-                season=args.season,
-                gw=args.gw,
-                horizon=shadow_horizon,
-                schedule=live.fixture_schedule(
-                    fx, boot, args.gw, args.gw + shadow_horizon - 1,
-                ),
-                decay=shadow_cfg.decay,
-                disponibilidad=roster["disponibilidad"].to_numpy(),
-            )
-            candidate_state = replace(
-                base_state,
-                chips_allowed={},
-                horizon_xp=fixture_projection.horizon_xp,
-                horizon_sd=fixture_projection.horizon_sd,
-            )
-            shadow_candidate = decide(args.gw, candidate_state, shadow_cfg)
-            control_row = _candidate(
-                "shadow_control_h3",
-                "Control causal: xP del rival actual repetido",
-                shadow_control,
-                control_state,
-            )
-            candidate_row = _candidate(
-                "shadow_season_fixture_h3",
-                "Candidato causal: rival y localía por fixture",
-                shadow_candidate,
-                candidate_state,
-            )
-            payload["strategy_shadow"] = {
-                "schema": "mova-strategy-shadow-v1",
-                "experiment_id": "EXP-MOVA-2026-003",
-                "strategy_key": "season_fixture_h3",
-                "status": "shadow_only",
-                "selected_for_execution": False,
-                "horizon": shadow_horizon,
-                "decay": shadow_cfg.decay,
-                "chips": "disabled_in_both_arms",
-                "controlled_variable": "future_fixture_opponent_and_home_context",
-                "information_set": (
-                    "single_predeadline_player_state_with_published_future_schedule"
-                ),
-                "control": control_row,
-                "candidate": candidate_row,
-                "comparison": {
-                    "fingerprint_changed": (
-                        shadow_control.fingerprint() != shadow_candidate.fingerprint()
-                    ),
-                    "current_gw_expected_points_delta": round(
-                        shadow_candidate.expected_points - shadow_control.expected_points,
-                        2,
-                    ),
-                    "control_transfers": len(shadow_control.transfers_in),
-                    "candidate_transfers": len(shadow_candidate.transfers_in),
-                    "control_hits": shadow_control.hits,
-                    "candidate_hits": shadow_candidate.hits,
-                },
-                # Se conservan las predicciones completas dentro del artefacto
-                # sellado para poder medir CRPS/calibración y atribuir el cambio
-                # cuando las jornadas se liquiden.
-                "projections": {
-                    "control_horizon_xp": control_matrix,
-                    "candidate_horizon_xp": fixture_projection.horizon_xp,
-                    "candidate_horizon_sd": fixture_projection.horizon_sd,
-                },
-            }
+            try:
+                payload["strategy_shadow"] = _build_strategy_shadow(
+                    season=args.season, gw=args.gw, cfg=cfg,
+                    candidatos=candidatos, fx=fx, boot=boot, base_state=base_state,
+                    historia=historia, roster=roster, modelos=modelos,
+                    prior_path=args.strategy_shadow_state,
+                    prior_sha256=args.strategy_shadow_state_sha256,
+                )
+            except Exception as exc:  # noqa: BLE001 - shadow no derriba la decisión vigente
+                payload["strategy_shadow"] = {
+                    "schema": "mova-strategy-shadow-v1",
+                    "experiment_id": "EXP-MOVA-2026-003",
+                    "strategy_key": "season_fixture_h3",
+                    "season": args.season,
+                    "gw": int(args.gw),
+                    "status": "invalid",
+                    "selected_for_execution": False,
+                    "virtual_trajectory": True,
+                    "error": {"type": type(exc).__name__, "detail": str(exc)[:500]},
+                }
         json_path = Path(args.json_out)
         json_path.parent.mkdir(parents=True, exist_ok=True)
         json_path.write_text(

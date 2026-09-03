@@ -496,6 +496,16 @@ class OpsDB:
             "reused": False, "superseded_decisions": superseded,
         }
 
+    def latest_decision_envelope(self, cycle_id: str) -> dict | None:
+        """Último envelope sellado del ciclo, incluido si fue superseded."""
+        with self.connect(readonly=True) as con:
+            row = con.execute(
+                "SELECT * FROM decision_envelopes WHERE cycle_id=? "
+                "ORDER BY created_at DESC LIMIT 1",
+                (cycle_id,),
+            ).fetchone()
+        return dict(row) if row else None
+
     def execution_preflight_source(self) -> dict:
         """Carga únicamente el estado durable necesario para un preflight."""
         with self.connect(readonly=True) as con:
@@ -3187,6 +3197,35 @@ class OpsDB:
             ),
             "latest": runs[0] if runs else None, "runs": runs,
         }
+
+    def strategy_shadow_settlements(self, season: str) -> list[dict]:
+        """Última liquidación retrospectiva de shadow por GW de una temporada."""
+        with self.connect(readonly=True) as con:
+            rows = con.execute(
+                """SELECT c.gw,r.created_at,r.metrics_json
+                FROM gameweek_reviews r
+                JOIN gameweek_settlements s ON s.settlement_id=r.settlement_id
+                JOIN gameweek_cycles c ON c.cycle_id=s.cycle_id
+                WHERE c.season=? AND r.review_type='retrospective'
+                ORDER BY c.gw,r.created_at DESC""",
+                (season,),
+            ).fetchall()
+        latest: dict[int, dict] = {}
+        seen: set[int] = set()
+        for row in rows:
+            gw = int(row["gw"])
+            if gw in seen:
+                continue
+            seen.add(gw)
+            try:
+                shadow = json.loads(row["metrics_json"]).get("strategy_shadow")
+            except (TypeError, json.JSONDecodeError):
+                shadow = None
+            latest[gw] = shadow or {
+                "season": season, "gw": gw, "status": "missing",
+                "reason": "retrospective_review_without_strategy_shadow",
+            }
+        return [latest[gw] for gw in sorted(latest)]
 
     def gameweek_review_status(self, season: str, gw: int) -> dict:
         """Devuelve la memoria post-settlement sin abrir SQLite fuera del runtime."""
