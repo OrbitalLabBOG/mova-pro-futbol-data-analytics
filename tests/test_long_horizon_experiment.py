@@ -8,6 +8,12 @@ import pytest
 from experiments.long_horizon.metrics import normal_crps, paired_policy_bootstrap
 from experiments.long_horizon.models import EventProxyGoalsModel
 from experiments.long_horizon.event_h3 import summarize_development
+from experiments.long_horizon.discrete_uncertainty import (
+    SUPPORT,
+    discrete_metrics,
+    knn_discrete_pmf,
+    normal_discrete_pmf,
+)
 from mova_fpl.engine.baselines import _prepara
 from mova_fpl.models.features.minutes_features import FEATURES, build, build_targets
 from mova_fpl.models.features.points_features import player_rates
@@ -188,3 +194,41 @@ def test_event_h3_challenger_rejected_with_only_one_win(tmp_path):
     assert result["event_mean_delta_vs_incumbent"] > 0
     assert result["event_wins_vs_incumbent"] == 1
     assert result["selected_policy"] == "season_fixture_h3"
+
+
+def test_discretized_normal_is_a_normalized_pmf():
+    pmf = normal_discrete_pmf([0.0, 3.0], [1.0, 0.0])
+    assert pmf.shape == (2, len(SUPPORT))
+    assert pmf.sum(axis=1) == pytest.approx([1.0, 1.0])
+    assert SUPPORT[pmf[1].argmax()] == 3
+
+
+def test_knn_distribution_preserves_zero_inflation_and_position():
+    calibration = pd.DataFrame({
+        "position": ["GK"] * 4 + ["FWD"] * 4,
+        "xp": [1.0] * 8,
+        "xp_sd": [2.0] * 8,
+        "n_fixtures": [1] * 8,
+        "actual": [0, 0, 0, 1, 2, 5, 6, 8],
+    })
+    target = pd.DataFrame({
+        "position": ["GK", "FWD"], "xp": [1.0, 1.0],
+        "xp_sd": [2.0, 2.0], "n_fixtures": [1, 1],
+    })
+    pmf = knn_discrete_pmf(
+        calibration, target, neighbors=4, prior_strength=0.0
+    )
+    zero = int(np.flatnonzero(SUPPORT == 0)[0])
+    assert pmf.sum(axis=1) == pytest.approx([1.0, 1.0])
+    assert pmf[0, zero] > pmf[1, zero]
+
+
+def test_discrete_metrics_rewards_exact_distribution():
+    actual = np.array([0, 2])
+    pmf = np.zeros((2, len(SUPPORT)))
+    pmf[0, int(np.flatnonzero(SUPPORT == 0)[0])] = 1.0
+    pmf[1, int(np.flatnonzero(SUPPORT == 2)[0])] = 1.0
+    metrics = discrete_metrics(actual, pmf)
+    assert metrics["crps_discrete"] == pytest.approx(0.0)
+    assert metrics["log_score"] == pytest.approx(0.0)
+    assert metrics["coverage_90"] == 1.0

@@ -90,7 +90,8 @@ def freeze_manifest(args, output: Path) -> dict:
         existing = json.loads(destination.read_text(encoding="utf-8"))
         comparable_existing = {key: value for key, value in existing.items()
                                if key != "created_at"}
-        comparable_new = {key: value for key, value in payload.items()
+        serialized = json.loads(json.dumps(payload, ensure_ascii=False, default=str))
+        comparable_new = {key: value for key, value in serialized.items()
                           if key != "created_at"}
         if comparable_existing != comparable_new:
             raise RuntimeError(

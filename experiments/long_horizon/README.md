@@ -120,3 +120,12 @@ y `season_fixture_h3_events` manteniendo todo salvo los proxies constante. El
 peso 0,45 se hereda congelado; el challenger solo puede abrir la evaluación
 temporal 2025-26 si mejora la media y gana al menos dos de tres temporadas de
 desarrollo. Este experimento tampoco puede promover ni ejecutar decisiones.
+
+## Iteración 5: incertidumbre discreta
+
+`EXP-MOVA-2026-005` conserva intacta la media y la política `h3`, pero reemplaza
+para evaluación la Normal simétrica por una PMF empírica de puntos enteros. El
+calibrador busca vecinos históricos dentro de la misma posición usando xP,
+desviación y número de fixtures; por construcción puede asignar masa explícita
+a cero y a resultados negativos. La selección usa folds temporales y CRPS
+discreto. Su salida es diagnóstica y no entra al optimizador ni al runtime.
