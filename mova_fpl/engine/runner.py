@@ -30,6 +30,8 @@ class Config:
     top_k: int = 30                   # recorte de mercado por posicion (0 = sin recorte)
     max_hits: int = 2                 # tope de transferencias pagadas por jornada
     time_limit: int = 30              # segundos por jornada antes de rendirse
+    transfer_penalty: float = 0.0     # valor de opcion de conservar un cambio
+    uncertainty_transfer_weight: float = 0.0  # robustez epistemica de compra/venta
 
 
 def decide(gw: int, state: State, config: Config | None = None) -> Decision:

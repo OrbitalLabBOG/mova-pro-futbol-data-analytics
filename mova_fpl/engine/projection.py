@@ -65,23 +65,11 @@ def _proba_minutos(history: pd.DataFrame, roster: pd.DataFrame, model) -> np.nda
     Se factoriza aparte porque la usan el proyector de minutos y el de puntos, y
     construir las features es lo caro del ciclo: una sola vez por jornada.
     """
-    objetivo = roster.copy()
-    for c in ("minutes", "starts", "total_points"):
-        objetivo[c] = np.nan
-
-    cols = ["player_key", "season", "gw", "fixture", "minutes", "starts",
-            "value", "position", "was_home", "element", "total_points"]
-    hist = history.reindex(columns=cols) if not history.empty else pd.DataFrame(columns=cols)
-    marco = pd.concat([hist, objetivo.reindex(columns=cols)], ignore_index=True)
-    marco["_objetivo"] = [False] * len(hist) + [True] * len(objetivo)
-
-    from mova_fpl.models.features.minutes_features import build
-    d = build(marco)
-    p = pd.DataFrame(model.predict_proba_built(d), columns=["p0", "p1", "p60"])
-    p["_objetivo"] = d["_objetivo"].to_numpy()
-    p["element"] = d["element"].to_numpy()
-    tgt = (p[p["_objetivo"]].set_index("element").reindex(roster["element"])
-           [["p0", "p1", "p60"]])
+    from mova_fpl.models.features.minutes_features import build_targets
+    target = build_targets(history, roster)
+    p = pd.DataFrame(model.predict_proba_built(target), columns=["p0", "p1", "p60"])
+    p["element"] = target["element"].to_numpy()
+    tgt = p.set_index("element").reindex(roster["element"])[["p0", "p1", "p60"]]
     # un jugador sin fila proyectable se trata como que no juega, no como 50/50:
     # inventar disponibilidad es peor que asumir ausencia
     return tgt.fillna({"p0": 1.0, "p1": 0.0, "p60": 0.0}).to_numpy(dtype=float)

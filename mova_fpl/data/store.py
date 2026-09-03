@@ -185,6 +185,25 @@ class Store:
         with self._connect() as con:
             return pd.read_sql_query(sql, con, params=(season, int(gw_from), int(gw_to)))
 
+    def team_fixtures(self, season: str, gw_from: int, gw_to: int) -> pd.DataFrame:
+        """Contexto de cada partido futuro por club, sin rendimiento ni precios.
+
+        Conserva rival y localia para proyectar cada fixture del horizonte sin
+        leer el catalogo futuro de jugadores, que revelaria fichajes y precios
+        aun desconocidos. En una doble jornada hay dos filas para el mismo club.
+
+        Mantiene la limitacion L-01 de ``team_schedule``: el historico ingerido
+        conoce la asignacion final de jornadas tras aplazamientos.
+        """
+        cols = "season, gw, fixture, team, opponent_team, was_home, kickoff_time"
+        sql = (
+            f"SELECT DISTINCT {cols} FROM {TABLE} "
+            f"WHERE season = ? AND gw BETWEEN ? AND ? AND team IS NOT NULL "
+            f"ORDER BY gw, fixture, team"
+        )
+        with self._connect() as con:
+            return pd.read_sql_query(sql, con, params=(season, int(gw_from), int(gw_to)))
+
     def teams(self, season: str) -> list[str]:
         """Clubes de la temporada. Metadato de calendario, sin ventana temporal."""
         sql = f"SELECT DISTINCT team FROM {TABLE} WHERE season = ? AND team IS NOT NULL ORDER BY team"

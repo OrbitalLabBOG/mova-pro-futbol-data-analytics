@@ -68,10 +68,17 @@ TASAS_POR_90 = (
     ("penalties_saved", "penaltis_parados90"),
     ("own_goals", "autogoles90"),
     ("bps", "bps90"),
+    # Proxies de eventos nativos de FPL. Estan disponibles en las diez
+    # temporadas y solo entran desde historia cerrada. El modelo productivo no
+    # los consume todavia; el laboratorio puede contrastarlos causalmente.
+    ("influence", "influence90"),
+    ("creativity", "creativity90"),
+    ("threat", "threat90"),
+    ("ict_index", "ict90"),
 )
 
 
-def player_rates(history: pd.DataFrame) -> pd.DataFrame:
+def player_rates(history: pd.DataFrame, half_life_appearances: float | None = None) -> pd.DataFrame:
     """Tasas por 90 y por aparicion de cada jugador, sin encoger todavia.
 
     Indexado por `player_key`. Una columna ausente en el historico produce NaN,
@@ -81,18 +88,29 @@ def player_rates(history: pd.DataFrame) -> pd.DataFrame:
     if history.empty:
         return pd.DataFrame(columns=["n90", "apariciones", "posicion"]).rename_axis("player_key")
 
+    if half_life_appearances is not None and half_life_appearances <= 0:
+        raise ValueError("half_life_appearances debe ser positivo")
     d = history.copy()
     d["player_key"] = d["player_key"].fillna("desconocido")
+    d = d.sort_values([c for c in ("player_key", "season", "gw", "fixture") if c in d])
     d["minutos"] = pd.to_numeric(d["minutes"], errors="coerce").fillna(0.0)
-    jug = d[d["minutos"] > 0]
+    jug = d[d["minutos"] > 0].copy()
     if jug.empty:
         return pd.DataFrame(columns=["n90", "apariciones", "posicion"]).rename_axis("player_key")
 
     g = jug.groupby("player_key", sort=False)
+    if half_life_appearances is None:
+        jug["_peso"] = 1.0
+    else:
+        age = g["minutos"].transform("size") - g.cumcount() - 1
+        jug["_peso"] = np.exp2(-age.to_numpy(dtype=float) / float(half_life_appearances))
+    weighted_minutes = jug["minutos"] * jug["_peso"]
+    sum_weight = jug["_peso"].groupby(jug["player_key"], sort=False).sum()
+    sum_minutes = weighted_minutes.groupby(jug["player_key"], sort=False).sum()
     out = pd.DataFrame({
-        "n90": g["minutos"].sum() / 90.0,
-        "apariciones": g.size(),
-        "minutos_medios": g["minutos"].mean(),
+        "n90": sum_minutes / 90.0,
+        "apariciones": sum_weight,
+        "minutos_medios": sum_minutes / sum_weight.replace(0.0, np.nan),
     })
 
     for col, nombre in TASAS_POR_90:
@@ -104,14 +122,21 @@ def player_rates(history: pd.DataFrame) -> pd.DataFrame:
         if v.notna().sum() == 0:
             out[nombre] = np.nan
             continue
-        suma = v.groupby(jug["player_key"], sort=False).sum(min_count=1)
-        expo = jug.loc[v.notna(), "minutos"].groupby(
-            jug.loc[v.notna(), "player_key"], sort=False).sum() / 90.0
+        valid = v.notna()
+        suma = (v[valid] * jug.loc[valid, "_peso"]).groupby(
+            jug.loc[valid, "player_key"], sort=False).sum(min_count=1)
+        expo = (jug.loc[valid, "minutos"] * jug.loc[valid, "_peso"]).groupby(
+            jug.loc[valid, "player_key"], sort=False).sum() / 90.0
         out[nombre] = suma / expo.replace(0.0, np.nan)
 
     if "bonus" in jug.columns:
         b = pd.to_numeric(jug["bonus"], errors="coerce")
-        out["bonus_aparicion"] = b.groupby(jug["player_key"], sort=False).mean()
+        valid = b.notna()
+        numerator = (b[valid] * jug.loc[valid, "_peso"]).groupby(
+            jug.loc[valid, "player_key"], sort=False).sum()
+        denominator = jug.loc[valid, "_peso"].groupby(
+            jug.loc[valid, "player_key"], sort=False).sum()
+        out["bonus_aparicion"] = numerator / denominator.replace(0.0, np.nan)
     else:
         out["bonus_aparicion"] = np.nan
 

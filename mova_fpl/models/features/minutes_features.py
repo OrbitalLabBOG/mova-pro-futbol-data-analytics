@@ -90,3 +90,88 @@ def build(df: pd.DataFrame) -> pd.DataFrame:
 
 def matrix(d: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
     return d[FEATURES].astype(float), d["y"].astype(int)
+
+
+def build_targets(history: pd.DataFrame, targets: pd.DataFrame) -> pd.DataFrame:
+    """Construye solo las filas objetivo con el mismo estado que :func:`build`.
+
+    ``build`` sigue siendo la vía de entrenamiento fila a fila. En producción y
+    replay no tiene sentido materializar features para todo el pasado en cada
+    deadline: basta resumir el histórico causal y anexar los atributos del
+    catálogo objetivo. Esta función es algebraicamente equivalente para una
+    fila objetivo por jugador.
+    """
+    target = targets.copy().reset_index(drop=True)
+    target["player_key"] = target["player_key"].fillna("desconocido")
+
+    if history.empty:
+        state = pd.DataFrame(index=pd.Index([], name="player_key"))
+    else:
+        d = history.copy()
+        d["player_key"] = d["player_key"].fillna("desconocido")
+        d = d.sort_values(ORDEN).reset_index(drop=True)
+        d["minutos"] = pd.to_numeric(d["minutes"], errors="coerce").fillna(0.0)
+        d["jugo"] = (d["minutos"] > 0).astype(float)
+        d["jugo_60"] = (d["minutos"] >= 60).astype(float)
+        if "starts" in d:
+            d["titular"] = pd.to_numeric(d["starts"], errors="coerce")
+        else:
+            d["titular"] = np.nan
+
+        def previous_two(values: pd.Series):
+            return float(values.iloc[-2]) if len(values) >= 2 else np.nan
+
+        def zero_streak(values: pd.Series) -> float:
+            count = 0
+            for value in reversed(values.to_numpy(dtype=float)):
+                if value != 0:
+                    break
+                count += 1
+            return float(count)
+
+        grouped = d.groupby("player_key", sort=False)
+        state = grouped.agg(
+            n_prev=("minutos", "size"),
+            tasa_jugo=("jugo", "mean"),
+            tasa_60=("jugo_60", "mean"),
+            min_anterior=("minutos", "last"),
+            min_hace_2=("minutos", previous_two),
+            std_min_5=("minutos", lambda values: values.tail(5).std()),
+            racha_ceros=("minutos", zero_streak),
+            tasa_titular=("titular", "mean"),
+            temporadas_vistas=("season", "nunique"),
+        )
+        state["ewm_min_corto"] = grouped["minutos"].agg(
+            lambda values: values.ewm(halflife=2, min_periods=1).mean().iloc[-1])
+        state["ewm_min_largo"] = grouped["minutos"].agg(
+            lambda values: values.ewm(halflife=8, min_periods=1).mean().iloc[-1])
+
+    out = state.reindex(target["player_key"].to_numpy()).reset_index(drop=True)
+    historical = (
+        "n_prev", "ewm_min_corto", "ewm_min_largo", "tasa_jugo", "tasa_60",
+        "min_anterior", "min_hace_2", "std_min_5", "racha_ceros",
+        "tasa_titular", "temporadas_vistas",
+    )
+    for column in historical:
+        if column not in out:
+            out[column] = np.nan
+    out["n_prev"] = out.get("n_prev", pd.Series(index=out.index, dtype=float)).fillna(0.0)
+    out["racha_ceros"] = out.get(
+        "racha_ceros", pd.Series(index=out.index, dtype=float)).fillna(0.0)
+    out["temporadas_vistas"] = out.get(
+        "temporadas_vistas", pd.Series(index=out.index, dtype=float)).fillna(0.0)
+    out["primera_de_temporada"] = (
+        pd.to_numeric(target["gw"], errors="coerce") <= 1).astype(float)
+    out["precio"] = pd.to_numeric(target["value"], errors="coerce") / 10.0
+    pos = target["position"].astype("string").str.upper()
+    out["es_gk"] = ((pos == "GK") | (pos == "GKP")).fillna(False).astype(float)
+    out["es_def"] = pos.str.startswith("DEF").fillna(False).astype(float)
+    out["es_mid"] = pos.str.startswith("MID").fillna(False).astype(float)
+    out["es_fwd"] = pos.str.startswith("FWD").fillna(False).astype(float)
+    out["local"] = pd.to_numeric(target["was_home"], errors="coerce").fillna(0.5)
+    out["gw_num"] = pd.to_numeric(target["gw"], errors="coerce")
+    out["element"] = target["element"].to_numpy()
+    out["player_key"] = target["player_key"].to_numpy()
+    out["y"] = 0
+    out["_objetivo"] = True
+    return out

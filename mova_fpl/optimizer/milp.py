@@ -74,6 +74,11 @@ class OptimizerConfig:
     max_hits_per_gw: int = 2
     time_limit: int = 30
     risk_lambda: float = 0.0          # Q-02: 0 = rank global, neutral al riesgo
+    #: valor futuro de conservar una transferencia. Cero reproduce produccion.
+    transfer_penalty: float = 0.0
+    #: robustez epistemica: solo grava comprar/vender cuando la proyeccion es
+    #: incierta; no castiga la varianza deportiva de quien ya esta elegido.
+    uncertainty_transfer_weight: float = 0.0
     tie_break: float = 1e-6           # a igual xp, prefiere plantilla mas barata
     #: penalizacion simbolica por jugar un chip. Evita que el modelo queme un chip
     #: que no aporta nada: ante empate, prefiere guardarlo. No expresa su coste de
@@ -198,7 +203,8 @@ def solve(state, xp_matrix: dict, config: OptimizerConfig | None = None) -> Solu
                          f"ftdin_{sig}")
 
     _restricciones_agente(prob, ids, gws, state, s, sell, en_plantilla)
-    prob += _objetivo(prob, ids, gws, xp_matrix, s, e, cap, hits, chip, precio, rules, config)
+    prob += _objetivo(prob, ids, gws, xp_matrix, s, e, cap, buy, sell, hits, chip,
+                      precio, rules, config, getattr(state, "horizon_sd", None) or {}, frio)
 
     solver = pulp.PULP_CBC_CMD(msg=1 if config.solver_msg else 0,
                                timeLimit=config.time_limit, threads=1)
@@ -290,7 +296,8 @@ def _restricciones_plantilla(prob, ids, pos, club, s, e, cap, rules, g) -> None:
                  f"club_{_slug(c)}_{g}")
 
 
-def _objetivo(prob, ids, gws, xp_matrix, s, e, cap, hits, chip, precio, rules, config):
+def _objetivo(prob, ids, gws, xp_matrix, s, e, cap, buy, sell, hits, chip, precio,
+              rules, config, sd_matrix, cold_start):
     """Puntos esperados del horizonte, descontados, menos el coste de los hits.
 
     Los chips entran como productos de binarias, linealizados. Para el bench boost
@@ -328,6 +335,15 @@ def _objetivo(prob, ids, gws, xp_matrix, s, e, cap, hits, chip, precio, rules, c
                 terminos.append((1.0 - config.bench_weight) * v * z)
 
         terminos.append(-rules["hit_cost"] * hits[g])
+        if not (cold_start and g == gws[0]):
+            if config.transfer_penalty:
+                terminos.append(-float(config.transfer_penalty)
+                                 * pulp.lpSum(buy[i, g] for i in ids))
+            if config.uncertainty_transfer_weight:
+                sd = sd_matrix.get(g, {})
+                terminos.append(-0.5 * float(config.uncertainty_transfer_weight)
+                                 * pulp.lpSum(float(sd.get(i, 0.0))
+                                              * (buy[i, g] + sell[i, g]) for i in ids))
     # ante empate, guardar el chip antes que quemarlo
     terminos += [-config.chip_epsilon * v for v in chip.values()]
     # desempate: a igual xp prefiere la plantilla mas barata, que deja banco

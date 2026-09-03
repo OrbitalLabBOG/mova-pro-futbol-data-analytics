@@ -71,6 +71,10 @@ class PointsModel:
     bonus: BonusModel = field(default_factory=BonusModel)
     minutos_parcial: float = MINUTOS_PARCIAL
     minutos_completo: float = MINUTOS_COMPLETO
+    #: None reproduce la media histórica. Un valor activa EWM por apariciones
+    #: únicamente en el estado de deadline; los priors de entrenamiento quedan
+    #: congelados para que la ablation mida recencia y nada más.
+    player_recency_half_life: float | None = None
     priors_entrenamiento: dict = field(default_factory=dict)
     metadata: dict = field(default_factory=dict)
 
@@ -112,7 +116,7 @@ class PointsModel:
 
     def project(self, history: pd.DataFrame, roster: pd.DataFrame,
                 minutes_proba: np.ndarray, scoring, umbrales: dict,
-                equipos: dict | None = None) -> pd.DataFrame:
+                equipos: dict | None = None, prepared: dict | None = None) -> pd.DataFrame:
         """Desglose por componente para cada fila del catalogo (AC-WP005-002).
 
         `history` viene de `as_of`: nunca contiene la jornada objetivo.
@@ -127,15 +131,11 @@ class PointsModel:
             return pd.DataFrame(columns=["element", "xp", "xp_sd", *COMPONENTES])
 
         pos = normaliza_posicion(roster["position"]).fillna("MID")
-        tasas_hist = player_rates(history)
-        priors = self._priors(tasas_hist)
+        prepared = prepared or self.prepare_history(history)
+        tasas_hist = prepared["player_rates"]
+        priors = prepared["priors"]
         estado = self._estado_jugador(roster, tasas_hist, priors, pos)
-        fuerza = team_strength(history)
-
-        # el conteo defensivo solo existe desde 2025/26: si el ajuste no lo vio,
-        # la dispersion se reestima con lo que lleve la temporada en curso
-        if self.defcon.sin_datos and "defensive_contribution" in history.columns:
-            self.defcon.fit(history)
+        fuerza = prepared["team_strength"]
 
         mult, lam_enc = self._contexto_partido(roster, fuerza, equipos)
         p = np.asarray(minutes_proba, dtype=float)
@@ -169,6 +169,24 @@ class PointsModel:
         out["lambda_encajados"] = lam_enc
         out["multiplicador_rival"] = mult
         return out
+
+    def prepare_history(self, history: pd.DataFrame) -> dict:
+        """Calcula una vez el estado compartido por todos los fixtures del plan.
+
+        Es un snapshot puro de la información disponible en el deadline. Pasarlo
+        a varias llamadas de ``project`` no adelanta datos; evita reagrupar el
+        mismo histórico para cada jornada hipotética del horizonte.
+        """
+        tasas_hist = player_rates(history, self.player_recency_half_life)
+        # el conteo defensivo solo existe desde 2025/26: si el ajuste no lo vio,
+        # la dispersion se reestima con lo que lleve la temporada en curso
+        if self.defcon.sin_datos and "defensive_contribution" in history.columns:
+            self.defcon.fit(history)
+        return {
+            "player_rates": tasas_hist,
+            "priors": self._priors(tasas_hist),
+            "team_strength": team_strength(history),
+        }
 
     # ---------------------------------------------------------------- internos
 

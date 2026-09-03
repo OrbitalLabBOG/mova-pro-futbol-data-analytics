@@ -3,12 +3,15 @@ from __future__ import annotations
 
 from types import ModuleType
 
-from mova_fpl.rules import season_2025_26, season_2026_27
+from mova_fpl.rules import season_2021_24, season_2024_25, season_2025_26, season_2026_27
 from mova_fpl.rules.base import (PlayerStats, PointsBreakdown, Position, ScoringTable,
                                  Squad, SquadPlayer, Violation)
 from mova_fpl.rules.scoring import score as _score
 
 _REGISTRY: dict[str, ModuleType] = {
+    "2021-22": season_2021_24,
+    "2023-24": season_2021_24,
+    "2024-25": season_2024_25,
     "2025-26": season_2025_26,
     "2026-27": season_2026_27,
 }
@@ -20,9 +23,7 @@ def get(season: str) -> ModuleType:
         return _REGISTRY[season]
     except KeyError:
         raise ValueError(
-            f"no hay reglas para {season}. Disponibles: {sorted(_REGISTRY)}. "
-            "Las temporadas anteriores a 2025/26 no se modelan: no tienen "
-            "contribucion defensiva y no son el juego que se va a jugar."
+            f"no hay reglas para {season}. Disponibles: {sorted(_REGISTRY)}."
         ) from None
 
 

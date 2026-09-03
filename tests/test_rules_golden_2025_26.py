@@ -118,6 +118,13 @@ def test_sin_dato_de_defcon_no_se_inventan_puntos():
     assert b.defensive_contribution == 0
 
 
-def test_temporadas_previas_no_tienen_reglas():
+def test_ruleset_historico_explicito_y_sin_defcon():
+    historical = score(PlayerStats(Position.DEF, minutes=90,
+                                   defensive_contribution=20), "2024-25")
+    assert historical.appearance == 2
+    assert historical.defensive_contribution == 0
+
+
+def test_temporada_del_mundial_sigue_excluida():
     with pytest.raises(ValueError, match="no hay reglas"):
-        score(PlayerStats(Position.DEF, minutes=90), "2024-25")
+        score(PlayerStats(Position.DEF, minutes=90), "2022-23")

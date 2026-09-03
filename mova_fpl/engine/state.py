@@ -57,6 +57,10 @@ class State:
     #: Lo llena el proveedor de estado (simulador o runner en vivo), nunca la politica:
     #: State sigue siendo un VALOR y decide() sigue sin tocar la base de datos.
     horizon_xp: dict = field(default_factory=dict)
+    #: desviacion estandar predictiva por jugador y jornada. No cambia ninguna
+    #: decision por defecto; habilita robustez de transferencias en research sin
+    #: convertir la varianza deportiva en una recompensa.
+    horizon_sd: dict = field(default_factory=dict)
 
     @property
     def is_cold_start(self) -> bool:

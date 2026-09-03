@@ -31,6 +31,19 @@ from mova_fpl.trace import TraceWriter
 MAX_GW = 38
 
 
+@dataclass(frozen=True)
+class ProjectionBundle:
+    """Proyeccion preparada por un adaptador experimental, sin resultados reales.
+
+    El seam permite contrastar un calendario fixture-a-fixture y su incertidumbre
+    con el constructor productivo sin duplicar el replay ni la politica. Los
+    defaults de :func:`replay` no lo usan.
+    """
+    xp: pd.Series
+    horizon_xp: dict
+    horizon_sd: dict = field(default_factory=dict)
+
+
 @dataclass
 class RunReport:
     run_id: str
@@ -197,9 +210,13 @@ def replay(season: str, mode: str = "named", config: Config | None = None,
            store: Store | None = None, trace: TraceWriter | None = None,
            run_id: str | None = None, resume: bool = False,
            max_gw: int = MAX_GW, verbose: bool = True,
-           agent_fn=None, agent_shadow: bool = False) -> RunReport:
+           agent_fn=None, agent_shadow: bool = False,
+           history_mode: str = "season", model_bundle=None,
+           projection_fn=None) -> RunReport:
     if mode not in ("named", "anonymized"):
         raise ValueError(f"modo desconocido: {mode}")
+    if history_mode not in ("season", "multi_season"):
+        raise ValueError(f"history_mode desconocido: {history_mode}")
     config = config or Config()
     store = store or Store()
     trace = trace or TraceWriter()
@@ -207,16 +224,26 @@ def replay(season: str, mode: str = "named", config: Config | None = None,
 
     modelo_min, modelos = None, None
     if config.projector == "minutes":
-        from mova_fpl.models.registry import load
-        modelo_min = load("minutes", config.model_version)
+        if model_bundle is not None:
+            modelo_min = (model_bundle.get("minutes") if isinstance(model_bundle, dict)
+                          else model_bundle)
+        else:
+            from mova_fpl.models.registry import load
+            modelo_min = load("minutes", config.model_version)
     elif config.projector == "points":
-        from mova_fpl.models.registry import load
-        modelos = {"minutes": load("minutes", "1.0.0"),
-                   "points": load("points", config.model_version)}
+        if model_bundle is not None:
+            modelos = model_bundle
+        else:
+            from mova_fpl.models.registry import load
+            modelos = {"minutes": load("minutes", "1.0.0"),
+                       "points": load("points", config.model_version)}
     elif config.projector != "naive":
         raise ValueError(f"proyector desconocido: {config.projector}")
 
     rules_mod = get_rules(season)
+    if (config.chip_policy == "planner"
+            and getattr(rules_mod, "HISTORICAL_CHIPS_SUPPORTED", True) is False):
+        raise ValueError(f"chips historicos no soportados para {season}; use chip_policy='none'")
     rules = rules_mod.SQUAD
     catalogo = rules_mod.CHIPS
     con_chips = config.chip_policy == "planner"
@@ -224,7 +251,9 @@ def replay(season: str, mode: str = "named", config: Config | None = None,
     chips_used: list[ChipUse] = []
     ya_hechas = trace.completed_gws(run_id) if resume else set()
     trace.start_run(run_id, season, mode, config.policy, config.horizon, config.seed,
-                    {"season": season, "mode": mode, "max_gw": max_gw})
+                    {"season": season, "mode": mode, "max_gw": max_gw,
+                     "history_mode": history_mode,
+                     "custom_projection": projection_fn is not None})
 
     alias = _alias_equipos(store, season) if mode == "anonymized" else {}
     report = RunReport(run_id=run_id, season=season, mode=mode, policy=config.policy)
@@ -237,14 +266,25 @@ def replay(season: str, mode: str = "named", config: Config | None = None,
         if gw in ya_hechas:
             continue
 
-        historia = store.as_of(season, gw)          # cold start real en gw=1
+        historia = (store.multi_season_as_of(season, gw)
+                    if history_mode == "multi_season" else store.as_of(season, gw))
         roster = store.roster(season, gw)
         if roster.empty:
             continue
         if mode == "anonymized":
             roster = _anonymize(roster, alias)
 
-        if modelos is not None:
+        bundle = None
+        if projection_fn is not None:
+            bundle = projection_fn(
+                history=historia, roster=roster, models=modelos or modelo_min,
+                season=season, gw=gw, store=store, config=config,
+                max_gw=max_gw, alias=alias,
+            )
+            if not isinstance(bundle, ProjectionBundle):
+                raise TypeError("projection_fn debe devolver ProjectionBundle")
+            xp = bundle.xp
+        elif modelos is not None:
             xp = points_projection(historia, roster, modelos, season)
         elif modelo_min is not None:
             xp = minutes_projection(historia, roster, modelo_min)
@@ -258,11 +298,14 @@ def replay(season: str, mode: str = "named", config: Config | None = None,
         # estructura que ve el planificador salen del mismo rango consultado.
         alcance = max(config.horizon, config.structure_lookahead + 1 if con_chips else 0)
         conteo = _calendario(store, season, gw, min(max_gw, gw + alcance), alias)
-        horizon_xp = _horizonte(candidatos, conteo, gw, config, max_gw)
+        horizon_xp = (bundle.horizon_xp if bundle is not None
+                      else _horizonte(candidatos, conteo, gw, config, max_gw))
+        horizon_sd = bundle.horizon_sd if bundle is not None else {}
 
         state = State(season=season, gw=gw, candidates=candidatos, squad=squad,
                       free_transfers=free_transfers, bank=bank, rules=rules,
                       horizon_xp=horizon_xp,
+                      horizon_sd=horizon_sd,
                       chips=catalogo if con_chips else None,
                       chips_used=tuple(chips_used),
                       schedule=conteo if con_chips else {})
