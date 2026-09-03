@@ -8,6 +8,7 @@ import pytest
 from experiments.long_horizon.metrics import normal_crps, paired_policy_bootstrap
 from experiments.long_horizon.models import EventProxyGoalsModel
 from experiments.long_horizon.event_h3 import summarize_development
+from experiments.long_horizon.stochastic_recourse import _scenario_matrices
 from experiments.long_horizon.discrete_uncertainty import (
     SUPPORT,
     discrete_metrics,
@@ -24,6 +25,8 @@ from mova_fpl.models.features.minutes_features import FEATURES, build, build_tar
 from mova_fpl.models.features.points_features import player_rates
 from mova_fpl.models.goals import GoalsModel
 from mova_fpl.rules import get as get_rules
+from mova_fpl.engine.state import Candidate, State
+from mova_fpl.rules.base import Position
 
 
 def _minute_history() -> pd.DataFrame:
@@ -146,6 +149,32 @@ def test_policy_bootstrap_is_paired_and_reproducible():
     result = paired_policy_bootstrap(baseline, candidate, draws=100, block_size=2, seed=7)
     assert result["observed_by_season"] == {"a": 4.0}
     assert result["probability_positive"] == 1.0
+
+
+def test_recourse_scenarios_preserve_each_frozen_player_mean_exactly():
+    candidates = tuple(
+        Candidate(element=element, position=Position.MID, team=f"T{element}",
+                  price=5.0, xp=3.0)
+        for element in (1, 2)
+    )
+    mean = {5: {1: 3.0, 2: 2.0}, 6: {1: 2.52, 2: 1.68}}
+    probabilities = np.zeros(len(SUPPORT), dtype=float)
+    probabilities[np.flatnonzero(SUPPORT == 0)[0]] = 0.5
+    probabilities[np.flatnonzero(SUPPORT == 6)[0]] = 0.5
+    rows = {
+        gw: {element: probabilities.tolist() for element in mean[gw]}
+        for gw in mean
+    }
+    state = State(
+        season="2026-27", gw=5, candidates=candidates,
+        rules=get_rules("2026-27").SQUAD, horizon_xp=mean,
+        horizon_pmf={"support": SUPPORT.tolist(), "rows": rows, "decay": 0.84},
+    )
+    scenarios = _scenario_matrices(state, count=6, seed=7)
+    for gw, row in mean.items():
+        for element, expected in row.items():
+            observed = np.mean([scenario[gw][element] for scenario in scenarios])
+            assert observed == pytest.approx(expected)
 
 
 def test_event_h3_challenger_requires_two_wins_and_positive_mean(tmp_path):

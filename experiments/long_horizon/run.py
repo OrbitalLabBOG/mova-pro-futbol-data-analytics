@@ -397,7 +397,7 @@ def _recency_half_life(output: Path) -> float:
 
 
 def run_variant(args, store: Store, output: Path, manifest: dict, season: str,
-                name: str, spec: dict, event_weight: float) -> dict:
+                name: str, spec: dict, event_weight: float, *, projector=None) -> dict:
     destination = output / "replays" / f"{season}-{name}.json"
     if destination.exists() and not args.force_replays:
         cached = json.loads(destination.read_text(encoding="utf-8"))
@@ -414,13 +414,18 @@ def run_variant(args, store: Store, output: Path, manifest: dict, season: str,
         base["points"].player_recency_half_life = _recency_half_life(output)
     models = with_event_proxy(base, train, event_weight) if spec["events"] else base
     config = Config(
-        policy="milp", projector="points", model_version=f"fold-{season}",
+        policy=str(spec.get("policy", "milp")), projector="points",
+        model_version=f"fold-{season}",
         horizon=int(spec["horizon"]), seed=42, chip_policy="none",
         decay=float(spec["decay"]), top_k=args.top_k, time_limit=args.time_limit,
         transfer_penalty=float(spec["transfer_penalty"]),
         uncertainty_transfer_weight=float(spec["uncertainty_transfer_weight"]),
     )
-    projector = FixtureProjector() if spec["fixture"] else None
+    if projector is not None and not spec["fixture"]:
+        raise ValueError("un projector custom requiere spec.fixture=true")
+    projector = projector if projector is not None else (
+        FixtureProjector() if spec["fixture"] else None
+    )
     (output / "replays").mkdir(parents=True, exist_ok=True)
     (output / "traces").mkdir(parents=True, exist_ok=True)
     trace = TraceWriter(output / "traces" / f"{season}-{name}.db")

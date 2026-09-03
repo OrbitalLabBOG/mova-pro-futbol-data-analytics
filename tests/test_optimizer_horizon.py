@@ -8,7 +8,7 @@ from __future__ import annotations
 import pytest
 
 from mova_fpl.engine.state import Candidate, State
-from mova_fpl.optimizer import OptimizerConfig, build_xp_matrix, shortlist, solve
+from mova_fpl.optimizer import FirstStage, OptimizerConfig, build_xp_matrix, shortlist, solve
 from mova_fpl.optimizer.horizon import DEFAULT_DECAY, summarize
 from mova_fpl.rules import get as get_rules
 from mova_fpl.rules.base import Position
@@ -126,6 +126,41 @@ def test_horizonte_3_no_es_peor_que_horizonte_1_sobre_el_mismo_tramo():
     # si el horizonte dejara de influir y nadie se enteraria. Medido: 141.2 vs 137.2,
     # porque el largo compra una estrella en la GW10 y llega a la GW12 sin pagar hit.
     assert largo > corto
+
+
+def test_first_stage_fija_hoy_y_deja_recourse_en_el_futuro():
+    cands = mercado(n_por_pos=(4, 10, 10, 6), clubes=10)
+    gws = [10, 11, 12]
+    matrix = {
+        g: {candidate.element: candidate.xp + (g - 10) * (candidate.element % 3)
+            for candidate in cands}
+        for g in gws
+    }
+    config = OptimizerConfig(horizon=3, top_k=0, bench_weight=0.0, time_limit=20)
+    base = solve(estado(cands, gw=10), matrix, config)
+    stage = FirstStage(
+        squad=base.squad[10], starters=base.starters[10], captain=base.captain[10],
+    )
+    scenario = {
+        g: {element: value + (25.0 if element % 5 == g % 5 else 0.0)
+            for element, value in row.items()}
+        for g, row in matrix.items()
+    }
+    recourse = solve(estado(cands, gw=10), scenario, config, first_stage=stage)
+    assert set(recourse.squad[10]) == set(stage.squad)
+    assert set(recourse.starters[10]) == set(stage.starters)
+    assert recourse.captain[10] == stage.captain
+    assert sorted(recourse.squad) == gws
+
+
+def test_first_stage_invalida_falla_antes_del_solver():
+    cands = mercado()
+    matrix = {1: {candidate.element: candidate.xp for candidate in cands}}
+    with pytest.raises(ValueError, match="plantilla completa"):
+        solve(
+            estado(cands), matrix, OptimizerConfig(top_k=0),
+            first_stage=FirstStage(squad=(cands[0].element,)),
+        )
 
 
 # ----------------------------------------------------------------- AC-WP006-006

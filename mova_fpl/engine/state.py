@@ -61,6 +61,9 @@ class State:
     #: decision por defecto; habilita robustez de transferencias en research sin
     #: convertir la varianza deportiva en una recompensa.
     horizon_sd: dict = field(default_factory=dict)
+    #: PMF discreta experimental por jugador/jornada. Vacia por defecto y sin
+    #: efecto sobre las políticas vigentes; permite evaluar recourse estocástico.
+    horizon_pmf: dict = field(default_factory=dict)
 
     @property
     def is_cold_start(self) -> bool:

@@ -39,6 +39,7 @@ class FixtureHorizonProjection:
     horizon_xp: dict[int, dict[int, float]]
     horizon_sd: dict[int, dict[int, float]]
     current_detail: pd.DataFrame = field(default_factory=pd.DataFrame)
+    horizon_detail: dict[int, pd.DataFrame] = field(default_factory=dict)
 
 
 def _tasa_por_aparicion(history: pd.DataFrame, roster: pd.DataFrame) -> pd.Series:
@@ -164,6 +165,7 @@ def fixture_horizon_projection(*, history: pd.DataFrame, roster: pd.DataFrame,
     horizon_xp: dict[int, dict[int, float]] = {}
     horizon_sd: dict[int, dict[int, float]] = {}
     current_detail = pd.DataFrame()
+    horizon_detail: dict[int, pd.DataFrame] = {}
 
     for target_gw in range(int(gw), until + 1):
         expected: defaultdict[int, float] = defaultdict(float)
@@ -212,22 +214,23 @@ def fixture_horizon_projection(*, history: pd.DataFrame, roster: pd.DataFrame,
             element: float(np.sqrt(variance[element])) * discount for element in ids
         }
 
-        if target_gw == int(gw):
-            current_detail = current[
-                ["element", "player_key", "name", "position", "team"]
-            ].copy()
-            current_detail["xp"] = current_detail["element"].map(expected).fillna(0.0)
-            current_detail["xp_sd"] = current_detail["element"].map(
+        detail = current[
+            ["element", "player_key", "name", "position", "team"]
+        ].copy()
+        detail["xp"] = detail["element"].map(expected).fillna(0.0)
+        detail["xp_sd"] = detail["element"].map(
                 lambda element: float(np.sqrt(variance[int(element)]))
             ).fillna(0.0)
-            current_detail["n_fixtures"] = current_detail["element"].map(
-                games
-            ).fillna(0).astype(int)
+        detail["n_fixtures"] = detail["element"].map(games).fillna(0).astype(int)
+        horizon_detail[target_gw] = detail
+        if target_gw == int(gw):
+            current_detail = detail
 
     return FixtureHorizonProjection(
         horizon_xp=horizon_xp,
         horizon_sd=horizon_sd,
         current_detail=current_detail,
+        horizon_detail=horizon_detail,
     )
 
 

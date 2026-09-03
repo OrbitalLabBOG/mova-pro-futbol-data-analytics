@@ -12,10 +12,10 @@ optimizador competente de uno ingenuo es el horizonte, no el solver.
 """
 from mova_fpl.optimizer.heuristics import ShortlistReport, shortlist
 from mova_fpl.optimizer.horizon import build_xp_matrix, per_match_rate
-from mova_fpl.optimizer.milp import Infeasible, OptimizerConfig, solve
+from mova_fpl.optimizer.milp import FirstStage, Infeasible, OptimizerConfig, solve
 from mova_fpl.optimizer.freehit import FreeHitPlan, free_hit_budget
 from mova_fpl.optimizer.freehit import evaluate as evaluate_free_hit
 
-__all__ = ["solve", "OptimizerConfig", "Infeasible", "build_xp_matrix",
+__all__ = ["solve", "OptimizerConfig", "FirstStage", "Infeasible", "build_xp_matrix",
            "evaluate_free_hit", "FreeHitPlan", "free_hit_budget",
            "per_match_rate", "shortlist", "ShortlistReport"]

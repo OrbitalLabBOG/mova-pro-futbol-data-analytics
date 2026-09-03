@@ -88,6 +88,19 @@ class OptimizerConfig:
 
 
 @dataclass(frozen=True, slots=True)
+class FirstStage:
+    """Decisión de la jornada actual que permanece fija entre escenarios.
+
+    El resto del horizonte queda libre para representar recourse: después de
+    observar un escenario, cada trayectoria puede volver a optimizar sus
+    transferencias futuras sin reescribir la acción ya tomada hoy.
+    """
+    squad: tuple[int, ...]
+    starters: tuple[int, ...] = ()
+    captain: int | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class Solution:
     """Resultado crudo del solver, antes de volverse `Decision`."""
     squad: dict            # gw -> tuple[element]
@@ -105,7 +118,8 @@ class Solution:
 
 # --------------------------------------------------------------------- modelo
 
-def solve(state, xp_matrix: dict, config: OptimizerConfig | None = None) -> Solution:
+def solve(state, xp_matrix: dict, config: OptimizerConfig | None = None, *,
+          first_stage: FirstStage | None = None) -> Solution:
     """Resuelve el horizonte y devuelve la solucion completa.
 
     `state` aporta plantilla vigente, banco, transferencias libres y reglas.
@@ -121,7 +135,8 @@ def solve(state, xp_matrix: dict, config: OptimizerConfig | None = None) -> Solu
 
     pool = _pool(state)
     en_plantilla = {p.element for p in state.squad.players} if state.squad else set()
-    pool, informe = shortlist(pool, xp_matrix, keep_ids=en_plantilla,
+    conservar = en_plantilla | (set(first_stage.squad) if first_stage else set())
+    pool, informe = shortlist(pool, xp_matrix, keep_ids=conservar,
                               top_k=config.top_k, cheapest=config.cheapest)
 
     precio = {c.element: to_tenths(c.price) for c in pool}
@@ -203,6 +218,8 @@ def solve(state, xp_matrix: dict, config: OptimizerConfig | None = None) -> Solu
                          f"ftdin_{sig}")
 
     _restricciones_agente(prob, ids, gws, state, s, sell, en_plantilla)
+    if first_stage is not None:
+        _fijar_primera_etapa(prob, first_stage, ids, gws[0], s, e, cap, rules)
     prob += _objetivo(prob, ids, gws, xp_matrix, s, e, cap, buy, sell, hits, chip,
                       precio, rules, config, getattr(state, "horizon_sd", None) or {}, frio)
 
@@ -214,6 +231,33 @@ def solve(state, xp_matrix: dict, config: OptimizerConfig | None = None) -> Solu
         raise Infeasible(_diagnose(state, pool, rules, banco0, estado))
 
     return _extract(prob, ids, gws, s, e, cap, buy, sell, hits, bank, chip, estado, informe)
+
+
+def _fijar_primera_etapa(prob, stage: FirstStage, ids: list[int], gw: int,
+                         s: dict, e: dict, cap: dict, rules: dict) -> None:
+    """Fija solo la acción irreversible de hoy; el futuro conserva recourse."""
+    universe = set(ids)
+    squad = set(int(value) for value in stage.squad)
+    starters = set(int(value) for value in stage.starters)
+    if len(stage.squad) != rules["size"] or len(squad) != rules["size"]:
+        raise ValueError("first_stage.squad debe contener la plantilla completa sin duplicados")
+    if not squad <= universe:
+        raise ValueError("first_stage contiene jugadores fuera del mercado")
+    if stage.starters:
+        if (len(stage.starters) != rules["starters"]
+                or len(starters) != rules["starters"] or not starters <= squad):
+            raise ValueError("first_stage.starters no es un XI válido dentro del squad")
+    if stage.captain is not None:
+        if int(stage.captain) not in (starters if stage.starters else squad):
+            raise ValueError("first_stage.captain debe pertenecer a la etapa fijada")
+
+    for element in ids:
+        prob += s[element, gw] == int(element in squad), f"fix_s_{element}_{gw}"
+        if stage.starters:
+            prob += e[element, gw] == int(element in starters), f"fix_e_{element}_{gw}"
+        if stage.captain is not None:
+            prob += cap[element, gw] == int(element == int(stage.captain)), \
+                f"fix_c_{element}_{gw}"
 
 
 def _chip_vars(prob, gws, state) -> dict:

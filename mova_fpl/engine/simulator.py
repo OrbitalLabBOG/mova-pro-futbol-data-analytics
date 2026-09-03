@@ -42,6 +42,7 @@ class ProjectionBundle:
     xp: pd.Series
     horizon_xp: dict
     horizon_sd: dict = field(default_factory=dict)
+    horizon_pmf: dict = field(default_factory=dict)
 
 
 @dataclass
@@ -301,11 +302,13 @@ def replay(season: str, mode: str = "named", config: Config | None = None,
         horizon_xp = (bundle.horizon_xp if bundle is not None
                       else _horizonte(candidatos, conteo, gw, config, max_gw))
         horizon_sd = bundle.horizon_sd if bundle is not None else {}
+        horizon_pmf = bundle.horizon_pmf if bundle is not None else {}
 
         state = State(season=season, gw=gw, candidates=candidatos, squad=squad,
                       free_transfers=free_transfers, bank=bank, rules=rules,
                       horizon_xp=horizon_xp,
                       horizon_sd=horizon_sd,
+                      horizon_pmf=horizon_pmf,
                       chips=catalogo if con_chips else None,
                       chips_used=tuple(chips_used),
                       schedule=conteo if con_chips else {})
