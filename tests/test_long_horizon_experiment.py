@@ -14,6 +14,10 @@ from experiments.long_horizon.models import EventProxyGoalsModel
 from experiments.long_horizon.event_h3 import summarize_development
 from experiments.long_horizon.stochastic_recourse import _scenario_matrices
 from experiments.long_horizon.terminal_value import POLICY_NAME, summarize as summarize_terminal
+from experiments.long_horizon.season_boundary import predictive_metrics
+from experiments.long_horizon.live_boundary import build_closed_history
+from experiments.long_horizon.online_calibration import prior_shift
+from experiments.long_horizon.forecast_ensemble import ForecastEnsembleProjector
 from experiments.long_horizon.discrete_uncertainty import (
     SUPPORT,
     discrete_metrics,
@@ -31,6 +35,7 @@ from mova_fpl.models.features.points_features import player_rates
 from mova_fpl.models.goals import GoalsModel
 from mova_fpl.rules import get as get_rules
 from mova_fpl.engine.state import Candidate, State
+from mova_fpl.engine.projection import FixtureHorizonProjection
 from mova_fpl.rules.base import Position
 
 
@@ -180,6 +185,71 @@ def test_policy_influence_rejects_missing_pairs():
 
     with pytest.raises(ValueError, match="exactamente las mismas"):
         paired_policy_influence(baseline, candidate)
+
+
+def test_season_boundary_proper_scores_reward_the_better_distribution():
+    actual = pd.DataFrame({
+        "actual_class": [0, 1, 2],
+        "p0": [0.9, 0.05, 0.05],
+        "p1": [0.05, 0.9, 0.05],
+        "p60": [0.05, 0.05, 0.9],
+    })
+    worse = actual.assign(
+        p0=[0.05, 0.9, 0.05],
+        p1=[0.9, 0.05, 0.05],
+        p60=[0.05, 0.05, 0.9],
+    )
+
+    better_metrics = predictive_metrics(actual)
+    worse_metrics = predictive_metrics(worse)
+
+    assert better_metrics["log_loss_3c"] < worse_metrics["log_loss_3c"]
+    assert better_metrics["brier_3c"] < worse_metrics["brier_3c"]
+
+
+def test_live_closed_history_rejects_target_leakage_and_maps_settled_rows():
+    boot = {
+        "teams": [{"id": 1, "name": "A"}, {"id": 2, "name": "B"}],
+        "elements": [{
+            "id": 7, "first_name": "Test", "second_name": "Player",
+            "web_name": "Player", "team": 1, "element_type": 3, "now_cost": 55,
+        }],
+    }
+    fixtures = [
+        {"id": gw, "event": gw, "team_h": 1, "team_a": 2,
+         "team_h_score": 1, "team_a_score": 0,
+         "kickoff_time": f"2026-08-{20 + gw:02d}T12:00:00Z"}
+        for gw in (1, 2)
+    ]
+    events = {
+        gw: {"elements": [{
+            "id": 7, "stats": {"minutes": 90, "starts": 1,
+                                  "total_points": 6},
+            "explain": [{"fixture": gw, "stats": []}],
+        }]}
+        for gw in (1, 2)
+    }
+
+    frame, quality = build_closed_history(boot, fixtures, events)
+
+    assert frame["gw"].tolist() == [1, 2]
+    assert frame["player_key"].tolist() == ["test player", "test player"]
+    assert frame["minutes"].tolist() == [90, 90]
+    assert quality["duplicate_keys"] == 0
+
+
+def test_online_prior_shift_moves_mass_toward_observed_class_and_normalizes():
+    target = np.array([[0.5, 0.2, 0.3], [0.4, 0.2, 0.4]])
+    calibration = np.tile([0.5, 0.2, 0.3], (10, 1))
+    actual = np.array([2] * 8 + [0] * 2)
+
+    adjusted, audit = prior_shift(
+        target, calibration, actual, strength_gws=0.5, target_rows=10,
+    )
+
+    assert adjusted[:, 2].mean() > target[:, 2].mean()
+    assert adjusted.sum(axis=1) == pytest.approx([1.0, 1.0])
+    assert audit["calibration_rows"] == 10
 
 
 def test_terminal_value_challenger_requires_three_of_four_development_wins(tmp_path):
@@ -348,3 +418,48 @@ def test_discrete_calibration_artifact_is_hash_bound_and_pickle_free(tmp_path):
 
     with pytest.raises(ValueError, match="SHA-256"):
         load_calibration_artifact(path, "0" * 64)
+
+
+def test_forecast_ensemble_adds_between_regime_uncertainty(monkeypatch):
+    def fake_projection(*, history, **_kwargs):
+        if history.empty:
+            mean, sd = 2.0, 3.0
+        else:
+            mean, sd = 4.0, 1.0
+        detail = pd.DataFrame({
+            "element": [7], "player_key": ["p"], "name": ["P"],
+            "position": ["MID"], "team": ["A"], "xp": [mean],
+            "xp_sd": [sd], "n_fixtures": [1],
+        })
+        return FixtureHorizonProjection(
+            horizon_xp={3: {7: mean}}, horizon_sd={3: {7: sd}},
+            current_detail=detail, horizon_detail={3: detail},
+        )
+
+    monkeypatch.setattr(
+        "experiments.long_horizon.forecast_ensemble.fixture_horizon_projection",
+        fake_projection,
+    )
+
+    class Store:
+        @staticmethod
+        def team_fixtures(*_args):
+            return pd.DataFrame()
+
+    class Config:
+        horizon = 1
+        decay = 0.84
+
+    history = pd.DataFrame({"season": ["2025-26"], "minutes": [90]})
+    roster = pd.DataFrame({
+        "element": [7], "player_key": ["p"], "name": ["P"],
+        "position": ["MID"], "team": ["A"],
+    })
+    result = ForecastEnsembleProjector(0.5)(
+        history=history, roster=roster, models={}, season="2026-27", gw=3,
+        store=Store(), config=Config(), max_gw=38, alias={},
+    )
+
+    assert result.horizon_xp[3][7] == pytest.approx(3.0)
+    # E[var + mean²] - E[mean]² = .5*(1+16) + .5*(9+4) - 9 = 6.
+    assert result.horizon_sd[3][7] == pytest.approx(np.sqrt(6.0))

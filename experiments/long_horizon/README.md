@@ -3,7 +3,7 @@ title: Laboratorio causal de estrategia FPL de largo horizonte
 status: experimental
 owner: MOVA Fantasy
 experiment_id: EXP-MOVA-2026-003
-updated: 2026-09-03
+updated: 2026-09-04
 ---
 
 # Long-horizon uncertainty lab
@@ -161,3 +161,66 @@ de un punto a cada transferencia libre disponible después de la última GW de l
 ventana. Es una sola hipótesis preregistrada —no un barrido— y siempre menor que
 el coste de cuatro puntos de un hit. Debe mejorar la media y ganar al menos tres
 de cuatro temporadas de desarrollo antes de abrir la evaluación 2025-26.
+
+## Iteración 13: cambio de régimen entre temporadas
+
+`EXP-MOVA-2026-013` aísla una divergencia encontrada en el runtime vivo: sus
+modelos están entrenados con varias temporadas, pero el estado de inferencia
+permanece congelado en el cierre 2025-26 y no incorpora las jornadas ya cerradas
+de 2026-27. El laboratorio compara ese control exacto contra cuatro tratamientos
+causales del cambio de temporada: reinicio con observaciones actuales, fallback
+individual, cola de cuatro jornadas y arrastre completo.
+
+La selección usa log-loss multiclase de minutos en GW2-GW8 de tres temporadas
+de desarrollo, con Brier/ECE como guardrails. El candidato solo llega a 2025-26
+si también mejora puntos reales con la política `season_fixture_h3`. No se usan
+datos sintéticos para eficacia y ninguna salida modifica el runtime o FPL.
+
+## Iteraciones 14–16: verificación viva y ruta promovible
+
+`EXP-MOVA-2026-014` confirmó el defecto con un contrafactual predeadline exacto:
+el estado heredado dejaba a Haaland en P(60') 0,439 y a Mamadou Sangaré en
+0,181; al anexar GW1–GW2 oficiales y asentadas subieron a 0,777 y 0,781. La
+decisión cambió sin hits y mejoró 4,79 xP en la jornada bajo la política h3.
+
+`EXP-MOVA-2026-015` probó recalibración online por prior shift. La mejora de
+desarrollo fue minúscula y el holdout empeoró Brier P(60') y el slice de
+jugadores managerialmente relevantes, por lo que fue rechazada.
+
+`EXP-MOVA-2026-016` llevó el tratamiento ganador a la ruta real de snapshot y
+CLI: cada snapshot guarda por hash todos los `event-live` previos que estén
+`finished + data_checked`, el runtime rechaza jornadas incompletas, DGW
+agregadas o filas futuras, y el default pasa a `append_closed`. La corrida GW3
+usó 29.747 filas previas + 1.236 actuales, 652 candidatos, equipo privado exacto
+y produjo tres candidatos válidos con cero escrituras. El modo heredado queda
+disponible solo como `--history-state previous_only` para rollback explícito.
+
+## Iteraciones 17–20: ensemble y transferencias entre clubes
+
+`EXP-MOVA-2026-017` modela explícitamente la duda entre continuidad y reinicio
+mediante un ensemble convexo. El peso 50/50 fue seleccionado únicamente en
+desarrollo: mejoró log-loss de minutos en las tres temporadas y Brier P(60').
+En política obtuvo deltas +148, -111 y +82; en 2025-26 mejoró log-loss en 0,00354,
+Brier P(60') en 0,00050 y sumó +29 puntos. Pasa el gate preregistrado, pero el
+IC95 cruza cero y la victoria externa cambia al retirar su mejor GW: queda como
+challenger de shadow, no como reemplazo automático.
+
+`EXP-MOVA-2026-018` detectó además que bootstrap solo conserva el club actual:
+para jugadores transferidos después de una GW, mapear retrospectivamente el
+fixture con ese club puede inventar rival y localía. Esa observación quedó
+superseded. El runtime ahora identifica el desacuerdo, consulta únicamente para
+esos IDs el `element-summary` oficial, guarda cada respuesta por hash y recupera
+fixture, lado y club histórico. Sin evidencia individual, omite la fila y lo
+declara en calidad.
+
+`EXP-MOVA-2026-019` repitió el ciclo con un snapshot nuevo: reparó las 25 filas
+afectadas, no omitió ninguna y conservó 1.236 filas actuales. La CLI produjo una
+acta válida. El shadow `fixture_h3` superó al planner vigente por 1,87 xP en GW3
+y evitó un hit: Mosquera y Rodon por Tarkowski y Egan, capitán Haaland.
+
+`EXP-MOVA-2026-020` repitió el ensemble 50/50 sobre el estado reparado. Produjo
+exactamente el mismo fingerprint que `append_full + fixture_h3`. El acuerdo es
+tranquilizador, pero una sola observación viva no autoriza promoción. La
+separación vigente es deliberada: `append_closed` y la recuperación de club sí
+son arreglos promovibles del information set; el ensemble y `fixture_h3`
+continúan en shadow hasta acumular jornadas consecutivas y settlement real.
