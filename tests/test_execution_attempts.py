@@ -259,7 +259,7 @@ def test_r3_contract_fails_closed_on_target_or_cost_drift():
 def _dom_probe(order: list[int]) -> dict:
     return {
         "schema": "mova-browser-dom-probe-v1",
-        "contract_version": "fpl-pick-team-a11y-2026.08.2",
+        "contract_version": "fpl-pick-team-a11y-2026.09.1",
         "status": "pass",
         "slots": [
             {"position": position, "element": element,

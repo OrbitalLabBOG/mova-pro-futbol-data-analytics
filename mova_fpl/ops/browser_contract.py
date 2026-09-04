@@ -12,7 +12,7 @@ from mova_fpl.data.private_state import validate as validate_private_state
 
 
 SCHEMA = "mova-browser-command-bundle-v1"
-DOM_CONTRACT_VERSION = "fpl-pick-team-a11y-2026.08.2"
+DOM_CONTRACT_VERSION = "fpl-pick-team-a11y-2026.09.1"
 DOM_PROBE_SCHEMA = "mova-browser-dom-probe-v1"
 UI_ACTION_PLAN_SCHEMA = "mova-browser-ui-action-plan-v1"
 TRANSFER_DOM_CONTRACT_VERSION = "fpl-transfers-a11y-2026.09.1"

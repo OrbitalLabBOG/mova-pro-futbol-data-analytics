@@ -77,8 +77,10 @@ def _commit_count_script(name: str) -> str:
 def _close_sheet_script() -> str:
     return (
         "(function(){const visible=n=>Boolean(n&&n.getClientRects().length);"
-        "const b=Array.from(document.querySelectorAll('button[aria-label=\\\"Close\\\"]'))"
-        ".find(visible);if(!b)return false;b.click();return true;})()"
+        "const buttons=Array.from(document.querySelectorAll('button')).filter(visible);"
+        "const b=buttons.find(n=>(n.getAttribute('aria-label')||'').trim()==='Dismiss')||"
+        "buttons.find(n=>(n.getAttribute('aria-label')||'').trim()==='Close');"
+        "if(!b)return false;b.click();return true;})()"
     )
 
 

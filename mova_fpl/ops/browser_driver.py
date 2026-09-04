@@ -15,7 +15,7 @@ from mova_fpl.ops.browser_contract import R3_UI_ACTION_PLAN_SCHEMA, UI_ACTION_PL
 
 
 DRIVER_PLAN_SCHEMA = "mova-browser-r2-driver-plan-v1"
-DRIVER_CONTRACT_VERSION = "fpl-r2-host-driver-2026.08.2"
+DRIVER_CONTRACT_VERSION = "fpl-r2-host-driver-2026.09.1"
 R3_DRIVER_PLAN_SCHEMA = "mova-browser-r3-driver-plan-v1"
 R3_DRIVER_CONTRACT_VERSION = "fpl-r3-host-driver-2026.08.1"
 LINEUP_EXECUTION_PROMOTED = False

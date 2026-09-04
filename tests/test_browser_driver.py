@@ -284,7 +284,14 @@ def test_host_driver_lineup_contract_mode_never_starts_browser(tmp_path: Path):
     )
     payload = json.loads(validated.stdout)
     assert payload["scope"] == "lineup_and_captaincy"
-    assert payload["contract_version"] == "fpl-r2-host-driver-2026.08.2"
+    assert payload["contract_version"] == "fpl-r2-host-driver-2026.09.1"
+
+
+def test_host_driver_prefers_current_dismiss_control_for_player_sheet():
+    script = _host_driver_module()._close_sheet_script()
+
+    assert "Dismiss" in script
+    assert script.index("Dismiss") < script.index("Close")
 
 
 def test_lineup_instruction_stream_materializes_against_fake_browser():

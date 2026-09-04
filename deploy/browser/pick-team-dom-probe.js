@@ -14,9 +14,14 @@
   const checkboxByLabel = (label) => [...document.querySelectorAll('input[type="checkbox"]')]
     .find((node) => visible(node) && [...(node.labels || [])].some(
       (candidate) => (candidate.innerText || candidate.textContent || "").trim() === label,
-    ));
+  ));
   const closePlayerSheet = async () => {
-    const close = [...document.querySelectorAll('button[aria-label="Close"]')].find(visible);
+    const buttons = [...document.querySelectorAll("button")].filter(visible);
+    const close = buttons.find(
+      (node) => (node.getAttribute("aria-label") || "").trim() === "Dismiss",
+    ) || buttons.find(
+      (node) => (node.getAttribute("aria-label") || "").trim() === "Close",
+    );
     if (!close) throw new Error("FPL_PLAYER_SHEET_CLOSE_MISSING");
     close.click();
     await waitFor(
@@ -121,7 +126,7 @@
   checks.captain_controls = Object.values(captainControlsChecks).every(Boolean);
   return {
     schema: "mova-browser-dom-probe-v1",
-    contract_version: "fpl-pick-team-a11y-2026.08.2",
+    contract_version: "fpl-pick-team-a11y-2026.09.1",
     observed_at: new Date().toISOString(),
     team_id: teamId,
     status: Object.values(checks).every(Boolean) ? "pass" : "fail",
