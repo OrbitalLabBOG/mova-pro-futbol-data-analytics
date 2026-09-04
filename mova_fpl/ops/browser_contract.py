@@ -15,7 +15,7 @@ SCHEMA = "mova-browser-command-bundle-v1"
 DOM_CONTRACT_VERSION = "fpl-pick-team-a11y-2026.08.2"
 DOM_PROBE_SCHEMA = "mova-browser-dom-probe-v1"
 UI_ACTION_PLAN_SCHEMA = "mova-browser-ui-action-plan-v1"
-TRANSFER_DOM_CONTRACT_VERSION = "fpl-transfers-a11y-2026.08.1"
+TRANSFER_DOM_CONTRACT_VERSION = "fpl-transfers-a11y-2026.09.1"
 TRANSFER_DOM_PROBE_SCHEMA = "mova-browser-transfer-dom-probe-v1"
 R3_UI_ACTION_PLAN_SCHEMA = "mova-browser-r3-ui-action-plan-v1"
 
@@ -137,7 +137,7 @@ def assess_transfers_snapshot(snapshot: str) -> dict:
         "cost": 'heading "Cost"',
     }
     checks = {name: token in snapshot for name, token in required.items()}
-    remove_controls = len(re.findall(r'button "Remove player"', snapshot))
+    remove_controls = len(re.findall(r'button "Remove player(?: [^"]*)?"', snapshot))
     # La vista pitch y la tabla de mercado pueden exponer controles duplicados
     # para jugadores propios. Quince es el mínimo de plantilla, no un total DOM.
     checks["squad_remove_controls_present"] = remove_controls >= 15
@@ -217,13 +217,13 @@ def compile_r3_ui_action_plan(*, bundle: dict, pre_state: dict, dom_probe: dict,
                 "element": element_out,
                 "position": int(out_row.get("position", 0)),
                 "web_name": squad_rows.get(element_out, {}).get("web_name"),
-                "selector": 'button[aria-label="Remove player"]',
+                "selector": 'button[aria-label^="Remove player"]',
             },
             "in": {
                 "element": element_in, "element_type": int(in_row.get("element_type", 0)),
                 "web_name": in_row.get("web_name"), "team": in_row.get("team"),
                 "price": price, "searchbox_name": "Find a player",
-                "selector": 'button[aria-label="Add player"]',
+                "selector": 'button[aria-label^="Add player"]',
             },
         })
     if sorted(final_types) != [1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4]:

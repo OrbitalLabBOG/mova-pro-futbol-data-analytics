@@ -115,7 +115,7 @@ def _r3_probe(service: ExecutionService, *, valid: bool = True) -> Path:
     }
     probe = {
         "schema": "mova-browser-transfer-dom-probe-v1",
-        "contract_version": "fpl-transfers-a11y-2026.08.1",
+        "contract_version": "fpl-transfers-a11y-2026.09.1",
         "observed_at": NOW.isoformat(), "team_id": service.config.team_id,
         "status": "pass" if valid else "fail", "checks": checks,
         "squad": [

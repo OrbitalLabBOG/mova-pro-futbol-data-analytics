@@ -131,11 +131,11 @@ def _r3_ui_plan() -> dict:
         "transfers": [{
             "sequence": 1, "operation": "replace_player",
             "out": {"element": 2, "position": 2, "web_name": "Player 2",
-                    "selector": 'button[aria-label="Remove player"]'},
+                    "selector": 'button[aria-label^="Remove player"]'},
             "in": {"element": 16, "element_type": 2, "web_name": "Player 16",
                    "team": "Test FC", "price": 45,
                    "searchbox_name": "Find a player",
-                   "selector": 'button[aria-label="Add player"]'},
+                   "selector": 'button[aria-label^="Add player"]'},
         }],
         "economics": {"bank_after": 15, "expected_hits": 0},
         "chip": {"operation": "stage_chip", "chip": "wildcard",

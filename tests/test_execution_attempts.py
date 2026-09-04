@@ -198,7 +198,7 @@ def _r3_bundle(*, chip=None) -> dict:
 def _r3_dom_probe() -> dict:
     return {
         "schema": "mova-browser-transfer-dom-probe-v1",
-        "contract_version": "fpl-transfers-a11y-2026.08.1", "status": "pass",
+        "contract_version": "fpl-transfers-a11y-2026.09.1", "status": "pass",
         "squad": [
             {"element": element, "position": position,
              "web_name": f"Player {element}"}

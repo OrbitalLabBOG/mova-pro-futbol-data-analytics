@@ -302,8 +302,8 @@ def compile_r3_driver_plan(ui_plan: dict) -> dict:
             or int(row.get("sequence", 0)) != sequence
             or out_element <= 0 or in_element <= 0
             or out_element in seen_out or in_element in seen_in
-            or outgoing.get("selector") != 'button[aria-label="Remove player"]'
-            or incoming.get("selector") != 'button[aria-label="Add player"]'
+            or outgoing.get("selector") != 'button[aria-label^="Remove player"]'
+            or incoming.get("selector") != 'button[aria-label^="Add player"]'
             or incoming.get("searchbox_name") != "Find a player"
             or not str(outgoing.get("web_name") or "").strip()
             or not str(incoming.get("web_name") or "").strip()

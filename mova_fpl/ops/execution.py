@@ -38,7 +38,7 @@ REHEARSAL_SCHEMA = "mova-browser-rehearsal-evidence-v1"
 CAPTAINCY_PROBE_SCHEMA = "mova-browser-dom-probe-v1"
 CAPTAINCY_PROBE_CONTRACT = "fpl-pick-team-a11y-2026.08.2"
 TRANSFER_PROBE_SCHEMA = "mova-browser-transfer-dom-probe-v1"
-TRANSFER_PROBE_CONTRACT = "fpl-transfers-a11y-2026.08.1"
+TRANSFER_PROBE_CONTRACT = "fpl-transfers-a11y-2026.09.1"
 REHEARSAL_CONTRACTS = {
     "captaincy": DRIVER_CONTRACT_VERSION,
     "lineup": DRIVER_CONTRACT_VERSION,

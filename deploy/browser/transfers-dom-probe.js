@@ -31,7 +31,7 @@
   const teams = new Map(bootstrap.teams.map((row) => [row.id, row.short_name || row.name]));
   const picks = [...(team.picks || [])].sort((a, b) => a.position - b.position);
   const removeButtons = visibleButtons().filter((node) => (
-    (node.getAttribute("aria-label") || "").trim() === "Remove player"
+    (node.getAttribute("aria-label") || "").trim().startsWith("Remove player")
     || text(node) === "Remove player"
   ));
   const signedIn = [...document.querySelectorAll("a")].some(
@@ -72,7 +72,7 @@
   };
   return {
     schema: "mova-browser-transfer-dom-probe-v1",
-    contract_version: "fpl-transfers-a11y-2026.08.1",
+    contract_version: "fpl-transfers-a11y-2026.09.1",
     observed_at: new Date().toISOString(),
     team_id: teamId,
     status: Object.values(checks).every(Boolean) ? "pass" : "fail",
