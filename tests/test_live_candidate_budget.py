@@ -1,7 +1,12 @@
 """Regresiones de presupuesto para los candidatos del ciclo vivo."""
 from __future__ import annotations
 
+from dataclasses import replace
+
+import pandas as pd
+
 from mova_fpl.cli.live import _engine_violations
+from mova_fpl.engine.report import render
 from mova_fpl.engine.state import Candidate, Decision, State
 from mova_fpl.rules import Position, Squad, SquadPlayer, get
 
@@ -57,6 +62,44 @@ def test_appreciated_owned_squad_is_not_over_budget():
 
     assert not any(item["code"] == "BUDGET" for item in violations)
     assert not any(item["code"] == "BANK_RECONCILIATION" for item in violations)
+
+
+def test_live_report_can_skip_nominal_budget_for_owned_appreciated_squad():
+    players = _players(appreciated=True)
+    decision = replace(
+        _decision(players),
+        starters=(1, 3, 4, 5, 6, 8, 9, 10, 11, 13, 14),
+        captain=8,
+        vice_captain=13,
+        bench_order=(2, 7, 12, 15),
+    )
+    roster = pd.DataFrame([
+        {
+            "element": player.element,
+            "position": player.position.value,
+            "name": f"P{player.element}",
+            "team": player.team,
+            "value": int(round(player.price * 10)),
+            "estado": "a",
+        }
+        for player in players
+    ])
+    detail = pd.DataFrame([
+        {"element": player.element, "xp": 1.0, "xp_sd": 1.0, "p_60": 0.8}
+        for player in players
+    ])
+    meta = {
+        "season": "2026-27", "emitida": "2026-09-04T00:00:00+00:00",
+        "deadline": "2026-09-04T17:30:00Z", "policy": "test", "horizon": 1,
+        "v_minutes": "test", "v_points": "test", "git_sha": "test",
+        "fuente": "test", "rules": get("2026-27").SQUAD,
+        "check_budget": False,
+    }
+
+    act = render(decision, roster, detail, meta)
+
+    assert act.valida
+    assert act.total == 100.5
 
 
 def test_transfer_budget_uses_fpl_selling_price_and_bank():

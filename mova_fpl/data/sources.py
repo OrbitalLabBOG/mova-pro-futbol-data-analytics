@@ -21,6 +21,7 @@ FPL_API = "https://fantasy.premierleague.com/api"
 FPL_BOOTSTRAP_URL = f"{FPL_API}/bootstrap-static/"
 FPL_FIXTURES_URL = f"{FPL_API}/fixtures/"
 FPL_EVENT_LIVE_URL = f"{FPL_API}/event/{{gw}}/live/"
+FPL_ELEMENT_SUMMARY_URL = f"{FPL_API}/element-summary/{{element}}/"
 FOOTBALL_DATA = "https://www.football-data.co.uk/mmz4281"
 THE_ODDS_API = "https://api.the-odds-api.com/v4/sports/soccer_epl/odds"
 
@@ -100,6 +101,14 @@ def fetch_event_live(gw: int) -> bytes:
     if not 1 <= event <= 38:
         raise ValueError("gw debe estar entre 1 y 38")
     return _get(FPL_EVENT_LIVE_URL.format(gw=event))
+
+
+def fetch_element_summary(element: int) -> bytes:
+    """Historial oficial de un jugador de la temporada actual (solo GET)."""
+    player = int(element)
+    if player < 1:
+        raise ValueError("element debe ser positivo")
+    return _get(FPL_ELEMENT_SUMMARY_URL.format(element=player))
 
 
 def football_data_url(season: str) -> str:

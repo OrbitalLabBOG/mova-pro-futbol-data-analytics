@@ -165,7 +165,13 @@ def render(decision, roster: pd.DataFrame, desglose: pd.DataFrame, meta: dict) -
     squad = Squad(players=jugadores, starters=decision.starters, captain=decision.captain,
                   vice_captain=decision.vice_captain, bench_order=decision.bench_order,
                   bank=decision.bank_after)
-    violaciones = list(validate_squad(squad, rules))
+    # Una plantilla ya poseida puede valer mas que el presupuesto inicial por
+    # apreciacion. En live la asequibilidad de transferencias se concilia con
+    # precios de venta y banco antes de renderizar; el limite nominal solo
+    # aplica a construcciones desde cero.
+    violaciones = list(validate_squad(
+        squad, rules, check_budget=bool(meta.get("check_budget", True)),
+    ))
     catalogo = meta.get("catalogo_chips")
     if catalogo is not None and decision.chip:
         from mova_fpl.rules.chips import validate_chip

@@ -18,6 +18,8 @@ from dataclasses import replace
 from datetime import datetime, timezone
 from pathlib import Path
 
+import pandas as pd
+
 from mova_fpl.data import live
 from mova_fpl.data.store import Store
 from mova_fpl.engine.planner import PlannerConfig, plan
@@ -380,6 +382,15 @@ def main() -> None:
     ap.add_argument("--version", default="1.0.0")
     ap.add_argument("--minutes-version", default="1.0.0")
     ap.add_argument(
+        "--history-state",
+        choices=("append_closed", "previous_only"),
+        default="append_closed",
+        help=(
+            "append_closed incorpora event-live asentado de la temporada actual; "
+            "previous_only reproduce explícitamente el comportamiento legado"
+        ),
+    )
+    ap.add_argument(
         "--snapshot-dir",
         help="directorio inmutable creado por mova_fpl.cli.collect_live; evita drift de API",
     )
@@ -441,9 +452,28 @@ def main() -> None:
     print(f"[1/5] Leyendo estado publico de FPL (solo GET)...")
     if args.snapshot_dir:
         from mova_fpl.cli.collect_live import load_snapshot
-        boot, fx, _ = load_snapshot(Path(args.snapshot_dir))
+        from mova_fpl.data.snapshot import load_element_summaries, load_event_history
+        snapshot_path = Path(args.snapshot_dir)
+        boot, fx, _ = load_snapshot(snapshot_path)
+        event_history = (
+            load_event_history(snapshot_path, boot, args.gw)
+            if args.history_state == "append_closed" else {}
+        )
+        element_summaries = (
+            load_element_summaries(snapshot_path, boot, fx, event_history)
+            if args.history_state == "append_closed" else {}
+        )
     else:
         boot, fx = live.bootstrap(), live.fixtures()
+        event_history = (
+            {gw: live.event_live(gw) for gw in live.settled_gws(boot, args.gw)}
+            if args.history_state == "append_closed" else {}
+        )
+        element_summaries = (
+            {element: live.element_summary(element)
+             for element in live.historical_team_mismatches(boot, fx, event_history)}
+            if args.history_state == "append_closed" else {}
+        )
     tope = args.gw + max(1, args.horizon) - 1
     roster = live.roster(boot, fx, args.season, args.gw)
     calendario = live.team_schedule(fx, boot, args.gw, tope)
@@ -454,19 +484,26 @@ def main() -> None:
     lesionados = int((roster["disponibilidad"] < 1.0).sum())
     print(f"      {lesionados} con el parte medico tocado (lesion, duda, sancion)")
 
-    print(f"[2/5] Cargando historico hasta {HISTORICO_HASTA} y modelos...")
+    print(f"[2/5] Cargando estado causal y modelos...")
     store = Store()
-    # Solo la ultima temporada cerrada, no las diez. Es lo mismo que ve el
-    # proyector en el backtest —donde `as_of` acota a la temporada en curso— y
-    # asi la decision en vivo se comporta como la que se midio. Las diez
-    # temporadas si entran, pero en el AJUSTE del modelo, no en el estado.
-    historia = store.as_of(HISTORICO_HASTA, 39)
+    previous_history = store.as_of(HISTORICO_HASTA, 39)
+    current_quality = {"rows": 0, "gws": []}
+    if args.history_state == "append_closed":
+        current_history, current_quality = live.closed_history(
+            boot, fx, event_history, args.season, args.gw,
+            element_summaries=element_summaries,
+        )
+        historia = pd.concat([previous_history, current_history], ignore_index=True)
+    else:
+        historia = previous_history
     modelos = {"minutes": load("minutes", args.minutes_version),
                "points": load("points", args.version)}
     temporadas_modelo = sorted(set(modelos["minutes"].metadata.get("temporadas", ()))
                                | set(modelos["points"].metadata.get("temporadas", ())))
-    print(f"      {len(historia):,} filas de {HISTORICO_HASTA} · "
-          f"modelos ajustados con {len(temporadas_modelo)} temporadas")
+    print(f"      {len(previous_history):,} filas de {HISTORICO_HASTA} + "
+          f"{current_quality['rows']:,} filas actuales asentadas "
+          f"({current_quality['gws']}) · modelos ajustados con "
+          f"{len(temporadas_modelo)} temporadas")
 
     print(f"[3/5] Proyectando xP por componentes...")
     xp, desglose = points_projection(historia, roster, modelos, args.season,
@@ -518,6 +555,10 @@ def main() -> None:
         "catalogo_chips": rules_mod.CHIPS if args.chips else None,
         "equipo": equipo,
         "event_context": event_context(boot, fx, args.gw),
+        # _engine_violations reconcilia compras/ventas con el precio FPL de
+        # venta. El valor de mercado de una plantilla poseida no esta limitado
+        # al presupuesto inicial aunque haya apreciado por encima de 100M.
+        "check_budget": equipo.get("squad") is None,
     })
 
     destino = Path(args.out) if args.out else (
@@ -571,6 +612,9 @@ def main() -> None:
                 "horizon": args.horizon,
                 "points_model_version": args.version,
                 "minutes_model_version": args.minutes_version,
+                "history_state": args.history_state,
+                "previous_history_rows": int(len(previous_history)),
+                "current_history": current_quality,
                 "git_sha": git_sha(),
             },
             "report_artifact": {"path": str(destino), "sha256": report_sha},

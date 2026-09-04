@@ -202,6 +202,82 @@ def test_fixture_schedule_conserva_ambos_lados_y_contexto_futuro():
     ]
 
 
+def test_closed_history_incorpora_solo_eventos_asentados():
+    boot = bootstrap(n=1)
+    boot["events"] = [
+        {"id": 1, "finished": True, "data_checked": True},
+        {"id": 2, "finished": False, "data_checked": False},
+    ]
+    fx = [{
+        "id": 11, "event": 1, "team_h": 2, "team_a": 1,
+        "team_h_score": 0, "team_a_score": 2,
+        "kickoff_time": "2026-08-21T17:30:00Z",
+    }]
+    payloads = {1: {"elements": [{
+        "id": 1,
+        "stats": {"minutes": 90, "starts": 1, "total_points": 6},
+        "explain": [{"fixture": 11, "stats": []}],
+    }]}}
+
+    history, quality = live.closed_history(boot, fx, payloads, "2026-27", 2)
+
+    assert history[["season", "gw", "element", "minutes"]].to_dict("records") == [{
+        "season": "2026-27", "gw": 1, "element": 1, "minutes": 90,
+    }]
+    assert history.iloc[0]["was_home"] == 1
+    assert quality["gws"] == [1]
+
+
+def test_closed_history_no_inventa_club_historico_despues_de_transferencia():
+    boot = {
+        "events": [{"id": 1, "finished": True, "data_checked": True}],
+        "teams": [
+            {"id": 1, "name": "Actual"}, {"id": 2, "name": "Old A"},
+            {"id": 3, "name": "Old B"}, {"id": 4, "name": "Other"},
+        ],
+        "elements": [
+            {"id": 1, "first_name": "Moved", "second_name": "Player",
+             "web_name": "Moved", "team": 1, "element_type": 3, "now_cost": 55},
+            {"id": 2, "first_name": "Stable", "second_name": "Player",
+             "web_name": "Stable", "team": 2, "element_type": 3, "now_cost": 55},
+        ],
+    }
+    fixtures = [
+        {"id": 11, "event": 1, "team_h": 1, "team_a": 4,
+         "team_h_score": 0, "team_a_score": 0},
+        {"id": 12, "event": 1, "team_h": 2, "team_a": 3,
+         "team_h_score": 1, "team_a_score": 0},
+    ]
+    payloads = {1: {"elements": [
+        {"id": 1, "stats": {"minutes": 90},
+         "explain": [{"fixture": 12, "stats": []}]},
+        {"id": 2, "stats": {"minutes": 90},
+         "explain": [{"fixture": 12, "stats": []}]},
+    ]}}
+
+    history, quality = live.closed_history(
+        boot, fixtures, payloads, "2026-27", 2,
+    )
+
+    assert history["element"].tolist() == [2]
+    assert quality["skipped_historical_team_mismatch"] == 1
+
+    summaries = {1: {"history": [{
+        "round": 1, "fixture": 12, "was_home": False,
+    }]}}
+    repaired, repaired_quality = live.closed_history(
+        boot, fixtures, payloads, "2026-27", 2,
+        element_summaries=summaries,
+    )
+
+    moved = repaired.set_index("element").loc[1]
+    assert moved["team"] == "Old B"
+    assert moved["opponent_team"] == 2
+    assert moved["was_home"] == 0
+    assert repaired_quality["repaired_historical_team_mismatch"] == 1
+    assert repaired_quality["skipped_historical_team_mismatch"] == 0
+
+
 def test_un_equipo_sin_jornadas_jugadas_es_arranque_en_frio(monkeypatch):
     monkeypatch.setattr(live, "fetch_team_history",
                         lambda i: json.dumps({"chips": [], "current": [], "past": []}).encode())

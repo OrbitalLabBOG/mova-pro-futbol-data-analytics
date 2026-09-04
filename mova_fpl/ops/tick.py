@@ -14,7 +14,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from mova_fpl.data.snapshot import capture_bytes
-from mova_fpl.data.sources import fetch_bootstrap, fetch_fixtures
+from mova_fpl.data.live import historical_team_mismatches, settled_gws
+from mova_fpl.data.sources import (fetch_bootstrap, fetch_element_summary,
+                                   fetch_event_live, fetch_fixtures)
 from mova_fpl.ops.decision_envelope import build_envelope
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB, canonical_json, new_id, sha256_json, utcnow
@@ -185,6 +187,26 @@ class TickRunner:
         boot = json.loads(source["bootstrap"])
         event = select_event(boot, now)
         gw, deadline = int(event["id"]), str(event["deadline_time"])
+        event_history = {
+            event_gw: harness.call(
+                f"fetch_fpl_event_live_gw{event_gw:02d}",
+                lambda event_gw=event_gw: fetch_event_live(event_gw),
+            )
+            for event_gw in settled_gws(boot, gw)
+        }
+        fixtures = json.loads(source["fixtures"])
+        event_payloads = {
+            event_gw: json.loads(payload) for event_gw, payload in event_history.items()
+        }
+        element_summaries = {
+            element: harness.call(
+                f"fetch_fpl_element_summary_{element}",
+                lambda element=element: fetch_element_summary(element),
+            )
+            for element in historical_team_mismatches(
+                boot, fixtures, event_payloads,
+            )
+        }
         phase = phase_for(deadline, now)
         cycle_id = self.db.upsert_cycle(self.config.season, gw, deadline, phase=phase)
         self.db.bind_job_cycle(job_id, cycle_id)
@@ -194,11 +216,17 @@ class TickRunner:
             out_root = self.config.artifact_root / "sources" / "fpl_live"
             dest, manifest = capture_bytes(
                 self.config.season, gw, out_root, source["bootstrap"], source["fixtures"],
+                event_raw=event_history,
+                element_summary_raw=element_summaries,
                 captured_at=now.isoformat(timespec="seconds"),
             )
             manifest_path = dest / "manifest.json"
             payload_sha = hashlib.sha256(
-                source["bootstrap"] + b"\n" + source["fixtures"]
+                source["bootstrap"] + b"\n" + source["fixtures"] + b"\n"
+                + b"\n".join(event_history[key] for key in sorted(event_history))
+                + b"\n" + b"\n".join(
+                    element_summaries[key] for key in sorted(element_summaries)
+                )
             ).hexdigest()
             self.db.add_snapshot(
                 job_id=job_id, cycle_id=cycle_id, source_name="fpl_official",

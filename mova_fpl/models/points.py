@@ -206,7 +206,10 @@ class PointsModel:
         clave = roster["player_key"].fillna("desconocido")
         crudo = tasas_hist.reindex(clave.to_numpy())
         crudo.index = roster.index
-        crudo["n90"] = crudo["n90"].fillna(0.0)
+        # ``reindex`` sobre un catálogo sin historia puede dejar dtype object;
+        # normalizarlo explícitamente evita depender del downcast silencioso de
+        # pandas, que está deprecado y cambiará en una versión futura.
+        crudo["n90"] = pd.to_numeric(crudo["n90"], errors="coerce").fillna(0.0)
         encogido = apply_priors(crudo, priors, pos, k=K_POR_TASA)
         encogido["n90"] = crudo["n90"]
         return encogido

@@ -13,8 +13,12 @@ from pathlib import Path
 from mova_fpl.data import live
 from mova_fpl.data.sources import (
     FPL_BOOTSTRAP_URL,
+    FPL_ELEMENT_SUMMARY_URL,
+    FPL_EVENT_LIVE_URL,
     FPL_FIXTURES_URL,
     fetch_bootstrap,
+    fetch_element_summary,
+    fetch_event_live,
     fetch_fixtures,
 )
 
@@ -61,6 +65,49 @@ def load_snapshot(path: Path) -> tuple[dict, list, dict]:
     if bad:
         raise ValueError(f"snapshot alterado o corrupto: {bad}")
     return json.loads(boot_raw), json.loads(fixtures_raw), manifest
+
+
+def load_event_history(path: Path, boot: dict, target_gw: int) -> dict[int, dict]:
+    """Carga y verifica todos los ``event-live`` asentados del snapshot."""
+    manifest = json.loads((path / "manifest.json").read_text(encoding="utf-8"))
+    expected = live.settled_gws(boot, target_gw)
+    specs = manifest.get("event_live") or {}
+    payloads = {}
+    for gw in expected:
+        name = f"event-live-gw{gw:02d}.json"
+        spec = specs.get(str(gw))
+        if not spec:
+            raise ValueError(f"snapshot sin {name}; vuelva a capturarlo")
+        raw = (path / name).read_bytes()
+        if _sha(raw) != spec.get("sha256"):
+            raise ValueError(f"snapshot alterado o corrupto: {name}")
+        payloads[int(gw)] = json.loads(raw)
+    unexpected = sorted(set(specs) - {str(gw) for gw in expected})
+    if unexpected:
+        raise ValueError(f"snapshot contiene event-live no causal: {unexpected}")
+    return payloads
+
+
+def load_element_summaries(path: Path, boot: dict, fixtures: list,
+                           events: dict[int, dict]) -> dict[int, dict]:
+    """Carga historiales individuales requeridos para resolver cambios de club."""
+    manifest = json.loads((path / "manifest.json").read_text(encoding="utf-8"))
+    expected = live.historical_team_mismatches(boot, fixtures, events)
+    specs = manifest.get("element_summary") or {}
+    payloads = {}
+    for element in expected:
+        name = f"element-summary-{element}.json"
+        spec = specs.get(str(element))
+        if not spec:
+            raise ValueError(f"snapshot sin {name}; vuelva a capturarlo")
+        raw = (path / name).read_bytes()
+        if _sha(raw) != spec.get("sha256"):
+            raise ValueError(f"snapshot alterado o corrupto: {name}")
+        payloads[int(element)] = json.loads(raw)
+    unexpected = sorted(set(specs) - {str(element) for element in expected})
+    if unexpected:
+        raise ValueError(f"snapshot contiene element-summary no requerido: {unexpected}")
+    return payloads
 
 
 def event_context(boot: dict, fixtures: list, target_gw: int) -> dict:
@@ -134,11 +181,30 @@ def validate(boot: dict, fixtures: list, season: str, gw: int) -> dict:
 
 
 def capture_bytes(season: str, gw: int, out_root: Path, boot_raw: bytes,
-                  fixtures_raw: bytes, *, captured_at: str | None = None) -> tuple[Path, dict]:
+                  fixtures_raw: bytes, *, event_raw: dict[int, bytes] | None = None,
+                  element_summary_raw: dict[int, bytes] | None = None,
+                  captured_at: str | None = None) -> tuple[Path, dict]:
     captured = captured_at or datetime.now(timezone.utc).isoformat(timespec="seconds")
     stamp = datetime.fromisoformat(captured.replace("Z", "+00:00")).strftime("%Y%m%dT%H%M%SZ")
     boot, fixtures = json.loads(boot_raw), json.loads(fixtures_raw)
     summary = validate(boot, fixtures, season, gw)
+    expected_events = live.settled_gws(boot, gw)
+    events = event_raw or {}
+    if tuple(sorted(events)) != expected_events:
+        raise ValueError(
+            f"event-live incompleto: asentadas={list(expected_events)} "
+            f"recibidas={sorted(events)}"
+        )
+    event_payloads = {event: json.loads(events[event]) for event in expected_events}
+    expected_summaries = live.historical_team_mismatches(
+        boot, fixtures, event_payloads,
+    )
+    summaries = element_summary_raw or {}
+    if tuple(sorted(summaries)) != expected_summaries:
+        raise ValueError(
+            f"element-summary incompleto: requeridos={list(expected_summaries)} "
+            f"recibidos={sorted(summaries)}"
+        )
     dest = out_root / season / f"gw{gw:02d}" / stamp
     manifest = {
         "captured_at": captured,
@@ -148,14 +214,46 @@ def capture_bytes(season: str, gw: int, out_root: Path, boot_raw: bytes,
              "method": "GET", "http_status": 200, "parser": "snapshot-v1"},
             {"url": FPL_FIXTURES_URL,
              "method": "GET", "http_status": 200, "parser": "snapshot-v1"},
+            *[
+                {"url": FPL_EVENT_LIVE_URL.format(gw=event),
+                 "method": "GET", "http_status": 200,
+                 "parser": "event-live-v1", "gw": int(event)}
+                for event in expected_events
+            ],
+            *[
+                {"url": FPL_ELEMENT_SUMMARY_URL.format(element=element),
+                 "method": "GET", "http_status": 200,
+                 "parser": "element-summary-v1", "element": int(element)}
+                for element in expected_summaries
+            ],
         ],
         "git_sha": _git_sha(),
         "bootstrap_sha256": _sha(boot_raw),
         "fixtures_sha256": _sha(fixtures_raw),
+        "event_live": {
+            str(event): {
+                "file": f"event-live-gw{event:02d}.json",
+                "bytes": len(events[event]),
+                "sha256": _sha(events[event]),
+            }
+            for event in expected_events
+        },
+        "element_summary": {
+            str(element): {
+                "file": f"element-summary-{element}.json",
+                "bytes": len(summaries[element]),
+                "sha256": _sha(summaries[element]),
+            }
+            for element in expected_summaries
+        },
         **summary,
     }
     _write_new(dest / "bootstrap-static.json", boot_raw)
     _write_new(dest / "fixtures.json", fixtures_raw)
+    for event in expected_events:
+        _write_new(dest / f"event-live-gw{event:02d}.json", events[event])
+    for element in expected_summaries:
+        _write_new(dest / f"element-summary-{element}.json", summaries[element])
     _write_new(dest / "manifest.json", (
         json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
     ).encode("utf-8"))
@@ -164,6 +262,19 @@ def capture_bytes(season: str, gw: int, out_root: Path, boot_raw: bytes,
 
 def collect(season: str, gw: int, out_root: Path) -> tuple[Path, dict]:
     captured = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    boot_raw = fetch_bootstrap()
+    boot = json.loads(boot_raw)
+    event_raw = {event: fetch_event_live(event)
+                 for event in live.settled_gws(boot, gw)}
+    fixtures_raw = fetch_fixtures()
+    fixtures = json.loads(fixtures_raw)
+    event_payloads = {event: json.loads(payload) for event, payload in event_raw.items()}
+    element_summary_raw = {
+        element: fetch_element_summary(element)
+        for element in live.historical_team_mismatches(boot, fixtures, event_payloads)
+    }
     return capture_bytes(
-        season, gw, out_root, fetch_bootstrap(), fetch_fixtures(), captured_at=captured,
+        season, gw, out_root, boot_raw, fixtures_raw, event_raw=event_raw,
+        element_summary_raw=element_summary_raw,
+        captured_at=captured,
     )

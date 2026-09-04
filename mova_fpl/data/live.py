@@ -22,10 +22,13 @@ from __future__ import annotations
 
 import json
 
+import numpy as np
 import pandas as pd
 
 from mova_fpl.data.identity import player_key
-from mova_fpl.data.sources import (fetch_bootstrap, fetch_fixtures, fetch_team,
+from mova_fpl.data.schema import ALL_COLUMNS
+from mova_fpl.data.sources import (fetch_bootstrap, fetch_element_summary,
+                                   fetch_event_live, fetch_fixtures, fetch_team,
                                    fetch_team_history, fetch_team_picks)
 
 POSICIONES = {1: "GKP", 2: "DEF", 3: "MID", 4: "FWD"}
@@ -47,6 +50,171 @@ def bootstrap() -> dict:
 
 def fixtures() -> list:
     return json.loads(fetch_fixtures())
+
+
+def event_live(gw: int) -> dict:
+    """Estadísticas oficiales asentadas de una jornada. Solo GET."""
+    return json.loads(fetch_event_live(gw))
+
+
+def settled_gws(boot: dict, target_gw: int) -> tuple[int, ...]:
+    """Jornadas anteriores verificadas por FPL y aptas para inferencia causal."""
+    return tuple(sorted(
+        int(item["id"])
+        for item in boot.get("events", ())
+        if int(item.get("id", 0)) < int(target_gw)
+        and item.get("finished") and item.get("data_checked")
+    ))
+
+
+def historical_team_mismatches(boot: dict, fx: list,
+                               payloads: dict[int, dict]) -> tuple[int, ...]:
+    """IDs cuyo fixture histórico no contiene el club que bootstrap muestra hoy."""
+    catalog = {int(item["id"]): item for item in boot.get("elements", ())}
+    fixtures = {int(item["id"]): item for item in fx}
+    mismatches = set()
+    for payload in payloads.values():
+        for observed in payload.get("elements", ()):
+            item = catalog.get(int(observed["id"]))
+            if item is None:
+                continue
+            for explanation in observed.get("explain") or ():
+                fixture = fixtures.get(int(explanation["fixture"]))
+                if fixture is None:
+                    continue
+                participants = {int(fixture["team_h"]), int(fixture["team_a"])}
+                if int(item["team"]) not in participants:
+                    mismatches.add(int(observed["id"]))
+    return tuple(sorted(mismatches))
+
+
+def element_summary(element: int) -> dict:
+    """Historial oficial individual de temporada. Solo GET."""
+    return json.loads(fetch_element_summary(element))
+
+
+def closed_history(boot: dict, fx: list, payloads: dict[int, dict],
+                   season: str, target_gw: int,
+                   element_summaries: dict[int, dict] | None = None,
+                   ) -> tuple[pd.DataFrame, dict]:
+    """Normaliza ``event-live`` a historia causal del modelo.
+
+    La API entrega una estadística agregada por jugador y GW. Una doble jornada
+    no se reparte artificialmente entre fixtures: se rechaza hasta disponer de
+    un origen por partido. Las jornadas simples conservan estadísticas, rival,
+    localía y marcador con la forma del almacén canónico.
+    """
+    expected = settled_gws(boot, target_gw)
+    received = tuple(sorted(int(gw) for gw in payloads))
+    if received != expected:
+        raise ValueError(
+            f"event-live incompleto: asentadas={list(expected)} recibidas={list(received)}"
+        )
+    clubs = teams(boot)
+    catalog = {int(item["id"]): item for item in boot.get("elements", ())}
+    fixture_by_gw_team: dict[tuple[int, int], list[dict]] = {}
+    fixture_by_id = {}
+    for item in fx:
+        event = item.get("event")
+        if event is None or int(event) not in payloads:
+            continue
+        fixture_by_id[int(item["id"])] = item
+        for side in ("team_h", "team_a"):
+            fixture_by_gw_team.setdefault(
+                (int(event), int(item[side])), [],
+            ).append(item)
+
+    rows = []
+    skipped = 0
+    skipped_team_mismatch = 0
+    repaired_team_mismatch = 0
+    summaries = element_summaries or {}
+    for gw, payload in sorted(payloads.items()):
+        for observed in payload.get("elements", ()):
+            element = int(observed["id"])
+            item = catalog.get(element)
+            if item is None:
+                skipped += 1
+                continue
+            explained = [
+                int(record["fixture"])
+                for record in (observed.get("explain") or ())
+            ]
+            if len(set(explained)) > 1:
+                raise ValueError(
+                    f"GW{gw} contiene DGW para element={element}; "
+                    "event-live agregado no se puede desagregar"
+                )
+            current_team_id = int(item["team"])
+            options = fixture_by_gw_team.get((int(gw), current_team_id), [])
+            if len(options) != 1:
+                raise ValueError(
+                    f"calendario ambiguo GW{gw} team={current_team_id}: {len(options)} fixtures"
+                )
+            fixture = fixture_by_id.get(explained[0]) if explained else options[0]
+            if fixture is None:
+                raise ValueError(f"fixture explicado ausente para element={element}")
+            participants = {int(fixture["team_h"]), int(fixture["team_a"])}
+            team_id = current_team_id
+            historical_home = None
+            if explained and current_team_id not in participants:
+                # El jugador cambió de club después de esta jornada. Bootstrap
+                # solo conserva su club actual. element-summary sí conserva el
+                # fixture y la localía observada; sin esa evidencia se omite.
+                history_rows = (summaries.get(element) or {}).get("history") or ()
+                historical = next((
+                    record for record in history_rows
+                    if int(record.get("round", -1)) == int(gw)
+                    and int(record.get("fixture", -1)) == int(fixture["id"])
+                ), None)
+                if historical is None:
+                    skipped_team_mismatch += 1
+                    continue
+                historical_home = bool(historical.get("was_home"))
+                team_id = int(fixture["team_h"] if historical_home else fixture["team_a"])
+                repaired_team_mismatch += 1
+            home = historical_home if historical_home is not None else (
+                team_id == int(fixture["team_h"])
+            )
+            opponent = int(fixture["team_a"] if home else fixture["team_h"])
+            name = f"{item.get('first_name', '')} {item.get('second_name', '')}".strip()
+            row = {column: np.nan for column in ALL_COLUMNS}
+            row.update({
+                "season": season, "gw": int(gw), "element": element,
+                "fixture": int(fixture["id"]),
+                "player_key": player_key(name) or player_key(item.get("web_name", "")),
+                "name": name or item.get("web_name", ""),
+                "opponent_team": opponent, "was_home": int(home),
+                "kickoff_time": fixture.get("kickoff_time"), "round": int(gw),
+                # FPL event-live no conserva el precio pasado. El estado histórico
+                # del modelo no lo consume; el precio objetivo sí viene del roster.
+                "value": int(item["now_cost"]),
+                "position": POSICIONES.get(int(item["element_type"])),
+                "team": clubs.get(team_id, str(team_id)),
+                "team_h_score": fixture.get("team_h_score"),
+                "team_a_score": fixture.get("team_a_score"),
+            })
+            for key, value in (observed.get("stats") or {}).items():
+                if key in row:
+                    row[key] = value
+            rows.append(row)
+    frame = pd.DataFrame(rows, columns=ALL_COLUMNS)
+    if not frame.empty and int(frame["gw"].max()) >= int(target_gw):
+        raise ValueError("event-live contiene la jornada objetivo o futura")
+    quality = {
+        "rows": int(len(frame)),
+        "players": int(frame["player_key"].nunique()),
+        "gws": sorted(int(value) for value in frame["gw"].unique()),
+        "skipped_missing_current_catalog": int(skipped),
+        "skipped_historical_team_mismatch": int(skipped_team_mismatch),
+        "repaired_historical_team_mismatch": int(repaired_team_mismatch),
+        "duplicate_keys": int(frame.duplicated(
+            ["season", "gw", "element", "fixture"],
+        ).sum()),
+    }
+    if quality["gws"] != list(expected) or quality["duplicate_keys"]:
+        raise ValueError(f"historia viva inválida: {quality}")
+    return frame, quality
 
 
 def disponibilidad(elemento: dict) -> float:
