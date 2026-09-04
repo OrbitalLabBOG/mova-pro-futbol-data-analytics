@@ -1633,6 +1633,19 @@ class OpsDB:
             ).fetchone()
         return dict(row) if row else None
 
+    def latest_snapshot_for_event(self, season: str, gw: int) -> dict | None:
+        """Último snapshot oficial sellado para una jornada concreta."""
+        with self.connect(readonly=True) as con:
+            row = con.execute(
+                "SELECT s.* FROM source_snapshots s "
+                "JOIN gameweek_cycles c ON c.cycle_id=s.cycle_id "
+                "WHERE c.season=? AND c.gw=? AND s.source_name='fpl_official' "
+                "AND s.quality_status='valid' "
+                "ORDER BY s.captured_at DESC LIMIT 1",
+                (season, int(gw)),
+            ).fetchone()
+        return dict(row) if row else None
+
     def latest_team_state(self, cycle_id: str) -> dict | None:
         with self.connect(readonly=True) as con:
             row = con.execute(

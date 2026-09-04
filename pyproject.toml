@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mova-fpl"
-version = "0.6.0"
+version = "0.6.1"
 description = "Motor analítico y operativo de MOVA para Fantasy Premier League"
 readme = "README.md"
 requires-python = ">=3.13"

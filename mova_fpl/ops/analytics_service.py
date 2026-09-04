@@ -10,6 +10,11 @@ from pathlib import Path
 from mova_fpl.analytics import (
     assess_drift, evaluate_gameweek_for_season, project_snapshot, projection_signature,
 )
+from mova_fpl.data.snapshot import (
+    load_element_summaries,
+    load_event_history,
+    load_snapshot,
+)
 from mova_fpl.ops.analytics_store import AnalyticsStore, publish_status
 from mova_fpl.ops.collector.contracts import canonical_bytes, sha256_bytes, write_atomic
 from mova_fpl.ops.db import new_id, sha256_json
@@ -148,6 +153,44 @@ class AnalyticsService:
         if now >= deadline or observed >= deadline:
             return {"status": "skipped", "reason": "deadline_closed", "gw": gw}
 
+        # La proyección productiva comparte exactamente el snapshot causal que
+        # usa el tick. El artifact del data service conserva el FK/mercado; el
+        # snapshot SQLite aporta el information set sellado y reproducible con
+        # todas las jornadas actuales ya cerradas.
+        source_snapshot = self.db.latest_snapshot_for_event(self.config.season, gw)
+        if not source_snapshot:
+            raise FileNotFoundError(
+                f"sin snapshot causal fpl_official para {self.config.season} GW{gw}"
+            )
+        source_directory = Path(source_snapshot["artifact_path"])
+        manifest_path = source_directory / "manifest.json"
+        if not manifest_path.is_file():
+            raise FileNotFoundError("snapshot causal sin manifest.json")
+        manifest_sha = sha256_bytes(manifest_path.read_bytes())
+        if manifest_sha != source_snapshot["manifest_sha256"]:
+            raise ValueError("manifest del snapshot causal alterado o corrupto")
+        boot, fixtures, source_manifest = load_snapshot(source_directory)
+        if (source_manifest.get("season") != self.config.season
+                or int(source_manifest.get("gw", -1)) != gw):
+            raise ValueError("snapshot causal no corresponde a temporada/GW objetivo")
+        source_observed = datetime.fromisoformat(
+            str(source_snapshot["captured_at"]).replace("Z", "+00:00")
+        )
+        if source_observed > now or source_observed >= deadline:
+            raise ValueError("snapshot causal fuera del corte predeadline")
+        event_history = load_event_history(source_directory, boot, gw)
+        element_summaries = load_element_summaries(
+            source_directory, boot, fixtures, event_history,
+        )
+        history_input = {
+            "snapshot_id": source_snapshot["snapshot_id"],
+            "captured_at": source_snapshot["captured_at"],
+            "manifest_sha256": manifest_sha,
+            "payload_sha256": source_snapshot["payload_sha256"],
+            "settled_gws": sorted(event_history),
+            "element_summaries": sorted(element_summaries),
+        }
+
         from mova_fpl.ops.model_release import (
             resolve_active_model_bundle, verify_model_bundle,
         )
@@ -160,6 +203,7 @@ class AnalyticsService:
 
         def identity(signature: dict, variant: str, extra: dict | None = None) -> dict:
             return {"input_artifact_id": artifact["artifact_id"],
+                    "history_input": history_input,
                     "season": self.config.season, "gw": gw, "variant": variant,
                     **signature, **(extra or {})}
 
@@ -168,6 +212,7 @@ class AnalyticsService:
             idempotency_key = _sha(identity_)
             payload = {"schema": "mova-player-projections-v1", "identity": identity_,
                        "cutoff_at": cutoff, "generated_at": now.isoformat(),
+                       "history": projection["history"],
                        "players": projection["rows"]}
             body = canonical_bytes(payload)
             path = output / f"{variant}-{idempotency_key[:12]}.json"
@@ -194,6 +239,8 @@ class AnalyticsService:
                 boot=boot, fixtures=fixtures, season=self.config.season, gw=gw,
                 minutes_version=active_minutes,
                 points_version=active_points,
+                event_history=event_history,
+                element_summaries=element_summaries,
                 market_context=market_context,
             )
             return persist(projection, variant, status, identity_)
@@ -247,6 +294,8 @@ class AnalyticsService:
                         boot=boot, fixtures=fixtures, season=self.config.season, gw=gw,
                         minutes_version=candidate_minutes,
                         points_version=candidate_points,
+                        event_history=event_history,
+                        element_summaries=element_summaries,
                     )
                     batch = persist(projection, variant, "shadow", identity_)
                 batches.append(batch)
@@ -265,6 +314,7 @@ class AnalyticsService:
                                         "points": active_points},
                 "market": {"status": odds_status, "quality": quality,
                            "artifact_id": market["artifact_id"]},
+                "history_input": history_input,
                 "model_release_shadow": {"status": model_release_status,
                                          "release_id": (release_shadow or {}).get("release_id")},
                 "events_signal": "rejected_by_experiment"}

@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — servicio analítico y drift por gameweek"
 created: 2026-08-24
-updated: 2026-08-30
+updated: 2026-09-04
 tags: [mova, fpl, analytics, model, drift, observability]
 status: active
 ---
@@ -44,9 +44,11 @@ requiere una nueva clave.
 
 ## Flujo y causalidad
 
-1. `mova analytics project` toma el último artifact FPL observado antes del deadline, carga los
-   modelos versionados y crea un batch inmutable por jugador con xP, desviación, P(juega), P(60)
-   y los diez componentes. Un snapshot nuevo supersede el anterior para esa GW, pero no lo borra.
+1. `mova analytics project` toma el último artifact FPL observado antes del deadline y exige el
+   snapshot causal sellado por el tick para la misma temporada/GW. Verifica manifest, hashes y
+   corte; carga los modelos versionados y crea un batch inmutable por jugador con xP, desviación,
+   P(juega), P(60) y los diez componentes. Un snapshot nuevo supersede el anterior para esa GW,
+   pero no lo borra.
 2. El collector obtiene `event/{gw}/live` para cada jornada `data_checked` y vuelve a leer la
    última por posibles correcciones oficiales.
 3. `mova analytics reconcile` evalúa únicamente el batch vigente contra un artifact oficial
@@ -54,10 +56,14 @@ requiere una nueva clave.
 4. `mova analytics run` ejecuta ambos pasos. El timer lo invoca cada 30 minutos; si no hay trabajo
    nuevo termina sin duplicar proyecciones ni evaluaciones.
 
-El estado de jugadores de 2026/27 viene del bootstrap vigente; las tasas individuales aún usan
-la última temporada cerrada (`2025-26`), igual que el path de decisión validado. Incorporar
-jornadas actuales al estado del modelo requiere un experimento causal y una versión nueva; no se
-hace silenciosamente durante `reconcile`.
+El estado objetivo de jugadores de 2026/27 viene del bootstrap vigente. Desde el contrato
+`model-analytics-v2`, el estado de inferencia concatena la última temporada cerrada (`2025-26`)
+con todos los `event-live` anteriores que FPL marque `finished + data_checked`. El snapshot guarda
+esas respuestas por hash y, cuando bootstrap ya muestra otro club, guarda además el
+`element-summary` necesario para recuperar club, rival y localía históricos. Falta de cobertura,
+una DGW agregada, un hash alterado o una fila futura hacen fallar cerrado el batch. El manifest de
+proyección conserva `history_input`, conteos y reparaciones; `reconcile` nunca se usa como feature
+del mismo batch.
 
 ## Métricas
 
