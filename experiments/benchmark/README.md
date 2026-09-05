@@ -4,13 +4,19 @@ status: experimental
 owner: MOVA Fantasy
 ---
 
-# Benchmark interno v1
+# Benchmark interno v2
 
-[Tabla histórica de progreso](snapshots/v1/REPORT.md) ·
-[Snapshot portable](snapshots/v1/catalog.json) · [Registro de comparaciones](registry.json)
+[Tabla de progreso vigente](snapshots/v2/REPORT.md) ·
+[Snapshot portable](snapshots/v2/catalog.json) · [Registro vigente](registry-v2.json)
+
+El [snapshot v1](snapshots/v1/REPORT.md) y `registry.json` se conservan sin cambios.
+V2 añade EXP022: 25 directorios, 12 grupos pareados y ocho paneles predictivos.
+El planner Markov empata 2.212–2.212 con season_value; no pasa el criterio de
+mejora. Su primera comparación invalidada permanece en inventario y está
+bloqueada para ranking mediante `invalidation.json`.
 
 El benchmark consolida evidencia previa sin reentrenar ni promover modelos.
-Incluye 23 directorios (21 IDs, una reproducción y un preflight fallido), 11 grupos
+El corte inicial v1 incluye 23 directorios (21 IDs, una reproducción y un preflight fallido), 11 grupos
 pareados de política y siete paneles predictivos. Una carpeta no implica una
 corrida terminada. Los experimentos sin adaptador de métricas quedan inventariados,
 con hashes de metadata y sin puntuación inventada.
@@ -28,7 +34,8 @@ Desde la raíz del repositorio (Python 3.13 del proyecto; sólo stdlib para este
 ```bash
 python -m experiments.benchmark.run \
   --root ../mova-fpl-experiments \
-  --output experiments/benchmark/snapshots/v1 --check
+  --registry experiments/benchmark/registry-v2.json \
+  --output experiments/benchmark/snapshots/v2 --check
 ```
 
 `--check` reconstruye en memoria, verifica hashes y compara ambos archivos, sin
@@ -55,7 +62,7 @@ no reconstruye decisiones; el adaptador de replay sí verifica 38 GW y suma neta
    archivos, adaptador y, si existe, ruta del bootstrap pareado. Preferir el
    adaptador `replays`: exige GW1..38 y puntos netos. Para métricas predictivas,
    registrar la población, nombres originales y rutas explícitas.
-4. Crear `snapshots/v2` (o la siguiente versión), revisar el diff y ejecutar
+4. Crear la siguiente versión de snapshot y su registro, revisar el diff y ejecutar
    `--check` más `pytest -q`. Conservar v1 y el resultado rechazado/incompleto.
 5. Para comparar contra otra generación, reejecutar ambos bajo el mismo protocolo
    y registrarlos juntos en un grupo nuevo. No unir por temporada ni por dataset

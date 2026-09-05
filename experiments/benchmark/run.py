@@ -56,6 +56,9 @@ def paired_rows(totals, control):
 
 
 def extract(root, spec):
+    invalidation = safe_path(root, spec['experiment'] + '/invalidation.json')
+    if invalidation.exists() and read(invalidation).get('policy_comparison_valid') is False:
+        raise ValueError('invalidated policy comparison cannot enter a benchmark group')
     evidence = []
     documents = []
     for name in spec['files']:
@@ -126,6 +129,14 @@ def build(root, registry):
                         'evidence_status': 'metadata_present' if evidence else 'no_top_level_metadata',
                         'completion_status': 'not_inferred',
                         'registered_groups': [s['id'] for s in registry['groups'] if s['experiment'] == directory.name]})
+        invalidation = directory / 'invalidation.json'
+        if invalidation.exists():
+            safe_path(root, invalidation.relative_to(root))
+            record = read(invalidation)
+            if record.get('policy_comparison_valid') is False:
+                catalog[-1]['policy_comparison_valid'] = False
+                catalog[-1]['invalidation_reason'] = record.get('reason')
+                catalog[-1]['superseded_by'] = record.get('superseded_by')
     groups = []
     ids = set()
     for spec in registry['groups']:

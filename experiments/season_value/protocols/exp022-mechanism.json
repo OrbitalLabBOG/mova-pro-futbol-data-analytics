@@ -1,0 +1,35 @@
+{
+  "experiment_id": "EXP-MOVA-2026-022",
+  "hypothesis": "Joint normalized chip opportunities have predictable persistent regimes that improve next-GW forecasting versus stationary inventory-v1 distribution.",
+  "created_at": "2026-09-05T22:26:07Z",
+  "phase": "mechanism_screen",
+  "train_seasons": [
+    "2023-24"
+  ],
+  "evaluation_seasons": [
+    "2024-25"
+  ],
+  "test_is_pristine": false,
+  "fixed_parameters": {
+    "regimes": 3,
+    "prior_strength": 5,
+    "seed": 42,
+    "n_init": 10,
+    "scale_floor": 1
+  },
+  "gate": "strictly lower energy score AND standardized mean squared error; otherwise stop before policy replay",
+  "primary_policy_metric": "paired net PVA-38 vs season_value 1.0.0 under identical protocol; not computed by this mechanism screen",
+  "production_gate": "not authorized; historical chip coverage, temporal calendar, multi-GW prospective evidence and planner release contract required",
+  "inputs": {
+    "2023-24-opportunities.json": "55e4b744b3f91237f649dfbfa0aae552356c20c81eae8fd7fdce4d1419985608",
+    "2024-25-opportunities.json": "9e8650c689cfbdc4ae0911a523d8bb1d28d840b9618a432abfa69157bb4032d7"
+  },
+  "source_sha256": "ee64c6aadae8ceaa85f0b3279e3c55d36e724a776454c082792359e2e5858ac1",
+  "limitations": [
+    "74 opportunities total, two baseline-policy trajectories",
+    "hypothetical chip opportunities, not realized rewards",
+    "action-independent transitions",
+    "final historical reschedule calendar",
+    "historical test season already inspected in prior experiments"
+  ]
+}

@@ -46,6 +46,19 @@ def fixture_registry(tmp_path):
     return registry, directory
 
 
+def test_invalidated_policy_cannot_be_ranked_but_remains_in_inventory(tmp_path):
+    registry, directory = fixture_registry(tmp_path)
+    (directory / 'invalidation.json').write_text(json.dumps({
+        'policy_comparison_valid': False, 'reason': 'shared mutable predictor',
+        'superseded_by': 'EXP-MOVA-REPRO'}))
+    with pytest.raises(ValueError, match='invalidated policy comparison'):
+        build(tmp_path, registry)
+    registry['groups'] = []
+    catalog = build(tmp_path, registry)['catalog']
+    assert catalog[0]['policy_comparison_valid'] is False
+    assert catalog[0]['invalidation_reason'] == 'shared mutable predictor'
+
+
 def test_manifest_changes_identity_and_missing_experiments_stay_visible(tmp_path):
     registry, directory = fixture_registry(tmp_path)
     (tmp_path / 'EXP-MOVA-INCOMPLETE').mkdir()

@@ -48,7 +48,8 @@ Un archivo antiguo cargado hoy queda etiquetado `historical_import` o
 Los metadatos faltantes permanecen `not_recorded`. Un directorio incompleto no
 se presenta como entrenamiento exitoso: `FINISHED` sólo acredita la importación.
 
-Para evaluar progreso, elegir el experimento/protocolo, filtrar `aggregation=summary`
+Para evaluar progreso, elegir el experimento/protocolo y filtrar primero
+`benchmark_version=historical-audit-v2`, luego `aggregation=summary`
 y comparar `mean_pva_38`, `ci95_low/high`, victorias y número de temporadas.
 `aggregation=season` muestra los puntos netos y deltas de cada temporada.
 Los paneles de CRPS/Brier/log-loss están separados; un menor error no acredita
@@ -170,3 +171,20 @@ El servidor MLflow no se convierte en una web anónima para esa publicación.
 
 Fuentes: [Tracking server](https://mlflow.org/docs/latest/self-hosting/architecture/tracking-server/),
 [autenticación](https://mlflow.org/docs/latest/self-hosting/security/basic-http-auth/).
+
+
+## Benchmark v2 — EXP022
+
+V2 contiene 104 registros de snapshot, incluidos los históricos que reaparecen
+bajo la nueva versión; no representa 104 entrenamientos ni temporadas nuevas.
+La identidad del importador incluye `benchmark_version`: filtrar una sola versión
+para no contar dos veces la evidencia de v1 y v2. Repetir el mismo snapshot es
+idempotente. El grupo `mova/policy/exp022-external_diagnostic-v1` registra el empate
+2.212–2.212 (PVA-38 = 0); `mova/prediction/exp022-opportunity-transition` conserva
+la prueba del mecanismo. El resultado inválido original sólo queda inventariado,
+con su motivo; no tiene grupo de política.
+
+La evidencia experimental privada, incluidas trazas e invalidación, vive en
+`/var/lib/mova-mlflow/imports/exp022-evidence.tar.gz`. El estado del modelo experimental
+es JSON, no un modelo ejecutable por el loader productivo. El planner permanece
+sin promoción. Consultar [EXP022](../../experiments/season_value/TRANSITIONS.md).

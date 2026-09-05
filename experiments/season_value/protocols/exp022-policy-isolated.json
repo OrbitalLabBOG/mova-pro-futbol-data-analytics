@@ -1,0 +1,35 @@
+{
+  "schema": "mova-exp022-policy-protocol-v1",
+  "season": "2025-26",
+  "phase": "external_diagnostic",
+  "pristine_holdout": false,
+  "control": "season_value",
+  "candidate": "markov_season_value",
+  "parameters": {
+    "horizon": 3,
+    "top_k": 20,
+    "time_limit": 3,
+    "decay": 0.84,
+    "seed": 42
+  },
+  "dataset_sha256": "43e053f68d069d76f94bf14bff35cbea5c0ebeb8172b173baae18c4cf630a2e0",
+  "sources": {
+    "transition_replay.py": "63455c633fd02388168778b2937b4229767e56692e91c07c0d6b2efe54ee8328",
+    "transition.py": "ee64c6aadae8ceaa85f0b3279e3c55d36e724a776454c082792359e2e5858ac1",
+    "transition_planner.py": "e27740b7491441856b453d5d4abeef191903de15fd8dc78a4a51819f6166ab0e"
+  },
+  "inputs": {
+    "models/2025-26-baseline.joblib": "3e6a3cbd0ac9d2204cedf0efa934d1ebaa3b8b780097d18d33e960db87b66a35",
+    "2023-24-opportunities.json": "55e4b744b3f91237f649dfbfa0aae552356c20c81eae8fd7fdce4d1419985608",
+    "2024-25-opportunities.json": "9e8650c689cfbdc4ae0911a523d8bb1d28d840b9618a432abfa69157bb4032d7"
+  },
+  "mechanism_sha256": "65b6695cda3d7356fc9dec961064a9c7b11fb1be81feb39869cc23e65b908aad",
+  "screen_gate": "PVA-38 > 0; no parameter retuning after opening results",
+  "promotion_authorized": false,
+  "promotion_blockers": [
+    "single historical chip season",
+    "final reschedule calendar",
+    "no prospective planner release evidence",
+    "action-independent transition approximation"
+  ]
+}
