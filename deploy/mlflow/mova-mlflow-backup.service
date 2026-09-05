@@ -1,0 +1,8 @@
+[Unit]
+Description=MOVA MLflow consistent local backup
+After=docker.service
+[Service]
+Type=oneshot
+ExecStart=/opt/orbital/services/mova-mlflow/deploy/mlflow/backup.sh systemd "Scheduled MLflow backup"
+TimeoutStartSec=300
+UMask=0077

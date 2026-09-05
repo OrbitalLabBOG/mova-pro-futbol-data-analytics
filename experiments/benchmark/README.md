@@ -75,6 +75,6 @@ Primero resolver catálogos históricos y disponibilidad temporal del calendario
 no copiar los ocho chips actuales a temporadas con reglas diferentes. El rango
 histórico comparable se publica después de verificar esas condiciones.
 
-Esta consolidación no ejecuta ese nuevo replay ni configura MLflow. Cuando se
-incorpore tracking, importará IDs, grupos y hashes de este contrato; no cambiará
+Esta consolidación no ejecuta ese nuevo replay. La [integración MLflow](../../docs/operations/mlflow.md)
+importa IDs, grupos y hashes de este contrato, con verificación y sin cambiar
 la definición de progreso ni la autoridad de promoción del runtime.

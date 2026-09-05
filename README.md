@@ -83,6 +83,8 @@ para resultados, hashes y límites de promoción.
 
 El [benchmark interno de progreso](experiments/benchmark/README.md) consolida
 el historial de investigación con comparaciones por protocolo, PVA-38 e incertidumbre.
+[MLflow privado](docs/operations/mlflow.md) añade comparación interactiva, archivo
+de modelos por hash y exportación revisable, sin promover modelos al runtime.
 
 ## Empezar
 

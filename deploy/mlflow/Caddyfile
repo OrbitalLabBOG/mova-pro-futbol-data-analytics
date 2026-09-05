@@ -1,0 +1,11 @@
+# Authenticated research service; no FPL operational routes are exposed.
+mlflow.72-60-245-2.sslip.io {
+    encode gzip
+    reverse_proxy 127.0.0.1:5050
+    header {
+        Cache-Control "no-store"
+        X-Content-Type-Options nosniff
+        Referrer-Policy no-referrer
+        -Server
+    }
+}
