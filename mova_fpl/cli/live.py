@@ -220,7 +220,8 @@ def _candidate(key: str, label: str, decision, state: State) -> dict:
 
 
 def _prior_virtual_states(path: str | None, expected_sha256: str | None,
-                          *, season: str, gw: int) -> tuple[dict | None, dict]:
+                          *, season: str, gw: int,
+                          strategy_key: str = "season_fixture_h3") -> tuple[dict | None, dict]:
     """Carga el ledger virtual previo; ausencia o brecha inicia una racha nueva."""
     if not path:
         return None, {"mode": "initialized_from_observed", "reason": "no_prior_state"}
@@ -233,7 +234,7 @@ def _prior_virtual_states(path: str | None, expected_sha256: str | None,
     envelope = json.loads(raw)
     shadow = envelope.get("strategy_shadow") or {}
     next_state = shadow.get("next_state")
-    if (shadow.get("strategy_key") != "season_fixture_h3" or not next_state
+    if (shadow.get("strategy_key") != strategy_key or not next_state
             or str(shadow.get("season")) != str(season)
             or int(shadow.get("gw", 0)) != int(gw) - 1):
         return None, {
@@ -415,12 +416,14 @@ def main() -> None:
     )
     ap.add_argument(
         "--strategy-shadow",
-        choices=("season_fixture_h3",),
+        choices=("season_fixture_h3", "season_value_v2"),
         help=(
             "añade un contrafactual no ejecutable del proyector fixture-a-fixture; "
             "no cambia selected_candidate_key"
         ),
     )
+    ap.add_argument("--season-value-shadow-manifest")
+    ap.add_argument("--season-value-shadow-sha256")
     ap.add_argument(
         "--strategy-shadow-state",
         help="envelope de la GW anterior con el ledger virtual de ambos brazos",
@@ -619,7 +622,26 @@ def main() -> None:
             },
             "report_artifact": {"path": str(destino), "sha256": report_sha},
         }
-        if args.strategy_shadow == "season_fixture_h3":
+        if args.strategy_shadow == "season_value_v2":
+            from mova_fpl.cli.season_value_shadow import build_shadow
+            try:
+                payload["strategy_shadow"] = build_shadow(
+                    season=args.season, gw=args.gw, cfg=cfg, fx=fx, boot=boot,
+                    base_state=base_state, history=historia, roster=roster, models=modelos,
+                    manifest_path=args.season_value_shadow_manifest,
+                    manifest_sha256=args.season_value_shadow_sha256,
+                    prior_path=args.strategy_shadow_state,
+                    prior_sha256=args.strategy_shadow_state_sha256,
+                )
+            except Exception as exc:
+                payload["strategy_shadow"] = {
+                    "schema": "mova-strategy-shadow-v1", "experiment_id": "EXP-MOVA-2026-021",
+                    "strategy_key": "season_value_v2", "status": "invalid",
+                    "season": args.season, "gw": args.gw, "selected_for_execution": False,
+                    "virtual_trajectory": True,
+                    "error": {"type": type(exc).__name__, "detail": str(exc)[:500]},
+                }
+        elif args.strategy_shadow == "season_fixture_h3":
             try:
                 payload["strategy_shadow"] = _build_strategy_shadow(
                     season=args.season, gw=args.gw, cfg=cfg,

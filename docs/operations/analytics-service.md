@@ -148,3 +148,27 @@ API, tick ni browser; se preservan PostgreSQL y artifacts para auditoría.
 La evidencia del despliegue del 24 de agosto de 2026, incluidas cobertura, proyecciones shadow,
 pruebas y rollback, está en el
 [acta del servicio analítico](../decisions/2026-27/analytics-service-rollout.md).
+
+## Challenger de participación y política de temporada (0.7.0)
+
+El entrenamiento admite una arquitectura explícita, registrada dentro de la
+identidad idempotente del job:
+
+```bash
+mova model train --architecture participation_v2 --version 1.3.0 \
+  --holdout 2025-26 --actor codex --reason "EXP-MOVA-2026-021, candidato" \
+  --idempotency-key "exp021:participation:1.3.0"
+```
+
+La calibración reserva la última temporada cerrada. El bundle entrenado para
+2026-27 no acredita eficacia en 2025-26: esa evaluación requiere su fold temporal.
+El comando no activa el bundle. El modelo conserva las ramas de minutos y los
+contratos predict/explain/evaluate/release existentes.
+
+El [experimento de valor de temporada](../../experiments/season_value/README.md)
+añade un comparador estratégico sellado con inventario de chips conjunto y
+ledger virtual. Usa `MOVA_SEASON_VALUE_SHADOW_MANIFEST` +
+`MOVA_SEASON_VALUE_SHADOW_SHA256`; no modifica `selected_candidate_key` ni los
+controles browser. Un artifact inválido marca el shadow inválido y conserva la
+propuesta baseline. El slot anterior `season_fixture_h3` permanece disponible
+al retirar esa configuración.

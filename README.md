@@ -1,3 +1,11 @@
+---
+type: docs
+name: MOVA Fantasy Fútbol Data Analytics
+updated: 2026-09-04
+status: active
+tags: [mova, fpl, runtime, operations]
+---
+
 # MOVA Fantasy Fútbol Data Analytics
 
 Motor operativo y analítico para gestionar el equipo `losmillosFPL` durante la temporada
@@ -11,6 +19,61 @@ El cockpit read-only comparte un único contrato entre CLI y API. Su dashboard e
 sólo expone tres indicadores humanos; diagnóstico, métricas y JSON permanecen en loopback.
 Supabase sólo refleja seguimiento PM y nunca recibe estado operativo.
 
+## Estado verificado del despliegue
+
+Corte: **4 de septiembre de 2026, 21:22–21:23 America/Bogota**
+(`2026-09-05T02:22–02:23Z`). Es una observación del VPS, no un monitor en vivo.
+Checkout e imagen coinciden en **v0.6.3**, SHA
+`161cfe131d89df9019560603cd457ad07d726c97`; el checkout desplegado está limpio.
+
+| Superficie | Evidencia observada |
+| --- | --- |
+| Doctor | **24 PASS, 0 WARN, 0 FAIL**, exit 0; contrato `mova-fpl-operator-v1`, versión 1.0 |
+| Procesos | API y PostgreSQL healthy; ocho timers activos; servicios programados sin resultado fallido; heartbeat fresco |
+| Datos y modelos | Bases íntegras, artefactos presentes, cuatro fuentes saludables y servicio analítico consultable |
+| Persistencia | SQLite es writer del harness; PostgreSQL 17.11 es shadow de ese ledger y writer del data service; paridad registrada: 57 tablas, 0 fallos |
+| Cuenta y browser | Snapshot privado válido de 15 jugadores dentro del umbral de frescura; browser detenido, perfil persistente presente |
+| Autoridad | `shadow / A0`, `kill_switch=true`, `browser_writes=false`; elegibilidad técnica A0 |
+| Seguridad operativa | `overall_status=healthy`, `safety=safe_to_wait`; cero P0/P1 y ocho P2 abiertos |
+| Preparación autónoma | `not_ready`: **15/25 gates pass, 10 pending, 0 blocked**; scorecard `pending` |
+| Cockpit | «Operación estable con pendientes», `attention_required`; workflow sin violaciones |
+| Respaldo y alertas | Backup local reciente; backup cifrado off-host sin configurar; alertas sólo en journald, sin destino externo ni owner |
+
+El ciclo objetivo es **GW4**, fase `baseline`, con deadline registrado para el
+**12 de septiembre, 07:30 Colombia**. Sigue `preliminary`: GW3 no está asentada y aún
+quedan nueve partidos sin comenzar. Research y deliberación del ciclo están pendientes;
+envelope y preflight terminan bloqueados por policy y ejecución queda `skipped_policy`.
+Esto no equivale a un fallo de infraestructura ni autoriza promover decisiones.
+
+El fallo del watchdog observado durante la mañana ya no aparece en el doctor actual.
+Eso no demuestra que se haya implementado el cierre manual previsto para v0.6.4:
+producción continúa en v0.6.3. Persisten ocho incidentes P2 `Shadow decision falló`,
+abiertos entre 12:30 y 13:15 Colombia. El log del último muestra un HTTP 503 en el
+historial público del equipo tras cinco intentos; esa evidencia no atribuye la misma
+causa a los otros siete. `status` no reporta jobs fallidos en su ventana de 24 horas,
+pero los incidentes siguen abiertos y deben revisarse por separado.
+
+La salud del servicio analítico no acredita calidad predictiva: la última scorecard
+observada sigue siendo de GW2 y su evaluación de drift es `insufficient` por falta
+de referencias. GW3 sólo se evalúa después de `finished + data_checked`.
+
+Pendientes de producto y operación:
+
+- Completar evidencia research en tres jornadas y ensayos browser: capitanía 0/3,
+  XI/banca 0/3 y R3 1/3; los entrypoints de XI/banca y R3 siguen cerrados.
+- Incorporar evidencia `manual_verified` para operaciones humanas con transferencias,
+  cerrar el ciclo tras salvaguarda verificada y conciliar el contrato de autoridad.
+  El importador actual sólo admite A1 sin transfers/chips; ejecución mapea R2 a A2
+  y R3 a A3. La normalización prevista no está desplegada.
+- Configurar y probar alertas externas, backup cifrado off-host y restauración;
+  completar tres ciclos independientes para el shadow PostgreSQL (observado: 1/3).
+
+Para renovar este corte, usar `mova doctor --json`, `mova status --json`,
+`mova cockpit --json`, `mova readiness`, `mova harness workflow` y
+`mova harness scorecard` desde el wrapper del VPS. Para un incidente, usar
+`mova triage --incident-id ID --json` y revisar su evidencia. Estos diagnósticos
+no ejecutan decisiones, no llaman agentes ni cambian permisos FPL.
+
 ## Empezar
 
 Requiere Python 3.13.
@@ -20,8 +83,16 @@ python -m pip install -e '.[test]'
 pytest -q
 ```
 
-La suite por defecto es hermética y no necesita bases ni modelos externos. Las pruebas que
-validan el dataset canónico y artefactos productivos se ejecutan después de generarlos:
+La suite por defecto no necesita bases ni modelos externos. **Deuda de reproducibilidad
+observada el 4 de septiembre:** `pytest -q` produjo 1.329 passed, 6 failed, 1 skipped y
+79 deselected. Los seis fallos de `test_agent_attempts.py` y `test_watchdog_resilience.py`
+dependen del reloj real con un deadline fijo `2026-09-04T17:30:00Z`: el authorizer
+rechaza el permiso con `deadline_open=false` / `agent_retry_deadline_closed`.
+Es necesario aislar el reloj de esos fixtures antes de volver a declarar la suite
+hermética y verde; no desactivar el gate productivo para hacerlas pasar.
+
+Las pruebas que validan el dataset canónico y artefactos productivos se ejecutan
+después de generarlos:
 
 ```bash
 python -m mova_fpl.data.ingest --all
@@ -169,8 +240,9 @@ CycleManifest + memoria estratégica durable → modelos causales → matriz xP 
 - `mova_fpl` solo hace HTTP `GET`; no escribe en FPL.
 - El browser autenticado vive aislado y sus mutaciones están gobernadas por controles.
 - Supabase no forma parte del runtime; se usa únicamente para seguimiento PM.
-- SQLite sigue siendo el writer operativo. PostgreSQL shadow se sincroniza de forma idempotente
-  por ciclo/semana y su paridad/frescura son visibles sin entregar secretos a la API.
+- SQLite sigue siendo el writer del ledger operativo del harness. PostgreSQL es writer del
+  data service FPL/odds/WhoScored y conserva un espejo shadow del harness, sincronizado de forma
+  idempotente por ciclo/semana; su paridad/frescura son visibles sin entregar secretos a la API.
 
 ## Repositorio
 
@@ -202,3 +274,11 @@ Documentos principales:
 El capítulo Mundial 2026, el motor FPL con leakage, visualizaciones y outputs históricos se
 retiraron del árbol operativo. Permanecen recuperables en el tag
 `archive/pre-harness-cleanup-2026-08-23`; ver [historia del repositorio](docs/history.md).
+
+## Laboratorio analítico 0.7.0
+
+La arquitectura candidata de participación reciente y el planificador de valor
+conjunto de chips se describen en el [experimento EXP-021](experiments/season_value/README.md).
+Su integración conserva el entrenamiento auditable, hashes y shadow con
+liquidación por jornada. La versión del software no implica promoción del
+modelo ni habilitación de escrituras FPL.

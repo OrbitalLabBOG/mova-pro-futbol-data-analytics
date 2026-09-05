@@ -8,6 +8,7 @@ from dataclasses import replace
 from mova_fpl.engine.state import Decision, State
 from mova_fpl.rules.base import Position, Squad, SquadPlayer
 from mova_fpl.rules.market import accumulate_free_transfers
+from mova_fpl.rules.chips import ChipUse, validate_chip
 
 SCHEMA = "mova-strategy-virtual-state-v1"
 
@@ -39,6 +40,16 @@ def restore_virtual_state(spec: dict, *, base_state: State, boot: dict,
         raise ValueError("estado virtual no es de la jornada inmediatamente anterior")
     if spec.get("state_fingerprint") != state_fingerprint(spec):
         raise ValueError("fingerprint del estado virtual no coincide")
+    if expected_strategy == "season_value_v2":
+        if "chips_used" not in spec or base_state.chips is None:
+            raise ValueError("missing virtual chip inventory")
+        used = []
+        for raw in spec["chips_used"]:
+            use = ChipUse(**raw)
+            if (use.gw > expected_previous_gw or use.gw < 1
+                    or validate_chip(use.chip, use.gw, tuple(used), base_state.chips)):
+                raise ValueError("invalid virtual chip history")
+            used.append(use)
 
     catalog = {int(item["id"]): item for item in boot["elements"]}
     teams = {int(item["id"]): str(item["name"]) for item in boot["teams"]}
@@ -68,14 +79,20 @@ def restore_virtual_state(spec: dict, *, base_state: State, boot: dict,
         bank=bank,
         free_transfers=free_transfers,
         chips_allowed={},
+        chips_used=(tuple(ChipUse(**u) for u in spec["chips_used"])
+                    if "chips_used" in spec else base_state.chips_used),
     )
 
 
 def next_virtual_state(decision: Decision, *, state: State, boot: dict,
                        strategy_key: str, arm: str) -> dict:
     """Aplica solo la primera acción y sella el estado que abrirá la siguiente GW."""
-    if decision.chip is not None:
+    with_chips = strategy_key == "season_value_v2"
+    if decision.chip is not None and not with_chips:
         raise ValueError("el estado virtual aislado no admite chips")
+    if with_chips and decision.chip and (
+            state.chips is None or validate_chip(decision.chip, state.gw, state.chips_used, state.chips)):
+        raise ValueError("illegal virtual chip")
     if arm not in {"control", "candidate"}:
         raise ValueError(f"brazo virtual desconocido: {arm}")
     catalog = {int(item["id"]): item for item in boot["elements"]}
@@ -83,7 +100,8 @@ def next_virtual_state(decision: Decision, *, state: State, boot: dict,
         player.element: player for player in (state.squad.players if state.squad else ())
     }
     squad = []
-    for element in sorted(decision.squad_15):
+    elements = previous if decision.chip == "free_hit" else decision.squad_15
+    for element in sorted(elements):
         item = catalog.get(int(element))
         if item is None:
             raise ValueError(f"elemento decidido ausente del bootstrap: {element}")
@@ -106,6 +124,8 @@ def next_virtual_state(decision: Decision, *, state: State, boot: dict,
             len(decision.transfers_in),
             int(state.rules["max_free_transfers"]),
         )
+        if decision.chip in {"wildcard", "free_hit"}:
+            next_free_transfers = min(state.free_transfers + 1, int(state.rules["max_free_transfers"]))
     body = {
         "schema": SCHEMA,
         "strategy_key": strategy_key,
@@ -114,7 +134,12 @@ def next_virtual_state(decision: Decision, *, state: State, boot: dict,
         "applied_gw": int(decision.gw),
         "decision_fingerprint": decision.fingerprint(),
         "squad": squad,
-        "bank": round(float(decision.bank_after), 1),
+        "bank": round(float(state.bank if decision.chip == "free_hit" else decision.bank_after), 1),
         "free_transfers": int(next_free_transfers),
     }
+    if with_chips:
+        used = list(state.chips_used)
+        if decision.chip:
+            used.append(ChipUse(state.gw, decision.chip))
+        body["chips_used"] = [{"gw": u.gw, "chip": u.chip} for u in used]
     return {**body, "state_fingerprint": state_fingerprint(body)}

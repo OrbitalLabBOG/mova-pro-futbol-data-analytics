@@ -83,6 +83,13 @@ def _proba_minutos(history: pd.DataFrame, roster: pd.DataFrame, model) -> np.nda
     Se factoriza aparte porque la usan el proyector de minutos y el de puntos, y
     construir las features es lo caro del ciclo: una sola vez por jornada.
     """
+    if hasattr(model, "predict_proba_history"):
+        probability = np.asarray(model.predict_proba_history(history, roster), dtype=float)
+        if (probability.shape != (len(roster), 3) or not np.isfinite(probability).all()
+                or (probability < 0).any() or (probability > 1).any()
+                or not np.allclose(probability.sum(axis=1), 1.0)):
+            raise ValueError("invalid participation probabilities")
+        return probability
     from mova_fpl.models.features.minutes_features import build_targets
     target = build_targets(history, roster)
     p = pd.DataFrame(model.predict_proba_built(target), columns=["p0", "p1", "p60"])

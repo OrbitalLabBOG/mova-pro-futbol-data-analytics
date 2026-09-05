@@ -328,3 +328,19 @@ def test_el_presupuesto_del_free_hit_liquida_la_plantilla():
     st = estado(cands, squad=squad, bank=3.5)
     esperado = round(sum(p.price for p in squad.players) + 3.5, 1)
     assert free_hit_budget(st) == pytest.approx(esperado, abs=0.05)
+
+
+@pytest.mark.parametrize('chip', ['triple_captain', 'bench_boost'])
+def test_decision_expected_points_include_the_selected_chip(chip):
+    from dataclasses import replace
+    from mova_fpl.engine.runner import Config, decide
+    cands = mercado()
+    xp = matriz(cands)
+    state = replace(estado(cands, permitidos={1: {chip}}), horizon_xp=xp)
+    decision = decide(1, state, Config(policy='milp', top_k=0))
+    assert decision.chip == chip
+    scoring = decision.squad_15 if chip == 'bench_boost' else decision.starters
+    expected = sum(xp[1][i] for i in scoring)
+    expected += xp[1][decision.captain] * (2 if chip == 'triple_captain' else 1)
+    expected -= RULES['hit_cost'] * decision.hits
+    assert decision.expected_points == pytest.approx(expected, abs=.005)

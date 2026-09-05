@@ -677,3 +677,15 @@ def test_causal_reviewer_does_not_count_same_gameweek_corrections_as_recurrence(
     assert first["proposals"] == 0
     assert second["proposals"] == 0
     assert all(item["prior_occurrences"] == 0 for item in second["findings"])
+
+
+def test_active_model_pointer_uses_ledger_order_when_wall_clock_moves_backwards(tmp_path):
+    db = OpsDB(tmp_path / 'ops.db', enforce_version=False)
+    db.migrate()
+    with db.transaction() as con:
+        for at, release in [('2026-09-05T03:00:00Z', 'first'), ('2026-09-05T02:59:59Z', None)]:
+            con.execute('INSERT INTO runtime_controls(control_key,value_json,effective_at,actor,reason) '
+                        'VALUES(?,?,?,?,?)', ('active_model_bundle', json.dumps({'release_id': release}),
+                                              at, 'test', 'rollback'))
+    assert db.active_model_bundle()['release_id'] is None
+    assert db.model_bundle_release_status()['active_model_bundle']['value']['release_id'] is None

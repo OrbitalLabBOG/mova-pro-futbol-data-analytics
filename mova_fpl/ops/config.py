@@ -25,6 +25,8 @@ class RuntimeConfig:
     enable_long_horizon_shadow: bool = False
     long_horizon_uncertainty_artifact: Path | None = None
     long_horizon_uncertainty_sha256: str | None = None
+    season_value_shadow_manifest: Path | None = None
+    season_value_shadow_sha256: str | None = None
     enable_browser_writes: bool = False
     ops_db: Path = Path("/var/lib/mova-fpl/db/ops.db")
     trace_db: Path = Path("/var/lib/mova-fpl/db/trace.db")
@@ -100,6 +102,9 @@ class RuntimeConfig:
             compliance_gate=os.environ.get("MOVA_COMPLIANCE_GATE", "pending"),
             enable_shadow_decision=_bool("MOVA_ENABLE_SHADOW_DECISION", True),
             enable_long_horizon_shadow=_bool("MOVA_ENABLE_LONG_HORIZON_SHADOW", False),
+            season_value_shadow_manifest=(Path(os.environ["MOVA_SEASON_VALUE_SHADOW_MANIFEST"])
+                if os.environ.get("MOVA_SEASON_VALUE_SHADOW_MANIFEST") else None),
+            season_value_shadow_sha256=os.environ.get("MOVA_SEASON_VALUE_SHADOW_SHA256") or None,
             long_horizon_uncertainty_artifact=(
                 Path(os.environ["MOVA_LONG_HORIZON_UNCERTAINTY_ARTIFACT"])
                 if os.environ.get("MOVA_LONG_HORIZON_UNCERTAINTY_ARTIFACT") else None

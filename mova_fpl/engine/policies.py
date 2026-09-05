@@ -215,6 +215,10 @@ def milp_policy(state: State, config) -> Decision:
     )
 
     chip = sol.chips.get(gw)
+    if chip == "triple_captain":
+        esperado += fila.get(cap, 0.0)
+    elif chip == "bench_boost":
+        esperado += sum(fila.get(i, 0.0) for i in sol.squad[gw] if i not in en_xi)
     notas = [str(sol.shortlist), f"horizonte {sorted(xp)} xp_total={summarize(xp)}"]
     if chip:
         notas.append(f"chip jugado: {chip}")

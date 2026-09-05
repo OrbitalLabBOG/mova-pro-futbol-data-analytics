@@ -324,8 +324,13 @@ class TickRunner:
             "--chips", "--lookahead", "6", "--dry-run", "--out", str(out),
             "--json-out", str(bundle_path), "--as-of", prepared_manifest["manifest"]["as_of_at"],
         ]
-        if self.config.enable_long_horizon_shadow:
-            argv.extend(["--strategy-shadow", "season_fixture_h3"])
+        if self.config.enable_long_horizon_shadow or self.config.season_value_shadow_manifest:
+            strategy_key = "season_value_v2" if self.config.season_value_shadow_manifest else "season_fixture_h3"
+            argv.extend(["--strategy-shadow", strategy_key])
+            if self.config.season_value_shadow_manifest:
+                argv.extend(["--season-value-shadow-manifest", str(self.config.season_value_shadow_manifest)])
+                if self.config.season_value_shadow_sha256:
+                    argv.extend(["--season-value-shadow-sha256", self.config.season_value_shadow_sha256])
             if self.config.long_horizon_uncertainty_artifact:
                 argv.extend([
                     "--strategy-shadow-uncertainty-artifact",
