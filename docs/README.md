@@ -1,7 +1,7 @@
 ---
 type: project
 name: "MOVA FPL — Technical Documentation"
-updated: 2026-09-04
+updated: 2026-09-05
 status: active
 tags: [mova, fpl, documentation]
 ---
@@ -10,6 +10,7 @@ tags: [mova, fpl, documentation]
 
 | Necesidad | Fuente |
 | --- | --- |
+| Empezar la operación diaria y distinguir versiones desplegadas | [README principal](../README.md#operación) |
 | Entender el motor | [Arquitectura](architecture/decision-engine.md) |
 | Revisar decisiones, papers y mejoras de autonomía | [Revisión técnica y científica, 2026-09-04](architecture/decision-quality-review-2026-09-04.md) |
 | Operar una jornada | [Runbook de jornada](operations/gameweek.md) |
