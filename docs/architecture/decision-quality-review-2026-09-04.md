@@ -160,3 +160,66 @@ habilitación gradual por tipo de acción y riesgo bajo sus gates. La promoción
 un modelo y el permiso para escribir en FPL son decisiones independientes. La
 primera iteración recomendada es cerrar evidencia existente y evaluar calendario
 por fixture, no reescribir el sistema ni activar autonomía total.
+
+
+## Actualización experimental — 5 de septiembre de 2026
+
+La revisión posterior de código `3f1fa0e`, predictores empaquetados, contrato
+`Decision`, servicio analítico y releases desemboca en
+[EXP022](../../experiments/season_value/TRANSITIONS.md). El source del mecanismo
+y sus inputs se sellaron antes del screen; el protocolo del replay se selló antes
+de ejecutar cualquiera de sus dos brazos. No se sustituyen resultados anteriores.
+
+### Frontera consultada y aplicabilidad
+
+Se ejecutó ORBIX Research con búsquedas multi-fuente de FPL y decisión estocástica,
+seguido de OpenAlex específico y lectura de fuentes primarias. La búsqueda amplia
+de arXiv devolvió también títulos sin relación con la consulta: se descartaron,
+sin tratarlos como hallazgos ni atribuir cobertura exhaustiva al dossier. El año
+2021 de la ficha OpenAlex de Matthews corresponde al registro de una contribución
+del volumen AAAI 2012, no a una nueva evaluación FPL.
+
+| Fuente primaria | Hallazgo y límite | Decisión para MOVA |
+| --- | --- | --- |
+| [OpenFPL, 2025](https://arxiv.org/html/2508.09992v1) | Ensembles por posición con datos FPL/Understat. Evaluación prospectiva GW32–38 de 2024/25; no prueba una política legal de temporada completa. Sus folds de desarrollo por club e imputación con temporadas posteriores no equivalen a nuestro walk-forward. | Referencia para un futuro predictor directo y evaluación prospectiva; no importar pesos entrenados con temporadas futuras en folds históricos. |
+| [DFL: Foundations, State of the Art, Benchmark and Future Opportunities](https://arxiv.org/abs/2307.13565) | Revisión de aprendizaje enfocado en decisiones, con once métodos y siete problemas. La evaluación pertenece a sus problemas, no FPL. | Medir error de decisión además de calibración; comparar ablaciones bajo igual solver. |
+| [Online Decision-Focused Learning, 2025](https://arxiv.org/abs/2505.13564) | Trata distribución/objetivo variables y regret dinámico; los resultados teóricos tienen supuestos y la demostración empírica usa knapsack. | Actualización secuencial auditable; no afirmar garantías para nuestro MILP de chips. |
+| [Control-Oriented Scenario Tree Construction, agosto 2026](https://arxiv.org/html/2608.09335v1) | Aprende asignaciones a un árbol de topología fija según beneficio del control. Ensayo de arbitraje de batería; preprint, no benchmark FPL. | Construir escenarios según decisiones que distinguen; conservar no anticipación y medir utilidad cerrando el ciclo. No implementado en EXP022. |
+| [Open FPL Solver](https://github.com/solioanalytics/open-fpl-solver) | Implementación pública de optimización FPL determinista. | Futuro comparador independiente de reglas/solución, sin tratar sus objetivos xP como puntos realizados ni copiar autoridad de ejecución. |
+
+Esta selección orienta el diseño, no acredita SOTA de MOVA. No se encontró aquí
+un leaderboard público que certifique conjuntamente predicción, reglas, chips,
+transferencias, incertidumbre y ejecución autónoma de nuestro problema.
+
+### Fallo observado y atribución pendiente
+
+El 5 de septiembre la última scorecard baseline final consultada sigue siendo GW2:
+620 jugadores, 750,78 puntos predichos frente a 889 realizados, sesgo −15,55%,
+MAE 1,297 y ECE P60 0,1372. Aparición predice 426,20 frente a 519 puntos; goles
+106,57 frente a 139; asistencias 61,74 frente a 90. Estos agregados describen la
+población completa, no pérdidas del equipo seleccionado. Otras componentes
+compensan parcialmente el sesgo. Drift permanece `insufficient` y no acredita
+estabilidad ni alarma estadística. No se obtuvo una scorecard GW1 por el endpoint
+consultado; no se reconstruye ni se inventa una segunda observación causal.
+
+Separar cohortes por versión/historia, posición, titularidad y universo realmente
+elegible será necesario antes de reentrenar. Comparar una GW liquidada con el modelo
+actual recalculado después de su deadline sería retrospectivo. Las puntuaciones
+humanas y puntos de banca tampoco identifican el efecto causal del algoritmo.
+
+EXP021 ya mostró que reducir Brier puede coexistir con perder −79/−44/−77 puntos.
+El recourse de EXP009 dio cero ganancia, y su lookahead de escenarios tenía
+optimismo por información perfecta futura. No se reactiva esa construcción como
+si ya fuera un árbol no anticipativo. El terminal FT fijo también perdió. El
+siguiente sistema debe aprender valor de estado y medir transiciones, preservando
+estos resultados negativos y manteniendo los predictores como control inicial.
+
+### Paquete estratégico pendiente
+
+El bundle predictivo vigente (`minutes+points`) y el manifest de shadow estratégico
+son contratos diferentes. Un paquete futuro del sistema completo debe sellar
+predictor, proyector, planner, reglas, solver, features/estado, calibración,
+cutoffs, hashes, protocolo y evidencia prospectiva; devolver `Decision` y evidencia
+legible por el harness. `improve release` no soporta actualmente esa promoción
+estratégica: no se simula su éxito con un registro MLflow. La nueva interfaz de
+promoción debe probarse con casos de rechazo y rollback antes de activar un planner.

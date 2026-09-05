@@ -171,3 +171,9 @@ de plantillas, lesiones, precios y rivales para toda la temporada. La siguiente
 mejora analítica debe comparar esas transiciones y su incertidumbre con este
 control, usando evaluación temporal y evidencia prospectiva; no promover el
 predictor rechazado ni interpretar este único backtest como garantía de ganar.
+
+## Experimento siguiente
+
+[EXP022: persistencia de oportunidades](TRANSITIONS.md) contrasta un estado Markov
+con el control estacionario, conserva PVA-38 y explicita el contrato pendiente de
+promoción estratégica. Sigue aislado de producción.

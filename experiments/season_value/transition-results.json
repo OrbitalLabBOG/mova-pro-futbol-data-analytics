@@ -1,0 +1,152 @@
+{
+  "schema": "mova-exp022-summary-v1",
+  "mechanism": {
+    "schema": "mova-opportunity-transition-evaluation-v1",
+    "model": {
+      "train_seasons": [
+        "2023-24"
+      ],
+      "target_season": "2024-25",
+      "observations": 37,
+      "transitions": 36,
+      "regimes": 3,
+      "prior_strength": 5,
+      "seed": 42,
+      "action_conditioned": false
+    },
+    "evaluation_season": "2024-25",
+    "pairs": 36,
+    "metrics": {
+      "stationary": {
+        "energy_score": 1.0617264624223246,
+        "mean_squared_error": 0.6892514405132731
+      },
+      "markov": {
+        "energy_score": 1.0244114623394103,
+        "mean_squared_error": 0.6439284245081008
+      }
+    },
+    "mechanism_gate_passed": true,
+    "policy_points_evaluated": false,
+    "promotion_authorized": false,
+    "manifest_sha256": "7369cd29866fa01f44b6f527e2993b33b471d5fd30625d8c8e5a79b3590086c2"
+  },
+  "policy": {
+    "schema": "mova-exp022-policy-evaluation-v1",
+    "pva_38": 0,
+    "control_points": 2212,
+    "candidate_points": 2212,
+    "paired_bootstrap": {
+      "method": "paired_moving_block_bootstrap",
+      "draws": 20000,
+      "block_size_gw": 4,
+      "observed_by_season": {
+        "2025-26": 0.0
+      },
+      "observed_mean": 0.0,
+      "simulated_mean": 0.0,
+      "ci90": [
+        0.0,
+        0.0
+      ],
+      "ci95": [
+        0.0,
+        0.0
+      ],
+      "probability_positive": 0.0,
+      "downside_cvar_10": 0.0,
+      "influence": {
+        "method": "paired_policy_influence_v1",
+        "seasons": 1,
+        "gameweeks": 38,
+        "season_mean_delta": 0.0,
+        "season_median_delta": 0.0,
+        "season_wins": 0,
+        "season_losses": 0,
+        "season_ties": 1,
+        "leave_one_season_out_mean": {},
+        "loss_reversal_seasons": [],
+        "single_gain_supported_seasons": [],
+        "largest_single_gw_loss": 0.0,
+        "largest_single_gw_gain": 0.0,
+        "by_season": {
+          "2025-26": {
+            "gameweeks": 38,
+            "delta": 0.0,
+            "through_penultimate_gw": 0.0,
+            "final_gw_delta": 0.0,
+            "worst_gw": {
+              "gw": 1,
+              "delta": 0.0
+            },
+            "best_gw": {
+              "gw": 1,
+              "delta": 0.0
+            },
+            "delta_without_worst_gw": 0.0,
+            "delta_without_best_gw": 0.0,
+            "loss_reversal_by_one_gw": false,
+            "win_supported_by_one_gw": false,
+            "absolute_delta_path": 0.0,
+            "max_single_gw_share_of_absolute_path": 0.0,
+            "positive_gws": 0,
+            "negative_gws": 0,
+            "tie_gws": 38
+          }
+        }
+      }
+    },
+    "influence": {
+      "method": "paired_policy_influence_v1",
+      "seasons": 1,
+      "gameweeks": 38,
+      "season_mean_delta": 0.0,
+      "season_median_delta": 0.0,
+      "season_wins": 0,
+      "season_losses": 0,
+      "season_ties": 1,
+      "leave_one_season_out_mean": {},
+      "loss_reversal_seasons": [],
+      "single_gain_supported_seasons": [],
+      "largest_single_gw_loss": 0.0,
+      "largest_single_gw_gain": 0.0,
+      "by_season": {
+        "2025-26": {
+          "gameweeks": 38,
+          "delta": 0.0,
+          "through_penultimate_gw": 0.0,
+          "final_gw_delta": 0.0,
+          "worst_gw": {
+            "gw": 1,
+            "delta": 0.0
+          },
+          "best_gw": {
+            "gw": 1,
+            "delta": 0.0
+          },
+          "delta_without_worst_gw": 0.0,
+          "delta_without_best_gw": 0.0,
+          "loss_reversal_by_one_gw": false,
+          "win_supported_by_one_gw": false,
+          "absolute_delta_path": 0.0,
+          "max_single_gw_share_of_absolute_path": 0.0,
+          "positive_gws": 0,
+          "negative_gws": 0,
+          "tie_gws": 38
+        }
+      }
+    },
+    "screen_passed": false,
+    "promotion_authorized": false,
+    "promotion_blockers": [
+      "single historical chip season",
+      "final reschedule calendar",
+      "no prospective planner release evidence",
+      "action-independent transition approximation"
+    ]
+  },
+  "paired_projection_hashes": 38,
+  "paired_decision_fingerprints": 38,
+  "decision": "not_selected",
+  "invalidated_initial_comparison_excluded": true
+}

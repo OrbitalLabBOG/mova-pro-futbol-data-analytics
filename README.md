@@ -283,3 +283,8 @@ conjunto de chips se describen en el [experimento EXP-021](experiments/season_va
 Su integración conserva el entrenamiento auditable, hashes y shadow con
 liquidación por jornada. La versión del software no implica promoción del
 modelo ni habilitación de escrituras FPL.
+
+El [experimento EXP022](experiments/season_value/TRANSITIONS.md) evalúa persistencia
+de oportunidades: mejora el pronóstico del mecanismo, pero empata en PVA-38
+con `season_value` bajo entradas verificadas. El benchmark v2 registra el resultado
+nulo y excluye una corrida invalidada; el motor productivo permanece en v0.7.0.
