@@ -15,6 +15,21 @@ El tracking conserva experimentos y artefactos; el benchmark en Git define las
 comparaciones válidas. La promoción a FPL sigue perteneciendo al harness.
 No hay alias MLflow que cambie un modelo activo ni endpoint de serving automático.
 
+## Corte verificado del despliegue
+
+Release `mlops-v1.0.0`, fuente `19e066b`, fusionada en PR #43. La carga inicial
+completa contiene **20 experimentos, 105 runs y 24 versiones registradas**:
+98 registros históricos y siete archivos de artefactos; 17 versiones descriptivas
+de políticas y siete versiones de artefactos. No son 24 modelos entrenados nuevos.
+La segunda importación creó cero registros y reutilizó 98; se verificó el contenido
+de los 98 registros del benchmark. La restauración aislada del respaldo inicial
+pasó con 105 runs y 98 artefactos de evidencia verificados.
+
+El acta privada vive en `/var/lib/mova-mlflow/imports/deployment-evidence-v1.json`.
+Los conteos son un corte de la carga inicial, no contadores actualizados en este
+Markdown. El respaldo diario es local; la restauración ensayada no acredita una
+copia fuera del VPS.
+
 ## Qué se registra
 
 - 98 registros de la consolidación inicial: política, predicción e inventario;

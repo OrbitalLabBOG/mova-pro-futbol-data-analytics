@@ -1,7 +1,7 @@
 ---
 type: docs
 name: MOVA Fantasy Fútbol Data Analytics
-updated: 2026-09-04
+updated: 2026-09-05
 status: active
 tags: [mova, fpl, runtime, operations]
 ---
@@ -19,7 +19,28 @@ El cockpit read-only comparte un único contrato entre CLI y API. Su dashboard e
 sólo expone tres indicadores humanos; diagnóstico, métricas y JSON permanecen en loopback.
 Supabase sólo refleja seguimiento PM y nunca recibe estado operativo.
 
-## Estado verificado del despliegue
+## Versiones y última comprobación
+
+Verificado el **5 de septiembre de 2026, 17:13 Colombia**: doctor FPL con
+**24 PASS, 0 WARN, 0 FAIL**; cockpit saludable, sin incidentes críticos ni
+violaciones del workflow. Continúan ocho incidentes abiertos, GW4 preliminar,
+A0/shadow y preparación autónoma pendiente. El corte detallado anterior se
+conserva abajo con su fecha; no representa un monitor en vivo.
+
+| Componente | Versión / revisión | Alcance |
+| --- | --- | --- |
+| Motor FPL desplegado | v0.7.0 · `dea98e2` | Predictores 1.1.0; `season_value` 1.0.0 como challenger shadow |
+| Código integrado en GitHub al corte | `19e066b` · PR #40–43 fusionadas | Motor, acta, benchmark y tracking |
+| MLflow desplegado | `mlops-v1.0.0` · `19e066b` | Servicio independiente con MLflow 3.16.0 |
+
+Los commits posteriores al motor añaden documentación, benchmark y el servicio
+MLflow separado; no implican una promoción del predictor ni un nuevo despliegue
+FPL. Para desarrollar, partir de `origin/main` en un worktree limpio y revisar
+`git status`: los checkouts de experimentos antiguos pueden conservar trabajo local.
+GitHub conserva código y contratos; los binarios, credenciales y evidencia privada
+permanecen en sus almacenes operativos.
+
+## Estado verificado del despliegue (corte detallado anterior)
 
 Corte: **4 de septiembre de 2026, 22:29–22:45 America/Bogota**
 (`2026-09-05T03:29–03:45Z`). Es una observación del VPS, no un monitor en vivo.
@@ -95,8 +116,9 @@ python -m pip install -e '.[test]'
 pytest -q
 ```
 
-La suite por defecto no necesita bases ni modelos externos. En v0.7.0 pasó con
-**1.372 passed, 1 skipped y 79 deselected**, también validada por CI en PR #40.
+La suite por defecto no necesita bases ni modelos externos. La integración
+MLOps pasó con **1.389 passed, 1 skipped y 79 deselected**, con CI aprobada en
+PR #43. El corte del motor v0.7.0 tuvo 1.372 passed en PR #40.
 Los seis fixtures que dependían del deadline del 4 de septiembre ahora usan un
 reloj explícito; el gate productivo de deadline permanece activo.
 
@@ -113,64 +135,34 @@ pytest -m slow -q
 
 ## Operación
 
+La operación provisionada se ejecuta desde WSL por SSH como `ubuntu`. Dentro del
+VPS, usar el wrapper con `sudo`; un checkout local no acredita la versión desplegada.
+
 ```bash
-# estado consolidado y diagnóstico del control plane local/VPS
-mova cockpit
-mova cockpit --json
-mova cockpit --watch 30
-mova triage --incident-id incident_... --json
-mova status
-mova doctor
-
-# servicio autónomo: API FPL + odds + WhoScored
-mova collect all
-mova data status
-mova model status
-mova model predict --actor codex --reason predeadline --idempotency-key gw03-v1
-mova model explain --batch-id projection_ID --element 123
-mova model evaluate --actor codex --reason settlement --idempotency-key gw02-v1
-mova strategy status
-mova strategy research due
-mova strategy deliberate status
-mova strategy attempts status
-mova watchdog
-mova improve status --season 2026-27
-mova harness scorecard
-mova harness workflow
-mova postgres status
-mova postgres verify
-mova postgres drill --actor codex --reason read-cutover --idempotency-key gw03-v1
-mova postgres roles --actor codex --reason least-privilege --idempotency-key gw03-roles-v1
-mova status --json                 # host.offsite_backup nunca expone URL/password
-mova drill host-status --scenario offsite_restore --actor codex \
-  --reason restore-evidence --idempotency-key offsite-restore-v1
-mova drill snapshot --actor codex --reason snapshot-boundary --idempotency-key snapshot-v1
-mova drill browser-failure --actor codex --reason dom-save-boundary \
-  --idempotency-key browser-failure-v1
-mova drill orchestration --actor codex --reason agent-graph \
-  --idempotency-key orchestration-v1
-mova alerts channel
-mova alerts test --actor codex --reason live-delivery \
-  --idempotency-key alert-live-v1
-mova drill alert-channel --actor codex --reason alert-contract \
-  --idempotency-key alert-channel-v1
-
-# chaos host-only, manual y reversible (no se agenda)
-sudo deploy/bin/api-recovery-drill.sh codex "api recovery" hv1-api-v1
-sudo deploy/bin/postgres-recovery-drill.sh codex "postgres recovery" hv1-postgres-v1
-sudo deploy/bin/browser-recovery-drill.sh codex "browser recovery read-only" hv1-browser-v1
-sudo deploy/bin/combined-recovery-drill.sh codex "combined recovery" hv1-combined-v1
-# Fase 1 solamente: prepara backup/estado sellado; NO reinicia el VPS.
-sudo deploy/bin/reboot-recovery-prepare.sh codex "real reboot recovery" hv1-reboot-v1
-# Tras autorización separada, el operador reinicia el host; systemd verifica/importa al volver.
-
-# collector público sellado
-python -m mova_fpl.cli.collect_live --season 2026-27 --gw 2
-
-# decisión con estado real del equipo
-FPL_TEAM_ID=3609854 python -m mova_fpl.cli.live \
-  --season 2026-27 --gw 2 --horizon 3 --top-k 0 --chips
+ssh ubuntu@72.60.245.2
+sudo /usr/local/bin/mova cockpit --json
+sudo /usr/local/bin/mova doctor
+sudo /usr/local/bin/mova model status
+sudo /usr/local/bin/mova harness scorecard
+sudo /usr/local/bin/mova harness workflow
+sudo /usr/local/bin/mova-mlflow ps
 ```
+
+Esta es la ruta cotidiana de consulta. Para un incidente, seguir
+[cockpit y triage](docs/operations/cockpit.md); para preparar y cerrar una jornada,
+[operar una GW](docs/operations/gameweek.md). Entrenamiento, evaluaciones que
+persisten resultados, cambios de autoridad y drills de recuperación tienen sus
+procedimientos y argumentos auditados en los runbooks; no son pasos de un healthcheck.
+
+| Necesidad | Procedimiento |
+| --- | --- |
+| Recolectar o diagnosticar fuentes | [Data service](docs/operations/data-service.md) |
+| Entrenar, proyectar y evaluar | [Servicio analítico](docs/operations/analytics-service.md) |
+| Preparar research y deliberación | [Contexto estratégico](docs/operations/strategic-research.md) |
+| Promover o revertir modelos | [Mejora continua](docs/operations/continuous-improvement.md) |
+| Comparar experimentos | [Benchmark](experiments/benchmark/README.md) y [MLflow](docs/operations/mlflow.md) |
+| Desplegar, respaldar y recuperar FPL | [VPS](docs/operations/vps.md) |
+
 
 El flujo de decisión conserva una sola autoridad y añade un lifecycle máquina:
 
