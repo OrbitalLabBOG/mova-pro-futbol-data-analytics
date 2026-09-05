@@ -12,9 +12,16 @@ from mova_fpl.models.registry import save
 
 
 def fit_candidate_models(frame: pd.DataFrame, *, version: str,
-                         holdout: str, artifact_root: Path) -> dict:
+                         holdout: str, artifact_root: Path,
+                         architecture: str = "baseline") -> dict:
     """Fit and persist minutes + points without selecting or promoting a release."""
-    minutes = MinutesModel(version=version, calibrar=True)
+    if architecture not in {"baseline", "participation_v2"}:
+        raise ValueError("unknown minutes architecture")
+    if architecture == "participation_v2":
+        from mova_fpl.models.participation import ParticipationModel
+        minutes = ParticipationModel(version=version, calibrar=True)
+    else:
+        minutes = MinutesModel(version=version, calibrar=True)
     minutes.fit(frame, calib_season=holdout)
     minutes_record = save(
         minutes, "minutes", version,
@@ -22,6 +29,7 @@ def fit_candidate_models(frame: pd.DataFrame, *, version: str,
             "mode": "production_candidate", "fit_through": holdout,
             "calib_season": holdout, "held_out_metrics": False,
             "dataset_rows": int(len(frame)),
+            "architecture": architecture,
         },
         artifact_root=artifact_root, overwrite=False,
     )

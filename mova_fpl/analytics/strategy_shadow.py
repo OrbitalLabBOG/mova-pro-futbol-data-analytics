@@ -167,7 +167,9 @@ def settle_strategy_shadow(shadow: dict, *, season: str, gw: int,
         raise ValueError("strategy shadow no está marcado como no ejecutable")
     if shadow.get("virtual_trajectory") is not True:
         raise ValueError("strategy shadow no conserva una trayectoria virtual")
-    if shadow.get("chips") != "disabled_in_both_arms":
+    joint = (shadow.get("strategy_key") == "season_value_v2"
+             and shadow.get("chips") == "joint_inventory_in_both_arms")
+    if not joint and shadow.get("chips") != "disabled_in_both_arms":
         raise ValueError("el par de shadow no aisló chips en ambos brazos")
     if (shadow.get("control", {}).get("violations")
             or shadow.get("candidate", {}).get("violations")):
@@ -178,8 +180,16 @@ def settle_strategy_shadow(shadow: dict, *, season: str, gw: int,
     if {(control.season, control.gw), (candidate.season, candidate.gw)} != {
             (str(season), int(gw))}:
         raise ValueError("decisiones de shadow no corresponden al settlement")
-    if control.chip is not None or candidate.chip is not None:
+    if not joint and (control.chip is not None or candidate.chip is not None):
         raise ValueError("el par aislado no puede contener chips")
+    if joint:
+        from mova_fpl.rules.chips import ChipUse, validate_chip
+        for arm, decision in (("control", control), ("candidate", candidate)):
+            if arm not in shadow.get("prior_chips_used", {}):
+                raise ValueError("joint inventory missing prior chip ledger")
+            used = tuple(ChipUse(**u) for u in shadow["prior_chips_used"][arm])
+            if validate_chip(decision.chip, gw, used, get_rules(season).CHIPS):
+                raise ValueError("illegal chip in strategy shadow")
 
     results = pd.DataFrame(live)
     _, actual_points = collapse_results(results)

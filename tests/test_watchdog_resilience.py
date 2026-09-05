@@ -257,7 +257,7 @@ def test_agent_queue_allows_fresh_enqueue_but_rejects_quarantine_tombstone(tmp_p
     assert rejected["anomalies"][0]["reason"] == "quarantined_result_tombstone"
 
 
-def test_watchdog_expires_unused_authorization_once_without_false_incident(tmp_path):
+def test_watchdog_expires_unused_authorization_once_without_false_incident(tmp_path, predeadline_clock):
     config, db, _, _ = _runtime_with_authorization(tmp_path)
     base = datetime.now(timezone.utc)
     permit = AgentAttemptService(config, db).authorize_next(now=base)
@@ -283,7 +283,7 @@ def test_watchdog_expires_unused_authorization_once_without_false_incident(tmp_p
         ).fetchone()[0] == 1
 
 
-def test_watchdog_detects_tampered_authorization_permit_and_opens_p1(tmp_path):
+def test_watchdog_detects_tampered_authorization_permit_and_opens_p1(tmp_path, predeadline_clock):
     config, db, _, _ = _runtime_with_authorization(tmp_path)
     base = datetime.now(timezone.utc)
     permit = AgentAttemptService(config, db).authorize_next(now=base)
@@ -311,7 +311,7 @@ def test_watchdog_detects_tampered_authorization_permit_and_opens_p1(tmp_path):
     assert dict(incident) == {"severity": "P1", "status": "open"}
 
 
-def test_watchdog_detects_started_authorization_without_finish(tmp_path):
+def test_watchdog_detects_started_authorization_without_finish(tmp_path, predeadline_clock):
     config, db, run_id, request_sha = _runtime_with_authorization(tmp_path)
     base = datetime.now(timezone.utc)
     permit = AgentAttemptService(config, db).authorize_next(now=base)

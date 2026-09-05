@@ -213,7 +213,7 @@ def replay(season: str, mode: str = "named", config: Config | None = None,
            max_gw: int = MAX_GW, verbose: bool = True,
            agent_fn=None, agent_shadow: bool = False,
            history_mode: str = "season", model_bundle=None,
-           projection_fn=None) -> RunReport:
+           projection_fn=None, planner_fn=None) -> RunReport:
     if mode not in ("named", "anonymized"):
         raise ValueError(f"modo desconocido: {mode}")
     if history_mode not in ("season", "multi_season"):
@@ -316,7 +316,7 @@ def replay(season: str, mode: str = "named", config: Config | None = None,
         veredicto = None
         if con_chips and not state.is_cold_start:
             # En la GW1 no hay plantilla que arreglar: ningun chip tiene sentido.
-            veredicto = plan(state, horizon_xp or {gw: {c.element: c.xp for c in candidatos}},
+            veredicto = (planner_fn or plan)(state, horizon_xp or {gw: {c.element: c.xp for c in candidatos}},
                              optimizer_config(config, len(horizon_xp) or 1), pcfg)
             if veredicto.chip:
                 state = replace(state, chips_allowed={gw: frozenset({veredicto.chip})})

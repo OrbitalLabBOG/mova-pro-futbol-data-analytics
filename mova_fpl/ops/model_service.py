@@ -57,7 +57,8 @@ class ModelOpsService:
             "schema": "mova-model-ops-status-v1",
             "contract_version": MODEL_CONTRACT_VERSION,
             "interfaces": {
-                "train": {"mode": "candidate_only", "promotes_runtime": False},
+                "train": {"mode": "candidate_only", "promotes_runtime": False,
+                          "architectures": ["baseline", "participation_v2"]},
                 "predict": {"mode": "immutable_projection", "promotes_runtime": False},
                 "explain": {"mode": "read_only", "promotes_runtime": False},
                 "evaluate": {"mode": "final_scorecard", "promotes_runtime": False},
@@ -121,9 +122,11 @@ class ModelOpsService:
         return explanation
 
     def train(self, *, version: str, holdout: str, actor: str, reason: str,
-              idempotency_key: str) -> dict:
+              idempotency_key: str, architecture: str = "baseline") -> dict:
         """Fit both model families and publish a non-active candidate manifest."""
         _assert_audit(actor, reason, idempotency_key)
+        if architecture not in {"baseline", "participation_v2"}:
+            raise ValueError("unknown minutes architecture")
         if not isinstance(version, str) or not SEMVER.fullmatch(version):
             raise ValueError("version debe usar semver X.Y.Z")
         if holdout not in SEASONS or holdout == self.config.season:
@@ -139,6 +142,8 @@ class ModelOpsService:
             "canonical_sha256": canonical_sha,
             "mode": "production_candidate",
         }
+        if architecture != "baseline":
+            identity["architecture"] = architecture
         input_sha = sha256_json(identity)
         job_id, reused = self.db.start_job(
             "model_train", f"model:train:{idempotency_key}", new_id("corr"),
@@ -162,7 +167,8 @@ class ModelOpsService:
             subject_type="model_bundle_candidate", subject_id=version,
             payload={"reason": reason, "holdout": holdout,
                      "idempotency_key": idempotency_key,
-                     "input_sha256": input_sha, "runtime_mutated": False},
+                     "input_sha256": input_sha, "architecture": architecture,
+                     "runtime_mutated": False},
         )
         created: list[Path] = []
         try:
@@ -170,6 +176,7 @@ class ModelOpsService:
                 result = self._fit_and_publish(
                     job_id=job_id, version=version, holdout=holdout,
                     canonical_sha=canonical_sha, created=created,
+                    architecture=architecture,
                 )
             self.db.append_audit(
                 "model_candidate_trained", actor=actor, job_id=job_id,
@@ -189,7 +196,8 @@ class ModelOpsService:
             raise
 
     def _fit_and_publish(self, *, job_id: str, version: str, holdout: str,
-                         canonical_sha: str, created: list[Path]) -> dict:
+                         canonical_sha: str, created: list[Path],
+                         architecture: str = "baseline") -> dict:
         model_root = self.config.artifact_root / "models"
         targets = [
             model_root / family / f"{family}-{version}.{suffix}"
@@ -209,6 +217,7 @@ class ModelOpsService:
         ])
         records = fit_candidate_models(
             frame, version=version, holdout=holdout, artifact_root=model_root,
+            **({"architecture": architecture} if architecture != "baseline" else {}),
         )
         candidate = {
             "schema": "mova-model-bundle-candidate-v1",

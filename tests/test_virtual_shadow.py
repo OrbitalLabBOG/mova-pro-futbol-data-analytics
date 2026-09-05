@@ -154,3 +154,20 @@ def test_prior_envelope_must_be_hashed_and_consecutive(tmp_path):
 
     with pytest.raises(ValueError, match="SHA-256"):
         _prior_virtual_states(str(path), "0" * 64, season="2026-27", gw=5)
+
+
+@pytest.mark.parametrize('chip', ['free_hit', 'wildcard', 'bench_boost', 'triple_captain'])
+def test_joint_virtual_inventory_preserves_chip_semantics(chip):
+    state = replace(_state(), chips=get_rules('2026-27').CHIPS)
+    decision = replace(_decision(), chip=chip)
+    spec = next_virtual_state(decision, state=state, boot=_boot(),
+                              strategy_key='season_value_v2', arm='candidate')
+    restored = restore_virtual_state(spec, base_state=replace(state, gw=5), boot=_boot(),
+        expected_strategy='season_value_v2', expected_arm='candidate', expected_previous_gw=4)
+    assert chip not in restored.chips_available()
+    if chip == 'free_hit':
+        assert {p.element for p in restored.squad.players} == {p.element for p in state.squad.players}
+        assert restored.bank == state.bank
+    else:
+        assert {p.element for p in restored.squad.players} == set(decision.squad_15)
+    assert restored.free_transfers == (4 if chip in {'free_hit', 'wildcard'} else 3)

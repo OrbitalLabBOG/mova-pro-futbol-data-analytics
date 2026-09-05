@@ -3894,7 +3894,7 @@ class OpsDB:
             active_bundle = con.execute(
                 """SELECT value_json,effective_at,actor,reason FROM runtime_controls
                 WHERE control_key='active_model_bundle'
-                ORDER BY effective_at DESC,control_id DESC LIMIT 1"""
+                ORDER BY control_id DESC LIMIT 1"""
             ).fetchone()
         proposal_rows = []
         for row in proposals:
@@ -4042,7 +4042,7 @@ class OpsDB:
             control = con.execute(
                 """SELECT value_json,effective_at,actor,reason FROM runtime_controls
                 WHERE control_key='active_model_bundle'
-                ORDER BY effective_at DESC,control_id DESC LIMIT 1"""
+                ORDER BY control_id DESC LIMIT 1"""
             ).fetchone()
         event_items = []
         for row in events:
@@ -4085,7 +4085,7 @@ class OpsDB:
             row = con.execute(
                 """SELECT value_json FROM runtime_controls
                 WHERE control_key='active_model_bundle'
-                ORDER BY effective_at DESC,control_id DESC LIMIT 1"""
+                ORDER BY control_id DESC LIMIT 1"""
             ).fetchone()
         return json.loads(row["value_json"]) if row else None
 

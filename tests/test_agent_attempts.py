@@ -181,7 +181,7 @@ def test_intentos_sin_fin_se_cargan_conservadoramente_por_intento(tmp_path):
     assert report["gameweek"]["charged_estimate_uses"] == 2
 
 
-def test_permiso_por_intento_es_idempotente_y_cierra_con_receipts_v2(tmp_path):
+def test_permiso_por_intento_es_idempotente_y_cierra_con_receipts_v2(tmp_path, predeadline_clock):
     config, db, run_id, request_sha, _ = _runtime(tmp_path)
     service = AgentAttemptService(config, db)
     first = service.authorize_next()
@@ -211,7 +211,7 @@ def test_permiso_por_intento_es_idempotente_y_cierra_con_receipts_v2(tmp_path):
     assert second["authorization_id"] != first["authorization_id"]
 
 
-def test_retry_se_bloquea_antes_de_codex_si_excede_job_budget(tmp_path):
+def test_retry_se_bloquea_antes_de_codex_si_excede_job_budget(tmp_path, predeadline_clock):
     config, db, run_id, request_sha, request_path = _runtime(tmp_path)
     service = AgentAttemptService(config, db)
     first = service.authorize_next()
@@ -269,7 +269,7 @@ def test_request_se_terminaliza_al_cerrar_cutoff_final(tmp_path):
     assert not request_path.exists()
 
 
-def test_receipt_v2_rechaza_permiso_alterado_y_no_crea_evento(tmp_path):
+def test_receipt_v2_rechaza_permiso_alterado_y_no_crea_evento(tmp_path, predeadline_clock):
     config, db, run_id, request_sha, _ = _runtime(tmp_path)
     service = AgentAttemptService(config, db)
     permit = service.authorize_next()

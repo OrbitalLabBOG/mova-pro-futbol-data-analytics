@@ -58,6 +58,7 @@ def parser() -> argparse.ArgumentParser:
     )
     model_train.add_argument("--version", required=True)
     model_train.add_argument("--holdout", default="2025-26")
+    model_train.add_argument("--architecture", choices=("baseline", "participation_v2"), default="baseline")
     model_explain = model_commands.add_parser(
         "explain", help="explica una proyección sellada por jugador"
     )
@@ -521,6 +522,7 @@ def main(argv: list[str] | None = None) -> int:
             payload = service.train(
                 version=args.version, holdout=args.holdout, actor=args.actor,
                 reason=args.reason, idempotency_key=args.idempotency_key,
+                architecture=args.architecture,
             )
         elif args.model_command == "explain":
             config.validate_postgres()

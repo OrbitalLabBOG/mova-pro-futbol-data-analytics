@@ -221,3 +221,17 @@ def test_shadow_loader_verifies_envelope_file_hash(tmp_path):
     )
     assert tampered["status"] == "invalid"
     assert tampered["reason"] == "envelope_artifact_sha256_mismatch"
+
+
+def test_joint_chip_settlement_scores_multiplier_and_checks_inventory():
+    from dataclasses import replace
+    shadow = _shadow()
+    shadow['strategy_key'] = 'season_value_v2'
+    shadow['chips'] = 'joint_inventory_in_both_arms'
+    shadow['prior_chips_used'] = {'control': [], 'candidate': []}
+    shadow['candidate']['decision'] = replace(_decision(9), chip='triple_captain').to_dict()
+    result = settle_strategy_shadow(shadow, season='2026-27', gw=4, live=_live(), players=_players())
+    assert result['comparison']['realized_points_delta'] == 18
+    shadow['prior_chips_used']['candidate'] = [{'gw': 2, 'chip': 'triple_captain'}]
+    with pytest.raises(ValueError, match='illegal chip'):
+        settle_strategy_shadow(shadow, season='2026-27', gw=4, live=_live(), players=_players())

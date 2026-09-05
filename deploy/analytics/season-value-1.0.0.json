@@ -1,0 +1,1221 @@
+{
+  "schema": "mova-season-value-shadow-v1",
+  "season": "2026-27",
+  "variant": "season_value",
+  "selected_for_execution": false,
+  "experiment_id": "EXP-MOVA-2026-021",
+  "software_version": "0.7.0",
+  "models": {
+    "minutes": {
+      "version": "1.1.0",
+      "artifact_sha256": "6daf1bdf6b0e769d0fb05d2a80311c381d5770141411bbdd51e8c2a4f214d76b"
+    },
+    "points": {
+      "version": "1.1.0",
+      "artifact_sha256": "65793fc352df3168002fca8eb9d85cec6c6439a1bcc38d553e75ff5f53d78bd9"
+    }
+  },
+  "season_value": {
+    "version": "1.0.0",
+    "samples": [
+      {
+        "season": "2023-24",
+        "gw": 2,
+        "values": {
+          "bench_boost": 4.233,
+          "free_hit": 6.3518,
+          "triple_captain": 5.2366,
+          "wildcard": 11.3028
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2023-24",
+        "gw": 3,
+        "values": {
+          "bench_boost": 5.3085,
+          "free_hit": 7.3339,
+          "triple_captain": 5.1546,
+          "wildcard": 14.2297
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2023-24",
+        "gw": 4,
+        "values": {
+          "bench_boost": 8.0964,
+          "free_hit": 7.8558,
+          "triple_captain": 5.6292,
+          "wildcard": 15.0788
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2023-24",
+        "gw": 5,
+        "values": {
+          "bench_boost": 8.0361,
+          "free_hit": 3.552,
+          "triple_captain": 5.2484,
+          "wildcard": 11.2367
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2023-24",
+        "gw": 6,
+        "values": {
+          "bench_boost": 7.8015,
+          "free_hit": 5.8148,
+          "triple_captain": 5.4739,
+          "wildcard": 12.2545
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2023-24",
+        "gw": 7,
+        "values": {
+          "bench_boost": 9.4247,
+          "free_hit": 7.0262,
+          "triple_captain": 8.2369,
+          "wildcard": 10.2371
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2023-24",
+        "gw": 8,
+        "values": {
+          "bench_boost": 9.6387,
+          "free_hit": 3.4826,
+          "triple_captain": 5.3105,
+          "wildcard": 8.7831
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2023-24",
+        "gw": 9,
+        "values": {
+          "bench_boost": 9.9674,
+          "free_hit": 5.0586,
+          "triple_captain": 5.8331,
+          "wildcard": 9.2946
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2023-24",
+        "gw": 10,
+        "values": {
+          "bench_boost": 10.4893,
+          "free_hit": 2.4711,
+          "triple_captain": 5.9148,
+          "wildcard": 5.7631
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2023-24",
+        "gw": 11,
+        "values": {
+          "bench_boost": 9.8451,
+          "free_hit": 7.5763,
+          "triple_captain": 5.9264,
+          "wildcard": 9.3572
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2023-24",
+        "gw": 12,
+        "values": {
+          "bench_boost": 9.5903,
+          "free_hit": 4.4541,
+          "triple_captain": 6.1235,
+          "wildcard": 6.3826
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2023-24",
+        "gw": 13,
+        "values": {
+          "bench_boost": 10.6452,
+          "free_hit": 3.7106,
+          "triple_captain": 4.6834,
+          "wildcard": 6.8828
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2023-24",
+        "gw": 14,
+        "values": {
+          "bench_boost": 9.3939,
+          "free_hit": 4.3428,
+          "triple_captain": 6.8072,
+          "wildcard": 7.7976
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2023-24",
+        "gw": 15,
+        "values": {
+          "bench_boost": 8.7853,
+          "free_hit": 3.7213,
+          "triple_captain": 7.5824,
+          "wildcard": 8.152
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2023-24",
+        "gw": 16,
+        "values": {
+          "bench_boost": 10.0408,
+          "free_hit": 3.2876,
+          "triple_captain": 5.5262,
+          "wildcard": 5.8451
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2023-24",
+        "gw": 17,
+        "values": {
+          "bench_boost": 7.8639,
+          "free_hit": 3.1461,
+          "triple_captain": 6.5874,
+          "wildcard": 4.7155
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2023-24",
+        "gw": 18,
+        "values": {
+          "bench_boost": 8.2017,
+          "free_hit": 4.321,
+          "triple_captain": 5.3673,
+          "wildcard": 7.7362
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2023-24",
+        "gw": 19,
+        "values": {
+          "bench_boost": 8.8308,
+          "free_hit": 3.1915,
+          "triple_captain": 6.5767,
+          "wildcard": 6.9291
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2023-24",
+        "gw": 20,
+        "values": {
+          "bench_boost": 10.1628,
+          "free_hit": 4.4975,
+          "triple_captain": 6.1859,
+          "wildcard": 6.1363
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2023-24",
+        "gw": 21,
+        "values": {
+          "bench_boost": 9.1203,
+          "free_hit": 2.3764,
+          "triple_captain": 6.2096,
+          "wildcard": 4.5421
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2023-24",
+        "gw": 22,
+        "values": {
+          "bench_boost": 10.2041,
+          "free_hit": 2.0717,
+          "triple_captain": 6.3,
+          "wildcard": 5.6384
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2023-24",
+        "gw": 23,
+        "values": {
+          "bench_boost": 10.0122,
+          "free_hit": 6.3614,
+          "triple_captain": 4.7401,
+          "wildcard": 11.3927
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2023-24",
+        "gw": 24,
+        "values": {
+          "bench_boost": 10.2908,
+          "free_hit": 3.5446,
+          "triple_captain": 6.063,
+          "wildcard": 8.957
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2023-24",
+        "gw": 25,
+        "values": {
+          "bench_boost": 10.9473,
+          "free_hit": 8.4384,
+          "triple_captain": 13.6038,
+          "wildcard": 10.3188
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2023-24",
+        "gw": 26,
+        "values": {
+          "bench_boost": 2.1635,
+          "free_hit": 10.3903,
+          "triple_captain": 6.5832,
+          "wildcard": 18.829
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2023-24",
+        "gw": 27,
+        "values": {
+          "bench_boost": 10.1353,
+          "free_hit": 3.0477,
+          "triple_captain": 6.1357,
+          "wildcard": 17.1725
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2023-24",
+        "gw": 28,
+        "values": {
+          "bench_boost": 9.5209,
+          "free_hit": 4.554,
+          "triple_captain": 8.8761,
+          "wildcard": 18.6548
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2023-24",
+        "gw": 29,
+        "values": {
+          "bench_boost": 0.0,
+          "free_hit": 13.5418,
+          "triple_captain": 4.4657,
+          "wildcard": 20.3198
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2023-24",
+        "gw": 30,
+        "values": {
+          "bench_boost": 8.6628,
+          "free_hit": 7.5975,
+          "triple_captain": 6.3499,
+          "wildcard": 15.0212
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2023-24",
+        "gw": 31,
+        "values": {
+          "bench_boost": 8.2808,
+          "free_hit": 8.3933,
+          "triple_captain": 9.5291,
+          "wildcard": 14.3957
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2023-24",
+        "gw": 32,
+        "values": {
+          "bench_boost": 11.5514,
+          "free_hit": 4.3924,
+          "triple_captain": 7.1386,
+          "wildcard": 15.1735
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2023-24",
+        "gw": 33,
+        "values": {
+          "bench_boost": 9.1585,
+          "free_hit": 4.5605,
+          "triple_captain": 7.4512,
+          "wildcard": 13.2294
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2023-24",
+        "gw": 34,
+        "values": {
+          "bench_boost": 12.0338,
+          "free_hit": 14.1397,
+          "triple_captain": 11.1075,
+          "wildcard": 16.4372
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2023-24",
+        "gw": 35,
+        "values": {
+          "bench_boost": 8.6341,
+          "free_hit": 14.0886,
+          "triple_captain": 8.7874,
+          "wildcard": 24.9411
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2023-24",
+        "gw": 36,
+        "values": {
+          "bench_boost": 10.078,
+          "free_hit": 4.3594,
+          "triple_captain": 6.8616,
+          "wildcard": 17.4965
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2023-24",
+        "gw": 37,
+        "values": {
+          "bench_boost": 9.2227,
+          "free_hit": 14.2478,
+          "triple_captain": 11.569,
+          "wildcard": 15.5892
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2023-24",
+        "gw": 38,
+        "values": {
+          "bench_boost": 7.4639,
+          "free_hit": 3.2112,
+          "triple_captain": 7.5552,
+          "wildcard": 3.2538
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2024-25",
+        "gw": 2,
+        "values": {
+          "bench_boost": 8.9638,
+          "free_hit": 3.5907,
+          "triple_captain": 6.2927,
+          "wildcard": 9.5089
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2024-25",
+        "gw": 3,
+        "values": {
+          "bench_boost": 8.9381,
+          "free_hit": 4.7909,
+          "triple_captain": 6.3376,
+          "wildcard": 8.1107
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2024-25",
+        "gw": 4,
+        "values": {
+          "bench_boost": 9.9581,
+          "free_hit": 3.3672,
+          "triple_captain": 6.3349,
+          "wildcard": 5.6801
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2024-25",
+        "gw": 5,
+        "values": {
+          "bench_boost": 7.626,
+          "free_hit": 5.0381,
+          "triple_captain": 6.5701,
+          "wildcard": 9.0503
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2024-25",
+        "gw": 6,
+        "values": {
+          "bench_boost": 9.5246,
+          "free_hit": 4.1521,
+          "triple_captain": 7.6814,
+          "wildcard": 8.1227
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2024-25",
+        "gw": 7,
+        "values": {
+          "bench_boost": 8.3208,
+          "free_hit": 5.4605,
+          "triple_captain": 5.8543,
+          "wildcard": 11.4609
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2024-25",
+        "gw": 8,
+        "values": {
+          "bench_boost": 7.0014,
+          "free_hit": 5.465,
+          "triple_captain": 8.5198,
+          "wildcard": 9.971
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2024-25",
+        "gw": 9,
+        "values": {
+          "bench_boost": 5.9525,
+          "free_hit": 3.3094,
+          "triple_captain": 7.8326,
+          "wildcard": 6.1356
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2024-25",
+        "gw": 10,
+        "values": {
+          "bench_boost": 8.5163,
+          "free_hit": 4.1693,
+          "triple_captain": 5.9727,
+          "wildcard": 9.1962
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2024-25",
+        "gw": 11,
+        "values": {
+          "bench_boost": 7.8237,
+          "free_hit": 8.3405,
+          "triple_captain": 6.5913,
+          "wildcard": 15.6457
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2024-25",
+        "gw": 12,
+        "values": {
+          "bench_boost": 9.7743,
+          "free_hit": 2.9656,
+          "triple_captain": 6.8982,
+          "wildcard": 6.4509
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2024-25",
+        "gw": 13,
+        "values": {
+          "bench_boost": 8.8513,
+          "free_hit": 5.1654,
+          "triple_captain": 5.8675,
+          "wildcard": 11.5546
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2024-25",
+        "gw": 14,
+        "values": {
+          "bench_boost": 10.5398,
+          "free_hit": 4.183,
+          "triple_captain": 6.9043,
+          "wildcard": 8.7321
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2024-25",
+        "gw": 15,
+        "values": {
+          "bench_boost": 7.1044,
+          "free_hit": 9.1213,
+          "triple_captain": 5.1536,
+          "wildcard": 12.8277
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2024-25",
+        "gw": 16,
+        "values": {
+          "bench_boost": 10.0441,
+          "free_hit": 3.9315,
+          "triple_captain": 7.3361,
+          "wildcard": 7.6628
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2024-25",
+        "gw": 17,
+        "values": {
+          "bench_boost": 10.1338,
+          "free_hit": 3.806,
+          "triple_captain": 6.0319,
+          "wildcard": 9.5668
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2024-25",
+        "gw": 18,
+        "values": {
+          "bench_boost": 10.0008,
+          "free_hit": 3.7533,
+          "triple_captain": 9.0192,
+          "wildcard": 6.4531
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2024-25",
+        "gw": 19,
+        "values": {
+          "bench_boost": 10.6216,
+          "free_hit": 6.8534,
+          "triple_captain": 7.2158,
+          "wildcard": 7.9613
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2024-25",
+        "gw": 20,
+        "values": {
+          "bench_boost": 9.0087,
+          "free_hit": 5.4361,
+          "triple_captain": 7.5999,
+          "wildcard": 9.0304
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2024-25",
+        "gw": 21,
+        "values": {
+          "bench_boost": 10.6965,
+          "free_hit": 5.0035,
+          "triple_captain": 6.0149,
+          "wildcard": 5.4619
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2024-25",
+        "gw": 22,
+        "values": {
+          "bench_boost": 10.7638,
+          "free_hit": 2.4491,
+          "triple_captain": 7.4964,
+          "wildcard": 7.5791
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2024-25",
+        "gw": 23,
+        "values": {
+          "bench_boost": 9.443,
+          "free_hit": 3.4462,
+          "triple_captain": 6.8978,
+          "wildcard": 13.5422
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2024-25",
+        "gw": 24,
+        "values": {
+          "bench_boost": 10.8766,
+          "free_hit": 7.8689,
+          "triple_captain": 11.4662,
+          "wildcard": 15.7873
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2024-25",
+        "gw": 25,
+        "values": {
+          "bench_boost": 8.67,
+          "free_hit": 12.0469,
+          "triple_captain": 13.9979,
+          "wildcard": 16.6854
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2024-25",
+        "gw": 26,
+        "values": {
+          "bench_boost": 4.6262,
+          "free_hit": 8.1156,
+          "triple_captain": 6.4325,
+          "wildcard": 14.7509
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2024-25",
+        "gw": 27,
+        "values": {
+          "bench_boost": 7.6905,
+          "free_hit": 4.9345,
+          "triple_captain": 7.8336,
+          "wildcard": 11.4959
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2024-25",
+        "gw": 28,
+        "values": {
+          "bench_boost": 6.7229,
+          "free_hit": 7.6334,
+          "triple_captain": 8.0976,
+          "wildcard": 18.0253
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2024-25",
+        "gw": 29,
+        "values": {
+          "bench_boost": 5.1382,
+          "free_hit": 9.7796,
+          "triple_captain": 6.1033,
+          "wildcard": 16.1679
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2024-25",
+        "gw": 30,
+        "values": {
+          "bench_boost": 8.2552,
+          "free_hit": 7.5612,
+          "triple_captain": 7.3689,
+          "wildcard": 18.3353
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2024-25",
+        "gw": 31,
+        "values": {
+          "bench_boost": 9.5236,
+          "free_hit": 8.1935,
+          "triple_captain": 6.1051,
+          "wildcard": 22.1871
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2024-25",
+        "gw": 32,
+        "values": {
+          "bench_boost": 12.0113,
+          "free_hit": 3.2867,
+          "triple_captain": 9.4839,
+          "wildcard": 7.4515
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2024-25",
+        "gw": 33,
+        "values": {
+          "bench_boost": 10.2006,
+          "free_hit": 14.7504,
+          "triple_captain": 8.4183,
+          "wildcard": 9.0487
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2024-25",
+        "gw": 34,
+        "values": {
+          "bench_boost": 3.1508,
+          "free_hit": 4.8391,
+          "triple_captain": 7.1504,
+          "wildcard": 11.4159
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2024-25",
+        "gw": 35,
+        "values": {
+          "bench_boost": 8.7994,
+          "free_hit": 3.336,
+          "triple_captain": 6.1052,
+          "wildcard": 9.0067
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2024-25",
+        "gw": 36,
+        "values": {
+          "bench_boost": 9.6443,
+          "free_hit": 4.702,
+          "triple_captain": 6.5638,
+          "wildcard": 7.498
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2024-25",
+        "gw": 37,
+        "values": {
+          "bench_boost": 10.7197,
+          "free_hit": 2.5475,
+          "triple_captain": 6.9313,
+          "wildcard": 6.3391
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      },
+      {
+        "season": "2024-25",
+        "gw": 38,
+        "values": {
+          "bench_boost": 9.7658,
+          "free_hit": 4.3758,
+          "triple_captain": 5.8091,
+          "wildcard": 4.5143
+        },
+        "structure": {
+          "bench_boost": 1.0,
+          "free_hit": 1.0,
+          "triple_captain": 1.0,
+          "wildcard": 1.0
+        }
+      }
+    ],
+    "metadata": {
+      "target_season": "2026-27",
+      "rows": 74,
+      "train_seasons": [
+        "2023-24",
+        "2024-25"
+      ],
+      "state_contract": "joint-chip-inventory-v1",
+      "limitations": [
+        "stationary normalized opportunity distribution",
+        "squad transitions approximated by historical samples",
+        "not a full-season player-state simulator"
+      ]
+    }
+  }
+}
