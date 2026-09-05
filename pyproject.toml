@@ -20,6 +20,7 @@ dependencies = [
 
 [project.optional-dependencies]
 test = ["pytest>=8.4,<9"]
+mlops = ["mlflow-skinny==3.16.0"]
 collector = ["playwright>=1.58,<2"]
 
 [project.scripts]

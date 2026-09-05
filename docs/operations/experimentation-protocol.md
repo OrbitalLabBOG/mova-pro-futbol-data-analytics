@@ -8,15 +8,14 @@ updated: 2026-09-03
 # Protocolo de experimentación del motor FPL
 
 El registro de modelos existente sigue siendo la fuente de artefactos de
-producción. No se añade MLflow remoto en esta etapa: el harness ya sella SHA de
-Git, SHA del dataset, configuración, fold temporal, trazas y resultados. MLflow
-local con SQLite solo se evaluará si el volumen de corridas vuelve insuficiente
-la consulta del benchmark interno consolidado resulte insuficiente.
+producción. [MLflow privado](mlflow.md) conserva tracking, métricas y copias
+verificadas de artefactos. No cambia el bundle activo ni sustituye el protocolo
+causal del benchmark o los gates del harness.
 
 El [benchmark interno v1](../../experiments/benchmark/README.md) reúne el catálogo,
 comparaciones pareadas y paneles predictivos. Su [tabla de progreso](../../experiments/benchmark/snapshots/v1/REPORT.md)
 separa protocolos y fases; no permite un ranking global de puntuaciones incompatibles.
-Antes de MLflow, toda nueva corrida debe registrar control, información disponible,
+Toda nueva corrida debe registrar control, información disponible,
 reglas, recursos y evidencia bajo ese contrato. Los snapshots anteriores se conservan.
 
 ## Unidad de evidencia

@@ -207,7 +207,14 @@ def main():
     parser.add_argument('--registry', type=Path, default=HERE / 'registry.json')
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--check', action='store_true', help='Verify evidence and both generated files without writing')
+    parser.add_argument('--tracking-uri', help='Sync the verified snapshot to MLflow after building/checking')
+    parser.add_argument('--tracking-credentials', type=Path)
+    parser.add_argument('--tracking-lock', type=Path, default=Path('/imports/tracking.lock'))
+    parser.add_argument('--actor')
+    parser.add_argument('--reason')
     args = parser.parse_args()
+    if args.tracking_uri and (not args.actor or not args.reason):
+        parser.error('tracking requires --actor and --reason')
     data = build(args.root, read(args.registry))
     files = {'catalog.json': json.dumps(data, indent=2, sort_keys=True, allow_nan=False) + '\n',
              'REPORT.md': render(data)}
@@ -221,6 +228,15 @@ def main():
         args.output.mkdir(parents=True, exist_ok=True)
         for name, text in files.items():
             (args.output / name).write_text(text)
+    if args.tracking_uri:
+        import subprocess
+        import sys
+        command = [sys.executable, '-m', 'experiments.benchmark.tracking', 'sync',
+                   '--snapshot', str(args.output / 'catalog.json'), '--tracking-uri', args.tracking_uri,
+                   '--actor', args.actor, '--reason', args.reason, '--lock-file', str(args.tracking_lock)]
+        if args.tracking_credentials:
+            command += ['--credentials', str(args.tracking_credentials)]
+        subprocess.run(command, check=True)
     print(json.dumps({'status': 'verified' if args.check else 'built',
                       'directories': len(data['catalog']), 'groups': len(data['groups'])}))
 

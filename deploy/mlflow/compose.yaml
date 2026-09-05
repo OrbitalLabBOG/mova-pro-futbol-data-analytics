@@ -1,0 +1,50 @@
+name: mova-mlflow
+services:
+  postgres:
+    image: postgres:17.11-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: mlflow
+      POSTGRES_DB: mlflow
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    volumes:
+      - /var/lib/mova-mlflow/postgres:/var/lib/postgresql/data
+      - /etc/mova-mlflow/db_password:/run/secrets/db_password:ro
+      - ./init.sql:/docker-entrypoint-initdb.d/10-auth.sql:ro
+    networks: [tracking]
+    mem_limit: 512m
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U mlflow -d mlflow]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+  tracking:
+    image: mova-mlflow:${MOVA_MLFLOW_IMAGE_TAG:?set image tag}
+    build:
+      context: ../..
+      dockerfile: deploy/mlflow/Dockerfile
+      args:
+        MOVA_MLFLOW_REVISION: ${MOVA_MLFLOW_IMAGE_TAG}
+    restart: unless-stopped
+    ports: ["127.0.0.1:5050:5000"]
+    volumes:
+      - /etc/mova-mlflow:/run/secrets/mlflow:ro
+      - /var/lib/mova-mlflow/artifacts:/mlartifacts
+      - /var/lib/mova-mlflow/imports:/imports
+    networks: [tracking, edge]
+    mem_limit: 1536m
+    cpus: 1.0
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/health', timeout=5)"]
+      interval: 15s
+      timeout: 8s
+      retries: 20
+networks:
+  edge: {}
+  tracking:
+    internal: true
