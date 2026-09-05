@@ -129,3 +129,45 @@ reproducción y hashes de los artefactos externos. El manifest de inferencia
 versionado es [season-value-1.0.0.json](../../deploy/analytics/season-value-1.0.0.json).
 La promoción activa requiere nueva evidencia prospectiva; no se fabrica un
 settlement de GW3 mientras siga abierta.
+
+## Acta del despliegue v0.7.0
+
+Verificado el 4 de septiembre de 2026, 22:29–22:45 America/Bogota.
+Código e imagen productivos: `dea98e20db44b05da7b426d0b4476f1cd5fca928`,
+[PR #40](https://github.com/OrbitalLabBOG/mova-pro-futbol-data-analytics/pull/40).
+Esta acta posterior sólo modifica documentación; no cambia la imagen desplegada.
+
+- Suite y CI: 1.372 passed, 1 skipped, 79 deselected; compileall y Compose válidos.
+- Doctor: healthy, 24 PASS, 0 WARN, 0 FAIL; API y PostgreSQL healthy.
+- Workflow: cero violaciones; presupuesto dentro del límite, sin reservas huérfanas.
+  Research y deliberación pendientes; scorecard 15/25 pass y 10 pending.
+- Backup previo: `/opt/orbital/backups/mova-fpl/20260905T032248Z`,
+  job `job_0fbcd58dde4242fb82045ee285d5e5d6`.
+- Rollback disponible: imagen/revisión `161cfe131d89df9019560603cd457ad07d726c97`.
+- Tick real completado: `job_66f55d6f5e3944e5a57cfe6f028f44bd`;
+  envelope `envelope_3202871d23a71c12fde62ea7`.
+- Manifest SHA-256:
+  `e7687eb1eafebd4223ca41e645ddb789143e070eae2eb65d1ba418b340d96ccf`.
+- Evidencia completa y reproducción archivadas en el VPS:
+  `/var/lib/mova-fpl/artifacts/experiments/EXP-MOVA-2026-021/evidence.tar.gz`;
+  SHA-256 `7a28bc5ee972b747dffeed60967f4a34dd090fbb3d7e9e6f9a6f1e220d821f30`,
+  verificado después de copiar.
+
+La corrida real produjo dos brazos válidos, sin violaciones. El candidato
+reserva chips (51,48 xP inmediatos); el control propone BB (61,83 xP).
+El valor estimado de continuación de reservar supera el de BB: 102,82 contra
+101,34. Son valores del modelo, no puntos realizados ni garantía de superioridad.
+El candidato conserva estado virtual independiente y `selected_for_execution=false`.
+Los predictores activos siguen en 1.1.0; la cuenta sigue A0/shadow sin escrituras.
+
+La cuenta real lleva 163 puntos en GW1 y GW2 cerradas (50 y 113), contra medias
+oficiales de 50 y 81. GW3 permanece abierta: su ranking y puntuación provisional
+no se usan como resultado final. Los 25 y 22 puntos de banca no representan
+por sí solos arrepentimiento recuperable mediante una alineación legal.
+
+El alcance implementado combina optimización de plantilla a tres jornadas con
+valor conjunto de chips hasta GW38. No es todavía un modelo completo de transición
+de plantillas, lesiones, precios y rivales para toda la temporada. La siguiente
+mejora analítica debe comparar esas transiciones y su incertidumbre con este
+control, usando evaluación temporal y evidencia prospectiva; no promover el
+predictor rechazado ni interpretar este único backtest como garantía de ganar.
