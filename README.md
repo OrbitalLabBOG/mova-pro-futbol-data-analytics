@@ -21,17 +21,17 @@ Supabase sólo refleja seguimiento PM y nunca recibe estado operativo.
 
 ## Estado verificado del despliegue
 
-Corte: **4 de septiembre de 2026, 21:22–21:23 America/Bogota**
-(`2026-09-05T02:22–02:23Z`). Es una observación del VPS, no un monitor en vivo.
-Checkout e imagen coinciden en **v0.6.3**, SHA
-`161cfe131d89df9019560603cd457ad07d726c97`; el checkout desplegado está limpio.
+Corte: **4 de septiembre de 2026, 22:29–22:45 America/Bogota**
+(`2026-09-05T03:29–03:45Z`). Es una observación del VPS, no un monitor en vivo.
+Checkout e imagen coinciden en **v0.7.0**, SHA
+`dea98e20db44b05da7b426d0b4476f1cd5fca928`; el checkout desplegado está limpio.
 
 | Superficie | Evidencia observada |
 | --- | --- |
 | Doctor | **24 PASS, 0 WARN, 0 FAIL**, exit 0; contrato `mova-fpl-operator-v1`, versión 1.0 |
 | Procesos | API y PostgreSQL healthy; ocho timers activos; servicios programados sin resultado fallido; heartbeat fresco |
 | Datos y modelos | Bases íntegras, artefactos presentes, cuatro fuentes saludables y servicio analítico consultable |
-| Persistencia | SQLite es writer del harness; PostgreSQL 17.11 es shadow de ese ledger y writer del data service; paridad registrada: 57 tablas, 0 fallos |
+| Persistencia | SQLite es writer del harness; PostgreSQL 17.11 es shadow de ese ledger y writer del data service; paridad del último import sellado: 57 tablas, 0 fallos (no incluye automáticamente los nuevos eventos) |
 | Cuenta y browser | Snapshot privado válido de 15 jugadores dentro del umbral de frescura; browser detenido, perfil persistente presente |
 | Autoridad | `shadow / A0`, `kill_switch=true`, `browser_writes=false`; elegibilidad técnica A0 |
 | Seguridad operativa | `overall_status=healthy`, `safety=safe_to_wait`; cero P0/P1 y ocho P2 abiertos |
@@ -47,7 +47,7 @@ Esto no equivale a un fallo de infraestructura ni autoriza promover decisiones.
 
 El fallo del watchdog observado durante la mañana ya no aparece en el doctor actual.
 Eso no demuestra que se haya implementado el cierre manual previsto para v0.6.4:
-producción continúa en v0.6.3. Persisten ocho incidentes P2 `Shadow decision falló`,
+v0.7.0 incorpora el laboratorio analítico, no ese cierre manual. Persisten ocho incidentes P2 `Shadow decision falló`,
 abiertos entre 12:30 y 13:15 Colombia. El log del último muestra un HTTP 503 en el
 historial público del equipo tras cinco intentos; esa evidencia no atribuye la misma
 causa a los otros siete. `status` no reporta jobs fallidos en su ventana de 24 horas,
@@ -74,6 +74,13 @@ Para renovar este corte, usar `mova doctor --json`, `mova status --json`,
 `mova triage --incident-id ID --json` y revisar su evidencia. Estos diagnósticos
 no ejecutan decisiones, no llaman agentes ni cambian permisos FPL.
 
+El planificador `season_value` 1.0.0 está instalado en el comparador estratégico
+shadow y completó una corrida real de GW4 con dos propuestas válidas. Conserva
+los predictores `minutes/points` 1.1.0 y no sustituye la decisión seleccionada.
+En ese corte propone reservar chips, mientras el control propone Bench Boost.
+Consultar [experimento y acta de despliegue](experiments/season_value/README.md)
+para resultados, hashes y límites de promoción.
+
 ## Empezar
 
 Requiere Python 3.13.
@@ -83,13 +90,10 @@ python -m pip install -e '.[test]'
 pytest -q
 ```
 
-La suite por defecto no necesita bases ni modelos externos. **Deuda de reproducibilidad
-observada el 4 de septiembre:** `pytest -q` produjo 1.329 passed, 6 failed, 1 skipped y
-79 deselected. Los seis fallos de `test_agent_attempts.py` y `test_watchdog_resilience.py`
-dependen del reloj real con un deadline fijo `2026-09-04T17:30:00Z`: el authorizer
-rechaza el permiso con `deadline_open=false` / `agent_retry_deadline_closed`.
-Es necesario aislar el reloj de esos fixtures antes de volver a declarar la suite
-hermética y verde; no desactivar el gate productivo para hacerlas pasar.
+La suite por defecto no necesita bases ni modelos externos. En v0.7.0 pasó con
+**1.372 passed, 1 skipped y 79 deselected**, también validada por CI en PR #40.
+Los seis fixtures que dependían del deadline del 4 de septiembre ahora usan un
+reloj explícito; el gate productivo de deadline permanece activo.
 
 Las pruebas que validan el dataset canónico y artefactos productivos se ejecutan
 después de generarlos:
