@@ -11,7 +11,13 @@ El registro de modelos existente sigue siendo la fuente de artefactos de
 producción. No se añade MLflow remoto en esta etapa: el harness ya sella SHA de
 Git, SHA del dataset, configuración, fold temporal, trazas y resultados. MLflow
 local con SQLite solo se evaluará si el volumen de corridas vuelve insuficiente
-la consulta de los JSON/CSV versionados.
+la consulta del benchmark interno consolidado resulte insuficiente.
+
+El [benchmark interno v1](../../experiments/benchmark/README.md) reúne el catálogo,
+comparaciones pareadas y paneles predictivos. Su [tabla de progreso](../../experiments/benchmark/snapshots/v1/REPORT.md)
+separa protocolos y fases; no permite un ranking global de puntuaciones incompatibles.
+Antes de MLflow, toda nueva corrida debe registrar control, información disponible,
+reglas, recursos y evidencia bajo ese contrato. Los snapshots anteriores se conservan.
 
 ## Unidad de evidencia
 
