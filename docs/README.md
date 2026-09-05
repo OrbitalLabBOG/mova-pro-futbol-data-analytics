@@ -23,6 +23,7 @@ tags: [mova, fpl, documentation]
 | Auditar autonomía y preflight | [Execution preflight](operations/execution-preflight.md) |
 | Consultar la decisión GW1 | [Research y decisión](decisions/2026-27/gw01-research-and-decision.md) |
 | Auditar el experimento de odds/eventos | [Ablación causal](decisions/2026-27/odds-events-ablation.md) |
+| Comparar progreso entre experimentos | [Benchmark interno](../experiments/benchmark/README.md) |
 | Consultar el nuevo laboratorio de decisiones | [Participación y valor de temporada](../experiments/season_value/README.md) |
 | Implementar el harness | [Autonomous Harness v1](specs/fpl-autonomous-operator/10-autonomous-harness-v1.md) |
 | Auditar el motor v1 cerrado | [Spec del decision engine](specs/fpl-decision-engine/README.md) |

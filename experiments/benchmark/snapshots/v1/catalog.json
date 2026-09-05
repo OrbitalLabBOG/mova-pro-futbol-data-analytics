@@ -1,0 +1,1988 @@
+{
+  "benchmark_version": "historical-audit-v1",
+  "catalog": [
+    {
+      "completion_status": "not_inferred",
+      "dataset_sha256": "43e053f68d069d76f94bf14bff35cbea5c0ebeb8172b173baae18c4cf630a2e0",
+      "evidence_status": "metadata_present",
+      "experiment": "EXP-MOVA-2026-001",
+      "git_sha": "5766ff81071b275d56e9d0b4377bb9a371bbbf45",
+      "metadata_files": [
+        {
+          "path": "EXP-MOVA-2026-001/event-screen.json",
+          "sha256": "1f663e8378693bd71f6f9646c35700ce9cce181e22d070f0dfc4fbdfce989024"
+        },
+        {
+          "path": "EXP-MOVA-2026-001/manifest.json",
+          "sha256": "cdc7a98ee257942e10fa58c21ee25291d4cc30d59c296cda28e87e483d1b2a35"
+        },
+        {
+          "path": "EXP-MOVA-2026-001/recency-screen.json",
+          "sha256": "8333e8c922368afeaaa00e92cba7d76eedcca934c6f7e1e99d86b9ad0f35ce51"
+        }
+      ],
+      "registered_groups": [],
+      "source_sha256": "a7bb32cb660adfab38f8bf0612a26156f81da37232f4a347b012b013944f2c8c"
+    },
+    {
+      "completion_status": "not_inferred",
+      "dataset_sha256": "43e053f68d069d76f94bf14bff35cbea5c0ebeb8172b173baae18c4cf630a2e0",
+      "evidence_status": "metadata_present",
+      "experiment": "EXP-MOVA-2026-002",
+      "git_sha": "017d41f78a52f74e6b77b4ae588d97f5c2c05bd3",
+      "metadata_files": [
+        {
+          "path": "EXP-MOVA-2026-002/event-screen.json",
+          "sha256": "1f663e8378693bd71f6f9646c35700ce9cce181e22d070f0dfc4fbdfce989024"
+        },
+        {
+          "path": "EXP-MOVA-2026-002/manifest.json",
+          "sha256": "3768f619e2872a0e4519549b0a3eb7f206c6916f1b028697bf4219c4477b834c"
+        }
+      ],
+      "registered_groups": [],
+      "source_sha256": "b1dcc9bf5d9b7aea5c9e0d3e1cc62197667f397d5e7cc2f15f692d5f2e2cfa09"
+    },
+    {
+      "completion_status": "not_inferred",
+      "dataset_sha256": "43e053f68d069d76f94bf14bff35cbea5c0ebeb8172b173baae18c4cf630a2e0",
+      "evidence_status": "metadata_present",
+      "experiment": "EXP-MOVA-2026-003",
+      "git_sha": "fc63673f63889da10ccd68dc3f1d675a0578287f",
+      "metadata_files": [
+        {
+          "path": "EXP-MOVA-2026-003/holdout-result.json",
+          "sha256": "aac1c6f3d0062f7daeeb023aef203ca944d8c5edfa49dd84c5766da0db90f7e9"
+        },
+        {
+          "path": "EXP-MOVA-2026-003/manifest.json",
+          "sha256": "ad639355928ac0373173eb7e0f49926071be676199f0f20579547a4291304486"
+        },
+        {
+          "path": "EXP-MOVA-2026-003/policy-selection.json",
+          "sha256": "7aa82abfee7c910fcf1e376759c7088901a53d45b59d39114ff3c2e08d5e2fc8"
+        },
+        {
+          "path": "EXP-MOVA-2026-003/post-holdout-audit.json",
+          "sha256": "35f065a955e95e028041c6086a846f132f983e0ce96d544ce7bd3d7f318a89fb"
+        }
+      ],
+      "registered_groups": [
+        "exp003-development-v1",
+        "exp003-historical_holdout-v1"
+      ],
+      "source_sha256": "937bd3efb473b82230a4910f91007f12dfc2ecf262cb8f8f7eccafee00cc896b"
+    },
+    {
+      "completion_status": "not_inferred",
+      "dataset_sha256": "43e053f68d069d76f94bf14bff35cbea5c0ebeb8172b173baae18c4cf630a2e0",
+      "evidence_status": "metadata_present",
+      "experiment": "EXP-MOVA-2026-003-repro",
+      "git_sha": "fc63673f63889da10ccd68dc3f1d675a0578287f",
+      "metadata_files": [
+        {
+          "path": "EXP-MOVA-2026-003-repro/manifest.json",
+          "sha256": "7fc205a5ff031f20fb0897c56d3a911e8a2707a39d930b9bf74cce1900677e2c"
+        }
+      ],
+      "registered_groups": [],
+      "source_sha256": "937bd3efb473b82230a4910f91007f12dfc2ecf262cb8f8f7eccafee00cc896b"
+    },
+    {
+      "completion_status": "not_inferred",
+      "dataset_sha256": "43e053f68d069d76f94bf14bff35cbea5c0ebeb8172b173baae18c4cf630a2e0",
+      "evidence_status": "metadata_present",
+      "experiment": "EXP-MOVA-2026-004",
+      "git_sha": "89475cee478d6fde13f39c675591ca26f9c59a47",
+      "metadata_files": [
+        {
+          "path": "EXP-MOVA-2026-004/manifest.json",
+          "sha256": "e72b058578a3ff63be721ac2bfadd1a60743a254d8487f3c0e9e97f81b430a40"
+        },
+        {
+          "path": "EXP-MOVA-2026-004/policy-selection.json",
+          "sha256": "f41f04bf65cf15bdb7032b9a519e34dc0c462f5df1132f128552168ba8e3d813"
+        }
+      ],
+      "registered_groups": [
+        "exp004-development-v1"
+      ],
+      "source_sha256": "3564d4081abd862accebde6b8e075d3906f1c35029c9e33178e884f2c2f7b2bf"
+    },
+    {
+      "completion_status": "not_inferred",
+      "dataset_sha256": null,
+      "evidence_status": "metadata_present",
+      "experiment": "EXP-MOVA-2026-005",
+      "git_sha": "6725d72d94aa7aa4d3327f3c5c66949f92e652a3",
+      "metadata_files": [
+        {
+          "path": "EXP-MOVA-2026-005/external-evaluation.json",
+          "sha256": "edf36ea99fc2eae1dc48e4babb8be1c4e45905c00bd2f5c24ce3524bc5786bc7"
+        },
+        {
+          "path": "EXP-MOVA-2026-005/manifest.json",
+          "sha256": "4b902890801d96c3c0b1d4ceb7460acce9c2fef392f21e13f47bbae170bcdd5b"
+        },
+        {
+          "path": "EXP-MOVA-2026-005/selection.json",
+          "sha256": "3a5a8534fd3abbeb81cb97d6510b03dcbb1df7d113279bb05b0e32e2d88b8ce3"
+        }
+      ],
+      "registered_groups": [],
+      "source_sha256": "3b0868c7136429bd25375c390c10558136c008d3749ee186bf18fc0447f829dd"
+    },
+    {
+      "completion_status": "not_inferred",
+      "dataset_sha256": null,
+      "evidence_status": "metadata_present",
+      "experiment": "EXP-MOVA-2026-006",
+      "git_sha": "d89477aaabbf4a6a75dfd34e51738c40ca32ace3",
+      "metadata_files": [
+        {
+          "path": "EXP-MOVA-2026-006/artifact.json",
+          "sha256": "61b9ab2bccd7f8589fd93056ed1657d05e325553936dec74c1d81b8c068d6eff"
+        },
+        {
+          "path": "EXP-MOVA-2026-006/manifest.json",
+          "sha256": "2154785421aa0286455ec6fd1f08392f891031869392fd38fe1a287597d4d7b1"
+        }
+      ],
+      "registered_groups": [],
+      "source_sha256": "60e1802f186ad74a98e41c9c0fd5e8684ebeedb3e0bf89242e4bd0df1e611023"
+    },
+    {
+      "completion_status": "not_inferred",
+      "dataset_sha256": "43e053f68d069d76f94bf14bff35cbea5c0ebeb8172b173baae18c4cf630a2e0",
+      "evidence_status": "metadata_present",
+      "experiment": "EXP-MOVA-2026-007",
+      "git_sha": "3c19dd8c3018c8fe5e80613361550b7cf5f0a875",
+      "metadata_files": [
+        {
+          "path": "EXP-MOVA-2026-007/historical-extension.json",
+          "sha256": "96b75678c24918bfec556a25fcac94e60af710712bc4f7169c46c25f5ed52aeb"
+        },
+        {
+          "path": "EXP-MOVA-2026-007/historical-scoring-validation.json",
+          "sha256": "7e16d2f91d2015e7fd1225c7fe329499c194e4397a13417d56d88b691b10b1db"
+        },
+        {
+          "path": "EXP-MOVA-2026-007/manifest.json",
+          "sha256": "6488a824c8b596d5ef966287eaf5dc667a833e287571177c5b385461e4836f7e"
+        }
+      ],
+      "registered_groups": [],
+      "source_sha256": "89c786c7867d533438aa492c2d40bbaf3e9662be8bd5a73e87889e5d11e21221"
+    },
+    {
+      "completion_status": "not_inferred",
+      "dataset_sha256": null,
+      "evidence_status": "metadata_present",
+      "experiment": "EXP-MOVA-2026-008",
+      "git_sha": null,
+      "metadata_files": [
+        {
+          "path": "EXP-MOVA-2026-008/gw03-shadow.json",
+          "sha256": "30eb5e4e9f6cd1c90f5b8475ca5a271029dd6b8c81faba467dc08193971144c5"
+        },
+        {
+          "path": "EXP-MOVA-2026-008/live-observation.json",
+          "sha256": "234ff3362987c06e2b43422c22e7191388a170e4a035c18dbff7ec5b14cedea8"
+        },
+        {
+          "path": "EXP-MOVA-2026-008/manifest.json",
+          "sha256": "15ad0f0dcb163dc0f1d322072fbc3172933c3e86bce08705b76a8cf949fe9625"
+        },
+        {
+          "path": "EXP-MOVA-2026-008/runtime-observation.json",
+          "sha256": "2bfbb55962c1bbedcec4343593ff0e00f02113c9a23893b923065a49cd332151"
+        }
+      ],
+      "registered_groups": [],
+      "source_sha256": null
+    },
+    {
+      "completion_status": "not_inferred",
+      "dataset_sha256": "43e053f68d069d76f94bf14bff35cbea5c0ebeb8172b173baae18c4cf630a2e0",
+      "evidence_status": "metadata_present",
+      "experiment": "EXP-MOVA-2026-009",
+      "git_sha": "2fdd48d78d25e8753fc0f72cf2ce626daf56c171",
+      "metadata_files": [
+        {
+          "path": "EXP-MOVA-2026-009/manifest.json",
+          "sha256": "a6a720b6de2cbb3e9965bc5d9a142db66d9830fb493c07af8ef1b9e147bcdeb6"
+        },
+        {
+          "path": "EXP-MOVA-2026-009/selection.json",
+          "sha256": "73f8a9ebb81d4db5b1d3550c20b6657881228ef9df961fe63a7fe0a27cc3f082"
+        }
+      ],
+      "registered_groups": [
+        "exp009-development-v1"
+      ],
+      "source_sha256": "524ee23a01135d227113550ca1564151aeebcba6f70acc555df9aaf6212d9d5a"
+    },
+    {
+      "completion_status": "not_inferred",
+      "dataset_sha256": null,
+      "evidence_status": "no_top_level_metadata",
+      "experiment": "EXP-MOVA-2026-010",
+      "git_sha": null,
+      "metadata_files": [],
+      "registered_groups": [],
+      "source_sha256": null
+    },
+    {
+      "completion_status": "not_inferred",
+      "dataset_sha256": null,
+      "evidence_status": "metadata_present",
+      "experiment": "EXP-MOVA-2026-011",
+      "git_sha": null,
+      "metadata_files": [
+        {
+          "path": "EXP-MOVA-2026-011/influence-summary.json",
+          "sha256": "759257ff1a6bd9a02979974db0e89cf2792a6fb16f64b8d3e802bba6eebde1f3"
+        }
+      ],
+      "registered_groups": [],
+      "source_sha256": null
+    },
+    {
+      "completion_status": "not_inferred",
+      "dataset_sha256": "43e053f68d069d76f94bf14bff35cbea5c0ebeb8172b173baae18c4cf630a2e0",
+      "evidence_status": "metadata_present",
+      "experiment": "EXP-MOVA-2026-012",
+      "git_sha": "890ca110be30e5e48664e0ddf248f2653dd8387b",
+      "metadata_files": [
+        {
+          "path": "EXP-MOVA-2026-012/manifest.json",
+          "sha256": "d2537dfadb70f3397bfef8fc35d636b14ac7de12ec1b51547b087df8aa1d57cb"
+        },
+        {
+          "path": "EXP-MOVA-2026-012/selection.json",
+          "sha256": "40f0895ea9503990ca6c06d9021cab36ad1fb7b82ee9620f2978191df5490cbe"
+        }
+      ],
+      "registered_groups": [
+        "exp012-development-v1"
+      ],
+      "source_sha256": "b22354997bbfa51800f5f36e35d9cf11b4d912f60ce9ffcf888a7a2a5d09a2af"
+    },
+    {
+      "completion_status": "not_inferred",
+      "dataset_sha256": "43e053f68d069d76f94bf14bff35cbea5c0ebeb8172b173baae18c4cf630a2e0",
+      "evidence_status": "metadata_present",
+      "experiment": "EXP-MOVA-2026-013",
+      "git_sha": "890ca110be30e5e48664e0ddf248f2653dd8387b",
+      "metadata_files": [
+        {
+          "path": "EXP-MOVA-2026-013/decision-development.json",
+          "sha256": "852d646e1c259d96caa84174f71600a87ec2b11e5e7c449e02941f981abcd105"
+        },
+        {
+          "path": "EXP-MOVA-2026-013/external-evaluation.json",
+          "sha256": "42df62d3396bcfcb95a8f0f77f33b765a0ec55576df2b6a6418ac827638e342f"
+        },
+        {
+          "path": "EXP-MOVA-2026-013/manifest.json",
+          "sha256": "181908a0e1f85233b1761a7b02835ba52f8130c9b61761b07bb8565305f66725"
+        },
+        {
+          "path": "EXP-MOVA-2026-013/selection.json",
+          "sha256": "63e23b9ad44494e49d1b9a670af6145a4c9441b3d78f6513c75e091b1f1826dd"
+        }
+      ],
+      "registered_groups": [
+        "exp013-development-v1",
+        "exp013-external_diagnostic-v1"
+      ],
+      "source_sha256": "a3a0ba54ee5551d5879859b077bb5c0362a38d3a2935c46aceb25aeaf3a06227"
+    },
+    {
+      "completion_status": "not_inferred",
+      "dataset_sha256": null,
+      "evidence_status": "metadata_present",
+      "experiment": "EXP-MOVA-2026-014",
+      "git_sha": "890ca110be30e5e48664e0ddf248f2653dd8387b",
+      "metadata_files": [
+        {
+          "path": "EXP-MOVA-2026-014/input-manifest.json",
+          "sha256": "58e88b0a13f1a33dc982cca4c9210fec1abfbb431782657e6682ed27680819aa"
+        },
+        {
+          "path": "EXP-MOVA-2026-014/live-shadow.json",
+          "sha256": "6ab42747ee2476b7a33c81391ee244c72c86b48172d1647186ef981cdf166598"
+        },
+        {
+          "path": "EXP-MOVA-2026-014/manifest.json",
+          "sha256": "8fbb713c26f235424a5e1c83b389c119d2c8a3db6eb117aea244dd81d357bad6"
+        }
+      ],
+      "registered_groups": [],
+      "source_sha256": "325433a71f173a27f0db9a0f681222dce516f3d6bce64420453d6bac5bd91bb9"
+    },
+    {
+      "completion_status": "not_inferred",
+      "dataset_sha256": null,
+      "evidence_status": "metadata_present",
+      "experiment": "EXP-MOVA-2026-015",
+      "git_sha": "890ca110be30e5e48664e0ddf248f2653dd8387b",
+      "metadata_files": [
+        {
+          "path": "EXP-MOVA-2026-015/external-evaluation.json",
+          "sha256": "ef12f07b2f1e7d01f92b6f64de6c92ecf2b6954ae33b4fe338ebf1bad92719f1"
+        },
+        {
+          "path": "EXP-MOVA-2026-015/manifest.json",
+          "sha256": "bcc16f9e1a66d303a51afbf4d3d0d83745defdab4e5c52de6bfd39be9c03381a"
+        },
+        {
+          "path": "EXP-MOVA-2026-015/selection.json",
+          "sha256": "472aa753527074d5df76a91b703b76b0dec9030bd57b82a7b5506a98002c1990"
+        }
+      ],
+      "registered_groups": [],
+      "source_sha256": "e536551038ced65af0fbff79c56a8eb0eae31f3ef12c10a0badfcf6b4ef615fd"
+    },
+    {
+      "completion_status": "not_inferred",
+      "dataset_sha256": null,
+      "evidence_status": "metadata_present",
+      "experiment": "EXP-MOVA-2026-016",
+      "git_sha": null,
+      "metadata_files": [
+        {
+          "path": "EXP-MOVA-2026-016/gw03-promotable.json",
+          "sha256": "4e2f81c1a73ccd1d8dd7232d9bbb885215a99ca1c69883bd3004ada2676e8108"
+        }
+      ],
+      "registered_groups": [],
+      "source_sha256": null
+    },
+    {
+      "completion_status": "not_inferred",
+      "dataset_sha256": "43e053f68d069d76f94bf14bff35cbea5c0ebeb8172b173baae18c4cf630a2e0",
+      "evidence_status": "metadata_present",
+      "experiment": "EXP-MOVA-2026-017",
+      "git_sha": "890ca110be30e5e48664e0ddf248f2653dd8387b",
+      "metadata_files": [
+        {
+          "path": "EXP-MOVA-2026-017/decision-development.json",
+          "sha256": "170e2446d4a6596baad159fd285b185f71885327ef8a6d762f12a8ef7b63acb8"
+        },
+        {
+          "path": "EXP-MOVA-2026-017/external-evaluation.json",
+          "sha256": "8d8e9261b72c882e8e36f8b802300ffaead6c788a3b7c77b1012f040b90716a1"
+        },
+        {
+          "path": "EXP-MOVA-2026-017/manifest.json",
+          "sha256": "d83b459e19ff1cff29f93f4cecd89ba43ae8ab27b8a074945145ebd1b712414e"
+        },
+        {
+          "path": "EXP-MOVA-2026-017/selection.json",
+          "sha256": "ca57902df87c9ae8d7c40ed333c91db6441419d578ccdb6ed3e90373823c35fe"
+        }
+      ],
+      "registered_groups": [
+        "exp017-development-v1",
+        "exp017-external_diagnostic-v1"
+      ],
+      "source_sha256": "cb586d46c5202e49b85bf5e36af4582aeb52f606520bad329c3cdeff9856f488"
+    },
+    {
+      "completion_status": "not_inferred",
+      "dataset_sha256": null,
+      "evidence_status": "metadata_present",
+      "experiment": "EXP-MOVA-2026-018",
+      "git_sha": "890ca110be30e5e48664e0ddf248f2653dd8387b",
+      "metadata_files": [
+        {
+          "path": "EXP-MOVA-2026-018/live-shadow.json",
+          "sha256": "3f233c36c1688e7f6f6dd98e8e297e4b57a7ee162bfd98cff5c0630e98042717"
+        },
+        {
+          "path": "EXP-MOVA-2026-018/manifest.json",
+          "sha256": "7d6141520bccb253bb033470ce48acf5d55426f01010117195d3fb5fda9572c3"
+        }
+      ],
+      "registered_groups": [],
+      "source_sha256": "383d4142a4729014190106ebbba7c482b7ce5d8bcb46f77ca07d8333ced2bc60"
+    },
+    {
+      "completion_status": "not_inferred",
+      "dataset_sha256": null,
+      "evidence_status": "metadata_present",
+      "experiment": "EXP-MOVA-2026-019",
+      "git_sha": null,
+      "metadata_files": [
+        {
+          "path": "EXP-MOVA-2026-019/gw03-promotable.json",
+          "sha256": "06406eb70fe6da067f4f1d746557d00cbdf3b4a41d0b7c286a2b1b5781361a1c"
+        }
+      ],
+      "registered_groups": [],
+      "source_sha256": null
+    },
+    {
+      "completion_status": "not_inferred",
+      "dataset_sha256": null,
+      "evidence_status": "metadata_present",
+      "experiment": "EXP-MOVA-2026-020",
+      "git_sha": "890ca110be30e5e48664e0ddf248f2653dd8387b",
+      "metadata_files": [
+        {
+          "path": "EXP-MOVA-2026-020/live-shadow.json",
+          "sha256": "3d386a22272a64ea731009c1d58b1ed6260a20c9369e755fd02e85c5ece857dc"
+        },
+        {
+          "path": "EXP-MOVA-2026-020/manifest.json",
+          "sha256": "7ea90cb53e81226128359fb8deb37f21b0ef7605d46d79b86e88d6b7f7bada83"
+        }
+      ],
+      "registered_groups": [],
+      "source_sha256": "8f3f04dc0ada6c284876a2fb001707e1e245816eb92c83b65345a106a7c0f795"
+    },
+    {
+      "completion_status": "not_inferred",
+      "dataset_sha256": "43e053f68d069d76f94bf14bff35cbea5c0ebeb8172b173baae18c4cf630a2e0",
+      "evidence_status": "metadata_present",
+      "experiment": "EXP-MOVA-2026-021",
+      "git_sha": null,
+      "metadata_files": [
+        {
+          "path": "EXP-MOVA-2026-021/2021-22-baseline-replay.json",
+          "sha256": "4d2987fee3b587ccc89085b482c1b5ab9069544a4b374f26db57d69df39ff16d"
+        },
+        {
+          "path": "EXP-MOVA-2026-021/2021-22-participation-replay.json",
+          "sha256": "b3f7c63f8ddabc3207df35f8413e502bd224e27239abd6a5745367580e9a23ce"
+        },
+        {
+          "path": "EXP-MOVA-2026-021/2021-22-predictive.json",
+          "sha256": "9e1a472a6d05f8f90b0bd1e8444739a24cb28dd07470cbc0779e0a05c8d14823"
+        },
+        {
+          "path": "EXP-MOVA-2026-021/2023-24-baseline-replay.json",
+          "sha256": "2de04292cf1fa671c46e002caeebb2ed035b2a560de20c95c05487847a1ab5d4"
+        },
+        {
+          "path": "EXP-MOVA-2026-021/2023-24-opportunities.json",
+          "sha256": "55e4b744b3f91237f649dfbfa0aae552356c20c81eae8fd7fdce4d1419985608"
+        },
+        {
+          "path": "EXP-MOVA-2026-021/2023-24-participation-replay.json",
+          "sha256": "630ebde78d7b634337c5190b0225805292ca52678ce654c9934ef0a98a7caf2f"
+        },
+        {
+          "path": "EXP-MOVA-2026-021/2023-24-predictive.json",
+          "sha256": "29087fc0fc0721e4bd0f612d72ff5a0b1b122c7bba9deb819c19cca8c8017c1d"
+        },
+        {
+          "path": "EXP-MOVA-2026-021/2024-25-baseline-replay.json",
+          "sha256": "c23a9aec04de449a82325e98f28b847cc5f30f13c27058beb91d20f933c739b9"
+        },
+        {
+          "path": "EXP-MOVA-2026-021/2024-25-opportunities.json",
+          "sha256": "9e8650c689cfbdc4ae0911a523d8bb1d28d840b9618a432abfa69157bb4032d7"
+        },
+        {
+          "path": "EXP-MOVA-2026-021/2024-25-participation-replay.json",
+          "sha256": "b2f4341cea86ff76f403eb2054c84d85a554f2804a61972b1604c1ef03c1e903"
+        },
+        {
+          "path": "EXP-MOVA-2026-021/2024-25-predictive.json",
+          "sha256": "42b48aa74d63c2f74adda80a393bca2f0140b74e551ce2e257e2c509f50055a3"
+        },
+        {
+          "path": "EXP-MOVA-2026-021/2025-26-baseline-replay.json",
+          "sha256": "b1ec5fab5bc0e9d990da2a1953567acaee630585489f1f17991e90478501e8fc"
+        },
+        {
+          "path": "EXP-MOVA-2026-021/2025-26-combined-replay.json",
+          "sha256": "4d34261f1856274161787ee7c0de92ecb509a1ba833db5db935c55d0da70288b"
+        },
+        {
+          "path": "EXP-MOVA-2026-021/2025-26-predictive.json",
+          "sha256": "bed58f09ad768139f5fa78145fac0a9da8a1a598ac3de932677b9aef095f8f65"
+        },
+        {
+          "path": "EXP-MOVA-2026-021/2025-26-runtime_matrix-replay.json",
+          "sha256": "43944d0831440eb39e9e1de11cf18d1004cdd7bdf2acc06d8c5a61cb44cce934"
+        },
+        {
+          "path": "EXP-MOVA-2026-021/2025-26-season_value-replay.json",
+          "sha256": "f0923103e9947f44100a65ba91dd4bca8c999ed258b501b5f6d6dbfcc07b57f7"
+        },
+        {
+          "path": "EXP-MOVA-2026-021/manifest.json",
+          "sha256": "41426a2d08be551e9024a1466b604b63f8346b8cd0a841ecae3c2111273ecb2e"
+        },
+        {
+          "path": "EXP-MOVA-2026-021/paired-evaluation.json",
+          "sha256": "4a96d07b4e447770082547b39e692d3f96d8126a47ccfd5d131cc535a0ea2770"
+        }
+      ],
+      "registered_groups": [
+        "exp021-development-v1",
+        "exp021-external_diagnostic-v1"
+      ],
+      "source_sha256": null
+    },
+    {
+      "completion_status": "not_inferred",
+      "dataset_sha256": "43e053f68d069d76f94bf14bff35cbea5c0ebeb8172b173baae18c4cf630a2e0",
+      "evidence_status": "metadata_present",
+      "experiment": "EXP-MOVA-2026-021-preflight-failed",
+      "git_sha": null,
+      "metadata_files": [
+        {
+          "path": "EXP-MOVA-2026-021-preflight-failed/manifest.json",
+          "sha256": "41426a2d08be551e9024a1466b604b63f8346b8cd0a841ecae3c2111273ecb2e"
+        }
+      ],
+      "registered_groups": [],
+      "source_sha256": null
+    }
+  ],
+  "global_ranking": null,
+  "groups": [
+    {
+      "adapter": "totals",
+      "comparison_sha256": "a2b3a5c2100b1f40e85c725ca040aa634a3d19de0e9eb5eb9427ad39a35c92bb",
+      "control": "control_h3",
+      "description": "Estado season-only; pol\u00edticas sin chips. Ablaci\u00f3n de horizonte, calendario y proxies.",
+      "evidence": [
+        {
+          "path": "EXP-MOVA-2026-003/policy-selection.json",
+          "sha256": "7aa82abfee7c910fcf1e376759c7088901a53d45b59d39114ff3c2e08d5e2fc8"
+        },
+        {
+          "path": "EXP-MOVA-2026-003/manifest.json",
+          "sha256": "ad639355928ac0373173eb7e0f49926071be676199f0f20579547a4291304486"
+        }
+      ],
+      "experiment": "EXP-MOVA-2026-003",
+      "files": [
+        "policy-selection.json"
+      ],
+      "id": "exp003-development-v1",
+      "phase": "development",
+      "promotion_authorized": false,
+      "ranking_scope": "within_this_group_only",
+      "rows": [
+        {
+          "candidate_points": {
+            "2021-22": 2097,
+            "2023-24": 2186,
+            "2024-25": 2213
+          },
+          "control": "control_h3",
+          "control_points": {
+            "2021-22": 2064,
+            "2023-24": 2114,
+            "2024-25": 2234
+          },
+          "losses": 1,
+          "mean_pva_38": 28.0,
+          "pva_38_by_season": {
+            "2021-22": 33,
+            "2023-24": 72,
+            "2024-25": -21
+          },
+          "seasons": [
+            "2021-22",
+            "2023-24",
+            "2024-25"
+          ],
+          "uncertainty": {
+            "block_size_gw": 4,
+            "ci95": [
+              -95.02499999999998,
+              155.0
+            ],
+            "downside_cvar_10": -80.70614469772052,
+            "draws": 20000,
+            "method": "paired_moving_block_bootstrap"
+          },
+          "variant": "season_fixture_h3",
+          "wins": 2
+        },
+        {
+          "candidate_points": {
+            "2021-22": 2088,
+            "2023-24": 2224,
+            "2024-25": 2146
+          },
+          "control": "control_h3",
+          "control_points": {
+            "2021-22": 2064,
+            "2023-24": 2114,
+            "2024-25": 2234
+          },
+          "losses": 1,
+          "mean_pva_38": 15.333333333333334,
+          "pva_38_by_season": {
+            "2021-22": 24,
+            "2023-24": 110,
+            "2024-25": -88
+          },
+          "seasons": [
+            "2021-22",
+            "2023-24",
+            "2024-25"
+          ],
+          "uncertainty": {
+            "block_size_gw": 4,
+            "ci95": [
+              -144.0,
+              188.0
+            ],
+            "downside_cvar_10": -126.87960687960688,
+            "draws": 20000,
+            "method": "paired_moving_block_bootstrap"
+          },
+          "variant": "season_fixture_h6_events_stable",
+          "wins": 2
+        },
+        {
+          "candidate_points": {
+            "2021-22": 2017,
+            "2023-24": 2246,
+            "2024-25": 2192
+          },
+          "control": "control_h3",
+          "control_points": {
+            "2021-22": 2064,
+            "2023-24": 2114,
+            "2024-25": 2234
+          },
+          "losses": 2,
+          "mean_pva_38": 14.333333333333334,
+          "pva_38_by_season": {
+            "2021-22": -47,
+            "2023-24": 132,
+            "2024-25": -42
+          },
+          "seasons": [
+            "2021-22",
+            "2023-24",
+            "2024-25"
+          ],
+          "uncertainty": {
+            "block_size_gw": 4,
+            "ci95": [
+              -129.0,
+              167.0
+            ],
+            "downside_cvar_10": -113.31938976377953,
+            "draws": 20000,
+            "method": "paired_moving_block_bootstrap"
+          },
+          "variant": "season_fixture_h6_events",
+          "wins": 1
+        },
+        {
+          "candidate_points": {
+            "2021-22": 2028,
+            "2023-24": 2148,
+            "2024-25": 2057
+          },
+          "control": "control_h3",
+          "control_points": {
+            "2021-22": 2064,
+            "2023-24": 2114,
+            "2024-25": 2234
+          },
+          "losses": 2,
+          "mean_pva_38": -59.666666666666664,
+          "pva_38_by_season": {
+            "2021-22": -36,
+            "2023-24": 34,
+            "2024-25": -177
+          },
+          "seasons": [
+            "2021-22",
+            "2023-24",
+            "2024-25"
+          ],
+          "uncertainty": {
+            "block_size_gw": 4,
+            "ci95": [
+              -198.0,
+              85.0
+            ],
+            "downside_cvar_10": -184.76949654491608,
+            "draws": 20000,
+            "method": "paired_moving_block_bootstrap"
+          },
+          "variant": "season_fixture_h6",
+          "wins": 1
+        }
+      ],
+      "seasons": [
+        "2021-22",
+        "2023-24",
+        "2024-25"
+      ],
+      "uncertainty_paths": {
+        "season_fixture_h3": [
+          "paired_vs_control",
+          "season_fixture_h3"
+        ],
+        "season_fixture_h6": [
+          "paired_vs_control",
+          "season_fixture_h6"
+        ],
+        "season_fixture_h6_events": [
+          "paired_vs_control",
+          "season_fixture_h6_events"
+        ],
+        "season_fixture_h6_events_stable": [
+          "paired_vs_control",
+          "season_fixture_h6_events_stable"
+        ]
+      }
+    },
+    {
+      "adapter": "holdout",
+      "comparison_sha256": "c9677599fe93ba3b574593e6e45e2e35856bb7e378201bddcb9beea3d9c0991b",
+      "control": "control_h3",
+      "description": "Holdout registrado en su momento; hoy ya consultado. No reutilizar como holdout intacto.",
+      "evidence": [
+        {
+          "path": "EXP-MOVA-2026-003/holdout-result.json",
+          "sha256": "aac1c6f3d0062f7daeeb023aef203ca944d8c5edfa49dd84c5766da0db90f7e9"
+        },
+        {
+          "path": "EXP-MOVA-2026-003/manifest.json",
+          "sha256": "ad639355928ac0373173eb7e0f49926071be676199f0f20579547a4291304486"
+        }
+      ],
+      "experiment": "EXP-MOVA-2026-003",
+      "files": [
+        "holdout-result.json"
+      ],
+      "id": "exp003-historical_holdout-v1",
+      "phase": "historical_holdout",
+      "promotion_authorized": false,
+      "ranking_scope": "within_this_group_only",
+      "rows": [
+        {
+          "candidate_points": {
+            "2025-26": 2306
+          },
+          "control": "control_h3",
+          "control_points": {
+            "2025-26": 2141
+          },
+          "losses": 0,
+          "mean_pva_38": 165.0,
+          "pva_38_by_season": {
+            "2025-26": 165
+          },
+          "seasons": [
+            "2025-26"
+          ],
+          "uncertainty": null,
+          "variant": "season_fixture_h3",
+          "wins": 1
+        }
+      ],
+      "seasons": [
+        "2025-26"
+      ]
+    },
+    {
+      "adapter": "totals",
+      "comparison_sha256": "33856066cf5cac30d7427aa96d13e781f4141f6b20ca4507f9b31d6736b0caa3",
+      "control": "season_fixture_h3",
+      "description": "Proxies de eventos aislados sobre h3. El control es fixture_h3, no control_h3.",
+      "evidence": [
+        {
+          "path": "EXP-MOVA-2026-004/policy-selection.json",
+          "sha256": "f41f04bf65cf15bdb7032b9a519e34dc0c462f5df1132f128552168ba8e3d813"
+        },
+        {
+          "path": "EXP-MOVA-2026-004/manifest.json",
+          "sha256": "e72b058578a3ff63be721ac2bfadd1a60743a254d8487f3c0e9e97f81b430a40"
+        }
+      ],
+      "experiment": "EXP-MOVA-2026-004",
+      "files": [
+        "policy-selection.json"
+      ],
+      "id": "exp004-development-v1",
+      "phase": "development",
+      "promotion_authorized": false,
+      "ranking_scope": "within_this_group_only",
+      "rows": [
+        {
+          "candidate_points": {
+            "2021-22": 2104,
+            "2023-24": 2238,
+            "2024-25": 2081
+          },
+          "control": "season_fixture_h3",
+          "control_points": {
+            "2021-22": 2097,
+            "2023-24": 2186,
+            "2024-25": 2213
+          },
+          "losses": 1,
+          "mean_pva_38": -24.333333333333332,
+          "pva_38_by_season": {
+            "2021-22": 7,
+            "2023-24": 52,
+            "2024-25": -132
+          },
+          "seasons": [
+            "2021-22",
+            "2023-24",
+            "2024-25"
+          ],
+          "uncertainty": {
+            "block_size_gw": 4,
+            "ci95": [
+              -154.0,
+              96.0
+            ],
+            "downside_cvar_10": -140.72290338401177,
+            "draws": 20000,
+            "method": "paired_moving_block_bootstrap"
+          },
+          "variant": "season_fixture_h3_events",
+          "wins": 2
+        },
+        {
+          "candidate_points": {
+            "2021-22": 2064,
+            "2023-24": 2114,
+            "2024-25": 2234
+          },
+          "control": "season_fixture_h3",
+          "control_points": {
+            "2021-22": 2097,
+            "2023-24": 2186,
+            "2024-25": 2213
+          },
+          "losses": 2,
+          "mean_pva_38": -28.0,
+          "pva_38_by_season": {
+            "2021-22": -33,
+            "2023-24": -72,
+            "2024-25": 21
+          },
+          "seasons": [
+            "2021-22",
+            "2023-24",
+            "2024-25"
+          ],
+          "uncertainty": null,
+          "variant": "control_h3",
+          "wins": 1
+        }
+      ],
+      "seasons": [
+        "2021-22",
+        "2023-24",
+        "2024-25"
+      ],
+      "uncertainty_paths": {
+        "season_fixture_h3_events": [
+          "paired_events_vs_incumbent"
+        ]
+      }
+    },
+    {
+      "adapter": "totals",
+      "comparison_sha256": "d52bd8c7230fc21974b7c3a8df731f501f3d1853210c48cc25be02e618939e51",
+      "control": "season_fixture_h3",
+      "description": "Recourse estoc\u00e1stico: conservar el resultado nulo.",
+      "evidence": [
+        {
+          "path": "EXP-MOVA-2026-009/selection.json",
+          "sha256": "73f8a9ebb81d4db5b1d3550c20b6657881228ef9df961fe63a7fe0a27cc3f082"
+        },
+        {
+          "path": "EXP-MOVA-2026-009/manifest.json",
+          "sha256": "a6a720b6de2cbb3e9965bc5d9a142db66d9830fb493c07af8ef1b9e147bcdeb6"
+        }
+      ],
+      "experiment": "EXP-MOVA-2026-009",
+      "files": [
+        "selection.json"
+      ],
+      "id": "exp009-development-v1",
+      "phase": "development",
+      "promotion_authorized": false,
+      "ranking_scope": "within_this_group_only",
+      "rows": [
+        {
+          "candidate_points": {
+            "2021-22": 2097,
+            "2023-24": 2186,
+            "2024-25": 2213
+          },
+          "control": "season_fixture_h3",
+          "control_points": {
+            "2021-22": 2097,
+            "2023-24": 2186,
+            "2024-25": 2213
+          },
+          "losses": 0,
+          "mean_pva_38": 0.0,
+          "pva_38_by_season": {
+            "2021-22": 0,
+            "2023-24": 0,
+            "2024-25": 0
+          },
+          "seasons": [
+            "2021-22",
+            "2023-24",
+            "2024-25"
+          ],
+          "uncertainty": {
+            "block_size_gw": 4,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "downside_cvar_10": 0.0,
+            "draws": 20000,
+            "method": "paired_moving_block_bootstrap"
+          },
+          "variant": "stochastic-recourse-h3",
+          "wins": 0
+        }
+      ],
+      "seasons": [
+        "2021-22",
+        "2023-24",
+        "2024-25"
+      ],
+      "uncertainty_paths": {
+        "stochastic-recourse-h3": [
+          "paired_bootstrap"
+        ]
+      }
+    },
+    {
+      "adapter": "totals",
+      "comparison_sha256": "b9ed906e25350dbcfa51cc31a9eee4c215aa1d512df3c30188cb5ecee202e5dc",
+      "control": "season_fixture_h3",
+      "description": "Valor terminal de FT; cuatro temporadas, pol\u00edtica sin chips.",
+      "evidence": [
+        {
+          "path": "EXP-MOVA-2026-012/selection.json",
+          "sha256": "40f0895ea9503990ca6c06d9021cab36ad1fb7b82ee9620f2978191df5490cbe"
+        },
+        {
+          "path": "EXP-MOVA-2026-012/manifest.json",
+          "sha256": "d2537dfadb70f3397bfef8fc35d636b14ac7de12ec1b51547b087df8aa1d57cb"
+        }
+      ],
+      "experiment": "EXP-MOVA-2026-012",
+      "files": [
+        "selection.json"
+      ],
+      "id": "exp012-development-v1",
+      "phase": "development",
+      "promotion_authorized": false,
+      "ranking_scope": "within_this_group_only",
+      "rows": [
+        {
+          "candidate_points": {
+            "2020-21": 2111,
+            "2021-22": 2100,
+            "2023-24": 2190,
+            "2024-25": 2084
+          },
+          "control": "season_fixture_h3",
+          "control_points": {
+            "2020-21": 2255,
+            "2021-22": 2097,
+            "2023-24": 2186,
+            "2024-25": 2213
+          },
+          "losses": 2,
+          "mean_pva_38": -66.5,
+          "pva_38_by_season": {
+            "2020-21": -144,
+            "2021-22": 3,
+            "2023-24": 4,
+            "2024-25": -129
+          },
+          "seasons": [
+            "2020-21",
+            "2021-22",
+            "2023-24",
+            "2024-25"
+          ],
+          "uncertainty": {
+            "block_size_gw": 4,
+            "ci95": [
+              -190.0,
+              44.0
+            ],
+            "downside_cvar_10": -177.5734265734266,
+            "draws": 50000,
+            "method": "paired_moving_block_bootstrap"
+          },
+          "variant": "season_fixture_h3_terminal_ft_v1",
+          "wins": 2
+        }
+      ],
+      "seasons": [
+        "2020-21",
+        "2021-22",
+        "2023-24",
+        "2024-25"
+      ],
+      "uncertainty_paths": {
+        "season_fixture_h3_terminal_ft_v1": [
+          "paired_bootstrap"
+        ]
+      }
+    },
+    {
+      "adapter": "totals",
+      "comparison_sha256": "bad568b02f9858b65c7e9080920d547d936884ee61cd8e9ac6f5b501365a9c87",
+      "control": "stale_previous",
+      "description": "Estado previo congelado frente a incorporaci\u00f3n causal de historia actual.",
+      "evidence": [
+        {
+          "path": "EXP-MOVA-2026-013/decision-development.json",
+          "sha256": "852d646e1c259d96caa84174f71600a87ec2b11e5e7c449e02941f981abcd105"
+        },
+        {
+          "path": "EXP-MOVA-2026-013/manifest.json",
+          "sha256": "181908a0e1f85233b1761a7b02835ba52f8130c9b61761b07bb8565305f66725"
+        }
+      ],
+      "experiment": "EXP-MOVA-2026-013",
+      "files": [
+        "decision-development.json"
+      ],
+      "id": "exp013-development-v1",
+      "phase": "development",
+      "promotion_authorized": false,
+      "ranking_scope": "within_this_group_only",
+      "rows": [
+        {
+          "candidate_points": {
+            "2021-22": 2089,
+            "2023-24": 2230,
+            "2024-25": 2353
+          },
+          "control": "stale_previous",
+          "control_points": {
+            "2021-22": 1683,
+            "2023-24": 1677,
+            "2024-25": 2187
+          },
+          "losses": 0,
+          "mean_pva_38": 375.0,
+          "pva_38_by_season": {
+            "2021-22": 406,
+            "2023-24": 553,
+            "2024-25": 166
+          },
+          "seasons": [
+            "2021-22",
+            "2023-24",
+            "2024-25"
+          ],
+          "uncertainty": {
+            "block_size_gw": 4,
+            "ci95": [
+              128.0,
+              613.0250000000015
+            ],
+            "downside_cvar_10": 153.36932491117253,
+            "draws": 50000,
+            "method": "paired_moving_block_bootstrap"
+          },
+          "variant": "append_full",
+          "wins": 3
+        }
+      ],
+      "seasons": [
+        "2021-22",
+        "2023-24",
+        "2024-25"
+      ],
+      "uncertainty_paths": {
+        "append_full": [
+          "paired_bootstrap"
+        ]
+      }
+    },
+    {
+      "adapter": "totals",
+      "comparison_sha256": "d7415b369f6cfd659daea9b159a4945526a81099c0f312cf71120a4494438489",
+      "control": "stale_previous",
+      "description": "Estado previo congelado frente a incorporaci\u00f3n causal de historia actual. Temporada externa ya consultada.",
+      "evidence": [
+        {
+          "path": "EXP-MOVA-2026-013/external-evaluation.json",
+          "sha256": "42df62d3396bcfcb95a8f0f77f33b765a0ec55576df2b6a6418ac827638e342f"
+        },
+        {
+          "path": "EXP-MOVA-2026-013/manifest.json",
+          "sha256": "181908a0e1f85233b1761a7b02835ba52f8130c9b61761b07bb8565305f66725"
+        }
+      ],
+      "experiment": "EXP-MOVA-2026-013",
+      "files": [
+        "external-evaluation.json"
+      ],
+      "id": "exp013-external_diagnostic-v1",
+      "object_path": [
+        "decision"
+      ],
+      "phase": "external_diagnostic",
+      "promotion_authorized": false,
+      "ranking_scope": "within_this_group_only",
+      "rows": [
+        {
+          "candidate_points": {
+            "2025-26": 2104
+          },
+          "control": "stale_previous",
+          "control_points": {
+            "2025-26": 1410
+          },
+          "losses": 0,
+          "mean_pva_38": 694.0,
+          "pva_38_by_season": {
+            "2025-26": 694
+          },
+          "seasons": [
+            "2025-26"
+          ],
+          "uncertainty": {
+            "block_size_gw": 4,
+            "ci95": [
+              374.0,
+              1032.0
+            ],
+            "downside_cvar_10": 409.29141835518476,
+            "draws": 50000,
+            "method": "paired_moving_block_bootstrap"
+          },
+          "variant": "append_full",
+          "wins": 1
+        }
+      ],
+      "seasons": [
+        "2025-26"
+      ],
+      "uncertainty_paths": {
+        "append_full": [
+          "decision",
+          "paired_bootstrap"
+        ]
+      }
+    },
+    {
+      "adapter": "totals",
+      "comparison_sha256": "2c1781602fe12df7e7c456622944d106e2660eddf5fee3befe6c94de58b394a4",
+      "control": "control_full",
+      "description": "Ensemble continuidad/reinicio; distinto control al EXP003.",
+      "evidence": [
+        {
+          "path": "EXP-MOVA-2026-017/decision-development.json",
+          "sha256": "170e2446d4a6596baad159fd285b185f71885327ef8a6d762f12a8ef7b63acb8"
+        },
+        {
+          "path": "EXP-MOVA-2026-017/manifest.json",
+          "sha256": "d83b459e19ff1cff29f93f4cecd89ba43ae8ab27b8a074945145ebd1b712414e"
+        }
+      ],
+      "experiment": "EXP-MOVA-2026-017",
+      "files": [
+        "decision-development.json"
+      ],
+      "id": "exp017-development-v1",
+      "phase": "development",
+      "promotion_authorized": false,
+      "ranking_scope": "within_this_group_only",
+      "rows": [
+        {
+          "candidate_points": {
+            "2021-22": 2237,
+            "2023-24": 2119,
+            "2024-25": 2435
+          },
+          "control": "control_full",
+          "control_points": {
+            "2021-22": 2089,
+            "2023-24": 2230,
+            "2024-25": 2353
+          },
+          "losses": 1,
+          "mean_pva_38": 39.666666666666664,
+          "pva_38_by_season": {
+            "2021-22": 148,
+            "2023-24": -111,
+            "2024-25": 82
+          },
+          "seasons": [
+            "2021-22",
+            "2023-24",
+            "2024-25"
+          ],
+          "uncertainty": {
+            "block_size_gw": 4,
+            "ci95": [
+              -138.0,
+              169.0
+            ],
+            "downside_cvar_10": -118.39453202953503,
+            "draws": 50000,
+            "method": "paired_moving_block_bootstrap"
+          },
+          "variant": "blend_0.50",
+          "wins": 2
+        }
+      ],
+      "seasons": [
+        "2021-22",
+        "2023-24",
+        "2024-25"
+      ],
+      "uncertainty_paths": {
+        "blend_0.50": [
+          "paired_bootstrap"
+        ]
+      }
+    },
+    {
+      "adapter": "totals",
+      "comparison_sha256": "a94bee7e8c23a3a93fa473d7f6cd4cd558243965c39dfff22a723254fe6b3aa2",
+      "control": "control_full",
+      "description": "Ensemble continuidad/reinicio; distinto control al EXP003. Temporada externa ya consultada.",
+      "evidence": [
+        {
+          "path": "EXP-MOVA-2026-017/external-evaluation.json",
+          "sha256": "8d8e9261b72c882e8e36f8b802300ffaead6c788a3b7c77b1012f040b90716a1"
+        },
+        {
+          "path": "EXP-MOVA-2026-017/manifest.json",
+          "sha256": "d83b459e19ff1cff29f93f4cecd89ba43ae8ab27b8a074945145ebd1b712414e"
+        }
+      ],
+      "experiment": "EXP-MOVA-2026-017",
+      "files": [
+        "external-evaluation.json"
+      ],
+      "id": "exp017-external_diagnostic-v1",
+      "object_path": [
+        "decision"
+      ],
+      "phase": "external_diagnostic",
+      "promotion_authorized": false,
+      "ranking_scope": "within_this_group_only",
+      "rows": [
+        {
+          "candidate_points": {
+            "2025-26": 2133
+          },
+          "control": "control_full",
+          "control_points": {
+            "2025-26": 2104
+          },
+          "losses": 0,
+          "mean_pva_38": 29.0,
+          "pva_38_by_season": {
+            "2025-26": 29
+          },
+          "seasons": [
+            "2025-26"
+          ],
+          "uncertainty": {
+            "block_size_gw": 4,
+            "ci95": [
+              -133.0,
+              238.0
+            ],
+            "downside_cvar_10": -115.19596598773977,
+            "draws": 50000,
+            "method": "paired_moving_block_bootstrap"
+          },
+          "variant": "blend_0.50",
+          "wins": 1
+        }
+      ],
+      "seasons": [
+        "2025-26"
+      ],
+      "uncertainty_paths": {
+        "blend_0.50": [
+          "decision",
+          "paired_bootstrap"
+        ]
+      }
+    },
+    {
+      "adapter": "replays",
+      "comparison_sha256": "c6c0e07f14114a37c724521f986cc0d6645c9973dd3ae81752e0386a999269df",
+      "control": "baseline",
+      "description": "Participaci\u00f3n reciente; estado append_full, h3, top20, CBC 3s, sin chips hist\u00f3ricos.",
+      "evidence": [
+        {
+          "path": "EXP-MOVA-2026-021/2021-22-baseline-replay.json",
+          "sha256": "4d2987fee3b587ccc89085b482c1b5ab9069544a4b374f26db57d69df39ff16d"
+        },
+        {
+          "path": "EXP-MOVA-2026-021/2021-22-participation-replay.json",
+          "sha256": "b3f7c63f8ddabc3207df35f8413e502bd224e27239abd6a5745367580e9a23ce"
+        },
+        {
+          "path": "EXP-MOVA-2026-021/2023-24-baseline-replay.json",
+          "sha256": "2de04292cf1fa671c46e002caeebb2ed035b2a560de20c95c05487847a1ab5d4"
+        },
+        {
+          "path": "EXP-MOVA-2026-021/2023-24-participation-replay.json",
+          "sha256": "630ebde78d7b634337c5190b0225805292ca52678ce654c9934ef0a98a7caf2f"
+        },
+        {
+          "path": "EXP-MOVA-2026-021/2024-25-baseline-replay.json",
+          "sha256": "c23a9aec04de449a82325e98f28b847cc5f30f13c27058beb91d20f933c739b9"
+        },
+        {
+          "path": "EXP-MOVA-2026-021/2024-25-participation-replay.json",
+          "sha256": "b2f4341cea86ff76f403eb2054c84d85a554f2804a61972b1604c1ef03c1e903"
+        },
+        {
+          "path": "EXP-MOVA-2026-021/manifest.json",
+          "sha256": "41426a2d08be551e9024a1466b604b63f8346b8cd0a841ecae3c2111273ecb2e"
+        },
+        {
+          "path": "EXP-MOVA-2026-021/paired-evaluation.json",
+          "sha256": "4a96d07b4e447770082547b39e692d3f96d8126a47ccfd5d131cc535a0ea2770"
+        }
+      ],
+      "experiment": "EXP-MOVA-2026-021",
+      "files": [
+        "2021-22-baseline-replay.json",
+        "2021-22-participation-replay.json",
+        "2023-24-baseline-replay.json",
+        "2023-24-participation-replay.json",
+        "2024-25-baseline-replay.json",
+        "2024-25-participation-replay.json"
+      ],
+      "id": "exp021-development-v1",
+      "phase": "development",
+      "promotion_authorized": false,
+      "ranking_scope": "within_this_group_only",
+      "rows": [
+        {
+          "candidate_points": {
+            "2021-22": 2010,
+            "2023-24": 2186,
+            "2024-25": 2282
+          },
+          "control": "baseline",
+          "control_points": {
+            "2021-22": 2089,
+            "2023-24": 2230,
+            "2024-25": 2359
+          },
+          "losses": 3,
+          "mean_pva_38": -66.66666666666667,
+          "pva_38_by_season": {
+            "2021-22": -79,
+            "2023-24": -44,
+            "2024-25": -77
+          },
+          "seasons": [
+            "2021-22",
+            "2023-24",
+            "2024-25"
+          ],
+          "uncertainty": {
+            "block_size_gw": 4,
+            "ci95": [
+              -220.0,
+              83.0
+            ],
+            "downside_cvar_10": -205.19553349875932,
+            "draws": 20000,
+            "method": "paired_moving_block_bootstrap"
+          },
+          "variant": "participation",
+          "wins": 0
+        }
+      ],
+      "seasons": [
+        "2021-22",
+        "2023-24",
+        "2024-25"
+      ],
+      "uncertainty_file": "paired-evaluation.json",
+      "uncertainty_paths": {
+        "participation": [
+          "participation"
+        ]
+      }
+    },
+    {
+      "adapter": "replays",
+      "comparison_sha256": "615a035a41b3cf5eb17322dec56243092061ae2ddde2c02b095f98067aad9152",
+      "control": "baseline",
+      "description": "Valor conjunto de chips y participaci\u00f3n; cat\u00e1logo habilitado, h3, top20, CBC 3s. No comparable con EXP003.",
+      "evidence": [
+        {
+          "path": "EXP-MOVA-2026-021/2025-26-baseline-replay.json",
+          "sha256": "b1ec5fab5bc0e9d990da2a1953567acaee630585489f1f17991e90478501e8fc"
+        },
+        {
+          "path": "EXP-MOVA-2026-021/2025-26-runtime_matrix-replay.json",
+          "sha256": "43944d0831440eb39e9e1de11cf18d1004cdd7bdf2acc06d8c5a61cb44cce934"
+        },
+        {
+          "path": "EXP-MOVA-2026-021/2025-26-season_value-replay.json",
+          "sha256": "f0923103e9947f44100a65ba91dd4bca8c999ed258b501b5f6d6dbfcc07b57f7"
+        },
+        {
+          "path": "EXP-MOVA-2026-021/2025-26-combined-replay.json",
+          "sha256": "4d34261f1856274161787ee7c0de92ecb509a1ba833db5db935c55d0da70288b"
+        },
+        {
+          "path": "EXP-MOVA-2026-021/manifest.json",
+          "sha256": "41426a2d08be551e9024a1466b604b63f8346b8cd0a841ecae3c2111273ecb2e"
+        },
+        {
+          "path": "EXP-MOVA-2026-021/paired-evaluation.json",
+          "sha256": "4a96d07b4e447770082547b39e692d3f96d8126a47ccfd5d131cc535a0ea2770"
+        }
+      ],
+      "experiment": "EXP-MOVA-2026-021",
+      "files": [
+        "2025-26-baseline-replay.json",
+        "2025-26-runtime_matrix-replay.json",
+        "2025-26-season_value-replay.json",
+        "2025-26-combined-replay.json"
+      ],
+      "id": "exp021-external_diagnostic-v1",
+      "phase": "external_diagnostic",
+      "promotion_authorized": false,
+      "ranking_scope": "within_this_group_only",
+      "rows": [
+        {
+          "candidate_points": {
+            "2025-26": 2212
+          },
+          "control": "baseline",
+          "control_points": {
+            "2025-26": 2056
+          },
+          "losses": 0,
+          "mean_pva_38": 156.0,
+          "pva_38_by_season": {
+            "2025-26": 156
+          },
+          "seasons": [
+            "2025-26"
+          ],
+          "uncertainty": {
+            "block_size_gw": 4,
+            "ci95": [
+              24.0,
+              263.0
+            ],
+            "downside_cvar_10": 36.94880715705765,
+            "draws": 20000,
+            "method": "paired_moving_block_bootstrap"
+          },
+          "variant": "season_value",
+          "wins": 1
+        },
+        {
+          "candidate_points": {
+            "2025-26": 2122
+          },
+          "control": "baseline",
+          "control_points": {
+            "2025-26": 2056
+          },
+          "losses": 0,
+          "mean_pva_38": 66.0,
+          "pva_38_by_season": {
+            "2025-26": 66
+          },
+          "seasons": [
+            "2025-26"
+          ],
+          "uncertainty": {
+            "block_size_gw": 4,
+            "ci95": [
+              -139.0,
+              264.0
+            ],
+            "downside_cvar_10": -119.23226773226773,
+            "draws": 20000,
+            "method": "paired_moving_block_bootstrap"
+          },
+          "variant": "combined",
+          "wins": 1
+        },
+        {
+          "candidate_points": {
+            "2025-26": 2058
+          },
+          "control": "baseline",
+          "control_points": {
+            "2025-26": 2056
+          },
+          "losses": 0,
+          "mean_pva_38": 2.0,
+          "pva_38_by_season": {
+            "2025-26": 2
+          },
+          "seasons": [
+            "2025-26"
+          ],
+          "uncertainty": null,
+          "variant": "runtime_matrix",
+          "wins": 1
+        }
+      ],
+      "seasons": [
+        "2025-26"
+      ],
+      "uncertainty_file": "paired-evaluation.json",
+      "uncertainty_paths": {
+        "combined": [
+          "combined"
+        ],
+        "season_value": [
+          "season_value"
+        ]
+      }
+    }
+  ],
+  "limitations": [
+    "Los grupos son comparaciones hist\u00f3ricas separadas, no un ranking global ni una nueva evaluaci\u00f3n cient\u00edfica.",
+    "El cat\u00e1logo inventar\u00eda metadata JSON de primer nivel; no certifica todos los binarios, predicciones ni trazas externos. Sus hashes declarados no equivalen a verificar sus bytes.",
+    "Los resultados agregados anteriores se importan como evidencia reportada; s\u00f3lo el adaptador replay comprueba GW1..38 y suma de puntos netos. No se reejecutaron temporadas en esta consolidaci\u00f3n.",
+    "Los IC95 se importan de bootstrap pareado s\u00f3lo cuando las temporadas y deltas coinciden; no incorporan toda la selecci\u00f3n de modelos ni convierten 2025-26 en holdout intacto.",
+    "No se mezclan xP vivos con puntos realizados, ni m\u00e9tricas predictivas con PVA-38. Los experimentos predictivos/vivos siguen catalogados aunque no tengan fila de pol\u00edtica.",
+    "Los calendarios hist\u00f3ricos conservan asignaciones finales de aplazamientos; los cat\u00e1logos hist\u00f3ricos de chips son incompletos. Falta comparabilidad multitemporada completa.",
+    "Una reproducci\u00f3n o fallo tiene su propio directorio; nunca cuenta como temporada independiente. No se infiere \u00e9xito o promoci\u00f3n de la presencia de un archivo.",
+    "El benchmark no cambia modelos activos ni autoridad del harness. MLflow no se incorpora en esta fase."
+  ],
+  "predictive_panels": [
+    {
+      "description": "2025-26; misma poblaci\u00f3n reportada de puntos jugador-GW. Menor CRPS/log-score/Brier es mejor; cobertura se compara con el nominal, no se maximiza.",
+      "entries": [
+        {
+          "path": [
+            "candidate_metrics"
+          ],
+          "variant": "empirical_discrete"
+        },
+        {
+          "path": [
+            "discretized_normal_metrics"
+          ],
+          "variant": "discretized_normal"
+        }
+      ],
+      "evidence_sha256": "edf36ea99fc2eae1dc48e4babb8be1c4e45905c00bd2f5c24ce3524bc5786bc7",
+      "file": "EXP-MOVA-2026-005/external-evaluation.json",
+      "id": "exp005-external",
+      "metrics": [
+        "rows",
+        "crps_discrete",
+        "log_score",
+        "zero_brier",
+        "coverage_80"
+      ],
+      "promotion_authorized": false,
+      "values": [
+        {
+          "metrics": {
+            "coverage_80": 0.9376576453745995,
+            "crps_discrete": 0.6450383088271943,
+            "log_score": 1.0853542572277817,
+            "rows": 29338,
+            "zero_brier": 0.09501565408964362
+          },
+          "variant": "empirical_discrete"
+        },
+        {
+          "metrics": {
+            "coverage_80": 0.9373167905106006,
+            "crps_discrete": 0.7111850399609766,
+            "log_score": 1.4110692011438468,
+            "rows": 29338,
+            "zero_brier": 0.15531533327440356
+          },
+          "variant": "discretized_normal"
+        }
+      ]
+    },
+    {
+      "description": "2025-26; participaci\u00f3n al comienzo de temporada, poblaci\u00f3n definida por el experimento. No equivale a toda la temporada de EXP021.",
+      "entries": [
+        {
+          "path": [
+            "metrics",
+            0
+          ],
+          "variant": "base"
+        },
+        {
+          "path": [
+            "metrics",
+            1
+          ],
+          "variant": "prior_shift_0.5gw"
+        }
+      ],
+      "evidence_sha256": "ef12f07b2f1e7d01f92b6f64de6c92ecf2b6954ae33b4fe338ebf1bad92719f1",
+      "file": "EXP-MOVA-2026-015/external-evaluation.json",
+      "id": "exp015-external",
+      "metrics": [
+        "n",
+        "log_loss_3c",
+        "brier_p60",
+        "ece_p60"
+      ],
+      "promotion_authorized": false,
+      "values": [
+        {
+          "metrics": {
+            "brier_p60": 0.08364402692027535,
+            "ece_p60": 0.01702109781578196,
+            "log_loss_3c": 0.49220238571899516,
+            "n": 4423
+          },
+          "variant": "base"
+        },
+        {
+          "metrics": {
+            "brier_p60": 0.08367386040485696,
+            "ece_p60": 0.016759268036634706,
+            "log_loss_3c": 0.49193356281106887,
+            "n": 4423
+          },
+          "variant": "prior_shift_0.5gw"
+        }
+      ]
+    },
+    {
+      "description": "2025-26; participaci\u00f3n al comienzo de temporada, poblaci\u00f3n definida por el experimento. No equivale a toda la temporada de EXP021.",
+      "entries": [
+        {
+          "path": [
+            "predictive_metrics",
+            0
+          ],
+          "variant": "blend_0.50"
+        },
+        {
+          "path": [
+            "predictive_metrics",
+            1
+          ],
+          "variant": "control_full"
+        }
+      ],
+      "evidence_sha256": "8d8e9261b72c882e8e36f8b802300ffaead6c788a3b7c77b1012f040b90716a1",
+      "file": "EXP-MOVA-2026-017/external-evaluation.json",
+      "id": "exp017-external",
+      "metrics": [
+        "n",
+        "log_loss_3c",
+        "brier_p60",
+        "ece_p60"
+      ],
+      "promotion_authorized": false,
+      "values": [
+        {
+          "metrics": {
+            "brier_p60": 0.08252079670338064,
+            "ece_p60": 0.01540609183135987,
+            "log_loss_3c": 0.4933511979370667,
+            "n": 5128
+          },
+          "variant": "blend_0.50"
+        },
+        {
+          "metrics": {
+            "brier_p60": 0.08301856108149008,
+            "ece_p60": 0.01750302143023855,
+            "log_loss_3c": 0.4968943717386143,
+            "n": 5128
+          },
+          "variant": "control_full"
+        }
+      ]
+    },
+    {
+      "description": "2021-22; participaci\u00f3n, excluye etiquetas DGW agregadas. Menor es mejor; m\u00e9tricas de calibraci\u00f3n no sustituyen PVA.",
+      "entries": [
+        {
+          "path": [
+            "metrics",
+            0
+          ],
+          "variant": "baseline"
+        },
+        {
+          "path": [
+            "metrics",
+            1
+          ],
+          "variant": "ensemble50"
+        },
+        {
+          "path": [
+            "metrics",
+            2
+          ],
+          "variant": "participation"
+        }
+      ],
+      "evidence_sha256": "9e1a472a6d05f8f90b0bd1e8444739a24cb28dd07470cbc0779e0a05c8d14823",
+      "file": "EXP-MOVA-2026-021/2021-22-predictive.json",
+      "id": "exp021-2021-22",
+      "metrics": [
+        "n",
+        "log_loss_3c",
+        "brier_p60",
+        "ece_p60"
+      ],
+      "promotion_authorized": false,
+      "values": [
+        {
+          "metrics": {
+            "brier_p60": 0.10346306166293934,
+            "ece_p60": 0.003976081751459231,
+            "log_loss_3c": 0.5407634731348709,
+            "n": 21013
+          },
+          "variant": "baseline"
+        },
+        {
+          "metrics": {
+            "brier_p60": 0.1030870990944095,
+            "ece_p60": 0.006494125815463259,
+            "log_loss_3c": 0.5378288994231878,
+            "n": 21013
+          },
+          "variant": "ensemble50"
+        },
+        {
+          "metrics": {
+            "brier_p60": 0.10327732258842152,
+            "ece_p60": 0.004628815635252178,
+            "log_loss_3c": 0.5433282105527933,
+            "n": 21013
+          },
+          "variant": "participation"
+        }
+      ]
+    },
+    {
+      "description": "2023-24; participaci\u00f3n, excluye etiquetas DGW agregadas. Menor es mejor; m\u00e9tricas de calibraci\u00f3n no sustituyen PVA.",
+      "entries": [
+        {
+          "path": [
+            "metrics",
+            0
+          ],
+          "variant": "baseline"
+        },
+        {
+          "path": [
+            "metrics",
+            1
+          ],
+          "variant": "ensemble50"
+        },
+        {
+          "path": [
+            "metrics",
+            2
+          ],
+          "variant": "participation"
+        }
+      ],
+      "evidence_sha256": "29087fc0fc0721e4bd0f612d72ff5a0b1b122c7bba9deb819c19cca8c8017c1d",
+      "file": "EXP-MOVA-2026-021/2023-24-predictive.json",
+      "id": "exp021-2023-24",
+      "metrics": [
+        "n",
+        "log_loss_3c",
+        "brier_p60",
+        "ece_p60"
+      ],
+      "promotion_authorized": false,
+      "values": [
+        {
+          "metrics": {
+            "brier_p60": 0.0818519309999958,
+            "ece_p60": 0.008427605192379485,
+            "log_loss_3c": 0.48176428787087877,
+            "n": 27759
+          },
+          "variant": "baseline"
+        },
+        {
+          "metrics": {
+            "brier_p60": 0.08123594389366115,
+            "ece_p60": 0.007608924309932436,
+            "log_loss_3c": 0.4766756201069378,
+            "n": 27759
+          },
+          "variant": "ensemble50"
+        },
+        {
+          "metrics": {
+            "brier_p60": 0.08164964092552808,
+            "ece_p60": 0.007431879842120901,
+            "log_loss_3c": 0.4789873347088971,
+            "n": 27759
+          },
+          "variant": "participation"
+        }
+      ]
+    },
+    {
+      "description": "2024-25; participaci\u00f3n, excluye etiquetas DGW agregadas. Menor es mejor; m\u00e9tricas de calibraci\u00f3n no sustituyen PVA.",
+      "entries": [
+        {
+          "path": [
+            "metrics",
+            0
+          ],
+          "variant": "baseline"
+        },
+        {
+          "path": [
+            "metrics",
+            1
+          ],
+          "variant": "ensemble50"
+        },
+        {
+          "path": [
+            "metrics",
+            2
+          ],
+          "variant": "participation"
+        }
+      ],
+      "evidence_sha256": "42b48aa74d63c2f74adda80a393bca2f0140b74e551ce2e257e2c509f50055a3",
+      "file": "EXP-MOVA-2026-021/2024-25-predictive.json",
+      "id": "exp021-2024-25",
+      "metrics": [
+        "n",
+        "log_loss_3c",
+        "brier_p60",
+        "ece_p60"
+      ],
+      "promotion_authorized": false,
+      "values": [
+        {
+          "metrics": {
+            "brier_p60": 0.0920699869339706,
+            "ece_p60": 0.010201162370365873,
+            "log_loss_3c": 0.5184538452376632,
+            "n": 26555
+          },
+          "variant": "baseline"
+        },
+        {
+          "metrics": {
+            "brier_p60": 0.09194546398830593,
+            "ece_p60": 0.012021162337738155,
+            "log_loss_3c": 0.5156217213305492,
+            "n": 26555
+          },
+          "variant": "ensemble50"
+        },
+        {
+          "metrics": {
+            "brier_p60": 0.09162716400152382,
+            "ece_p60": 0.00935451427028417,
+            "log_loss_3c": 0.5145713258626236,
+            "n": 26555
+          },
+          "variant": "participation"
+        }
+      ]
+    },
+    {
+      "description": "2025-26; participaci\u00f3n, excluye etiquetas DGW agregadas. Menor es mejor; m\u00e9tricas de calibraci\u00f3n no sustituyen PVA.",
+      "entries": [
+        {
+          "path": [
+            "metrics",
+            0
+          ],
+          "variant": "baseline"
+        },
+        {
+          "path": [
+            "metrics",
+            1
+          ],
+          "variant": "ensemble50"
+        },
+        {
+          "path": [
+            "metrics",
+            2
+          ],
+          "variant": "participation"
+        }
+      ],
+      "evidence_sha256": "bed58f09ad768139f5fa78145fac0a9da8a1a598ac3de932677b9aef095f8f65",
+      "file": "EXP-MOVA-2026-021/2025-26-predictive.json",
+      "id": "exp021-2025-26",
+      "metrics": [
+        "n",
+        "log_loss_3c",
+        "brier_p60",
+        "ece_p60"
+      ],
+      "promotion_authorized": false,
+      "values": [
+        {
+          "metrics": {
+            "brier_p60": 0.08175835416054877,
+            "ece_p60": 0.010577200138712987,
+            "log_loss_3c": 0.4640662168384899,
+            "n": 28929
+          },
+          "variant": "baseline"
+        },
+        {
+          "metrics": {
+            "brier_p60": 0.08137833125426208,
+            "ece_p60": 0.010689510133044786,
+            "log_loss_3c": 0.46022305073680303,
+            "n": 28929
+          },
+          "variant": "ensemble50"
+        },
+        {
+          "metrics": {
+            "brier_p60": 0.08155085137175089,
+            "ece_p60": 0.011237600634547925,
+            "log_loss_3c": 0.4612687737310136,
+            "n": 28929
+          },
+          "variant": "participation"
+        }
+      ]
+    }
+  ],
+  "promotion_authorized": false,
+  "schema": "mova-internal-benchmark-v1"
+}

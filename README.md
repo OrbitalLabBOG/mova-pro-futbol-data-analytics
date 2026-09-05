@@ -81,6 +81,9 @@ En ese corte propone reservar chips, mientras el control propone Bench Boost.
 Consultar [experimento y acta de despliegue](experiments/season_value/README.md)
 para resultados, hashes y límites de promoción.
 
+El [benchmark interno de progreso](experiments/benchmark/README.md) consolida
+el historial de investigación con comparaciones por protocolo, PVA-38 e incertidumbre.
+
 ## Empezar
 
 Requiere Python 3.13.

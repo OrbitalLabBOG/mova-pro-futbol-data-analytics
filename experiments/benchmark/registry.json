@@ -1,0 +1,486 @@
+{
+  "benchmark_version": "historical-audit-v1",
+  "groups": [
+    {
+      "id": "exp003-development-v1",
+      "experiment": "EXP-MOVA-2026-003",
+      "phase": "development",
+      "files": [
+        "policy-selection.json"
+      ],
+      "control": "control_h3",
+      "seasons": [
+        "2021-22",
+        "2023-24",
+        "2024-25"
+      ],
+      "description": "Estado season-only; pol\u00edticas sin chips. Ablaci\u00f3n de horizonte, calendario y proxies.",
+      "adapter": "totals",
+      "uncertainty_paths": {
+        "season_fixture_h3": [
+          "paired_vs_control",
+          "season_fixture_h3"
+        ],
+        "season_fixture_h6": [
+          "paired_vs_control",
+          "season_fixture_h6"
+        ],
+        "season_fixture_h6_events": [
+          "paired_vs_control",
+          "season_fixture_h6_events"
+        ],
+        "season_fixture_h6_events_stable": [
+          "paired_vs_control",
+          "season_fixture_h6_events_stable"
+        ]
+      }
+    },
+    {
+      "id": "exp003-historical_holdout-v1",
+      "experiment": "EXP-MOVA-2026-003",
+      "phase": "historical_holdout",
+      "files": [
+        "holdout-result.json"
+      ],
+      "control": "control_h3",
+      "seasons": [
+        "2025-26"
+      ],
+      "description": "Holdout registrado en su momento; hoy ya consultado. No reutilizar como holdout intacto.",
+      "adapter": "holdout"
+    },
+    {
+      "id": "exp004-development-v1",
+      "experiment": "EXP-MOVA-2026-004",
+      "phase": "development",
+      "files": [
+        "policy-selection.json"
+      ],
+      "control": "season_fixture_h3",
+      "seasons": [
+        "2021-22",
+        "2023-24",
+        "2024-25"
+      ],
+      "description": "Proxies de eventos aislados sobre h3. El control es fixture_h3, no control_h3.",
+      "adapter": "totals",
+      "uncertainty_paths": {
+        "season_fixture_h3_events": [
+          "paired_events_vs_incumbent"
+        ]
+      }
+    },
+    {
+      "id": "exp009-development-v1",
+      "experiment": "EXP-MOVA-2026-009",
+      "phase": "development",
+      "files": [
+        "selection.json"
+      ],
+      "control": "season_fixture_h3",
+      "seasons": [
+        "2021-22",
+        "2023-24",
+        "2024-25"
+      ],
+      "description": "Recourse estoc\u00e1stico: conservar el resultado nulo.",
+      "adapter": "totals",
+      "uncertainty_paths": {
+        "stochastic-recourse-h3": [
+          "paired_bootstrap"
+        ]
+      }
+    },
+    {
+      "id": "exp012-development-v1",
+      "experiment": "EXP-MOVA-2026-012",
+      "phase": "development",
+      "files": [
+        "selection.json"
+      ],
+      "control": "season_fixture_h3",
+      "seasons": [
+        "2020-21",
+        "2021-22",
+        "2023-24",
+        "2024-25"
+      ],
+      "description": "Valor terminal de FT; cuatro temporadas, pol\u00edtica sin chips.",
+      "adapter": "totals",
+      "uncertainty_paths": {
+        "season_fixture_h3_terminal_ft_v1": [
+          "paired_bootstrap"
+        ]
+      }
+    },
+    {
+      "id": "exp013-development-v1",
+      "experiment": "EXP-MOVA-2026-013",
+      "phase": "development",
+      "files": [
+        "decision-development.json"
+      ],
+      "control": "stale_previous",
+      "seasons": [
+        "2021-22",
+        "2023-24",
+        "2024-25"
+      ],
+      "description": "Estado previo congelado frente a incorporaci\u00f3n causal de historia actual.",
+      "adapter": "totals",
+      "uncertainty_paths": {
+        "append_full": [
+          "paired_bootstrap"
+        ]
+      }
+    },
+    {
+      "id": "exp013-external_diagnostic-v1",
+      "experiment": "EXP-MOVA-2026-013",
+      "phase": "external_diagnostic",
+      "files": [
+        "external-evaluation.json"
+      ],
+      "control": "stale_previous",
+      "seasons": [
+        "2025-26"
+      ],
+      "description": "Estado previo congelado frente a incorporaci\u00f3n causal de historia actual. Temporada externa ya consultada.",
+      "adapter": "totals",
+      "object_path": [
+        "decision"
+      ],
+      "uncertainty_paths": {
+        "append_full": [
+          "decision",
+          "paired_bootstrap"
+        ]
+      }
+    },
+    {
+      "id": "exp017-development-v1",
+      "experiment": "EXP-MOVA-2026-017",
+      "phase": "development",
+      "files": [
+        "decision-development.json"
+      ],
+      "control": "control_full",
+      "seasons": [
+        "2021-22",
+        "2023-24",
+        "2024-25"
+      ],
+      "description": "Ensemble continuidad/reinicio; distinto control al EXP003.",
+      "adapter": "totals",
+      "uncertainty_paths": {
+        "blend_0.50": [
+          "paired_bootstrap"
+        ]
+      }
+    },
+    {
+      "id": "exp017-external_diagnostic-v1",
+      "experiment": "EXP-MOVA-2026-017",
+      "phase": "external_diagnostic",
+      "files": [
+        "external-evaluation.json"
+      ],
+      "control": "control_full",
+      "seasons": [
+        "2025-26"
+      ],
+      "description": "Ensemble continuidad/reinicio; distinto control al EXP003. Temporada externa ya consultada.",
+      "adapter": "totals",
+      "object_path": [
+        "decision"
+      ],
+      "uncertainty_paths": {
+        "blend_0.50": [
+          "decision",
+          "paired_bootstrap"
+        ]
+      }
+    },
+    {
+      "id": "exp021-development-v1",
+      "experiment": "EXP-MOVA-2026-021",
+      "phase": "development",
+      "files": [
+        "2021-22-baseline-replay.json",
+        "2021-22-participation-replay.json",
+        "2023-24-baseline-replay.json",
+        "2023-24-participation-replay.json",
+        "2024-25-baseline-replay.json",
+        "2024-25-participation-replay.json"
+      ],
+      "control": "baseline",
+      "seasons": [
+        "2021-22",
+        "2023-24",
+        "2024-25"
+      ],
+      "description": "Participaci\u00f3n reciente; estado append_full, h3, top20, CBC 3s, sin chips hist\u00f3ricos.",
+      "adapter": "replays",
+      "uncertainty_file": "paired-evaluation.json",
+      "uncertainty_paths": {
+        "participation": [
+          "participation"
+        ]
+      }
+    },
+    {
+      "id": "exp021-external_diagnostic-v1",
+      "experiment": "EXP-MOVA-2026-021",
+      "phase": "external_diagnostic",
+      "files": [
+        "2025-26-baseline-replay.json",
+        "2025-26-runtime_matrix-replay.json",
+        "2025-26-season_value-replay.json",
+        "2025-26-combined-replay.json"
+      ],
+      "control": "baseline",
+      "seasons": [
+        "2025-26"
+      ],
+      "description": "Valor conjunto de chips y participaci\u00f3n; cat\u00e1logo habilitado, h3, top20, CBC 3s. No comparable con EXP003.",
+      "adapter": "replays",
+      "uncertainty_file": "paired-evaluation.json",
+      "uncertainty_paths": {
+        "season_value": [
+          "season_value"
+        ],
+        "combined": [
+          "combined"
+        ]
+      }
+    }
+  ],
+  "limitations": [
+    "Los grupos son comparaciones hist\u00f3ricas separadas, no un ranking global ni una nueva evaluaci\u00f3n cient\u00edfica.",
+    "El cat\u00e1logo inventar\u00eda metadata JSON de primer nivel; no certifica todos los binarios, predicciones ni trazas externos. Sus hashes declarados no equivalen a verificar sus bytes.",
+    "Los resultados agregados anteriores se importan como evidencia reportada; s\u00f3lo el adaptador replay comprueba GW1..38 y suma de puntos netos. No se reejecutaron temporadas en esta consolidaci\u00f3n.",
+    "Los IC95 se importan de bootstrap pareado s\u00f3lo cuando las temporadas y deltas coinciden; no incorporan toda la selecci\u00f3n de modelos ni convierten 2025-26 en holdout intacto.",
+    "No se mezclan xP vivos con puntos realizados, ni m\u00e9tricas predictivas con PVA-38. Los experimentos predictivos/vivos siguen catalogados aunque no tengan fila de pol\u00edtica.",
+    "Los calendarios hist\u00f3ricos conservan asignaciones finales de aplazamientos; los cat\u00e1logos hist\u00f3ricos de chips son incompletos. Falta comparabilidad multitemporada completa.",
+    "Una reproducci\u00f3n o fallo tiene su propio directorio; nunca cuenta como temporada independiente. No se infiere \u00e9xito o promoci\u00f3n de la presencia de un archivo.",
+    "El benchmark no cambia modelos activos ni autoridad del harness. MLflow no se incorpora en esta fase."
+  ],
+  "predictive_panels": [
+    {
+      "id": "exp005-external",
+      "file": "EXP-MOVA-2026-005/external-evaluation.json",
+      "entries": [
+        {
+          "variant": "empirical_discrete",
+          "path": [
+            "candidate_metrics"
+          ]
+        },
+        {
+          "variant": "discretized_normal",
+          "path": [
+            "discretized_normal_metrics"
+          ]
+        }
+      ],
+      "metrics": [
+        "rows",
+        "crps_discrete",
+        "log_score",
+        "zero_brier",
+        "coverage_80"
+      ],
+      "description": "2025-26; misma poblaci\u00f3n reportada de puntos jugador-GW. Menor CRPS/log-score/Brier es mejor; cobertura se compara con el nominal, no se maximiza."
+    },
+    {
+      "id": "exp015-external",
+      "file": "EXP-MOVA-2026-015/external-evaluation.json",
+      "entries": [
+        {
+          "variant": "base",
+          "path": [
+            "metrics",
+            0
+          ]
+        },
+        {
+          "variant": "prior_shift_0.5gw",
+          "path": [
+            "metrics",
+            1
+          ]
+        }
+      ],
+      "metrics": [
+        "n",
+        "log_loss_3c",
+        "brier_p60",
+        "ece_p60"
+      ],
+      "description": "2025-26; participaci\u00f3n al comienzo de temporada, poblaci\u00f3n definida por el experimento. No equivale a toda la temporada de EXP021."
+    },
+    {
+      "id": "exp017-external",
+      "file": "EXP-MOVA-2026-017/external-evaluation.json",
+      "entries": [
+        {
+          "variant": "blend_0.50",
+          "path": [
+            "predictive_metrics",
+            0
+          ]
+        },
+        {
+          "variant": "control_full",
+          "path": [
+            "predictive_metrics",
+            1
+          ]
+        }
+      ],
+      "metrics": [
+        "n",
+        "log_loss_3c",
+        "brier_p60",
+        "ece_p60"
+      ],
+      "description": "2025-26; participaci\u00f3n al comienzo de temporada, poblaci\u00f3n definida por el experimento. No equivale a toda la temporada de EXP021."
+    },
+    {
+      "id": "exp021-2021-22",
+      "file": "EXP-MOVA-2026-021/2021-22-predictive.json",
+      "entries": [
+        {
+          "variant": "baseline",
+          "path": [
+            "metrics",
+            0
+          ]
+        },
+        {
+          "variant": "ensemble50",
+          "path": [
+            "metrics",
+            1
+          ]
+        },
+        {
+          "variant": "participation",
+          "path": [
+            "metrics",
+            2
+          ]
+        }
+      ],
+      "metrics": [
+        "n",
+        "log_loss_3c",
+        "brier_p60",
+        "ece_p60"
+      ],
+      "description": "2021-22; participaci\u00f3n, excluye etiquetas DGW agregadas. Menor es mejor; m\u00e9tricas de calibraci\u00f3n no sustituyen PVA."
+    },
+    {
+      "id": "exp021-2023-24",
+      "file": "EXP-MOVA-2026-021/2023-24-predictive.json",
+      "entries": [
+        {
+          "variant": "baseline",
+          "path": [
+            "metrics",
+            0
+          ]
+        },
+        {
+          "variant": "ensemble50",
+          "path": [
+            "metrics",
+            1
+          ]
+        },
+        {
+          "variant": "participation",
+          "path": [
+            "metrics",
+            2
+          ]
+        }
+      ],
+      "metrics": [
+        "n",
+        "log_loss_3c",
+        "brier_p60",
+        "ece_p60"
+      ],
+      "description": "2023-24; participaci\u00f3n, excluye etiquetas DGW agregadas. Menor es mejor; m\u00e9tricas de calibraci\u00f3n no sustituyen PVA."
+    },
+    {
+      "id": "exp021-2024-25",
+      "file": "EXP-MOVA-2026-021/2024-25-predictive.json",
+      "entries": [
+        {
+          "variant": "baseline",
+          "path": [
+            "metrics",
+            0
+          ]
+        },
+        {
+          "variant": "ensemble50",
+          "path": [
+            "metrics",
+            1
+          ]
+        },
+        {
+          "variant": "participation",
+          "path": [
+            "metrics",
+            2
+          ]
+        }
+      ],
+      "metrics": [
+        "n",
+        "log_loss_3c",
+        "brier_p60",
+        "ece_p60"
+      ],
+      "description": "2024-25; participaci\u00f3n, excluye etiquetas DGW agregadas. Menor es mejor; m\u00e9tricas de calibraci\u00f3n no sustituyen PVA."
+    },
+    {
+      "id": "exp021-2025-26",
+      "file": "EXP-MOVA-2026-021/2025-26-predictive.json",
+      "entries": [
+        {
+          "variant": "baseline",
+          "path": [
+            "metrics",
+            0
+          ]
+        },
+        {
+          "variant": "ensemble50",
+          "path": [
+            "metrics",
+            1
+          ]
+        },
+        {
+          "variant": "participation",
+          "path": [
+            "metrics",
+            2
+          ]
+        }
+      ],
+      "metrics": [
+        "n",
+        "log_loss_3c",
+        "brier_p60",
+        "ece_p60"
+      ],
+      "description": "2025-26; participaci\u00f3n, excluye etiquetas DGW agregadas. Menor es mejor; m\u00e9tricas de calibraci\u00f3n no sustituyen PVA."
+    }
+  ]
+}
