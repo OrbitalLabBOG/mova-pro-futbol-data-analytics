@@ -5952,3 +5952,41 @@ python -m experiments.data_ground_truth.footieviz_source_audit \
   --base "$RAW_HISTORY_ROOT" \
   --out "$RAW_HISTORY_ROOT/footieviz-audit-g106-v1"
 ```
+
+
+## G107 — CSV de RProgrammingWorkshop: cobertura y semántica
+
+Se adquirieron seis archivos (83.285 bytes) de
+[nvenkataraman1/RProgrammingWorkshop](https://github.com/nvenkataraman1/RProgrammingWorkshop/tree/ce4510d5e2d533ce814c322d44038c0886c21a95),
+fijados al commit `ce4510d5e2d533ce814c322d44038c0886c21a95`: dos CSV,
+documentación del taller y contexto R, conservados sin ejecutar.
+
+- `sessions/w4/soccer.csv`: encabezado de 64 columnas y 17 registros parseados
+  con anchos de 34 a 137. No forma una tabla válida; sus fragmentos R no se
+  evalúan ni se reconstruyen automáticamente como observaciones.
+- `sessions/w5/data/soccer.csv`: 567 perfiles, 29 columnas y estructura válida.
+  Contiene estadísticas acumuladas, precios y pronósticos, pero carece de ID,
+  código oficial de jugador, jornada, temporada y fecha de captura.
+
+Los 567 nombres completos tienen candidato único en la captura G100
+`data/players.1424275568.json` (SHA `b499ccddd7bcbcb78e9c429e597efe797785ead16054ec6252e07ee368737274`).
+La comparación conserva fuente y referencia para dieciséis campos numéricos;
+335 puntos totales, 325 minutos y 532 precios coinciden. No se atribuyen las
+diferencias a errores: se desconoce el período del CSV. Coincidencia de nombre
+no verifica identidad oficial y la referencia es un estado archivado, no GT final.
+Los campos de pronóstico permanecen fuera de la comparación de resultados.
+
+Los documentos del curso declaran fechas de enero/febrero de 2016. Esto no
+acredita cuándo se capturaron los datos ni permite asignarles una temporada.
+No se admiten nuevas etiquetas, identidades verificadas o ventanas predeadline.
+
+[Resultados G107](results-g107.json): reporte, inventario y candidatos idénticos
+en dos corridas. Fuente externa al Git: `workshop-source-g107`; resultados:
+`workshop-audit-g107-v1` y `-v2`. Todavía no incluidos en el corte G104.
+GT, entrenamiento y producción permanecen sin cambios.
+
+```bash
+python -m experiments.data_ground_truth.workshop_source_audit \
+  --base "$RAW_HISTORY_ROOT" \
+  --out "$RAW_HISTORY_ROOT/workshop-audit-g107-v1"
+```
