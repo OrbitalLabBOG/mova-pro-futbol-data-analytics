@@ -6114,3 +6114,45 @@ python -m experiments.data_ground_truth.geek_publication \
   --base "$RAW_HISTORY_ROOT" \
   --out "$RAW_HISTORY_ROOT/geek-publication-audit-g110-v1"
 ```
+
+
+## G111 — Testigos posteriores para los cuatro conflictos de reloj
+
+Se preservó un bundle del repositorio público `jokecamp/epl-fantasy-geek`
+(13.348.209 bytes) y se verificó con `git fsck`. Para los cuatro casos que G110
+mantenía sin `available_at`, se buscaron pushes posteriores al timestamp del
+committer entre los eventos ya archivados. No se corrigieron relojes ni se
+introdujeron timestamps calculados.
+
+Dos casos se acreditan mediante descendencia Git: el commit original está en
+la historia del head publicado posteriormente. Los otros dos se acreditan por
+igualdad exacta del blob: el head público de la rama desplegada contiene los
+mismos bytes en `js/data.json`. En este segundo caso se prueba publicación del
+contenido, no del commit de origen. La comprobación vincula SHA-256 del raw,
+SHA-1 del objeto Git, archivo, head y evento público; no usa sólo similitud textual.
+
+| Snapshot original | Tipo de testigo | Disponibilidad acreditada UTC |
+| --- | --- | --- |
+| `be5872ab…` | Blob idéntico en head público | 2016-05-30 15:28:35 |
+| `4c5c7360…` | Commit ancestro de head público | 2016-05-06 17:29:23 |
+| `ea5e97d8…` | Commit ancestro de head público | 2016-04-26 02:03:58 |
+| `17dc21d5…` | Blob idéntico en head público | 2015-11-27 17:39:16 |
+
+La cobertura combinada sube de 94 a **98 snapshots**, con **65.163 estados**
+(+2.765). El candidato inicial de 2014 sigue sin testigo. Algunas fechas
+posteriores pierden frescura; no se adelantan para cubrir deadlines anteriores.
+G110 conserva los conflictos de reloj originales. Continúan sin selección por
+deadline ni admisión de campos al entrenamiento.
+
+[Resultados G111](results-g111.json) fija bundle, reporte padre, testigos y
+extensiones. Tres artefactos idénticos al reproducir usando un clon independiente
+del bundle, sin acceso Git de red. Bundle en `geek-git-evidence-g111`;
+resultados en `geek-publication-extension-g111-v1` y `-v2`, fuera de Git y aún
+fuera del corte G104. GT y producción intactos.
+
+```bash
+python -m experiments.data_ground_truth.geek_publication_extension \
+  --base "$RAW_HISTORY_ROOT" \
+  --repo "$RAW_HISTORY_ROOT/geek-git-g111" \
+  --out "$RAW_HISTORY_ROOT/geek-publication-extension-g111-v1"
+```

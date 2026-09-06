@@ -25,7 +25,8 @@ precios y acumulados conservados sin asignar disponibilidad predeadline. G109
 contrasta su contexto de clubes con 2014/15 y 2015/16: 118.549 pares ID/código
 coinciden con GT y 85 discrepancias permanecen identificadas. G110 acredita
 publicación externa para 94 snapshots (62.398 estados), sin asignar deadlines
-ni habilitar entrenamiento.
+ni habilitar entrenamiento. G111 añade cuatro testigos posteriores verificados
+y eleva la cobertura de publicación a 98 snapshots y 65.163 estados.
 
 G107: dos CSV de un taller recuperados: uno tiene estructura inválida; el otro,
 567 perfiles acumulados sin ID, jornada ni fecha de captura. Comparación por
@@ -159,7 +160,7 @@ de modelos por hash y exportación revisable, sin promover modelos al runtime.
 
 La capa experimental conserva los datos crudos fuera de Git, con manifiestos,
 SHA-256, fuentes fijadas por commit y auditorías reproducibles. El
-[registro de gates G1–G110](experiments/data_ground_truth/README.md) contiene
+[registro de gates G1–G111](experiments/data_ground_truth/README.md) contiene
 adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 
 | Capa | Cobertura verificada | Límite pendiente |
