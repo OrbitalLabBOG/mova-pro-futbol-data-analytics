@@ -2261,3 +2261,48 @@ Las pruebas cubren códigos sin nombre coincidente, variantes no admitidas,
 colisiones, conservación de valores, población y exclusión de managers en v5/v6.
 **1.539 passed, 1 skipped, 79 deselected**.
 [Resultados G41](results-g41.json).
+
+## Gate G42: perfiles históricos adicionales y GT v7 experimental
+
+`discovery_profile_extension.py` reproduce G41 y audita los **620 perfiles** del
+[dump histórico FPL de clwatkins](https://github.com/clwatkins/fantasy_premier_league/blob/aa8e6b99aac8f02cc85bb07ac0c3a3a655c0e993/Data/FPL_API_Dump.json),
+archivado en la capa raw. SHA-256 del cuerpo:
+`b057bf1a5567d9b474fa59b5303beb5d8a3a186f85837ccf1b3c406942ec0639`.
+La fuente conserva fecha de descarga, revisión y disponibilidad histórica desconocida.
+El diccionario usa nombres visibles como claves; podría omitir homónimos y no
+se considera prueba de población completa.
+
+De los 27 candidatos pendientes en GT v6, **tres coinciden por código y nombre
+completo**: Doneil Henry, Jamal Blackman y Lewis Kinsella. Cambian únicamente
+los tres campos de identidad de **30 filas existentes**. Quedan 23 jugadores
+sin perfil y Matthew/Matt Macey como variante pendiente: **24 jugadores y 421
+filas** con identidad limitada a 2014/15. La partición tiene 24.455 de 24.876
+filas con código enlazado (98,31 %). No se incorporan estadísticas futuras como
+features ni se inventa una fecha de disponibilidad.
+
+GT v7 experimental:
+`d4baf849fb4a051be103f8c469e61a4753edb0b4004f980a000fe5c86ef573db`.
+Conserva GT v6 como padre inmutable, las **303.126 filas de jugadores de doce
+temporadas** y las 322 filas separadas de managers. No cambia puntos, minutos,
+particiones temporales, modelos o producción. El puntero documental
+[current-labels.json](current-labels.json) señala esta versión experimental.
+
+```bash
+python -m experiments.data_ground_truth.discovery_profile_extension \
+  --base-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments \
+  --out /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/discovery-profile-extension-v1 \
+  --datasets-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/training-datasets
+```
+
+Reporte, identidades y cambios se reprodujeron byte por byte en
+`discovery-profile-extension-v2`. Los quince archivos del paquete son idénticos
+al reconstruirlo en `g42-reproduced-datasets`. La suite verifica también que v7
+rechaza managers en particiones de jugadores: **1.542 passed, 1 skipped,
+79 deselected**. [Resultados G42](results-g42.json).
+
+La búsqueda complementaria de fuentes públicas no acreditó otra temporada FPL
+completa en este gate. El triage de Orbix Research devolvió resultados ajenos al
+tema, por lo que no se incorporan como evidencia científica. El siguiente foco
+con mayor utilidad para el benchmark es la cobertura y frescura anterior al
+deadline, y la semántica de los acumulados de GW1. Resolver identidades de filas
+sin minutos no demuestra una mejora predictiva ni cierra esas brechas.

@@ -41,7 +41,7 @@ def test_existing_identity_collision_and_wrong_population_rejected():
     with pytest.raises(ValueError,match='population'):update_rows([row()],[dict(accepted(),reference_rows=2)])
 
 
-@pytest.mark.parametrize('version',['fpl-labels-v5','fpl-labels-v6'])
+@pytest.mark.parametrize('version',['fpl-labels-v5','fpl-labels-v6','fpl-labels-v7'])
 def test_player_partition_guard_remains_active_in_derived_gt(tmp_path,version):
     import csv,gzip,io,json
     from experiments.data_ground_truth.raw import digest
