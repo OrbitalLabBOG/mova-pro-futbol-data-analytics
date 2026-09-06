@@ -4403,7 +4403,7 @@ requieren otra evidencia independiente; no se reduce el mínimo de partidos.
 
 ## G78 — Archivo consolidado y restauración independiente
 
-El corte [current-data-archive.json](current-data-archive.json) reúne el bundle
+El corte histórico G78, fijado en [results-g78.json](results-g78.json), reúne el bundle
 G55 inmutable, una extensión de fuentes/documentos y un grupo separado de
 investigación StatsBomb. El registro explícito
 [archive-cut-g78.json](archive-cut-g78.json) fija inventarios de **39 directorios**
@@ -4932,3 +4932,68 @@ No se recuperaron nuevas etiquetas ni se admitieron estados al benchmark.
 GT v7, runtime y archivo portable G78 permanecen sin cambios. El avance permite
 investigar elegibilidad y resolver variantes con evidencia explícita; aún falta
 el contrato temporal que permita usar estos estados como entradas históricas.
+
+## G87 — Corte portable ampliado y replay desde restauración
+
+El puntero [current-data-archive.json](current-data-archive.json) selecciona ahora
+el corte `93bc739476110695e383a326c81e0c057837c4b8248ebfc2a47bfe39f486d737`.
+El corte G78 permanece intacto y su descriptor fue comprobado contra su SHA
+anterior. El nuevo registro [archive-cut-g87.json](archive-cut-g87.json) conserva
+los inventarios previos y añade fuentes y auditorías de G79–G86, incluidos los
+2.524 snapshots Azure completos y sus receipts.
+
+| Propiedad del nuevo corte | Resultado |
+| --- | ---: |
+| Directorios con inventario fijado | 54 |
+| Archivos explícitos adicionales | 38 |
+| Rutas restaurables | 35.446 |
+| Contenidos únicos | 32.597 |
+| Bytes de contenido único | 6.333.636.927 |
+| Referencias de fuentes verificadas contra bytes incluidos | 3.951 |
+
+`data_archive_cut.py` acepta las referencias Azure con tamaño anidado en el
+inventario, comprobando contenedor y URL esperados. La verificación recalcula
+además cantidad y bytes de contenidos únicos: no basta con que los conteos del
+descriptor acompañen un hash coherente. Conserva grupos separados, restricciones
+de derechos, rechazo de symlinks, archivos inconclusos y destinos existentes.
+
+Se preserva el grupo de investigación **StatsBomb Open Data (Hudl)**, sin promover
+sus permisos a entrenamiento comercial, runtime o publicación del corpus.
+
+<img src="https://static.hudl.com/craft/productAssets/statsbomb_icon.svg" alt="Hudl StatsBomb" width="40" height="40">
+
+La restauración en `restored-data-g87-v1` produjo copias independientes de las
+35.446 rutas y cotejó su hash/tamaño. Con esa raíz restaurada se ejecutaron G85
+y G86 usando el código versionado del repositorio. Los dos reportes y sus seis
+artefactos son idénticos byte por byte a los preservados; esos replays no usaron
+los directorios originales de adquisición. El puntero se actualizó después de
+estas comprobaciones.
+
+```bash
+python -m experiments.data_ground_truth.data_archive_cut build \
+  --base "$DATA_BASE" \
+  --registry experiments/data_ground_truth/archive-cut-g87.json \
+  --repository-root "$PWD" --out "$DATA_BASE/data-archives"
+python -m experiments.data_ground_truth.data_archive_cut restore \
+  --package "$DATA_BASE/data-archives/93bc739476110695e383a326c81e0c057837c4b8248ebfc2a47bfe39f486d737" \
+  --out "$DATA_BASE/restored-data-g87-new"
+python -m experiments.data_ground_truth.azure_gt_identity \
+  --base "$DATA_BASE/restored-data-g87-new" \
+  --out "$DATA_BASE/replayed-g85-new"
+python -m experiments.data_ground_truth.azure_observation_brackets \
+  --base "$DATA_BASE/restored-data-g87-new" \
+  --out "$DATA_BASE/replayed-g86-new"
+```
+
+[Resultados G87](results-g87.json) fija descriptor, padre y hashes de los replays.
+Suite completa: **1.679 passed, 1 skipped, 79 deselected**, 33,03 s. Las pruebas
+nuevas rechazan referencias Azure ajenas/tamaños inválidos y conteos alterados
+aun cuando se recalcula el hash del descriptor.
+
+Alcance: archivo interno de datos/documentos seleccionados y restauración local;
+no acredita backup externo, disponibilidad predeadline ni reproducción de todos
+los gates históricos. G80 conserva sus proyecciones y receipts horarios, sin
+incorporar aquí todos los payloads comprimidos originales de esas consultas.
+Los directorios de modelos y operaciones privadas siguen fuera del corte.
+No hubo nuevas descargas, etiquetas, entrenamiento o cambios productivos. GT v7
+mantiene 303.126 filas y doce temporadas; G55 continúa como bundle histórico.

@@ -6,6 +6,7 @@ from pathlib import Path
 import shutil
 import tempfile
 
+from experiments.data_ground_truth.azure_history import ACCOUNT, CONTAINERS
 from experiments.data_ground_truth.raw import digest
 from experiments.data_ground_truth.raw_bundle import canonical, hashfile, safe, verify_bundle
 from experiments.data_ground_truth.training_dataset import checked
@@ -48,6 +49,12 @@ def data_references(manifest):
     for row in records:
         if 'error' in row:failed+=1;continue
         if 'sha256' in row and 'bytes' in row:references.append((row['sha256'],row['bytes']))
+        elif 'listing_item' in row and 'sha256' in row:
+            item=row['listing_item'];container=row.get('container')
+            if container not in CONTAINERS or row.get('url')!=ACCOUNT+'/'+container+'/'+item.get('name',''):
+                raise ValueError('unreviewed Azure source reference')
+            if type(item.get('bytes')) is not int or item['bytes']<=0:raise ValueError('invalid Azure source size')
+            references.append((row['sha256'],item['bytes']))
         elif 'compressed_sha256' in row:references.append((row['compressed_sha256'],row['compressed_bytes']))
         else:raise ValueError('unsupported documentary source record')
     return references,failed
@@ -132,6 +139,9 @@ def verify(package):
         manifests.append(manifest)
     merged=merge_files(manifests)
     if len(merged)!=cut['restoration_paths']:raise ValueError('archive path count differs')
+    contents={r['sha256']:r['bytes'] for r in merged.values()}
+    if len(contents)!=cut['unique_content_objects'] or sum(contents.values())!=cut['unique_content_bytes']:
+        raise ValueError('archive content counts differ')
     return cut,manifests
 
 

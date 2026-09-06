@@ -47,3 +47,23 @@ def test_publication_fetch_requires_pinned_safe_source_before_network():
     for url in ('http://data.gharchive.org/2025-10-21-6.json.gz','https://example.org/data','https://data.gharchive.org/2025-10-21-6.json.gz?token=x'):
         with pytest.raises(ValueError):validate(record|{'url':url})
     with pytest.raises(ValueError):validate(record|{'compressed_sha256':'../other'})
+
+
+def test_azure_references_use_pinned_listing_size_and_reject_other_hosts():
+    from experiments.data_ground_truth.data_archive_cut import data_references
+    row=dict(sha256='a'*64,container='2020-fpl-data',listing_item=dict(name='2020-01-01T00-00-00Z_data.json',bytes=12),
+        url='https://martinfplstats1337.blob.core.windows.net/2020-fpl-data/2020-01-01T00-00-00Z_data.json')
+    assert data_references(dict(records=[row]))==([('a'*64,12)],0)
+    with pytest.raises(ValueError,match='unreviewed'):
+        data_references(dict(records=[row|{'url':'https://example.org/other'}]))
+    with pytest.raises(ValueError,match='size'):
+        data_references(dict(records=[row|{'listing_item':row['listing_item']|{'bytes':True}}]))
+
+
+def test_archive_recomputes_content_counts_even_with_rehashed_descriptor(tmp_path):
+    base,registry=fixture_registry(tmp_path);package=build(base,registry,tmp_path,tmp_path/'packages')
+    cut=json.loads((package/'cut.json').read_text());cut['unique_content_bytes']+=1
+    cut['cut_id']=digest(canonical({k:v for k,v in cut.items() if k!='cut_id'}))
+    (package/'cut.json').write_bytes(canonical(cut))
+    with pytest.raises(ValueError,match='content counts'):
+        verify(package)

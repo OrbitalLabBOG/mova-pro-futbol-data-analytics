@@ -1,0 +1,685 @@
+{
+  "version": 1,
+  "legacy": {
+    "path": "corpus-bundles/4830e5a2347de3eaaab16ffef028ef1de354a19d0d08db72f84c8eec0424ee52",
+    "bundle_id": "4830e5a2347de3eaaab16ffef028ef1de354a19d0d08db72f84c8eec0424ee52",
+    "manifest_sha256": "dc93f3b2a5ea45434755af097a65a1b018981c5ea0f4760f6608f4f2d9ca2561"
+  },
+  "directories": [
+    {
+      "directory": "bootstrap-capture-code-history",
+      "group": "source_extension",
+      "role": "source_or_documentary_evidence",
+      "inventory_sha256": "451341c44f025e0f04a29f4bde0ba98f94205b4602d4db438703b58f5cd7eb99"
+    },
+    {
+      "directory": "core-competition-reference-v1",
+      "group": "source_extension",
+      "role": "source_or_documentary_evidence",
+      "inventory_sha256": "df9f8f0c4c8be45bb8844d7c91e7c1f9033b2a9c63dabf73c378ed7cbe9b8ea1"
+    },
+    {
+      "directory": "core-defensive-discovery-g63",
+      "group": "source_extension",
+      "role": "source_or_documentary_evidence",
+      "inventory_sha256": "65d0c50dab2cb484b292e32c8681f97d46cd461501e0e950c582190d5653821e"
+    },
+    {
+      "directory": "core-defensive-history-g63",
+      "group": "source_extension",
+      "role": "source_or_documentary_evidence",
+      "inventory_sha256": "78d7801247127d34243b120c47f244e4a8ea960dc6361617798c3de7e48e823d"
+    },
+    {
+      "directory": "core-detail-gap-history-g66",
+      "group": "source_extension",
+      "role": "source_or_documentary_evidence",
+      "inventory_sha256": "02551115b048f727bada6ff1f71ef56e97cde83e48229361a5f15fe59a3871cb"
+    },
+    {
+      "directory": "core-lineup-history-g65",
+      "group": "source_extension",
+      "role": "source_or_documentary_evidence",
+      "inventory_sha256": "53d5681facfb09d9a44635f91ae9e5a07654146bfe32cde4457dcc84f7ec1908"
+    },
+    {
+      "directory": "core-match-details-g64",
+      "group": "source_extension",
+      "role": "source_or_documentary_evidence",
+      "inventory_sha256": "a378db586ba0a15441d6fd8f97661478f9c88c1bbb34044424a5321765612dc7"
+    },
+    {
+      "directory": "defensive-rule-evidence-g61",
+      "group": "source_extension",
+      "role": "source_or_documentary_evidence",
+      "inventory_sha256": "4f6e16edda27ff8338cb9bd930479f0408979716fe1f3fd1559613c9808e8139"
+    },
+    {
+      "directory": "differential-source-g57",
+      "group": "source_extension",
+      "role": "source_or_documentary_evidence",
+      "inventory_sha256": "8d59019bb9fbb48f898b9e11dd11b2d9972cfdb8d4826ca0ddd4208ef2ae6cfc"
+    },
+    {
+      "directory": "fixture-publication-followup-v1",
+      "group": "source_extension",
+      "role": "source_or_documentary_evidence",
+      "inventory_sha256": "7b8beb7f3e67aa95bc92bc9692aea4c909fedff3cfa1767cb152bba1ca531d47"
+    },
+    {
+      "directory": "historical-discovery-g56",
+      "group": "source_extension",
+      "role": "source_or_documentary_evidence",
+      "inventory_sha256": "afcb5b50617e11e314ba621782fa113c82b79682a03a0ef6d48ce50193fd3d05"
+    },
+    {
+      "directory": "identity-name-evidence-g75",
+      "group": "source_extension",
+      "role": "source_or_documentary_evidence",
+      "inventory_sha256": "ac2dca2afa41517003feb1b6d97c5b02e874742a0e9663a6905c615a6f6db5c6"
+    },
+    {
+      "directory": "identity-name-evidence-g76",
+      "group": "source_extension",
+      "role": "source_or_documentary_evidence",
+      "inventory_sha256": "003e7831d1cf4bd4ee9d00999c469db6c3bfe4909b0629ac3986b930d472ab8e"
+    },
+    {
+      "directory": "kickoff-delay-reference-v1",
+      "group": "source_extension",
+      "role": "source_or_documentary_evidence",
+      "inventory_sha256": "cda7c9ff40e1e28aa18ce1774895c8ea96f25ad52eb234f0f195da895b61f68a"
+    },
+    {
+      "directory": "legacy-scoring-audit-v1",
+      "group": "statsbomb_research",
+      "role": "derived_research_lineage",
+      "inventory_sha256": "73d7c5fa5ce1e260e4ac651e8293df302eb6e98f231f427885d35031fc478f5c"
+    },
+    {
+      "directory": "official-calendar-pdf-extraction-v1",
+      "group": "source_extension",
+      "role": "source_or_documentary_evidence",
+      "inventory_sha256": "83db044afafc24f755902c4a0e96d6f01c13a7fb0617831bfd6414f8a28aa757"
+    },
+    {
+      "directory": "official-calendar-pdf-extraction-v2",
+      "group": "source_extension",
+      "role": "source_or_documentary_evidence",
+      "inventory_sha256": "f1dce32560326f7735c74cfbf0e3327dce52084bbe00e56d73960932d70d032a"
+    },
+    {
+      "directory": "official-calendar-pdf-extraction-v3",
+      "group": "source_extension",
+      "role": "source_or_documentary_evidence",
+      "inventory_sha256": "f1dce32560326f7735c74cfbf0e3327dce52084bbe00e56d73960932d70d032a"
+    },
+    {
+      "directory": "preseason-transfer-reference-v1",
+      "group": "source_extension",
+      "role": "source_or_documentary_evidence",
+      "inventory_sha256": "67d593b59c7abbc58e2d371961b28ed68caabfad625b49f89354dccb3c941a98"
+    },
+    {
+      "directory": "publication-hour-source-g78",
+      "group": "source_extension",
+      "role": "source_or_documentary_evidence",
+      "inventory_sha256": "f4f122fa07b1f19b623ae9f82b0e41c5f8c7dbb3cc7ee8a46f9e764d5fd4c998"
+    },
+    {
+      "directory": "rule-editorial-reference-v1",
+      "group": "source_extension",
+      "role": "source_or_documentary_evidence",
+      "inventory_sha256": "c61f2bc53bf63f96659c55afcc26b324b4ee4c172598bc4b2f4688a727550953"
+    },
+    {
+      "directory": "scoring-evidence-g73",
+      "group": "source_extension",
+      "role": "source_or_documentary_evidence",
+      "inventory_sha256": "6e25aaecd49cab7a01f6f238140413e7ee3a27e9b33928b04468b5244acab126"
+    },
+    {
+      "directory": "statsbomb-alias-crosswalk-v2",
+      "group": "statsbomb_research",
+      "role": "derived_research_lineage",
+      "inventory_sha256": "1756b93aa8f52126f6c88af90d4636f134695ddb423fc927a9893559916a4e1a"
+    },
+    {
+      "directory": "statsbomb-code-recovery-goals-v1",
+      "group": "statsbomb_research",
+      "role": "derived_research_lineage",
+      "inventory_sha256": "b731819a27253782c5ef1214358fdc99e5453797840beee8aec83687c2633c62"
+    },
+    {
+      "directory": "statsbomb-code-recovery-v2",
+      "group": "statsbomb_research",
+      "role": "derived_research_lineage",
+      "inventory_sha256": "e7c2239433a2c2015063639f1aa5c8d95243455645c4296d96e0b212d74cfca3"
+    },
+    {
+      "directory": "statsbomb-coverage-v2",
+      "group": "statsbomb_research",
+      "role": "derived_research_lineage",
+      "inventory_sha256": "b8de5aa098024ee6d32ced0bcd7e405c6723a2211a618b540e9293e387757bff"
+    },
+    {
+      "directory": "statsbomb-fixture-crosswalk-v2",
+      "group": "statsbomb_research",
+      "role": "derived_research_lineage",
+      "inventory_sha256": "4a4e59fa6bb610f80423de03980fcdbefba2a07a0985c3465135a64d9f0fef34"
+    },
+    {
+      "directory": "statsbomb-fpl-name-crosswalk-v2",
+      "group": "statsbomb_research",
+      "role": "derived_research_lineage",
+      "inventory_sha256": "6b34f590c126dfd44510d72372c046d107518c4fcd2f0148dc5185232b17e633"
+    },
+    {
+      "directory": "statsbomb-goal-calibration-v2",
+      "group": "statsbomb_research",
+      "role": "derived_research_lineage",
+      "inventory_sha256": "289a5079b6c8d657e578195999d23857eda6775f04193a93fd013cac0d800423"
+    },
+    {
+      "directory": "statsbomb-open-g67",
+      "group": "statsbomb_research",
+      "role": "source_or_documentary_evidence",
+      "inventory_sha256": "666f1362f8cd853e1c3928c3a746e07e837e7c8214aaa7baf2397bb4266f3551"
+    },
+    {
+      "directory": "statsbomb-player-crosswalk-v2",
+      "group": "statsbomb_research",
+      "role": "derived_research_lineage",
+      "inventory_sha256": "3af6c3bd886c0aa0f8dc2d8fb0c1323fccc3f60d7ff0ac3851c20fbbec1021c7"
+    },
+    {
+      "directory": "statsbomb-reviewed-names-goals-v1",
+      "group": "statsbomb_research",
+      "role": "derived_research_lineage",
+      "inventory_sha256": "2ed0d6d519ade56ddd117739fad3bb33d46b363da65bf5b6840fc0b2a1208b21"
+    },
+    {
+      "directory": "statsbomb-reviewed-names-v1",
+      "group": "statsbomb_research",
+      "role": "derived_research_lineage",
+      "inventory_sha256": "3784c9038c0e973be560c83442f59c531cdc3486e5ee7410ac06263ec3d6dcd1"
+    },
+    {
+      "directory": "statsbomb-season-signatures-goals-v1",
+      "group": "statsbomb_research",
+      "role": "derived_research_lineage",
+      "inventory_sha256": "85fc688a3f106906ea377ccbd8e14f1d1d3fbc2229b949c49870c2b30b522cd1"
+    },
+    {
+      "directory": "statsbomb-season-signatures-v2",
+      "group": "statsbomb_research",
+      "role": "derived_research_lineage",
+      "inventory_sha256": "f700b9554855042cde7dc8806e602b0ae55a2949551467f7f5e04097e833cdff"
+    },
+    {
+      "directory": "statsbomb-specs-g72",
+      "group": "statsbomb_research",
+      "role": "source_or_documentary_evidence",
+      "inventory_sha256": "4ac07bb898f2e35e88459625ef62dcaf641ac0169cf708b95dcd439b321604d8"
+    },
+    {
+      "directory": "statsbomb-spelling-names-goals-v1",
+      "group": "statsbomb_research",
+      "role": "derived_research_lineage",
+      "inventory_sha256": "6685b80d88378f699168e7e6a612502bf3bb3d0e1b6c07b21e18f396973e0ad0"
+    },
+    {
+      "directory": "statsbomb-spelling-names-scoring-v1",
+      "group": "statsbomb_research",
+      "role": "derived_research_lineage",
+      "inventory_sha256": "a203342e3423df26396ef34318a03b0b6307ef27bbb341448d735791be585acd"
+    },
+    {
+      "directory": "statsbomb-spelling-names-v1",
+      "group": "statsbomb_research",
+      "role": "derived_research_lineage",
+      "inventory_sha256": "b8055a218e5268ed812fe5fc9f0f64c72ae2039997c6729ed68681808c263826"
+    },
+    {
+      "directory": "historical-workbooks-g79",
+      "group": "source_extension",
+      "role": "source_or_verified_audit_lineage",
+      "inventory_sha256": "a7c5ddda84f4b42b78592f4876469d52c77830a510fe954ad5688b4fec1f9eea"
+    },
+    {
+      "directory": "historical-workbook-discovery-g79",
+      "group": "source_extension",
+      "role": "source_or_verified_audit_lineage",
+      "inventory_sha256": "25e04e441427702aa2145e775ae380d160d8e4d6fc1dfcb9ab413455f7c2938b"
+    },
+    {
+      "directory": "historical-workbook-audit-v1",
+      "group": "source_extension",
+      "role": "source_or_verified_audit_lineage",
+      "inventory_sha256": "b67288f98c927ec32e99bb9983d473ba1f06d9c98c4f6d3ebf833e7a14af1fab"
+    },
+    {
+      "directory": "calendar-deadline-tail-v1",
+      "group": "source_extension",
+      "role": "source_or_verified_audit_lineage",
+      "inventory_sha256": "3e7a34eea5cd8ab75a3b596da5686122d5c9806b23e39699e997dcd503b8d2a7"
+    },
+    {
+      "directory": "calendar-staleness-v1",
+      "group": "source_extension",
+      "role": "source_or_verified_audit_lineage",
+      "inventory_sha256": "90d908871765711f4af6aab204bcc4845a16cc29d611dc5e21bffb24466fb478"
+    },
+    {
+      "directory": "fixture-announcement-source-g82",
+      "group": "source_extension",
+      "role": "source_or_verified_audit_lineage",
+      "inventory_sha256": "607cd1a4ed6287fa8dc7267ff3add72d5680982f57b59964fbde0a7b2a190c22"
+    },
+    {
+      "directory": "fixture-announcement-archive-discovery-g82",
+      "group": "source_extension",
+      "role": "source_or_verified_audit_lineage",
+      "inventory_sha256": "b5ac19ac42d44226b58278415557b8d41c5bb7ec5e14211d0100552ab58ddcde"
+    },
+    {
+      "directory": "fixture-announcement-audit-v1",
+      "group": "source_extension",
+      "role": "source_or_verified_audit_lineage",
+      "inventory_sha256": "34d2bb805b1ca19f88722696407509d82c26f3f8e37a7ab3acf5e095bf267447"
+    },
+    {
+      "directory": "partial-history-integrity-v1",
+      "group": "source_extension",
+      "role": "source_or_verified_audit_lineage",
+      "inventory_sha256": "fab4f8f4d21595951c0c6c90af2f94507a97e9ef9a5d35315f5d56df4e0162d4"
+    },
+    {
+      "directory": "azure-history-g84",
+      "group": "source_extension",
+      "role": "source_or_verified_audit_lineage",
+      "inventory_sha256": "d9be5145ba53cd351dd33b631360dfac1c1cd44efe23aa5890a7828c529add3c"
+    },
+    {
+      "directory": "azure-history-source-g84",
+      "group": "source_extension",
+      "role": "source_or_verified_audit_lineage",
+      "inventory_sha256": "e897fd279fe9c3f9eec346c9534cad93dd7d6da11ce2ee6ca33cf5b2f244213e"
+    },
+    {
+      "directory": "azure-clock-source-g84",
+      "group": "source_extension",
+      "role": "source_or_verified_audit_lineage",
+      "inventory_sha256": "fcd5146b12309c9073fb0ee1cc30d0a45f3e8f63f336369983756fa152499559"
+    },
+    {
+      "directory": "azure-coverage-g84-v1",
+      "group": "source_extension",
+      "role": "source_or_verified_audit_lineage",
+      "inventory_sha256": "d4c14f20abd8ec50cd513d24d882857888ea375dc453d8b46680cd008f1b4316"
+    },
+    {
+      "directory": "azure-gt-identity-g85-v1",
+      "group": "source_extension",
+      "role": "source_or_verified_audit_lineage",
+      "inventory_sha256": "9133855bfb0bdf81ea17d806669ce3f0c58439c7a4f47ace5869fa7708fbc349"
+    },
+    {
+      "directory": "azure-observation-brackets-g86-v3",
+      "group": "source_extension",
+      "role": "source_or_verified_audit_lineage",
+      "inventory_sha256": "76a870b2c22e1c97f798e8eb4ba68f391113d3e646d4f7de84b2ac3c3fb66eb7"
+    }
+  ],
+  "files": [
+    {
+      "origin": "base",
+      "source": "raw-history-v2/crosswalk-report.json",
+      "path": "raw-history-v2/crosswalk-report.json",
+      "group": "source_extension",
+      "role": "derived_archive_identity_reference",
+      "sha256": "7f0c2f387368214054450e2c4ef65b547c56e38d195e596c650bd2d831cf487e",
+      "bytes": 9845
+    },
+    {
+      "origin": "base",
+      "source": "raw-history-v2/crosswalk/2015-16/fixtures.csv",
+      "path": "raw-history-v2/crosswalk/2015-16/fixtures.csv",
+      "group": "source_extension",
+      "role": "derived_archive_identity_reference",
+      "sha256": "e83dc1964799f8fbac3ca0f42cb1b9745f819d922e3c283bcb9109e22a494e50",
+      "bytes": 15455
+    },
+    {
+      "origin": "base",
+      "source": "raw-history-v2/crosswalk/2015-16/player_match_observations.csv",
+      "path": "raw-history-v2/crosswalk/2015-16/player_match_observations.csv",
+      "group": "source_extension",
+      "role": "derived_archive_identity_reference",
+      "sha256": "372cf81ada5d8fb8e2e41dcc324c9164402c422acd6453a55c2c40fc6018ebce",
+      "bytes": 3731743
+    },
+    {
+      "origin": "repository",
+      "source": "experiments/data_ground_truth/results-g55.json",
+      "path": "metadata/results-g55.json",
+      "group": "source_extension",
+      "role": "versioned_audit_result",
+      "sha256": "1d768181c151d3e432beb842f888124185af58593eea6a08a94c49a71fc7203e",
+      "bytes": 5479
+    },
+    {
+      "origin": "repository",
+      "source": "experiments/data_ground_truth/results-g56.json",
+      "path": "metadata/results-g56.json",
+      "group": "source_extension",
+      "role": "versioned_audit_result",
+      "sha256": "eb3f64f329cbf076c0cf52baa28fce50a1e8a51de0e143fe79f58c91218b83fb",
+      "bytes": 3740
+    },
+    {
+      "origin": "repository",
+      "source": "experiments/data_ground_truth/results-g57.json",
+      "path": "metadata/results-g57.json",
+      "group": "source_extension",
+      "role": "versioned_audit_result",
+      "sha256": "58bc1096be716259620ae800bcf1b6c03c66914cbc15362c83286f4fb8cba4b1",
+      "bytes": 4647
+    },
+    {
+      "origin": "repository",
+      "source": "experiments/data_ground_truth/results-g58.json",
+      "path": "metadata/results-g58.json",
+      "group": "source_extension",
+      "role": "versioned_audit_result",
+      "sha256": "3fd7bea37e526ebbeb9f3d1fa13a88882a41e8584c5ab66f6500b1767b22212f",
+      "bytes": 8397
+    },
+    {
+      "origin": "repository",
+      "source": "experiments/data_ground_truth/results-g59.json",
+      "path": "metadata/results-g59.json",
+      "group": "source_extension",
+      "role": "versioned_audit_result",
+      "sha256": "1a46e497b9131ddbe5dbd0a7947cd1901cc6d0e3987f6bc532afb341e17dfcd4",
+      "bytes": 3274
+    },
+    {
+      "origin": "repository",
+      "source": "experiments/data_ground_truth/results-g60.json",
+      "path": "metadata/results-g60.json",
+      "group": "source_extension",
+      "role": "versioned_audit_result",
+      "sha256": "b75194f007b0fc51b3ff7fd8d91b8b5c231185fd0d53ef7c7c57c980518ef2d9",
+      "bytes": 19249
+    },
+    {
+      "origin": "repository",
+      "source": "experiments/data_ground_truth/results-g61.json",
+      "path": "metadata/results-g61.json",
+      "group": "source_extension",
+      "role": "versioned_audit_result",
+      "sha256": "6de48b82ba2cf1ab6fd9567a7e9ddeb60d3ba4807d9d85c43f4367685adc3983",
+      "bytes": 3577
+    },
+    {
+      "origin": "repository",
+      "source": "experiments/data_ground_truth/results-g62.json",
+      "path": "metadata/results-g62.json",
+      "group": "source_extension",
+      "role": "versioned_audit_result",
+      "sha256": "5bc02688a3654d78b5e6801a2881d88efe22a3e7378893a5b1061b7c8dce79b5",
+      "bytes": 28561
+    },
+    {
+      "origin": "repository",
+      "source": "experiments/data_ground_truth/results-g63.json",
+      "path": "metadata/results-g63.json",
+      "group": "source_extension",
+      "role": "versioned_audit_result",
+      "sha256": "fb648cb0d7f7aab0842658259fce213a61bb1d7deefa11925395b983f4715661",
+      "bytes": 3386
+    },
+    {
+      "origin": "repository",
+      "source": "experiments/data_ground_truth/results-g64.json",
+      "path": "metadata/results-g64.json",
+      "group": "source_extension",
+      "role": "versioned_audit_result",
+      "sha256": "d6f8125d6b32c9c84b1ebf992a40cdd461667198ea88763dc36c2ab837ad1178",
+      "bytes": 12691
+    },
+    {
+      "origin": "repository",
+      "source": "experiments/data_ground_truth/results-g65.json",
+      "path": "metadata/results-g65.json",
+      "group": "source_extension",
+      "role": "versioned_audit_result",
+      "sha256": "3e16c2046652d0bd200d12331ddc60fd50843701d21c5be4a4da0bf655bc722f",
+      "bytes": 8366
+    },
+    {
+      "origin": "repository",
+      "source": "experiments/data_ground_truth/results-g66.json",
+      "path": "metadata/results-g66.json",
+      "group": "source_extension",
+      "role": "versioned_audit_result",
+      "sha256": "f57aec4d541b510716a9366f5ba25828f860956aa6fc2699acc9127c1d7f7bb6",
+      "bytes": 3826
+    },
+    {
+      "origin": "repository",
+      "source": "experiments/data_ground_truth/results-g67.json",
+      "path": "metadata/results-g67.json",
+      "group": "statsbomb_research",
+      "role": "versioned_audit_result",
+      "sha256": "eb2ce46918929aa501a66a7bb20f1ce9d37eadceee267b066ffbd191254d1ed0",
+      "bytes": 4490
+    },
+    {
+      "origin": "repository",
+      "source": "experiments/data_ground_truth/results-g68.json",
+      "path": "metadata/results-g68.json",
+      "group": "statsbomb_research",
+      "role": "versioned_audit_result",
+      "sha256": "5cdbfa0939b0388b854c371adce3857bb87d2bf5032ea920b861260c1a6676e5",
+      "bytes": 3565
+    },
+    {
+      "origin": "repository",
+      "source": "experiments/data_ground_truth/results-g69.json",
+      "path": "metadata/results-g69.json",
+      "group": "statsbomb_research",
+      "role": "versioned_audit_result",
+      "sha256": "ee71c325056cfe5eb32051b8c80795117642020794d98af28bb89e816032c057",
+      "bytes": 58310
+    },
+    {
+      "origin": "repository",
+      "source": "experiments/data_ground_truth/results-g70.json",
+      "path": "metadata/results-g70.json",
+      "group": "statsbomb_research",
+      "role": "versioned_audit_result",
+      "sha256": "77b99f718987c02380ab31fb4e77b0ca18e6076eaaaf08133733d461bf12400a",
+      "bytes": 58887
+    },
+    {
+      "origin": "repository",
+      "source": "experiments/data_ground_truth/results-g71.json",
+      "path": "metadata/results-g71.json",
+      "group": "statsbomb_research",
+      "role": "versioned_audit_result",
+      "sha256": "1508524e3a27688b55d647608b0989741ec07fb9ef8d31a1c84e9523227c46b0",
+      "bytes": 59149
+    },
+    {
+      "origin": "repository",
+      "source": "experiments/data_ground_truth/results-g72.json",
+      "path": "metadata/results-g72.json",
+      "group": "statsbomb_research",
+      "role": "versioned_audit_result",
+      "sha256": "f444b4db10dab1832e6e92773757075c2408a35451e8334939f5ab5c4affab94",
+      "bytes": 90393
+    },
+    {
+      "origin": "repository",
+      "source": "experiments/data_ground_truth/results-g73.json",
+      "path": "metadata/results-g73.json",
+      "group": "statsbomb_research",
+      "role": "versioned_audit_result",
+      "sha256": "93d0f0e6b175cd08430080325dee472e5b4b01496352ca62e7d9a10fb8ff91e8",
+      "bytes": 3237
+    },
+    {
+      "origin": "repository",
+      "source": "experiments/data_ground_truth/results-g74.json",
+      "path": "metadata/results-g74.json",
+      "group": "statsbomb_research",
+      "role": "versioned_audit_result",
+      "sha256": "01cb6089e5f6f0cb8bc5cc523ee41bb2855639c4a655b1959d5a0a495c0c0715",
+      "bytes": 149593
+    },
+    {
+      "origin": "repository",
+      "source": "experiments/data_ground_truth/results-g75.json",
+      "path": "metadata/results-g75.json",
+      "group": "statsbomb_research",
+      "role": "versioned_audit_result",
+      "sha256": "7f0c798b44cb49fc287eeea4b59d528e597919146b6286dcc94565664b9f8f22",
+      "bytes": 151570
+    },
+    {
+      "origin": "repository",
+      "source": "experiments/data_ground_truth/results-g76.json",
+      "path": "metadata/results-g76.json",
+      "group": "statsbomb_research",
+      "role": "versioned_audit_result",
+      "sha256": "7f26bbcf1c2bcaff62e5771024663632ab49f78ba1dfa21155fae6a70e22770a",
+      "bytes": 154990
+    },
+    {
+      "origin": "repository",
+      "source": "experiments/data_ground_truth/results-g77.json",
+      "path": "metadata/results-g77.json",
+      "group": "statsbomb_research",
+      "role": "versioned_audit_result",
+      "sha256": "4f468c75dd5ac40c608807516ba20388e66f0d59e258beb4e20ac35b41afb28b",
+      "bytes": 149330
+    },
+    {
+      "origin": "repository",
+      "source": "experiments/data_ground_truth/reviewed-name-claims.json",
+      "path": "metadata/reviewed-name-claims.json",
+      "group": "source_extension",
+      "role": "reviewed_identity_claims",
+      "sha256": "68dff397a02d35f12171a2011b466708fbf1d59a50ea7efdf5ed5ba9cbf4ebbf",
+      "bytes": 2478
+    },
+    {
+      "origin": "repository",
+      "source": "experiments/data_ground_truth/results-g78.json",
+      "path": "metadata/results-g78.json",
+      "group": "source_extension",
+      "role": "versioned_audit_result",
+      "sha256": "b3ffc5b2c8780c09c95dcebcdd5fcc314a08369c14c4671b07889bab8a7ac99b",
+      "bytes": 14874
+    },
+    {
+      "origin": "repository",
+      "source": "experiments/data_ground_truth/results-g79.json",
+      "path": "metadata/results-g79.json",
+      "group": "source_extension",
+      "role": "versioned_audit_result",
+      "sha256": "104a2bfe65d77b87dd0a0b90ef832c8022045e53bf4ee285113121f427ea7ca3",
+      "bytes": 11213
+    },
+    {
+      "origin": "repository",
+      "source": "experiments/data_ground_truth/results-g80.json",
+      "path": "metadata/results-g80.json",
+      "group": "source_extension",
+      "role": "versioned_audit_result",
+      "sha256": "1403651b7fb787d846027a2af1cbae33aef05cf59727cea52adce43eb55956db",
+      "bytes": 15337
+    },
+    {
+      "origin": "repository",
+      "source": "experiments/data_ground_truth/results-g81.json",
+      "path": "metadata/results-g81.json",
+      "group": "source_extension",
+      "role": "versioned_audit_result",
+      "sha256": "da0f72c4a825acd316ead6a32cdcfc944216f132864a1f81802c92b004dbb62b",
+      "bytes": 3409
+    },
+    {
+      "origin": "repository",
+      "source": "experiments/data_ground_truth/results-g82.json",
+      "path": "metadata/results-g82.json",
+      "group": "source_extension",
+      "role": "versioned_audit_result",
+      "sha256": "a4a444c911b1c55c4d0235cb3392438f292028d46f119774fe13e0bef701de01",
+      "bytes": 6433
+    },
+    {
+      "origin": "repository",
+      "source": "experiments/data_ground_truth/results-g83.json",
+      "path": "metadata/results-g83.json",
+      "group": "source_extension",
+      "role": "versioned_audit_result",
+      "sha256": "6b171ec9175f63f6cf5703a9763f2483cb81773442213b795771e4d2673b1ad7",
+      "bytes": 3091
+    },
+    {
+      "origin": "repository",
+      "source": "experiments/data_ground_truth/results-g84.json",
+      "path": "metadata/results-g84.json",
+      "group": "source_extension",
+      "role": "versioned_audit_result",
+      "sha256": "fd8cf18546d59f86805e589ecb4af1b064bbdb7d018b5ef1cf781b9bc73e4723",
+      "bytes": 5042
+    },
+    {
+      "origin": "repository",
+      "source": "experiments/data_ground_truth/results-g85.json",
+      "path": "metadata/results-g85.json",
+      "group": "source_extension",
+      "role": "versioned_audit_result",
+      "sha256": "66ef69b501299e2ab85fa86a1cd797915637ed6777a8eb1915227bb2aa25b169",
+      "bytes": 2586
+    },
+    {
+      "origin": "repository",
+      "source": "experiments/data_ground_truth/results-g86.json",
+      "path": "metadata/results-g86.json",
+      "group": "source_extension",
+      "role": "versioned_audit_result",
+      "sha256": "be83fe74917dd8d8fda004173fabbb086f189b61c6be3f4af6af8117d32a6749",
+      "bytes": 2373
+    },
+    {
+      "origin": "repository",
+      "source": "experiments/data_ground_truth/results-g84-discovery.json",
+      "path": "metadata/results-g84-discovery.json",
+      "group": "source_extension",
+      "role": "versioned_audit_result",
+      "sha256": "871545300b36b2a68e88aed5e4febb6401e03c07638d5afd515f8e519f6212b4",
+      "bytes": 1378
+    },
+    {
+      "origin": "repository",
+      "source": "experiments/data_ground_truth/archive-cut-g78.json",
+      "path": "metadata/archive-cut-g78.json",
+      "group": "source_extension",
+      "role": "versioned_audit_result",
+      "sha256": "d1dc27e5d09a4cea7569a2ab7e40931c474aefd1c5f815f0c7ab399efbcc173d",
+      "bytes": 18956
+    }
+  ],
+  "exclusions": [
+    "EXP-MOVA model workspaces",
+    "raw-production-discovery-v1 operative files",
+    "unselected derived experiment intermediates"
+  ],
+  "scope": "internal_source_archive_and_selected_StatsBomb_lineage",
+  "parent_cut_id": "9a119e7b37d42607cb0fc2a91dd31103146ef786f1927459c3d56620751ec542"
+}
