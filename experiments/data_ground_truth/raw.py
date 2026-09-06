@@ -18,7 +18,7 @@ REPOS = ('vaastav/Fantasy-Premier-League', 'olbauday/FPL-Core-Insights',
          'imadeddine-belkat/Premier-League-Stats', 'TopMarxFPL/fpl-mirror', 'durtal/fantasysocceR',
          'prathmesh/Fantasy-Premier-League-Points-Predictor', 'clwatkins/fantasy_premier_league',
          'mvbfontes/premierleaguedatasets', 'sjp4/differentialfpl',
-         'darrenvong/fpl-data-visualiser', 'Randdalf/fplcache', 'Schwetche/fpl_project', 'hudl/open-data', 'lifebeyondfife/FantasyFootball', 'keithxm23/fplPlayer', 'keithxm23/fplassistant', 'keithxm23/fplassistantv2', 'barryedmund/gaffer', 'nori/hbv401g-2015v-f1a', 'llimllib/fantasypl_stats', 'sandalsoft/footieviz_py', 'nvenkataraman1/RProgrammingWorkshop')
+         'darrenvong/fpl-data-visualiser', 'Randdalf/fplcache', 'Schwetche/fpl_project', 'hudl/open-data', 'lifebeyondfife/FantasyFootball', 'keithxm23/fplPlayer', 'keithxm23/fplassistant', 'keithxm23/fplassistantv2', 'barryedmund/gaffer', 'nori/hbv401g-2015v-f1a', 'llimllib/fantasypl_stats', 'sandalsoft/footieviz_py', 'nvenkataraman1/RProgrammingWorkshop', 'jokecamp/epl-fantasy-geek')
 
 
 def digest(data: bytes) -> str:
@@ -71,6 +71,8 @@ def capture(root: Path, repo: str, revision: str, path: str) -> dict:
 def select(repo: str, path: str) -> bool:
     if path in ('README.md', 'LICENSE', 'DATA_INTEGRATION_REVIEW.md'):
         return True
+    if repo == 'jokecamp/epl-fantasy-geek':
+        return path in {'app/js/data.json', 'FantasyJsonExtractor/get.rb', 'app/js/15-16/data.json'}
     if repo == 'nvenkataraman1/RProgrammingWorkshop':
         return path in {'sessions/w4/soccer.csv', 'sessions/w5/data/soccer.csv', 'sessions/w4/README.Rmd', 'sessions/w4/Untitled.R', 'sessions/w5/README.Rmd'}
     if repo == 'sandalsoft/footieviz_py':

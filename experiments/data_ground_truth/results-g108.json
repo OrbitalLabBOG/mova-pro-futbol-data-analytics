@@ -1,0 +1,57 @@
+{
+  "version": "historical-data-g108",
+  "audit": {
+    "version": "geek-history-audit-v1",
+    "implementation_sha256": "2ad46c3164a34a71a9edaf6465d73cf09893b5bb8709a55fa3457a373444a5c7",
+    "manifest_sha256": "9df63820b80e77bbda34d71cc6362ca9522ca96747c5b212c1ce69eb2433d238",
+    "history_metadata_sha256": {
+      "data-history.json": "be0a92e356373030d4361241aa245ad55e2362a253f56d7a2cdf39d57818ece6",
+      "data-history-2.json": "cf8e93640a519913820fb2c4359306ba5a78be885186c53419ecafd10f87cbf1"
+    },
+    "rename_evidence_sha256": "1b51c525edcbe1ccf2471fec5cef61d64adc1496674e2f5b64683ecc6777c3d6",
+    "captured_files": 188,
+    "captured_bytes": 39223568,
+    "snapshots": 185,
+    "unique_snapshot_contents": 184,
+    "snapshot_statuses": {
+      "decoded": 183,
+      "no_player_arrays": 1,
+      "empty_file": 1
+    },
+    "player_states": 118634,
+    "min_decoded_players": 529,
+    "max_players": 716,
+    "distinct_team_code_sets": 2,
+    "new_complete_label_seasons": 0,
+    "finalized_labels_admitted": 0,
+    "training_admitted": false,
+    "gt_changed": false,
+    "production_changed": false,
+    "limitations": [
+      "default_branch_history_for_one_path",
+      "author_date_not_publication_proof",
+      "source_added_is_player_metadata_not_snapshot_availability",
+      "accumulated_points_not_match_labels",
+      "no_season_or_deadline_assignment",
+      "manager_selection_and_forecast_fields_not_exported"
+    ],
+    "artifacts": {
+      "snapshots.json": "46d603a09a58f59def79ee9a59bdfb1cf72c6342e0be6a532a96b867a301e6dd",
+      "player_states.csv": "82c8f84bb8c7782d7a2ffbbc5e5717380e5e72a50e1b8b97fb13fe701f50b224"
+    }
+  },
+  "report_sha256": "b29f1b994a216f5f37ca8a6503fd5256e64e62430a122bf7028a35b983b27caf",
+  "reproduction": {
+    "identical_files": [
+      "report.json",
+      "snapshots.json",
+      "player_states.csv"
+    ]
+  },
+  "validation": {
+    "command": "python -m pytest -q",
+    "passed": 1723,
+    "skipped": 1,
+    "deselected": 79
+  }
+}
