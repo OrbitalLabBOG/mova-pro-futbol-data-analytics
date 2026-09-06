@@ -1347,3 +1347,82 @@ fuera de Git. Auditoría reproducida byte por byte; 1.460 passed, 1 skipped,
 79 deselected. No se habilita entrenamiento ni se modifica GT v5 o producción.
 Faltan testigos externos de publicación de estos commits y una fuente más densa
 para 2025/26, además de las brechas de reglas y etiquetas ya documentadas.
+
+## Gate G24: fuentes complementarias y calendarios coherentes por commit
+
+Se contrastó el historial Git fijado de otras tres fuentes. El mirror conserva
+28 versiones desde abril de 2026; el archivo deportivo inspeccionado solo tiene
+dos versiones de fixtures 2025/26 con commits de junio, posteriores a temporada.
+FPL Core sí conserva un historial extenso de archivos por jornada. Se adquiere
+la carpeta Premier League y se excluye la copia `By Gameweek`, que también puede
+contener otros torneos. Los pins y hashes están en [results-g24.json](results-g24.json).
+
+| Fuente | Archivos versionados adquiridos | Objetos distintos | Bytes asociados |
+| --- | ---: | ---: | ---: |
+| FPL Core, fixtures y matches por jornada | 5.019 | 2.312 | 27.102.963 |
+| TopMarxFPL mirror, CSV de temporada | 28 | 28 | 968.298 |
+
+La adquisición terminó sin errores y verificó cada blob Git. Los 79 borrados
+observados de archivos Core se preservan en el manifiesto; no se borran los raw
+adquiridos. La abundancia de archivos no equivale a calendarios completos ni a
+nuevas temporadas de etiquetas.
+
+`fixture_commit_plan` elige nominalmente un commit anterior a cada deadline de
+2025/26, comprueba que pertenece al historial alcanzable del pin y exporta su árbol
+completo. Evita construir una supuesta captura mezclando las últimas versiones de
+archivos de commits distintos. Core tiene 38 árboles candidatos (38 o 76 archivos),
+26 con commit a menos de 48 horas y antigüedad máxima de 194,56 horas. El mirror
+solo tiene seis, GW33–38; tres están dentro de 48 horas. Estas cifras describen
+fechas Git, no disponibilidad pública probada ni hora de captura del calendario.
+
+`fixture_tree_audit` combina únicamente componentes del mismo árbol por ID del
+proveedor. Conserva rutas, campos vacíos y valores originales. Solo combina valores
+no nulos compatibles; discrepancias no se resuelven por preferencia de archivo.
+IDs de proveedor y jornadas de proveedor no se equiparan automáticamente con FPL.
+Tampoco se confunden IDs FPL de equipos con códigos Opta si falta una columna.
+
+La auditoría encontró límites materiales:
+
+- Core usa muchos `fixtures.csv` como plantillas sin kickoff. `matches.csv`
+  incorpora fechas, pero numerosas observaciones carecen de zona horaria. Se
+  conservan sus strings originales y se dejan sin timestamp normalizado; no se
+  inventa UTC. En los 38 árboles hay 7.692 observaciones de fixture con ese límite.
+- Tres árboles, GW13–15, tienen 370 IDs de partido en vez de 380. Hay treinta
+  observaciones con asignaciones de jornada incompatibles entre componentes.
+  Se registran los conflictos y no se completan los diez partidos con otro commit.
+- Hay **749 observaciones de fechas raw para jornadas actuales o posteriores**,
+  concentradas en GW26–33, pendientes de validar su reloj. En la proyección con
+  zona acreditada hay **cero horarios futuros utilizables** de Core. No se declara
+  que todos los valores raw estén vacíos ni que la fuente cierre esa brecha.
+- El mirror aporta seis calendarios de 380 partidos, sin conflictos observados,
+  con **209 observaciones de horarios futuros con zona explícita**. Son
+  observaciones repetidas entre capturas, no 209 partidos adicionales. Su
+  publicación histórica todavía requiere testigos externos.
+
+```bash
+# Exportar el historial desde cada clon fijado; para Core incluir ambos tipos:
+git log --format='commit%x09%H%x09%cI%x09%aI' --raw --no-abbrev --no-renames \
+  ce03f31b4032f3f89a1aa460ddc8a709ddeb56b6 -- 'data/*/matches.csv' 'data/*/fixtures.csv' \
+  > "$CORE_FIXTURE_GIT_LOG"
+python -m experiments.data_ground_truth.fixture_complement --source core \
+  --log "$CORE_FIXTURE_GIT_LOG" --out "$CORE_FIXTURE_HISTORY_ROOT"
+python -m experiments.data_ground_truth.fixture_commit_plan --source core \
+  --repo "$CORE_SOURCE_GIT" --log "$CORE_FIXTURE_GIT_LOG" \
+  --selection-root "$PUBLICATION_SELECTION_ROOT" --out "$CORE_FIXTURE_PLAN_ROOT"
+python -m experiments.data_ground_truth.fixture_tree_audit \
+  --root "$CORE_FIXTURE_HISTORY_ROOT" --plan-root "$CORE_FIXTURE_PLAN_ROOT" \
+  --out "$CORE_FIXTURE_TREE_AUDIT_ROOT"
+```
+
+Para mirror usar `--source mirror`, el clon/pin y el export de su historial de
+`data/2025/csv/fixtures.csv`. Ambos reportes de auditoría se reprodujeron byte por
+byte. Suite: 1.463 passed, 1 skipped, 79 deselected; hashes de implementación
+verificados. El parser conserva los límites de campos sin descartar el archivo
+entero por una fecha sin zona. Cero errores de parseo no significa cero conflictos
+ni calendario completo.
+
+GT v5, estados anteriores, entrenamiento y producción permanecen intactos.
+Sigue siendo necesario corroborar el reloj de Core, resolver identidad/jornada
+del proveedor, obtener testigos de publicación y complementar el calendario de
+la primera parte de 2025/26. La evidencia negativa de esta auditoría evita tratar
+un repositorio muy activo como un calendario futuro completo.

@@ -1,0 +1,202 @@
+{
+  "version": "historical-data-g24",
+  "cutoff_date_colombia": "2026-09-06",
+  "sources": {
+    "core": {
+      "acquisition": {
+        "version": "fixture-complement-v1",
+        "source": "core",
+        "repository": "olbauday/FPL-Core-Insights",
+        "pinned_revision": "ce03f31b4032f3f89a1aa460ddc8a709ddeb56b6",
+        "git_log_sha256": "69e7eae64f0a1d0c56b0f9745b14af020aaddb8ef628060616c86ff4d8b5d4e7",
+        "implementation_sha256": "f279bc22892b466340007ac2881e184e8bc40642a974e6d84d50b06d8875bb2e",
+        "expected_versions": 5019,
+        "errors": [],
+        "distinct_objects": 2312,
+        "bytes": 27102963,
+        "eligible_predeadline": false,
+        "production_changed": false,
+        "limitations": [
+          "provider_match_and_team_ids_are_not_automatically_FPL_ids",
+          "files_from_different_commits_are_not_a_coherent_calendar"
+        ]
+      },
+      "deleted_file_observations": 79,
+      "plan": {
+        "version": "fixture-commit-plan-v1",
+        "source": "core",
+        "repository": "olbauday/FPL-Core-Insights",
+        "pinned_revision": "ce03f31b4032f3f89a1aa460ddc8a709ddeb56b6",
+        "git_log_sha256": "69e7eae64f0a1d0c56b0f9745b14af020aaddb8ef628060616c86ff4d8b5d4e7",
+        "selection_report_sha256": "1ace4506377f6bf92ff79d71f7b1083070f273c58f802518754f96fccb87b6fc",
+        "implementation_sha256": "3a4cdba61f58d2863bc6caa5e1aa37e899634139dfa7368d596bb40a25cb230b",
+        "trees_sha256": "7e2abb039ab3faffb3634baa82644edb91d4e563011827df94065ab1dc62986b",
+        "deadlines": 38,
+        "with_prior_commit": 38,
+        "distinct_commits": 38,
+        "within_48h": 26,
+        "max_nominal_commit_age_hours": 194.5613888888889,
+        "file_counts": [
+          38,
+          76
+        ],
+        "eligible_predeadline": false,
+        "production_changed": false,
+        "limitation": "complete_Git_tree_is_not_proof_of_latest_official_calendar_or_historical_publication"
+      },
+      "audit": {
+        "version": "fixture-tree-audit-v1",
+        "source": "core",
+        "manifest_sha256": "8eaed7946fa3479b58f43eb3349ba05e4f3f65dbd50874ec5febbe014c4c43ee",
+        "plan_report_sha256": "806c59e2caf3679eef71e283fef3c3c3954f115902e6a6259afea0d5dba0e807",
+        "implementation_sha256": "5b64a8ee4e59a2a07ce3bf8bef107351176fa3512f31ff3bc2146236f15d7aee",
+        "distinct_source_objects": 2312,
+        "file_errors": 0,
+        "deadlines": 38,
+        "audited_calendars": 38,
+        "provider_fixture_counts": [
+          370,
+          380
+        ],
+        "unknown_kickoff_timezone_rows": 7692,
+        "schedule_conflict_observations": 30,
+        "known_kickoffs_after_commit": 0,
+        "current_or_later_raw_kickoffs": 749,
+        "current_or_later_provider_gameweek_rows": 7342,
+        "current_or_later_known_kickoffs": 0,
+        "artifacts": {
+          "calendars.json": "2289b4845ab2271365490b43c48d47dc834f1e13368352f564e8b6d82a9cef3a",
+          "conflicts.json": "e37f306c88ce687d104a5b07469cd1ef263c1ad6ed722fdd71b7226bd920423c",
+          "file_errors.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "eligible_predeadline": false,
+        "eligible_training": false,
+        "production_changed": false,
+        "limitations": [
+          "provider_gameweek_is_not_yet_verified_as_FPL_gameweek",
+          "nonnull_union_is_limited_to_files_in_the_same_verified_Git_tree",
+          "conflicting_schedule_values_are_not_silently_selected",
+          "Git_time_is_not_verified_publication_time"
+        ]
+      }
+    },
+    "mirror": {
+      "acquisition": {
+        "version": "fixture-complement-v1",
+        "source": "mirror",
+        "repository": "TopMarxFPL/fpl-mirror",
+        "pinned_revision": "29cec4c2bb3d53ce0675a889b162043d422307fe",
+        "git_log_sha256": "ea648f6aaedd328066c25a02f98a36ea3479b9208197ad5811da705e2b6c3799",
+        "implementation_sha256": "f279bc22892b466340007ac2881e184e8bc40642a974e6d84d50b06d8875bb2e",
+        "expected_versions": 28,
+        "errors": [],
+        "distinct_objects": 28,
+        "bytes": 968298,
+        "eligible_predeadline": false,
+        "production_changed": false,
+        "limitations": [
+          "provider_match_and_team_ids_are_not_automatically_FPL_ids",
+          "files_from_different_commits_are_not_a_coherent_calendar"
+        ]
+      },
+      "deleted_file_observations": 0,
+      "plan": {
+        "version": "fixture-commit-plan-v1",
+        "source": "mirror",
+        "repository": "TopMarxFPL/fpl-mirror",
+        "pinned_revision": "29cec4c2bb3d53ce0675a889b162043d422307fe",
+        "git_log_sha256": "ea648f6aaedd328066c25a02f98a36ea3479b9208197ad5811da705e2b6c3799",
+        "selection_report_sha256": "1ace4506377f6bf92ff79d71f7b1083070f273c58f802518754f96fccb87b6fc",
+        "implementation_sha256": "3a4cdba61f58d2863bc6caa5e1aa37e899634139dfa7368d596bb40a25cb230b",
+        "trees_sha256": "674ecb84163fef0055ffb02be883f337c1af4768fb2e23c0c6595798dc44e532",
+        "deadlines": 38,
+        "with_prior_commit": 6,
+        "distinct_commits": 6,
+        "within_48h": 3,
+        "max_nominal_commit_age_hours": 103.8775,
+        "file_counts": [
+          1
+        ],
+        "eligible_predeadline": false,
+        "production_changed": false,
+        "limitation": "complete_Git_tree_is_not_proof_of_latest_official_calendar_or_historical_publication"
+      },
+      "audit": {
+        "version": "fixture-tree-audit-v1",
+        "source": "mirror",
+        "manifest_sha256": "a4e4160dbe6c283d268617a5d3d017fbd952a8c6128d9833566529e30e06513b",
+        "plan_report_sha256": "1b2a50355088464d499e90d6438dc5b6ae9700425a35b289257b15cfe144e69b",
+        "implementation_sha256": "5b64a8ee4e59a2a07ce3bf8bef107351176fa3512f31ff3bc2146236f15d7aee",
+        "distinct_source_objects": 28,
+        "file_errors": 0,
+        "deadlines": 38,
+        "audited_calendars": 6,
+        "provider_fixture_counts": [
+          380
+        ],
+        "unknown_kickoff_timezone_rows": 0,
+        "schedule_conflict_observations": 0,
+        "known_kickoffs_after_commit": 209,
+        "current_or_later_raw_kickoffs": 209,
+        "current_or_later_provider_gameweek_rows": 209,
+        "current_or_later_known_kickoffs": 209,
+        "artifacts": {
+          "calendars.json": "a616a7f8fbde1e6d8b7966ec3b1d6b488fdd112990341750d09db883641c5d91",
+          "conflicts.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+          "file_errors.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "eligible_predeadline": false,
+        "eligible_training": false,
+        "production_changed": false,
+        "limitations": [
+          "provider_gameweek_is_not_yet_verified_as_FPL_gameweek",
+          "nonnull_union_is_limited_to_files_in_the_same_verified_Git_tree",
+          "conflicting_schedule_values_are_not_silently_selected",
+          "Git_time_is_not_verified_publication_time"
+        ]
+      }
+    }
+  },
+  "discovery": {
+    "core_pinned_reachable_commits": 1733,
+    "mirror_pinned_reachable_commits": 218,
+    "sport_pinned_reachable_commits": 68,
+    "sport_2025_26_fixture_versions": 2,
+    "sport_2025_26_first_commit": "2026-06-01T16:05:17+00:00",
+    "sport_2025_26_last_commit": "2026-06-23T15:04:42+00:00",
+    "sport_history_export_sha256": "0126b506873cd4674eef039dfd123e78d82095a4d9835f7a67a678cceb9aaa91"
+  },
+  "verification": {
+    "audit_reports_reproduced_byte_for_byte": true,
+    "implementation_hashes_verified": true,
+    "local_tests_passed": 1463,
+    "local_tests_skipped": 1,
+    "local_tests_deselected": 79
+  },
+  "interpretation": {
+    "core_low_population_deadlines": [
+      13,
+      14,
+      15
+    ],
+    "core_schedule_conflicts": "provider_gameweek",
+    "core_upcoming_raw_dates_need_timezone_validation": 749,
+    "mirror_prior_commit_deadlines": [
+      33,
+      34,
+      35,
+      36,
+      37,
+      38
+    ],
+    "publication_witnesses": 0
+  },
+  "pending": [
+    "corroborate source clock semantics for naive dates",
+    "resolve provider identity and gameweek contracts",
+    "external publication witnesses",
+    "denser future fixture schedule for early/mid 2025-26",
+    "78 kickoff discrepancies and historical eligible universe"
+  ],
+  "production_changed": false
+}
