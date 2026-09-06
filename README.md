@@ -19,6 +19,10 @@ El cockpit read-only comparte un único contrato entre CLI y API. Su dashboard e
 sólo expone tres indicadores humanos; diagnóstico, métricas y JSON permanecen en loopback.
 Supabase sólo refleja seguimiento PM y nunca recibe estado operativo.
 
+G100: colección cruda de 2.579 snapshots adquirida (17,06 GB), con hashes
+verificados. Auditoría distingue 2.572 estructuras válidas, dos vacíos y cinco
+JSON inválidos; no implica nuevas etiquetas ni disponibilidad predeadline.
+
 G99: GT experimental v8 incorpora las identidades verificadas de los 24 jugadores
 pendientes de 2014/15 (421 filas). Las 24.876 filas de esa temporada quedan
 enlazadas, conservando todas las etiquetas. Paquete reproducido; producción intacta.

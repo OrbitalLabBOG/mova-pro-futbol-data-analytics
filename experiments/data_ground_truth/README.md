@@ -5615,3 +5615,56 @@ admitieron features predeadline. Los nuevos paquetes y crudos G93–G99 aún no 
 incluidos en el corte restaurable G92.
 
 Suite completa G99: **1.705 passed, 1 skipped, 79 deselected**, 33,31 s.
+
+## G100 — colección completa de snapshots de llimllib
+
+La adquisición usa el árbol fijado de `llimllib/fantasypl_stats`, commit
+`db590f1925289069d171dc9766928cdd14817833`, descubierto en G98. Selecciona únicamente
+`data/players.<timestamp>.json`; no descarga ni ejecuta código de terceros.
+Cada archivo conserva recibo y SHA256, y se verifica además contra el tamaño y
+hash de blob Git del árbol. Un error conserva los recibos y bloquea la declaración
+de colección completa; reejecutar reutiliza las capturas verificadas.
+
+```bash
+python -m experiments.data_ground_truth.profile_snapshot_collection \
+  --base "$DATA_BASE" --acquire \
+  --out "$DATA_BASE/profile-snapshot-audit-g100-new"
+```
+
+El inventario registra por snapshot perfiles, filas de historial, jornadas, años
+anuales declarados y una huella del historial por ID de jugador. Esta huella
+excluye el estado mutable del perfil: igualdad de historiales no implica igualdad
+de precios, noticias o pronósticos. Se conservan ambos tipos de evidencia en el
+crudo, pero los pronósticos nunca se convierten en etiquetas observadas.
+
+Los tiempos derivados del nombre de archivo son **nominales**, con
+`available_at=null` y `eligible_predeadline=false`. Validar estructura y conservar
+bytes no demuestra correspondencia de cada fila con fixtures ni publicación antes
+del deadline. Las observaciones repetidas entre snapshots no se suman como nueva
+cobertura; la normalización y comparación exhaustiva con GT son un paso posterior.
+
+Resultado del recorrido completo: **2.579 archivos, 17.061.506.389 bytes**, cero
+fallos de adquisición y **2.578 contenidos SHA256 distintos**, todos coincidentes
+con el árbol Git. Hay **2.572 archivos con estructura de perfiles/historial válida**,
+**dos vacíos** y **cinco JSON inválidos**. Estos últimos se conservan como originales
+publicados, con estado y posición del error; no se reparan ni se inventan filas.
+
+El inventario distingue **253 proyecciones de historial**, excluyendo campos
+mutables del perfil. Los snapshots válidos contienen entre uno y 711 perfiles;
+**354 no tienen filas de historial**. Ninguno presenta códigos duplicados o
+faltantes dentro de su colección de perfiles. La validación de esquema por sí
+sola no demuestra que un snapshot represente a todos los jugadores registrados.
+
+Los nombres cubren nominalmente febrero–noviembre de 2015, más un archivo vacío
+nominal de septiembre de 2018. Se registra el mes por archivo sin atribuirle valor
+de publicación. La última temporada anual declarada es `2013/14` en 1.088 archivos
+y `2014/15` en 1.484; esas filas anuales no se cuentan como observaciones por GW.
+
+La primera ejecución del auditor encontró un JSON inválido y se detuvo; la
+implementación final los clasifica explícitamente. Las dos ejecuciones finales
+recorren la colección completa y producen reporte e inventario idénticos byte por
+byte. Pruebas completas: **1.708 passed, 1 skipped, 79 deselected**, 35,39 s.
+
+GT v8, paquete parcial G94, entrenamiento y producción permanecen intactos.
+No se añade una temporada completa al GT en este gate. El archivo G100 todavía
+está fuera del corte restaurable G92. `results-g100.json` fija hashes y límites.
