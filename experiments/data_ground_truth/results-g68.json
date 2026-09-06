@@ -1,0 +1,174 @@
+{
+  "version": "historical-data-g68",
+  "audit_report_sha256": "fcce490934e70bef789e2a91b696d8698a3171e6a4b1b90bc3c5db4cc94bce64",
+  "audit": {
+    "version": "statsbomb-fixture-crosswalk-v1",
+    "dataset_id": "d4baf849fb4a051be103f8c469e61a4753edb0b4004f980a000fe5c86ef573db",
+    "partition_sha256": "d74cf06e3a811584b004a9721e5d053f816d5255b94ebbf779d7d02da1216b68",
+    "statsbomb_manifest_sha256": "a30065dabd1e47528c9c5f45cdca3e0b9bdaff20249515d9c6baa5b115f76ad7",
+    "archive_manifest_sha256": "93cbcfa531157c317ec925b3b49a681051bf90cc4dcea7c2eaf8549e8758bd77",
+    "implementation_sha256": "d79f62188bcd39043ff342bdbe580b2412f1ce0b17551d208f1eb85f5188c910",
+    "club_mapping": [
+      [
+        1,
+        "Man Utd",
+        39,
+        "Manchester United"
+      ],
+      [
+        11,
+        "Everton",
+        29,
+        "Everton"
+      ],
+      [
+        110,
+        "Stoke",
+        30,
+        "Stoke City"
+      ],
+      [
+        13,
+        "Leicester",
+        22,
+        "Leicester City"
+      ],
+      [
+        14,
+        "Liverpool",
+        24,
+        "Liverpool"
+      ],
+      [
+        20,
+        "Southampton",
+        25,
+        "Southampton"
+      ],
+      [
+        21,
+        "West Ham",
+        40,
+        "West Ham United"
+      ],
+      [
+        3,
+        "Arsenal",
+        1,
+        "Arsenal"
+      ],
+      [
+        31,
+        "Crystal Palace",
+        31,
+        "Crystal Palace"
+      ],
+      [
+        35,
+        "West Brom",
+        27,
+        "West Bromwich Albion"
+      ],
+      [
+        4,
+        "Newcastle",
+        37,
+        "Newcastle United"
+      ],
+      [
+        43,
+        "Man City",
+        36,
+        "Manchester City"
+      ],
+      [
+        45,
+        "Norwich",
+        56,
+        "Norwich City"
+      ],
+      [
+        56,
+        "Sunderland",
+        41,
+        "Sunderland"
+      ],
+      [
+        57,
+        "Watford",
+        23,
+        "Watford"
+      ],
+      [
+        6,
+        "Spurs",
+        38,
+        "Tottenham Hotspur"
+      ],
+      [
+        7,
+        "Aston Villa",
+        59,
+        "Aston Villa"
+      ],
+      [
+        8,
+        "Chelsea",
+        33,
+        "Chelsea"
+      ],
+      [
+        80,
+        "Swansea",
+        26,
+        "Swansea City"
+      ],
+      [
+        91,
+        "Bournemouth",
+        28,
+        "AFC Bournemouth"
+      ]
+    ],
+    "fixtures": 380,
+    "date_status": {
+      "equal": 380
+    },
+    "score_status": {
+      "unknown": 380
+    },
+    "GT_rows": 24741,
+    "GT_unique_fixtures": 380,
+    "GT_link_status": {
+      "accepted": 24741
+    },
+    "GT_local_date_status": {
+      "equal": 24741
+    },
+    "source_fixtures_without_GT": 0,
+    "new_FPL_labels": 0,
+    "training_admitted": false,
+    "commercial_runtime_admitted": false,
+    "raw_redistribution_admitted": false,
+    "production_changed": false,
+    "limitations": [
+      "club_alias_mapping_explicit_not_player_identity_mapping",
+      "date_agreement_not_timezone_or_predeadline_publication_proof",
+      "research_only_StatsBomb_license_restrictions_inherited",
+      "event_semantics_and_player_crosswalk_not_validated"
+    ],
+    "artifacts": {
+      "fixture-links.json": "3381c4026234b6bdbe7f65cb9131715c72edf52a4c54193b62b648deb2404e3e",
+      "label-link-issues.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    }
+  },
+  "verification": {
+    "reproduced_byte_for_byte": true,
+    "pytest": {
+      "passed": 1627,
+      "skipped": 1,
+      "deselected": 79,
+      "seconds": 33.92
+    }
+  }
+}

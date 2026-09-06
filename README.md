@@ -111,7 +111,7 @@ de modelos por hash y exportación revisable, sin promover modelos al runtime.
 
 La capa experimental conserva los datos crudos fuera de Git, con manifiestos,
 SHA-256, fuentes fijadas por commit y auditorías reproducibles. El
-[registro de gates G1–G67](experiments/data_ground_truth/README.md) contiene
+[registro de gates G1–G68](experiments/data_ground_truth/README.md) contiene
 adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 
 | Capa | Cobertura verificada | Límite pendiente |
@@ -147,6 +147,7 @@ adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 | Integridad de titulares, G65 | 378/380 conjuntos de titulares concuerdan con FPL; 301 referencias de jugador adicionales resueltas | Dos partidos con cinco titulares extra y cinco faltantes cada uno; sin reparación histórica ni admisión predeadline |
 | Huecos y exclusiones, G66 | 86 archivos contrastados; 75 claves ausentes persisten; 48 incidentes descartados conservados | Sin recuperación por ID exacto en los cortes examinados; exclusiones del proveedor no se convierten en ceros |
 | StatsBomb, G67 | Corpus separado de investigación: 380 partidos 2015/16 y 38 de 2003/04 | Licencia restrictiva: sin admisión comercial/runtime, redistribución raw ni enlace FPL todavía; ver atribución y métricas en el registro de gates |
+| Enlace de partidos, G68 | 380/380 partidos StatsBomb 2015/16 enlazados; 24.741 filas FPL cubiertas | Clubes y fecha concordantes; marcador no verificable en PL, identidad de jugadores pendiente; sólo investigación |
 | Collector propio, G36 | 55 bundles públicos; 34.512 estados de jugadores y 20.900 observaciones de fixtures | Dos candidatos anteriores a GW2/GW3 2026/27 vinculados al cierre de ingesta; evidencia interna identificada en el índice común G37 |
 | Reglas y chips de snapshots | Explícitos desde GW16 de 2024/25 y en toda 2025/26 | Faltan reglas históricas anteriores e interpretación de overrides |
 | Reglas documentales oficiales, G38 | 10 artículos archivados, 30 afirmaciones parciales en seis temporadas | Descargas actuales: la fecha del artículo no prueba disponibilidad histórica; no son un intérprete de reglas |
