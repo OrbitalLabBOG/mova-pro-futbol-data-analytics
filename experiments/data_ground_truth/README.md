@@ -4048,3 +4048,58 @@ Reporte y tres artefactos reproducidos byte por byte en v3. Suite completa:
 entrenamiento, cambios productivos o modificación de GT v7/G55. Las discrepancias
 requieren contrastar atribución y semántica de puntuación antes de admitir una
 fuente como sustituto de otra.
+
+## G73 — Coherencia aritmética de las etiquetas FPL 2015/16
+
+`legacy_scoring_audit.py` reconstruye los puntos de las **24.741 filas** usando
+sus componentes FPL y la posición histórica de las 723 fichas `PlayersInfo`,
+verificadas por hash y enlazadas por código oficial **y** elemento de esa temporada.
+Campos ausentes quedan desconocidos; valores fraccionarios, negativos en conteos
+o no finitos se rechazan. Los puntos totales sí pueden ser negativos.
+
+La fórmula declarada está documentada en la tabla A1, página PDF 46, de
+[Bryson y Chevalier, CEP Discussion Paper 1283 (2014)](https://eprints.lse.ac.uk/60283/1/dp1283.pdf).
+Es un antecedente histórico verificable, **no una certificación del reglamento
+oficial 2015/16**. Se usan clean sheets y bonus archivados; no se reconstruye BPS.
+El PDF y dos páginas del club se conservan fuera de Git con URL, fecha de captura
+y SHA-256 en `scoring-evidence-g73/manifest.json`.
+
+| Comprobación | Resultado |
+| --- | ---: |
+| Puntos reconstruidos iguales a los archivados | 24.741/24.741 |
+| Apariciones con minutos positivos concordantes | 10.469/10.469 |
+| Filas discrepantes con StatsBomb que conservan coherencia FPL | 19/19 |
+| Concordantes tras sustituir sólo goles/autogoles por StatsBomb | 0/19 |
+
+La última fila es una **sustitución parcial de diagnóstico**, manteniendo
+asistencias, bonus y demás componentes. No representa una puntuación alternativa
+completa ni determina qué proveedor tiene razón. La concordancia aritmética
+interna tampoco prueba exactitud independiente de cada componente.
+
+Como caso documentado, las fichas archivadas de David Silva y Yaya Touré en
+West Brom–City del 10 de agosto de 2015 producen 6 y 16 puntos. El club
+[documentó la atribución todavía pendiente el 12 de agosto](https://www.mancity.com/news/first-team/first-team-news/2015/august/whose-goal-was-it-anyway-yaya-or-silva);
+su [crónica consultada actualmente](https://www.mancity.com/news/first-team/match-report/2015/august/west-brom-v-city)
+atribuye un gol a cada uno. Esto respalda conservar versiones de atribución;
+no demuestra la causa de las otras 17 discrepancias ni cuándo se actualizó
+cada registro. No se reparan etiquetas con esta evidencia.
+
+El contraste hereda la restricción de investigación de **StatsBomb Open Data
+(Hudl)**, sin admisión comercial, entrenamiento ni redistribución del corpus.
+
+<img src="https://static.hudl.com/craft/productAssets/statsbomb_icon.svg" alt="Hudl StatsBomb" width="40" height="40">
+
+```bash
+python -m experiments.data_ground_truth.legacy_scoring_audit \
+  --package /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/training-datasets/d4baf849fb4a051be103f8c469e61a4753edb0b4004f980a000fe5c86ef573db \
+  --metadata-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/raw-history-2015 \
+  --comparison-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/statsbomb-goal-calibration-v2 \
+  --out /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/legacy-scoring-audit-v1
+```
+
+Reporte y dos artefactos individuales reproducidos byte por byte en v2. Los
+artefactos individuales permanecen fuera de Git. Suite completa: **1.640 passed,
+1 skipped, 79 deselected** (43,22 s). [Resultados G73](results-g73.json).
+GT v7, G55 y producción permanecen sin cambios. La brecha pendiente sigue siendo
+identidad, cobertura temporal y semántica verificable; contar más archivos no
+sustituye esos controles.
