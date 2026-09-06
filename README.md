@@ -111,7 +111,7 @@ de modelos por hash y exportación revisable, sin promover modelos al runtime.
 
 La capa experimental conserva los datos crudos fuera de Git, con manifiestos,
 SHA-256, fuentes fijadas por commit y auditorías reproducibles. El
-[registro de gates G1–G30](experiments/data_ground_truth/README.md) contiene
+[registro de gates G1–G31](experiments/data_ground_truth/README.md) contiene
 adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 
 | Capa | Cobertura verificada | Límite pendiente |
@@ -120,6 +120,7 @@ adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 | Bootstrap raw | 7.837 snapshots; estados, precios, clubes y posiciones | Disponibilidad y semántica varían por campo y temporada |
 | Estados con publicación histórica acreditada | 196/199 deadlines; 38/38 en cada temporada 2021/22–2025/26 | GW1–3 de 2026/27 sin testigo; selección desconocida no se convierte en elegibilidad |
 | Calendarios con publicación histórica acreditada, G30 | 184/199 deadlines; 38/38 en 2025/26 | Quince ventanas pendientes y frescura desigual: solo 14/38 calendarios 2025/26 tienen commit de hasta 48 horas |
+| Rendimiento raw, G31 | 143.720 filas y 22 campos tipados; sin valores numéricos inválidos | 31.071 descensos de celda, 27.211 entre GW1–2: falta resolver período y semántica antes de calcular deltas |
 | Reglas y chips de snapshots | Explícitos desde GW16 de 2024/25 y en toda 2025/26 | Faltan reglas históricas anteriores e interpretación de overrides |
 | Fuentes antiguas complementarias | Material parcial desde 2010/11 y totales desde 2006/07 | No cuentan como nuevas temporadas completas; persisten huecos de población e identidad |
 
@@ -132,8 +133,10 @@ Los datos permiten investigar más temporadas y estados, pero todavía no acredi
 un replay causal completo ni mejoras del modelo. GT v5, evidencia temporal y
 reglas se versionan por separado; este trabajo no habilita entrenamiento ni
 modifica el histórico productivo de 253.890 filas. El siguiente trabajo de datos
-es cerrar ventanas de publicación, mejorar frescura y validar las variables
-acumuladas de rendimiento que ya existen en los snapshots raw.
+es cerrar ventanas de publicación, mejorar frescura y conciliar el período de
+las estadísticas raw, especialmente en GW1. La validación numérica G31 no
+acredita acumulados de la temporada corriente ni deltas por jornada.
+[Resultados G31](experiments/data_ground_truth/results-g31.json).
 
 ## Empezar
 
