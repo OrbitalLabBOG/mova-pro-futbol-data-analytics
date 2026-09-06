@@ -4741,3 +4741,48 @@ Verificación: suite completa **1.667 passed, 1 skipped, 79 deselected** en 34,5
 Las pruebas nuevas cubren conservación de NULL, derivación de visitante, puntos
 negativos, conflictos de localía/clubes, claves duplicadas, cruce entre temporadas
 y etiquetas fraccionarias.
+
+## G84 en curso — Archivo público de snapshots Azure
+
+Se localizó [martgra/fpl-timeseries-data](https://github.com/martgra/fpl-timeseries-data),
+revisión `f5135c27cc75e56370d310bb359157dd84c29cee`. README, licencia Apache-2.0
+y código de configuración se preservan con URL/SHA en
+`azure-history-source-g84`, fuera de Git. El repositorio declara capturas cada
+seis horas y acceso de lectura; su configuración identifica dos contenedores
+públicos que respondieron a enumeración anónima:
+
+| Contenedor | Blobs enumerados | Bytes declarados | Primer–último nombre |
+| --- | ---: | ---: | --- |
+| 2020-fpl-data | 1.015 | 1.569.954.563 | 2020-09-12 – 2021-05-26 |
+| 2021-fpl-data | 1.509 | 1.548.146.723 | 2021-06-22 – 2022-07-05 |
+
+[Descubrimiento G84](results-g84-discovery.json) fija ambos XML por SHA y momento
+de consulta. Son **2.524 blobs y 3.118.101.286 bytes enumerados**, no una afirmación
+de descarga terminada. La adquisición está en curso: G84 no está cerrado.
+
+`azure_history.py` usa la primitiva GET existente, cuatro workers, un inventario
+fijado y receipts reanudables. Rechaza enumeraciones truncadas, nombres inesperados,
+duplicados y archivos cuyo tamaño/MD5 difiere del inventario. Preserva bytes por
+SHA-256, metadatos HTTP y tiempo de adquisición. Valida el contenido bootstrap y
+clasifica temporada por el deadline interno de GW1; no por el nombre del archivo.
+La reproducción offline revalida bytes y resúmenes sin acudir a la red.
+
+```bash
+python -m experiments.data_ground_truth.azure_history \
+  --root "$DATA_BASE/azure-history-g84"
+# Sólo tras completar la adquisición:
+python -m experiments.data_ground_truth.azure_history \
+  --root "$DATA_BASE/azure-history-g84" --offline
+```
+
+El contenido aporta estados bootstrap, no nuevas etiquetas jugador–partido.
+Nombre, `download_time`, ETag y Last-Modified se conservan como evidencia sin
+convertirlos automáticamente en prueba de publicación anterior al deadline.
+Pendientes: terminar los 2.524 archivos, reproducir offline, medir cobertura por
+jornada y contrastar con los snapshots existentes. No hay admisión temporal ni
+de entrenamiento, ni cambios al GT v7, runtime o archivo portable G78.
+
+Validación del capturador: **1.670 passed, 1 skipped, 79 deselected**, 33,71 s.
+Las pruebas cubren integridad del contenido, temporada distinta del nombre,
+truncación, claves duplicadas, rutas no admitidas y corrupción de caché. Esta suite
+no prueba que la adquisición completa haya finalizado.

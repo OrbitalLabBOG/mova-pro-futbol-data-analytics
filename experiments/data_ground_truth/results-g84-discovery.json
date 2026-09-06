@@ -1,0 +1,32 @@
+{
+  "version": "historical-data-g84-discovery",
+  "phase": "acquisition_in_progress_not_closed",
+  "repository": "martgra/fpl-timeseries-data",
+  "revision": "f5135c27cc75e56370d310bb359157dd84c29cee",
+  "source_manifest_sha256": "e594d9ab410a3ddd592fb141fd5f5427c6133114e93a6d1dc18245bc336b39d9",
+  "inventories": [
+    {
+      "container": "2020-fpl-data",
+      "url": "https://martinfplstats1337.blob.core.windows.net/2020-fpl-data?restype=container&comp=list&maxresults=5000",
+      "sha256": "9d2e390b7e244801e15f40f48be670a3a9baddda8e4a1ac6215d00f0d0e263dd",
+      "listed_blobs": 1015,
+      "listed_bytes": 1569954563,
+      "first_name": "2020-09-12T08-24-34Z_data.json",
+      "last_name": "2021-05-26T00-02-24Z_data.json",
+      "fetched_at": "2026-09-06T18:16:27.996859+00:00"
+    },
+    {
+      "container": "2021-fpl-data",
+      "url": "https://martinfplstats1337.blob.core.windows.net/2021-fpl-data?restype=container&comp=list&maxresults=5000",
+      "sha256": "0356bdc47a2a64a17d3d1fda67ed044557993a11f159a7e4f8c1444eca4068ca",
+      "listed_blobs": 1509,
+      "listed_bytes": 1548146723,
+      "first_name": "2021-06-22T12-02-08Z_data.json",
+      "last_name": "2022-07-05T12-00-02Z_data.json",
+      "fetched_at": "2026-09-06T18:16:30.377866+00:00"
+    }
+  ],
+  "training_admitted": false,
+  "production_changed": false,
+  "new_complete_label_seasons": 0
+}
