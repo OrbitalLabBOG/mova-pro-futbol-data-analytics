@@ -1,0 +1,350 @@
+{
+  "version": "historical-data-g14",
+  "history_consensus": {
+    "version": "history-consensus-v1",
+    "acquired_files": 517,
+    "parsed_nonempty_files": 517,
+    "empty_files": 0,
+    "quarantined_files": 0,
+    "acquired_bytes": 430549,
+    "prior_rows": 25479,
+    "prior_unique_keys": 8284,
+    "source_observation_rows": 27541,
+    "closed_through": 2025,
+    "excluded_open_season_rows": 0,
+    "consensus_player_seasons": 8786,
+    "conflicting_player_seasons": 0,
+    "additional_consensus_keys_over_prior": 502,
+    "season_counts": {
+      "2006/07": 101,
+      "2007/08": 126,
+      "2008/09": 166,
+      "2009/10": 187,
+      "2010/11": 229,
+      "2011/12": 267,
+      "2012/13": 339,
+      "2013/14": 412,
+      "2014/15": 529,
+      "2015/16": 509,
+      "2016/17": 683,
+      "2017/18": 472,
+      "2018/19": 476,
+      "2019/20": 538,
+      "2020/21": 713,
+      "2021/22": 536,
+      "2022/23": 608,
+      "2023/24": 865,
+      "2024/25": 562,
+      "2025/26": 468
+    },
+    "artifacts": {
+      "source_observations.csv": "11745f180e4ff6536be5abb99593dca0b36c1b77f68f66b77e927a792146a543",
+      "consensus_totals.csv": "0d2e18ce98ffd9e5eecfa01b4dc623f726eb00780c474b611856b8d67101eeb8",
+      "conflicting_observations.csv": "3a327953a30ccb1a694cacd1b2223ee17f0829ebecf17f81cd2d0c2631945357",
+      "open_season_observations.csv": "2b7234db6e8efd48a3dc9fac87d23f49fa0e9245ad43ce6707e303f0d5a9013c",
+      "file_audit.json": "a6fc12e450c3845ac8f0579cc3789971a9491131e3e67e127309a4a97ad8543f"
+    },
+    "manifest_sha256": "161c17b119b6ff32adef080cf2d3e4e5660a063448da35271f3bbd86fc25a797",
+    "prior_sha256": "0f933412627546ebe851d321f37ede989ee8f77173600db92a090eeda336c8d9",
+    "source_independence": "repeated_API_archives_not_independent_measurements",
+    "complete_population_seasons": 0,
+    "new_complete_gameweek_seasons": 0
+  },
+  "reference_before": {
+    "seasons": {
+      "2016/17": {
+        "matched_players": 683,
+        "outcome_disagreements": 0,
+        "history_without_reference": 0,
+        "reference_without_history": 0
+      },
+      "2017/18": {
+        "matched_players": 472,
+        "outcome_disagreements": 0,
+        "history_without_reference": 0,
+        "reference_without_history": 175
+      },
+      "2018/19": {
+        "matched_players": 476,
+        "outcome_disagreements": 1,
+        "history_without_reference": 0,
+        "reference_without_history": 148
+      },
+      "2019/20": {
+        "matched_players": 538,
+        "outcome_disagreements": 0,
+        "history_without_reference": 0,
+        "reference_without_history": 128
+      },
+      "2020/21": {
+        "matched_players": 713,
+        "outcome_disagreements": 0,
+        "history_without_reference": 0,
+        "reference_without_history": 0
+      },
+      "2021/22": {
+        "matched_players": 536,
+        "outcome_disagreements": 0,
+        "history_without_reference": 0,
+        "reference_without_history": 201
+      },
+      "2022/23": {
+        "matched_players": 607,
+        "outcome_disagreements": 0,
+        "history_without_reference": 1,
+        "reference_without_history": 171
+      },
+      "2023/24": {
+        "matched_players": 865,
+        "outcome_disagreements": 0,
+        "history_without_reference": 0,
+        "reference_without_history": 0
+      },
+      "2024/25": {
+        "matched_players": 562,
+        "outcome_disagreements": 1,
+        "history_without_reference": 0,
+        "reference_without_history": 242
+      },
+      "2025/26": {
+        "matched_players": 468,
+        "outcome_disagreements": 0,
+        "history_without_reference": 0,
+        "reference_without_history": 373
+      }
+    },
+    "matched_players": 5920,
+    "outcome_disagreements": 2,
+    "unsupported_history_rows": 2865,
+    "status": "retrospective_totals_comparison_not_population_completion",
+    "version": "history-reference-v1",
+    "history_sha256": "0d2e18ce98ffd9e5eecfa01b4dc623f726eb00780c474b611856b8d67101eeb8",
+    "reference_sha256": {
+      "2016-17": "9ed2df5bcbb385e0e01ef55fab72bccb71d57c30e96ad7ca5f5dad32cc4b599f",
+      "2017-18": "60cee6c8dfb47eb833847a9b71c8cd3603e9cdea83901f7ee4abe3549a6bc690",
+      "2018-19": "3ef7acfdf91d23efab056639ea2f145cf6ad4cae66d61780e1154d264031fba7",
+      "2019-20": "8ccb52155294aff11192b71d86fd9e52369658014ff5b1da2f507a10b3bb7489",
+      "2020-21": "38aad14d031e7f5b720b2aab68481f2e2f7c4d375b08660cfe620f496f25c322",
+      "2021-22": "7fcc5cd767c4a896481a7b5282156d0babcc8aa8a5e43c4b473e043df5280472",
+      "2022-23": "9df7eda77107e98e544de7bdf76a14216eaca5feff85dcaf686aea98e1067457",
+      "2023-24": "4661bc195d69f50713dd8837cfe765a12cf087719ebc6db0f89688d12ebc813e",
+      "2024-25": "547e148c2db8c27bb0165047d8f72c2052377f843752c4f56e15dd9599ffe204",
+      "2025-26": "f942b5271d0db12879d9c07b55c4a42ef73be34c7e84514af90a62fd33e46df7"
+    },
+    "comparison_sha256": "33be21e1e55ad9ca0bb03237cd103bd6753022886a3d26792eb54c64a105b15a"
+  },
+  "reference_after": {
+    "seasons": {
+      "2014/15": {
+        "matched_players": 505,
+        "outcome_disagreements": 0,
+        "history_without_reference": 24,
+        "reference_without_history": 160
+      },
+      "2015/16": {
+        "matched_players": 509,
+        "outcome_disagreements": 0,
+        "history_without_reference": 0,
+        "reference_without_history": 214
+      },
+      "2016/17": {
+        "matched_players": 683,
+        "outcome_disagreements": 0,
+        "history_without_reference": 0,
+        "reference_without_history": 0
+      },
+      "2017/18": {
+        "matched_players": 472,
+        "outcome_disagreements": 0,
+        "history_without_reference": 0,
+        "reference_without_history": 175
+      },
+      "2018/19": {
+        "matched_players": 476,
+        "outcome_disagreements": 0,
+        "history_without_reference": 0,
+        "reference_without_history": 148
+      },
+      "2019/20": {
+        "matched_players": 538,
+        "outcome_disagreements": 0,
+        "history_without_reference": 0,
+        "reference_without_history": 128
+      },
+      "2020/21": {
+        "matched_players": 713,
+        "outcome_disagreements": 0,
+        "history_without_reference": 0,
+        "reference_without_history": 0
+      },
+      "2021/22": {
+        "matched_players": 536,
+        "outcome_disagreements": 0,
+        "history_without_reference": 0,
+        "reference_without_history": 201
+      },
+      "2022/23": {
+        "matched_players": 607,
+        "outcome_disagreements": 0,
+        "history_without_reference": 1,
+        "reference_without_history": 171
+      },
+      "2023/24": {
+        "matched_players": 865,
+        "outcome_disagreements": 0,
+        "history_without_reference": 0,
+        "reference_without_history": 0
+      },
+      "2024/25": {
+        "matched_players": 562,
+        "outcome_disagreements": 0,
+        "history_without_reference": 0,
+        "reference_without_history": 242
+      },
+      "2025/26": {
+        "matched_players": 468,
+        "outcome_disagreements": 0,
+        "history_without_reference": 0,
+        "reference_without_history": 373
+      }
+    },
+    "matched_players": 6934,
+    "outcome_disagreements": 0,
+    "unsupported_history_rows": 1827,
+    "status": "retrospective_totals_comparison_not_population_completion",
+    "version": "history-reference-v1",
+    "history_sha256": "0d2e18ce98ffd9e5eecfa01b4dc623f726eb00780c474b611856b8d67101eeb8",
+    "reference_sha256": {
+      "2014-15": "cf30c5c622b9eeb6bf0f0f2af450a05e012cc38354bd0258b1d6e5adfe51935c",
+      "2015-16": "d9aa0e6c31e778f1d9579c9d3e16c0c54a3d21fb393481a1f56980f8e252e097",
+      "2016-17": "983f07618af9dd6eeadaa4c15966c482fb038ec0de668dbeeeff44ab4e677643",
+      "2017-18": "c45ef62d992bace24f7559f496b6e1cf20a9dd31a9285dace92a3994e944cd1a",
+      "2018-19": "ac4ad0b780476279fe72b7017b4cc9e3a58b8c565682c56e76e3cd4a0b6fc793",
+      "2019-20": "8be07be45c6a6c7979ec5bbcd4a6e6b54c29ffc2b91cd115d300879f77379995",
+      "2020-21": "56269abd9ac700ae5146e14a6b55fe3b39dd64cb9edc3a959bbb70aa073ddc85",
+      "2021-22": "3ef6f5c66f0806e93c9d384a5247161e27d822618346273c8a695607f18ec0c9",
+      "2022-23": "728f31efa7a9aac8da4c87c2eb79cf98532a08571ee343561b3f07c26499b3eb",
+      "2023-24": "68701db57139f6a10a6a3fcfdc3263a50f8ab4f71a6a66716c1ecab685d22148",
+      "2024-25": "d14673a3f8e9ae0417c41820b067226d780c279665592d577f4f6767afe01d93",
+      "2025-26": "fd6244ae95a43c6e9a8aaf74b0e56d37a9c54737e7db8d80b4e6309bb8c54aa1"
+    },
+    "reference_dataset_id": "f69c13a09b55c131fcae3e53bb09da43a827f31f58a501eef7a3c60239857456",
+    "reference_scope": "rows_with_official_player_identity",
+    "comparison_sha256": "d53bad485a34692c2017ca5ea6fbf5bcc5b1ae7a6ebbd34a1647ead3aed0c187"
+  },
+  "package": {
+    "dataset_id": "f69c13a09b55c131fcae3e53bb09da43a827f31f58a501eef7a3c60239857456",
+    "rows": 303448,
+    "partitions": [
+      {
+        "season": "2014-15",
+        "split": "train",
+        "rows": 24876
+      },
+      {
+        "season": "2015-16",
+        "split": "train",
+        "rows": 24741
+      },
+      {
+        "season": "2016-17",
+        "split": "train",
+        "rows": 23679
+      },
+      {
+        "season": "2017-18",
+        "split": "train",
+        "rows": 22467
+      },
+      {
+        "season": "2018-19",
+        "split": "train",
+        "rows": 21790
+      },
+      {
+        "season": "2019-20",
+        "split": "train",
+        "rows": 22501
+      },
+      {
+        "season": "2020-21",
+        "split": "train",
+        "rows": 24365
+      },
+      {
+        "season": "2021-22",
+        "split": "train",
+        "rows": 25447
+      },
+      {
+        "season": "2022-23",
+        "split": "train",
+        "rows": 26505
+      },
+      {
+        "season": "2023-24",
+        "split": "train",
+        "rows": 29725
+      },
+      {
+        "season": "2024-25",
+        "split": "validation",
+        "rows": 27605
+      },
+      {
+        "season": "2025-26",
+        "split": "evaluation",
+        "rows": 29747
+      }
+    ],
+    "version": "fpl-labels-v4",
+    "label_repairs": [
+      {
+        "season": "2018-19",
+        "source_sha256": "e2f0894ce7974adeae8ffad72cfb8431cf94fda93fbeb65f061e15cbf28372c0",
+        "metadata_sha256": "a2ad425f5692842d05ddc8de7eafa63cece551fde788278427594790e982046a",
+        "element": 2,
+        "official_player_code": 80201,
+        "fixture": 61,
+        "field": "minutes",
+        "before": 42,
+        "after": 45
+      },
+      {
+        "season": "2024-25",
+        "source_sha256": "de490b05e4b8d33ff05dad9d397ee87fcc054a5390d83aab3f03ec8521db5a44",
+        "metadata_sha256": "75686051b265cbe7755ac71213ecaad21b26ee1cc46a8bafbba19c39ce894b05",
+        "element": 123,
+        "official_player_code": 487117,
+        "fixture": 239,
+        "field": "minutes",
+        "before": 0,
+        "after": 17
+      },
+      {
+        "season": "2024-25",
+        "source_sha256": "de490b05e4b8d33ff05dad9d397ee87fcc054a5390d83aab3f03ec8521db5a44",
+        "metadata_sha256": "75686051b265cbe7755ac71213ecaad21b26ee1cc46a8bafbba19c39ce894b05",
+        "element": 123,
+        "official_player_code": 487117,
+        "fixture": 239,
+        "field": "total_points",
+        "before": 0,
+        "after": 1
+      },
+      {
+        "season": "2024-25",
+        "source_sha256": "de490b05e4b8d33ff05dad9d397ee87fcc054a5390d83aab3f03ec8521db5a44",
+        "metadata_sha256": "75686051b265cbe7755ac71213ecaad21b26ee1cc46a8bafbba19c39ce894b05",
+        "element": 123,
+        "official_player_code": 487117,
+        "fixture": 239,
+        "field": "goals_conceded",
+        "before": 0,
+        "after": 2
+      }
+    ],
+    "previous_dataset_id": "a81868dedb2dd70598f145d95871d352476570e316568cbfd841371b7fcc7f50"
+  },
+  "production_changed": false
+}

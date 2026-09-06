@@ -659,3 +659,79 @@ def test_player_history_acquisition_is_pinned_filtered_and_resumable(tmp_path,mo
     assert acquire(tmp_path/'raw',inventory,revision)['records']==result['records']
     assert len(calls)==1
     with pytest.raises(ValueError,match='inventory'):acquire(tmp_path/'raw',inventory,'b'*40)
+
+
+def test_history_snapshot_can_select_current_folder_without_personal_team_data(tmp_path,monkeypatch):
+    from experiments.data_ground_truth.history_archive import acquire
+    inventory=tmp_path/'tree.json';revision='a'*40
+    inventory.write_text(json.dumps(dict(sha=revision,truncated=False,tree=[
+        dict(type='blob',path='data/2026-27/players/Example/history.csv'),
+        dict(type='blob',path='team_123/history.csv'),
+        dict(type='blob',path='data/2025-26/players/Example/history.csv')])))
+    monkeypatch.setattr(raw,'_get',lambda url:b'element_code,season_name,minutes,total_points\n')
+    report=acquire(tmp_path/'raw',inventory,revision,'2026-27')
+    assert report['expected_files']==1
+    assert report['records'][0]['path']=='data/2026-27/players/Example/history.csv'
+    with pytest.raises(ValueError,match='snapshot season'):acquire(tmp_path/'raw',inventory,revision,'2026-28')
+
+
+def test_history_extension_preserves_conflicting_prior_witnesses_and_excludes_open_season(tmp_path):
+    from experiments.data_ground_truth.history_consensus import build
+    prior=tmp_path/'prior';prior.mkdir()
+    f=pd.DataFrame([dict(season='2025/26',official_player_code=20,minutes=90,points=2,source_sha256=s*64,source_path='earlier') for s in ['a','b']])
+    f.to_csv(prior/'source_observations.csv',index=False)
+    prior_sha=raw.digest((prior/'source_observations.csv').read_bytes())
+    (prior/'report.json').write_text(json.dumps(dict(version='history-consensus-v1',artifacts={'source_observations.csv':prior_sha})))
+    root=tmp_path/'raw';(root/'objects').mkdir(parents=True)
+    records=[]
+    for name,data in [('One',b'element_code,season_name,minutes,total_points\n20,2025/26,90,3\n'),
+                      ('Two',b'element_code,season_name,minutes,total_points\n30,2025/26,90,2\n30,2026/27,1,1\n')]:
+        sha=raw.digest(data);(root/'objects'/sha).write_bytes(data)
+        records.append(dict(path=f'data/2026-27/players/{name}/history.csv',sha256=sha))
+    (root/'manifest.json').write_text(json.dumps(dict(records=records,errors=[],expected_files=2)))
+    out=tmp_path/'out';report=build(root,prior,out,closed_through=2025)
+    assert report['prior_unique_keys']==1 and report['prior_rows']==2
+    assert report['conflicting_player_seasons']==1
+    assert report['consensus_player_seasons']==1
+    assert report['excluded_open_season_rows']==1
+    assert report['additional_consensus_keys_over_prior']==1
+    assert len(pd.read_csv(out/'conflicting_observations.csv'))==3
+    assert raw.digest((prior/'source_observations.csv').read_bytes())==prior_sha
+    assert pd.read_csv(out/'consensus_totals.csv').season.tolist()==['2025/26']
+
+
+def test_season_reference_audit_separates_disagreement_from_missing_population():
+    from experiments.data_ground_truth.history_reference import compare
+    totals=pd.DataFrame([dict(season='2025/26',official_player_code=i,minutes=90,points=2) for i in [1,2]])
+    reference=pd.DataFrame([dict(season='2025/26',official_player_code=i,minutes=90,points=3) for i in [1,3]])
+    joined,report=compare(totals,reference)
+    assert report['matched_players']==report['outcome_disagreements']==1
+    assert report['seasons']['2025/26']['history_without_reference']==1
+    assert report['seasons']['2025/26']['reference_without_history']==1
+    assert joined.outcome_disagreement.sum()==1
+    assert compare(totals.assign(season='2010/11'),reference)[1]['unsupported_history_rows']==2
+    with pytest.raises(ValueError,match='ambiguous'):
+        compare(pd.concat([totals,totals]),reference)
+
+
+def test_label_repair_requires_exact_fixture_identity_and_final_component_totals():
+    from experiments.data_ground_truth.label_repairs import repair_player
+    original=pd.DataFrame([dict(element=1,fixture=10,gw=24,round=24,kickoff_time='2025-02-01T12:30:00Z',
+        official_player_code=20,minutes=0,total_points=0,goals_conceded=0)])
+    individual=pd.DataFrame([dict(element=1,fixture=10,round=24,kickoff_time='2025-02-01T12:30:00Z',
+        minutes=17,total_points=1,goals_conceded=2)])
+    metadata=pd.DataFrame([dict(id=1,code=20,minutes=17,total_points=1,goals_conceded=2)])
+    repaired,changes=repair_player(original,individual,metadata,['goals_conceded'])
+    assert repaired.minutes.tolist()==[17] and repaired.total_points.tolist()==[1]
+    assert repaired.goals_conceded.tolist()==[2] and len(changes)==3
+    assert original.minutes.tolist()==[0]
+    with pytest.raises(ValueError,match='season total disagreement'):
+        repair_player(original,individual.assign(minutes=18),metadata,['goals_conceded'])
+    with pytest.raises(ValueError,match='code disagreement'):
+        repair_player(original,individual,metadata.assign(code=21),['goals_conceded'])
+    with pytest.raises(ValueError,match='fixture coverage'):
+        repair_player(original,individual.assign(fixture=11),metadata,['goals_conceded'])
+    with pytest.raises(ValueError,match='kickoff'):
+        repair_player(original,individual.assign(kickoff_time='2025-02-02T12:30:00Z'),metadata,['goals_conceded'])
+    with pytest.raises(ValueError,match='gameweek'):
+        repair_player(original,individual.assign(round=25),metadata,['goals_conceded'])

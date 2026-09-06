@@ -712,3 +712,69 @@ python -m experiments.data_ground_truth.history_consensus \
   --root "$PLAYER_HISTORIES_ROOT" --prior-root "$SEASON_EVIDENCE_ROOT" \
   --out "$HISTORY_CONSENSUS_ROOT"
 ```
+
+## Gate G14: todos los historiales del inventario y correcciones verificadas
+
+[results-g14.json](results-g14.json) incorpora los **517 historiales de jugadores**
+de la carpeta 2026/27: 430.549 bytes, cero errores y todos parseados. Junto a G13
+se han adquirido los **6.495 `history.csv` de jugadores** del inventario fijado;
+el otro historial pertenece a un equipo personal y no es parte de este dataset.
+La carpeta del snapshot puede corresponder a la temporada abierta mientras sus
+filas describen temporadas anteriores. El consenso admite solo temporadas hasta
+2025/26; una fila 2026/27 queda fuera y se conserva separada. Este lote no contenía
+filas de la temporada abierta.
+
+Se conservan los 25.479 registros fuente anteriores y se añaden 2.062: el consenso
+alcanza **8.786 claves jugador-temporada de 2006/07–2025/26**, 502 adicionales,
+sin contradicciones entre historiales. Incluye 468 totales 2025/26. Las claves
+conflictivas de una versión anterior también se preservan al extender el archivo,
+sin reemplazarlas por un consenso previo que las hubiera omitido.
+
+El contraste con las sumas de etiquetas por jornada encontró dos errores en los
+CSV combinados de Vaastav. Se adquirieron los CSV individuales en la misma revisión
+y se verificaron jugador/código, conjunto de partidos, jornada, fecha y sumas de
+**todos los componentes normalizados** contra `players_raw.csv` de esa temporada:
+
+| Jugador | Temporada / fixture FPL | Campo | Combinado anterior | CSV individual corroborado |
+| --- | --- | --- | ---: | ---: |
+| Bernd Leno | 2018/19 · 61 | minutos | 42 | 45 |
+| Evan Ferguson | 2024/25 · 239 | minutos | 0 | 17 |
+| Evan Ferguson | 2024/25 · 239 | puntos | 0 | 1 |
+| Evan Ferguson | 2024/25 · 239 | goles concedidos | 0 | 2 |
+
+Son correcciones de fuente, no etiquetas sintetizadas a partir de reglas ni de
+minutos deportivos. El paquete experimental vigente es **`fpl-labels-v4`**, ID
+`f69c13a09b55c131fcae3e53bb09da43a827f31f58a501eef7a3c60239857456`:
+303.448 filas, doce temporadas y las mismas particiones. Su manifiesto registra
+cada campo anterior/nuevo, fuentes, código de reparación y hashes. El paquete v3
+y los CSV combinados originales permanecen intactos; el canónico y el VPS no se
+modifican. Los experimentos comparables deben fijar el mismo dataset ID.
+
+Después de corregir, **6.934 totales jugador-temporada** coinciden con la suma de
+filas con identidad oficial de las doce particiones: cero diferencias de minutos
+o puntos en esa comparación. Hay registros fuera del rango y sin correspondencia;
+no se convierten en prueba de población completa ni de inscripción histórica.
+Sigue pendiente contrastar sistemáticamente los CSV individuales restantes, además
+de completar el histórico anterior a 2014/15 y acreditar disponibilidad predeadline.
+
+```bash
+python -m experiments.data_ground_truth.history_archive \
+  --root "$PLAYER_HISTORIES_2026_ROOT" --inventory "$VAASTAV_PINNED_INVENTORY" \
+  --revision 9779cdbc0c07f6c900c2d0c181ddf6bb9c800f88 --snapshot-season 2026-27
+python -m experiments.data_ground_truth.history_consensus \
+  --root "$PLAYER_HISTORIES_2026_ROOT" --prior-root "$HISTORY_CONSENSUS_ROOT" \
+  --out "$HISTORY_CONSENSUS_V2_ROOT" --closed-through 2025
+python -m experiments.data_ground_truth.training_dataset \
+  --recent-root "$RAW_HISTORY_ROOT" --old-root "$HISTORICAL_2014_ROOT" \
+  --identity-root "$IDENTITY_REGISTRY_ROOT/identity" \
+  --season-2015-root "$SEASON_2015_ROOT" --repairs-root "$LABEL_REPAIRS_ROOT" \
+  --output "$TRAINING_DATASETS_ROOT"
+python -m experiments.data_ground_truth.history_reference \
+  --consensus-root "$HISTORY_CONSENSUS_V2_ROOT" --package "$LABELS_V4_PACKAGE" \
+  --out "$HISTORY_REFERENCE_ROOT"
+```
+
+`LABEL_REPAIRS_ROOT` contiene el manifiesto y objetos adquiridos de
+`data/2018-19/players/Bernd_Leno_2/gw.csv` y
+`data/2024-25/players/Evan_Ferguson_123/gw.csv`, en la revisión Vaastav fijada.
+Los hashes exactos quedan en las reparaciones del manifiesto v4 y en G14.
