@@ -1,0 +1,140 @@
+{
+  "version": "historical-data-g100",
+  "audit": {
+    "version": "profile-snapshot-collection-v1",
+    "manifest_sha256": "483a8a0c83486c5d019cc823cc3fca708ce5c1b9a81d0a7d4c93299ad798ad87",
+    "tree_sha256": "094c125f4c970a04120f55a51015f484d302449f3fa512b92fd4cb06b64401ef",
+    "implementation_sha256": "028fd3b5ebfcb3b29f19b8da10324cf15d65983aa0263f53ff3a5a6951e90841",
+    "files": 2579,
+    "bytes": 17061506389,
+    "unique_contents": 2578,
+    "statuses": {
+      "profile_history_schema_valid": 2572,
+      "empty": 2,
+      "invalid_json": 5
+    },
+    "unique_history_projections": 253,
+    "nominal_months": {
+      "2015-02": 118,
+      "2015-03": 353,
+      "2015-04": 342,
+      "2015-05": 279,
+      "2015-06": 34,
+      "2015-07": 274,
+      "2015-08": 360,
+      "2015-09": 251,
+      "2015-10": 362,
+      "2015-11": 205,
+      "2018-09": 1
+    },
+    "new_complete_seasons": 0,
+    "training_admitted": false,
+    "production_changed": false,
+    "artifacts": {
+      "snapshots.json": "90cff64bf4519ec925335ddfae8dd8d273881cfef15db5768bb5c17b77042f25"
+    },
+    "limitations": [
+      "filename_time_not_publication_proof",
+      "schema_validation_not_fixture_reconciliation",
+      "history_projection_excludes_mutable_profile_state",
+      "raw_forecasts_not_observed_labels",
+      "snapshot_rows_must_not_be_summed_as_unique_observations"
+    ]
+  },
+  "report_sha256": "1f9309eab79f3804831e1d1545338fedf17bb63a0f53c4b945b6f9317d23bb83",
+  "reproduction_identical": true,
+  "valid_profiles_range": [
+    1,
+    711
+  ],
+  "valid_snapshots_without_history": 354,
+  "latest_annual_season_counts": {
+    "2013/14": 1088,
+    "2014/15": 1484
+  },
+  "snapshots_with_code_issues": 0,
+  "excluded_structures": [
+    {
+      "path": "data/players.1436437693.json",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "bytes": 2,
+      "nominal_filename_time": "2015-07-09T10:28:13+00:00",
+      "available_at": null,
+      "eligible_predeadline": false,
+      "status": "empty",
+      "profiles": 0,
+      "history_rows": 0
+    },
+    {
+      "path": "data/players.1441577157.json",
+      "sha256": "267909bb3805158a7d6ed8eb4168831601106bce0792cdc1873cdcbf2b959d34",
+      "bytes": 1265664,
+      "nominal_filename_time": "2015-09-06T22:05:57+00:00",
+      "available_at": null,
+      "eligible_predeadline": false,
+      "status": "invalid_json",
+      "profiles": null,
+      "error_type": "JSONDecodeError",
+      "error_offset": 1265664
+    },
+    {
+      "path": "data/players.1441613146.json",
+      "sha256": "73c1e95edcc65113c0353da3394997d33357dbc1fe20e0493c0dd76bef98c632",
+      "bytes": 1343488,
+      "nominal_filename_time": "2015-09-07T08:05:46+00:00",
+      "available_at": null,
+      "eligible_predeadline": false,
+      "status": "invalid_json",
+      "profiles": null,
+      "error_type": "JSONDecodeError",
+      "error_offset": 1343480
+    },
+    {
+      "path": "data/players.1441699566.json",
+      "sha256": "d615fa4de2b72569ff9d1cb14d3ebbb52e61e27dd25f7ccd38fd0ae68d0f0168",
+      "bytes": 606208,
+      "nominal_filename_time": "2015-09-08T08:06:06+00:00",
+      "available_at": null,
+      "eligible_predeadline": false,
+      "status": "invalid_json",
+      "profiles": null,
+      "error_type": "JSONDecodeError",
+      "error_offset": 606208
+    },
+    {
+      "path": "data/players.1447841166.json",
+      "sha256": "adf4981aa3c5df1cbe2bc708b85cd00c5e967c631bc2e0ac64c71cd657a6cea7",
+      "bytes": 4546560,
+      "nominal_filename_time": "2015-11-18T10:06:06+00:00",
+      "available_at": null,
+      "eligible_predeadline": false,
+      "status": "invalid_json",
+      "profiles": null,
+      "error_type": "JSONDecodeError",
+      "error_offset": 4546558
+    },
+    {
+      "path": "data/players.1447920361.json",
+      "sha256": "bb034eccf41a5f83ce4844c417e799298c2d688a0ed5888956e4502043b2619c",
+      "bytes": 1568768,
+      "nominal_filename_time": "2015-11-19T08:06:01+00:00",
+      "available_at": null,
+      "eligible_predeadline": false,
+      "status": "invalid_json",
+      "profiles": null,
+      "error_type": "JSONDecodeError",
+      "error_offset": 1568768
+    },
+    {
+      "path": "data/players.1537812761.json",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "bytes": 2,
+      "nominal_filename_time": "2018-09-24T18:12:41+00:00",
+      "available_at": null,
+      "eligible_predeadline": false,
+      "status": "empty",
+      "profiles": 0,
+      "history_rows": 0
+    }
+  ]
+}
