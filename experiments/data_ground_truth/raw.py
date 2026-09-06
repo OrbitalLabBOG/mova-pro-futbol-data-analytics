@@ -18,7 +18,7 @@ REPOS = ('vaastav/Fantasy-Premier-League', 'olbauday/FPL-Core-Insights',
          'imadeddine-belkat/Premier-League-Stats', 'TopMarxFPL/fpl-mirror', 'durtal/fantasysocceR',
          'prathmesh/Fantasy-Premier-League-Points-Predictor', 'clwatkins/fantasy_premier_league',
          'mvbfontes/premierleaguedatasets', 'sjp4/differentialfpl',
-         'darrenvong/fpl-data-visualiser', 'Randdalf/fplcache', 'Schwetche/fpl_project', 'hudl/open-data', 'lifebeyondfife/FantasyFootball', 'keithxm23/fplPlayer', 'keithxm23/fplassistant', 'keithxm23/fplassistantv2', 'barryedmund/gaffer')
+         'darrenvong/fpl-data-visualiser', 'Randdalf/fplcache', 'Schwetche/fpl_project', 'hudl/open-data', 'lifebeyondfife/FantasyFootball', 'keithxm23/fplPlayer', 'keithxm23/fplassistant', 'keithxm23/fplassistantv2', 'barryedmund/gaffer', 'nori/hbv401g-2015v-f1a', 'llimllib/fantasypl_stats')
 
 
 def digest(data: bytes) -> str:
@@ -71,6 +71,10 @@ def capture(root: Path, repo: str, revision: str, path: str) -> dict:
 def select(repo: str, path: str) -> bool:
     if path in ('README.md', 'LICENSE', 'DATA_INTEGRATION_REVIEW.md'):
         return True
+    if repo == 'nori/hbv401g-2015v-f1a':
+        return bool(re.fullmatch(r'cache/players/[0-9]+\.json', path)) or path == 'cache/teams.json'
+    if repo == 'llimllib/fantasypl_stats':
+        return bool(re.fullmatch(r'data/players\.[0-9]+\.json', path))
     if repo == 'barryedmund/gaffer':
         return path == 'lib/tasks/get_player_data.rake' or bool(re.fullmatch(r'public/player_data/2015_16_[0-9]+\.json', path))
     if repo == 'keithxm23/fplPlayer':
