@@ -135,6 +135,9 @@ anterior a esas transformaciones, pero detecta un jugador con minutos sin fila y
 un universo sin no apariciones. Audita además siete snapshots BSON de 2015/16,
 con cuarentena de identidades y resultados conflictivos. Son evidencia adicional,
 no nuevas temporadas completas: el conteo validado sigue siendo doce temporadas.
+G10 cruza los 380 partidos de 2010/11 con el archivo deportivo y localiza tres
+diferencias de conteo de apariciones; conserva 524 candidatos de identidad sin
+promoverlos. Las filas con minutos desconocidos siguen siendo desconocidas.
 
 ## Empezar
 
