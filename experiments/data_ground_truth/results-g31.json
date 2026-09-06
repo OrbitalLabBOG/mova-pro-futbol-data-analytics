@@ -1,0 +1,1728 @@
+{
+  "version": "historical-data-g31",
+  "performance_report_sha256": "45366aadfe7002e2369082a334a7c64d21bb6b7e0541baa5f27798040fee395b",
+  "performance": {
+    "version": "bootstrap-performance-v1",
+    "source_manifest_sha256": "d9eed1e354d0a35443e480a0c4bfcbdebee97f28b73b04309e4bef0f8bcc243e",
+    "selection_report_sha256": "1ace4506377f6bf92ff79d71f7b1083070f273c58f802518754f96fccb87b6fc",
+    "candidates_sha256": "1688ebad1f57a3640bad056db7e8ce5d5771a937313d2bee97c5f2f11598bf71",
+    "implementation_sha256": "f4245fa352ead9ace454f296548400901d34daace5479e59a124b5ca53fb9d1e",
+    "coverage": {
+      "2020-21": {
+        "snapshots": 6,
+        "player_rows": 4191,
+        "managers_excluded": 0,
+        "fields": {
+          "minutes": {
+            "valid": 4191
+          },
+          "starts": {
+            "absent": 4191
+          },
+          "goals_scored": {
+            "valid": 4191
+          },
+          "assists": {
+            "valid": 4191
+          },
+          "clean_sheets": {
+            "valid": 4191
+          },
+          "goals_conceded": {
+            "valid": 4191
+          },
+          "saves": {
+            "valid": 4191
+          },
+          "penalties_saved": {
+            "valid": 4191
+          },
+          "penalties_missed": {
+            "valid": 4191
+          },
+          "yellow_cards": {
+            "valid": 4191
+          },
+          "red_cards": {
+            "valid": 4191
+          },
+          "bonus": {
+            "valid": 4191
+          },
+          "defensive_contribution": {
+            "absent": 4191
+          },
+          "recoveries": {
+            "absent": 4191
+          },
+          "tackles": {
+            "absent": 4191
+          },
+          "clearances_blocks_interceptions": {
+            "absent": 4191
+          },
+          "total_points": {
+            "valid": 4191
+          },
+          "bps": {
+            "valid": 4191
+          },
+          "expected_goals": {
+            "absent": 4191
+          },
+          "expected_assists": {
+            "absent": 4191
+          },
+          "expected_goals_conceded": {
+            "absent": 4191
+          },
+          "expected_goal_involvements": {
+            "absent": 4191
+          }
+        }
+      },
+      "2021-22": {
+        "snapshots": 38,
+        "player_rows": 25150,
+        "managers_excluded": 0,
+        "fields": {
+          "minutes": {
+            "valid": 25150
+          },
+          "starts": {
+            "absent": 25150
+          },
+          "goals_scored": {
+            "valid": 25150
+          },
+          "assists": {
+            "valid": 25150
+          },
+          "clean_sheets": {
+            "valid": 25150
+          },
+          "goals_conceded": {
+            "valid": 25150
+          },
+          "saves": {
+            "valid": 25150
+          },
+          "penalties_saved": {
+            "valid": 25150
+          },
+          "penalties_missed": {
+            "valid": 25150
+          },
+          "yellow_cards": {
+            "valid": 25150
+          },
+          "red_cards": {
+            "valid": 25150
+          },
+          "bonus": {
+            "valid": 25150
+          },
+          "defensive_contribution": {
+            "absent": 25150
+          },
+          "recoveries": {
+            "absent": 25150
+          },
+          "tackles": {
+            "absent": 25150
+          },
+          "clearances_blocks_interceptions": {
+            "absent": 25150
+          },
+          "total_points": {
+            "valid": 25150
+          },
+          "bps": {
+            "valid": 25150
+          },
+          "expected_goals": {
+            "absent": 25150
+          },
+          "expected_assists": {
+            "absent": 25150
+          },
+          "expected_goals_conceded": {
+            "absent": 25150
+          },
+          "expected_goal_involvements": {
+            "absent": 25150
+          }
+        },
+        "gw1_players_with_nonzero_minutes": 372
+      },
+      "2022-23": {
+        "snapshots": 38,
+        "player_rows": 26198,
+        "managers_excluded": 0,
+        "fields": {
+          "minutes": {
+            "valid": 26198
+          },
+          "starts": {
+            "absent": 9301,
+            "valid": 16897
+          },
+          "goals_scored": {
+            "valid": 26198
+          },
+          "assists": {
+            "valid": 26198
+          },
+          "clean_sheets": {
+            "valid": 26198
+          },
+          "goals_conceded": {
+            "valid": 26198
+          },
+          "saves": {
+            "valid": 26198
+          },
+          "penalties_saved": {
+            "valid": 26198
+          },
+          "penalties_missed": {
+            "valid": 26198
+          },
+          "yellow_cards": {
+            "valid": 26198
+          },
+          "red_cards": {
+            "valid": 26198
+          },
+          "bonus": {
+            "valid": 26198
+          },
+          "defensive_contribution": {
+            "absent": 26198
+          },
+          "recoveries": {
+            "absent": 26198
+          },
+          "tackles": {
+            "absent": 26198
+          },
+          "clearances_blocks_interceptions": {
+            "absent": 26198
+          },
+          "total_points": {
+            "valid": 26198
+          },
+          "bps": {
+            "valid": 26198
+          },
+          "expected_goals": {
+            "absent": 9301,
+            "valid": 16897
+          },
+          "expected_assists": {
+            "absent": 9301,
+            "valid": 16897
+          },
+          "expected_goals_conceded": {
+            "absent": 9301,
+            "valid": 16897
+          },
+          "expected_goal_involvements": {
+            "absent": 9301,
+            "valid": 16897
+          }
+        },
+        "gw1_players_with_nonzero_minutes": 396
+      },
+      "2023-24": {
+        "snapshots": 38,
+        "player_rows": 29510,
+        "managers_excluded": 0,
+        "fields": {
+          "minutes": {
+            "valid": 29510
+          },
+          "starts": {
+            "valid": 29510
+          },
+          "goals_scored": {
+            "valid": 29510
+          },
+          "assists": {
+            "valid": 29510
+          },
+          "clean_sheets": {
+            "valid": 29510
+          },
+          "goals_conceded": {
+            "valid": 29510
+          },
+          "saves": {
+            "valid": 29510
+          },
+          "penalties_saved": {
+            "valid": 29510
+          },
+          "penalties_missed": {
+            "valid": 29510
+          },
+          "yellow_cards": {
+            "valid": 29510
+          },
+          "red_cards": {
+            "valid": 29510
+          },
+          "bonus": {
+            "valid": 29510
+          },
+          "defensive_contribution": {
+            "absent": 29510
+          },
+          "recoveries": {
+            "absent": 29510
+          },
+          "tackles": {
+            "absent": 29510
+          },
+          "clearances_blocks_interceptions": {
+            "absent": 29510
+          },
+          "total_points": {
+            "valid": 29510
+          },
+          "bps": {
+            "valid": 29510
+          },
+          "expected_goals": {
+            "valid": 29510
+          },
+          "expected_assists": {
+            "valid": 29510
+          },
+          "expected_goals_conceded": {
+            "valid": 29510
+          },
+          "expected_goal_involvements": {
+            "valid": 29510
+          }
+        },
+        "gw1_players_with_nonzero_minutes": 400
+      },
+      "2024-25": {
+        "snapshots": 38,
+        "player_rows": 27159,
+        "managers_excluded": 320,
+        "fields": {
+          "minutes": {
+            "valid": 27159
+          },
+          "starts": {
+            "valid": 27159
+          },
+          "goals_scored": {
+            "valid": 27159
+          },
+          "assists": {
+            "valid": 27159
+          },
+          "clean_sheets": {
+            "valid": 27159
+          },
+          "goals_conceded": {
+            "valid": 27159
+          },
+          "saves": {
+            "valid": 27159
+          },
+          "penalties_saved": {
+            "valid": 27159
+          },
+          "penalties_missed": {
+            "valid": 27159
+          },
+          "yellow_cards": {
+            "valid": 27159
+          },
+          "red_cards": {
+            "valid": 27159
+          },
+          "bonus": {
+            "valid": 27159
+          },
+          "defensive_contribution": {
+            "absent": 27159
+          },
+          "recoveries": {
+            "absent": 27159
+          },
+          "tackles": {
+            "absent": 27159
+          },
+          "clearances_blocks_interceptions": {
+            "absent": 27159
+          },
+          "total_points": {
+            "valid": 27159
+          },
+          "bps": {
+            "valid": 27159
+          },
+          "expected_goals": {
+            "valid": 27159
+          },
+          "expected_assists": {
+            "valid": 27159
+          },
+          "expected_goals_conceded": {
+            "valid": 27159
+          },
+          "expected_goal_involvements": {
+            "valid": 27159
+          }
+        },
+        "gw1_players_with_nonzero_minutes": 407
+      },
+      "2025-26": {
+        "snapshots": 38,
+        "player_rows": 29645,
+        "managers_excluded": 0,
+        "fields": {
+          "minutes": {
+            "valid": 29645
+          },
+          "starts": {
+            "valid": 29645
+          },
+          "goals_scored": {
+            "valid": 29645
+          },
+          "assists": {
+            "valid": 29645
+          },
+          "clean_sheets": {
+            "valid": 29645
+          },
+          "goals_conceded": {
+            "valid": 29645
+          },
+          "saves": {
+            "valid": 29645
+          },
+          "penalties_saved": {
+            "valid": 29645
+          },
+          "penalties_missed": {
+            "valid": 29645
+          },
+          "yellow_cards": {
+            "valid": 29645
+          },
+          "red_cards": {
+            "valid": 29645
+          },
+          "bonus": {
+            "valid": 29645
+          },
+          "defensive_contribution": {
+            "valid": 29645
+          },
+          "recoveries": {
+            "valid": 29645
+          },
+          "tackles": {
+            "valid": 29645
+          },
+          "clearances_blocks_interceptions": {
+            "valid": 29645
+          },
+          "total_points": {
+            "valid": 29645
+          },
+          "bps": {
+            "valid": 29645
+          },
+          "expected_goals": {
+            "valid": 29645
+          },
+          "expected_assists": {
+            "valid": 29645
+          },
+          "expected_goals_conceded": {
+            "valid": 29645
+          },
+          "expected_goal_involvements": {
+            "valid": 29645
+          }
+        },
+        "gw1_players_with_nonzero_minutes": 395
+      },
+      "2026-27": {
+        "snapshots": 3,
+        "player_rows": 1867,
+        "managers_excluded": 0,
+        "fields": {
+          "minutes": {
+            "valid": 1867
+          },
+          "starts": {
+            "valid": 1867
+          },
+          "goals_scored": {
+            "valid": 1867
+          },
+          "assists": {
+            "valid": 1867
+          },
+          "clean_sheets": {
+            "valid": 1867
+          },
+          "goals_conceded": {
+            "valid": 1867
+          },
+          "saves": {
+            "valid": 1867
+          },
+          "penalties_saved": {
+            "valid": 1867
+          },
+          "penalties_missed": {
+            "valid": 1867
+          },
+          "yellow_cards": {
+            "valid": 1867
+          },
+          "red_cards": {
+            "valid": 1867
+          },
+          "bonus": {
+            "valid": 1867
+          },
+          "defensive_contribution": {
+            "valid": 1867
+          },
+          "recoveries": {
+            "valid": 1867
+          },
+          "tackles": {
+            "valid": 1867
+          },
+          "clearances_blocks_interceptions": {
+            "valid": 1867
+          },
+          "total_points": {
+            "valid": 1867
+          },
+          "bps": {
+            "valid": 1867
+          },
+          "expected_goals": {
+            "valid": 1867
+          },
+          "expected_assists": {
+            "valid": 1867
+          },
+          "expected_goals_conceded": {
+            "valid": 1867
+          },
+          "expected_goal_involvements": {
+            "valid": 1867
+          }
+        },
+        "gw1_players_with_nonzero_minutes": 400
+      }
+    },
+    "player_rows": 143720,
+    "anomalies": {
+      "cumulative_decrease": 31071
+    },
+    "decrease_windows": [
+      {
+        "season": "2020-21",
+        "previous_gw": 33,
+        "gw": 34,
+        "cells": 6
+      },
+      {
+        "season": "2020-21",
+        "previous_gw": 34,
+        "gw": 35,
+        "cells": 8
+      },
+      {
+        "season": "2020-21",
+        "previous_gw": 35,
+        "gw": 36,
+        "cells": 12
+      },
+      {
+        "season": "2020-21",
+        "previous_gw": 37,
+        "gw": 38,
+        "cells": 13
+      },
+      {
+        "season": "2021-22",
+        "previous_gw": 1,
+        "gw": 2,
+        "cells": 2888
+      },
+      {
+        "season": "2021-22",
+        "previous_gw": 2,
+        "gw": 3,
+        "cells": 10
+      },
+      {
+        "season": "2021-22",
+        "previous_gw": 3,
+        "gw": 4,
+        "cells": 12
+      },
+      {
+        "season": "2021-22",
+        "previous_gw": 4,
+        "gw": 5,
+        "cells": 10
+      },
+      {
+        "season": "2021-22",
+        "previous_gw": 5,
+        "gw": 6,
+        "cells": 9
+      },
+      {
+        "season": "2021-22",
+        "previous_gw": 6,
+        "gw": 7,
+        "cells": 8
+      },
+      {
+        "season": "2021-22",
+        "previous_gw": 7,
+        "gw": 8,
+        "cells": 3
+      },
+      {
+        "season": "2021-22",
+        "previous_gw": 8,
+        "gw": 9,
+        "cells": 12
+      },
+      {
+        "season": "2021-22",
+        "previous_gw": 9,
+        "gw": 10,
+        "cells": 21
+      },
+      {
+        "season": "2021-22",
+        "previous_gw": 10,
+        "gw": 11,
+        "cells": 11
+      },
+      {
+        "season": "2021-22",
+        "previous_gw": 11,
+        "gw": 12,
+        "cells": 16
+      },
+      {
+        "season": "2021-22",
+        "previous_gw": 12,
+        "gw": 13,
+        "cells": 6
+      },
+      {
+        "season": "2021-22",
+        "previous_gw": 13,
+        "gw": 14,
+        "cells": 10
+      },
+      {
+        "season": "2021-22",
+        "previous_gw": 14,
+        "gw": 15,
+        "cells": 8
+      },
+      {
+        "season": "2021-22",
+        "previous_gw": 15,
+        "gw": 16,
+        "cells": 6
+      },
+      {
+        "season": "2021-22",
+        "previous_gw": 16,
+        "gw": 17,
+        "cells": 11
+      },
+      {
+        "season": "2021-22",
+        "previous_gw": 17,
+        "gw": 18,
+        "cells": 7
+      },
+      {
+        "season": "2021-22",
+        "previous_gw": 18,
+        "gw": 19,
+        "cells": 3
+      },
+      {
+        "season": "2021-22",
+        "previous_gw": 19,
+        "gw": 20,
+        "cells": 10
+      },
+      {
+        "season": "2021-22",
+        "previous_gw": 20,
+        "gw": 21,
+        "cells": 5
+      },
+      {
+        "season": "2021-22",
+        "previous_gw": 21,
+        "gw": 22,
+        "cells": 7
+      },
+      {
+        "season": "2021-22",
+        "previous_gw": 22,
+        "gw": 23,
+        "cells": 7
+      },
+      {
+        "season": "2021-22",
+        "previous_gw": 23,
+        "gw": 24,
+        "cells": 12
+      },
+      {
+        "season": "2021-22",
+        "previous_gw": 24,
+        "gw": 25,
+        "cells": 8
+      },
+      {
+        "season": "2021-22",
+        "previous_gw": 25,
+        "gw": 26,
+        "cells": 4
+      },
+      {
+        "season": "2021-22",
+        "previous_gw": 26,
+        "gw": 27,
+        "cells": 9
+      },
+      {
+        "season": "2021-22",
+        "previous_gw": 27,
+        "gw": 28,
+        "cells": 9
+      },
+      {
+        "season": "2021-22",
+        "previous_gw": 28,
+        "gw": 29,
+        "cells": 11
+      },
+      {
+        "season": "2021-22",
+        "previous_gw": 29,
+        "gw": 30,
+        "cells": 11
+      },
+      {
+        "season": "2021-22",
+        "previous_gw": 30,
+        "gw": 31,
+        "cells": 7
+      },
+      {
+        "season": "2021-22",
+        "previous_gw": 31,
+        "gw": 32,
+        "cells": 10
+      },
+      {
+        "season": "2021-22",
+        "previous_gw": 32,
+        "gw": 33,
+        "cells": 16
+      },
+      {
+        "season": "2021-22",
+        "previous_gw": 33,
+        "gw": 34,
+        "cells": 9
+      },
+      {
+        "season": "2021-22",
+        "previous_gw": 34,
+        "gw": 35,
+        "cells": 8
+      },
+      {
+        "season": "2021-22",
+        "previous_gw": 35,
+        "gw": 36,
+        "cells": 9
+      },
+      {
+        "season": "2021-22",
+        "previous_gw": 36,
+        "gw": 37,
+        "cells": 16
+      },
+      {
+        "season": "2021-22",
+        "previous_gw": 37,
+        "gw": 38,
+        "cells": 17
+      },
+      {
+        "season": "2022-23",
+        "previous_gw": 1,
+        "gw": 2,
+        "cells": 3036
+      },
+      {
+        "season": "2022-23",
+        "previous_gw": 2,
+        "gw": 3,
+        "cells": 23
+      },
+      {
+        "season": "2022-23",
+        "previous_gw": 3,
+        "gw": 4,
+        "cells": 9
+      },
+      {
+        "season": "2022-23",
+        "previous_gw": 4,
+        "gw": 5,
+        "cells": 21
+      },
+      {
+        "season": "2022-23",
+        "previous_gw": 5,
+        "gw": 6,
+        "cells": 13
+      },
+      {
+        "season": "2022-23",
+        "previous_gw": 6,
+        "gw": 7,
+        "cells": 10
+      },
+      {
+        "season": "2022-23",
+        "previous_gw": 8,
+        "gw": 9,
+        "cells": 7
+      },
+      {
+        "season": "2022-23",
+        "previous_gw": 9,
+        "gw": 10,
+        "cells": 17
+      },
+      {
+        "season": "2022-23",
+        "previous_gw": 10,
+        "gw": 11,
+        "cells": 7
+      },
+      {
+        "season": "2022-23",
+        "previous_gw": 11,
+        "gw": 12,
+        "cells": 11
+      },
+      {
+        "season": "2022-23",
+        "previous_gw": 12,
+        "gw": 13,
+        "cells": 14
+      },
+      {
+        "season": "2022-23",
+        "previous_gw": 13,
+        "gw": 14,
+        "cells": 13
+      },
+      {
+        "season": "2022-23",
+        "previous_gw": 14,
+        "gw": 15,
+        "cells": 14
+      },
+      {
+        "season": "2022-23",
+        "previous_gw": 15,
+        "gw": 16,
+        "cells": 15
+      },
+      {
+        "season": "2022-23",
+        "previous_gw": 16,
+        "gw": 17,
+        "cells": 11
+      },
+      {
+        "season": "2022-23",
+        "previous_gw": 17,
+        "gw": 18,
+        "cells": 12
+      },
+      {
+        "season": "2022-23",
+        "previous_gw": 18,
+        "gw": 19,
+        "cells": 17
+      },
+      {
+        "season": "2022-23",
+        "previous_gw": 19,
+        "gw": 20,
+        "cells": 14
+      },
+      {
+        "season": "2022-23",
+        "previous_gw": 20,
+        "gw": 21,
+        "cells": 11
+      },
+      {
+        "season": "2022-23",
+        "previous_gw": 21,
+        "gw": 22,
+        "cells": 498
+      },
+      {
+        "season": "2022-23",
+        "previous_gw": 22,
+        "gw": 23,
+        "cells": 323
+      },
+      {
+        "season": "2022-23",
+        "previous_gw": 23,
+        "gw": 24,
+        "cells": 19
+      },
+      {
+        "season": "2022-23",
+        "previous_gw": 24,
+        "gw": 25,
+        "cells": 16
+      },
+      {
+        "season": "2022-23",
+        "previous_gw": 25,
+        "gw": 26,
+        "cells": 11
+      },
+      {
+        "season": "2022-23",
+        "previous_gw": 26,
+        "gw": 27,
+        "cells": 16
+      },
+      {
+        "season": "2022-23",
+        "previous_gw": 27,
+        "gw": 28,
+        "cells": 11
+      },
+      {
+        "season": "2022-23",
+        "previous_gw": 28,
+        "gw": 29,
+        "cells": 99
+      },
+      {
+        "season": "2022-23",
+        "previous_gw": 29,
+        "gw": 30,
+        "cells": 10
+      },
+      {
+        "season": "2022-23",
+        "previous_gw": 30,
+        "gw": 31,
+        "cells": 14
+      },
+      {
+        "season": "2022-23",
+        "previous_gw": 31,
+        "gw": 32,
+        "cells": 16
+      },
+      {
+        "season": "2022-23",
+        "previous_gw": 32,
+        "gw": 33,
+        "cells": 14
+      },
+      {
+        "season": "2022-23",
+        "previous_gw": 33,
+        "gw": 34,
+        "cells": 13
+      },
+      {
+        "season": "2022-23",
+        "previous_gw": 34,
+        "gw": 35,
+        "cells": 14
+      },
+      {
+        "season": "2022-23",
+        "previous_gw": 35,
+        "gw": 36,
+        "cells": 17
+      },
+      {
+        "season": "2022-23",
+        "previous_gw": 36,
+        "gw": 37,
+        "cells": 13
+      },
+      {
+        "season": "2022-23",
+        "previous_gw": 37,
+        "gw": 38,
+        "cells": 9
+      },
+      {
+        "season": "2023-24",
+        "previous_gw": 1,
+        "gw": 2,
+        "cells": 4810
+      },
+      {
+        "season": "2023-24",
+        "previous_gw": 2,
+        "gw": 3,
+        "cells": 19
+      },
+      {
+        "season": "2023-24",
+        "previous_gw": 3,
+        "gw": 4,
+        "cells": 19
+      },
+      {
+        "season": "2023-24",
+        "previous_gw": 4,
+        "gw": 5,
+        "cells": 16
+      },
+      {
+        "season": "2023-24",
+        "previous_gw": 5,
+        "gw": 6,
+        "cells": 10
+      },
+      {
+        "season": "2023-24",
+        "previous_gw": 6,
+        "gw": 7,
+        "cells": 31
+      },
+      {
+        "season": "2023-24",
+        "previous_gw": 7,
+        "gw": 8,
+        "cells": 26
+      },
+      {
+        "season": "2023-24",
+        "previous_gw": 8,
+        "gw": 9,
+        "cells": 19
+      },
+      {
+        "season": "2023-24",
+        "previous_gw": 9,
+        "gw": 10,
+        "cells": 13
+      },
+      {
+        "season": "2023-24",
+        "previous_gw": 10,
+        "gw": 11,
+        "cells": 13
+      },
+      {
+        "season": "2023-24",
+        "previous_gw": 11,
+        "gw": 12,
+        "cells": 20
+      },
+      {
+        "season": "2023-24",
+        "previous_gw": 12,
+        "gw": 13,
+        "cells": 16
+      },
+      {
+        "season": "2023-24",
+        "previous_gw": 13,
+        "gw": 14,
+        "cells": 15
+      },
+      {
+        "season": "2023-24",
+        "previous_gw": 14,
+        "gw": 15,
+        "cells": 15
+      },
+      {
+        "season": "2023-24",
+        "previous_gw": 15,
+        "gw": 16,
+        "cells": 13
+      },
+      {
+        "season": "2023-24",
+        "previous_gw": 16,
+        "gw": 17,
+        "cells": 15
+      },
+      {
+        "season": "2023-24",
+        "previous_gw": 17,
+        "gw": 18,
+        "cells": 15
+      },
+      {
+        "season": "2023-24",
+        "previous_gw": 18,
+        "gw": 19,
+        "cells": 18
+      },
+      {
+        "season": "2023-24",
+        "previous_gw": 19,
+        "gw": 20,
+        "cells": 13
+      },
+      {
+        "season": "2023-24",
+        "previous_gw": 20,
+        "gw": 21,
+        "cells": 10
+      },
+      {
+        "season": "2023-24",
+        "previous_gw": 21,
+        "gw": 22,
+        "cells": 13
+      },
+      {
+        "season": "2023-24",
+        "previous_gw": 22,
+        "gw": 23,
+        "cells": 19
+      },
+      {
+        "season": "2023-24",
+        "previous_gw": 23,
+        "gw": 24,
+        "cells": 15
+      },
+      {
+        "season": "2023-24",
+        "previous_gw": 24,
+        "gw": 25,
+        "cells": 14
+      },
+      {
+        "season": "2023-24",
+        "previous_gw": 25,
+        "gw": 26,
+        "cells": 12
+      },
+      {
+        "season": "2023-24",
+        "previous_gw": 26,
+        "gw": 27,
+        "cells": 13
+      },
+      {
+        "season": "2023-24",
+        "previous_gw": 27,
+        "gw": 28,
+        "cells": 17
+      },
+      {
+        "season": "2023-24",
+        "previous_gw": 28,
+        "gw": 29,
+        "cells": 12
+      },
+      {
+        "season": "2023-24",
+        "previous_gw": 29,
+        "gw": 30,
+        "cells": 6
+      },
+      {
+        "season": "2023-24",
+        "previous_gw": 30,
+        "gw": 31,
+        "cells": 15
+      },
+      {
+        "season": "2023-24",
+        "previous_gw": 31,
+        "gw": 32,
+        "cells": 15
+      },
+      {
+        "season": "2023-24",
+        "previous_gw": 32,
+        "gw": 33,
+        "cells": 10
+      },
+      {
+        "season": "2023-24",
+        "previous_gw": 33,
+        "gw": 34,
+        "cells": 19
+      },
+      {
+        "season": "2023-24",
+        "previous_gw": 34,
+        "gw": 35,
+        "cells": 13
+      },
+      {
+        "season": "2023-24",
+        "previous_gw": 35,
+        "gw": 36,
+        "cells": 8
+      },
+      {
+        "season": "2023-24",
+        "previous_gw": 36,
+        "gw": 37,
+        "cells": 16
+      },
+      {
+        "season": "2023-24",
+        "previous_gw": 37,
+        "gw": 38,
+        "cells": 15
+      },
+      {
+        "season": "2024-25",
+        "previous_gw": 1,
+        "gw": 2,
+        "cells": 5013
+      },
+      {
+        "season": "2024-25",
+        "previous_gw": 2,
+        "gw": 3,
+        "cells": 25
+      },
+      {
+        "season": "2024-25",
+        "previous_gw": 3,
+        "gw": 4,
+        "cells": 22
+      },
+      {
+        "season": "2024-25",
+        "previous_gw": 4,
+        "gw": 5,
+        "cells": 18
+      },
+      {
+        "season": "2024-25",
+        "previous_gw": 5,
+        "gw": 6,
+        "cells": 30
+      },
+      {
+        "season": "2024-25",
+        "previous_gw": 6,
+        "gw": 7,
+        "cells": 19
+      },
+      {
+        "season": "2024-25",
+        "previous_gw": 7,
+        "gw": 8,
+        "cells": 20
+      },
+      {
+        "season": "2024-25",
+        "previous_gw": 8,
+        "gw": 9,
+        "cells": 27
+      },
+      {
+        "season": "2024-25",
+        "previous_gw": 9,
+        "gw": 10,
+        "cells": 17
+      },
+      {
+        "season": "2024-25",
+        "previous_gw": 10,
+        "gw": 11,
+        "cells": 21
+      },
+      {
+        "season": "2024-25",
+        "previous_gw": 11,
+        "gw": 12,
+        "cells": 21
+      },
+      {
+        "season": "2024-25",
+        "previous_gw": 12,
+        "gw": 13,
+        "cells": 21
+      },
+      {
+        "season": "2024-25",
+        "previous_gw": 13,
+        "gw": 14,
+        "cells": 34
+      },
+      {
+        "season": "2024-25",
+        "previous_gw": 14,
+        "gw": 15,
+        "cells": 26
+      },
+      {
+        "season": "2024-25",
+        "previous_gw": 15,
+        "gw": 16,
+        "cells": 14
+      },
+      {
+        "season": "2024-25",
+        "previous_gw": 16,
+        "gw": 17,
+        "cells": 29
+      },
+      {
+        "season": "2024-25",
+        "previous_gw": 17,
+        "gw": 18,
+        "cells": 38
+      },
+      {
+        "season": "2024-25",
+        "previous_gw": 18,
+        "gw": 19,
+        "cells": 20
+      },
+      {
+        "season": "2024-25",
+        "previous_gw": 19,
+        "gw": 20,
+        "cells": 11
+      },
+      {
+        "season": "2024-25",
+        "previous_gw": 20,
+        "gw": 21,
+        "cells": 25
+      },
+      {
+        "season": "2024-25",
+        "previous_gw": 21,
+        "gw": 22,
+        "cells": 14
+      },
+      {
+        "season": "2024-25",
+        "previous_gw": 22,
+        "gw": 23,
+        "cells": 37
+      },
+      {
+        "season": "2024-25",
+        "previous_gw": 23,
+        "gw": 24,
+        "cells": 26
+      },
+      {
+        "season": "2024-25",
+        "previous_gw": 24,
+        "gw": 25,
+        "cells": 32
+      },
+      {
+        "season": "2024-25",
+        "previous_gw": 25,
+        "gw": 26,
+        "cells": 19
+      },
+      {
+        "season": "2024-25",
+        "previous_gw": 26,
+        "gw": 27,
+        "cells": 26
+      },
+      {
+        "season": "2024-25",
+        "previous_gw": 27,
+        "gw": 28,
+        "cells": 27
+      },
+      {
+        "season": "2024-25",
+        "previous_gw": 28,
+        "gw": 29,
+        "cells": 15
+      },
+      {
+        "season": "2024-25",
+        "previous_gw": 29,
+        "gw": 30,
+        "cells": 14
+      },
+      {
+        "season": "2024-25",
+        "previous_gw": 30,
+        "gw": 31,
+        "cells": 16
+      },
+      {
+        "season": "2024-25",
+        "previous_gw": 31,
+        "gw": 32,
+        "cells": 22
+      },
+      {
+        "season": "2024-25",
+        "previous_gw": 32,
+        "gw": 33,
+        "cells": 40
+      },
+      {
+        "season": "2024-25",
+        "previous_gw": 33,
+        "gw": 34,
+        "cells": 37
+      },
+      {
+        "season": "2024-25",
+        "previous_gw": 34,
+        "gw": 35,
+        "cells": 18
+      },
+      {
+        "season": "2024-25",
+        "previous_gw": 35,
+        "gw": 36,
+        "cells": 24
+      },
+      {
+        "season": "2024-25",
+        "previous_gw": 36,
+        "gw": 37,
+        "cells": 15
+      },
+      {
+        "season": "2024-25",
+        "previous_gw": 37,
+        "gw": 38,
+        "cells": 15
+      },
+      {
+        "season": "2025-26",
+        "previous_gw": 1,
+        "gw": 2,
+        "cells": 5090
+      },
+      {
+        "season": "2025-26",
+        "previous_gw": 2,
+        "gw": 3,
+        "cells": 30
+      },
+      {
+        "season": "2025-26",
+        "previous_gw": 3,
+        "gw": 4,
+        "cells": 21
+      },
+      {
+        "season": "2025-26",
+        "previous_gw": 4,
+        "gw": 5,
+        "cells": 17
+      },
+      {
+        "season": "2025-26",
+        "previous_gw": 5,
+        "gw": 6,
+        "cells": 16
+      },
+      {
+        "season": "2025-26",
+        "previous_gw": 6,
+        "gw": 7,
+        "cells": 24
+      },
+      {
+        "season": "2025-26",
+        "previous_gw": 7,
+        "gw": 8,
+        "cells": 15
+      },
+      {
+        "season": "2025-26",
+        "previous_gw": 8,
+        "gw": 9,
+        "cells": 16
+      },
+      {
+        "season": "2025-26",
+        "previous_gw": 9,
+        "gw": 10,
+        "cells": 13
+      },
+      {
+        "season": "2025-26",
+        "previous_gw": 10,
+        "gw": 11,
+        "cells": 19
+      },
+      {
+        "season": "2025-26",
+        "previous_gw": 11,
+        "gw": 12,
+        "cells": 26
+      },
+      {
+        "season": "2025-26",
+        "previous_gw": 12,
+        "gw": 13,
+        "cells": 14
+      },
+      {
+        "season": "2025-26",
+        "previous_gw": 13,
+        "gw": 14,
+        "cells": 21
+      },
+      {
+        "season": "2025-26",
+        "previous_gw": 14,
+        "gw": 15,
+        "cells": 22
+      },
+      {
+        "season": "2025-26",
+        "previous_gw": 15,
+        "gw": 16,
+        "cells": 26
+      },
+      {
+        "season": "2025-26",
+        "previous_gw": 16,
+        "gw": 17,
+        "cells": 22
+      },
+      {
+        "season": "2025-26",
+        "previous_gw": 17,
+        "gw": 18,
+        "cells": 17
+      },
+      {
+        "season": "2025-26",
+        "previous_gw": 18,
+        "gw": 19,
+        "cells": 14
+      },
+      {
+        "season": "2025-26",
+        "previous_gw": 19,
+        "gw": 20,
+        "cells": 19
+      },
+      {
+        "season": "2025-26",
+        "previous_gw": 20,
+        "gw": 21,
+        "cells": 21
+      },
+      {
+        "season": "2025-26",
+        "previous_gw": 21,
+        "gw": 22,
+        "cells": 25
+      },
+      {
+        "season": "2025-26",
+        "previous_gw": 22,
+        "gw": 23,
+        "cells": 12
+      },
+      {
+        "season": "2025-26",
+        "previous_gw": 23,
+        "gw": 24,
+        "cells": 22
+      },
+      {
+        "season": "2025-26",
+        "previous_gw": 24,
+        "gw": 25,
+        "cells": 26
+      },
+      {
+        "season": "2025-26",
+        "previous_gw": 25,
+        "gw": 26,
+        "cells": 18
+      },
+      {
+        "season": "2025-26",
+        "previous_gw": 26,
+        "gw": 27,
+        "cells": 14
+      },
+      {
+        "season": "2025-26",
+        "previous_gw": 27,
+        "gw": 28,
+        "cells": 23
+      },
+      {
+        "season": "2025-26",
+        "previous_gw": 28,
+        "gw": 29,
+        "cells": 27
+      },
+      {
+        "season": "2025-26",
+        "previous_gw": 29,
+        "gw": 30,
+        "cells": 27
+      },
+      {
+        "season": "2025-26",
+        "previous_gw": 30,
+        "gw": 31,
+        "cells": 11
+      },
+      {
+        "season": "2025-26",
+        "previous_gw": 31,
+        "gw": 32,
+        "cells": 16
+      },
+      {
+        "season": "2025-26",
+        "previous_gw": 32,
+        "gw": 33,
+        "cells": 16
+      },
+      {
+        "season": "2025-26",
+        "previous_gw": 33,
+        "gw": 34,
+        "cells": 18
+      },
+      {
+        "season": "2025-26",
+        "previous_gw": 34,
+        "gw": 35,
+        "cells": 16
+      },
+      {
+        "season": "2025-26",
+        "previous_gw": 35,
+        "gw": 36,
+        "cells": 24
+      },
+      {
+        "season": "2025-26",
+        "previous_gw": 36,
+        "gw": 37,
+        "cells": 21
+      },
+      {
+        "season": "2025-26",
+        "previous_gw": 37,
+        "gw": 38,
+        "cells": 17
+      },
+      {
+        "season": "2026-27",
+        "previous_gw": 1,
+        "gw": 2,
+        "cells": 6374
+      },
+      {
+        "season": "2026-27",
+        "previous_gw": 2,
+        "gw": 3,
+        "cells": 32
+      }
+    ],
+    "decrease_fields": {
+      "total_points": 2917,
+      "bps": 4788,
+      "minutes": 2359,
+      "clean_sheets": 1939,
+      "goals_conceded": 2255,
+      "saves": 188,
+      "penalties_saved": 52,
+      "red_cards": 200,
+      "bonus": 1669,
+      "goals_scored": 1338,
+      "assists": 1422,
+      "yellow_cards": 1813,
+      "penalties_missed": 68,
+      "expected_goals": 1518,
+      "expected_goals_conceded": 1715,
+      "expected_assists": 1725,
+      "expected_goal_involvements": 1786,
+      "starts": 1461,
+      "defensive_contribution": 725,
+      "recoveries": 393,
+      "tackles": 365,
+      "clearances_blocks_interceptions": 375
+    },
+    "artifacts": {
+      "performance.jsonl.gz": "180186bed6da42ea4c19fa084c44506d05bdb6e953cd6b8e5be54e0e824c8f80",
+      "anomalies.json": "08328bf86200e8d911179f441497974e9c391ffc892e74eaf5fb4b7fdbf9573a"
+    },
+    "training_admitted": false,
+    "production_changed": false,
+    "limitations": [
+      "numeric_domains_only_not_full_semantic_validation",
+      "GW1_nonzero_totals_must_not_be_assumed_current_season",
+      "signed_points_and_BPS_can_legitimately_decrease",
+      "publication_witnesses_remain_separate_not_revalidated_here",
+      "identity_source_codes_preserved_no_cross_season_join",
+      "cumulative_decreases_are_diagnostics_not_automatic_repairs"
+    ]
+  },
+  "verification": {
+    "reproduced_byte_for_byte": true,
+    "tests_passed": 1496,
+    "tests_skipped": 1,
+    "tests_deselected": 79
+  },
+  "production_changed": false,
+  "gt_v5_changed": false,
+  "training_admitted": false
+}

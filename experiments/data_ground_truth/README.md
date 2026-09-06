@@ -1720,3 +1720,46 @@ cobertura, huecos, hashes y verificación. GT v5 y producción permanecen intact
 no se habilita entrenamiento ni replay completo. El próximo gate de datos debe
 medir frescura y cerrar ventanas, además de tipar y validar rendimiento acumulado
 raw antes de usarlo como variables causales.
+
+## Gate G31: rendimiento raw tipado y cambios de semántica
+
+Se extraen 22 campos de rendimiento de los 199 snapshots seleccionados en G21,
+verificando manifiesto, hashes y correspondencia de calendario. El paquete
+conserva **143.720 filas de jugadores** y excluye 320 filas de managers. Cada
+celda distingue ausencia, nulo, valor válido y motivo de rechazo. Conteos exigen
+enteros no negativos; puntos y BPS admiten valores negativos; xG/xA usan decimales
+finitos no negativos. No se rellenan ausencias con cero.
+
+Los dominios numéricos pasan sin celdas inválidas, pero eso no demuestra semántica
+homogénea. La comparación temporal detecta **31.071 descensos de celda**, de los
+que **27.211 ocurren entre GW1 y GW2**. Antes de GW1 ya hay minutos positivos para
+372 jugadores en 2021/22, 396 en 2022/23, 400 en 2023/24, 407 en 2024/25, 395 en
+2025/26 y 400 en 2026/27. No se interpretan como minutos acumulados de la nueva
+temporada, ni se restan automáticamente para reconstruir jornadas.
+
+Los descensos restantes tampoco equivalen todos a errores: puntos y BPS pueden
+bajar legítimamente. Hay descensos de xG/xA y componentes esperados en ventanas
+posteriores de 2022/23 que requieren conciliación. `anomalies.json` conserva
+valores, jornadas, código de origen y SHA del snapshot; no corrige ni elimina
+observaciones. Las comparaciones se separan por temporada, elemento y código,
+sin aplicar alias ni inferir identidad entre temporadas.
+
+| Campo | Cobertura numérica válida |
+| --- | --- |
+| Minutos y puntos | Todas las 143.720 filas seleccionadas |
+| Titularidades y xG/xA/xGC | Ausentes en 2020/21–2021/22; 16.897/26.198 filas de 2022/23; completas desde 2023/24 en esta selección |
+| Contribuciones defensivas y sus nuevos componentes | Se informa cobertura por campo y temporada en resultados; no se fabrican datos históricos anteriores |
+
+```bash
+python -m experiments.data_ground_truth.bootstrap_performance \
+  --raw-root "$BOOTSTRAP_RAW_ROOT" --selection-root "$PUBLICATION_SELECTION_ROOT" \
+  --out "$PERFORMANCE_AUDIT_ROOT"
+```
+
+Reporte, filas comprimidas e incidencias se reproducen byte por byte.
+[Resultados G31](results-g31.json) conserva hashes y cobertura detallada.
+Esta auditoría tipa los valores raw; los testigos temporales G21 siguen separados
+y no se revalidan aquí. `available_at` permanece nulo y entrenamiento deshabilitado.
+La siguiente conciliación debe determinar el período representado por cada campo,
+especialmente en pretemporada, antes de construir variables o deltas causales.
+GT v5 y producción permanecen intactos.
