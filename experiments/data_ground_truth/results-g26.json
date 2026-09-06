@@ -1,0 +1,206 @@
+{
+  "version": "historical-data-g26",
+  "audit": {
+    "version": "kickoff-semantics-v1",
+    "dataset_id": "1d111a458c9074fcd7ec2da516e82d9d1984600f6f057716112b92e855240df4",
+    "fixture_report_sha256": "448a774a7a32815a64655999542af121e188a6fbcd58cd1847430c1a0ba47c24",
+    "implementation_sha256": "1ef5607a0a52044c29ce1c3ef27d909294b110e6727b79c1039fd3bd58117566",
+    "seasons": [
+      {
+        "season": "2014-15",
+        "status": "no_fixture_history",
+        "rows": 24876
+      },
+      {
+        "season": "2015-16",
+        "status": "no_fixture_history",
+        "rows": 24741
+      },
+      {
+        "season": "2016-17",
+        "status": "no_fixture_history",
+        "rows": 23679
+      },
+      {
+        "season": "2017-18",
+        "status": "no_fixture_history",
+        "rows": 22467
+      },
+      {
+        "season": "2018-19",
+        "status": "compared",
+        "rows": 21790,
+        "reference_revision": "460d8ebade8b3023e58c5443c1cb6f4f79a3ce3b",
+        "reference_sha256": "567db7bd3ea369b42e30c93d34f937af83541121ff6be1667a700e4ecae85756",
+        "discrepant_rows": 0,
+        "discrepant_fixtures": 0,
+        "compared_rows": 21790
+      },
+      {
+        "season": "2019-20",
+        "status": "compared",
+        "rows": 22501,
+        "reference_revision": "f257ed51ce7c5169b4f682002a42dabf0682d4af",
+        "reference_sha256": "26918791f3ceb26e68557dd1ccaca5f2a02c2e261ea23abb208e8f7b10ab465a",
+        "discrepant_rows": 0,
+        "discrepant_fixtures": 0,
+        "compared_rows": 22501
+      },
+      {
+        "season": "2020-21",
+        "status": "compared",
+        "rows": 24365,
+        "reference_revision": "2e6c87be387b2a1900f1e93cbbc1fb91be2d6ea9",
+        "reference_sha256": "548edb79f980f44da2e8796dfb5deba5a4c356bc41f4a5d6afc49f5de1c4ae53",
+        "discrepant_rows": 0,
+        "discrepant_fixtures": 0,
+        "compared_rows": 24365
+      },
+      {
+        "season": "2021-22",
+        "status": "compared",
+        "rows": 25447,
+        "reference_revision": "969ebcc35cf19520b6c6318bf833a54074b7dfab",
+        "reference_sha256": "d5bdf6b8f133a3a6d99e527f1ff534cafbed2302f828216f9fc7a33bd8e3ac1d",
+        "discrepant_rows": 78,
+        "discrepant_fixtures": 1,
+        "compared_rows": 25447
+      },
+      {
+        "season": "2022-23",
+        "status": "compared",
+        "rows": 26505,
+        "reference_revision": "7009d351b6077cc3f3ae5bdc3a7e23f58f6817e6",
+        "reference_sha256": "3988b1b171cdcd829f8826a5eb6151b7526ceacb0d7d6620e2fa7c5482c54cbd",
+        "discrepant_rows": 0,
+        "discrepant_fixtures": 0,
+        "compared_rows": 26505
+      },
+      {
+        "season": "2023-24",
+        "status": "compared",
+        "rows": 29725,
+        "reference_revision": "204c134d8e90e2b6e69ec252aa3ef6f10f21e73c",
+        "reference_sha256": "4163910b69233d0736f2c351dc3e01affed6c428e537f8a51e8e33412da91855",
+        "discrepant_rows": 0,
+        "discrepant_fixtures": 0,
+        "compared_rows": 29725
+      },
+      {
+        "season": "2024-25",
+        "status": "compared",
+        "rows": 27283,
+        "reference_revision": "59c767596750f554ba464de94cf4fce8664a6cbe",
+        "reference_sha256": "bb9abf6ec30f191952b7e875248b87259fb3d33ca0338ca2490a1a84d254ee31",
+        "discrepant_rows": 0,
+        "discrepant_fixtures": 0,
+        "compared_rows": 27283
+      },
+      {
+        "season": "2025-26",
+        "status": "compared",
+        "rows": 29747,
+        "reference_revision": "a8337d50698de908f92e8d1905142d968384a2ca",
+        "reference_sha256": "d662b69161e58bde94b5ae6421de0ffb3eaa589cb52b6b5890ba7947ef3c7d37",
+        "discrepant_rows": 0,
+        "discrepant_fixtures": 0,
+        "compared_rows": 29747
+      }
+    ],
+    "discrepant_rows": 78,
+    "discrepant_season_fixtures": 1,
+    "artifacts": {
+      "differences.json": "041bc5fca62aa4e00604d97f9c821f6c3c792ef0d4242281e8ecee7da56a65a0",
+      "fixture_timelines.json": "594b422ed7872a13a970213f822007e1077765add1bcb9761a17e97f39331478"
+    },
+    "gt_changed": false,
+    "production_changed": false,
+    "eligible_predeadline": false,
+    "limitations": [
+      "final_fixture_clock_is_retrospective_not_predeadline_input",
+      "Git_time_is_not_publication_proof",
+      "scheduled_and_updated_kickoffs_may_both_be_correct_at_different_times",
+      "no_automatic_timestamp_repair"
+    ]
+  },
+  "compared_rows": 207363,
+  "fixture_clock_transitions": [
+    {
+      "season": "2021-22",
+      "revision": "0601bb2992bd202000461c7df7f56fc2d2e3d5a1",
+      "committer_at": "2021-07-21T20:57:13+00:00",
+      "source_sha256": "0f595a12f6f974af6e70a9bde5e1a59c666a4a6fe3bcc75bba23da174f6de142",
+      "normalized_sha256": "2dbc3f50836858ac67c603d661fbd91e61f76dded2c1852c2c1deb043fccb257",
+      "fixture": {
+        "code": 2210533,
+        "event": 27,
+        "finished": false,
+        "finished_present": true,
+        "finished_provisional": false,
+        "finished_provisional_present": true,
+        "id": 263,
+        "kickoff_time": "2022-02-26T15:00:00+00:00",
+        "provisional_start_time": false,
+        "provisional_start_time_present": true,
+        "started": false,
+        "started_present": true,
+        "team_a": 2,
+        "team_a_difficulty": 3,
+        "team_a_difficulty_present": true,
+        "team_h": 4,
+        "team_h_difficulty": 2,
+        "team_h_difficulty_present": true
+      }
+    },
+    {
+      "season": "2021-22",
+      "revision": "145a6102b3c6c8f5625be1290958c8ed71d081de",
+      "committer_at": "2022-03-12T10:31:10+00:00",
+      "source_sha256": "e2afcb95242954cb7ce28ab8b541318c74cf69dec2054159b34cccf085b1d434",
+      "normalized_sha256": "9ce7f72c0ab3fd28c3c06fa90345ce3dc729af1cf67e4134e7471ebd5f374a7b",
+      "fixture": {
+        "code": 2210533,
+        "event": 27,
+        "finished": true,
+        "finished_present": true,
+        "finished_provisional": true,
+        "finished_provisional_present": true,
+        "id": 263,
+        "kickoff_time": "2022-02-26T15:30:00+00:00",
+        "provisional_start_time": false,
+        "provisional_start_time_present": true,
+        "started": true,
+        "started_present": true,
+        "team_a": 2,
+        "team_a_difficulty": 3,
+        "team_a_difficulty_present": true,
+        "team_h": 4,
+        "team_h_difficulty": 3,
+        "team_h_difficulty_present": true
+      }
+    }
+  ],
+  "editorial_reference": {
+    "url": "https://www.brightonandhovenews.org/2022/02/26/traffic-delays-kick-off-as-brighton-and-hove-albion-prepare-to-host-aston-villa/",
+    "sha256": "4ee2c984746dcd62bd3d0985d91f0be366d6c707d5a84b6f47a994de1e877e38",
+    "bytes": 158274,
+    "fetched_at": "2026-09-06T06:47:00.924573+00:00",
+    "publication_witness": false
+  },
+  "identity_evidence": {
+    "season": "2021-22",
+    "fixture": 263,
+    "fixture_code": 2210533,
+    "home": "Brighton",
+    "away": "Aston Villa",
+    "teams_sha256": "c1dd02ed25fe832ba7bf6ce846ac506a00a0f0babdacb6bf2a011dc9eaa8cfad"
+  },
+  "interpretation": "78 rows concern one match delayed on matchday. Preserve scheduled/source-label and updated fixture clocks separately; later clock is not predeadline knowledge.",
+  "verification": {
+    "reproduced_byte_for_byte": true,
+    "tests_passed": 1468,
+    "tests_skipped": 1,
+    "tests_deselected": 79
+  },
+  "production_changed": false
+}

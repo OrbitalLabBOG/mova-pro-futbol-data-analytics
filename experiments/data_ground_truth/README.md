@@ -1480,3 +1480,45 @@ El gate no normaliza las 749 fechas futuras raw, no admite fixtures al replay y
 no modifica GT v5 ni producción. La siguiente prioridad es acreditar competición,
 ID de evento y calendario publicado antes del deadline, además del reloj; más
 archivos de esta fuente por sí solos no cierran la brecha.
+
+## Gate G26: horario previsto y actualización del día de partido
+
+`kickoff_semantics` verifica GT v5 y contrasta **207.363 filas de ocho temporadas**
+(2018/19–2025/26) con la última versión fijada de fixtures de cada temporada.
+No faltan referencias ni relojes en ese cruce; no hay diferencias de jornada.
+Las cuatro temporadas anteriores no tienen historial en esta fuente y quedan
+explícitamente fuera de esta verificación, no declaradas correctas por ausencia.
+
+Las **78 diferencias** son del mismo fixture 263 de 2021/22, Brighton–Aston Villa,
+código 2210533. GT conserva `2022-02-26T15:00:00Z`; la referencia final e historiales
+individuales conservan 15:30. El historial de fixtures mantiene ID, código y equipos:
+la primera versión adquirida usa 15:00; la primera versión adquirida con 15:30
+tiene commit del 12 de marzo de 2022. Esa fecha de commit no es la fecha real del
+anuncio ni prueba de publicación.
+
+La [crónica local del día](https://www.brightonandhovenews.org/2022/02/26/traffic-delays-kick-off-as-brighton-and-hove-albion-prepare-to-host-aston-villa/)
+explica el retraso hasta 15:30 por tráfico. Se archiva el HTML con hash y fecha de
+descarga actual. La noticia corrobora la explicación, pero no acredita el instante
+en que FPL actualizó su API. Hay un cambio real de horario: no corresponde aplicar
+una corrección global de zona ni tratar las 78 filas como 78 errores independientes.
+
+El contrato actual de `event_time_utc` copia el kickoff del CSV de etiquetas; no
+garantiza inicio real observado ni publicación de resultados. Se preserva GT v5
+y se añade la trayectoria del fixture como evidencia separada. Un futuro paquete
+con relojes explícitos deberá distinguir horario previsto observado, horario
+actualizado y disponibilidad de cada observación; no retropropagar 15:30 a un
+estado anterior al anuncio. Ninguno de estos timestamps acredita por sí solo
+cuándo las etiquetas estuvieron disponibles.
+
+```bash
+python -m experiments.data_ground_truth.kickoff_semantics \
+  --package "$GT_V5_PACKAGE" --fixture-root "$FIXTURE_HISTORY_AUDIT_ROOT" \
+  --out "$KICKOFF_SEMANTICS_ROOT"
+```
+
+Reporte y dos sidecars reproducidos byte por byte. Suite: **1.468 passed,
+1 skipped, 79 deselected**. Las pruebas cubren horarios equivalentes con offsets,
+referencias ausentes, valores desconocidos, identidades duplicadas y preservación
+de entradas. [Resultados y hashes G26](results-g26.json). Este gate explica la
+discrepancia conocida y amplía su contraste al resto de temporadas disponibles;
+no añade temporadas ni habilita entrenamiento o replay.
