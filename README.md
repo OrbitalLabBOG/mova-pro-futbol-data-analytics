@@ -226,6 +226,11 @@ con identidad FPL completa para 2025/26. La unión con el archivo anterior aumen
 de 6 a 18 los deadlines con commit previo de hasta 48 horas; falta corroborar
 publicación histórica. [Resultados G27](experiments/data_ground_truth/results-g27.json).
 
+G28 corrobora publicación anterior al deadline para **26 calendarios 2025/26**
+de la nueva fuente mediante GH Archive y ascendencia Git verificada. Cubren
+5.015 observaciones futuras; quedan diez candidatos sin testigo y GW1–2 sin
+candidato de esta fuente. [Resultados G28](experiments/data_ground_truth/results-g28.json).
+
 ## Empezar
 
 Requiere Python 3.13.

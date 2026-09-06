@@ -1571,3 +1571,46 @@ objetos normalizados se reprodujeron byte por byte. Suite: **1.470 passed,
 cambios de equipos, clocks desconocidos y exclusión de resultados. GT v5,
 entrenamiento y producción intactos. Próximo gate: testigos de publicación y
 comparación de frescura conjunta; los 36 candidatos no se admiten aún al replay.
+
+## Gate G28: publicación histórica de calendarios corroborada
+
+`fixture_publication` liga cada uno de los 36 candidatos de G27 con su CSV raw,
+blob Git, commit alcanzable del pin y objeto normalizado. Verifica el reloj real
+del commit contra los metadatos adquiridos. Después busca eventos públicos de
+`Schwetche/fpl_project`, ID GitHub `1042951725`, en [GH Archive](https://www.gharchive.org/).
+Se preservan solo eventos del repositorio exacto, con hash del archivo horario
+y de la línea original; no se retiene actividad GitHub ajena.
+
+La primera pasada adquirió 36 horas y encontró 24 coincidencias directas. Para
+los doce casos sin coincidencia se adquirió también la hora siguiente: en total
+**48 horas, 1.971.757.699 bytes y cero errores**. Los eventos cuyo head no coincide
+se contrastan mediante `git merge-base --is-ancestor`: solo un commit realmente
+alcanzable desde el head público puede recibir ese testigo. El sentido inverso
+no constituye evidencia. Los campos proyectados del evento se vuelven a validar
+contra su línea raw sellada antes de utilizarlos.
+
+Resultado: **26/36 candidatos con publicación previa corroborada** —24 exactos y
+dos por ascendencia, GW23 y GW37—. Cubren **5.015 observaciones futuras de fixtures**,
+repetidas entre calendarios; trece tienen commit nominal de hasta 48 horas antes
+del deadline. La hora del push es una cota superior conservadora de publicación,
+no la hora de captura de la API. La antigüedad máxima de publicación entre los
+seleccionados ronda 200 horas: evidencia temporal no equivale a máxima frescura.
+
+Quedan sin testigo en las horas examinadas GW9,13,17,18,25,26,27,28,31,32;
+GW1–2 no tenían candidato G27. Un evento ausente no prueba no publicación ni
+justifica reemplazar el calendario por su versión final. La siguiente búsqueda
+puede usar capturas anteriores y fuentes complementarias, midiendo su antigüedad.
+
+```bash
+python -m experiments.data_ground_truth.fixture_publication \
+  --root "$FIXTURE_PUBLICATION_ROOT" --audit-root "$ADDITIONAL_FIXTURE_AUDIT_ROOT" \
+  --raw-root "$ADDITIONAL_FIXTURE_RAW_ROOT" --repo "$ADDITIONAL_FIXTURE_SOURCE_GIT"
+```
+
+El reporte y testigos se reprodujeron byte por byte desde los eventos archivados,
+volviendo a validar sus hashes, proyecciones y ascendencia. Suite: **1.473 passed,
+1 skipped, 79 deselected**; pruebas de repositorio exacto, privacidad, límites de
+deadline, alteración de evidencia y ascendencia sobre un grafo Git local real.
+[Resultados G28](results-g28.json) conserva hashes y los dos testigos indirectos.
+Los flags de admisión del paquete G27 no se reescriben: los testigos son evidencia
+separada y no habilitan entrenamiento, replay completo ni cambios en producción.
