@@ -4824,3 +4824,55 @@ curso, ya superado por este cierre. Bytes en `azure-history-g84`, documentos en
 portable G78 congelado. GT v7 permanece en 303.126 filas/doce temporadas, sin
 entrenamiento ni cambios productivos. Quedan pendientes el enlace con GT,
 la comparación con estados existentes y la admisión temporal de esta fuente.
+
+## G85 — Enlace de estados Azure con identidades del GT
+
+`azure_gt_identity.py` verifica los hashes de G84, sus ventanas y los objetos
+seleccionados; revalida íntegramente el paquete GT fijado por `current-labels.json`.
+El enlace exige **ID estacional y código oficial coincidentes dentro de temporada**.
+No usa nombres ni reemplaza códigos con el identificador interno. Mapas GT
+ambiguos bloquean el proceso; identidades duplicadas en snapshots quedan sin enlace.
+
+| Temporada | Variantes de ventana | Observaciones jugador–ventana | Enlace exacto | Filas GT de GW seleccionadas | Filas GT enlazadas en alguna variante |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 2020/21 | 39 | 24.866 | 24.865 | 23.940 | 23.786 |
+| 2021/22 | 42 | 27.774 | 27.774 | 25.447 | 25.257 |
+
+El denominador de estados son comparaciones jugador–ventana, no ejemplos
+independientes. Las variantes pueden reutilizar un snapshot o una jornada.
+Hay **52.639 enlaces exactos de 52.640**. El caso restante es GW26 2020/21,
+captura nominal del 27-02-2021 06:00:42 UTC: ID 671 declara código 490098 y el
+GT asigna 465390 a ese ID. Se conserva como
+`code_absent_from_gt_with_id_conflict`, sin resolverlo por el nombre «Hayden».
+Esta discrepancia no determina por sí sola qué fuente contiene el código correcto.
+
+En las jornadas seleccionadas, 49.043 de 49.387 filas GT tienen identidad exacta
+en alguna variante. **344 filas** no la tienen en ninguna. Considerando ausencia
+en al menos una variante hay 356 filas GT distintas (162/194 por temporada),
+porque una fila puede faltar en una versión y aparecer en otra.
+
+El artefacto de huecos conserva 388 comparaciones fila GT–ventana sin identidad
+(172/216), incluidas **35 apariciones distintas con minutos positivos** (22/13).
+No se fabrican jugadores ni ceros para completarlas. La ausencia del snapshot no
+prueba inelegibilidad al deadline: queda pendiente medir primera aparición y
+última captura sin cada jugador para distinguir observaciones tardías y huecos
+del archivo. Las etiquetas usan la GW retrospectiva del GT, no un calendario
+que se dé por conocido antes del partido.
+
+Salidas externas: `state_identity_links.csv`, `unmatched_gt_rows.csv` y
+`windows.json`, con temporada, variante de deadline y SHA del snapshot. Las
+etiquetas de diagnóstico permanecen separadas de los enlaces de estado. Todas
+las salidas mantienen disponibilidad desconocida y admisiones desactivadas.
+Identidad correcta no equivale a admisión causal ni a un benchmark validado.
+
+```bash
+python -m experiments.data_ground_truth.azure_gt_identity \
+  --base "$DATA_BASE" \
+  --out "$DATA_BASE/azure-gt-identity-g85-v1"
+```
+
+Reporte y tres artefactos reproducidos byte por byte en dos raíces. Suite
+completa: **1.675 passed, 1 skipped, 79 deselected**, 49,16 s; incluye rechazo de
+IDs/códigos incompatibles, duplicados y mapas GT ambiguos.
+[Resultados G85](results-g85.json) fija métricas y hashes. No añade etiquetas ni
+modifica el GT v7, el runtime o el archivo portable G78 congelado.
