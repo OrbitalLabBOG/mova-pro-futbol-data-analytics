@@ -2629,3 +2629,59 @@ al cambiar una etiqueta informativa de igualdad retrospectiva, y separan poblaci
 cero, período y publicación. [Resultados G49](results-g49.json).
 GT v7 y producción permanecen intactos. El filtro prepara la admisión experimental;
 no modifica por sí mismo la configuración de benchmarks ni el entrenamiento.
+
+## Gate G50: inventario consolidado e integridad de la capa raw
+
+`raw_corpus_inventory.py` inspecciona todos los directorios `raw*/manifest.json`
+del corte y verifica tamaño y SHA-256 de cada objeto referenciado. Cada copia
+física se verifica, incluso cuando comparte hash con otro conjunto. Los exports
+del collector sólo permiten los cuerpos públicos bootstrap/fixtures: los hashes
+de payload de cuenta son referencias y no se leen ni exportan esos cuerpos.
+También verifica el paquete señalado por `current-labels.json`, incluidos hash
+del manifiesto y contrato de etiquetas.
+
+| Medida al corte | Resultado |
+| --- | ---: |
+| Conjuntos con manifiesto, incluidas versiones anteriores | 21 |
+| Registros en esos manifiestos | 32.423 |
+| Objetos físicos referenciados verificados | 27.214 |
+| Bytes físicos referenciados | 1.585.532.426 |
+| Contenidos únicos por SHA-256 | 24.462 |
+| Bytes únicos de esos contenidos | 1.396.855.878 |
+| Conjuntos con errores de adquisición declarados o conteo esperado incumplido | 0 |
+| Archivos de otros formatos inventariados | 141 |
+| Bytes de esos otros archivos | 49.817.739 |
+
+Los otros archivos proceden de siete carpetas: búsquedas, documentos oficiales,
+PDFs, FPL Discovery y evidencia de inspección. Se registra su hash actual como
+**línea base observada**, no como validación contra un manifiesto de adquisición.
+Los hashes no equivalen a nuevas observaciones deportivas ni resuelven licencias,
+semántica o disponibilidad anterior al deadline.
+
+`raw-history-differential` conserva **seis archivos de objeto no referenciados**
+por su manifiesto actual. Se cuentan como deuda de procedencia, fuera de los
+objetos referenciados verificados; no se eliminan ni se admiten como datos nuevos.
+El resto de los conjuntos no tiene objetos sin referencia. El siguiente paso
+es localizar los registros de adquisición de esos seis cuerpos antes de
+completar su inventario verificable.
+
+El paquete experimental vigente sigue siendo GT v7, 303.126 filas de jugadores
+2014/15–2025/26 y 322 de managers. La integridad del paquete se comprobó de nuevo.
+El inventario conserva por conjunto los repositorios, hashes de manifiestos,
+conteos y tipo de registro, sin mezclar versiones anteriores con adquisiciones
+nuevas. Esta comprobación no es una auditoría fresca de salud de producción.
+
+```bash
+python -m experiments.data_ground_truth.raw_corpus_inventory \
+  --base-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments \
+  --label-pointer experiments/data_ground_truth/current-labels.json \
+  --out /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/corpus-inventory-v4
+```
+
+Reporte y tres índices se reproducen byte por byte en `corpus-inventory-v5`.
+Las corridas anteriores se conservan como exploratorias/parciales. El comando
+rechaza ubicar su salida dentro del espacio `raw*`, para no inventariarse como
+fuente. **1.560 passed, 1 skipped, 79 deselected**. Pruebas de corrupción del
+mismo tamaño, digest inválido, allowlist de cuerpos públicos y separación de
+salida/entrada. [Resultados G50](results-g50.json). Sin entrenamiento, promoción
+ni cambios en producción; las brechas de cobertura y causalidad siguen abiertas.
