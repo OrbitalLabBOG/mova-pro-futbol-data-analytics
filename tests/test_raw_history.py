@@ -398,3 +398,48 @@ def test_historical_code_alias_requires_direct_fullname_and_prior_totals():
         reconcile_labels(labels,obs,old.iloc[:0],[player])
     no_registry=obs.assign(registry_code=None)
     assert reconcile_labels(labels, no_registry, old, [player])[1]['aliases']
+
+
+def test_acquire_reuses_pinned_inventory_and_rejects_wrong_revision(tmp_path,monkeypatch):
+    pins={raw.REPOS[8]:'a'*40};inventory=tmp_path/'inventories'/('sjp4-'+'a'*40+'.json')
+    inventory.parent.mkdir(parents=True)
+    tree=dict(sha='a'*40,truncated=False,tree=[dict(type='blob',path='README.md')])
+    inventory.write_text(json.dumps(tree))
+    calls=[]
+    def get(url):
+        calls.append(url)
+        assert 'api.github.com' not in url
+        return b'public archive documentation'
+    monkeypatch.setattr(raw,'_get',get)
+    result=raw.acquire(tmp_path,pins)
+    assert len(result['records'])==1
+    assert len(calls)==1
+    inventory.write_text(json.dumps(tree|{'sha':'b'*40}))
+    with pytest.raises(ValueError,match='mismatched source inventory'):
+        raw.acquire(tmp_path,pins)
+    assert not raw.select(raw.REPOS[8],'Differential/Database/DiffMoi_device.db3')
+
+
+def test_archive_audit_does_not_count_future_placeholders_as_labels(tmp_path):
+    import sqlite3
+    from experiments.data_ground_truth.differential_audit import read_tables,quality
+    db=tmp_path/'archive.db3'
+    matches=pd.DataFrame([
+        dict(season=11,player_fpl_id=1,fixture_id=100,gameweek=37,minutes=90,total=2),
+        dict(season=11,player_fpl_id=1,fixture_id=101,gameweek=38,minutes=None,total=None),
+    ])
+    metadata=pd.DataFrame([dict(season=11,fpl_id=1,player_id=900,minutes=90,points=2)])
+    fixtures=pd.DataFrame([dict(season=11,_id=100),dict(season=11,_id=101)])
+    with sqlite3.connect(db) as con:
+        for name,frame in [('player_match',matches),('player_season',metadata),('fixture',fixtures)]:
+            frame.to_sql(name,con,index=False)
+    before=raw.digest(db.read_bytes());tables=read_tables(db);report=quality(tables)['11']
+    assert raw.digest(db.read_bytes())==before
+    assert report['referenced_gameweeks']==[37,38]
+    assert report['gameweeks_with_both_labels']==[37]
+    assert report['missing_minutes']==report['missing_points']==1
+    assert report['player_total_disagreements']==0
+    assert report['source_player_key']=='player_fpl_id'
+    assert report['status']=='unreconciled_archive_not_full_season_ground_truth'
+    tables['player_season']['points']=3
+    assert quality(tables)['11']['player_total_disagreements']==1

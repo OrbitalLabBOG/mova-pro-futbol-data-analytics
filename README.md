@@ -128,6 +128,9 @@ G6 completa 2015/16 con 24.741 observaciones, 723 jugadores y 380/380 partidos.
 El paquete v3 suma **303.448 etiquetas de doce temporadas consecutivas**, 2014/15–2025/26;
 verifica puntos y trece componentes contra totales finales de 2015/16. El manifiesto
 permite fijar las entradas de cada experimento; no acredita replay predeadline.
+G8 archiva y audita ocho bases históricas Differential, con material desde 2010/11:
+permanecen fuera del entrenamiento por cobertura incompleta, nulos y discrepancias
+con snapshots de totales. El conteo validado sigue siendo doce temporadas.
 
 ## Empezar
 

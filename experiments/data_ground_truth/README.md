@@ -414,3 +414,67 @@ con identidad actualizada y código original explícito. G5/G6 y el histórico c
 permanecen intactos. Estos enlaces retrospectivos no acreditan disponibilidad
 predeadline. Queda por ampliar la reconciliación de códigos PL entre temporadas,
 las identidades sin apariciones y las fuentes anteriores a 2014/15.
+
+
+## Gate G8: archivos anteriores a 2014/15, todavía sin promover
+
+La búsqueda amplió el inventario de 39 repositorios candidatos: 38 consultas
+completadas y una fallida. [results-g8.json](results-g8.json) conserva revisiones
+y hashes de inventarios. La extensión de archivo inicial no bastaba: aparecieron
+bases `.db3` y volcados `.bson` además de CSV/JSON.
+
+Se adquirieron **15 archivos / 37.857.224 bytes** de
+[sjp4/differentialfpl](https://github.com/sjp4/differentialfpl), fijados en
+`pins-g8.json`: ocho bases genéricas, un dump SQL, código documental del extractor,
+README y licencia. No se adquieren las bases de equipos personales `DiffMoi` ni
+se ejecutan Java, SQL o código de esa aplicación. No pertenece al legacy de MOVA.
+
+La auditoría abre SQLite en modo de solo lectura e inmutable, desactiva el schema
+confiable, comprueba integridad y exige tablas físicas conocidas. Conserva la
+semántica de ID: la base inicial usa `player_fpl_id`; las siguientes usan el ID
+interno `player_player_id`. Los cruces de totales usan el campo correspondiente de
+`player_season`, nunca asumen que ambos namespaces sean iguales.
+
+La base `diffgen16.db3` contiene estas filas con minutos y puntos no nulos:
+
+| Temporada | Filas con ambas etiquetas almacenadas |
+| --- | ---: |
+| 2010/11 | 8.320 |
+| 2011/12 | 9.462 |
+| 2012/13 | 10.076 |
+| 2013/14 | 10.389 |
+| 2014/15 | 1.925 |
+| 2015/16 | 0 |
+
+Estas cifras **no prueban temporadas completas ni etiquetas reconciliadas**.
+La base inicial 2010/11 tiene más cobertura que las posteriores, pero su GW38 es
+un placeholder: 673 filas sin minutos ni puntos. En `diffgen16`, las 20.292 filas
+2015/16 tampoco tienen resultados. Hay discrepancias entre sumas y snapshots de
+totales en otras temporadas, que pueden reflejar cortes distintos y requieren
+reconciliación. No se cuentan como nuevos ejemplos válidos ni se suman versiones
+solapadas de la misma base.
+
+Los NULL permanecen desconocidos. El extractor histórico omite algunos componentes
+cero, pero eso no acredita que todo NULL de cualquier tabla/versión equivalga a cero.
+La salida `staging/unreconciled_player_match.csv` usa una lista explícita de columnas,
+excluye predicciones y métricas calculadas, y lleva `eligible_training=false`,
+`eligible_predeadline=false` y `available_at` vacío.
+
+```bash
+python -m experiments.data_ground_truth.raw \
+  --root "$DIFFERENTIAL_ROOT" --pins experiments/data_ground_truth/pins-g8.json
+python -m experiments.data_ground_truth.differential_audit \
+  --root "$DIFFERENTIAL_ROOT"
+```
+
+La adquisición ahora reutiliza inventarios ya capturados del mismo commit, y rechaza
+inventarios truncados o de otra revisión. Esto permitió continuar cuando la API
+pública de metadatos devolvió HTTP403, conservando el inventario previamente obtenido;
+las descargas públicas de archivos y su verificación SHA-256 completaron sin errores.
+
+El paquete validado sigue siendo `fpl-labels-v3`, 303.448 etiquetas y doce temporadas.
+Los siguientes candidatos son el dump SQL GW38 ya archivado, que debe leerse como
+literales sin ejecutar sus instrucciones, y los BSON de
+[darrenvong/fpl-data-visualiser](https://github.com/darrenvong/fpl-data-visualiser),
+aún no adquiridos. Sigue pendiente la propagación corroborada de IDs deportivos
+entre temporadas. No hay promoción de modelo ni cambio de producción en este gate.

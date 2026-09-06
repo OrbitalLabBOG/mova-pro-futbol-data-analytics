@@ -17,7 +17,7 @@ from mova_fpl.data.sources import _get
 REPOS = ('vaastav/Fantasy-Premier-League', 'olbauday/FPL-Core-Insights',
          'imadeddine-belkat/Premier-League-Stats', 'TopMarxFPL/fpl-mirror', 'durtal/fantasysocceR',
          'prathmesh/Fantasy-Premier-League-Points-Predictor', 'clwatkins/fantasy_premier_league',
-         'mvbfontes/premierleaguedatasets')
+         'mvbfontes/premierleaguedatasets', 'sjp4/differentialfpl')
 
 
 def digest(data: bytes) -> str:
@@ -70,6 +70,23 @@ def capture(root: Path, repo: str, revision: str, path: str) -> dict:
 def select(repo: str, path: str) -> bool:
     if path in ('README.md', 'LICENSE', 'DATA_INTEGRATION_REVIEW.md'):
         return True
+    if repo == REPOS[8]:
+        return path in {
+            'README.MD', 'LICENCE.txt',
+            'Differential/Database/DiffGen_11_37.db3',
+            'Differential/Database/DiffGen_13.db3',
+            'Differential/Database/DiffGen_14.db3',
+            'Differential/Database/diffgen14b.db3',
+            'Differential/Database/DiffGen_15.db3',
+            'Differential/Database/DiffGen_15a.db3',
+            'Differential/Database/diffgen15_final.db3',
+            'Differential/Database/diffgen16.db3',
+            'Differential/Database/release_prep.sql',
+            'Differential/Database/DiffGenTestData_11_38.sql',
+            'Differential/src/com/pennas/fpl/scrape/ScrapeMatchScoresCatchup.java',
+            'Differential/src/com/pennas/fpl/scrape/ScrapeMatchScores_New.java',
+            'Differential/src/com/pennas/fpl/util/DbGen.java',
+        }
     if repo == REPOS[7]:
         return bool(re.fullmatch(r'PlayersInfo/[0-9]+\.json', path))
     if repo == REPOS[5]:
@@ -94,13 +111,17 @@ def acquire(root: Path, pins: dict[str, str]) -> dict:
     for repo, revision in pins.items():
         if repo not in REPOS or not re.fullmatch('[0-9a-f]{40}', revision):
             raise ValueError('invalid pin')
-        tree = json.loads(_get(f'https://api.github.com/repos/{repo}/git/trees/{revision}?recursive=1'))
-        if tree.get('truncated'):
-            raise ValueError('incomplete source inventory')
-        # Preserve the complete inventory, including files we deliberately did not fetch.
         inventory = root / 'inventories' / (repo.split('/')[0] + '-' + revision + '.json')
+        if inventory.exists():
+            tree = json.loads(inventory.read_text())
+        else:
+            tree = json.loads(_get(f'https://api.github.com/repos/{repo}/git/trees/{revision}?recursive=1'))
+        if tree.get('sha') != revision or tree.get('truncated'):
+            raise ValueError('incomplete or mismatched source inventory')
+        # Reuse a previously captured inventory when the public metadata API is unavailable.
         inventory.parent.mkdir(parents=True, exist_ok=True)
-        inventory.write_text(json.dumps(tree, indent=2) + '\n')
+        if not inventory.exists():
+            inventory.write_text(json.dumps(tree, indent=2) + '\n')
         paths = [x['path'] for x in tree['tree'] if x['type'] == 'blob' and select(repo, x['path'])]
         def one(path):
             try:
