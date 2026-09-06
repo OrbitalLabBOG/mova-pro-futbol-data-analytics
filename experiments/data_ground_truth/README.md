@@ -1852,3 +1852,48 @@ Como contexto editorial se archivó el [anuncio oficial de Ramsdale en Newcastle
 La página de entrevista de Ugochukwu encontrada en búsqueda devolvió HTTP 404
 en adquisición directa; se registra el fallo, sin atribuirle evidencia descargada.
 Estas referencias no cambian los valores FPL ni acreditan publicación histórica.
+
+## Gate G34: calendarios anteriores publicados para ventanas pendientes
+
+Se reejecuta G30 y se exige reproducción exacta de reporte e índice, revalidando
+raw, Git y testigos. Para ventanas pendientes se selecciona el calendario completo
+más reciente de una jornada anterior de la misma temporada, con publicación
+anterior al deadline y antigüedad nominal máxima de catorce días. La cota se
+aplica solo a las adiciones; no redefine ni rejuvenece las 184 selecciones G30.
+No se encadenan imputaciones ni se elige por resultados deportivos.
+
+| Temporada / GW añadida | GW de origen | Antigüedad nominal, horas | Diferencias de horario posteriores |
+| --- | ---: | ---: | ---: |
+| 2021/22 GW10 | 9 | 264,92 | 2 |
+| 2021/22 GW28 | 27 | 192,48 | 0 |
+| 2022/23 GW14 | 12 | 289,58 | 22 |
+| 2023/24 GW17 | 16 | 177,98 | 0 |
+| 2023/24 GW37 | 36 | 193,43 | 0 |
+| 2024/25 GW15 | 14 | 127,10 | 0 |
+| 2024/25 GW27 | 26 | 116,98 | 0 |
+
+La selección crece a **191/199 deadlines**. 2023/24 y 2025/26 alcanzan 38/38;
+2021/22 y 2024/25 quedan en 36/38, 2022/23 en 37/38. El tramo 2020/21 conserva
+6/6. No aumenta el conteo de calendarios con commit de hasta 48 horas: esto
+amplía cobertura con evidencia anterior, no la frecuencia de captura.
+
+Quedan ocho ventanas: 2021/22 GW31–32, 2022/23 GW23, 2024/25 GW1 y GW5,
+y 2026/27 GW1–3. La comparación contra los candidatos posteriores sin testigo
+registra **24 diferencias de kickoff**, todas futuras respecto al deadline, y
+ninguna de jornada. Se preservan ambos valores en `deltas.json`; las versiones
+posteriores no se incorporan a las entradas. Se valida identidad completa de
+fixture antes de comparar. El testigo conserva su jornada/deadline de origen,
+y la selección registra por separado el nuevo contexto de uso.
+
+```bash
+python -m experiments.data_ground_truth.calendar_carryforward \
+  --base-root "$EXPERIMENTS_ROOT" --out "$CALENDAR_CARRYFORWARD_ROOT" \
+  --max-age-hours 336
+```
+
+Reporte, selección y diferencias se reprodujeron byte por byte; el proceso
+revalida también el padre en una carpeta separada. Suite: **1.509 passed,
+1 skipped, 79 deselected**. Pruebas cubren límites de edad, publicación estricta,
+aislamiento de temporada, identidad y conservación de valores anteriores.
+[Resultados G34](results-g34.json). La cobertura no acredita frescura suficiente
+para replay completo: GT v5, entrenamiento y producción continúan intactos.
