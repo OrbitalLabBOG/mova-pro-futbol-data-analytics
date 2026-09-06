@@ -1614,3 +1614,46 @@ deadline, alteración de evidencia y ascendencia sobre un grafo Git local real.
 [Resultados G28](results-g28.json) conserva hashes y los dos testigos indirectos.
 Los flags de admisión del paquete G27 no se reescriben: los testigos son evidencia
 separada y no habilitan entrenamiento, replay completo ni cambios en producción.
+
+## Gate G29: calendarios anteriores con publicación probada
+
+Para las diez ventanas G28 sin testigo, se planificaron 48 versiones anteriores
+de la serie principal, con identidad FPL acreditada y antigüedad nominal máxima
+de catorce días. La búsqueda intenta primero la más reciente y se detiene por
+jornada al hallar un testigo válido; no usa métricas de resultado para elegir.
+Cada intento vuelve a verificar raw, blob, ascendencia del pin y reloj Git.
+
+Se evaluaron **13 candidatos en dos rondas**, adquiriendo **26 horas de GH Archive,
+1.043.275.936 bytes**, sin errores. Se recuperaron **las diez ventanas**. Las
+sustituciones son entre 23,65 y 143,99 horas más antiguas que el candidato original,
+y tienen entre 36,57 y 199,51 horas de antigüedad al deadline. La cota de catorce
+días limita la búsqueda; no constituye una garantía de frescura suficiente para
+cualquier política de decisión.
+
+El selector revalida también los 26 testigos G28 contra sus eventos raw y grafo
+Git. Emite `selected_calendars.json`, ligado por hash a los objetos normalizados
+G27, con **36 calendarios, GW3–38 de 2025/26**, y evidencia de publicación previa
+para cada uno. Hay **6.648 observaciones futuras** repetidas entre capturas,
+catorce calendarios con commit previo de hasta 48 horas y antigüedad nominal
+máxima de 199,74 horas. GW1–2 siguen pendientes de fuente/testigo complementario.
+
+Comparadas con las versiones más recientes sin testigo, cuatro sustituciones
+presentan cambios: **32 campos kickoff y cuatro campos jornada**, en 32
+observaciones de fixture. El archivo de diferencias conserva ambos valores.
+Es un diagnóstico retrospectivo: no rellena la captura anterior con valores
+posteriores ni declara equivalente un calendario más antiguo. GT v5 y los
+snapshots de estados permanecen intactos.
+
+```bash
+python -m experiments.data_ground_truth.fixture_publication_alternatives \
+  --publication-root "$FIXTURE_PUBLICATION_ROOT" --audit-root "$ADDITIONAL_FIXTURE_AUDIT_ROOT" \
+  --raw-root "$ADDITIONAL_FIXTURE_RAW_ROOT" --repo "$ADDITIONAL_FIXTURE_SOURCE_GIT" \
+  --out "$FIXTURE_PUBLICATION_ALTERNATIVES_ROOT"
+```
+
+Reporte, plan, intentos, sustituciones y selección consolidados se reprodujeron
+byte por byte. Suite: **1.475 passed, 1 skipped, 79 deselected**; se prueban límites
+de antigüedad, exclusión de futuro, temporada incorrecta, identidad desconocida y
+snapshots derivados. [Resultados G29](results-g29.json). Los testigos acreditan
+publicación, no captura API ni readiness de replay completo; entrenamiento y
+producción continúan sin cambios.
