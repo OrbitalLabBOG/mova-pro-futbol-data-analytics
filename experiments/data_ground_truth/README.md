@@ -1147,3 +1147,76 @@ esos huecos, priorizando 2025/26, y definir la admisión del estado junto con su
 campos desconocidos. Una temporada con 38 testigos bootstrap todavía necesita
 reglas de juego, calendario conocido, transiciones y etiquetas compatibles para
 constituir un benchmark estratégico completo.
+
+## Gate G21: capturas anteriores para cerrar huecos de temporadas terminadas
+
+G21 busca alternativas para los 35 deadlines sin testigo en G20. El plan fija
+241 capturas anteriores dentro de 48 horas; exige una única adición Git, relojes
+coherentes y el mismo deadline en el calendario del propio snapshot. Examina de
+más reciente a más antigua y deja de consultar alternativas de una jornada al
+hallar un PushEvent público del commit exacto anterior al deadline. Esta selección
+usa evidencia de publicación, sin mirar los resultados deportivos.
+
+La corrida completó siete rondas, adquirió **85 horas** (3.211.301.171 bytes
+comprimidos) y encontró **32 testigos nuevos**. Una hora adicional no pudo
+adquirirse; su error queda registrado y el proceso devuelve exit 1. La búsqueda
+continuó con capturas anteriores de esa jornada y consiguió corroborarla. No se
+convierte un error de descarga en evidencia negativa ni se repiten horas ya
+verificadas dentro de una corrida. La cache permite reanudar.
+
+| Temporada | Deadlines corroborados G20 → G21 | Capturas sustituidas |
+| --- | ---: | ---: |
+| 2020/21, GW33–38 | 6 → 6 | 0 |
+| 2021/22 | 36 → 38 | 2 |
+| 2022/23 | 37 → 38 | 1 |
+| 2023/24 | 34 → 38 | 4 |
+| 2024/25 | 38 → 38 | 0 |
+| 2025/26 | 13 → 38 | 25 |
+| 2026/27, abierta GW1–3 | 0 → 0 | 0 |
+
+**196/199 deadlines** tienen ahora un snapshot corroborado. Esto incluye las
+38 jornadas de cada temporada 2021/22–2025/26; no implica cobertura temporal de las
+doce temporadas del GT. Los tres huecos restantes pertenecen a la temporada
+abierta. La ausencia de eventos en las horas consultadas no prueba no publicación.
+
+`publication_selection` conserva los 164 testigos anteriores, valida los nuevos
+contra su plan y sus eventos originales, y emite una selección diferente. Cada
+captura sustituida es entre **4,02 y 35,93 horas más antigua**, según su reloj
+declarado, que la de G20. Los nuevos pushes ocurrieron entre **6,65 y 39,38 horas**
+antes del deadline. Esta distancia debe conservarse como frescura de la señal;
+no se presentan los valores como si fueran los de la última captura.
+
+Con esa selección, `bootstrap_state` genera un paquete separado que conserva
+**143.720 filas de jugadores y 320 de managers**, cero rechazos y las mismas
+claves. Hay **141.853 filas de jugadores** con publicación corroborada y 1.867 de
+la temporada abierta sin testigo; los 320 managers están corroborados. G19 sigue
+preservado. La auditoría verifica igualdad completa de las 119.382 filas de
+snapshots conservados y compara 24.658 filas de snapshots sustituidos. Cambian
+3.064 ownership, 152 precios, 174 estados, 212 probabilidades de jugar la próxima
+jornada y 57 fechas de noticias. No se trasplantan valores posteriores.
+
+```bash
+python -m experiments.data_ground_truth.publication_alternatives \
+  --raw-root "$BOOTSTRAP_RAW_ROOT" --provenance-root "$BOOTSTRAP_TIME_ROOT" \
+  --archive-root "$PUBLICATION_ARCHIVE_ROOT" --out "$PUBLICATION_ALTERNATIVES_ROOT"
+python -m experiments.data_ground_truth.publication_selection \
+  --alternatives-root "$PUBLICATION_ALTERNATIVES_ROOT" \
+  --original-archive-root "$PUBLICATION_ARCHIVE_ROOT" \
+  --original-audit-root "$BOOTSTRAP_AUDIT_ROOT" --out "$PUBLICATION_SELECTION_ROOT"
+python -m experiments.data_ground_truth.bootstrap_state \
+  --root "$BOOTSTRAP_RAW_ROOT" --audit-root "$PUBLICATION_SELECTION_ROOT" \
+  --package "$LABELS_V5_PACKAGE" --aliases-root "$BOOTSTRAP_ALIASES_ROOT" \
+  --out "$BOOTSTRAP_SELECTED_STATE_ROOT"
+python -m experiments.data_ground_truth.publication_state_audit \
+  --selection-root "$PUBLICATION_SELECTION_ROOT" --state-root "$BOOTSTRAP_SELECTED_STATE_ROOT" \
+  --previous-state-root "$BOOTSTRAP_STATE_V2_ROOT" --out "$PUBLICATION_STATE_AUDIT_ROOT"
+```
+
+[results-g21.json](results-g21.json) conserva métricas, hashes, error de adquisición
+y cambios de campos. Selección y auditoría reproducen sus reportes byte por byte.
+Suite local: 1.457 passed, 1 skipped, 79 deselected. La disponibilidad probada
+permanece en testigos separados; los estados mantienen entrenamiento y admisión
+predeadline deshabilitados. No hay cambios en GT v5 ni producción. Faltan el
+contrato de admisión y replay, reglas/calendarios históricos, flags desconocidos,
+los 78 kickoffs discrepantes y el universo elegible antiguo. Para 2026/27 conviene
+contrastar la evidencia propia del collector antes de ampliar búsquedas externas.

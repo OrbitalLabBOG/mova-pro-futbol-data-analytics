@@ -999,3 +999,90 @@ def test_publication_evidence_rejects_tampered_projection_and_wrong_repository()
         verify_event(dict(projection,created_at='2024-08-15T12:38:38Z'),data)
     with pytest.raises(ValueError,match='repository'):
         verify_event(projection,json.dumps(dict(event,repo=dict(id=0,name=REPOSITORY))).encode())
+
+
+def test_alternative_snapshot_requires_earlier_immutable_clock_within_48_hours():
+    from experiments.data_ground_truth.publication_alternatives import eligible_alternative
+    original=dict(source_claimed_at='2024-08-16T12:00:00',deadline='2024-08-16T17:30:00Z')
+    candidate=dict(single_addition=True,author_committer_agree=True,nonnegative_commit_delay=True,
+        source_claimed_at='2024-08-16T06:00:00',committer_at='2024-08-16T06:00:20Z')
+    assert eligible_alternative(original,candidate)
+    for change in [dict(single_addition=False),dict(author_committer_agree=False),dict(nonnegative_commit_delay=False),
+                   dict(source_claimed_at=original['source_claimed_at']),dict(source_claimed_at='2024-08-14T17:29:00'),
+                   dict(committer_at=original['deadline'])]:
+        assert not eligible_alternative(original,dict(candidate,**change))
+    assert eligible_alternative(original,dict(candidate,source_claimed_at='2024-08-14T17:30:00',committer_at='2024-08-14T17:30:20Z'))
+
+
+def test_alternative_search_stops_at_first_verified_snapshot_and_measures_staleness(tmp_path,monkeypatch):
+    import gzip
+    from experiments.data_ground_truth import publication_alternatives as alternatives,publication_archive as archive
+    original=dict(season='2024-25',gw=1,path='original',source_claimed_at='2024-08-16T12:00:00',deadline='2024-08-16T17:30:00Z')
+    options=[dict(original,path=str(h),source_claimed_at=f'2024-08-16T{h:02}:00:00',
+        committer_at=f'2024-08-16T{h:02}:00:20Z',commit=str(h)*40,source_sha256='f'*64) for h in (6,0)]
+    options.append(dict(options[-1],path='unused',source_claimed_at='2024-08-15T18:00:00',committer_at='2024-08-15T18:00:20Z'))
+    monkeypatch.setattr(alternatives,'plan',lambda *args:dict(original_candidates=2,preserved=[{}],jobs=[dict(original=original,alternatives=options)]))
+    urls=[]
+    def get(url,**kwargs):
+        urls.append(url)
+        if url.endswith('-6.json.gz'):events=[]
+        else:events=[dict(id='proof',type='PushEvent',repo=dict(id=archive.REPOSITORY_ID,name=archive.REPOSITORY),public=True,
+            created_at='2024-08-16T00:00:22Z',payload=dict(head='0'*40,commits=[]))]
+        return gzip.compress((''.join(json.dumps(e)+'\n' for e in events)).encode()),{}
+    monkeypatch.setattr(archive,'_get',get)
+    report=alternatives.run(tmp_path,tmp_path,tmp_path,tmp_path/'out')
+    assert report['new_witnesses']==1 and report['remaining_deadlines']==0 and report['preserved_witnesses']==1
+    assert len(urls)==2 and not report['training_admitted']
+    found=json.loads((tmp_path/'out/found.json').read_text())
+    assert found[0]['extra_staleness_hours']==12 and found[0]['candidate']['path']=='0'
+    assert found[0]['witness']['available_at']=='2024-08-16T00:00:22Z'
+
+
+def test_publication_selection_replaces_only_planned_deadlines_and_rejects_partition_drift(tmp_path,monkeypatch):
+    from experiments.data_ground_truth import publication_selection as selection
+    def write(folder,name,data):
+        folder.mkdir(exist_ok=True)
+        payload=(json.dumps(data,indent=2)+'\n').encode();(folder/name).write_bytes(payload);return raw.digest(payload)
+    alt=tmp_path/'alt';old=tmp_path/'old';audit=tmp_path/'audit'
+    original=dict(season='2024-25',gw=1,path='latest',sha256='a'*64,deadline='2024-08-16T17:30:00Z',source_claimed_at='2024-08-16T12:00:00')
+    previous=dict(season='2024-25',gw=1,path='previous',source_sha256='b'*64,deadline=original['deadline'],source_claimed_at='2024-08-16T06:00:00')
+    proof=dict(season='2024-25',gw=1,eligible_predeadline=True)
+    old_hash=write(old,'report.json',dict(git_provenance_report_sha256='p'))
+    plan=dict(archive_report_sha256=old_hash,provenance_report_sha256='p',source_manifest_sha256='m',original_candidates=1,
+              preserved=[],jobs=[dict(original=original,alternatives=[previous])])
+    plan_hash=write(alt,'plan.json',plan)
+    found=[dict(candidate=previous,witness=proof,extra_staleness_hours=6)]
+    found_hash=write(alt,'found.json',found);missing_hash=write(alt,'unresolved.json',[])
+    report=dict(plan_sha256=plan_hash,artifacts={'found.json':found_hash,'unresolved.json':missing_hash},new_witnesses=1,preserved_witnesses=0,errors=[])
+    write(alt,'report.json',report)
+    candidates_hash=write(audit,'nominal_deadline_candidates.json',[original])
+    write(audit,'report.json',dict(manifest_sha256='m',errors=[],artifacts={'nominal_deadline_candidates.json':candidates_hash}))
+    calls=[];monkeypatch.setattr(selection,'evidence',lambda *args:calls.append(args))
+    result=selection.build(alt,old,audit,tmp_path/'out')
+    candidates=json.loads((tmp_path/'out/nominal_deadline_candidates.json').read_text())
+    assert candidates[0]['path']=='previous' and candidates[0]['sha256']=='b'*64
+    assert not candidates[0]['eligible_predeadline'] and not result['training_admitted']
+    assert result['verified_deadlines']==1 and len(calls)==1
+    bad=dict(report,new_witnesses=2);write(alt,'report.json',bad)
+    with pytest.raises(ValueError,match='partition'):
+        selection.build(alt,old,audit,tmp_path/'bad')
+
+
+def test_publication_state_audit_detects_same_snapshot_drift_and_admission(tmp_path,monkeypatch):
+    from experiments.data_ground_truth import publication_state_audit as audit
+    def write(name,data):
+        payload=json.dumps(data).encode();(tmp_path/name).write_bytes(payload);return raw.digest(payload)
+    candidate=dict(season='2024-25',gw=1,sha256='a',deadline='2024-08-16T17:30:00Z')
+    csha=write('nominal_deadline_candidates.json',[candidate])
+    psha=write('publication_witnesses.json',[dict(season='2024-25',gw=1,source_sha256='a',deadline=candidate['deadline'],eligible_predeadline=True)])
+    write('report.json',dict(artifacts={'nominal_deadline_candidates.json':csha,'publication_witnesses.json':psha},manifest_sha256='m',seasons={'2024-25':{}}))
+    row=dict(source_sha256='a',deadline=candidate['deadline'],eligible_training='False',eligible_predeadline='False',available_at='',price_gbp='4.5')
+    key=('player','2024-25',1,1);current={key:dict(row)};old={key:dict(row)}
+    report=dict(source_manifest_sha256='m',candidate_sha256=csha,reference_dataset_id='gt',rejected_rows=0)
+    monkeypatch.setattr(audit,'states',lambda root:(report,'hash',current if root==tmp_path/'current' else old))
+    result=audit.build(tmp_path,tmp_path/'current',tmp_path/'old',tmp_path/'out')
+    assert result['unchanged_snapshot_rows']==1 and result['seasons']['2024-25']['verified_player_rows']==1
+    current[key]['price_gbp']='4.6'
+    with pytest.raises(ValueError,match='drift'):audit.build(tmp_path,tmp_path/'current',tmp_path/'old',tmp_path/'bad')
+    current[key]=dict(row,eligible_training='True')
+    with pytest.raises(ValueError,match='admission'):audit.build(tmp_path,tmp_path/'current',tmp_path/'old',tmp_path/'bad')
