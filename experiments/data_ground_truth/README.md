@@ -3771,3 +3771,79 @@ Reporte y dos artefactos reproducidos byte por byte en v3. Suite completa:
 aceptada a nivel de jugador/evento. Las taxonomías de eventos, su publicación
 histórica y derechos de uso comercial siguen sin admisión. GT v7, G55 y producción
 no cambian; no hay nuevas etiquetas o temporadas FPL.
+
+## G69 — identidad investigativa de jugadores StatsBomb 2015/16
+
+<img src="https://static.hudl.com/craft/productAssets/statsbomb_icon.svg" alt="Hudl StatsBomb" width="40" height="40">
+
+Fuente de alineaciones: **StatsBomb Open Data (Hudl)**, revisión y restricciones
+archivadas en G67. El enlace permanece local y sólo investigativo; no se
+redistribuye el corpus ni se habilita explotación comercial o entrenamiento.
+
+`statsbomb_player_crosswalk.py` verifica las 380 alineaciones por hash, el enlace
+de partidos G68 y las observaciones PL de G4. Los códigos oficiales PL en CSV
+pueden estar serializados como decimales integrales: se normalizan exactamente,
+rechazando valores no integrales, no positivos o no finitos; vacío conserva ausencia.
+
+### Criterio fijado de enlace
+
+Se requiere el mismo club y partido, minutos PL positivos y algún intervalo de
+posición en StatsBomb. Los nombres completos se normalizan en tokens sin acentos;
+un conjunto debe estar incluido en el otro y ambos tener al menos dos tokens.
+No se emplea distancia difusa, elección del candidato de mayor score ni equivalencia
+por apellido aislado. Tampoco se usan puntos FPL o igualdad exacta de minutos para
+seleccionar identidades.
+
+Una identidad sólo se acepta con **dos partidos distintos** y un único código
+candidato. El código oficial tampoco puede tener otro ID StatsBomb candidato,
+incluso si ese competidor tiene un solo testigo. Duplicar una fila no aumenta el
+número de partidos testigo. Esto es evidencia estructural de enlace, no verificación
+biográfica independiente ni garantía de que toda normalización de nombre sea perfecta.
+
+### Cobertura observada
+
+| Medida | Resultado |
+| --- | ---: |
+| Jugadores distintos en alineaciones StatsBomb | 644 |
+| Enlaces de identidad aceptados para investigación | 462 |
+| Sin testigo que cumpla el criterio | 137 |
+| Con testigos ambiguos o insuficientes | 45 |
+| Filas testigo de nombre, club y partido | 9.690 |
+| Códigos de jugador distintos en GT FPL | 723 |
+| Códigos GT enlazados | 462 |
+
+La categoría sin testigo puede incluir ausencia de minutos o diferencias de nombre;
+no se atribuye una causa única sin examinarla. La población de 644 jugadores en
+alineaciones no es el universo de 723 jugadores FPL.
+
+| Estado de fila FPL | Todas las filas | Con minutos positivos |
+| --- | ---: | ---: |
+| Identidad enlazada y presente en alineación del partido | 12.104 | 9.645 |
+| Identidad enlazada, fuera de esa alineación | 4.533 | 0 |
+| Identidad sin resolver | 8.104 | 824 |
+| Total | 24.741 | 10.469 |
+
+Cobertura de apariciones positivas: **9.645/10.469 = 92,13%**. Las 9.645 tienen
+intervalos de posición en StatsBomb; no se afirma que sus duraciones coincidan
+con minutos FPL. Las 4.533 filas fuera de alineación son filas FPL sin minutos;
+no se inventa una observación StatsBomb de no aparición ni se imputan componentes.
+
+`player-links.json` conserva candidatos, nombres y cantidad de partidos testigo;
+`witnesses.jsonl.gz` conserva club, partido, nombres, fila PL y hash de alineación;
+`positive-appearance-issues.json` enumera las 824 apariciones pendientes. Los tres
+artefactos permanecen fuera de Git, con hashes versionados en el reporte.
+
+```bash
+python -m experiments.data_ground_truth.statsbomb_player_crosswalk \
+  --statsbomb-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/statsbomb-open-g67 \
+  --fixture-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/statsbomb-fixture-crosswalk-v2 \
+  --archive-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/raw-history-v2 \
+  --package /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/training-datasets/d4baf849fb4a051be103f8c469e61a4753edb0b4004f980a000fe5c86ef573db \
+  --out /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/statsbomb-player-crosswalk-v2
+```
+
+Reporte y tres artefactos reproducidos byte por byte en v3. Suite completa:
+**1.631 passed, 1 skipped, 79 deselected** (43,10 s).
+[Resultados G69](results-g69.json). Sigue pendiente examinar las identidades no
+resueltas con evidencia adicional y validar semántica de eventos/minutos. No se
+modifican GT v7, G55, etiquetas, permisos comerciales o producción.
