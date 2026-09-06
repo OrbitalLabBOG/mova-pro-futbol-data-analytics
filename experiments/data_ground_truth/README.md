@@ -5527,3 +5527,51 @@ separan cero explícito, resultado parcial y NULL con pronóstico. Los nuevos cr
 quedan fuera del corte restaurable G92; GT v7, G94 y producción siguen intactos.
 
 Suite completa G97: **1.701 passed, 1 skipped, 79 deselected**, 43,19 s.
+
+## G98 — archivos alternativos y candidatos de identidad 2014/15
+
+El 6 de septiembre de 2026, cuatro búsquedas acotadas de GitHub y seis árboles
+fijados descubrieron dos fuentes nuevas: `nori/hbv401g-2015v-f1a` y
+`llimllib/fantasypl_stats`. Orbix Research consultó OpenAlex (12 resultados) para
+seguir pistas académicas; los artículos no se cuentan como datasets disponibles.
+Los hashes de las respuestas y el alcance están en `results-g98.json`.
+
+Se adquirieron los 695 perfiles de jugadores de Nori, su tabla de equipos y README,
+y tres snapshots de llimllib. El árbol de este último contiene **2.579 snapshots,
+17.061.506.389 bytes nominales**; solo tres se han descargado y auditado en este gate.
+Los nombres con timestamp no prueban disponibilidad histórica. La fuente conserva
+campos de pronóstico, pero la comparación utiliza resultados observados e identidad.
+
+| Colección | Perfiles | Filas comparadas | Partidos | Candidatos de identidad / filas |
+| --- | ---: | ---: | ---: | ---: |
+| llimllib `1424275568` | 679 | 15.859 | 250 | 16 / 159 |
+| Nori | 695 | 18.541 | 296 | 21 / 232 |
+| llimllib `1432930058` | 711 | 24.876 | 380 | 24 / 421 |
+| llimllib `1435579666` | 711 | 24.876 | 380 | 24 / 421 |
+
+Todas las filas comparadas existen en GT v7 y coinciden en minutos, puntos y
+jornada. No hay conflictos con códigos ya conocidos, códigos duplicados ni
+colisiones de candidatos con identidades resueltas. Las dos tablas normalizadas
+completas son idénticas; no se cuentan como resultados independientes. El agregado
+anual añadido en esos snapshots permanece como evidencia retrospectiva, no como
+una jornada ni una feature causal.
+
+`identity_candidates.csv` identifica por fuente los **24 jugadores pendientes**,
+que abarcan **421 filas del GT**. Se verificó consistencia entre fuentes. Esto
+prepara una nueva versión de identidad; G98 todavía no cambia GT v7 ni su pointer.
+La promoción debe conservar los valores de todas las etiquetas y versionar tanto
+el crosswalk como el dataset resultante. No se recuperan aquí los huecos de 2013/14.
+
+```bash
+python -m experiments.data_ground_truth.profile_sources \
+  --base "$DATA_BASE" --out "$DATA_BASE/profile-audit-g98-new"
+```
+
+Reporte y cinco artefactos idénticos byte por byte en dos ejecuciones. Pruebas
+rechazan discrepancias observadas, conflictos de identidad y códigos duplicados.
+No hay entrenamiento, promoción productiva ni admisión predeadline. Los nuevos
+originales siguen fuera del corte restaurable G92. La adquisición del resto de
+snapshots de llimllib requiere medir épocas, duplicación y cobertura incremental.
+
+Adquisición: **700 archivos, 31.340.367 bytes**. Suite completa G98:
+**1.703 passed, 1 skipped, 79 deselected**, 33,46 s.
