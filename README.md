@@ -19,6 +19,10 @@ El cockpit read-only comparte un único contrato entre CLI y API. Su dashboard e
 sólo expone tres indicadores humanos; diagnóstico, métricas y JSON permanecen en loopback.
 Supabase sólo refleja seguimiento PM y nunca recibe estado operativo.
 
+G105: seis perfiles con totales inconsistentes se contrastaron con sus capturas
+vecinas: todas concuerdan antes y después. Se conserva la discrepancia de un
+punto, sin corregir etiquetas; reproducción idéntica desde el archivo restaurado.
+
 G104: corte activo restaurado y verificado: 43.741 archivos, 23,56 GB de
 contenidos únicos, con GT v8 explícito. Las auditorías recientes se reprodujeron
 desde la copia restaurada; no equivale a un backup offsite.
@@ -139,7 +143,7 @@ de modelos por hash y exportación revisable, sin promover modelos al runtime.
 
 La capa experimental conserva los datos crudos fuera de Git, con manifiestos,
 SHA-256, fuentes fijadas por commit y auditorías reproducibles. El
-[registro de gates G1–G96](experiments/data_ground_truth/README.md) contiene
+[registro de gates G1–G105](experiments/data_ground_truth/README.md) contiene
 adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 
 | Capa | Cobertura verificada | Límite pendiente |
