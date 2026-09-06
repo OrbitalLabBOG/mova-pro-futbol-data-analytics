@@ -4694,3 +4694,50 @@ fechas/clubes no interpretables. [Resultados G82](results-g82.json) fija evidenc
 fuentes y métricas. La cobertura seleccionada permanece **195/199**; GT v7 sigue
 con 303.126 etiquetas/doce temporadas. Sin entrenamiento ni cambios productivos;
 los nuevos cuerpos y derivados permanecen fuera del paquete portable G78 congelado.
+
+## G83 — Integridad por fila de temporadas parciales
+
+`partial_history_integrity.py` revalida el SQLite histórico fijado por SHA y
+exporta las 33.392 observaciones archivadas de 2011/12–2013/14, con diagnóstico
+por fila. Cruza fixture y metadatos de jugador dentro de la misma temporada;
+rechaza dimensiones ambiguas y marca claves repetidas, etiquetas ausentes o no
+enteras, minutos fuera de 0–90, jornadas y clubes inconsistentes. Los puntos
+negativos y los ceros explícitos son válidos; no se imputa ningún NULL.
+
+| Temporada | Filas archivadas | Etiquetas minutos/puntos estructuralmente válidas | Partidos con esas etiquetas | Localías vacías resueltas por clubes |
+| --- | ---: | ---: | ---: | ---: |
+| 2011/12 | 11.720 | 9.462 | 360 | 5.890 |
+| 2012/13 | 10.814 | 10.076 | 380 | 5.409 |
+| 2013/14 | 10.858 | 10.389 | 380 | 5.425 |
+
+Las **29.927 etiquetas observadas** pasan los controles estructurales. Otras
+**3.465 filas** carecen de alguna etiqueta; no se convierten en resultados cero.
+Las 16.724 localías originalmente NULL corresponden al visitante según la
+pareja de clubes del fixture. `derived_is_home` registra esa derivación y su
+método, mientras `is_home` conserva el valor crudo. No se asume que todo NULL de
+la fuente signifique falso. No hay conflictos entre localías explícitas y clubes.
+
+La identidad conserva su namespace interno y temporada: el identificador FPL
+estacional no se declara código oficial persistente. La validez estructural no
+mide exactitud independiente de puntos ni cobertura del universo de jugadores.
+Tener etiquetas en 380 partidos tampoco acredita todas sus apariciones. La
+muestra sigue sesgada por la captura histórica y no permite reconstruir ausencias
+para entrenar probabilidad de jugar. Todas las filas mantienen
+`eligible_training=false`, `eligible_predeadline=false` y disponibilidad desconocida.
+
+```bash
+python -m experiments.data_ground_truth.partial_history_integrity \
+  --database "$DATA_BASE/raw-history-differential/objects/e4f1e637702f69cfa513a5719b05f87bb0aab47ddd2cd4864b40d567c1ac9f80" \
+  --out "$DATA_BASE/partial-history-integrity-v1"
+```
+
+[Resultados G83](results-g83.json) fija fuente, implementación y exportación.
+Reporte y CSV reproducidos byte por byte en dos directorios independientes.
+No se descargaron etiquetas nuevas ni se añadieron temporadas completas. GT v7
+permanece en 303.126 filas y doce temporadas; runtime sin cambios. Este derivado
+queda fuera del paquete portable G78 congelado.
+
+Verificación: suite completa **1.667 passed, 1 skipped, 79 deselected** en 34,57 s.
+Las pruebas nuevas cubren conservación de NULL, derivación de visitante, puntos
+negativos, conflictos de localía/clubes, claves duplicadas, cruce entre temporadas
+y etiquetas fraccionarias.

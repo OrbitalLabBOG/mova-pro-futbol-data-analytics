@@ -1,0 +1,91 @@
+{
+  "version": "historical-data-g83",
+  "audit_report_sha256": "de97fa4e0ab850e197393583d4162c685ba45043ec0abfa123ca36eeb1c32670",
+  "audit": {
+    "version": "partial-history-integrity-v1",
+    "database_sha256": "e4f1e637702f69cfa513a5719b05f87bb0aab47ddd2cd4864b40d567c1ac9f80",
+    "implementation_sha256": "e72ff2e67d5b61f4c04f881212538f72c25fca787e0ff3013d2a26c4671070d4",
+    "seasons": {
+      "12": {
+        "archived_rows": 11720,
+        "observed_label_rows": 9462,
+        "structurally_valid_observed_labels": 9462,
+        "fixtures_with_valid_labels": 360,
+        "venue_derived_from_clubs": 11720,
+        "raw_venue_nulls_resolved": 5890,
+        "issues": {
+          "missing_native_key": 0,
+          "duplicate_native_key": 0,
+          "missing_fixture": 0,
+          "missing_player_metadata": 0,
+          "invalid_gameweek": 0,
+          "gameweek_conflict": 0,
+          "invalid_club_pair": 0,
+          "venue_conflict": 0,
+          "missing_minutes": 1904,
+          "invalid_minutes": 0,
+          "missing_points": 2258,
+          "invalid_points": 0
+        }
+      },
+      "13": {
+        "archived_rows": 10814,
+        "observed_label_rows": 10076,
+        "structurally_valid_observed_labels": 10076,
+        "fixtures_with_valid_labels": 380,
+        "venue_derived_from_clubs": 10814,
+        "raw_venue_nulls_resolved": 5409,
+        "issues": {
+          "missing_native_key": 0,
+          "duplicate_native_key": 0,
+          "missing_fixture": 0,
+          "missing_player_metadata": 0,
+          "invalid_gameweek": 0,
+          "gameweek_conflict": 0,
+          "invalid_club_pair": 0,
+          "venue_conflict": 0,
+          "missing_minutes": 421,
+          "invalid_minutes": 0,
+          "missing_points": 738,
+          "invalid_points": 0
+        }
+      },
+      "14": {
+        "archived_rows": 10858,
+        "observed_label_rows": 10389,
+        "structurally_valid_observed_labels": 10389,
+        "fixtures_with_valid_labels": 380,
+        "venue_derived_from_clubs": 10858,
+        "raw_venue_nulls_resolved": 5425,
+        "issues": {
+          "missing_native_key": 0,
+          "duplicate_native_key": 0,
+          "missing_fixture": 0,
+          "missing_player_metadata": 0,
+          "invalid_gameweek": 0,
+          "gameweek_conflict": 0,
+          "invalid_club_pair": 0,
+          "venue_conflict": 0,
+          "missing_minutes": 408,
+          "invalid_minutes": 0,
+          "missing_points": 469,
+          "invalid_points": 0
+        }
+      }
+    },
+    "artifacts": {
+      "partial_observations.csv": "4ab30020d8d3c4818018e2ca20b11231d52cfafab9a8d036702645058738e93a"
+    },
+    "new_label_rows": 0,
+    "new_complete_seasons": 0,
+    "training_admitted": false,
+    "limitations": [
+      "structural_checks_not_independent_label_accuracy",
+      "registered_player_population_unknown_selection_bias",
+      "season_fpl_id_not_cross_season_official_player_code",
+      "raw_nulls_preserved_venue_is_separate_derivation",
+      "no_predeadline_availability_proof"
+    ]
+  },
+  "reproduction_identical": true
+}
