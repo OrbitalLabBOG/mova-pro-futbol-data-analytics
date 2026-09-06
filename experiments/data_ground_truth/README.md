@@ -6068,3 +6068,49 @@ python -m experiments.data_ground_truth.geek_season_context \
   --base "$RAW_HISTORY_ROOT" \
   --out "$RAW_HISTORY_ROOT/geek-context-g109-v1"
 ```
+
+
+## G110 — Publicación externa de los snapshots EPL Fantasy Geek
+
+Se descargaron y preservaron 97 archivos horarios de
+[GH Archive](https://www.gharchive.org/): 94 horas correspondientes a commits
+de los 98 snapshots candidatos 2015/16 de G109, más tres horas alrededor del
+primer snapshot de 2014. Total: **1.380.573.226 bytes comprimidos**. La auditoría
+verifica el conjunto exacto de URLs solicitado y hashes de fuentes y metadata.
+
+Se recorrieron 3.571.100 eventos y conservaron 208 pushes públicos del repositorio
+con ID `23294266` y nombre `jokecamp/epl-fantasy-geek`. El enlace exige el SHA
+exacto del snapshot como `head` o miembro explícito de `payload.commits`; no
+se infiere inclusión por fechas o por un ancestro no comprobado.
+
+De 99 candidatos examinados, **94 tienen un push público con cronología
+coherente**, correspondientes a **62.398 estados de jugador**. `available_at`
+usa el evento acreditado, no la fecha de autor ni el campo `added`. Por ejemplo,
+el commit `2a20a5aab08361832bd9d950dfebc2b5385d5e8a`, fechado a las 16:14:22,
+aparece en un push público a las 16:17:57 UTC del 15 de agosto de 2015.
+
+Cuatro snapshots conservan un conflicto de reloj: el evento antecede al
+committer en 1, 3, 8 o 71 segundos. El gate no corrige esos relojes y los deja
+sin `available_at`. El snapshot inicial de 2014 no tiene testigo en las tres
+horas consultadas. Esto no demuestra ausencia histórica de publicación;
+GH Archive distingue Timeline API hasta 2014 y Events API desde 2015, y esta
+auditoría admite como testigos únicamente los eventos modernos validados.
+
+La publicación es un límite superior de disponibilidad del archivo, no una
+fecha de captura API. No se seleccionan deadlines ni se admiten estadísticas
+por período; `eligible_predeadline` y entrenamiento permanecen falsos. No cambia
+el índice de ventanas de otros corpus ni las etiquetas GT.
+
+[Resultados G110](results-g110.json) fija fuentes, metadata, horas, testigos y
+hashes de eventos. Dos corridas reproducen reporte, horas, testigos y todos los
+eventos preservados. Raw en `geek-publication-g110`; auditorías en
+`geek-publication-audit-g110-v1` y `-v2`, fuera de Git y aún fuera del corte G104.
+Los archivos horarios completos se retienen para reproducir la extracción;
+los artefactos de eventos sólo contienen los pushes del repositorio examinado.
+Producción intacta.
+
+```bash
+python -m experiments.data_ground_truth.geek_publication \
+  --base "$RAW_HISTORY_ROOT" \
+  --out "$RAW_HISTORY_ROOT/geek-publication-audit-g110-v1"
+```
