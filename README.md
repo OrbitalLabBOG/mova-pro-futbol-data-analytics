@@ -141,6 +141,9 @@ promoverlos. Las filas con minutos desconocidos siguen siendo desconocidas.
 G11 recupera 268 códigos de fila deportivos con ID nativo, nombre completo y
 partidos testigo: quedan 1.502 sin identidad; hay 179.847 observaciones deportivas
 con identidad y minutos válidos, separadas de las etiquetas FPL y del runtime.
+G12 verifica identidad para 502 jugadores / 10.164 apariciones FPL de 2010/11,
+conservando los resultados originales. Quedan 189 filas sin identidad y la
+temporada sigue fuera del paquete completo por el universo elegible pendiente.
 
 ## Empezar
 

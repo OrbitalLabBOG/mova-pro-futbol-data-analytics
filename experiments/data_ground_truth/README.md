@@ -619,3 +619,40 @@ fijada devolvió un único commit inicial. Su respuesta está archivada con hash
 G11: esta ruta no aporta versiones previas para reparar 2011/12–2013/14. Hay que
 contrastar las bases existentes o buscar otras fuentes, no asumir que un checkout
 anterior de ese repositorio contiene temporadas más completas.
+
+## Gate G12: identidades FPL 2010/11 corroboradas
+
+El cruce histórico deja de ser solo una lista de candidatos: conserva las
+apariciones FPL con identidad verificada cuando hay un código único en todos sus
+partidos y al menos dos apariciones deportivas con minutos positivos. Rechaza
+colisiones entre jugadores FPL, IDs deportivos contradictorios y filas duplicadas.
+Los nombres con iniciales, como `Young L` y `Diouf EH`, se expanden mediante iniciales
+exactas del nombre completo; no se corrigen grafías por distancia difusa.
+
+Una segunda vía utiliza `season_history` del archivo FPL 2015/16: exige igualdad
+de minutos y puntos de 2010/11, nombre completo y código corroborados por el registro
+de partido. Esta evidencia independiente permite resolver algunos casos de una
+sola aparición o de minutos deportivos desconocidos. El código mantiene los
+minutos y puntos originales del SQL; nunca los sustituye por minutos deportivos.
+La igualdad de totales se usa retrospectivamente para identidad, no como feature.
+
+El resultado verifica **502 jugadores / 10.164 apariciones** (98,17% de las
+10.353 filas SQL). Hay 153 jugadores corroborados también por los totales del
+archivo FPL posterior. Quedan **41 jugadores / 189 filas** sin identidad verificada.
+La medición y hashes están en [results-g12.json](results-g12.json). El artefacto
+`appearances.csv` conserva también las filas no resueltas; `evidence.json` registra
+los partidos y la vía de corroboración por jugador. Las entradas proceden de los
+archivos SQL, deportivos G11 y JSON FPL 2015/16 verificados por hash.
+
+```bash
+python -m experiments.data_ground_truth.historical_identity \
+  --sql-root "$DIFFERENTIAL_ROOT/sql-literals" \
+  --sport-root "$RAW_HISTORY_ROOT" --native-root "$NATIVE_IDENTITY_ROOT" \
+  --later-root "$SEASON_2015_ROOT" --out "$HISTORICAL_FPL_IDENTITY_ROOT"
+```
+
+La identidad verificada no resuelve el universo de no apariciones ni la fila
+faltante de Sammy Ameobi. Se conserva `eligible_training=false` y
+`eligible_predeadline=false`; no se integra este archivo como temporada completa
+al paquete v3. Los siguientes pasos siguen siendo completar las apariciones y
+el universo elegible, contrastar otras temporadas antiguas y acreditar causalidad.

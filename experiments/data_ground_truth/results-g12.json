@@ -1,0 +1,312 @@
+{
+  "version": "historical-fpl-identity-v1",
+  "source_appearance_rows": 10353,
+  "verified_players": 502,
+  "verified_rows": 10164,
+  "unresolved_players": 41,
+  "unresolved_rows": 189,
+  "unresolved": [
+    {
+      "fpl_id": 24,
+      "name": "Emmanuel-Thomas",
+      "rows": 1,
+      "candidate_count": 1,
+      "reason": "fewer_than_two_played_fixtures"
+    },
+    {
+      "fpl_id": 56,
+      "name": "Doyle",
+      "rows": 1,
+      "candidate_count": 1,
+      "reason": "fewer_than_two_played_fixtures"
+    },
+    {
+      "fpl_id": 93,
+      "name": "Linganzi",
+      "rows": 1,
+      "candidate_count": 1,
+      "reason": "fewer_than_two_played_fixtures"
+    },
+    {
+      "fpl_id": 94,
+      "name": "Diouf EH",
+      "rows": 20,
+      "candidate_count": 0,
+      "reason": "not_unique_in_every_played_fixture"
+    },
+    {
+      "fpl_id": 109,
+      "name": "Demontagnac",
+      "rows": 1,
+      "candidate_count": 1,
+      "reason": "fewer_than_two_played_fixtures"
+    },
+    {
+      "fpl_id": 118,
+      "name": "O'Brien A",
+      "rows": 2,
+      "candidate_count": 0,
+      "reason": "not_unique_in_every_played_fixture"
+    },
+    {
+      "fpl_id": 127,
+      "name": "Taylor",
+      "rows": 36,
+      "candidate_count": 0,
+      "reason": "not_unique_in_every_played_fixture"
+    },
+    {
+      "fpl_id": 136,
+      "name": "Blake",
+      "rows": 8,
+      "candidate_count": 0,
+      "reason": "not_unique_in_every_played_fixture"
+    },
+    {
+      "fpl_id": 184,
+      "name": "Baxter",
+      "rows": 1,
+      "candidate_count": 1,
+      "reason": "fewer_than_two_played_fixtures"
+    },
+    {
+      "fpl_id": 193,
+      "name": "Pantsil",
+      "rows": 16,
+      "candidate_count": 0,
+      "reason": "not_unique_in_every_played_fixture"
+    },
+    {
+      "fpl_id": 198,
+      "name": "Dikgacoi",
+      "rows": 1,
+      "candidate_count": 1,
+      "reason": "fewer_than_two_played_fixtures"
+    },
+    {
+      "fpl_id": 228,
+      "name": "Mascherano",
+      "rows": 1,
+      "candidate_count": 1,
+      "reason": "fewer_than_two_played_fixtures"
+    },
+    {
+      "fpl_id": 232,
+      "name": "Pacheco",
+      "rows": 1,
+      "candidate_count": 1,
+      "reason": "fewer_than_two_played_fixtures"
+    },
+    {
+      "fpl_id": 276,
+      "name": "Hargreaves",
+      "rows": 1,
+      "candidate_count": 1,
+      "reason": "fewer_than_two_played_fixtures"
+    },
+    {
+      "fpl_id": 288,
+      "name": "Diouf M",
+      "rows": 26,
+      "candidate_count": 0,
+      "reason": "not_unique_in_every_played_fixture"
+    },
+    {
+      "fpl_id": 289,
+      "name": "Hernandez",
+      "rows": 27,
+      "candidate_count": 0,
+      "reason": "not_unique_in_every_played_fixture"
+    },
+    {
+      "fpl_id": 343,
+      "name": "da Silva",
+      "rows": 1,
+      "candidate_count": 1,
+      "reason": "fewer_than_two_played_fixtures"
+    },
+    {
+      "fpl_id": 410,
+      "name": "Wood",
+      "rows": 1,
+      "candidate_count": 1,
+      "reason": "fewer_than_two_played_fixtures"
+    },
+    {
+      "fpl_id": 440,
+      "name": "Pollitt",
+      "rows": 1,
+      "candidate_count": 1,
+      "reason": "fewer_than_two_played_fixtures"
+    },
+    {
+      "fpl_id": 469,
+      "name": "Van Damme",
+      "rows": 6,
+      "candidate_count": 0,
+      "reason": "not_unique_in_every_played_fixture"
+    },
+    {
+      "fpl_id": 481,
+      "name": "Keogh",
+      "rows": 1,
+      "candidate_count": 1,
+      "reason": "fewer_than_two_played_fixtures"
+    },
+    {
+      "fpl_id": 515,
+      "name": "Weimann",
+      "rows": 1,
+      "candidate_count": 1,
+      "reason": "fewer_than_two_played_fixtures"
+    },
+    {
+      "fpl_id": 516,
+      "name": "Waghorn",
+      "rows": 2,
+      "candidate_count": 0,
+      "reason": "not_unique_in_every_played_fixture"
+    },
+    {
+      "fpl_id": 532,
+      "name": "Keinan",
+      "rows": 6,
+      "candidate_count": 0,
+      "reason": "not_unique_in_every_played_fixture"
+    },
+    {
+      "fpl_id": 534,
+      "name": "Halstead",
+      "rows": 1,
+      "candidate_count": 1,
+      "reason": "fewer_than_two_played_fixtures"
+    },
+    {
+      "fpl_id": 539,
+      "name": "Halliche",
+      "rows": 1,
+      "candidate_count": 1,
+      "reason": "fewer_than_two_played_fixtures"
+    },
+    {
+      "fpl_id": 592,
+      "name": "Eccleston",
+      "rows": 1,
+      "candidate_count": 1,
+      "reason": "fewer_than_two_played_fixtures"
+    },
+    {
+      "fpl_id": 598,
+      "name": "Boffin",
+      "rows": 1,
+      "candidate_count": 1,
+      "reason": "fewer_than_two_played_fixtures"
+    },
+    {
+      "fpl_id": 604,
+      "name": "Mujangi Bia",
+      "rows": 1,
+      "candidate_count": 0,
+      "reason": "not_unique_in_every_played_fixture"
+    },
+    {
+      "fpl_id": 613,
+      "name": "Lowe",
+      "rows": 1,
+      "candidate_count": 1,
+      "reason": "fewer_than_two_played_fixtures"
+    },
+    {
+      "fpl_id": 615,
+      "name": "Lopez",
+      "rows": 1,
+      "candidate_count": 0,
+      "reason": "not_unique_in_every_played_fixture"
+    },
+    {
+      "fpl_id": 616,
+      "name": "Hurst",
+      "rows": 1,
+      "candidate_count": 1,
+      "reason": "fewer_than_two_played_fixtures"
+    },
+    {
+      "fpl_id": 621,
+      "name": "Vaughan",
+      "rows": 1,
+      "candidate_count": 1,
+      "reason": "fewer_than_two_played_fixtures"
+    },
+    {
+      "fpl_id": 625,
+      "name": "Hammil",
+      "rows": 10,
+      "candidate_count": 0,
+      "reason": "not_unique_in_every_played_fixture"
+    },
+    {
+      "fpl_id": 642,
+      "name": "Razak",
+      "rows": 1,
+      "candidate_count": 1,
+      "reason": "fewer_than_two_played_fixtures"
+    },
+    {
+      "fpl_id": 648,
+      "name": "Wabara",
+      "rows": 1,
+      "candidate_count": 1,
+      "reason": "fewer_than_two_played_fixtures"
+    },
+    {
+      "fpl_id": 653,
+      "name": "Lehmann",
+      "rows": 1,
+      "candidate_count": 1,
+      "reason": "fewer_than_two_played_fixtures"
+    },
+    {
+      "fpl_id": 656,
+      "name": "Forshaw",
+      "rows": 1,
+      "candidate_count": 1,
+      "reason": "fewer_than_two_played_fixtures"
+    },
+    {
+      "fpl_id": 658,
+      "name": "McGivern",
+      "rows": 1,
+      "candidate_count": 1,
+      "reason": "fewer_than_two_played_fixtures"
+    },
+    {
+      "fpl_id": 666,
+      "name": "Thorne",
+      "rows": 1,
+      "candidate_count": 1,
+      "reason": "fewer_than_two_played_fixtures"
+    },
+    {
+      "fpl_id": 667,
+      "name": "Laing",
+      "rows": 1,
+      "candidate_count": 1,
+      "reason": "fewer_than_two_played_fixtures"
+    }
+  ],
+  "new_complete_seasons": 0,
+  "source_outcomes_preserved": true,
+  "status": "linked_appearance_labels_not_complete_eligibility_universe",
+  "players_corroborated_by_later_fpl_totals": 153,
+  "source_sha256": {
+    "player_match.csv": "a4f0d945220310a2094626e1614bb1e9cd6fdbff2e154781a55a471033806f78",
+    "fixture.csv": "09d3f222c0e4779c388ef54b87ba82dbdd7a7e1256f8d1fa4875c8a9aeb978bd",
+    "team.csv": "d72dfd2804171781ba9853696bfb5dbee4f0e0159577c9b81c74bf46fc29c9ad",
+    "player.csv": "5cbf922b79984957c8c7f32e1911339403a588dc70d4fe9bdf42f32f49172f62",
+    "observations.csv": "bba2458f4b0deccb9747af3d08ed1207f948656b7a353c4122247d1b7bc42e7d",
+    "fixtures.csv": "0a02aeb9ae4872593241adb40867dad1d0bd4c91355e9c4529df44afa090f98f",
+    "later_fpl_manifest": "adac2f3a9bc6d1e660743167b6ad7f23b527284453e871ed730e8ff552436bcd"
+  },
+  "labels_sha256": "7fad8b258458b48033b48820b6b74a0b2b25194fa79bab723d6a95294ab91b3f",
+  "evidence_sha256": "4f99938d25a29d241473effa06dd0bf693401a20816536e4a20b229f95fd9482"
+}
