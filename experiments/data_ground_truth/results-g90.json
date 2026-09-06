@@ -1,0 +1,83 @@
+{
+  "version": "historical-data-g90",
+  "audit_report_sha256": "6531636a92eedb9024445cf73e8e945194cc52f7b0c4c8bc729c0d1aa563a6e4",
+  "audit": {
+    "version": "early-successor-archive-v1",
+    "manifest_sha256": "7cdf50da4cc37f0a45f7ab17b5579e7916ceeaa315fbe5c8fbb2089f5793705e",
+    "history_response_sha256": "b76c91ab2606979c4b7e484ba7a5e87a284f70c4e17f9ab49d13d2587d57c0f7",
+    "prior_manifest_sha256": "b097b408189ed0fb7e6449f58980b5688942f5bd3a43cd01b8750ba3262d94a3",
+    "fixture_sha256": "4f6c42e636040f1910a914e4c7c4d43aa4a81a00af5549daefe62b28345ed51f",
+    "gt_dataset_id": "d4baf849fb4a051be103f8c469e61a4753edb0b4004f980a000fe5c86ef573db",
+    "implementation_sha256": "d402a634753aeb015de3815d31d6cf71c0b31ddf64eb773ebedb124bfe15c215",
+    "snapshots": 44,
+    "bytes": 97136875,
+    "unique_contents": 44,
+    "reconciled_snapshots": 36,
+    "snapshots_without_history": 1,
+    "unreconciled_snapshots": 7,
+    "contents_already_in_g88": 14,
+    "contents_new_vs_g88": 30,
+    "earliest_git_committer_time": "2014-08-15T22:05:47Z",
+    "latest_git_committer_time": "2014-10-02T13:21:41Z",
+    "latest": {
+      "revision": "fd5b8c6f331b571cb37b02d3d0ac3804153beca6",
+      "source_sha256": "382b2041386d9698ce6c912c6868d2d203b3ff452c40b2a7178829d0ee2419d0",
+      "bytes": 2326187,
+      "git_committer_time": "2014-10-02T13:21:41Z",
+      "players": 617,
+      "rows": 3596,
+      "gameweeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "fixtures": 60,
+      "missing_history_profiles": 0,
+      "total_points_disagreements": 0,
+      "normalization_status": "reconciled",
+      "normalization_error": null,
+      "available_at": null,
+      "eligible_predeadline": false,
+      "eligible_training": false
+    },
+    "latest_GT_comparison": {
+      "rows": 3596,
+      "missing_in_GT": 0,
+      "minutes_conflicts": 0,
+      "points_conflicts": 0,
+      "gameweek_conflicts": 0,
+      "player_code_conflicts": 6
+    },
+    "new_complete_seasons": 0,
+    "training_admitted": false,
+    "production_changed": false,
+    "limitations": [
+      "git_clock_not_historic_publication_proof",
+      "collections_not_proven_atomic_snapshots",
+      "2014_15_does_not_fill_2013_14_GW34",
+      "source_overlap_not_independent_accuracy_validation"
+    ],
+    "artifacts": {
+      "snapshots.json": "5aaa62663efcba5e754125af4d8e8c6e818671081e364d51fc0fefca74341f85",
+      "latest-labels.csv": "d91aa0b9ef12fea9d159480d2e87f8800ebe0c6122c1651668a873b3cf73a1a7"
+    }
+  },
+  "discovery_artifact_sha256": {
+    "IanFletcher--fplmoneyball.json": "5f6d498288c60932b70768e42ca48b20379649591b31557aa6d27edc2f7f2ba5",
+    "ShotsOnTarget--fantasy_premier_league_player_stats.json": "a383b661933094fb6084c027121f3d788aab2291743544e80b71d7abdf3d3834",
+    "adityahub--fpl.json": "7da862928cc9a86cc375efdb23f888d08887c0050cffbc0474fd08c6da95b58a",
+    "arxoclay--FantasyPremierLeague.json": "809229b5fb1cff5e2fb0c3b8aaf2c2290eecfdd7e0d86dc1d8025d51308c9697",
+    "bobbymond--FantasyPremierLeagueAPI.json": "b4235c4926d07bb5c01bf933559adbcdd4c25207fb42237c54594c811e8fdf66",
+    "cheguitara--fpl-march-2014.json": "e87fb1e28fdd7519d7526316a2d8bb3b506c3ef531a965bd62c3a17258a2d394",
+    "dhalik--fpl.json": "927dbb0f81e9fcaae06503f0a3e5b3beedcd8f661f49ed54b68343eb6c521837",
+    "fplassistantv2-history.json": "b76c91ab2606979c4b7e484ba7a5e87a284f70c4e17f9ab49d13d2587d57c0f7",
+    "keithxm23--fplassistantv2.json": "3d4c5d9dcad28223b94fa50c22e119771597dd113a879c6dcab4b297b147e1c7",
+    "keithxm23--fplscraper.json": "e7e9c29b399208f03287594a51ef4ebc1ad03ec2f89af717ccb8fdc3fb1eeaae",
+    "search-0.json": "1403523dbe878ca61354346a9f7eb4701f495fc7d91fd2cb34a1eb04a5d7ade4",
+    "search-1.json": "2ea36245fcc8fd7a3265e6f576187872bb5ecdaac5845212ea69b0df751413dc"
+  },
+  "reproduction_identical": true
+}
