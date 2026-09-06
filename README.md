@@ -111,7 +111,7 @@ de modelos por hash y exportación revisable, sin promover modelos al runtime.
 
 La capa experimental conserva los datos crudos fuera de Git, con manifiestos,
 SHA-256, fuentes fijadas por commit y auditorías reproducibles. El
-[registro de gates G1–G37](experiments/data_ground_truth/README.md) contiene
+[registro de gates G1–G38](experiments/data_ground_truth/README.md) contiene
 adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 
 | Capa | Cobertura verificada | Límite pendiente |
@@ -124,6 +124,7 @@ adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 | Rendimiento raw, G31 | 143.720 filas y 22 campos tipados; sin valores numéricos inválidos | 31.071 descensos de celda, 27.211 entre GW1–2: falta resolver período y semántica antes de calcular deltas |
 | Collector propio, G36 | 55 bundles públicos; 34.512 estados de jugadores y 20.900 observaciones de fixtures | Dos candidatos anteriores a GW2/GW3 2026/27 vinculados al cierre de ingesta; evidencia interna identificada en el índice común G37 |
 | Reglas y chips de snapshots | Explícitos desde GW16 de 2024/25 y en toda 2025/26 | Faltan reglas históricas anteriores e interpretación de overrides |
+| Reglas documentales oficiales, G38 | 10 artículos archivados, 30 afirmaciones parciales en seis temporadas | Descargas actuales: la fecha del artículo no prueba disponibilidad histórica; no son un intérprete de reglas |
 | Fuentes antiguas complementarias | Material parcial desde 2010/11 y totales desde 2006/07 | No cuentan como nuevas temporadas completas; persisten huecos de población e identidad |
 
 G30 combina calendarios completos de dos fuentes, revalidando cada testigo contra
@@ -166,6 +167,10 @@ G37 reproduce las auditorías G35 y G36 antes de combinar sus índices. Alcanza
 Conserva edad de commit y edad de inicio de captura como métricas distintas,
 sin afirmar replay completo ni admisión a entrenamiento.
 [Resultados G37](experiments/data_ground_truth/results-g37.json).
+G38 incorpora artículos oficiales sobre cambios de chips, límites de transferencias
+y excepciones de temporada. Conserva los HTML, hashes, fecha declarada y localizadores
+de cada afirmación. La evidencia es retrospectiva y no se hereda entre temporadas.
+[Resultados G38](experiments/data_ground_truth/results-g38.json).
 
 ## Empezar
 
