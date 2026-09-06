@@ -1,0 +1,479 @@
+{
+  "version": "historical-data-g64",
+  "audit_report_sha256": "b8a70cc8e53302242a6ee0d7d395bded0829c33652aa522f0863b1c3d1baf6eb",
+  "audit": {
+    "version": "core-match-details-v1",
+    "raw_manifest_sha256": "0f7b76e4b7db6c280104c1582212d96b5c49a3d56dd1035b44b5da0e550df2fb",
+    "calibration_report_sha256": "77cc1a7db361a30cf981568081c185e59a1d2cca796a110ae2dff70787474ca7",
+    "implementation_sha256": "897ec76dae926ff8516f4e4b6c783e6e99b2f2c72437d272f3ac7f97f49e41f7",
+    "source_files": 304,
+    "source_bytes": 7167022,
+    "tables": {
+      "average_positions": {
+        "rows": 11448,
+        "matches": 380,
+        "reference_matches": 380,
+        "covered_reference_matches": 380,
+        "missing_reference_matches": [],
+        "outside_reference_matches": [],
+        "invalid_keys": 0,
+        "duplicate_key_excess_rows": 0,
+        "identity_fields": {
+          "player_id:linked_reference": 11448
+        },
+        "fields": {
+          "jersey_number": {
+            "populated": 11198,
+            "empty": 250
+          },
+          "match_id": {
+            "populated": 11448
+          },
+          "player_id": {
+            "populated": 11448
+          },
+          "player_name": {
+            "populated": 11448
+          },
+          "position": {
+            "populated": 11448
+          },
+          "team_side": {
+            "populated": 11448
+          },
+          "x": {
+            "populated": 11448
+          },
+          "y": {
+            "populated": 11448
+          }
+        },
+        "positive_FPL_appearances": {
+          "reference": 11492,
+          "covered": 11448,
+          "missing": 44,
+          "outside_positive_reference": 0
+        }
+      },
+      "incidents": {
+        "rows": 6455,
+        "matches": 380,
+        "reference_matches": 380,
+        "covered_reference_matches": 380,
+        "missing_reference_matches": [],
+        "outside_reference_matches": [],
+        "invalid_keys": 0,
+        "duplicate_key_excess_rows": 0,
+        "identity_fields": {
+          "player_id:empty": 760,
+          "secondary_player_id:empty": 3328,
+          "assist_player_id:empty": 6007,
+          "player_id:linked_reference": 5695,
+          "secondary_player_id:linked_reference": 3127,
+          "assist_player_id:linked_reference": 448
+        },
+        "fields": {
+          "added_time": {
+            "empty": 6158,
+            "populated": 297
+          },
+          "assist_player_id": {
+            "empty": 6007,
+            "populated": 448
+          },
+          "assist_player_name": {
+            "empty": 6007,
+            "populated": 448
+          },
+          "away_score": {
+            "populated": 1425,
+            "empty": 5030
+          },
+          "card_type": {
+            "empty": 4985,
+            "populated": 1470
+          },
+          "goal_type": {
+            "empty": 5412,
+            "populated": 1043
+          },
+          "home_score": {
+            "populated": 1425,
+            "empty": 5030
+          },
+          "incident_index": {
+            "populated": 6455
+          },
+          "incident_type": {
+            "populated": 6455
+          },
+          "match_id": {
+            "populated": 6455
+          },
+          "minute": {
+            "populated": 6449,
+            "empty": 6
+          },
+          "player_id": {
+            "empty": 760,
+            "populated": 5695
+          },
+          "player_name": {
+            "empty": 760,
+            "populated": 5695
+          },
+          "secondary_player_id": {
+            "empty": 3328,
+            "populated": 3127
+          },
+          "secondary_player_name": {
+            "empty": 3328,
+            "populated": 3127
+          },
+          "team_side": {
+            "empty": 760,
+            "populated": 5695
+          },
+          "text": {
+            "populated": 382,
+            "empty": 6073
+          }
+        }
+      },
+      "lineups": {
+        "rows": 15153,
+        "matches": 380,
+        "reference_matches": 380,
+        "covered_reference_matches": 380,
+        "missing_reference_matches": [],
+        "outside_reference_matches": [],
+        "invalid_keys": 0,
+        "duplicate_key_excess_rows": 0,
+        "identity_fields": {
+          "player_id:linked_reference": 14851,
+          "player_id:outside_reference": 302
+        },
+        "fields": {
+          "formation": {
+            "populated": 15153
+          },
+          "is_starting": {
+            "populated": 15153
+          },
+          "jersey_number": {
+            "populated": 15153
+          },
+          "lineup_status": {
+            "populated": 15153
+          },
+          "match_id": {
+            "populated": 15153
+          },
+          "player_id": {
+            "populated": 15153
+          },
+          "player_name": {
+            "populated": 15153
+          },
+          "position": {
+            "populated": 15153
+          },
+          "team_code": {
+            "populated": 15153
+          },
+          "team_side": {
+            "populated": 15153
+          }
+        },
+        "positive_FPL_appearances": {
+          "reference": 11492,
+          "covered": 11478,
+          "missing": 14,
+          "outside_positive_reference": 3675
+        },
+        "starting_eleven_violations": [],
+        "starting_flags": {
+          "True": 8360,
+          "False": 6793
+        },
+        "lineup_status": {
+          "confirmed": 15153
+        }
+      },
+      "match_enrichment": {
+        "rows": 380,
+        "matches": 380,
+        "reference_matches": 380,
+        "covered_reference_matches": 380,
+        "missing_reference_matches": [],
+        "outside_reference_matches": [],
+        "invalid_keys": 0,
+        "duplicate_key_excess_rows": 0,
+        "identity_fields": {},
+        "fields": {
+          "away_shot_model_xg": {
+            "populated": 380
+          },
+          "home_shot_model_xg": {
+            "populated": 380
+          },
+          "incident_timing_coverage": {
+            "populated": 380
+          },
+          "is_local_derby": {
+            "populated": 380
+          },
+          "is_neutral_ground": {
+            "populated": 380
+          },
+          "lineup_status": {
+            "populated": 380
+          },
+          "match_id": {
+            "populated": 380
+          },
+          "pitch_condition": {
+            "empty": 332,
+            "populated": 48
+          },
+          "quarantined_incident_count": {
+            "populated": 380
+          },
+          "temperature_c": {
+            "empty": 332,
+            "populated": 48
+          },
+          "travel_distance_km": {
+            "empty": 332,
+            "populated": 48
+          },
+          "unlocated_card_count": {
+            "populated": 380
+          },
+          "weather_description": {
+            "empty": 344,
+            "populated": 36
+          },
+          "wind_speed": {
+            "empty": 332,
+            "populated": 48
+          }
+        }
+      },
+      "momentum": {
+        "rows": 34954,
+        "matches": 380,
+        "reference_matches": 380,
+        "covered_reference_matches": 380,
+        "missing_reference_matches": [],
+        "outside_reference_matches": [],
+        "invalid_keys": 0,
+        "duplicate_key_excess_rows": 0,
+        "identity_fields": {},
+        "fields": {
+          "match_id": {
+            "populated": 34954
+          },
+          "minute": {
+            "populated": 34954
+          },
+          "value": {
+            "populated": 34954
+          }
+        }
+      },
+      "player_match_enrichment": {
+        "rows": 11462,
+        "matches": 380,
+        "reference_matches": 380,
+        "covered_reference_matches": 380,
+        "missing_reference_matches": [],
+        "outside_reference_matches": [],
+        "invalid_keys": 0,
+        "duplicate_key_excess_rows": 0,
+        "identity_fields": {
+          "player_id:linked_reference": 11462
+        },
+        "fields": {
+          "aerial_duels_lost": {
+            "populated": 11462
+          },
+          "attacking_shots_blocked": {
+            "populated": 11462
+          },
+          "goalkeeper_punches": {
+            "populated": 11462
+          },
+          "ground_duels_lost": {
+            "populated": 11462
+          },
+          "match_id": {
+            "populated": 11462
+          },
+          "player_id": {
+            "populated": 11462
+          },
+          "player_name": {
+            "populated": 11462
+          },
+          "possession_lost": {
+            "populated": 11462
+          },
+          "rating": {
+            "populated": 11235,
+            "empty": 227
+          },
+          "red_cards": {
+            "populated": 11462
+          },
+          "total_crosses": {
+            "populated": 11462
+          },
+          "total_dribbles": {
+            "populated": 11462
+          },
+          "total_long_balls": {
+            "populated": 11462
+          },
+          "total_passes": {
+            "populated": 11462
+          },
+          "yellow_cards": {
+            "populated": 11462
+          }
+        },
+        "positive_FPL_appearances": {
+          "reference": 11492,
+          "covered": 11461,
+          "missing": 31,
+          "outside_positive_reference": 1
+        }
+      },
+      "shots": {
+        "rows": 9504,
+        "matches": 380,
+        "reference_matches": 380,
+        "covered_reference_matches": 380,
+        "missing_reference_matches": [],
+        "outside_reference_matches": [],
+        "invalid_keys": 0,
+        "duplicate_key_excess_rows": 0,
+        "identity_fields": {
+          "player_id:linked_reference": 9504
+        },
+        "fields": {
+          "added_time": {
+            "populated": 1146,
+            "empty": 8358
+          },
+          "body_part": {
+            "populated": 9504
+          },
+          "goal_mouth_location": {
+            "populated": 9504
+          },
+          "goal_mouth_y": {
+            "populated": 9504
+          },
+          "goal_mouth_z": {
+            "populated": 9504
+          },
+          "is_home": {
+            "populated": 9504
+          },
+          "match_id": {
+            "populated": 9504
+          },
+          "minute": {
+            "populated": 9504
+          },
+          "outcome": {
+            "populated": 9504
+          },
+          "player_id": {
+            "populated": 9504
+          },
+          "player_name": {
+            "populated": 9504
+          },
+          "shot_index": {
+            "populated": 9504
+          },
+          "situation": {
+            "populated": 9504
+          },
+          "start_x": {
+            "populated": 9504
+          },
+          "start_y": {
+            "populated": 9504
+          },
+          "xg": {
+            "populated": 9504
+          },
+          "xgot": {
+            "empty": 6426,
+            "populated": 3078
+          }
+        }
+      },
+      "xg_by_minute": {
+        "rows": 7651,
+        "matches": 380,
+        "reference_matches": 380,
+        "covered_reference_matches": 380,
+        "missing_reference_matches": [],
+        "outside_reference_matches": [],
+        "invalid_keys": 0,
+        "duplicate_key_excess_rows": 0,
+        "identity_fields": {},
+        "fields": {
+          "away_cumulative_xg": {
+            "populated": 7651
+          },
+          "away_xg": {
+            "populated": 7651
+          },
+          "home_cumulative_xg": {
+            "populated": 7651
+          },
+          "home_xg": {
+            "populated": 7651
+          },
+          "match_id": {
+            "populated": 7651
+          },
+          "minute": {
+            "populated": 7651
+          }
+        }
+      }
+    },
+    "dataset_id": "d4baf849fb4a051be103f8c469e61a4753edb0b4004f980a000fe5c86ef573db",
+    "new_FPL_labels": 0,
+    "training_admitted": false,
+    "production_changed": false,
+    "limitations": [
+      "coverage_does_not_prove_accuracy_or_independent_source",
+      "reference_player_mapping_limited_to_G62_comparison_population",
+      "empty_values_not_zero_imputed",
+      "attacking_shots_blocked_not_defender_blocks",
+      "confirmed_lineup_label_does_not_prove_predeadline_availability",
+      "populated_cells_not_full_semantic_or_numeric_validation"
+    ],
+    "artifacts": {
+      "observations.jsonl.gz": "214551b4645c32f40a1eb2c439ab8c01f9000d601d8a27d49a980ed71efb8dcf",
+      "coverage-issues.json": "246577ae7587a9a8cfa95d03078290db2a87bcd75845ce804e00ba4385e04a5b"
+    }
+  },
+  "verification": {
+    "reproduced_byte_for_byte": true,
+    "pytest": {
+      "passed": 1616,
+      "skipped": 1,
+      "deselected": 79,
+      "seconds": 32.71
+    }
+  },
+  "new_complete_FPL_seasons": 0
+}

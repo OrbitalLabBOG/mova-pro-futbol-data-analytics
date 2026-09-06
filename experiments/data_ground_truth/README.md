@@ -3432,3 +3432,75 @@ Suite completa: **1.612 passed, 1 skipped, 79 deselected** (33,37 s).
 Sin nuevas etiquetas FPL, temporadas completas, entrenamiento ni cambios productivos;
 GT v7 y G55 permanecen inmutables. Continúa la búsqueda de componentes realmente
 observados y de evidencia temporal, conservando la procedencia de cada campo.
+
+## G64 — adquisición de detalle por partido y cobertura individual
+
+Se adquirieron **304 CSV adicionales, 7.167.022 bytes**, del commit Core
+`ce03f31b4032f3f89a1aa460ddc8a709ddeb56b6`: ocho tablas por 38 jornadas de
+`data/2025-2026/By Tournament/Premier League/`. Se usa sólo esa proyección, sin
+sumar sus copias `By Gameweek`. Los objetos quedan en `core-match-details-g64`,
+fuera de Git, con URL, hash, revisión y fecha de descarga. El capturador reutiliza
+y verifica los objetos al repetir la adquisición.
+
+La revisión upstream anuncia estas tablas en
+[DATA_INTEGRATION_REVIEW.md](https://github.com/olbauday/FPL-Core-Insights/blob/ce03f31b4032f3f89a1aa460ddc8a709ddeb56b6/DATA_INTEGRATION_REVIEW.md).
+G64 verifica los archivos directamente, usando como referencia los fixtures y
+apariciones ya conciliados en G62. No adopta las afirmaciones de exactitud del
+proveedor ni trata estos archivos como una fuente independiente de Core.
+
+| Tabla | Filas | Partidos enlazados / referencia | Apariciones FPL con minutos cubiertas / referencia |
+| --- | ---: | ---: | ---: |
+| Posiciones medias | 11.448 | 380/380 | 11.448/11.492 |
+| Incidentes | 6.455 | 380/380 | No aplica como denominador de eventos |
+| Alineaciones | 15.153 | 380/380 | 11.478/11.492 |
+| Contexto de partido | 380 | 380/380 | No aplica |
+| Momentum | 34.954 | 380/380 | No aplica |
+| Estadísticas adicionales de jugador | 11.462 | 380/380 | 11.461/11.492 |
+| Tiros | 9.504 | 380/380 | No aplica como denominador de eventos |
+| xG por minuto | 7.651 | 380/380 | No aplica |
+
+Total: **97.007 filas**. No hay claves naturales incompletas ni duplicadas dentro
+de las ocho tablas, ni partidos fuera de la referencia. Esto no prueba que estén
+todos los eventos de cada partido. Se conservan íntegramente las filas y campos
+originales, junto con hash, path y número de fila CSV, en `observations.jsonl.gz`.
+
+La cobertura de 380 partidos no elimina los huecos individuales: faltan **44**
+apariciones en posiciones medias, **14** en alineaciones y **31** en estadísticas
+adicionales. Estas últimas también incluyen una fila fuera del conjunto de minutos
+positivos. `coverage-issues.json` enumera las apariciones faltantes, sin imputarlas.
+Las alineaciones tienen exactamente once titulares por cada equipo/partido
+(8.360 filas titulares), pero eso no demuestra concordancia de sus identidades con
+los titulares oficiales FPL. Hay 302 filas de alineación cuyo jugador no figura
+en la población de referencia G62; no se declaran IDs inválidos por esa ausencia.
+Los IDs poblados de las otras tablas de jugadores/eventos sí enlazan con esa
+referencia, incluidos los campos secundarios y asistentes de incidentes.
+
+El reporte conserva cobertura por campo, diferenciando ausente, vacío y poblado:
+
+- Seis incidentes tienen minuto vacío; los campos de actor vacíos de eventos de
+  período no se interpretan automáticamente como fallos de identidad.
+- Hay 227 ratings vacíos y 250 dorsales vacíos en posiciones medias.
+- Temperatura, viento, distancia y estado del campo sólo están poblados en 48/380
+  partidos; descripción meteorológica en 36/380. No son capas completas.
+- xGOT está poblado en 3.078/9.504 tiros; no se supone que deba existir en todo tiro.
+- `attacking_shots_blocked` describe tiros propios bloqueados; **no equivale a
+  bloqueos defensivos** y no repara los 293 huecos de G63.
+
+```bash
+python -m experiments.data_ground_truth.core_match_details \
+  --acquire \
+  --root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/core-match-details-g64 \
+  --calibration-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/defensive-match-calibration-v5 \
+  --out /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/core-match-detail-coverage-v1
+```
+
+La segunda corrida vuelve a verificar los 304 objetos y reproduce byte por byte
+el reporte y los dos artefactos. Suite completa: **1.616 passed, 1 skipped,
+79 deselected** (32,71 s). [Resultados G64](results-g64.json).
+`populated` sólo acredita presencia; no sustituye validación numérica, semántica,
+cronológica o de concordancia. Incluso `lineup_status=confirmed` es una etiqueta
+retrospectiva: `available_at` sigue desconocido y `eligible_predeadline=false`.
+No se admiten estas tablas a entrenamiento, ni se modifican GT v7, G55 o producción.
+No hay nuevas temporadas FPL completas. G55 es un bundle congelado anterior y no
+incluye esta adquisición. El siguiente contraste debe evaluar coherencia de
+identidades/eventos y procedencia temporal, además de completar las ausencias.
