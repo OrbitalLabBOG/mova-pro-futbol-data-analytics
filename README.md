@@ -1,7 +1,7 @@
 ---
 type: docs
 name: MOVA Fantasy Fútbol Data Analytics
-updated: 2026-09-05
+updated: 2026-09-06
 status: active
 tags: [mova, fpl, runtime, operations]
 ---
@@ -182,6 +182,13 @@ de aparición; excluye el reemplazo de entrenador. Recupera dos estados de GW1
 con códigos originales preservados: 143.720 estados de jugadores, 320 managers
 y cero rechazos en los 199 candidatos. No habilita entrenamiento ni cambia GT v5.
 [Resultados G19](experiments/data_ground_truth/results-g19.json).
+G20 verifica los objetos Git de los 7.837 snapshots y contrasta 199 candidatos
+con GH Archive: 198 horas adquiridas, una ausente (404), **164 deadlines con
+publicación anterior corroborada** y 35 sin evidencia suficiente. Cubren
+**117.195 estados de jugadores y 320 managers**. 2024/25 alcanza 38/38; 2025/26,
+13/38. Son testigos temporales separados: G19 y GT v5 no se reescriben ni se
+habilita entrenamiento. [Resultados G20](experiments/data_ground_truth/results-g20.json).
+
 
 ## Empezar
 

@@ -924,3 +924,78 @@ def test_bootstrap_alias_is_scoped_preserves_source_and_does_not_admit_time():
     with pytest.raises(ValueError,match='range'):apply_alias(e,dict(candidate,source_claimed_at='2022-08-08'),aliases)
     with pytest.raises(ValueError,match='entity'):apply_alias(dict(e,element_type=5),candidate,aliases)
     with pytest.raises(ValueError,match='integer'):apply_alias(dict(e,code=True),candidate,aliases)
+
+
+def test_bootstrap_git_provenance_parses_offsets_and_requires_immutable_content():
+    from experiments.data_ground_truth.bootstrap_time import parse_log,assess
+    sha='a'*40;blob='b'*40;zero='0'*40;path='cache/2024/8/16/1238.json.xz'
+    log=f'commit\t{sha}\t2024-08-16T13:38:36+01:00\t2024-08-16T12:38:36Z\n\n:000000 100644 {zero} {blob} A\t{path}\n'
+    history=parse_log(log);row=assess(path,blob,history[path],'2024-08-16T17:30:00Z')
+    assert row['commit_minus_claim_seconds']==36 and row['coherent_under_source_clock_assumption']
+    assert row['author_committer_agree'] and row['available_at'] is None and not row['eligible_predeadline']
+    changed=history[path]+[dict(history[path][0],status='M')]
+    assert not assess(path,blob,changed,'2024-08-16T17:30:00Z')['coherent_under_source_clock_assumption']
+    assert not assess(path,'c'*40,history[path],'2024-08-16T17:30:00Z')['coherent_under_source_clock_assumption']
+    assert not assess(path,blob,history[path],'2024-08-16T12:38:20Z')['coherent_under_source_clock_assumption']
+    with pytest.raises(ValueError,match='naive'):parse_log(log.replace('2024-08-16T12:38:36Z','2024-08-16T12:38:36'))
+    with pytest.raises(ValueError,match='diff without'):parse_log(log.split('\n\n')[1])
+
+
+def test_bootstrap_git_negative_clock_delay_never_becomes_coherent():
+    from experiments.data_ground_truth.bootstrap_time import assess
+    c=dict(new_blob='b'*40,status='A',commit='a'*40,committer_at='2024-08-16T12:37:00Z',author_at='2024-08-16T12:37:00Z')
+    row=assess('cache/2024/8/16/1238.json.xz','b'*40,[c],'2024-08-16T17:30:00Z')
+    assert row['commit_minus_claim_seconds']==-60 and not row['coherent_under_source_clock_assumption']
+
+
+def test_publication_archive_filters_repository_and_reuses_verified_events(tmp_path, monkeypatch):
+    import gzip
+    from experiments.data_ground_truth import publication_archive as archive
+    event=dict(id='event', type='PushEvent', repo=dict(id=archive.REPOSITORY_ID,name=archive.REPOSITORY),
+               created_at='2024-08-17T06:15:00Z',public=True,payload=dict(head='a'*40,commits=[]))
+    other=dict(event,repo=dict(id=999,name=archive.REPOSITORY))
+    data=gzip.compress(('\n'.join(json.dumps(e) for e in [event,other])+'\n').encode())
+    calls=[]
+    def get(url, **kwargs):
+        calls.append(url)
+        return data, {'last-modified':'Sat, 17 Aug 2024 07:05:00 GMT'}
+    monkeypatch.setattr(archive,'_get',get)
+    record=archive.capture_hour(tmp_path,'2024-08-17-06')
+    assert calls==['https://data.gharchive.org/2024-08-17-6.json.gz']
+    assert record['scanned_events']==2 and len(record['events'])==1
+    assert archive.capture_hour(tmp_path,'2024-08-17-06')==record and len(calls)==1
+    assert len(list((tmp_path/'events').iterdir()))==1
+    (tmp_path/'events'/record['events'][0]['source_event_sha256']).write_bytes(b'corrupt')
+    with pytest.raises(ValueError,match='hash mismatch'):
+        archive.capture_hour(tmp_path,'2024-08-17-06')
+
+
+def test_publication_witness_requires_exact_public_commit_and_predeadline_time():
+    from experiments.data_ground_truth.publication_archive import witness
+    candidate=dict(season='2024-25',gw=1,path='cache/a',source_sha256='b'*64,commit='a'*40,
+                   committer_at='2024-08-16T12:38:36Z',deadline='2024-08-16T17:30:00Z')
+    event=dict(event_id='event',source_event_sha256='c'*64,head='a'*40,commit_shas=[],
+               public=True,created_at='2024-08-16T12:38:38Z')
+    hour=dict(hour='2024-08-16-12',compressed_sha256='d'*64,events=[event])
+    assert witness(candidate,hour)['available_at']=='2024-08-16T12:38:38Z'
+    for change in [dict(public=False),dict(public='true'),dict(head='e'*40),
+                   dict(created_at=candidate['deadline']),dict(created_at='2024-08-16T12:38:35Z')]:
+        row=witness(candidate,dict(hour,events=[dict(event,**change)]))
+        assert row['available_at'] is None and not row['eligible_predeadline']
+    assert witness(candidate,dict(hour,events=[]))['status']=='no_matching_public_push_in_requested_hour'
+    assert witness(candidate,dict(hour,events=[dict(event,head='e'*40,commit_shas=['a'*40])]))['eligible_predeadline']
+
+
+def test_publication_evidence_rejects_tampered_projection_and_wrong_repository():
+    from experiments.data_ground_truth.publication_coverage import verify_event
+    from experiments.data_ground_truth.publication_archive import REPOSITORY,REPOSITORY_ID
+    event=dict(id='1',type='PushEvent',repo=dict(id=REPOSITORY_ID,name=REPOSITORY),
+               created_at='2024-08-16T12:38:38Z',public=True,payload=dict(head='a'*40,commits=[]))
+    data=json.dumps(event).encode()
+    projection=dict(event_id='1',created_at=event['created_at'],public=True,head='a'*40,
+                    commit_shas=[],source_event_sha256=raw.digest(data))
+    verify_event(projection,data)
+    with pytest.raises(ValueError,match='projection'):
+        verify_event(dict(projection,created_at='2024-08-15T12:38:38Z'),data)
+    with pytest.raises(ValueError,match='repository'):
+        verify_event(projection,json.dumps(dict(event,repo=dict(id=0,name=REPOSITORY))).encode())
