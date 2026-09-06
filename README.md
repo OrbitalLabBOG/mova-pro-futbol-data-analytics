@@ -111,7 +111,7 @@ de modelos por hash y exportación revisable, sin promover modelos al runtime.
 
 La capa experimental conserva los datos crudos fuera de Git, con manifiestos,
 SHA-256, fuentes fijadas por commit y auditorías reproducibles. El
-[registro de gates G1–G32](experiments/data_ground_truth/README.md) contiene
+[registro de gates G1–G33](experiments/data_ground_truth/README.md) contiene
 adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 
 | Capa | Cobertura verificada | Límite pendiente |
@@ -142,6 +142,10 @@ temporada anterior, 19 difieren y 864 carecen de código en la referencia. Esto
 respalda la hipótesis de estadísticas previas, pero no autoriza reasignación global de período
 ni rellenar snapshots con totales finales.
 [Resultados G32](experiments/data_ground_truth/results-g32.json).
+G33 rastrea las diecinueve excepciones en 694 snapshots de pretemporada: ocho
+altas observadas y once estados constantes, sin una captura anterior que resuelva
+la discrepancia. Se conservan como excepciones, sin imputación desde el GT final.
+[Resultados G33](experiments/data_ground_truth/results-g33.json).
 
 ## Empezar
 
