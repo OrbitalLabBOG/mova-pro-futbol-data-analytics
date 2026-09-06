@@ -5387,3 +5387,54 @@ históricas apropiadas para cada evaluación. Las etiquetas retrospectivas no se
 convierten en features predeadline. GT v7 conserva 303.126 filas y doce temporadas;
 no hubo despliegue, nuevas descargas ni cambio de modelo. G92 permanece intacto y
 no incluye todavía este nuevo paquete parcial ni G93.
+
+
+## G95 — Cobertura de minutos y sesgo de observación en 2013/14
+
+El paquete parcial G94 se verifica por hash antes de medir cobertura por partido
+y jornada. Se separa disponibilidad de minutos de disponibilidad de puntos: una
+aparición con minutos conocidos y puntos desconocidos sigue siendo una observación
+de participación, aunque no sea una etiqueta completa para puntos.
+
+| Medida | GW1–30 | GW31–38 |
+| --- | ---: | ---: |
+| Filas archivadas | 17.805 | 2.860 |
+| Filas con minutos conocidos | 17.805 | 2.452 |
+| Apariciones positivas conocidas | 7.998 | 2.452 |
+| Ceros de minutos explícitos | 9.807 | 0 |
+| Minutos desconocidos | 0 | 408 |
+| Minutos y puntos conocidos | 17.805 | 2.443 |
+| Minutos conocidos pero puntos desconocidos | 0 | 9 |
+| Fracción positiva entre minutos conocidos | 44,92% | 100% |
+
+Los 291 partidos cubiertos por el JSON incluyen ceros explícitos; los otros
+89 sólo tienen apariciones positivas con minutos conocidos. Las ocho jornadas
+GW31–38 se marcan `positive_only_observations`. Los 408 minutos desconocidos se
+concentran en GW38; los nueve puntos desconocidos con minutos conocidos, en GW34.
+No se sustituyen unos por otros ni se convierten desconocidos en ceros.
+
+El salto al 100% describe el archivo observado, no la probabilidad de que un jugador
+juegue. Mezclar estas filas para entrenar un clasificador de participación sin
+tratar el mecanismo de muestreo introduciría sesgo. Tampoco los primeros 30 GWs
+acreditan por sí solos el universo elegible: se conserva el denominador registrado
+como desconocido y `participation_training_admitted=false` en todas las ventanas.
+El análisis condicionado a haber jugado requiere un contrato distinto y no equivale
+a validar predicciones incondicionales.
+
+```bash
+python -m experiments.data_ground_truth.partial_population_audit \
+  --base "$DATA_BASE" --out "$DATA_BASE/partial-population-audit-g95-new"
+```
+
+[Resultados G95](results-g95.json) fija el paquete, manifiesto e implementación.
+Reporte y dos artefactos (`fixture_windows.csv`, `gameweek_windows.csv`) idénticos
+byte por byte en v1/v2. Las pruebas mantienen minutos conocidos cuando faltan puntos,
+no cuentan minutos desconocidos como ceros y rechazan asignaciones incompatibles de
+un mismo partido a varias jornadas.
+
+No se añadieron etiquetas ni se cambió el paquete G94, el GT v7 o producción. El
+siguiente foco de adquisición queda acotado: estados/población de GW31–38 y evidencia
+para los 408 minutos desconocidos de GW38, además de los nueve puntos de GW34.
+Este reporte aún no forma parte del corte portable inmutable G92.
+
+Suite completa G95: **1.697 passed, 1 skipped, 79 deselected**, 36,16 s.
