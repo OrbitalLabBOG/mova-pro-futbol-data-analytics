@@ -5575,3 +5575,43 @@ snapshots de llimllib requiere medir épocas, duplicación y cobertura increment
 
 Adquisición: **700 archivos, 31.340.367 bytes**. Suite completa G98:
 **1.703 passed, 1 skipped, 79 deselected**, 33,46 s.
+
+## G99 — GT v8: cierre de identidades pendientes 2014/15
+
+`current-labels.json` selecciona **GT v8**, derivado inmutablemente de GT v7.
+Los 24 candidatos de G98 coinciden en ID de la misma temporada, código y nombre
+completo con la evidencia original de perfiles. Se verificó la igualdad de las
+observaciones, ausencia de colisiones y unicidad de códigos antes de enriquecer.
+
+Cambian exclusivamente `official_player_code`, `source_official_player_code` e
+`identity_key` en **421 filas de 24 jugadores**. Las **24.876 filas de 2014/15** quedan
+con identidad oficial enlazada y cero identidades limitadas a esa temporada. El
+GT conserva **303.126 filas de jugadores**, doce temporadas y **322 filas de
+managers separadas**. No se añaden observaciones ni se modifica su elegibilidad.
+
+`identities.json` conserva los nombres, códigos y perfiles testigo fijados;
+`changes.json` enumera cada jugador y fixture modificado. El paquete conserva la
+referencia a su padre v7. Se compararon todas las celdas ajenas a identidad en
+2014/15, y las demás particiones, cuarentenas y managers son idénticos byte por
+byte al padre. Dos construcciones en directorios distintos producen exactamente
+el mismo manifiesto, ID, archivos y evidencia.
+
+```bash
+python -m experiments.data_ground_truth.profile_identity_promotion \
+  --base "$DATA_BASE" --out "$DATA_BASE/profile-promotion-g99-new" \
+  --datasets "$DATA_BASE/training-datasets"
+```
+
+G98 ahora fija su padre v7 en vez de seguir `current-labels.json`; su reproducción
+conserva los cinco artefactos y todas las métricas, con el cambio explícito del hash
+de implementación. Así la promoción no transforma retrospectivamente una auditoría
+de candidatos en una comparación contra el GT ya enriquecido. El verificador
+extiende a v8 la prohibición de managers en particiones de jugadores.
+
+`results-g99.json` fija paquete, manifiesto, implementaciones y evidencia. Las pruebas
+cubren derivación reproducible, conservación de etiquetas y rechazo de entidades
+incorrectas. No se entrenó ni promovió ningún modelo, no cambió producción y no se
+admitieron features predeadline. Los nuevos paquetes y crudos G93–G99 aún no están
+incluidos en el corte restaurable G92.
+
+Suite completa G99: **1.705 passed, 1 skipped, 79 deselected**, 33,31 s.

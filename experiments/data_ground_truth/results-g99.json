@@ -1,0 +1,38 @@
+{
+  "version": "historical-data-g99",
+  "audit": {
+    "version": "profile-identity-promotion-v1",
+    "parent_dataset_id": "d4baf849fb4a051be103f8c469e61a4753edb0b4004f980a000fe5c86ef573db",
+    "source_audit_report_sha256": "c47fea5ea053cfc04a06ec402e9283dba1b19f4b0354c678cbf65c33620ca5e6",
+    "prior_identity_evidence_sha256": "933d406dd06418b8831fdf9ea60d76db76c595aa0e05f0acf8f34abb9388d0c1",
+    "source_replay_implementation_sha256": "3716fb64cd62f0755aaa5656f66f75d7fd43bb8b9352a056dae89212770825d6",
+    "implementation_sha256": "3b087cb099f99fa0c33e67c6e582fc3be26e5d105a3c9133a0815148d60847a8",
+    "dataset_id": "e0b5ab38c46df8eae793742421965cf80665764cbbf23dfcb99e3c8b50247998",
+    "manifest_sha256": "9a71bb11bf6ed5351b2084e104b7b4e8e279995d2f3d25cd8a095989af50798e",
+    "dataset_rows": 303126,
+    "manager_rows": 322,
+    "enriched_players": 24,
+    "enriched_rows": 421,
+    "partition_2014": {
+      "season": "2014-15",
+      "split": "train",
+      "file": "2014-15.csv.gz",
+      "rows": 24876,
+      "sha256": "07b45a4d537a36c4805c41dace34a1faea59a34d18b5e757b650ae9b5331c79b",
+      "official_identity_rows": 24876,
+      "season_scoped_identity_rows": 0
+    },
+    "artifacts": {
+      "identities.json": "540d645605c78b0e3bf12f05a63625dc9b7a832de170da909cd9dd7b323b3cfd",
+      "changes.json": "868a71ca5811f62d46f9e1ac272df544f11e23018e909b8be3a5443104bd2b0b"
+    },
+    "all_non_identity_cells_preserved": true,
+    "unrelated_partitions_byte_identical": true,
+    "production_changed": false,
+    "model_training_run": false,
+    "predeadline_admission": false
+  },
+  "report_sha256": "70d7f6a807f70ad31ae44c3c152f150d69f227de8903fd22f1fe69e75d2f4594",
+  "reproduction_identical": true,
+  "independent_non_identity_comparison": true
+}
