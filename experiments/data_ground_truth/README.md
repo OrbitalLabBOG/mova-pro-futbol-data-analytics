@@ -2795,3 +2795,58 @@ python -m experiments.data_ground_truth.joint_coverage \
 
 Validación G52: **1.567 passed, 1 skipped, 79 deselected**. Incluye rechazo de
 evidencia tardía, deadline/hash incompatibles, duplicados y poblaciones parciales.
+
+## G53 — flags observados de selección y estado deportivo
+
+`selection_flags.py` vuelve a leer los 199 snapshots seleccionados de raw,
+verificando manifiesto, hashes, calendario interno y asociación de cada testigo
+de publicación. Exporta observaciones por entidad y deadline con el hash de la
+fuente; separa jugadores y managers. No consulta GT, infiere permisos a partir de
+resultados ni modifica consumidores productivos. Conserva ausente, nulo, tipo
+inválido y booleano como cuatro casos distintos; solo el último expresa un valor
+observado, y ninguno equivale a verificar permisos de transacción del servidor.
+
+| Temporada | Estados jugador | `can_select` ausente | Explícito true | Explícito false | Seleccionables con status distinto de `a` |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 2020/21 | 4.191 | 4.191 | 0 | 0 | 0 |
+| 2021/22 | 25.150 | 25.150 | 0 | 0 | 0 |
+| 2022/23 | 26.198 | 26.198 | 0 | 0 | 0 |
+| 2023/24 | 29.510 | 29.510 | 0 | 0 | 0 |
+| 2024/25 | 27.159 | 9.933 | 13.841 | 3.385 | 2.306 |
+| 2025/26 | 29.645 | 0 | 23.203 | 6.442 | 3.550 |
+| 2026/27 | 1.867 | 0 | 1.685 | 182 | 225 |
+
+Totales: **143.720 estados**, 141.853 con testigo de publicación; **94.982 flags
+`can_select` ausentes**, 38.729 true y 10.009 false. Los 48.738 estados con flag
+explícito tienen `can_transact=true` y `removed=false`, incluso los 10.009 con
+`can_select=false`: estos campos no son intercambiables. No hay nulos ni tipos
+inválidos en las celdas actuales. Los 320 estados de managers se conservan aparte
+y tienen los tres flags explícitos; no aumentan la población de jugadores.
+
+Un filtro hipotético `status == a` excluiría **6.081 estados con can_select=true**:
+la disponibilidad deportiva y la selección deben seguir siendo dimensiones
+distintas. En la muestra explícita no hay desacuerdos entre `can_select` y
+`status != u`; esa concordancia observacional **no autoriza imputar 94.982 flags
+históricos ni prueba las reglas de FPL de otras épocas**. El valor original y el
+estado desconocido quedan en el artefacto, sin sustitución.
+
+El primer snapshot seleccionado con flags explícitos corresponde a 2024/25 GW16;
+esto no fecha el despliegue exacto de la API. G52 conserva su métrica de calendario
++ publicación, pero G53 precisa la prioridad: **2025/26 es la única temporada
+cerrada de esta selección con flags explícitos en todos sus snapshots**; 2024/25
+sirve para ventanas desde GW16, y 2023/24 aún necesita evidencia histórica de
+selección. 2025/26 ya se usó para evaluación: no se convierte en holdout nuevo.
+Siguen pendientes contratos de GW1, reglas/chips y permisos por tipo de operación.
+
+```bash
+python -m experiments.data_ground_truth.selection_flags \
+  --base-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments \
+  --out /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/selection-flags-audit-v1
+```
+
+`report.json` y `observations.jsonl.gz` reproducidos byte por byte en
+`selection-flags-audit-v2`. No hay temporadas, etiquetas o descargas nuevas en
+este gate; es extracción y auditoría de raw archivado. [Resultados G53](results-g53.json).
+
+Validación G53: **1.571 passed, 1 skipped, 79 deselected**. Regresiones de
+ausente/nulo/tipo inválido, lesión seleccionable y contradicción preservada.

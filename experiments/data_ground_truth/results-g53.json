@@ -1,0 +1,316 @@
+{
+  "version": "historical-data-g53",
+  "audit_report_sha256": "fb38919f16b3a086c0852927b453194771433a539cc0d5489453fe83cdcc5e51",
+  "audit": {
+    "version": "raw-selection-flags-v1",
+    "selection_report_sha256": "1ace4506377f6bf92ff79d71f7b1083070f273c58f802518754f96fccb87b6fc",
+    "raw_manifest_sha256": "d9eed1e354d0a35443e480a0c4bfcbdebee97f28b73b04309e4bef0f8bcc243e",
+    "implementation_sha256": "59c5b0b0f400856a009dea602cc780811b82602a168ce4bc8161dd8c72b46951",
+    "observations_sha256": "0b7b81407928e6c1b417976a81993d23793de4842e0ee1b7db10c8b9ff56916c",
+    "players": {
+      "rows": 143720,
+      "published_rows": 141853,
+      "flags": {
+        "can_select": {
+          "absent": 94982,
+          "false": 10009,
+          "true": 38729
+        },
+        "can_transact": {
+          "absent": 94982,
+          "true": 48738
+        },
+        "removed": {
+          "absent": 94982,
+          "false": 48738
+        },
+        "has_temporary_code": {
+          "absent": 99935,
+          "false": 43785
+        }
+      },
+      "combinations": [
+        {
+          "status": "a",
+          "observed_selectability": "none",
+          "flag_kind": "absent",
+          "rows": 64963
+        },
+        {
+          "status": "a",
+          "observed_selectability": "true",
+          "flag_kind": "boolean",
+          "rows": 32648
+        },
+        {
+          "status": "d",
+          "observed_selectability": "none",
+          "flag_kind": "absent",
+          "rows": 4210
+        },
+        {
+          "status": "d",
+          "observed_selectability": "true",
+          "flag_kind": "boolean",
+          "rows": 1769
+        },
+        {
+          "status": "i",
+          "observed_selectability": "none",
+          "flag_kind": "absent",
+          "rows": 7990
+        },
+        {
+          "status": "i",
+          "observed_selectability": "true",
+          "flag_kind": "boolean",
+          "rows": 3827
+        },
+        {
+          "status": "n",
+          "observed_selectability": "none",
+          "flag_kind": "absent",
+          "rows": 349
+        },
+        {
+          "status": "n",
+          "observed_selectability": "true",
+          "flag_kind": "boolean",
+          "rows": 220
+        },
+        {
+          "status": "s",
+          "observed_selectability": "none",
+          "flag_kind": "absent",
+          "rows": 457
+        },
+        {
+          "status": "s",
+          "observed_selectability": "true",
+          "flag_kind": "boolean",
+          "rows": 265
+        },
+        {
+          "status": "u",
+          "observed_selectability": "false",
+          "flag_kind": "boolean",
+          "rows": 10009
+        },
+        {
+          "status": "u",
+          "observed_selectability": "none",
+          "flag_kind": "absent",
+          "rows": 17013
+        }
+      ],
+      "status_a_filter_exclusions": 6081,
+      "status_u_rule_disagreements": 0,
+      "transact_true_select_false": 10009
+    },
+    "managers": {
+      "rows": 320,
+      "published_rows": 320,
+      "flags": {
+        "can_select": {
+          "true": 320
+        },
+        "can_transact": {
+          "true": 320
+        },
+        "removed": {
+          "false": 320
+        },
+        "has_temporary_code": {
+          "false": 320
+        }
+      },
+      "combinations": [
+        {
+          "status": "a",
+          "observed_selectability": "true",
+          "flag_kind": "boolean",
+          "rows": 320
+        }
+      ],
+      "status_a_filter_exclusions": 0,
+      "status_u_rule_disagreements": 0,
+      "transact_true_select_false": 0
+    },
+    "training_admitted": false,
+    "production_changed": false,
+    "limitations": [
+      "observed_flags_not_verified_server_transaction_permissions",
+      "absence_null_and_invalid_are_unknown_not_false",
+      "concordance_with_status_u_does_not_authorize_historical_imputation",
+      "sporting_status_not_a_selection_permission",
+      "publication_proof_is_not_exact_API_capture_time",
+      "no_new_seasons_or_labels_no_retrospective_label_inputs"
+    ]
+  },
+  "season_coverage": {
+    "2020-21": {
+      "rows": 4191,
+      "published_rows": 4191,
+      "flags": {
+        "can_select": {
+          "absent": 4191
+        },
+        "can_transact": {
+          "absent": 4191
+        },
+        "removed": {
+          "absent": 4191
+        },
+        "has_temporary_code": {
+          "absent": 4191
+        }
+      },
+      "status_a_filter_exclusions": 0,
+      "status_u_rule_disagreements": 0,
+      "transact_true_select_false": 0
+    },
+    "2021-22": {
+      "rows": 25150,
+      "published_rows": 25150,
+      "flags": {
+        "can_select": {
+          "absent": 25150
+        },
+        "can_transact": {
+          "absent": 25150
+        },
+        "removed": {
+          "absent": 25150
+        },
+        "has_temporary_code": {
+          "absent": 25150
+        }
+      },
+      "status_a_filter_exclusions": 0,
+      "status_u_rule_disagreements": 0,
+      "transact_true_select_false": 0
+    },
+    "2022-23": {
+      "rows": 26198,
+      "published_rows": 26198,
+      "flags": {
+        "can_select": {
+          "absent": 26198
+        },
+        "can_transact": {
+          "absent": 26198
+        },
+        "removed": {
+          "absent": 26198
+        },
+        "has_temporary_code": {
+          "absent": 26198
+        }
+      },
+      "status_a_filter_exclusions": 0,
+      "status_u_rule_disagreements": 0,
+      "transact_true_select_false": 0
+    },
+    "2023-24": {
+      "rows": 29510,
+      "published_rows": 29510,
+      "flags": {
+        "can_select": {
+          "absent": 29510
+        },
+        "can_transact": {
+          "absent": 29510
+        },
+        "removed": {
+          "absent": 29510
+        },
+        "has_temporary_code": {
+          "absent": 29510
+        }
+      },
+      "status_a_filter_exclusions": 0,
+      "status_u_rule_disagreements": 0,
+      "transact_true_select_false": 0
+    },
+    "2024-25": {
+      "rows": 27159,
+      "published_rows": 27159,
+      "flags": {
+        "can_select": {
+          "absent": 9933,
+          "false": 3385,
+          "true": 13841
+        },
+        "can_transact": {
+          "absent": 9933,
+          "true": 17226
+        },
+        "removed": {
+          "absent": 9933,
+          "false": 17226
+        },
+        "has_temporary_code": {
+          "absent": 14886,
+          "false": 12273
+        }
+      },
+      "status_a_filter_exclusions": 2306,
+      "status_u_rule_disagreements": 0,
+      "transact_true_select_false": 3385
+    },
+    "2025-26": {
+      "rows": 29645,
+      "published_rows": 29645,
+      "flags": {
+        "can_select": {
+          "true": 23203,
+          "false": 6442
+        },
+        "can_transact": {
+          "true": 29645
+        },
+        "removed": {
+          "false": 29645
+        },
+        "has_temporary_code": {
+          "false": 29645
+        }
+      },
+      "status_a_filter_exclusions": 3550,
+      "status_u_rule_disagreements": 0,
+      "transact_true_select_false": 6442
+    },
+    "2026-27": {
+      "rows": 1867,
+      "published_rows": 0,
+      "flags": {
+        "can_select": {
+          "true": 1685,
+          "false": 182
+        },
+        "can_transact": {
+          "true": 1867
+        },
+        "removed": {
+          "false": 1867
+        },
+        "has_temporary_code": {
+          "false": 1867
+        }
+      },
+      "status_a_filter_exclusions": 225,
+      "status_u_rule_disagreements": 0,
+      "transact_true_select_false": 182
+    }
+  },
+  "verification": {
+    "reproduced_byte_for_byte": true,
+    "tests_passed": 1571,
+    "tests_skipped": 1,
+    "tests_deselected": 79
+  },
+  "new_label_rows": 0,
+  "new_complete_seasons": 0,
+  "production_changed": false,
+  "training_admitted": false
+}
