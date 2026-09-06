@@ -2730,3 +2730,68 @@ WAL no vacío y nombres no clasificados. [Resultados G51](results-g51.json).
 G50 sigue describiendo seis archivos no referenciados físicamente; G51 resuelve
 su clasificación como auxiliares conservados. No hay nuevas fuentes, temporadas,
 entrenamiento ni cambios productivos en este gate.
+
+## G52 — cobertura conjunta y búsqueda anterior a 2014/15
+
+`joint_coverage.py` cruza los artefactos congelados G30/G37/G49 con el GT vigente.
+Verifica hashes de reportes y artefactos, reproduce la verificación íntegra del
+paquete GT y exige coincidencia de temporada, jornada, deadline y hash del snapshot.
+No vuelve a ejecutar todos los padres ni selecciona observaciones por concordancia
+con etiquetas finales. El resultado mide disponibilidad de evidencia; no admite
+features ni demuestra que cada estado tenga una etiqueta enlazada.
+
+| Temporada | Filas GT | Deadlines del inventario | Estado publicado + calendario | Además filtro básico | Además starts + cuatro xG |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 2014/15–2019/20 | 140.054 | 0 | 0 | 0 | 0 |
+| 2020/21 | 24.365 | 6 | 6 | 6 | 0 |
+| 2021/22 | 25.447 | 38 | 36 | 35 | 0 |
+| 2022/23 | 26.505 | 38 | 37 | 36 | 21 |
+| 2023/24 | 29.725 | 38 | 38 | 37 | 37 |
+| 2024/25 | 27.283 | 38 | 38 | 37 | 37 |
+| 2025/26 | 29.747 | 38 | 38 | 37 | 37 |
+| 2026/27 | 0 | 3 | 0 | 0 | 0 |
+
+El denominador son los 199 deadlines seleccionados del archivo bootstrap, **no
+el universo de jornadas de las doce temporadas**. Cero indica ausencia en este
+índice, no inexistencia universal de datos. En 2026/27 el collector propio sí tiene
+evidencia para GW2/GW3 (G36); no se sustituye silenciosamente con ella la prueba
+faltante de los snapshots externos seleccionados. Los filtros exigen que todos
+los jugadores observados pasen para todos los campos del grupo; no eliminan
+jugadores difíciles para mejorar el porcentaje. GW1 conserva su revisión de período.
+La edad del commit de calendario no equivale a frescura de una captura API.
+
+La prioridad derivada es cerrar los contratos de estados para 2023/24–2025/26:
+GW1 y acumulados, identidad/elegibilidad, reglas/chips y selección temporal del
+calendario. Después, completar calendario acreditado en 2021/22 GW31–32 y
+2022/23 GW23. Es una recomendación basada en cobertura, no una prueba de que estas
+fuentes basten para un replay causal o una mejora del modelo.
+
+Se repitió búsqueda web de CSV/datasets 2012/13 y 2013/14 y la consulta
+`tools/research/orbix-research sota 'Fantasy Premier League historical data dataset'`.
+La respuesta de Research mezcló trabajos pertinentes y ajenos; no se adopta su
+lista como frontera verificada. Se descargaron y archivaron dos originales:
+
+- [Gupta, arXiv:1909.12938](https://arxiv.org/pdf/1909.12938), sección 3: describe
+  datos por jornada de 2013/14–2015/16. Sus referencias de datos remiten a las
+  páginas generales FPL y Kaggle, sin un archivo específico reproducible.
+- [Goldstein, McAfee y Suri, 2014](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/smart_crowds.pdf),
+  sección 3.1: describe elecciones de 100.000 managers durante 38 jornadas de
+  2012/13 y resultados de 706 jugadores. Esa descripción no demuestra que su
+  corpus siga descargable; no se obtuvo un dataset desde el paper o su página.
+
+Los PDFs y la salida de Research quedan en `literature-discovery-g52`, con
+manifiesto y hashes, separados del corpus FPL. **Esta búsqueda no añadió temporadas
+ni filas de etiquetas**; tampoco demuestra que se hayan agotado todas las fuentes
+públicas. GT v7 conserva 303.126 filas y doce temporadas; producción permanece igual.
+
+```bash
+python -m experiments.data_ground_truth.joint_coverage \
+  --base-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments \
+  --out /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/joint-data-coverage-v1
+```
+
+`report.json` y `windows.json` reproducidos byte por byte en
+`joint-data-coverage-v2`. [Resultados G52](results-g52.json).
+
+Validación G52: **1.567 passed, 1 skipped, 79 deselected**. Incluye rechazo de
+evidencia tardía, deadline/hash incompatibles, duplicados y poblaciones parciales.
