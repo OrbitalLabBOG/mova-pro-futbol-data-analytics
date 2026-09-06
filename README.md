@@ -111,7 +111,7 @@ de modelos por hash y exportación revisable, sin promover modelos al runtime.
 
 La capa experimental conserva los datos crudos fuera de Git, con manifiestos,
 SHA-256, fuentes fijadas por commit y auditorías reproducibles. El
-[registro de gates G1–G36](experiments/data_ground_truth/README.md) contiene
+[registro de gates G1–G37](experiments/data_ground_truth/README.md) contiene
 adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 
 | Capa | Cobertura verificada | Límite pendiente |
@@ -120,8 +120,9 @@ adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 | Bootstrap raw | 7.837 snapshots; estados, precios, clubes y posiciones | Disponibilidad y semántica varían por campo y temporada |
 | Estados con publicación histórica acreditada | 196/199 deadlines; 38/38 en cada temporada 2021/22–2025/26 | GW1–3 de 2026/27 sin testigo; selección desconocida no se convierte en elegibilidad |
 | Calendarios con publicación histórica acreditada, G35 | 193/199 deadlines; 38/38 en 2023/24, 2024/25 y 2025/26 | Seis ventanas pendientes y frescura desigual: 93 calendarios tienen commit de hasta 48 horas; en 2025/26 son 14/38 |
+| Índice común de calendarios, G37 | 195/199 deadlines: 193 con publicación externa y dos con ledger propio | Cuatro ventanas pendientes; los tipos de reloj y evidencia se conservan separados |
 | Rendimiento raw, G31 | 143.720 filas y 22 campos tipados; sin valores numéricos inválidos | 31.071 descensos de celda, 27.211 entre GW1–2: falta resolver período y semántica antes de calcular deltas |
-| Collector propio, G36 | 55 bundles públicos; 34.512 estados de jugadores y 20.900 observaciones de fixtures | Dos candidatos anteriores a GW2/GW3 2026/27 vinculados al cierre de ingesta; evidencia interna separada del índice externo |
+| Collector propio, G36 | 55 bundles públicos; 34.512 estados de jugadores y 20.900 observaciones de fixtures | Dos candidatos anteriores a GW2/GW3 2026/27 vinculados al cierre de ingesta; evidencia interna identificada en el índice común G37 |
 | Reglas y chips de snapshots | Explícitos desde GW16 de 2024/25 y en toda 2025/26 | Faltan reglas históricas anteriores e interpretación de overrides |
 | Fuentes antiguas complementarias | Material parcial desde 2010/11 y totales desde 2006/07 | No cuentan como nuevas temporadas completas; persisten huecos de población e identidad |
 
@@ -158,8 +159,13 @@ con seis pendientes. Las nuevas pruebas acreditan publicación, no captura API.
 G36 recupera bootstrap/fixtures del collector propio, verifica 55 manifiestos y
 los vincula al ledger readonly. Usa el cierre de ingesta como disponibilidad,
 pues `observed_at` se asigna antes de descargar. Entrega dos candidatos 2026/27
-con origen interno explícito, pendientes de integrar al índice común.
+con origen interno explícito, incorporados al índice común G37.
 [Resultados G36](experiments/data_ground_truth/results-g36.json).
+G37 reproduce las auditorías G35 y G36 antes de combinar sus índices. Alcanza
+195/199 deadlines; faltan 2021/22 GW31–32, 2022/23 GW23 y 2026/27 GW1.
+Conserva edad de commit y edad de inicio de captura como métricas distintas,
+sin afirmar replay completo ni admisión a entrenamiento.
+[Resultados G37](experiments/data_ground_truth/results-g37.json).
 
 ## Empezar
 
