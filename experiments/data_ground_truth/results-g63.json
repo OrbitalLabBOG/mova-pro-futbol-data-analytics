@@ -1,0 +1,91 @@
+{
+  "version": "historical-data-g63",
+  "audit_report_sha256": "3857576b17b5f974be5e1097858f2fd35856e65dcce5a615d15fac888c46b442",
+  "audit": {
+    "version": "defensive-source-lineage-v1",
+    "calibration_report_sha256": "77cc1a7db361a30cf981568081c185e59a1d2cca796a110ae2dff70787474ca7",
+    "history_manifest_sha256": "1d890f32304052429612fb8574de613b07ffbf579030ce5640fa11cf49ecb3b0",
+    "discovery_manifest_sha256": "5a7d00048f0b06e28c9fc179d9f810fce69049411415f820974b1783ad02f08b",
+    "supplemental_report_sha256": "504cfd547e9b2ca9374214cbee1ad9a85cd6f4a1ae9df660b2bad93cb372a186",
+    "FPL_metadata_sha256": "412ce0172016f8f98f25177dc6de9f3cd2a8ec7a6135f9aa638d7fdee784d67b",
+    "implementation_sha256": "169d254e3d05c7b94529601d1833466c066e07c9969bb987b55a9308bee10a15",
+    "history_files": 108,
+    "missing_blocks": 293,
+    "earlier_observed_blocks_candidates": 0,
+    "blocks_by_cut": {
+      "before_backfill": {
+        "absent_row": 293
+      },
+      "after_july27": {
+        "absent_row": 133,
+        "empty": 160
+      },
+      "after_july29": {
+        "empty": 293
+      },
+      "after_july22_backfill": {
+        "absent_row": 293
+      }
+    },
+    "native_relationships": {
+      "after_july22_backfill": {
+        "equal": 12461,
+        "absent_row_to_unknown": 293
+      },
+      "after_july27": {
+        "equal": 12461,
+        "absent_row_to_unknown": 133,
+        "empty_to_unknown": 160
+      }
+    },
+    "FPL_self_consistency": {
+      "equal": 26320
+    },
+    "FPL_played_outfield_self_consistency": {
+      "equal": 10725
+    },
+    "upstream_PR": "https://github.com/olbauday/FPL-Core-Insights/pull/58",
+    "upstream_claim": "GW FPL totals copied; double-GW values allocated proportionally, 360 rows claimed",
+    "training_admitted": false,
+    "production_changed": false,
+    "artifacts": {
+      "blocks-lineage.json": "1ca02265ebd60f01956c6733ec9da37c761eecad84e003534d4b3a26870de17e",
+      "native-lineage.jsonl.gz": "1b7879f7f2c229670e74e61876deb215285070f14e2a0849cbf28e70c8ccad5b",
+      "FPL-inconsistencies.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    "limitations": [
+      "upstream_PR_describes_a_historical_patch_not_proof_for_every_current_cell",
+      "sampled_revisions_do_not_exhaust_all_historical_versions",
+      "absence_in_prior_cut_not_proof_of_exact_creation_time_or_cause",
+      "no_zero_imputation_or_label_repair",
+      "documented_proportional_allocation_is_not_observed_per_match_ground_truth",
+      "internal_FPL_consistency_not_independent_measurement_accuracy"
+    ]
+  },
+  "acquisition": {
+    "history_files": 108,
+    "history_bytes": 9268159,
+    "history_errors": [],
+    "discovery_files": 9,
+    "discovery_bytes": 485801
+  },
+  "native_field_contract": {
+    "field": "Core.playermatchstats.defensive_contributions",
+    "classification": "upstream_GW_backfill_with_documented_proportional_allocation",
+    "independent_match_ground_truth": false,
+    "training_admitted": false,
+    "limitation": "classification_of_archived_column_not_assertion_that_every_cell_was_changed_by_patch"
+  },
+  "verification": {
+    "reproduced_byte_for_byte": true,
+    "pytest": {
+      "passed": 1612,
+      "skipped": 1,
+      "deselected": 79,
+      "seconds": 33.37
+    }
+  },
+  "new_FPL_labels": 0,
+  "new_complete_fpl_seasons": 0,
+  "production_changed": false
+}

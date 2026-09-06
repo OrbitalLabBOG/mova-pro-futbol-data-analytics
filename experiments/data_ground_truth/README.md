@@ -3361,3 +3361,74 @@ Suite: **1.610 passed, 1 skipped, 79 deselected**.
 GT v7, G55 y producción permanecen intactos; no hay nuevas temporadas ni admisión
 de entrenamiento. Siguiente investigación: procedencia de la columna nativa,
 semántica de blocks ausentes y consistencia interna de los componentes FPL.
+
+
+## G63 — procedencia del relleno Core y huecos posteriores
+
+La inspección del código y Git Core encontró la
+[PR upstream #58](https://github.com/olbauday/FPL-Core-Insights/pull/58), cuyo autor
+declara que rellenó `defensive_contributions` desde totales FPL por jornada. Para
+jugadores con dos partidos distribuyó el total proporcionalmente según acciones;
+la PR declara 360 filas afectadas por ese reparto. Esa cifra es una afirmación del
+proveedor, no un conteo independiente de G63. Un reparto que preserva la suma semanal
+**no es una observación por partido**. No se adopta la calificación de exactitud
+que da el proveedor a su procedimiento.
+
+Se archivaron tres archivos de código/workflow, cinco versiones de muestra de GW38
+y el JSON de la PR. Se adquirieron además **108 versiones CSV, 9.268.159 bytes,
+sin errores**, fijadas por commit y hash: dieciséis jornadas afectadas antes del
+relleno, las 38 jornadas tras el relleno del 22 de julio, las 38 tras el 27 de julio
+y las dieciséis afectadas tras el 29 de julio. Los cortes son versiones Git;
+no prueban publicación histórica ni el instante exacto de captura de la API.
+
+`defensive_source_lineage.py` exige la matriz completa de versiones declarada,
+verifica objetos y conserva fuente/número de fila para cada coincidencia:
+
+| Corte examinado | Filas de los 293 huecos actuales ausentes | Presentes con blocks vacío |
+| --- | ---: | ---: |
+| Anterior al relleno de julio | 293 | 0 |
+| Tras relleno del 22 de julio | 293 | 0 |
+| Tras actualización del 27 de julio | 133 | 160 |
+| Tras actualización del 29 de julio | 0 | 293 |
+
+**Cero candidatos con blocks observado** en los cortes inspeccionados. Los huecos
+corresponden a filas añadidas entre esos cortes; no se ha demostrado la causa ni
+se afirma que el muestreo agote todas las revisiones posibles. Se conservan desconocidos.
+
+Los **12.461 valores nativos actuales no nulos coinciden numéricamente con el corte
+del relleno del 22 de julio** y con el del 27. No se atribuye el origen individual
+de cada celda sólo por igualdad, pero la columna archivada conserva un procedimiento
+upstream documentado de derivación/reparto. Su contrato experimental en resultados
+excluye usarla como **ground truth independiente por partido** o como validación
+independiente de FPL. Los valores observados no se borran ni reemplazan.
+
+El exportador `scripts/export_data.py`, líneas 146–151 y 543–545 del commit
+`ce03f31b4032f3f89a1aa460ddc8a709ddeb56b6`, añade columnas ausentes como NA y exporta
+el dataframe. El normalizador de no apariciones sólo establece minutos cero bajo
+su condición de fila vacía y modifica la cronología; no aporta una regla para
+rellenar blocks. Ese código no demuestra qué writer generó cada fila de la base
+upstream, a la que no se accedió.
+
+Como control independiente del contraste entre archivos, se revalidó la identidad
+oficial y la composición interna de FPL: **26.320/26.320 filas de campo** coinciden
+con CBIT/CBIRT, incluidas las **10.725/10.725 con minutos positivos**. No hay
+inconsistencias en este control. Esto prueba coherencia aritmética del archivo,
+no precisión independiente de medición deportiva ni disponibilidad predeadline.
+
+```bash
+python -m experiments.data_ground_truth.defensive_source_lineage \
+  --calibration-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/defensive-match-calibration-v5 \
+  --history-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/core-defensive-history-g63 \
+  --supplemental-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/supplemental-components-v3 \
+  --raw-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/raw-history-v1 \
+  --discovery-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/core-defensive-discovery-g63 \
+  --out /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/defensive-source-lineage-v1
+```
+
+Reporte, linaje de blocks, linaje nativo e índice de inconsistencias FPL reproducidos
+byte por byte en una raíz v2. [Resultados G63](results-g63.json). Pruebas distinguen
+fila ausente, columna ausente, vacío, cero y valor anterior sin reparar el actual.
+Suite completa: **1.612 passed, 1 skipped, 79 deselected** (33,37 s).
+Sin nuevas etiquetas FPL, temporadas completas, entrenamiento ni cambios productivos;
+GT v7 y G55 permanecen inmutables. Continúa la búsqueda de componentes realmente
+observados y de evidencia temporal, conservando la procedencia de cada campo.
