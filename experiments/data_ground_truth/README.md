@@ -3244,3 +3244,60 @@ precisión ISO de hora con o sin segundos. Suite: **1.597 passed, 1 skipped,
 Siguiente contraste: totales defensivos del proveedor frente a la referencia anual
 G59, conservando hipótesis de composición y posición explícitas; la coincidencia
 numérica no autoriza elegir fórmulas retrospectivamente para maximizar concordancia.
+
+
+## G61 — composición defensiva y contraste anual
+
+Se fijó una hipótesis antes de ejecutar el contraste por posición: CBIT para
+DEF y CBIRT para MID/FWD, usando `tackles`; como sensibilidad separada se sustituye
+ese campo por `tackles_won`. La base documental es la
+[explicación oficial de los cambios 2025/26](https://www.premierleague.com/en/news/4362211/all-you-need-to-know-about-changes-to-fantasy-for-202526),
+archivada ahora (91.531 bytes, SHA en resultados). La fecha de adquisición no
+prueba publicación histórica. El protocolo local conserva hipótesis, fecha y SHA;
+no se presenta como un preregistro externo ni se elige fórmula por concordancia.
+
+`defensive_annual_reconciliation.py` verifica todos los artefactos G59/G60 y el
+snapshot fijado por SHA de **GW1 2025/26**, del que toma posiciones por código
+oficial. Aplicar esas posiciones a totales 2024/25 es una hipótesis retrospectiva
+explícita; no cambia posiciones históricas de jugadores ni concede puntos de
+reglas nuevas a la temporada anterior. Los porteros quedan fuera de la comparación,
+sin generarles un total cero. La referencia anual mantiene su período 2024/25.
+
+De los 562 códigos anuales, 369 tienen acciones y posición de campo comparables:
+125 carecen de apariciones del proveedor, 32 son porteros y 36 carecen de posición
+en ese snapshot. La ausencia de apariciones no se transforma en cero.
+
+| Posición observada GW1 2025/26 | Comparables | Iguales con CBIT/CBIRT y tackles |
+| --- | ---: | ---: |
+| DEF | 144 | 144 |
+| MID | 186 | 185 |
+| FWD | 39 | 39 |
+| Total | 369 | 368 |
+
+La sensibilidad con tackles ganados coincide en **30/369**, frente a **368/369**
+con tackles. Se conservan ambos resultados y deltas; no se cambia la hipótesis
+principal ni se fusionan los campos. El único desacuerdo principal es el código
+499721: 2 tackles + 1 intercepción + 11 recuperaciones + 0 bloques + 4 despejes
+suman **18**, frente a **19** en FPL anual. La alternativa suma 17. La diferencia
+permanece sin reparación ni atribución de causa.
+
+El resultado respalda **compatibilidad de agregados** para los 368 códigos,
+no igualdad en cada partido: errores opuestos podrían compensarse. La coincidencia
+no selecciona filas para entrenamiento ni convierte métricas del proveedor en
+etiquetas oficiales. Sigue pendiente un contraste por partido con temporadas en
+que FPL publique los componentes, además de la disponibilidad temporal.
+
+```bash
+python -m experiments.data_ground_truth.defensive_annual_reconciliation \
+  --core-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/core-defensive-matches-v3 \
+  --annual-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/annual-defensive-reference-v1 \
+  --bootstrap-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/raw-bootstrap-snapshots \
+  --evidence-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/defensive-rule-evidence-g61 \
+  --out /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/defensive-annual-reconciliation-v1
+```
+
+Reporte y 562 comparaciones reproducidos byte por byte en una raíz v2.
+[Resultados G61](results-g61.json). Las pruebas distinguen roles, componentes
+faltantes, porteros y sensibilidad sin sustituir el resultado principal.
+Suite: **1.600 passed, 1 skipped, 79 deselected**.
+GT v7, G55, entrenamiento y producción permanecen intactos.
