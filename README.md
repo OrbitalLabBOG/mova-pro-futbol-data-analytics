@@ -111,7 +111,7 @@ de modelos por hash y exportación revisable, sin promover modelos al runtime.
 
 La capa experimental conserva los datos crudos fuera de Git, con manifiestos,
 SHA-256, fuentes fijadas por commit y auditorías reproducibles. El
-[registro de gates G1–G93](experiments/data_ground_truth/README.md) contiene
+[registro de gates G1–G94](experiments/data_ground_truth/README.md) contiene
 adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 
 | Capa | Cobertura verificada | Límite pendiente |
@@ -262,6 +262,12 @@ G93 contrasta los nueve puntos desconocidos de GW34 2013/14 con referencias
 anuales: siete tienen residuo condicional cero y dos carecen de referencia en
 la fuente examinada. Los nueve siguen sin etiqueta observada; las inferencias
 se conservan separadas. [Resultados G93](experiments/data_ground_truth/results-g93.json).
+
+G94 consolida el histórico parcial 2013/14 en un paquete independiente:
+20.248 etiquetas observadas, 417 filas desconocidas e inferencias anuales
+separadas. [current-partial-labels.json](experiments/data_ground_truth/current-partial-labels.json)
+fija su versión; no sustituye el GT v7 de doce temporadas.
+[Resultados G94](experiments/data_ground_truth/results-g94.json).
 
 ## Empezar
 

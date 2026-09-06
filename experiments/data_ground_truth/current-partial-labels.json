@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "dataset_id": "8bdcc426bb8c65a6b7281fb4013dbb77933844562dc7be05b5a0b54c9ebfc8ac",
+  "manifest_sha256": "3f4c06cabc568497368902eb4ab74deca031ca40ce07398e3810c32e615d16f1",
+  "season": "2013-14",
+  "coverage_status": "partial_observed_population",
+  "evidence": "results-g94.json",
+  "training_admitted": false,
+  "complete_season_admitted": false
+}

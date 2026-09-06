@@ -5331,3 +5331,59 @@ entrenamiento. El próximo paso debe separar explícitamente etiquetas observada
 recuperaciones corroboradas e inferencias al consolidar el histórico parcial.
 
 Suite completa G93: **1.692 passed, 1 skipped, 79 deselected**, 35,14 s.
+
+
+## G94 — Paquete parcial de etiquetas observadas 2013/14
+
+[current-partial-labels.json](current-partial-labels.json) selecciona el paquete
+`8bdcc426bb8c65a6b7281fb4013dbb77933844562dc7be05b5a0b54c9ebfc8ac`.
+Es una colección experimental separada del GT de temporadas completas. Consolida
+G89, conservando los 52 puntos corroborados en el JSON como observaciones y dejando
+las inferencias G93 fuera de las etiquetas observadas.
+
+| Contenido | Filas |
+| --- | ---: |
+| Unión de claves jugador–partido | 20.665 |
+| Minutos y puntos observados | 20.248 |
+| Observaciones con minutos positivos | 10.441 |
+| Observaciones con cero minutos explícito | 9.807 |
+| Filas todavía desconocidas | 417 |
+
+Las 417 filas incompletas incluyen 408 con minutos desconocidos y nueve con minutos
+conocidos y puntos desconocidos. La colección tiene observaciones en 38 jornadas y
+380 partidos; esto no demuestra cobertura completa del universo elegible ni autoriza
+tratar las ausencias como ceros. Los IDs de jugador están limitados a la temporada y
+los de partido pertenecen al archivo PL; no se incorporan códigos globales inferidos.
+
+El paquete tiene tres artefactos:
+
+- `observed_labels.csv`: únicamente filas con ambos valores observados, con fuente
+  de minutos/puntos, IDs nativos y marca de recuperación corroborada.
+- `unknown_rows.csv`: conserva las filas incompletas, sus NULLs y procedencia.
+- `inferred_candidates.json`: copia exacta de los nueve casos G93, siete con residuo
+  condicional. Sus valores inferidos no se incorporan a `total_points`.
+
+El manifiesto fija los reportes y artefactos padres por SHA, las dos fuentes crudas,
+la implementación, el hash/tamaño de cada archivo y los conteos. Cada fila puede
+rastrearse mediante fuente e ID al contraste G89 y a sus originales. La construcción
+usa un directorio temporal y publica el paquete sólo tras verificarlo. Un paquete
+existente se verifica antes de reutilizarse. El verificador comprueba hashes,
+tamaños, claves únicas, particiones observado/desconocido y conteos recalculados.
+
+```bash
+python -m experiments.data_ground_truth.partial_label_package \
+  --base "$DATA_BASE" --out "$DATA_BASE/partial-label-datasets"
+```
+
+[Resultados G94](results-g94.json) fija el manifiesto. Una segunda construcción en
+`partial-label-reproduction-g94` produjo el mismo identificador, manifiesto y tres
+artefactos byte por byte. Suite completa: **1.695 passed, 1 skipped, 79 deselected**,
+35,50 s. Las pruebas rechazan conflictos de identidad/jornada/valores, recuperaciones
+sin corroboración, claves duplicadas y archivos alterados; conservan NULLs originales.
+
+El paquete permite analizar etiquetas parciales con procedencia explícita. Sigue sin
+admisión a entrenamiento: faltan el contrato de población/muestreo y las entradas
+históricas apropiadas para cada evaluación. Las etiquetas retrospectivas no se
+convierten en features predeadline. GT v7 conserva 303.126 filas y doce temporadas;
+no hubo despliegue, nuevas descargas ni cambio de modelo. G92 permanece intacto y
+no incluye todavía este nuevo paquete parcial ni G93.
