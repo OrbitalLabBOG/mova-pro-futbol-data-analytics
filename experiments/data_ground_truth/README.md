@@ -743,7 +743,7 @@ y se verificaron jugador/código, conjunto de partidos, jornada, fecha y sumas d
 | Evan Ferguson | 2024/25 · 239 | goles concedidos | 0 | 2 |
 
 Son correcciones de fuente, no etiquetas sintetizadas a partir de reglas ni de
-minutos deportivos. El paquete experimental vigente es **`fpl-labels-v4`**, ID
+minutos deportivos. El paquete de G14 es **`fpl-labels-v4`**, ID
 `f69c13a09b55c131fcae3e53bb09da43a827f31f58a501eef7a3c60239857456`:
 303.448 filas, doce temporadas y las mismas particiones. Su manifiesto registra
 cada campo anterior/nuevo, fuentes, código de reparación y hashes. El paquete v3
@@ -778,3 +778,70 @@ python -m experiments.data_ground_truth.history_reference \
 `data/2018-19/players/Bernd_Leno_2/gw.csv` y
 `data/2024-25/players/Evan_Ferguson_123/gw.csv`, en la revisión Vaastav fijada.
 Los hashes exactos quedan en las reparaciones del manifiesto v4 y en G14.
+
+
+## Gate G15: cobertura individual y separación de entidades
+
+[results-g15.json](results-g15.json) registra la adquisición de **7.365 CSV por
+jugador y partido**, **39.523.460 bytes**, sin errores. Es el 100% de las rutas
+`players/*/gw.csv` de 2016/17–2025/26 en el inventario Vaastav fijado. Todos los
+elementos presentes en las diez particiones de referencia tienen un archivo
+comparado; esto no prueba el universo histórico de jugadores elegibles.
+
+El contraste contra v4 comprueba claves, jornada, fecha, minutos, puntos y doce
+componentes. Detecta un BPS distinto: Cucho Hernández, 2021/22, fixture 8,
+**28 → 29**. Su archivo individual concuerda en claves, fechas y sumas de todos
+los componentes con `players_raw.csv`; se incorpora con el mismo gate estricto
+de reparación de G14. No cambia sus puntos FPL.
+
+El paquete **fpl-labels-v5**, ID
+`1d111a458c9074fcd7ec2da516e82d9d1984600f6f057716112b92e855240df4`,
+contiene **303.126 filas de jugadores** en doce temporadas. Conserva las cuatro
+correcciones de G14 y añade la de BPS. Se separan **322 filas de Assistant Manager**
+de 2024/25 en un archivo con hash propio, sin habilitación para entrenar jugadores.
+Las particiones principales suman 246.096 filas train, 27.283 validation y 29.747
+evaluation. Los artefactos previos siguen disponibles. Los 20 elementos de manager
+son slots FPL de temporada: no equivalen necesariamente a veinte identidades
+humanas estables (el elemento 748 aparece como Ivan Juric y Simon Rusk).
+
+La auditoría por archivo cuenta **180 filas solo en la referencia y 15 solo en
+el individual**. No son diferencias de población únicas: hay siete pares de rutas
+con el mismo elemento-temporada, incluyendo archivos antiguos incompletos tras
+cambios de nombre y el slot de entrenador mencionado. Los 15 registros adicionales
+individuales tienen cero minutos y puntos; no se incorporan como negativos sin
+resolver elegibilidad y pertenencia al club en ese momento. Se conservan todos
+los originales, sin fusionar automáticamente los archivos por nombre o recencia.
+
+Hay **78 discrepancias de kickoff**, todas del fixture 263 de 2021/22:
+15:00 UTC en la referencia y 15:30 UTC en los individuales. El `fixtures.csv`
+archivado también indica 15:30 UTC. Esta versión registra la evidencia pero no
+modifica las fechas: su corrección requiere un gate propio y no acredita cuándo
+se conoció el retraso. Seis archivos individuales discrepan en totales finales;
+son archivos incompletos de esos pares de rutas, no seis nuevos errores probados
+del GT combinado. La adquisición exhaustiva no implica cero discrepancias.
+
+```bash
+python -m experiments.data_ground_truth.history_archive \
+  --root "$PLAYER_GAMEWEEKS_ROOT" --inventory "$VAASTAV_PINNED_INVENTORY" \
+  --revision 9779cdbc0c07f6c900c2d0c181ddf6bb9c800f88 --artifact gw
+python -m experiments.data_ground_truth.individual_audit \
+  --root "$PLAYER_GAMEWEEKS_ROOT" --recent-root "$RAW_HISTORY_ROOT" \
+  --package "$LABELS_V4_PACKAGE" --out "$INDIVIDUAL_AUDIT_ROOT"
+python -m experiments.data_ground_truth.training_dataset \
+  --recent-root "$RAW_HISTORY_ROOT" --old-root "$HISTORICAL_2014_ROOT" \
+  --identity-root "$IDENTITY_REGISTRY_ROOT/identity" \
+  --season-2015-root "$SEASON_2015_ROOT" --repairs-root "$LABEL_REPAIRS_V2_ROOT" \
+  --separate-managers --output "$TRAINING_DATASETS_ROOT"
+```
+
+`LABEL_REPAIRS_V2_ROOT` selecciona del archivo adquirido los dos CSV de G14 más
+`data/2021-22/players/Juan Camilo_Hernández Suárez_472/gw.csv`. Sus bytes y hashes
+originales se preservan; el manifiesto v5 registra la evidencia de cada cambio.
+El verificador comprueba también integridad y exclusión de entrenamiento del
+archivo de managers. `load_partition` devuelve únicamente jugadores para v5.
+
+G15 no añade temporadas completas. Siguen pendientes población e identidades
+anteriores a 2014/15 y disponibilidad histórica predeadline de las features.
+El siguiente gate debe reconciliar claves y fechas con evidencia temporal,
+sin convertir ceros ambiguos en no apariciones observadas. Después podrá medirse
+cobertura de estados de decisión para precios, lesiones, traspasos y chips.

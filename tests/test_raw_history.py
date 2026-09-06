@@ -267,6 +267,25 @@ def test_training_package_reproducibility_splits_and_integrity(tmp_path):
     (history/'report.json').write_text(json.dumps(quality|{'rows':381}))
     with pytest.raises(ValueError,match='contradict coverage report'):
         build(recent,old,out,season_2015_root=history)
+    for season in seasons:
+        frame=pd.read_csv(recent/'labels'/f'{season}.csv').assign(season_position_type=2)
+        if season=='2024-25':
+            manager=frame.iloc[:1].assign(element=2,official_player_code=100000123,season_position_type=5,minutes=0,total_points=9,mng_win=1)
+            frame=pd.concat([frame,manager],ignore_index=True)
+        data=frame.to_csv(index=False).encode();(recent/'labels'/f'{season}.csv').write_bytes(data)
+        seasons[season]={'artifact_sha256':raw.digest(data)}
+    (recent/'labels-manifest.json').write_text(json.dumps({'seasons':seasons}))
+    typed=build(recent,old,out,separate_managers=True)
+    typed_manifest=verify(typed)
+    assert typed_manifest['version']=='fpl-labels-v5' and typed_manifest['rows']==4
+    assert typed_manifest['manager_rows']==1
+    validation=load_partition(typed,'validation')
+    assert validation.element.tolist()==[1] and validation.entity_type.tolist()==['player']
+    managers=pd.read_csv(typed/typed_manifest['manager_partitions'][0]['file'],compression='gzip')
+    assert managers.identity_key.tolist()==['fpl_manager:2024-25:2']
+    assert managers.total_points.tolist()==[9] and managers.mng_win.tolist()==[1]
+    assert not managers.eligible_player_training.any()
+    assert 'official_player_code' not in managers and 'minutes' not in managers
     artifact=package/'2025-26.csv.gz';original=artifact.read_bytes();artifact.write_bytes(original+b'changed')
     with pytest.raises(ValueError,match='hash mismatch'):
         load_partition(package,'train')
@@ -735,3 +754,33 @@ def test_label_repair_requires_exact_fixture_identity_and_final_component_totals
         repair_player(original,individual.assign(kickoff_time='2025-02-02T12:30:00Z'),metadata,['goals_conceded'])
     with pytest.raises(ValueError,match='gameweek'):
         repair_player(original,individual.assign(round=25),metadata,['goals_conceded'])
+
+
+def test_individual_audit_detects_cancelling_row_errors_even_when_totals_match():
+    from experiments.data_ground_truth.individual_audit import compare_player
+    from experiments.data_ground_truth.training_dataset import COMPONENTS
+    rows=[dict(element=1,fixture=i,gw=i,official_player_code=20,event_time_utc=f'2025-01-0{i}T15:00:00Z',
+        minutes=m,total_points=2,**{c:0 for c in COMPONENTS}) for i,m in [(1,10),(2,20)]]
+    reference=pd.DataFrame(rows)
+    individual=reference.rename(columns={'gw':'round','event_time_utc':'kickoff_time'}).assign(minutes=[11,19])
+    metadata=pd.DataFrame([dict(id=1,code=20,element_type=2,minutes=30,total_points=4,**{c:0 for c in COMPONENTS})])
+    report,differences=compare_player(individual,reference,metadata,pd.DataFrame())
+    assert report['season_total_disagreements']==[]
+    assert report['changed_rows']==report['changed_fields']==2
+    assert {d['fixture'] for d in differences}=={1,2}
+    missing=individual.iloc[:1]
+    assert compare_player(missing,reference,metadata,pd.DataFrame())[0]['reference_only_rows']==1
+    with pytest.raises(ValueError,match='identity disagreement'):
+        compare_player(individual,reference,metadata.assign(code=21),pd.DataFrame())
+
+
+def test_individual_acquisition_selects_gw_files_only(tmp_path,monkeypatch):
+    from experiments.data_ground_truth.history_archive import acquire
+    revision='a'*40;inventory=tmp_path/'tree.json'
+    inventory.write_text(json.dumps(dict(sha=revision,truncated=False,tree=[dict(type='blob',path=p) for p in [
+        'data/2025-26/players/Example/gw.csv','data/2025-26/players/Example/history.csv','team_123/gw.csv']])) )
+    monkeypatch.setattr(raw,'_get',lambda url:b'element,fixture,minutes,total_points\n')
+    report=acquire(tmp_path/'raw',inventory,revision,artifact='gw')
+    assert report['expected_files']==1 and report['records'][0]['path'].endswith('/Example/gw.csv')
+    with pytest.raises(ValueError,match='unsupported player artifact'):
+        acquire(tmp_path/'raw',inventory,revision,artifact='../something')
