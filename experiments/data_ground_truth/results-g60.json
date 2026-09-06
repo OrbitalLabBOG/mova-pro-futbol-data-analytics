@@ -1,0 +1,530 @@
+{
+  "version": "historical-data-g60",
+  "audit_report_sha256": "8735421641ea72ca4c41bbc92d3f1059655289de84661ae618d3e68bf998b0a2",
+  "audit": {
+    "version": "core-defensive-matches-v1",
+    "season": "2024-25",
+    "raw_manifest_sha256": "b4807899c1ef38cd5279b1c9b3eb5a74de8fa5995733f08f024b5d19fedf7c01",
+    "dataset_id": "d4baf849fb4a051be103f8c469e61a4753edb0b4004f980a000fe5c86ef573db",
+    "implementation_sha256": "51521ccdb8f7a694b1eb0a7bcb32b374a6d1015fad9ed47287db57f1697cf654",
+    "source_records": [
+      {
+        "path": "data/2024-2025/matches/GW1/matches.csv",
+        "sha256": "a2019aba462d4c0299f660b37051d1c99a84a6dc42281576d4c34aba4be59bcf",
+        "kind": "matches"
+      },
+      {
+        "path": "data/2024-2025/matches/GW10/matches.csv",
+        "sha256": "2419c6869eba4bf92c6ade5b72476ed6da0c16207668a9ca84083cb86f7fd178",
+        "kind": "matches"
+      },
+      {
+        "path": "data/2024-2025/matches/GW11/matches.csv",
+        "sha256": "8fc0daa086a3eba2df2c1561b89dd92d7b313bc67f25bed70603c4aab212a7eb",
+        "kind": "matches"
+      },
+      {
+        "path": "data/2024-2025/matches/GW12/matches.csv",
+        "sha256": "093dd3ca1620b42682a3e96fc52ad57ef34041d46cc61b44e8585febf0cfa4b3",
+        "kind": "matches"
+      },
+      {
+        "path": "data/2024-2025/matches/GW13/matches.csv",
+        "sha256": "2f8699cc6a02d26ca7bee2dc16390bc1e738a595f916379d5c8a9e135c25a102",
+        "kind": "matches"
+      },
+      {
+        "path": "data/2024-2025/matches/GW14/matches.csv",
+        "sha256": "29cb612db71b224b9294fb18c4693c89ca1c5538a4cda8e5f2f1f8422a2567c1",
+        "kind": "matches"
+      },
+      {
+        "path": "data/2024-2025/matches/GW15/matches.csv",
+        "sha256": "802f9df95cac0bae872d59cf0b7b036f00464698931f0be4bb52abd9ba06bc01",
+        "kind": "matches"
+      },
+      {
+        "path": "data/2024-2025/matches/GW16/matches.csv",
+        "sha256": "0175cf4a630f0289b10d5de501e8db9838abc9375a562ccdd78c61d5dd338a46",
+        "kind": "matches"
+      },
+      {
+        "path": "data/2024-2025/matches/GW17/matches.csv",
+        "sha256": "17eb2ade0c34d568c407439479de8a38d035748664d5c819746d48fdf7fb896f",
+        "kind": "matches"
+      },
+      {
+        "path": "data/2024-2025/matches/GW18/matches.csv",
+        "sha256": "04f9cae498286e39318696d78df42006f5ed63e48e06edd40d0213a1a4e856f8",
+        "kind": "matches"
+      },
+      {
+        "path": "data/2024-2025/matches/GW19/matches.csv",
+        "sha256": "df515161853fe18971ef9a343cfb18c4e8477c10ddf9aced9fc2db66035fc818",
+        "kind": "matches"
+      },
+      {
+        "path": "data/2024-2025/matches/GW2/matches.csv",
+        "sha256": "5b0a9d94e1b7183f9cfe101c8be54b7e3e2da93ed11647030e54cfafd2ea6bde",
+        "kind": "matches"
+      },
+      {
+        "path": "data/2024-2025/matches/GW20/matches.csv",
+        "sha256": "fe53c23d7d02609f4681ad2d1289bcaca635a36bdaa50d2d54e28a270dfb21ed",
+        "kind": "matches"
+      },
+      {
+        "path": "data/2024-2025/matches/GW21/matches.csv",
+        "sha256": "3ff163ebe725621d3d7985559f778259f8088a319647b97708f318f36f59a2e1",
+        "kind": "matches"
+      },
+      {
+        "path": "data/2024-2025/matches/GW22/matches.csv",
+        "sha256": "b7bd39537271acffb6845cc4482f7d83885209b97002b212006769b3e476adad",
+        "kind": "matches"
+      },
+      {
+        "path": "data/2024-2025/matches/GW23/matches.csv",
+        "sha256": "f4401cac0ec92f474d9222b3c5dc6a97fe3d5d839ee38d75edd1c74950dfe1bb",
+        "kind": "matches"
+      },
+      {
+        "path": "data/2024-2025/matches/GW24/matches.csv",
+        "sha256": "1a1f6a3968f95487178e9d44444c6fc86258dd426699bab481694dd6ba1be3e8",
+        "kind": "matches"
+      },
+      {
+        "path": "data/2024-2025/matches/GW25/matches.csv",
+        "sha256": "1e2da9a51c924ca7ee239c704077cf81608f1bea351d107704bce86959ed2647",
+        "kind": "matches"
+      },
+      {
+        "path": "data/2024-2025/matches/GW26/matches.csv",
+        "sha256": "8b9e8d21f168ea91f404b8d0f798c9d74c7eb918491da07d1543fcb6f78775d6",
+        "kind": "matches"
+      },
+      {
+        "path": "data/2024-2025/matches/GW27/matches.csv",
+        "sha256": "5947e00f4fc4004eca2e630323185b120aa8c3b97d81aece6de7f9416e16b5f7",
+        "kind": "matches"
+      },
+      {
+        "path": "data/2024-2025/matches/GW28/matches.csv",
+        "sha256": "517993eb79d2b332e06224361e9237c118369a6d8364436f490f611f41e3e96c",
+        "kind": "matches"
+      },
+      {
+        "path": "data/2024-2025/matches/GW29/matches.csv",
+        "sha256": "0407e9be33b0d1fa741ecc7e56f7226ccaa7ca354862a7c3ae33e14a27538576",
+        "kind": "matches"
+      },
+      {
+        "path": "data/2024-2025/matches/GW3/matches.csv",
+        "sha256": "89f0b757a257e465b1d079275e1c27807a31bad948aa3678135046fad4c3c4a1",
+        "kind": "matches"
+      },
+      {
+        "path": "data/2024-2025/matches/GW30/matches.csv",
+        "sha256": "5f95be08bd9dc6dc6287e78fd9eeb848e536a067cf4431cfd9ef461f9e138295",
+        "kind": "matches"
+      },
+      {
+        "path": "data/2024-2025/matches/GW31/matches.csv",
+        "sha256": "b78af71a5633b108cde475acd221e767bd40ead09041931759e6ed33e279b5e9",
+        "kind": "matches"
+      },
+      {
+        "path": "data/2024-2025/matches/GW32/matches.csv",
+        "sha256": "924fe91561ab063a5efaa056b092f224a167f8252ac71a62d2c9b316a8fe16a8",
+        "kind": "matches"
+      },
+      {
+        "path": "data/2024-2025/matches/GW33/matches.csv",
+        "sha256": "cbb44429d8d070e9c54bc0e988a9b0e1f7ea958d98095de6338f23d77d00a444",
+        "kind": "matches"
+      },
+      {
+        "path": "data/2024-2025/matches/GW34/matches.csv",
+        "sha256": "42da8fe6bc7d8f67f1eb4df0c6306a4c3c322efbe3017320c5b3fd09544e6f45",
+        "kind": "matches"
+      },
+      {
+        "path": "data/2024-2025/matches/GW35/matches.csv",
+        "sha256": "2e9e383638a610eb761ed0c29ab8cd22949b973b89084232729e1996d03e5151",
+        "kind": "matches"
+      },
+      {
+        "path": "data/2024-2025/matches/GW36/matches.csv",
+        "sha256": "efcaaa9ae8c799d036b2b548a5706c8edc4c14814f4c211131a3ecd090a68bf4",
+        "kind": "matches"
+      },
+      {
+        "path": "data/2024-2025/matches/GW37/matches.csv",
+        "sha256": "2f28e7bd357f18d383cef6eb1e6d98e537e6061794dfd9282dfff05905a614bb",
+        "kind": "matches"
+      },
+      {
+        "path": "data/2024-2025/matches/GW38/matches.csv",
+        "sha256": "d0aaf869e3771f432d1ac4d99bc69e52b0ff1e5713dfcf35e7be709bcf9bdc2b",
+        "kind": "matches"
+      },
+      {
+        "path": "data/2024-2025/matches/GW4/matches.csv",
+        "sha256": "3d78b404961156bcac2864777b2802a66611f76811ed6248343f34eeae2ea5e7",
+        "kind": "matches"
+      },
+      {
+        "path": "data/2024-2025/matches/GW5/matches.csv",
+        "sha256": "aab1896e515b100c533c783076bc3a822458bf37bbeaaefbd39526b55eaec0b4",
+        "kind": "matches"
+      },
+      {
+        "path": "data/2024-2025/matches/GW6/matches.csv",
+        "sha256": "02554febf621aeef04b458347f6f929abbe7822fa56814419575139ad4f69faa",
+        "kind": "matches"
+      },
+      {
+        "path": "data/2024-2025/matches/GW7/matches.csv",
+        "sha256": "ada443754bed3f6fd31a855fbcc1e0d5892fe1dd0ad3bbf6245ab83565b78e00",
+        "kind": "matches"
+      },
+      {
+        "path": "data/2024-2025/matches/GW8/matches.csv",
+        "sha256": "e85fc31c754c0c97edb4d3340e351109c00614f8a034cd9b70a9b99afa170e5a",
+        "kind": "matches"
+      },
+      {
+        "path": "data/2024-2025/matches/GW9/matches.csv",
+        "sha256": "782d96fe241c52f48947f7e0bcddd0fed1a0f5d9f7cba559d3dd3ba7d66b3047",
+        "kind": "matches"
+      },
+      {
+        "path": "data/2024-2025/playermatchstats/GW1/playermatchstats.csv",
+        "sha256": "fb1d77977cd151389c648407aad43aa2c55663f2fb103b2d4a72b2450b1f3ec5",
+        "kind": "stats"
+      },
+      {
+        "path": "data/2024-2025/playermatchstats/GW10/playermatchstats.csv",
+        "sha256": "84a2b4d31d29484e107f76fe07168192f8be3a5d522957cf936764f3b8802afa",
+        "kind": "stats"
+      },
+      {
+        "path": "data/2024-2025/playermatchstats/GW11/playermatchstats.csv",
+        "sha256": "09814cb5185d1252b8ec94caef667a4d02221f72db17b00a8105aa01caaeea85",
+        "kind": "stats"
+      },
+      {
+        "path": "data/2024-2025/playermatchstats/GW12/playermatchstats.csv",
+        "sha256": "fdc1b9b5094ba3c626f9af901fb74a1da4a107f3adeb1f0864e17ea48c1c96e8",
+        "kind": "stats"
+      },
+      {
+        "path": "data/2024-2025/playermatchstats/GW13/playermatchstats.csv",
+        "sha256": "110c19c9411c43fda41f762f98f66cc1a2794ca841855007d3ffe3a7add61019",
+        "kind": "stats"
+      },
+      {
+        "path": "data/2024-2025/playermatchstats/GW14/playermatchstats.csv",
+        "sha256": "84e34b9503258ecd7fe67910833abfdbff94b3bb82ffaeab3a0c317759097f77",
+        "kind": "stats"
+      },
+      {
+        "path": "data/2024-2025/playermatchstats/GW15/playermatchstats.csv",
+        "sha256": "e6ba014df2b730fdcedd0557c5128de2aa288a07004ac1e4befc994a6902af74",
+        "kind": "stats"
+      },
+      {
+        "path": "data/2024-2025/playermatchstats/GW16/playermatchstats.csv",
+        "sha256": "0cf02e0717c1e8c0a3422fdbe55b901d56c5403e3eb8454c8e5a3d53dde93d38",
+        "kind": "stats"
+      },
+      {
+        "path": "data/2024-2025/playermatchstats/GW17/playermatchstats.csv",
+        "sha256": "dac61e8aa720eb87cee90c54fcfbe86621c4fcd257db7ccb8d3400a5f03989ad",
+        "kind": "stats"
+      },
+      {
+        "path": "data/2024-2025/playermatchstats/GW18/playermatchstats.csv",
+        "sha256": "e7dce53c8f1016572841301b4b5b3276eea0c736974339056d451cbef0399dbd",
+        "kind": "stats"
+      },
+      {
+        "path": "data/2024-2025/playermatchstats/GW19/playermatchstats.csv",
+        "sha256": "b10f0b147f7e63c49e5343234ccde3486865355daff2fbe587d97cd05e547dd5",
+        "kind": "stats"
+      },
+      {
+        "path": "data/2024-2025/playermatchstats/GW2/playermatchstats.csv",
+        "sha256": "339c47e558cfd43b71a1b3d27e1c7ebe9bc2001ef9490223533502d9636270ff",
+        "kind": "stats"
+      },
+      {
+        "path": "data/2024-2025/playermatchstats/GW20/playermatchstats.csv",
+        "sha256": "20d081a7082414261865b0cd1628f1443648d9a830f6bc9a49fd7222f10a614a",
+        "kind": "stats"
+      },
+      {
+        "path": "data/2024-2025/playermatchstats/GW21/playermatchstats.csv",
+        "sha256": "b0317af272b5a800b11489d8bf9558b478dc97b1122d2cba64543d39b204ea27",
+        "kind": "stats"
+      },
+      {
+        "path": "data/2024-2025/playermatchstats/GW22/playermatchstats.csv",
+        "sha256": "86f8dd5aaa02f6359373f896b72054c55bf5c4594bd50cd56138fa906125c3ca",
+        "kind": "stats"
+      },
+      {
+        "path": "data/2024-2025/playermatchstats/GW23/playermatchstats.csv",
+        "sha256": "29d3053aef1dc0f054c8e5a2995ba2accb1b1a7b7cc7272e791b452eea961b7b",
+        "kind": "stats"
+      },
+      {
+        "path": "data/2024-2025/playermatchstats/GW24/playermatchstats.csv",
+        "sha256": "b7d2874f00ae9f2113d6a40931bb3071c8be3887fcd90cb0e3429b85e2bbfb58",
+        "kind": "stats"
+      },
+      {
+        "path": "data/2024-2025/playermatchstats/GW25/playermatchstats.csv",
+        "sha256": "f66b1614d5797c771a145bf8fac24833376d6c678939bdc789526967b8cf5cab",
+        "kind": "stats"
+      },
+      {
+        "path": "data/2024-2025/playermatchstats/GW26/playermatchstats.csv",
+        "sha256": "c5fe8f7b647216cb5302b92b9ef81476104d82e22a26e91b64faeebb7939fc85",
+        "kind": "stats"
+      },
+      {
+        "path": "data/2024-2025/playermatchstats/GW27/playermatchstats.csv",
+        "sha256": "c5fd3d2311c3bc978cd49314872661cc278ab464c8c9d8e762877b5071fccfb6",
+        "kind": "stats"
+      },
+      {
+        "path": "data/2024-2025/playermatchstats/GW28/playermatchstats.csv",
+        "sha256": "f63d6cd1644dc36ffb54805d9126208f3e447c860aa52db6ae6643dd04187364",
+        "kind": "stats"
+      },
+      {
+        "path": "data/2024-2025/playermatchstats/GW29/playermatchstats.csv",
+        "sha256": "66d314efe746cb1da6af20fe9c12b415bbe680a8235e19578c8be2529ede17d3",
+        "kind": "stats"
+      },
+      {
+        "path": "data/2024-2025/playermatchstats/GW3/playermatchstats.csv",
+        "sha256": "6e40f2733c1cae991a9d11f2395577cd5881f716d267bddf0781a8fdebd00035",
+        "kind": "stats"
+      },
+      {
+        "path": "data/2024-2025/playermatchstats/GW30/playermatchstats.csv",
+        "sha256": "95b37be9b8f81c26b0d47d6a948574dbb6ba0ec3c6264afd62da0e71c18ca971",
+        "kind": "stats"
+      },
+      {
+        "path": "data/2024-2025/playermatchstats/GW31/playermatchstats.csv",
+        "sha256": "8846229f22fbdb536ace250ea0fe49dc068c155c5bd0af5e5132d59bf6b52202",
+        "kind": "stats"
+      },
+      {
+        "path": "data/2024-2025/playermatchstats/GW32/playermatchstats.csv",
+        "sha256": "a9079d9c7537c7d02eb8fd737050d683cfa161d7ef7a30a06e73522c1d6faca5",
+        "kind": "stats"
+      },
+      {
+        "path": "data/2024-2025/playermatchstats/GW33/playermatchstats.csv",
+        "sha256": "70559072b0df410d741350aedb104547c8eba9af9a3d1a2c01910e015c4a6417",
+        "kind": "stats"
+      },
+      {
+        "path": "data/2024-2025/playermatchstats/GW34/playermatchstats.csv",
+        "sha256": "f73a6d1b263697dfd7604aa1ccf17179a4b4e24d4ee1993e2d3aaf594179d79c",
+        "kind": "stats"
+      },
+      {
+        "path": "data/2024-2025/playermatchstats/GW35/playermatchstats.csv",
+        "sha256": "7cb9c46a1f7898be42518af873ae0ad1e2b96f140c05a0c0287dfe2cd89e69f3",
+        "kind": "stats"
+      },
+      {
+        "path": "data/2024-2025/playermatchstats/GW36/playermatchstats.csv",
+        "sha256": "82e2073e550ccd1f5d1384b32f6b6ba3ff70f2ce239efce191b3af69bd30deb7",
+        "kind": "stats"
+      },
+      {
+        "path": "data/2024-2025/playermatchstats/GW37/playermatchstats.csv",
+        "sha256": "5502c1685d38496454a3f90a55a31ed8903a4d8c7d691edf8eca0af83bf0fdb6",
+        "kind": "stats"
+      },
+      {
+        "path": "data/2024-2025/playermatchstats/GW38/playermatchstats.csv",
+        "sha256": "869073bcd981d29ce2ea1d6d6e237c048b8c8581413e2a591db95ec8e3eacbb4",
+        "kind": "stats"
+      },
+      {
+        "path": "data/2024-2025/playermatchstats/GW4/playermatchstats.csv",
+        "sha256": "19a4ce4096a9a75efd41e1cf0f97148cec56c837a0ad0f51149bde5b984cab6e",
+        "kind": "stats"
+      },
+      {
+        "path": "data/2024-2025/playermatchstats/GW5/playermatchstats.csv",
+        "sha256": "b8777ff1891a927927ac8a0268aff6e9413af4f307ec509821da3a6b0aa54e69",
+        "kind": "stats"
+      },
+      {
+        "path": "data/2024-2025/playermatchstats/GW6/playermatchstats.csv",
+        "sha256": "33892a51975606faac2a9704d36386b8547d9faa0cfd3f81e4f4c1dc6c89e7be",
+        "kind": "stats"
+      },
+      {
+        "path": "data/2024-2025/playermatchstats/GW7/playermatchstats.csv",
+        "sha256": "e6a26b6c3fe9a05826ec2b6e719f3f35e40f470e1ced4374c0e68c4bafb56255",
+        "kind": "stats"
+      },
+      {
+        "path": "data/2024-2025/playermatchstats/GW8/playermatchstats.csv",
+        "sha256": "1cdac6918dc953485a4fc4ae27aabd9af98710ff2bd73e4bde14128c7eb129ae",
+        "kind": "stats"
+      },
+      {
+        "path": "data/2024-2025/playermatchstats/GW9/playermatchstats.csv",
+        "sha256": "615d1d2224d818d44d17216a6beb11ee1b3b3139050942ca72a1008c6232df9b",
+        "kind": "stats"
+      },
+      {
+        "path": "data/2024-2025/players/players.csv",
+        "sha256": "be331f2349cba22cc8fbf5f432ebc152b6c325054e4faa2683d65c336a8143b3",
+        "kind": "players"
+      },
+      {
+        "path": "data/2024-25/fixtures.csv",
+        "sha256": "ce696e187569ca7c45da2562811d3c38f525b58e65575531be37bebd0769ee28",
+        "kind": "fixtures"
+      },
+      {
+        "path": "data/2024-25/teams.csv",
+        "sha256": "d10a6db8feca6db9e44a3ba50b15168396667ea387fee9235d6b211c7f598c3b",
+        "kind": "teams"
+      }
+    ],
+    "stats_quality": {
+      "input_rows": 11567,
+      "exact_duplicates": 0,
+      "conflicting_rows": 0,
+      "null_key_rows": 0,
+      "retained_rows": 11567
+    },
+    "matches_quality": {
+      "input_rows": 380,
+      "exact_duplicates": 0,
+      "conflicting_rows": 0,
+      "null_key_rows": 0,
+      "retained_rows": 380
+    },
+    "player_quality": {
+      "input_rows": 804,
+      "exact_duplicates": 0,
+      "conflicting_rows": 0,
+      "null_key_rows": 0,
+      "retained_rows": 804
+    },
+    "linked_fixtures": 380,
+    "unmatched_source_fixtures": 0,
+    "reference_fixtures": 380,
+    "fixtures_with_stats": 380,
+    "identity_agree_players": 784,
+    "identity_disagree_players": 0,
+    "identity_without_GT_players": 20,
+    "paired_rows": 11567,
+    "unpaired_rows": 0,
+    "minutes_equal": 8625,
+    "minutes_different": 2942,
+    "minutes_delta_counts": {
+      "-17": 1,
+      "-11": 1,
+      "-7": 2,
+      "-6": 3,
+      "-5": 1,
+      "-4": 2,
+      "-1": 199,
+      "0": 8625,
+      "1": 2726,
+      "2": 7
+    },
+    "provider_minutes_missing": 0,
+    "provider_minutes_outside_0_90": 0,
+    "positive_GT_appearances": 11567,
+    "missing_positive_GT_appearances": 0,
+    "field_coverage": {
+      "tackles": {
+        "valid": 11567,
+        "missing": 0,
+        "invalid": 0,
+        "positive": 6493,
+        "zero": 5074
+      },
+      "tackles_won": {
+        "valid": 11567,
+        "missing": 0,
+        "invalid": 0,
+        "positive": 4956,
+        "zero": 6611
+      },
+      "interceptions": {
+        "valid": 11567,
+        "missing": 0,
+        "invalid": 0,
+        "positive": 4034,
+        "zero": 7533
+      },
+      "recoveries": {
+        "valid": 11567,
+        "missing": 0,
+        "invalid": 0,
+        "positive": 9722,
+        "zero": 1845
+      },
+      "blocks": {
+        "valid": 11567,
+        "missing": 0,
+        "invalid": 0,
+        "positive": 2118,
+        "zero": 9449
+      },
+      "clearances": {
+        "valid": 11567,
+        "missing": 0,
+        "invalid": 0,
+        "positive": 6497,
+        "zero": 5070
+      }
+    },
+    "artifacts": {
+      "observations.csv": "415d7265504b6402a66f8437697d13104dd20151d00d70c54af7b55be5d28fdb",
+      "fixture-links.csv": "a9af0cd353a5f1eae990acd9f4fe05445a2969c314f6bfa55807f3cdc915dcc2",
+      "missing-positive-appearances.csv": "a03dc7aec3fdba4243011be83d62f57c7c3afe69a7001a99b1896c54b944a31a"
+    },
+    "training_admitted": false,
+    "production_changed": false,
+    "limitations": [
+      "provider_fields_not_assumed_FPL_equivalent",
+      "naive_source_date_matched_to_official_UTC_date_not_clock_proof",
+      "field_presence_does_not_prove_complete_measurement",
+      "identity_code_agreement_not_independent_person_proof",
+      "matched_minutes_do_not_admit_defensive_labels",
+      "no_new_complete_FPL_season_or_FPL_score_reconstruction",
+      "retrospective_values_without_predeadline_publication_proof"
+    ]
+  },
+  "verification": {
+    "reproduced_byte_for_byte": true,
+    "accepted_roots": [
+      "core-defensive-matches-v3",
+      "core-defensive-matches-v4"
+    ],
+    "tests_passed": 1597,
+    "tests_skipped": 1,
+    "tests_deselected": 79
+  },
+  "new_normalized_provider_rows": 11567,
+  "new_FPL_labels": 0,
+  "new_complete_fpl_seasons": 0,
+  "production_changed": false
+}
