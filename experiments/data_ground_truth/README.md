@@ -5214,3 +5214,70 @@ entre fuentes. No admite entrenamiento, publicación predeadline ni cambios de
 producción; el corte portable G87 conserva su estado inmutable.
 
 Suite completa G91: **1.689 passed, 1 skipped, 79 deselected**, 33,69 s.
+
+
+## G92 — Consolidación restaurable de G88–G91
+
+[current-data-archive.json](current-data-archive.json) selecciona el corte
+`f1db933fd0d7e883fe78aeb66477b809c88a032b7a810e5bfabb597eedef2a03`.
+Su descriptor tiene SHA-256
+`ad1926d7fd5fdfa31020dd24fb181f4161d5be8f9c66143493e4f0df90f44a9f`.
+El descriptor G87 fue comprobado contra su hash anterior y permanece intacto.
+
+[archive-cut-g92.json](archive-cut-g92.json) conserva G87 y añade diez directorios:
+fuentes, descubrimientos y auditorías seleccionadas de G88–G91. Incluye originales
+JSON, las historias de revisiones, los contrastes, la evidencia de Brown y el receipt
+de descarga 403. Conserva también seis archivos versionados adicionales: el registro
+G87 y los resultados G87–G91. Los archivos originales viven fuera de Git.
+
+| Medida | G92 |
+| --- | ---: |
+| Directorios inventariados | 64 |
+| Archivos explícitos adicionales | 44 |
+| Rutas restaurables | 35.636 |
+| Contenidos únicos | 32.770 |
+| Bytes de contenido único | 6.453.936.277 |
+| Referencias reconocidas de fuentes verificadas | 4.020 |
+
+Frente a G87 añade 190 rutas, 173 contenidos y 120.299.350 bytes únicos. Es aumento
+del archivo preservado, no conteo de etiquetas nuevas. El contador de receipts
+fallidos del descriptor corresponde a los manifiestos reconocidos por el verificador;
+el receipt separado de FPL Analytics también está incluido y fijado por el inventario.
+
+Se preserva el grupo **StatsBomb Open Data (Hudl)** con sus restricciones separadas,
+sin promover permisos de entrenamiento, explotación comercial o publicación del corpus.
+
+<img src="https://static.hudl.com/craft/productAssets/statsbomb_icon.svg" alt="Hudl StatsBomb" width="40" height="40">
+
+La restauración en `restored-data-g92-v1` copió y cotejó hashes/tamaños de las 35.636
+rutas. Usando esa raíz restaurada y el código Git se ejecutaron G88, G89, G90 y G91.
+Los cuatro reportes y sus diez artefactos fueron idénticos byte por byte a los
+preservados. No se utilizaron las raíces originales de adquisición para esos
+replays. El puntero se actualizó después de completar las comprobaciones.
+
+```bash
+python -m experiments.data_ground_truth.data_archive_cut build \
+  --base "$DATA_BASE" \
+  --registry experiments/data_ground_truth/archive-cut-g92.json \
+  --repository-root "$PWD" --out "$DATA_BASE/data-archives"
+python -m experiments.data_ground_truth.data_archive_cut restore \
+  --package "$DATA_BASE/data-archives/f1db933fd0d7e883fe78aeb66477b809c88a032b7a810e5bfabb597eedef2a03" \
+  --out "$DATA_BASE/restored-data-g92-new"
+python -m experiments.data_ground_truth.early_json_archives \
+  --base "$DATA_BASE/restored-data-g92-new" --out "$DATA_BASE/replayed-g88-new"
+python -m experiments.data_ground_truth.early_history_overlap \
+  --base "$DATA_BASE/restored-data-g92-new" --out "$DATA_BASE/replayed-g89-new"
+python -m experiments.data_ground_truth.early_successor_archive \
+  --base "$DATA_BASE/restored-data-g92-new" --out "$DATA_BASE/replayed-g90-new"
+python -m experiments.data_ground_truth.early_identity_evidence \
+  --base "$DATA_BASE/restored-data-g92-new" --out "$DATA_BASE/replayed-g91-new"
+```
+
+[Resultados G92](results-g92.json) fija descriptor, padre, restauración y hashes de
+los replays. Suite completa: **1.689 passed, 1 skipped, 79 deselected**, 37,90 s.
+No fue necesario modificar el motor de empaquetado ni los normalizadores.
+
+Alcance: corte local restaurable de fuentes y auditorías seleccionadas, sin acreditar
+backup externo ni reproducción de todos los experimentos del proyecto. GT v7 conserva
+303.126 filas y doce temporadas; las nueve apariciones pendientes de GW34 2013/14
+siguen sin resolverse. No hubo nuevas descargas, entrenamiento ni cambios productivos.
