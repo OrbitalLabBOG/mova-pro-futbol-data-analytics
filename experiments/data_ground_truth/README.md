@@ -1522,3 +1522,52 @@ referencias ausentes, valores desconocidos, identidades duplicadas y preservaci�
 de entradas. [Resultados y hashes G26](results-g26.json). Este gate explica la
 discrepancia conocida y amplía su contraste al resto de temporadas disponibles;
 no añade temporadas ni habilita entrenamiento o replay.
+
+## Gate G27: nueva serie histórica de fixtures
+
+El descubrimiento inspeccionó ocho repositorios públicos con árboles fijados,
+ninguno truncado. `Schwetche/fpl_project` contiene una serie de `data/fixtures.csv`
+y snapshots derivados. Se fijó el commit
+`34f681c7b756ae901982e53cdcb6cd061dbd0482`, con 2.292 commits alcanzables en clon
+no shallow. Los scripts inspeccionados leen el endpoint oficial FPL de fixtures;
+no se ejecuta código descargado. Los pins y hashes de descubrimiento están en
+[results-g27.json](results-g27.json).
+
+Se adquieren **199 versiones, 155 objetos distintos y 79.817.488 bytes asociados**,
+sin errores de descarga. Cada objeto se verifica por SHA-256 y blob Git. Se
+incluye la serie principal, snapshots de fixtures y un JSON raw; no se adquieren
+cuentas, ligas privadas ni archivos ajenos a esta selección.
+
+La auditoría interpreta 193 versiones y registra seis errores de schema en
+snapshots derivados. Para acreditar temporada exige los 380 partidos con la
+misma tupla `(id, code, team_h, team_a)` que la referencia FPL fijada. La serie
+principal contiene 132 versiones de 2025/26, trece de 2026/27 y dos sin `code`:
+estas últimas se conservan sin identidad acreditada. Los snapshots derivados
+no participan en la selección por deadline. No se trasladan scores ni estadísticas
+a la proyección de calendario.
+
+Para 2025/26 hay versión de la serie principal con commit nominal anterior en
+**36/38 deadlines**, GW3–38; **15/38** con antigüedad de hasta 48 horas. Se observan
+6.647 fechas futuras en esos calendarios, repetidas entre capturas. La unión con
+Vaastav amplía de **6 a 18 deadlines** con versión previa de hasta 48 horas:
+doce ventanas adicionales, detalladas en resultados. Esto mide fechas Git, no
+hora de captura, publicación probada ni integridad de todas las actualizaciones
+intermedias. La fuente no añade una nueva temporada completa de etiquetas.
+
+```bash
+git log --format='commit%x09%H%x09%cI%x09%aI' --raw --no-abbrev --no-renames \
+  34f681c7b756ae901982e53cdcb6cd061dbd0482 -- 'data/*fixtures*' 'data/raw/*/fixtures.json' \
+  > "$ADDITIONAL_FIXTURE_GIT_LOG"
+python -m experiments.data_ground_truth.additional_fixture_history \
+  --log "$ADDITIONAL_FIXTURE_GIT_LOG" --out "$ADDITIONAL_FIXTURE_RAW_ROOT"
+python -m experiments.data_ground_truth.additional_fixture_audit \
+  --root "$ADDITIONAL_FIXTURE_RAW_ROOT" --reference-root "$FIXTURE_HISTORY_AUDIT_ROOT" \
+  --selection-root "$PUBLICATION_SELECTION_ROOT" --out "$ADDITIONAL_FIXTURE_AUDIT_ROOT"
+```
+
+El comando Git se ejecuta dentro del clon de la fuente. Reporte, sidecars y
+objetos normalizados se reprodujeron byte por byte. Suite: **1.470 passed,
+1 skipped, 79 deselected**. Se prueban identidad completa, códigos ausentes,
+cambios de equipos, clocks desconocidos y exclusión de resultados. GT v5,
+entrenamiento y producción intactos. Próximo gate: testigos de publicación y
+comparación de frescura conjunta; los 36 candidatos no se admiten aún al replay.
