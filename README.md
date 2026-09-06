@@ -109,132 +109,31 @@ de modelos por hash y exportación revisable, sin promover modelos al runtime.
 
 ## Histórico para investigación
 
-La [auditoría raw-history-v1](experiments/data_ground_truth/README.md) mide las diez
-temporadas y añade 427 archivos fijados por commit y SHA-256, metadatos de identidad
-y observaciones complementarias de partidos. Conserva staging separado del canónico:
-la disponibilidad anterior al deadline todavía no está demostrada. Incluye cobertura,
-reconciliación y comandos para repetir la medición antes de experimentar.
-El gate G2 amplía a 1.161 archivos y genera 253.890 etiquetas con identidad oficial.
-El archivo deportivo adicional abarca 17 temporadas desde 2009/10; sus claves de
-partido se reconciliaron en G4 mediante clubes local/visitante; conserva anomalías
-y procedencia separadas del entrenamiento productivo.
-El gate G3 recupera además 2014/15: 24.876 filas, 38 jornadas y 380 partidos
-reconciliados. G5 empaqueta 278.707 etiquetas de once temporadas, verificadas por
-hash y separadas temporalmente: excluye 59 ceros de un partido aplazado en 2019/20.
-G7 resuelve la identidad de las 10.428 apariciones con minutos de 2014/15 (100%);
-quedan 46 jugadores sin apariciones con ID de temporada. Conserva equivalencias
-verificadas cuando un código histórico cambió.
-G6 completa 2015/16 con 24.741 observaciones, 723 jugadores y 380/380 partidos.
-El paquete v3 suma **303.448 etiquetas de doce temporadas consecutivas**, 2014/15–2025/26;
-verifica puntos y trece componentes contra totales finales de 2015/16. El manifiesto
-permite fijar las entradas de cada experimento; no acredita replay predeadline.
-G8 archiva y audita ocho bases históricas Differential, con material desde 2010/11:
-permanecen fuera del entrenamiento por cobertura incompleta, nulos y discrepancias
-con snapshots de totales. G9 recupera 10.353 apariciones de 2010/11 del SQL
-anterior a esas transformaciones, pero detecta un jugador con minutos sin fila y
-un universo sin no apariciones. Audita además siete snapshots BSON de 2015/16,
-con cuarentena de identidades y resultados conflictivos. Son evidencia adicional,
-no nuevas temporadas completas: el conteo validado sigue siendo doce temporadas.
-G10 cruza los 380 partidos de 2010/11 con el archivo deportivo y localiza tres
-diferencias de conteo de apariciones; conserva 524 candidatos de identidad sin
-promoverlos. Las filas con minutos desconocidos siguen siendo desconocidas.
-G11 recupera 268 códigos de fila deportivos con ID nativo, nombre completo y
-partidos testigo: quedan 1.502 sin identidad; hay 179.847 observaciones deportivas
-con identidad y minutos válidos, separadas de las etiquetas FPL y del runtime.
-G12 verifica identidad para 502 jugadores / 10.164 apariciones FPL de 2010/11,
-conservando los resultados originales. Quedan 189 filas sin identidad y la
-temporada sigue fuera del paquete completo por el universo elegible pendiente.
-G13 adquiere 5.978 archivos de historiales de jugador: el consenso alcanza 8.284
-registros jugador-temporada de 2006/07–2024/25, con 6.308 claves adicionales.
-Son totales retrospectivos con cobertura parcial, separados del benchmark por jornada.
-G14 completa los 6.495 historiales de jugadores del inventario y alcanza 8.786
-registros jugador-temporada. El paquete G14 **fpl-labels-v4**: corrige
-cuatro valores en dos filas (Leno 2018/19 y Ferguson 2024/25), con evidencia directa
-de CSV individuales y totales finales. Conserva 303.448 filas y doce temporadas;
-6.934 totales coinciden tras la corrección. V3 y el runtime permanecen intactos.
-G15 audita los 7.365 CSV individuales por partido del inventario 2016/17–2025/26.
-El GT experimental vigente **fpl-labels-v5** contiene **303.126 filas de jugadores**
-y conserva aparte 322 filas de Assistant Manager; añade una corrección de BPS
-corroborada para Cucho Hernández. La auditoría explicita archivos repetidos o
-incompletos, 15 filas adicionales con cero minutos/puntos y 78 fechas discrepantes.
-Son doce temporadas de etiquetas retrospectivas, sin disponibilidad predeadline
-acreditada; [G15](experiments/data_ground_truth/results-g15.json) no acredita
-un replay causal completo ni una mejora del modelo.
-G16 adquirió y auditó **7.837 snapshots bootstrap** (2021–2026), sin errores:
-5.617.474 filas jugador-snapshot y 14.240 de managers separadas. Bajo la hipótesis
-de reloj UTC, hay capturas dentro de 48 horas anteriores a los 38 deadlines de
-cada temporada 2021/22–2025/26. Precio, club, posición y estado están presentes
-en todas las filas de jugadores. Esto amplía estados históricos; no añade
-etiquetas completas ni certifica disponibilidad predeadline. El detalle y hashes
-están en [G16](experiments/data_ground_truth/results-g16.json).
-G17 normaliza los 199 candidatos: 143.718 estados de jugadores y 320 de managers
-separados. Las identidades admitidas de temporadas cerradas coinciden con v5;
-dos cambios de código quedan en cuarentena. Se conservan 94.980 valores
-desconocidos de selección y se mantienen deshabilitados entrenamiento y admisión
-predeadline. [Resultados G17](experiments/data_ground_truth/results-g17.json).
-G18 revisa identidades en los 7.837 snapshots: 5.391 claves temporada-elemento,
-cuatro cambios de código, trece de nombre y cero colisiones de código entre
-elementos dentro de temporada. Distingue tres casos de jugadores de una
-sustitución de entrenador; no aplica alias automáticamente.
-[Resultados G18](experiments/data_ground_truth/results-g18.json).
-G19 corrobora tres alias de jugadores mediante continuidad del snapshot y fechas
-de aparición; excluye el reemplazo de entrenador. Recupera dos estados de GW1
-con códigos originales preservados: 143.720 estados de jugadores, 320 managers
-y cero rechazos en los 199 candidatos. No habilita entrenamiento ni cambia GT v5.
-[Resultados G19](experiments/data_ground_truth/results-g19.json).
-G20 verifica los objetos Git de los 7.837 snapshots y contrasta 199 candidatos
-con GH Archive: 198 horas adquiridas, una ausente (404), **164 deadlines con
-publicación anterior corroborada** y 35 sin evidencia suficiente. Cubren
-**117.195 estados de jugadores y 320 managers**. 2024/25 alcanza 38/38; 2025/26,
-13/38. Son testigos temporales separados: G19 y GT v5 no se reescriben ni se
-habilita entrenamiento. [Resultados G20](experiments/data_ground_truth/results-g20.json).
-G21 recupera 32 testigos con capturas anteriores: **196/199 deadlines** corroborados,
-con **38/38 en cada temporada 2021/22–2025/26**. El paquete seleccionado conserva
-143.720 estados de jugadores y 320 managers; 141.853 estados de jugadores tienen
-testigo. Las 32 capturas sustituidas son 4–36 horas más antiguas; se registran sus
-cambios de precios, disponibilidad y ownership. Quedan sin testigo GW1–3 2026/27.
-No se habilita entrenamiento ni replay completo.
-[Resultados G21](experiments/data_ground_truth/results-g21.json).
-G22 extrae reglas y calendarios de esos snapshots: **7.562 observaciones de jornada**,
-141 cambios de deadline y **cero calendarios de fixtures**. Chips/scoring están
-explícitos desde GW16 2024/25 en la selección; antes se conservan como ausentes.
-Se documentan overrides que requieren interpretación, sin ejecutarlos como reglas.
-[Resultados G22](experiments/data_ground_truth/results-g22.json).
-G23 adquiere **254 versiones históricas de fixtures**, todas con 380 partidos,
-y mide 2.020 cambios de kickoff y 387 de jornada. Para los 199 deadlines G21,
-92 tienen una versión con commit previo de hasta 48 horas; esa fecha aún no
-acredita publicación. 2025/26 solo tiene doce versiones y requiere una fuente
-más densa. [Resultados G23](experiments/data_ground_truth/results-g23.json).
-G24 incorpora 5.019 versiones de archivos Core y 28 del mirror. Reconstruye árboles
-coherentes por commit, pero encuentra fechas sin zona, tres calendarios Core de
-370 partidos y conflictos de jornada. Hay 749 fechas futuras raw pendientes de
-reloj; el mirror aporta 209 observaciones futuras con zona en GW33–38. La brecha
-no se declara cerrada. [Resultados G24](experiments/data_ground_truth/results-g24.json).
-G25 audita 81 versiones del exportador Core y 6.552 comparaciones retrospectivas:
-319 discrepan. Dos fechas bajo Premier League coinciden con partidos de Carabao
-Cup documentados por los clubes. La hipótesis UTC no acredita identidad ni reloj
-de origen; continúa sin admitirse ese calendario al GT.
-[Resultados G25](experiments/data_ground_truth/results-g25.json).
+La capa experimental conserva los datos crudos fuera de Git, con manifiestos,
+SHA-256, fuentes fijadas por commit y auditorías reproducibles. El
+[registro de gates G1–G30](experiments/data_ground_truth/README.md) contiene
+adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 
-G26 contrasta 207.363 etiquetas con calendarios finales de ocho temporadas. Las
-78 diferencias corresponden a un único partido retrasado 30 minutos el día de
-juego; se conservan ambos horarios y su historial sin sobrescribir GT v5.
-[Resultados G26](experiments/data_ground_truth/results-g26.json).
+| Capa | Cobertura verificada | Límite pendiente |
+| --- | --- | --- |
+| Etiquetas FPL, GT experimental v5 | 303.126 filas de jugadores, doce temporadas 2014/15–2025/26; 322 filas de managers separadas | Son resultados retrospectivos, no entradas disponibles antes del deadline |
+| Bootstrap raw | 7.837 snapshots; estados, precios, clubes y posiciones | Disponibilidad y semántica varían por campo y temporada |
+| Estados con publicación histórica acreditada | 196/199 deadlines; 38/38 en cada temporada 2021/22–2025/26 | GW1–3 de 2026/27 sin testigo; selección desconocida no se convierte en elegibilidad |
+| Calendarios con publicación histórica acreditada, G30 | 184/199 deadlines; 38/38 en 2025/26 | Quince ventanas pendientes y frescura desigual: solo 14/38 calendarios 2025/26 tienen commit de hasta 48 horas |
+| Reglas y chips de snapshots | Explícitos desde GW16 de 2024/25 y en toda 2025/26 | Faltan reglas históricas anteriores e interpretación de overrides |
+| Fuentes antiguas complementarias | Material parcial desde 2010/11 y totales desde 2006/07 | No cuentan como nuevas temporadas completas; persisten huecos de población e identidad |
 
-G27 añade 199 versiones de fixtures de una nueva fuente fijada: 132 versiones
-con identidad FPL completa para 2025/26. La unión con el archivo anterior aumenta
-de 6 a 18 los deadlines con commit previo de hasta 48 horas; falta corroborar
-publicación histórica. [Resultados G27](experiments/data_ground_truth/results-g27.json).
+G30 combina calendarios completos de dos fuentes, revalidando cada testigo contra
+su evento público y grafo Git. No mezcla filas de capturas distintas. En 2025/26
+la antigüedad nominal máxima es 344,67 horas; la hora del commit no es la hora de
+captura API. [Resultados G30](experiments/data_ground_truth/results-g30.json).
 
-G28 corrobora publicación anterior al deadline para **26 calendarios 2025/26**
-de la nueva fuente mediante GH Archive y ascendencia Git verificada. Cubren
-5.015 observaciones futuras; quedan diez candidatos sin testigo y GW1–2 sin
-candidato de esta fuente. [Resultados G28](experiments/data_ground_truth/results-g28.json).
-
-G29 recupera diez calendarios anteriores con testigo y consolida **36/38 deadlines
-2025/26 (GW3–38)** con publicación previa corroborada. Conserva antigüedad y
-36 cambios de campos frente a versiones posteriores; quedan GW1–2.
-[Resultados G29](experiments/data_ground_truth/results-g29.json).
+Los datos permiten investigar más temporadas y estados, pero todavía no acreditan
+un replay causal completo ni mejoras del modelo. GT v5, evidencia temporal y
+reglas se versionan por separado; este trabajo no habilita entrenamiento ni
+modifica el histórico productivo de 253.890 filas. El siguiente trabajo de datos
+es cerrar ventanas de publicación, mejorar frescura y validar las variables
+acumuladas de rendimiento que ya existen en los snapshots raw.
 
 ## Empezar
 

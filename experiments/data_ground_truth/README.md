@@ -1657,3 +1657,66 @@ de antigüedad, exclusión de futuro, temporada incorrecta, identidad desconocid
 snapshots derivados. [Resultados G29](results-g29.json). Los testigos acreditan
 publicación, no captura API ni readiness de replay completo; entrenamiento y
 producción continúan sin cambios.
+
+## Gate G30: publicación histórica y selección conjunta de calendarios
+
+La auditoría de la fuente Vaastav examina los 199 candidatos G23. Adquiere
+241 horas de GH Archive (22.582.820.815 bytes comprimidos procesados) y acredita
+149 candidatos mediante PushEvent. Dos horas, 2021-10-25-09 y -10, devuelven 404;
+se conservan como fallos, también durante la reproducción offline.
+
+Una segunda extracción busca PullRequestEvent públicos, cerrados y fusionados,
+con repositorio base exacto y commit de merge verificado. Procesa 40 horas
+(3.252.130.682 bytes), parcialmente solapadas con la extracción de pushes: esos
+bytes no representan un total de archivos únicos adicionales. Recupera dos
+testigos y eleva esta fuente a **151/199 candidatos**. En GW2 2025/26 el commit
+exacto aparece en un merge público del 20 de agosto; buscar únicamente pushes
+había dejado sin acreditar esa ventana. Se usa la hora del evento como cota
+superior conservadora, nunca se retrocede a la hora declarada del commit.
+
+El selector conjunto vuelve a verificar los 151 testigos y los 36 calendarios
+G29, incluidos hashes raw/normalizados, identidad, reloj y ascendencia Git.
+Selecciona por jornada un calendario completo con el commit más reciente entre
+los acreditados, sin usar resultados deportivos ni mezclar sus filas.
+
+| Temporada | Deadlines acreditados | Commit de hasta 48 h |
+| --- | ---: | ---: |
+| 2020/21, tramo GW33–38 | 6/6 | 4 |
+| 2021/22 | 34/38 | 18 |
+| 2022/23 | 36/38 | 19 |
+| 2023/24 | 36/38 | 20 |
+| 2024/25 | 34/38 | 17 |
+| 2025/26 | 38/38 | 14 |
+| 2026/27, tramo GW1–3 | 0/3 | 0 |
+
+Resultado: **184/199 deadlines**, con **7.398 observaciones futuras de fixtures**
+en los 38 calendarios 2025/26 (repetidas entre snapshots). La antigüedad nominal
+máxima de esa temporada es 344,67 horas, correspondiente a GW1. La publicación
+acreditada no garantiza que la fuente haya capturado todos los cambios recientes.
+Quedan doce ventanas de temporadas cerradas y tres de la temporada abierta.
+
+```bash
+python -m experiments.data_ground_truth.historical_fixture_publication \
+  --root "$HISTORICAL_PUBLICATION_ROOT" --audit-root "$FIXTURE_AUDIT_ROOT" \
+  --raw-root "$FIXTURE_RAW_ROOT" --repo "$FIXTURE_SOURCE_GIT" \
+  --extended-candidate 2025-26:2 --offline
+python -m experiments.data_ground_truth.historical_pr_publication \
+  --publication-root "$HISTORICAL_PUBLICATION_ROOT" --audit-root "$FIXTURE_AUDIT_ROOT" \
+  --raw-root "$FIXTURE_RAW_ROOT" --repo "$FIXTURE_SOURCE_GIT" \
+  --out "$HISTORICAL_MERGE_PUBLICATION_ROOT" --offline
+python -m experiments.data_ground_truth.calendar_publication_selection \
+  --base-root "$EXPERIMENTS_ROOT" --out "$CALENDAR_SELECTION_ROOT"
+```
+
+El selector fija las versiones de carpetas de entrada indicadas en su código y
+reporte. Los dos primeros comandos requieren caché de horas/eventos y fallos
+para modo offline; omitir `--offline` permite adquisición GET. El comando de
+pushes conserva salida no cero por las dos horas ausentes: no implica que los
+149 testigos válidos se hayan perdido.
+
+Los tres reportes y sus índices se reprodujeron byte por byte desde la caché,
+con hashes y evidencia revalidados. [Resultados G30](results-g30.json) conserva
+cobertura, huecos, hashes y verificación. GT v5 y producción permanecen intactos;
+no se habilita entrenamiento ni replay completo. El próximo gate de datos debe
+medir frescura y cerrar ventanas, además de tipar y validar rendimiento acumulado
+raw antes de usarlo como variables causales.
