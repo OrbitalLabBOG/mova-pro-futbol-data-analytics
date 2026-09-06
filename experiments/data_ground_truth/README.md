@@ -4628,3 +4628,69 @@ Suite completa: **1.662 passed, 1 skipped, 79 deselected**, en 41,55 s. Las prue
 cubren rechazo de fuentes futuras, de otra temporada o sin prueba; conservación
 de observaciones antiguas; y conteos de horizonte sin asignar fixtures desconocidos
 ni extender jornadas más allá de GW38.
+
+## G82 — Anuncios oficiales, condiciones y discrepancia temporal
+
+Se adquirieron cinco páginas oficiales, **447.310 bytes**, mediante el capturador
+GET de evidencia documental existente. Se fijan cuerpo HTML, URL, tamaño, SHA y
+momento de adquisición; `available_at` permanece desconocido. Las fuentes son:
+
+- [Enmiendas abril–mayo 2022](https://www.premierleague.com/en/news/2533700), fecha visible 15-03-2022.
+- [Selecciones televisivas y reprogramaciones de mayo](https://www.premierleague.com/en/news/2562266), fecha visible 04-04-2022.
+- [Dos partidos reprogramados para marzo](https://www.premierleague.com/en/news/3053298), fecha visible 07-02-2023.
+- [Double Gameweek 25](https://www.premierleague.com/en/news/3053317), contexto documental del mismo 07-02-2023.
+- [Efecto de las copas en FPL](https://www.premierleague.com/en/news/3040501), contexto documental del 02-02-2023.
+
+`fixture_announcements.py` extrae fechas y horas de las tres páginas de calendario,
+verifica día de semana y zona declarada GMT/BST, convierte a UTC y enlaza parejas
+local–visitante mediante las veinte identidades de clubes de cada temporada.
+Las tablas de clubes están fijadas por SHA. Cada declaración conserva offsets y
+hashes de sus fragmentos de fecha/horario, además del hash del HTML original.
+Los marcadores de condición se conservan; no se convierte una fecha condicionada
+por copas en un fixture confirmado ni se ejecutan instrucciones del texto.
+
+| Fuente | Horarios extraídos | Con marcador condicional |
+| --- | ---: | ---: |
+| Marzo 2022 | 23 | 8 |
+| Abril 2022 | 22 | 0 |
+| Febrero 2023 | 2 | 0 |
+| Total | 47 | 8 |
+
+Las dos páginas explicativas quedan como contexto, sin inventar claves de fixture
+ni extraer resultados de los widgets actuales. El cotejo con G81 produce **70
+comparaciones declaración–ventana**, usando la fecha visible sólo como filtro
+descriptivo. Entre las no condicionadas, 30 coinciden con ambos snapshots, 20
+sólo con el posterior y cuatro con ninguno. Entre las condicionadas, diez
+coinciden con ambos y seis sólo con el antiguo. Son comparaciones de contenido,
+no precisión causal ni disponibilidad antes del deadline.
+
+Los **20 cambios de kickoff** coincidentes tienen respaldo documental actual.
+Las cuatro discrepancias de la página fechada el 4 de abril afectan a Wolves–Man
+City, West Ham–Man City, Everton–Brentford y Southampton–Liverpool. Por ejemplo,
+el HTML actual asigna Wolves–Man City al 11 de mayo a las 20:15 BST; el snapshot
+del 7 de abril deja su fecha desconocida. La divergencia no identifica por sí
+sola cuándo se editó el artículo ni cuál era su cuerpo original. Muestra por qué
+no se debe tratar el contenido descargado hoy como una captura de la fecha que
+aparece en su cabecera.
+
+Se consultó la API pública de disponibilidad de Wayback para las URLs históricas
+`/news/2562266` y `/news/3053298`, solicitando instantes anteriores a los deadlines
+respectivos. Ambas respuestas devolvieron `archived_snapshots={}`. Se conservan
+consultas, respuestas y hashes en `fixture-announcement-archive-discovery-g82`.
+Este resultado sólo describe esas consultas; no acredita ausencia global de
+copias archivadas ni autoriza completar la disponibilidad con la fecha editorial.
+
+```bash
+python -m experiments.data_ground_truth.fixture_announcements \
+  --base-root "$DATA_BASE" \
+  --root "$DATA_BASE/fixture-announcement-source-g82" \
+  --out "$DATA_BASE/fixture-announcement-audit-v1"
+```
+
+Reporte, declaraciones y comparaciones reproducidos byte por byte en una segunda
+raíz. Suite completa: **1.664 passed, 1 skipped, 79 deselected**, en 43,05 s.
+Las pruebas cubren BST/GMT, conservación de condiciones, offsets y rechazo de
+fechas/clubes no interpretables. [Resultados G82](results-g82.json) fija evidencia,
+fuentes y métricas. La cobertura seleccionada permanece **195/199**; GT v7 sigue
+con 303.126 etiquetas/doce temporadas. Sin entrenamiento ni cambios productivos;
+los nuevos cuerpos y derivados permanecen fuera del paquete portable G78 congelado.
