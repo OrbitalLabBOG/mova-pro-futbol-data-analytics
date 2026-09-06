@@ -519,3 +519,27 @@ def test_appearance_coverage_checks_namespaces_dates_and_preserves_unknowns():
         compare(matches.assign(opp_team_id=1),fixtures,teams,players,obs,reference)
     with pytest.raises(ValueError,match='ambiguous fixture pair'):
         compare(matches,fixtures,teams,players,obs,pd.concat([reference,reference]))
+
+
+def test_native_identity_requires_repeated_fullname_witnesses_and_preserves_unknown_minutes():
+    from experiments.data_ground_truth.native_identity import propagate
+    rows=[dict(season='2010-11',playerId=1,playerName='John Smith',matchId_events=m,
+        official_player_code=20,source_official_player_code=20,minutesPlayed=90) for m in [100,101]]
+    rows+=[dict(season='2011-12',playerId=1,playerName=name,matchId_events=200,
+        official_player_code=None,source_official_player_code=None,minutesPlayed=None) for name in ['John Smith','James Smith']]
+    frame=pd.DataFrame(rows)
+    linked,evidence=propagate(frame)
+    assert linked.loc[2,'official_player_code']==20
+    assert pd.isna(linked.loc[3,'official_player_code'])
+    assert pd.isna(linked.loc[2,'source_official_player_code'])
+    assert pd.isna(linked.loc[2,'minutesPlayed'])
+    assert not linked.loc[2,'eligible_observed_minutes_label']
+    assert not linked.eligible_predeadline.any()
+    assert evidence[0]['witness_fixtures']==[['2010-11',100],['2010-11',101]]
+    single=pd.concat([frame.iloc[:1],frame.iloc[:1],frame.iloc[2:]],ignore_index=True)
+    assert not propagate(single)[0].native_identity_recovered.any()
+    conflict=frame.copy();conflict.loc[1,'official_player_code']=21
+    with pytest.raises(ValueError,match='namespace code conflict'):propagate(conflict)
+    # A different native ID with the same name cannot donate its identity.
+    renamed=frame.copy();renamed.loc[2:,'playerId']=2
+    assert not propagate(renamed)[0].native_identity_recovered.any()
