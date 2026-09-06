@@ -4163,3 +4163,74 @@ reescribir los resultados congelados G72/G73.
 Suite completa: **1.643 passed, 1 skipped, 79 deselected** (33,65 s).
 [Resultados G74](results-g74.json). Sin descargas nuevas en este gate: se recupera
 cobertura de datos crudos ya adquiridos. GT, bundle G55 y runtime productivo intactos.
+
+## G75 — Variantes de nombre con evidencia revisada
+
+La búsqueda de nombres alternativos en las diez tablas FPL `players_raw.csv`
+identificó `Josh Onomah` en 2020/21 bajo el mismo código oficial 168765 que la
+ficha `Joshua Onomah` de 2015/16. Esa tabla ya estaba adquirida; no se considera
+una nueva temporada de etiquetas. Para otros casos se adquirieron dos páginas
+oficiales de Premier League, **180.989 bytes nuevos**:
+
+- [Burnley–City, crónica del 3 de diciembre de 2019](https://www.premierleague.com/en/news/1514200):
+  el texto atribuye el único gol local a Robbie Brady y el registro del mismo
+  encuentro a Robert Brady. Es una inferencia de identidad revisada sobre el
+  mismo evento, no una regla general de coocurrencia de nombres.
+- [Everton–Derby, crónica del 16 de diciembre de 2018](https://www.premierleague.com/en/news/946678):
+  el texto atribuye la asistencia del gol a Tyias Browning y el registro del
+  evento a Jiang Guangtai. La equivalencia se registra con la misma limitación.
+
+`reviewed-name-claims.json` conserva las **tres equivalencias explícitas**,
+código oficial, nombre esperado en FPL, URL, hash y tipo de evidencia. El cargador
+`identity_name_evidence.py` verifica bytes, vínculo al nombre de la ficha FPL y,
+para el CSV, una sola fila con ese código. En páginas exige los fragmentos revisados;
+esto detecta evidencia ausente, pero **no automatiza el juicio semántico** de que
+se refieren al mismo actor. Incorporar otra equivalencia requiere revisar y
+versionar el registro. No hay reglas generales Rob→Robert o Josh→Joshua.
+
+`--name-evidence-root` aplica estas variantes sólo dentro del código FPL asociado,
+conserva su procedencia en los testigos y permite a G74 proponer los cinco códigos
+faltantes bajo `Guangtai Jiang`. La normalización vigente tolera el orden de
+las palabras. Después sigue exigiendo dos partidos distintos, club, posición en
+lineup, nombre respaldado y correspondencia recíproca única. No fuerza ningún
+ID StatsBomb ni selecciona enlaces por igualdad de puntos o rendimiento.
+
+| Métrica | G74 | G75 |
+| --- | ---: | ---: |
+| Identidades aceptadas para investigación | 496 | 499 |
+| Apariciones positivas cubiertas | 10.312/10.469 | 10.361/10.469 |
+| Apariciones pendientes | 157 | 108 |
+| Enlaces anteriores perdidos/cambiados | — | 0 |
+
+Se recuperan **49 apariciones**: Brady 36, Onomah 8 y Browning 5. Cobertura positiva
+**98,97%**. Los 32 códigos PL positivos ausentes tienen ahora propuesta, pero
+Javier Hernández sigue sin alcanzar los dos partidos necesarios. No se confunde
+una propuesta de código con una identidad aceptada.
+
+El reporte y cinco artefactos reproducen bytes idénticos en
+`statsbomb-reviewed-names-v1` y `v2`. Las fuentes locales quedan en
+`identity-name-evidence-g75`; el manifiesto incluye las dos páginas nuevas y el
+CSV importado, **376.685 bytes** en total. Los nombres de temporadas posteriores
+se usan para identidad retrospectiva, nunca como entradas disponibles en 2015.
+
+Para reproducir, usar G74 cambiando el baseline a `statsbomb-code-recovery-v2`,
+añadir `--name-evidence-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/identity-name-evidence-g75`
+y escribir en `statsbomb-reviewed-names-v1`. Conservar `--recover-missing-codes`
+y todos los conjuntos fuente G74.
+
+El auditor posterior de goles, con el nuevo `--identity-root`, compara **13.054
+filas**: 13.042 goles concordantes/12 distintos y 13.047 autogoles concordantes/7
+distintos. Los casos no cero de gol pasan a 879, con 867 concordantes; los de
+autogol siguen en 37, con 30 concordantes. Marcador interno 760/760. No aparecen
+nuevas discrepancias de atribución; las anteriores se conservan.
+
+El contraste usa **StatsBomb Open Data (Hudl)** sólo para investigación, sin
+admisión comercial, entrenamiento ni redistribución del corpus. Sus artefactos
+individuales permanecen fuera de Git.
+
+<img src="https://static.hudl.com/craft/productAssets/statsbomb_icon.svg" alt="Hudl StatsBomb" width="40" height="40">
+
+Suite completa: **1.646 passed, 1 skipped, 79 deselected** (43,24 s).
+[Resultados G75](results-g75.json). Sin etiquetas nuevas ni cambios en GT v7,
+bundle G55 o producción. El siguiente trabajo debe resolver la evidencia de
+identidades restantes y las brechas temporales, sin rebajar los controles.
