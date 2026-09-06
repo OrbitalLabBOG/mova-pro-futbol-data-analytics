@@ -1,0 +1,538 @@
+{
+  "version": "historical-data-g54",
+  "audit_report_sha256": "9d4e80df952df187cad5d1979f89b43d5ced964414dee3c31ae74840a337f953",
+  "audit": {
+    "version": "chip-rule-consistency-v1",
+    "season": "2025-26",
+    "parent_report_sha256": "c2da3cbc8aaeb0272195c46f3c0692fe71be4bcb65fca13ac301f17077a9d5f6",
+    "implementation_sha256": "44bf9c9852f3e66984d2ac68098058d733b2f3f8197a1781ebb7aaedb1f99073",
+    "observations_sha256": "c02c60244e726fa52eb7dd075438612a0db79a1c89dcb2a30be4ffd6201d704d",
+    "snapshots": 38,
+    "chip_observations": 304,
+    "base_status": {
+      "internally_consistent_squad_total": 38
+    },
+    "chip_status": {
+      "internally_consistent_squad_total": 290,
+      "inconsistent_squad_total": 14
+    },
+    "findings": [
+      {
+        "observed_gw": 1,
+        "source_sha256": "eee31c9ece4864963bff4d88543ac5d440ca4d574ec89512e680d6e697f9a086",
+        "chip": {
+          "chip_type": "transfer",
+          "id": 6,
+          "name": "freehit",
+          "number": 1,
+          "overrides": {
+            "element_types": [],
+            "pick_multiplier": null,
+            "rules": {
+              "squad_squadsize": 16
+            },
+            "scoring": {}
+          },
+          "start_event": 20,
+          "stop_event": 38
+        },
+        "temporal_scope": "future",
+        "audit": {
+          "status": "inconsistent_squad_total",
+          "declared_squad_total": 16,
+          "exact_role_quota_total": 15,
+          "role_quotas": {
+            "1": 2,
+            "2": 5,
+            "3": 5,
+            "4": 3
+          }
+        }
+      },
+      {
+        "observed_gw": 2,
+        "source_sha256": "3c7bfd83741fe6709d54556e33e7fb669f6fa8b249f9ed2c4cf1af9ff239c0bd",
+        "chip": {
+          "chip_type": "transfer",
+          "id": 6,
+          "name": "freehit",
+          "number": 1,
+          "overrides": {
+            "element_types": [],
+            "pick_multiplier": null,
+            "rules": {
+              "squad_squadsize": 16
+            },
+            "scoring": {}
+          },
+          "start_event": 20,
+          "stop_event": 38
+        },
+        "temporal_scope": "future",
+        "audit": {
+          "status": "inconsistent_squad_total",
+          "declared_squad_total": 16,
+          "exact_role_quota_total": 15,
+          "role_quotas": {
+            "1": 2,
+            "2": 5,
+            "3": 5,
+            "4": 3
+          }
+        }
+      },
+      {
+        "observed_gw": 3,
+        "source_sha256": "4914ca608a046a9702596878800273099003c9479a6ad23030f994fb801e645c",
+        "chip": {
+          "chip_type": "transfer",
+          "id": 6,
+          "name": "freehit",
+          "number": 1,
+          "overrides": {
+            "element_types": [],
+            "pick_multiplier": null,
+            "rules": {
+              "squad_squadsize": 16
+            },
+            "scoring": {}
+          },
+          "start_event": 20,
+          "stop_event": 38
+        },
+        "temporal_scope": "future",
+        "audit": {
+          "status": "inconsistent_squad_total",
+          "declared_squad_total": 16,
+          "exact_role_quota_total": 15,
+          "role_quotas": {
+            "1": 2,
+            "2": 5,
+            "3": 5,
+            "4": 3
+          }
+        }
+      },
+      {
+        "observed_gw": 4,
+        "source_sha256": "9c2debc7fd99d952b13e820ea4782bfa3684ac26bb0c9e3cebd4ebc9b610bd26",
+        "chip": {
+          "chip_type": "transfer",
+          "id": 6,
+          "name": "freehit",
+          "number": 1,
+          "overrides": {
+            "element_types": [],
+            "pick_multiplier": null,
+            "rules": {
+              "squad_squadsize": 16
+            },
+            "scoring": {}
+          },
+          "start_event": 20,
+          "stop_event": 38
+        },
+        "temporal_scope": "future",
+        "audit": {
+          "status": "inconsistent_squad_total",
+          "declared_squad_total": 16,
+          "exact_role_quota_total": 15,
+          "role_quotas": {
+            "1": 2,
+            "2": 5,
+            "3": 5,
+            "4": 3
+          }
+        }
+      },
+      {
+        "observed_gw": 5,
+        "source_sha256": "8f4acabcce81ae1b85ff8475749ced3dbb87b746d15c60c84fb2da9808a45ce0",
+        "chip": {
+          "chip_type": "transfer",
+          "id": 6,
+          "name": "freehit",
+          "number": 1,
+          "overrides": {
+            "element_types": [],
+            "pick_multiplier": null,
+            "rules": {
+              "squad_squadsize": 16
+            },
+            "scoring": {}
+          },
+          "start_event": 20,
+          "stop_event": 38
+        },
+        "temporal_scope": "future",
+        "audit": {
+          "status": "inconsistent_squad_total",
+          "declared_squad_total": 16,
+          "exact_role_quota_total": 15,
+          "role_quotas": {
+            "1": 2,
+            "2": 5,
+            "3": 5,
+            "4": 3
+          }
+        }
+      },
+      {
+        "observed_gw": 6,
+        "source_sha256": "d24eb9d137739682a71090d4abf7b9c49245624f5ffab316c127781ebe514838",
+        "chip": {
+          "chip_type": "transfer",
+          "id": 6,
+          "name": "freehit",
+          "number": 1,
+          "overrides": {
+            "element_types": [],
+            "pick_multiplier": null,
+            "rules": {
+              "squad_squadsize": 16
+            },
+            "scoring": {}
+          },
+          "start_event": 20,
+          "stop_event": 38
+        },
+        "temporal_scope": "future",
+        "audit": {
+          "status": "inconsistent_squad_total",
+          "declared_squad_total": 16,
+          "exact_role_quota_total": 15,
+          "role_quotas": {
+            "1": 2,
+            "2": 5,
+            "3": 5,
+            "4": 3
+          }
+        }
+      },
+      {
+        "observed_gw": 7,
+        "source_sha256": "f1707e7f9d4f93a8991bb929a7b7258fd3277d8b32e4542b4cc7df127b47393f",
+        "chip": {
+          "chip_type": "transfer",
+          "id": 6,
+          "name": "freehit",
+          "number": 1,
+          "overrides": {
+            "element_types": [],
+            "pick_multiplier": null,
+            "rules": {
+              "squad_squadsize": 16
+            },
+            "scoring": {}
+          },
+          "start_event": 20,
+          "stop_event": 38
+        },
+        "temporal_scope": "future",
+        "audit": {
+          "status": "inconsistent_squad_total",
+          "declared_squad_total": 16,
+          "exact_role_quota_total": 15,
+          "role_quotas": {
+            "1": 2,
+            "2": 5,
+            "3": 5,
+            "4": 3
+          }
+        }
+      },
+      {
+        "observed_gw": 8,
+        "source_sha256": "2c9c6f4e083c35a8acb6e05b0eedda532baf3936d3ad17f1847af5af5a548b77",
+        "chip": {
+          "chip_type": "transfer",
+          "id": 6,
+          "name": "freehit",
+          "number": 1,
+          "overrides": {
+            "element_types": [],
+            "pick_multiplier": null,
+            "rules": {
+              "squad_squadsize": 16
+            },
+            "scoring": {}
+          },
+          "start_event": 20,
+          "stop_event": 38
+        },
+        "temporal_scope": "future",
+        "audit": {
+          "status": "inconsistent_squad_total",
+          "declared_squad_total": 16,
+          "exact_role_quota_total": 15,
+          "role_quotas": {
+            "1": 2,
+            "2": 5,
+            "3": 5,
+            "4": 3
+          }
+        }
+      },
+      {
+        "observed_gw": 9,
+        "source_sha256": "c19f663c311664425ec5f40fbf2d9cefe15a31f42e1d2a34ddf46f15b4e416f8",
+        "chip": {
+          "chip_type": "transfer",
+          "id": 6,
+          "name": "freehit",
+          "number": 1,
+          "overrides": {
+            "element_types": [],
+            "pick_multiplier": null,
+            "rules": {
+              "squad_squadsize": 16
+            },
+            "scoring": {}
+          },
+          "start_event": 20,
+          "stop_event": 38
+        },
+        "temporal_scope": "future",
+        "audit": {
+          "status": "inconsistent_squad_total",
+          "declared_squad_total": 16,
+          "exact_role_quota_total": 15,
+          "role_quotas": {
+            "1": 2,
+            "2": 5,
+            "3": 5,
+            "4": 3
+          }
+        }
+      },
+      {
+        "observed_gw": 10,
+        "source_sha256": "b42ec469494813e8019f583578a1cc9865a316cc6dab291006afa73aaaaa1200",
+        "chip": {
+          "chip_type": "transfer",
+          "id": 6,
+          "name": "freehit",
+          "number": 1,
+          "overrides": {
+            "element_types": [],
+            "pick_multiplier": null,
+            "rules": {
+              "squad_squadsize": 16
+            },
+            "scoring": {}
+          },
+          "start_event": 20,
+          "stop_event": 38
+        },
+        "temporal_scope": "future",
+        "audit": {
+          "status": "inconsistent_squad_total",
+          "declared_squad_total": 16,
+          "exact_role_quota_total": 15,
+          "role_quotas": {
+            "1": 2,
+            "2": 5,
+            "3": 5,
+            "4": 3
+          }
+        }
+      },
+      {
+        "observed_gw": 11,
+        "source_sha256": "b9b40ee84b55e24b2ce8a3adae8116626ece5091dfd453e05eff640a6b4143fe",
+        "chip": {
+          "chip_type": "transfer",
+          "id": 6,
+          "name": "freehit",
+          "number": 1,
+          "overrides": {
+            "element_types": [],
+            "pick_multiplier": null,
+            "rules": {
+              "squad_squadsize": 16
+            },
+            "scoring": {}
+          },
+          "start_event": 20,
+          "stop_event": 38
+        },
+        "temporal_scope": "future",
+        "audit": {
+          "status": "inconsistent_squad_total",
+          "declared_squad_total": 16,
+          "exact_role_quota_total": 15,
+          "role_quotas": {
+            "1": 2,
+            "2": 5,
+            "3": 5,
+            "4": 3
+          }
+        }
+      },
+      {
+        "observed_gw": 12,
+        "source_sha256": "3c3a52d10e696f93f49f75d803ceb2753aa45ba09495523ee777b23377cc400d",
+        "chip": {
+          "chip_type": "transfer",
+          "id": 6,
+          "name": "freehit",
+          "number": 1,
+          "overrides": {
+            "element_types": [],
+            "pick_multiplier": null,
+            "rules": {
+              "squad_squadsize": 16
+            },
+            "scoring": {}
+          },
+          "start_event": 20,
+          "stop_event": 38
+        },
+        "temporal_scope": "future",
+        "audit": {
+          "status": "inconsistent_squad_total",
+          "declared_squad_total": 16,
+          "exact_role_quota_total": 15,
+          "role_quotas": {
+            "1": 2,
+            "2": 5,
+            "3": 5,
+            "4": 3
+          }
+        }
+      },
+      {
+        "observed_gw": 13,
+        "source_sha256": "88a3689a796c51387ac427ce215f0f8a56b4d95999f422d671dc46cede87e091",
+        "chip": {
+          "chip_type": "transfer",
+          "id": 6,
+          "name": "freehit",
+          "number": 1,
+          "overrides": {
+            "element_types": [],
+            "pick_multiplier": null,
+            "rules": {
+              "squad_squadsize": 16
+            },
+            "scoring": {}
+          },
+          "start_event": 20,
+          "stop_event": 38
+        },
+        "temporal_scope": "future",
+        "audit": {
+          "status": "inconsistent_squad_total",
+          "declared_squad_total": 16,
+          "exact_role_quota_total": 15,
+          "role_quotas": {
+            "1": 2,
+            "2": 5,
+            "3": 5,
+            "4": 3
+          }
+        }
+      },
+      {
+        "observed_gw": 14,
+        "source_sha256": "a8c4947c488181c1827c4589b07020b36987d3b88efe90584f7524e648c12102",
+        "chip": {
+          "chip_type": "transfer",
+          "id": 6,
+          "name": "freehit",
+          "number": 1,
+          "overrides": {
+            "element_types": [],
+            "pick_multiplier": null,
+            "rules": {
+              "squad_squadsize": 16
+            },
+            "scoring": {}
+          },
+          "start_event": 20,
+          "stop_event": 38
+        },
+        "temporal_scope": "future",
+        "audit": {
+          "status": "inconsistent_squad_total",
+          "declared_squad_total": 16,
+          "exact_role_quota_total": 15,
+          "role_quotas": {
+            "1": 2,
+            "2": 5,
+            "3": 5,
+            "4": 3
+          }
+        }
+      }
+    ],
+    "finding_temporal_scope": {
+      "future": 14
+    },
+    "nonempty_event_override_observations": 0,
+    "training_admitted": false,
+    "production_changed": false,
+    "limitations": [
+      "checks_squad_total_and_exact_role_quotas_only",
+      "declared_chip_window_is_not_account_specific_availability",
+      "unsupported_overrides_not_silently_merged",
+      "does_not_establish_backend_precedence_or_rule_change_cause",
+      "future_inconsistency_does_not_prove_invalid_active_chip",
+      "later_snapshots_do_not_repair_earlier_observations"
+    ]
+  },
+  "documentary_sources": {
+    "manifest_sha256": "c737518907dde32fa1ff2a3544e834db3d6b872c36dc2a745200bedae2b804e7",
+    "records": [
+      {
+        "url": "https://www.premierleague.com/en/news/4362027",
+        "sha256": "7c6428cf48811a579d1b20d1f1fa4665342bfc329d83ecb94a7b661a915dd199",
+        "bytes": 94463,
+        "fetched_at": "2026-09-06T12:28:54.894157+00:00",
+        "available_at": null,
+        "role": "official_documentary_context_not_temporal_rule_admission"
+      },
+      {
+        "url": "https://www.premierleague.com/en/news/4617957/fpl-bgw31-stats-season-high-number-of-free-hit-chips-played",
+        "sha256": "d2a716a34251bb25e6df007d5441e934494ef8ef80d41968336837ea011267f8",
+        "bytes": 98798,
+        "fetched_at": "2026-09-06T12:28:55.625218+00:00",
+        "available_at": null,
+        "role": "official_documentary_context_not_temporal_rule_admission"
+      }
+    ]
+  },
+  "documentary_assertions": [
+    {
+      "source_sha256": "7c6428cf48811a579d1b20d1f1fa4665342bfc329d83ecb94a7b661a915dd199",
+      "season": "2025-26",
+      "claim": "first_chip_set_cannot_carry_beyond_GW19",
+      "available_at": null,
+      "training_admitted": false
+    },
+    {
+      "source_sha256": "7c6428cf48811a579d1b20d1f1fa4665342bfc329d83ecb94a7b661a915dd199",
+      "season": "2025-26",
+      "claim": "freehit_cannot_be_played_in_both_GW19_and_GW20",
+      "available_at": null,
+      "training_admitted": false
+    },
+    {
+      "source_sha256": "d2a716a34251bb25e6df007d5441e934494ef8ef80d41968336837ea011267f8",
+      "season": "2025-26",
+      "claim": "GW31_freehit_described_as_15_players_and_original_squad_returns_GW32",
+      "available_at": null,
+      "training_admitted": false
+    }
+  ],
+  "verification": {
+    "reproduced_byte_for_byte": true,
+    "tests_passed": 1573,
+    "tests_skipped": 1,
+    "tests_deselected": 79
+  },
+  "new_label_rows": 0,
+  "new_complete_seasons": 0,
+  "production_changed": false,
+  "training_admitted": false
+}

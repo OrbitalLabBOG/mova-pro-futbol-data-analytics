@@ -2850,3 +2850,62 @@ este gate; es extracción y auditoría de raw archivado. [Resultados G53](result
 
 Validación G53: **1.571 passed, 1 skipped, 79 deselected**. Regresiones de
 ausente/nulo/tipo inválido, lesión seleccionable y contradicción preservada.
+
+## G54 — consistencia declarada de chips 2025/26
+
+`chip_rule_consistency.py` reproduce primero G22 (`bootstrap-rules-v1`) desde raw
+para los 199 snapshots y exige igualdad de sus cinco artefactos principales.
+Después audita 38 snapshots publicados de 2025/26 y sus 304 declaraciones de chip.
+Comprueba exclusivamente si el tamaño de plantilla declarado coincide con la
+suma de cuotas exactas por posición. No implementa reglas completas, precedencia
+del backend ni disponibilidad de una cuenta concreta. Overrides no soportados
+quedan explícitos como tales; datos desconocidos no se convierten en consistencia.
+
+- Las 38 configuraciones base tienen tamaño 15 y cuotas 2/5/5/3, coherentes entre sí.
+- 290 declaraciones de chip pasan esa comprobación dimensional.
+- **14 declaraciones del segundo Free Hit**, observadas en GW1–14, contienen
+  `overrides.rules.squad_squadsize=16` sin cambiar cuotas que suman 15.
+  Se conservan como contradicción bajo la interpretación literal de esos campos.
+- En los snapshots seleccionados de GW15–38 ese override ya no aparece.
+  El chip declara ventana GW20–38: las 14 contradicciones corresponden a una
+  declaración **futura**, no a un chip dentro de su ventana en ese momento.
+- No hay overrides de evento con contenido en estos 38 calendarios. Esto no
+  prueba que no existieran excepciones operativas ni permite inferir cómo se
+  implementó la recarga AFCON documentada en G38.
+
+Se preservan ID, nombre, número, ventana y override completo de cada chip,
+configuración fuente, reloj nominal, testigo de publicación y SHA. Una versión
+posterior no corrige silenciosamente el histórico anterior. El gate identifica
+un riesgo concreto para un planificador a largo plazo: no aceptar automáticamente
+como ejecutable toda regla futura anunciada por un snapshot.
+
+Se adquirieron dos artículos oficiales adicionales, **193.261 bytes** en
+`official-chip-evidence-g54`, con manifiesto y hashes:
+
+- [Dos sets de chips, 18 julio 2025](https://www.premierleague.com/en/news/4362027):
+  ocho chips, primer set sin arrastre tras GW19 y prohibición de usar Free Hit en
+  GW19 y GW20 consecutivamente. Esta última condición depende de la historia de
+  acciones; las ventanas start/stop por sí solas no la representan.
+- [Free Hit GW31, 22 marzo 2026](https://www.premierleague.com/en/news/4617957/fpl-bgw31-stats-season-high-number-of-free-hit-chips-played):
+  describe selección temporal de 15 jugadores y regreso de la plantilla regular
+  en GW32. Es contexto documental de 2025/26, no prueba de precedencia del backend.
+
+Las fechas son las declaradas por las páginas, consultadas ahora; `available_at`
+permanece desconocido. Las afirmaciones documentales quedan separadas de reglas
+admitidas temporalmente. No se atribuye la causa del override ni se afirma que
+la API permitiera efectivamente seleccionar 16 jugadores. No hay nuevas
+etiquetas, temporadas, entrenamiento o cambios de producción.
+
+```bash
+python -m experiments.data_ground_truth.chip_rule_consistency \
+  --base-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments \
+  --out /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/chip-rule-consistency-v1
+```
+
+Reporte y observaciones reproducidos byte por byte en `chip-rule-consistency-v2`.
+[Resultados G54](results-g54.json). Siguen pendientes los contratos de transiciones
+por chip, acumulados GW1 y la prueba temporal de reglas documentales.
+
+Validación G54: **1.573 passed, 1 skipped, 79 deselected**. Regresiones de
+plantilla futura imposible, campos desconocidos, overrides no soportados y
+conflicto entre configuraciones base; sin reparación silenciosa.
