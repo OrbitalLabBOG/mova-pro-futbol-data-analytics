@@ -43,3 +43,14 @@ def test_alias_must_match_whole_normalized_name_not_subset():
     player={'player_name':'Francesc Fabregas i Soler','player_nickname':'Cesc Fàbregas'}
     assert name_evidence(player,'Cesc Fabregas',True)=='declared_alias'
     assert name_evidence(player,'Cesc',True) is None
+
+
+def test_FPL_full_name_must_be_bound_to_the_same_official_code():
+    from experiments.data_ground_truth.statsbomb_player_crosswalk import candidate_name_evidence
+    player={'player_name':'Fernando Francisco Reges','player_nickname':None}
+    candidate={'code':'52538','name':'Fernando'}
+    metadata={'full_name':'Fernando Francisco Reges','source_sha256':'evidence'}
+    assert candidate_name_evidence(player,candidate,True,{'999':metadata})[0] is None
+    kind,source=candidate_name_evidence(player,candidate,True,{'52538':metadata})
+    assert kind=='fpl_metadata_full_name'
+    assert source==metadata

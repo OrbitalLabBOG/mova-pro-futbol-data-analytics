@@ -3912,3 +3912,64 @@ Reporte y cuatro artefactos reproducidos byte por byte en v3. Suite completa:
 etiquetas. Queda revisar las 249 apariciones pendientes con evidencia adicional
 y contrastar la semántica de eventos/minutos antes de cualquier uso analítico
 más amplio. La cobertura de identidad no resuelve los derechos comerciales.
+
+## G71 — nombres completos de fichas FPL vinculados por código oficial
+
+<img src="https://static.hudl.com/craft/productAssets/statsbomb_icon.svg" alt="Hudl StatsBomb" width="40" height="40">
+
+Fuente de alineaciones: **StatsBomb Open Data (Hudl)**; condiciones investigativas
+G67 conservadas. Se añade la evidencia de nombres de los 723 JSON `PlayersInfo/`
+FPL ya archivados desde `mvbfontes/premierleaguedatasets`, sin nuevas descargas.
+
+El modo `--fpl-names-root` construye el nombre completo desde `first_name` y
+`second_name` de cada ficha, validando el objeto por hash y rechazando códigos
+repetidos. Sólo puede aportar un nombre al candidato PL con **el mismo código
+oficial**. No se usan `web_name` como apodos deducidos, variantes genéricas del
+nombre ni listas manuales de equivalencias. La evidencia se ensaya después de
+los criterios G70; si éstos ya sirven, conserva su clasificación.
+
+Se mantienen nombre completo compatible o alias explícito StatsBomb, mismo
+club/partido, participación y dos partidos distintos, con candidato único en ambos
+sentidos. El witness adicional guarda nombre completo FPL, path y SHA-256 de la
+ficha. Una ficha de otro código no puede resolver al candidato aunque el nombre
+coincida. La ficha archivada aporta identidad retrospectiva, no disponibilidad
+histórica antes del deadline ni comprobación biográfica independiente.
+
+| Métrica | G70 | G71 |
+| --- | ---: | ---: |
+| Identidades investigativas aceptadas | 490 | 493 |
+| Apariciones positivas cubiertas | 10.220 | 10.286 |
+| Apariciones positivas sin resolver | 249 | 183 |
+| Cobertura sobre 10.469 apariciones | 97,62% | 98,25% |
+
+Los **tres enlaces y 66 apariciones adicionales** conservan los 490 enlaces
+anteriores: cero perdidos o cambiados. Las 66 filas testigo nuevas usan nombre
+completo FPL; se preservan también los 9.690 testigos de nombre PL y los 576 por
+alias StatsBomb de gates anteriores.
+
+Sobre las 24.741 filas GT: 12.939 tienen identidad y presencia en alineación;
+4.798 tienen identidad enlazada pero quedan fuera de esa alineación, sin minutos
+positivos; 7.004 siguen sin resolver. De los 644 jugadores StatsBomb, 493 se
+aceptan, 105 no tienen testigo admisible y 46 tienen testigos ambiguos o
+insuficientes. No se interpreta el resto como inexistencia de jugador ni como cero
+estadístico. La presencia de intervalos no prueba igualdad de minutos entre fuentes.
+
+```bash
+python -m experiments.data_ground_truth.statsbomb_player_crosswalk \
+  --declared-aliases \
+  --fpl-names-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/raw-history-2015 \
+  --baseline-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/statsbomb-alias-crosswalk-v2 \
+  --statsbomb-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/statsbomb-open-g67 \
+  --fixture-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/statsbomb-fixture-crosswalk-v2 \
+  --archive-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/raw-history-v2 \
+  --package /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/training-datasets/d4baf849fb4a051be103f8c469e61a4753edb0b4004f980a000fe5c86ef573db \
+  --out /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/statsbomb-fpl-name-crosswalk-v2
+```
+
+Reporte y cuatro artefactos reproducidos byte por byte en v3. Suite completa:
+**1.634 passed, 1 skipped, 79 deselected** (32,76 s).
+[Resultados G71](results-g71.json). Se conserva la comparación explícita contra
+G70 y se versiona el hash del manifiesto de fichas FPL. Los artefactos con filas
+individuales permanecen locales. GT v7, G55 y producción siguen intactos; no hay
+nuevas etiquetas, admisión comercial, entrenamiento ni redistribución del corpus.
+Queda contrastar las 183 apariciones pendientes y la semántica de los eventos.
