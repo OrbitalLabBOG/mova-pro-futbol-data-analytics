@@ -1,0 +1,46 @@
+{
+  "version": "historical-data-g97",
+  "audit": {
+    "rows": 10858,
+    "unknown_minutes": 408,
+    "unknown_minutes_with_forecast": 408,
+    "unknown_minutes_without_any_selected_outcome": 408,
+    "unknown_minutes_gameweeks": [
+      38
+    ],
+    "known_minutes_missing_points": 61,
+    "new_observed_labels": 0,
+    "null_to_zero_admitted": false,
+    "training_admitted": false,
+    "limitations": [
+      "forecast_presence_is_not_an_observed_outcome",
+      "source_code_does_not_prove_which_path_created_each_archived_row",
+      "selected_outcome_columns_not_a_complete_row_provenance_trace"
+    ],
+    "version": "differential-null-lineage-v1",
+    "database_sha256": "e4f1e637702f69cfa513a5719b05f87bb0aab47ddd2cd4864b40d567c1ac9f80",
+    "source": {
+      "repository": "sjp4/differentialfpl",
+      "revision": "6bb3366343998ac016f6a3120e9cba9a3f0037eb",
+      "path": "Differential/src/com/pennas/fpl/process/ProcessPlayer.java",
+      "url": "https://raw.githubusercontent.com/sjp4/differentialfpl/6bb3366343998ac016f6a3120e9cba9a3f0037eb/Differential/src/com/pennas/fpl/process/ProcessPlayer.java",
+      "sha256": "8cd1efb7e89f99b4bde88885cdd0bf0fa7b27dacd62fae55ad7475850a705e6f",
+      "bytes": 57754,
+      "fetched_at": "2026-09-06T21:02:50.913927+00:00",
+      "available_at": null,
+      "time_semantics": "retrospective_unknown_publication",
+      "eligible_predeadline": false
+    },
+    "source_manifest_sha256": "76ddc953e83091ec1702e7ca0d0633796ec2139a9b4dd749329b1464d6126538",
+    "implementation_sha256": "8577e9a2c9060387b7adbebdda72593582774e24fa6a1a3aac7398fdb3c16257",
+    "artifacts": {
+      "unknown_rows.json": "5ab95e6e25aa9287d26e6320d32d077c2c9037460b1aad8ec773ff6a6d006c5a",
+      "code_evidence.json": "43cfce1b0465ed05f081385c163d5947e64486c09332c27f5f9056849b4afa84"
+    }
+  },
+  "report_sha256": "184ec110a2376f6ff4b319cced09243cb2675232ac8c55ca6c87f671588b6912",
+  "reproduction_identical": true,
+  "partial_label_package_unchanged": true,
+  "complete_gt_unchanged": true,
+  "production_changed": false
+}

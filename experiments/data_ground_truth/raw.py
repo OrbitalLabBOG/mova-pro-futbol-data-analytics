@@ -101,6 +101,7 @@ def select(repo: str, path: str) -> bool:
             'Differential/src/com/pennas/fpl/scrape/ScrapeMatchScoresCatchup.java',
             'Differential/src/com/pennas/fpl/scrape/ScrapeMatchScores_New.java',
             'Differential/src/com/pennas/fpl/util/DbGen.java',
+            'Differential/src/com/pennas/fpl/process/ProcessPlayer.java',
         }
     if repo == REPOS[7]:
         return bool(re.fullmatch(r'PlayersInfo/[0-9]+\.json', path))

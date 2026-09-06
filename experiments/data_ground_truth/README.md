@@ -5492,3 +5492,38 @@ sin contarlas como cobertura de etiquetas adicional. GT v7, paquete parcial G94 
 producción permanecen intactos. Los nuevos originales quedan fuera del corte G92.
 
 Suite completa G96: **1.699 passed, 1 skipped, 79 deselected**, 35,36 s.
+
+## G97 — procedencia de los NULL de Differential
+
+El corte del 6 de septiembre de 2026 verifica la base original por SHA256 y añade
+`ProcessPlayer.java` (57.754 bytes) del mismo commit fijado de
+`sjp4/differentialfpl`. Se preserva como texto, sin ejecutar código de terceros.
+Las líneas 1116–1131 escriben identidad, jornada, equipos y `pred_total_pts` mediante
+`db.replace`; el bloque no escribe minutos ni puntos observados. Esto documenta
+una ruta de escritura de pronósticos, pero no demuestra qué ejecución produjo
+cada fila histórica.
+
+En las 10.858 filas originales de 2013/14, los **408 minutos desconocidos** están
+exclusivamente en GW38. Todos tienen un pronóstico presente y todos carecen de
+valor en los 12 campos observados inspeccionados: minutos, puntos, goles,
+asistencias, bonus, concedidos, penaltis salvados/fallados, tarjetas, paradas y
+autogoles. El artefacto conserva únicamente la presencia del pronóstico, nunca su
+valor como etiqueta. Ninguna de estas filas puede declararse cero por ese motivo.
+
+La base original tiene 61 apariciones con minutos conocidos y puntos desconocidos;
+G89 recuperó 52 mediante JSON observado y G94 ya conserva esas recuperaciones.
+Por eso siguen siendo **nueve** pendientes en el paquete parcial actual, no 61.
+Este gate no modifica el paquete ni añade etiquetas. La falta de traza de ejecución
+impide distinguir con certeza un cero omitido de un resultado nunca recogido.
+
+```bash
+python -m experiments.data_ground_truth.differential_null_lineage \
+  --base "$DATA_BASE" --out "$DATA_BASE/differential-null-audit-g97-new"
+```
+
+`results-g97.json` fija hashes del original, fuente Java, implementación y dos
+artefactos. Reporte y artefactos se reprodujeron byte por byte en v1/v2. Las pruebas
+separan cero explícito, resultado parcial y NULL con pronóstico. Los nuevos crudos
+quedan fuera del corte restaurable G92; GT v7, G94 y producción siguen intactos.
+
+Suite completa G97: **1.701 passed, 1 skipped, 79 deselected**, 43,19 s.

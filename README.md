@@ -19,6 +19,10 @@ El cockpit read-only comparte un único contrato entre CLI y API. Su dashboard e
 sólo expone tres indicadores humanos; diagnóstico, métricas y JSON permanecen en loopback.
 Supabase sólo refleja seguimiento PM y nunca recibe estado operativo.
 
+G97: la auditoría de procedencia encuentra pronósticos, pero ningún resultado en
+12 campos observados de los 408 registros incompletos de GW38 2013/14. No se
+imputan ceros ni aumenta la cobertura; ver el [registro de datos](experiments/data_ground_truth/README.md).
+
 ## Versiones y última comprobación
 
 Verificado el **5 de septiembre de 2026, 17:13 Colombia**: doctor FPL con
