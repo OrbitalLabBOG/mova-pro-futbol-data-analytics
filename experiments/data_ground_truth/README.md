@@ -5103,3 +5103,62 @@ El siguiente paso es resolver con evidencia independiente las nueve apariciones
 restantes y validar el universo de jugadores antes de consolidar una temporada.
 
 Verificación G89: **1.685 passed, 1 skipped, 79 deselected**, 34,22 s.
+
+
+## G90 — Archivo sucesor 2014/15, deduplicación y estados sin marcador
+
+La búsqueda consultó dos listados de repositorios creados en 2013–2014 e
+inspeccionó nueve árboles fijados por SHA. Las respuestas y árboles quedan en
+`historical-discovery-g90`, con hashes en [resultados G90](results-g90.json).
+No apareció en esos candidatos un archivo posterior de 2013/14 que resolviera
+GW34. Esto delimita la búsqueda realizada; no demuestra inexistencia de otras fuentes.
+
+Se encontró `keithxm23/fplassistantv2`, revisión de árbol
+`9a19447b0072fa145f5083b40b19fde5972d7006`. Se adquirieron las 44 revisiones de
+`data.json` devueltas por la historia consultada (una página de hasta 100):
+97.136.875 bytes, fechas nominales de commit entre 15-08-2014 y 02-10-2014.
+El último cambio de datos es `fd5b8c6f331b571cb37b02d3d0ac3804153beca6`.
+Los datos crudos se conservan en `early-fpl-successor-g90`; no se ejecutó código
+archivado ni se adquirieron configuraciones. Una captura inicial del HEAD queda
+como receipt adicional y comparte contenido con la última revisión de datos;
+los conteos siguientes corresponden a las 44 revisiones de la historia.
+
+| Medida | Resultado |
+| --- | ---: |
+| Contenidos distintos en las 44 revisiones | 44 |
+| Contenidos idénticos a G88 | 14 |
+| Contenidos nuevos frente a G88 | 30 |
+| Versiones conciliadas por el normalizador estricto | 36 |
+| Versiones sin historial de partidos | 1 |
+| Versiones con filas sin marcador que no concilian | 7 |
+| Último snapshot: perfiles / filas / partidos | 617 / 3.596 / 60 |
+| Jornadas representadas en el último snapshot | GW1–6 |
+
+Las 3.596 filas del último archivo ya existen en GT v7 y coinciden en minutos,
+puntos y jornada. Se conservan seis diferencias de código de jugador; no se
+promueven identidades por igualdad de resultados. La suma de puntos del historial
+concuerda con el total del snapshot, sin atribuirle cobertura final de temporada.
+
+Siete revisiones contienen rivales sin marcador final. El inventario conserva la
+razón del rechazo del normalizador y no las cuenta como snapshots conciliados.
+La captura sin historia conserva perfiles; sus ceros no se convierten en partidos
+inventados. Todos los originales permanecen disponibles para análisis de estados,
+incluidos los que no pueden usarse como etiquetas finales.
+
+```bash
+python -m experiments.data_ground_truth.early_successor_archive \
+  --base "$DATA_BASE" --out "$DATA_BASE/early-successor-audit-g90-new"
+```
+
+Reporte, `snapshots.json` y `latest-labels.csv` idénticos byte por byte en v1/v2.
+La validación exige conjunto exacto de revisiones, fuente/path esperados y hashes
+y tamaños de los originales. Las pruebas cubren revisiones duplicadas, fuentes
+incorrectas, perfiles sin historia y filas sin marcador que impiden conciliación.
+Los relojes Git no prueban publicación antes del deadline ni captura atómica.
+
+El aporte es un archivo de estados más amplio para 2014/15, no nuevas etiquetas
+únicas del GT ni recuperación de la GW34 de 2013/14. GT v7, runtime y corte portable
+G87 permanecen intactos; G88–G90 siguen fuera de ese corte inmutable. El siguiente
+trabajo debe mantener la búsqueda de 2013/14 y conciliar las identidades discrepantes.
+
+Suite completa G90: **1.687 passed, 1 skipped, 79 deselected**, 35,63 s.

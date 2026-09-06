@@ -111,7 +111,7 @@ de modelos por hash y exportación revisable, sin promover modelos al runtime.
 
 La capa experimental conserva los datos crudos fuera de Git, con manifiestos,
 SHA-256, fuentes fijadas por commit y auditorías reproducibles. El
-[registro de gates G1–G89](experiments/data_ground_truth/README.md) contiene
+[registro de gates G1–G90](experiments/data_ground_truth/README.md) contiene
 adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 
 | Capa | Cobertura verificada | Límite pendiente |
@@ -245,6 +245,12 @@ diferencias en valores conocidos, 9.807 ceros explícitos adicionales y 52 punto
 faltantes recuperables como candidatos; quedan nueve apariciones con puntos
 desconocidos sin resolver. No aumenta todavía el número
 de temporadas del GT. [Resultados G88](experiments/data_ground_truth/results-g88.json).
+
+G90 preserva otras 44 versiones de estados 2014/15, de las cuales 30 tienen
+contenido nuevo frente a G88. El último archivo cubre GW1–6 y sus 3.596 filas
+coinciden con GT v7 en minutos, puntos y jornada; seis diferencias de código
+permanecen pendientes. Siete versiones no concilian por filas sin marcador.
+[Resultados G90](experiments/data_ground_truth/results-g90.json).
 
 ## Empezar
 

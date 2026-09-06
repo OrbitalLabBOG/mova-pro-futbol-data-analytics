@@ -18,7 +18,7 @@ REPOS = ('vaastav/Fantasy-Premier-League', 'olbauday/FPL-Core-Insights',
          'imadeddine-belkat/Premier-League-Stats', 'TopMarxFPL/fpl-mirror', 'durtal/fantasysocceR',
          'prathmesh/Fantasy-Premier-League-Points-Predictor', 'clwatkins/fantasy_premier_league',
          'mvbfontes/premierleaguedatasets', 'sjp4/differentialfpl',
-         'darrenvong/fpl-data-visualiser', 'Randdalf/fplcache', 'Schwetche/fpl_project', 'hudl/open-data', 'lifebeyondfife/FantasyFootball', 'keithxm23/fplPlayer', 'keithxm23/fplassistant')
+         'darrenvong/fpl-data-visualiser', 'Randdalf/fplcache', 'Schwetche/fpl_project', 'hudl/open-data', 'lifebeyondfife/FantasyFootball', 'keithxm23/fplPlayer', 'keithxm23/fplassistant', 'keithxm23/fplassistantv2')
 
 
 def digest(data: bytes) -> str:
@@ -73,7 +73,7 @@ def select(repo: str, path: str) -> bool:
         return True
     if repo == 'keithxm23/fplPlayer':
         return path in {'data.json', 'fplplayers.py'}
-    if repo == 'keithxm23/fplassistant':
+    if repo in {'keithxm23/fplassistant', 'keithxm23/fplassistantv2'}:
         return path in {'data.json', 'README.rdoc', 'db/schema.rb'}
     if repo == 'lifebeyondfife/FantasyFootball':
         return path == 'LICENCE.txt' or path in {
