@@ -4234,3 +4234,79 @@ Suite completa: **1.646 passed, 1 skipped, 79 deselected** (43,24 s).
 [Resultados G75](results-g75.json). Sin etiquetas nuevas ni cambios en GT v7,
 bundle G55 o producción. El siguiente trabajo debe resolver la evidencia de
 identidades restantes y las brechas temporales, sin rebajar los controles.
+
+## G76 — Grafía de Ki y nombre registrado de Krul
+
+Se adquirieron dos documentos nuevos (**1.314.603 bytes**) para contrastar nombres:
+
+- [Nota de Premier League sobre Swansea–Palace, 24 de noviembre de 2016](https://www.premierleague.com/en/news/144194):
+  usa `Ki Sung-yeung` en el resumen y `Ki Sung-yueng` en el cuerpo para la misma
+  ausencia del jugador. Se registra como variante observada en ese contexto,
+  sin declarar una grafía correcta ni normalizar errores similares de otros nombres.
+- [FIFA, List of Players del Mundial 2014](https://www.fifadata.com/document/fwc/2014/pdf/fwc_2014_squadlists.pdf):
+  página PDF 25, fila 23 de Países Bajos. Las columnas distinguen el nombre mostrado
+  `Tim KRUL`, apellido y nombres registrados `Timothy Michael`. Se revisó también
+  la página renderizada para comprobar la alineación de las columnas.
+
+El registro explícito de equivalencias pasa a versión 2 y cinco entradas. Los
+bytes originales siguen fuera de Git. `pdf_text_evidence.py` permite reproducir
+la extracción con **pypdf 6.7.4** en entorno aislado; no añade esa dependencia al
+runtime de producción. La extracción conserva 32 páginas separadas, hash del PDF,
+hash del texto, versión del extractor y hash del código. El cargador verifica
+ambos artefactos y exige la fila revisada una sola vez en la página registrada;
+no acepta una coincidencia en otra página ni texto alterado.
+
+```bash
+uv run --no-project --with pypdf==6.7.4 python \
+  -m experiments.data_ground_truth.pdf_text_evidence \
+  --root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/identity-name-evidence-g76 \
+  --pdf-sha d4d77dded0c7d0b51ecfb705052e189ad26f216434526502423880659844fb44
+```
+
+La extracción produce **77.758 bytes**, SHA-256
+`73ff887bc0b1a1443d81ac4e814f80d12983aa327057bfbcfaf8d639eb7ebbe3`;
+texto y metadata se reprodujeron. La fecha impresa en un documento no se convierte
+en disponibilidad predeadline acreditada. Se usan únicamente nombres para
+identidad retrospectiva, sin importar métricas internacionales como etiquetas FPL.
+
+| Métrica | G75 | G76 |
+| --- | ---: | ---: |
+| Identidades aceptadas para investigación | 499 | 501 |
+| Apariciones positivas cubiertas | 10.361/10.469 | 10.397/10.469 |
+| Apariciones pendientes | 108 | 72 |
+| Enlaces anteriores perdidos/cambiados | — | 0 |
+
+Se recuperan **36 apariciones**: Ki 28 y Krul 8, alcanzando **99,31%** de cobertura
+positiva. Quedan 21 apariciones de Elliot, cuatro de Byram y 47 jugadores con
+una sola aparición. La revisión de las fuentes no autorizó todavía equivalencias
+nuevas para Elliot o Byram. No se generalizan apodos ni se reduce el umbral de
+dos partidos para cerrar artificialmente el resto.
+
+Con baseline `statsbomb-reviewed-names-v1` y `--name-evidence-root` apuntando a
+`identity-name-evidence-g76`, el comando G75 produce `statsbomb-spelling-names-v1`.
+Reporte y cinco artefactos son idénticos byte por byte al repetir en v2.
+Los demás argumentos fuente y `--recover-missing-codes` se conservan.
+
+### Discrepancia adicional visible tras recuperar identidad
+
+El auditor posterior de goles compara **13.094 filas**: goles 13.082 concordantes
+y doce distintos; autogoles 13.086 concordantes y ocho distintos. En casos no cero:
+869/881 goles y 30/38 autogoles concordantes. El marcador interno sigue 760/760.
+
+La diferencia adicional es Ki, fixture archivado 803231: StatsBomb cuenta un
+autogol y FPL cero. Antes se excluía por identidad no resuelta. No se interpreta
+como error del GT. Se volvió a ejecutar `legacy_scoring_audit.py` con este contraste:
+**24.741/24.741 filas** cuadran con la fórmula histórica declarada, incluidas las
+**20 filas discrepantes**. Sustituir sólo goles/autogoles rompe los veinte totales;
+sigue siendo un diagnóstico parcial, no una puntuación alternativa completa.
+
+Resultados posteriores locales: `statsbomb-spelling-names-goals-v1` y
+`statsbomb-spelling-names-scoring-v1`. El contraste conserva las restricciones de
+investigación de **StatsBomb Open Data (Hudl)**, sin admisión comercial,
+entrenamiento ni redistribución raw.
+
+<img src="https://static.hudl.com/craft/productAssets/statsbomb_icon.svg" alt="Hudl StatsBomb" width="40" height="40">
+
+Suite completa: **1.648 passed, 1 skipped, 79 deselected** (35,04 s).
+[Resultados G76](results-g76.json). GT v7 permanece en 303.126 filas y doce
+temporadas; G55 y producción intactos. No se añadieron etiquetas FPL.
