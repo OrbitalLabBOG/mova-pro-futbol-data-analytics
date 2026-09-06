@@ -1,0 +1,200 @@
+{
+  "version": "historical-data-g101",
+  "audit": {
+    "version": "profile-history-reconciliation-v1",
+    "source_inventory_sha256": "90cff64bf4519ec925335ddfae8dd8d273881cfef15db5768bb5c17b77042f25",
+    "implementation_sha256": "756cdf319af5c4d48b8f8f69ce7121b722975ff32568104a26027c776ce6bf1d",
+    "gt_dataset_id": "e0b5ab38c46df8eae793742421965cf80665764cbbf23dfcb99e3c8b50247998",
+    "gt_manifest_sha256": "9a71bb11bf6ed5351b2084e104b7b4e8e279995d2f3d25cd8a095989af50798e",
+    "fixture_sha256": {
+      "2014": "4f6c42e636040f1910a914e4c7c4d43aa4a81a00af5549daefe62b28345ed51f",
+      "2015": "7b1c5b8cc70e551413b981a58988fee9205fc7987ec2ba5745c93d8aa69d3a66"
+    },
+    "source_snapshots": 2579,
+    "valid_schema_snapshots": 2572,
+    "projections": 253,
+    "statuses": {
+      "reconciled": 62,
+      "unreconciled": 177,
+      "no_history": 14
+    },
+    "coverage": {
+      "2014-15": {
+        "unique_player_fixture_keys": 24876,
+        "gt_rows": 24876,
+        "overlap_keys": 24876,
+        "missing_gt_keys": 0,
+        "gt_keys_without_reconciled_history": 0
+      },
+      "2015-16": {
+        "unique_player_fixture_keys": 7184,
+        "gt_rows": 24741,
+        "overlap_keys": 7182,
+        "missing_gt_keys": 2,
+        "gt_keys_without_reconciled_history": 17559
+      }
+    },
+    "disagreement_rows": 599,
+    "conflict_counts": {
+      "minutes_conflict": 479,
+      "points_conflict": 500,
+      "gameweek_conflict": 0,
+      "code_conflict": 0,
+      "missing_in_gt": 4
+    },
+    "training_admitted": false,
+    "gt_changed": false,
+    "production_changed": false,
+    "limitations": [
+      "one_representative_per_history_projection",
+      "mutable_profile_totals_and_codes_not_validated_for_every_member",
+      "fixture_match_does_not_prove_finalized_observation",
+      "disagreements_not_automatically_GT_errors",
+      "nominal_capture_times_not_publication_proof"
+    ],
+    "artifacts": {
+      "projections.json": "08f70aad700cf4fbc5ee9d93e415075da61c6918a3cbc3e599bd8f1485bcc625",
+      "disagreements.csv": "c6f0ef7037f62476c22cec7a641045930dd2bdb6e574534fadba7c2bfeabca70"
+    }
+  },
+  "report_sha256": "a0ea2f7a0a370527728aaee7dfae74dbda7d93b7453831ab015b7f2ea6134f10",
+  "reproduction_identical": true,
+  "unique_disagreement_keys": 581,
+  "reconciled_projections_by_season": {
+    "2015-16": 30,
+    "2014-15": 32
+  },
+  "missing_gt_candidates": [
+    {
+      "season": "2015-16",
+      "element": 201,
+      "fixture": 803201,
+      "code": 77454,
+      "web_name": "Borini",
+      "source_path": "data/players.1440950760.json",
+      "source_sha256": "b6d7a5d74f705ed3df9bdd5e733b64818c885d92b1f121ee9dc86f490ab43421",
+      "source_history_row": [
+        "29 Aug 15:00",
+        4,
+        "WHU(H) 0-3",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        -190,
+        54,
+        0
+      ],
+      "training_admitted": false
+    },
+    {
+      "season": "2015-16",
+      "element": 231,
+      "fixture": 803196,
+      "code": 37642,
+      "web_name": "Evans",
+      "source_path": "data/players.1440950760.json",
+      "source_sha256": "b6d7a5d74f705ed3df9bdd5e733b64818c885d92b1f121ee9dc86f490ab43421",
+      "source_history_row": [
+        "30 Aug 16:00",
+        4,
+        "SWA(A) 0-0",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        -739,
+        48,
+        0
+      ],
+      "training_admitted": false
+    },
+    {
+      "season": "2015-16",
+      "element": 201,
+      "fixture": 803201,
+      "code": 77454,
+      "web_name": "Borini",
+      "source_path": "data/players.1440957959.json",
+      "source_sha256": "d72ee9a973f8d3db35f63fb70f6ce6f92dc3611c074409324ac823c4d4b6d7ec",
+      "source_history_row": [
+        "29 Aug 15:00",
+        4,
+        "WHU(H) 0-3",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        -190,
+        54,
+        0
+      ],
+      "training_admitted": false
+    },
+    {
+      "season": "2015-16",
+      "element": 231,
+      "fixture": 803196,
+      "code": 37642,
+      "web_name": "Evans",
+      "source_path": "data/players.1440957959.json",
+      "source_sha256": "d72ee9a973f8d3db35f63fb70f6ce6f92dc3611c074409324ac823c4d4b6d7ec",
+      "source_history_row": [
+        "30 Aug 16:00",
+        4,
+        "SWA(A) 1-2",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        -739,
+        48,
+        0
+      ],
+      "training_admitted": false
+    }
+  ],
+  "unreconciled_reason_counts": {
+    "unrecognized opponent format": 177
+  }
+}

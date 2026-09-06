@@ -19,6 +19,10 @@ El cockpit read-only comparte un único contrato entre CLI y API. Su dashboard e
 sólo expone tres indicadores humanos; diagnóstico, métricas y JSON permanecen en loopback.
 Supabase sólo refleja seguimiento PM y nunca recibe estado operativo.
 
+G101: de 253 variantes de historial, 62 se reconcilian con fixtures y totales.
+La comparación con GT v8 conserva 599 discrepancias de estado y dos claves
+candidatas ausentes (ambas 0/0); no se incorporan automáticamente al GT.
+
 G100: colección cruda de 2.579 snapshots adquirida (17,06 GB), con hashes
 verificados. Auditoría distingue 2.572 estructuras válidas, dos vacíos y cinco
 JSON inválidos; no implica nuevas etiquetas ni disponibilidad predeadline.

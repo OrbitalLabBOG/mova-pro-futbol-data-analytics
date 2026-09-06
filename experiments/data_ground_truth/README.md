@@ -5668,3 +5668,57 @@ byte. Pruebas completas: **1.708 passed, 1 skipped, 79 deselected**, 35,39 s.
 GT v8, paquete parcial G94, entrenamiento y producción permanecen intactos.
 No se añade una temporada completa al GT en este gate. El archivo G100 todavía
 está fuera del corte restaurable G92. `results-g100.json` fija hashes y límites.
+
+## G101 — reconciliación de variantes de historial contra GT v8
+
+Se toma **un representante por cada una de las 253 proyecciones de historial**
+de G100. No se afirma que los totales o códigos mutables de todos los miembros de
+cada grupo hayan sido validados. Cada representante se verifica por SHA256 y por
+su proyección; se intenta una correspondencia única con los calendarios 2014/15 y
+2015/16 y se exige que el total del perfil coincida con la suma del historial.
+Los fixtures y GT v8 se fijan por hashes, sin seguir un pointer mutable.
+
+| Resultado por proyección | Cantidad |
+| --- | ---: |
+| Reconciliada | 62 |
+| No reconciliada por formato del rival | 177 |
+| Sin filas de historial | 14 |
+
+Las 62 reconciliadas se reparten en 32 de 2014/15 y 30 de 2015/16. Su unión cubre
+las **24.876 claves jugador-partido de GT 2014/15**. Para 2015/16 cubre **7.184
+claves**, de las cuales 7.182 existen en GT y **dos están ausentes**. Las 17.559
+claves restantes del GT de esa temporada no aparecen en los representantes
+reconciliados; este conteo no demuestra ausencia en todos los crudos adquiridos.
+
+Las dos candidatas nuevas son Borini (FPL 201, código 77454), Liverpool–West Ham,
+fixture 803201, y Evans (FPL 231, código 37642), Swansea–Manchester United, fixture
+803196, ambas GW4 2015/16 y ambas con **0 minutos / 0 puntos**. Aparecen en dos
+representantes y se conservan como cuatro registros de evidencia, no cuatro
+observaciones independientes. No se agregan al GT: todavía falta establecer la
+naturaleza del registro y su persistencia; fecha nominal y correspondencia de
+fixture no prueban una observación final ni elegibilidad del jugador.
+
+Hay **599 registros de discrepancia**, que abarcan 581 claves jugador-partido:
+479 discrepancias de minutos, 500 de puntos, cero de jornada y cero de código,
+más las cuatro apariciones de las dos claves ausentes. Las categorías se solapan.
+Estos conteos comparan estados contra resultados finales; no equivalen a errores
+del GT. Cada discrepancia conserva ambos valores y su proyección de origen.
+
+Los 177 rechazos son por formato del rival. En las muestras inspeccionadas aparecen
+entradas como `SUN(H) `, sin marcador; se retiene el crudo y no se eliminan ni
+completan filas silenciosamente. La revisión de resultados provisionales y la
+separación de filas de partidos pendientes quedan para un gate posterior.
+
+```bash
+python -m experiments.data_ground_truth.profile_history_reconciliation \
+  --base "$DATA_BASE" --out "$DATA_BASE/profile-history-audit-g101-new"
+```
+
+`projections.json` permite seguir cada representante y motivo de rechazo;
+`disagreements.csv` conserva diferencias y ausencias. Reporte y ambos artefactos
+se reproducen byte por byte. Las pruebas exigen temporada inequívoca, totales
+reales del perfil y preservación de diferencias sin reparación automática.
+GT v8, paquete parcial G94, entrenamiento y producción permanecen intactos;
+no hay admisión predeadline ni nuevas temporadas completas.
+
+Suite completa G101: **1.710 passed, 1 skipped, 79 deselected**, 38,26 s.
