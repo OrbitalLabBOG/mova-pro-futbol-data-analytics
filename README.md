@@ -111,7 +111,7 @@ de modelos por hash y exportación revisable, sin promover modelos al runtime.
 
 La capa experimental conserva los datos crudos fuera de Git, con manifiestos,
 SHA-256, fuentes fijadas por commit y auditorías reproducibles. El
-[registro de gates G1–G87](experiments/data_ground_truth/README.md) contiene
+[registro de gates G1–G88](experiments/data_ground_truth/README.md) contiene
 adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 
 | Capa | Cobertura verificada | Límite pendiente |
@@ -236,6 +236,13 @@ G42 audita 620 perfiles del dump histórico 2015/16 y deriva GT v7 mediante
 código y nombre completo coincidentes. Conserva los paquetes padres y reproduce
 los quince archivos en una raíz independiente.
 [Resultados G42](experiments/data_ground_truth/results-g42.json).
+
+G88 añade archivos parciales de 2013/14 (17.805 filas, 291/380 partidos) y
+2014/15 (1.756 filas, GW1–3), más 19 versiones históricas del segundo archivo.
+Las filas de 2014/15 coinciden con GT v7 en minutos, puntos y jornada; persisten
+tres diferencias de código de jugador. La aportación única de 2013/14 frente
+a Differential sigue pendiente de conciliación. No aumenta todavía el número
+de temporadas del GT. [Resultados G88](experiments/data_ground_truth/results-g88.json).
 
 ## Empezar
 
