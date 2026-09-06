@@ -1,0 +1,211 @@
+{
+  "version": "historical-crosswalk-g4",
+  "archive": {
+    "version": "archive-crosswalk-v1",
+    "seasons": {
+      "2009-10": {
+        "fixtures": 380,
+        "rows": 13593,
+        "missing_identity_rows": 227,
+        "invalid_minutes_rows": 0,
+        "observed_minutes_label_rows": 10193,
+        "fixture_source_sha256": "98eef082f80b38fc9d1df2718d5444ac17e9e0def1677640bfb831501fcb3218",
+        "players_source_sha256": "183de064402c60e9ab2acf34788d0e094e51bf0e206736099c33f4b956551b17",
+        "fixture_crosswalk_sha256": "323d168f69649e8ee94b04c639732c35126356a7b8867615b2a8d506c8318665",
+        "observation_sha256": "36b00f892bec1fc1e9321034063e945e774c7ca9049f8973787cfb04de04edcc"
+      },
+      "2010-11": {
+        "fixtures": 380,
+        "rows": 13655,
+        "missing_identity_rows": 147,
+        "invalid_minutes_rows": 0,
+        "observed_minutes_label_rows": 10238,
+        "fixture_source_sha256": "bfd9b2815835fbbae48a582c37ec1733c42c601f97767d95638479afe00b4688",
+        "players_source_sha256": "a7ffaffa01e9e63a4f567ed429dc73dc9781257dd9d3f3c1a043bbd9cbcbea3f",
+        "fixture_crosswalk_sha256": "0a02aeb9ae4872593241adb40867dad1d0bd4c91355e9c4529df44afa090f98f",
+        "observation_sha256": "bb342117aa25be89c545777a89a6485c48b41c6d9f2a5e12ac7e9635c9cba197"
+      },
+      "2011-12": {
+        "fixtures": 380,
+        "rows": 13675,
+        "missing_identity_rows": 140,
+        "invalid_minutes_rows": 0,
+        "observed_minutes_label_rows": 10276,
+        "fixture_source_sha256": "b2c1693cc4ba2c747210c7f69c9fe34eaef08d042e609474cb24c10d0c3d8dca",
+        "players_source_sha256": "1b72f43d9d43db9fba45c943cb36a1f0ceebb0ccbc3e2f32ca74037a1d8c5511",
+        "fixture_crosswalk_sha256": "16b520119854c0d2a6093ea73ded58451f1f1b752275218f527654a683ccac3d",
+        "observation_sha256": "2ef972e5f00462250106d4f808944621b511646109ac3a69ddce8cb891ea5d92"
+      },
+      "2012-13": {
+        "fixtures": 380,
+        "rows": 13676,
+        "missing_identity_rows": 137,
+        "invalid_minutes_rows": 0,
+        "observed_minutes_label_rows": 9503,
+        "fixture_source_sha256": "7c3bf7c91e4f9f5cb8825c1e37cf372b03ef51f5da0157993dea677960a22db2",
+        "players_source_sha256": "c1cc821c6591631f10f7b6078cb4eb6d9512a1d446ef9accd046a871de45da2f",
+        "fixture_crosswalk_sha256": "c0468e28e50667f45092e850d0d3c1fd0b5dceb597d147030a01c1e754dd2cef",
+        "observation_sha256": "e6ab8f4f2bfc952621a84b455abae961a12bc86a31764b239bd02c3a0e388a76"
+      },
+      "2013-14": {
+        "fixtures": 380,
+        "rows": 13679,
+        "missing_identity_rows": 176,
+        "invalid_minutes_rows": 0,
+        "observed_minutes_label_rows": 10300,
+        "fixture_source_sha256": "cae54cded8ed41bf60d44401f8f7626b8f3ac3bf3f107b4751cb5783653cb26a",
+        "players_source_sha256": "e44e957e4cb435170ad375584126c38f4d58dc5edcd4eadf19a9559c71adedb4",
+        "fixture_crosswalk_sha256": "788522202efa1a9966a77513357996311aac64574e27a1fd6d6447a027bbb6be",
+        "observation_sha256": "bede257ad0af4b852b330481c3951f38fa3f2690a4864d4d14b5b4aa9be11ce1"
+      },
+      "2014-15": {
+        "fixtures": 380,
+        "rows": 13674,
+        "missing_identity_rows": 142,
+        "invalid_minutes_rows": 0,
+        "observed_minutes_label_rows": 10245,
+        "fixture_source_sha256": "4f6c42e636040f1910a914e4c7c4d43aa4a81a00af5549daefe62b28345ed51f",
+        "players_source_sha256": "b1bf5463b4c55b5a75b620821dc24fdee862f6d71d0e67146aa7eac2bd69e05a",
+        "fixture_crosswalk_sha256": "2be0da82c66f2f06d7996892c5021a51c93a813d83f9b7b3db0c597db8af3b11",
+        "observation_sha256": "28b91df6a23cd75ba3c07b1c90594e35870050f48ec741b3c607dfa63630822c"
+      },
+      "2015-16": {
+        "fixtures": 380,
+        "rows": 13678,
+        "missing_identity_rows": 76,
+        "invalid_minutes_rows": 0,
+        "observed_minutes_label_rows": 10437,
+        "fixture_source_sha256": "7b1c5b8cc70e551413b981a58988fee9205fc7987ec2ba5745c93d8aa69d3a66",
+        "players_source_sha256": "701f165f3fad11899df1c3e75daadabe49d3378bbbad0a7c434b9269a7032459",
+        "fixture_crosswalk_sha256": "e83dc1964799f8fbac3ca0f42cb1b9745f819d922e3c283bcb9109e22a494e50",
+        "observation_sha256": "372cf81ada5d8fb8e2e41dcc324c9164402c422acd6453a55c2c40fc6018ebce"
+      },
+      "2016-17": {
+        "fixtures": 380,
+        "rows": 13675,
+        "missing_identity_rows": 137,
+        "invalid_minutes_rows": 0,
+        "observed_minutes_label_rows": 10391,
+        "fixture_source_sha256": "103c885259b324360ea95130501bba73b5e2e9b26c6b870d87eb1cd21d952237",
+        "players_source_sha256": "6c23b6fe6711dba28b029c54f65d448eb70372c105c920d4439604a35b17b6cd",
+        "fixture_crosswalk_sha256": "e955ca56d2e6bccd00fd31e8f0c5917732f7b80b82ada18ff9adbb3464849bf1",
+        "observation_sha256": "c7f36ccc5a746095fcd35b9de51074713e1d269877186e968801e487f2732d5d"
+      },
+      "2017-18": {
+        "fixtures": 380,
+        "rows": 13675,
+        "missing_identity_rows": 92,
+        "invalid_minutes_rows": 0,
+        "observed_minutes_label_rows": 10397,
+        "fixture_source_sha256": "09d9b417cc9f528fcd44af150c7e3c0dc92d2555db57f28ba722fdb5f5447a09",
+        "players_source_sha256": "5c5cb8c07d8fd8f8c3c655d20c1dc2c489b47dc475e734cd4bcb8def616d9aed",
+        "fixture_crosswalk_sha256": "6ecb7ee612c51d1485746b367e45cf9ab69c2ae85e51816460fd8933f602a949",
+        "observation_sha256": "f777b782f27e4fb9e495876d09ce1ddfef76810148b54c290dda3a4b9dc08d57"
+      },
+      "2018-19": {
+        "fixtures": 380,
+        "rows": 13679,
+        "missing_identity_rows": 30,
+        "invalid_minutes_rows": 0,
+        "observed_minutes_label_rows": 10455,
+        "fixture_source_sha256": "e7870343b9e4af6e571ec409b8c762c9e61943629e51f9e32e2c782153d3f371",
+        "players_source_sha256": "c7d8d1997a452d614deea9f40267083c3b728dc1b2adab88ddbae5bcd077ec32",
+        "fixture_crosswalk_sha256": "a3d52511f8ba0678f889f54e6320fab3d1d77140311d7ac4b005a31f03c4f9a5",
+        "observation_sha256": "b9c45ab20d94cf2fa932efe7b87cfdb1f4f6e24ae5354bbd13267d07fd3e64d7"
+      },
+      "2019-20": {
+        "fixtures": 380,
+        "rows": 14034,
+        "missing_identity_rows": 202,
+        "invalid_minutes_rows": 0,
+        "observed_minutes_label_rows": 10511,
+        "fixture_source_sha256": "e1c66fca4e67907d5a3ff97beeabac82763648c73f1b54ced7e5e3c568fdcda0",
+        "players_source_sha256": "121dcb32693a3974a59e14136c8c0cab66bf958cc708329e5828eed7d9ef4ccd",
+        "fixture_crosswalk_sha256": "d60d51bc63460a31c243ce8a3ca1aaa568ac0fd15cb53fe285ae1026f6339ab6",
+        "observation_sha256": "9faff5d9ddb4e7bc0042a1eac6a80da2a150b47f71c5cf4bf2be1e253ef2f735"
+      },
+      "2020-21": {
+        "fixtures": 380,
+        "rows": 14643,
+        "missing_identity_rows": 116,
+        "invalid_minutes_rows": 0,
+        "observed_minutes_label_rows": 10353,
+        "fixture_source_sha256": "bee5fc40823acbbb0a18bb16ecb1b7be2d827980de082b6cfda1c411fbb46b1e",
+        "players_source_sha256": "61e01671a1f34c2e5d3714c77069274c1f4740e31e5b514d81266695ac3a2944",
+        "fixture_crosswalk_sha256": "4d151b8312ba7161ace00d38de7919a7ed706ed6e49a266bea454da3a1507b10",
+        "observation_sha256": "6a04b6874bc64ed28733bfcb77db95a8215659a69d55e94099a5b03dfd505eb5"
+      },
+      "2021-22": {
+        "fixtures": 380,
+        "rows": 15163,
+        "missing_identity_rows": 24,
+        "invalid_minutes_rows": 0,
+        "observed_minutes_label_rows": 10475,
+        "fixture_source_sha256": "508f988ccde236a83949a7e3a8b4086cfd9617215fa50666e51c35046aeaf714",
+        "players_source_sha256": "b41380e5b5010844edd9b033ed2a3f4c971e0d2c01d2158c4364f2189d736651",
+        "fixture_crosswalk_sha256": "ed91b0c0fb0d80bcb1a4f8a02c090ed551a4bb9fbe79bd9ba853d62218fc9ee9",
+        "observation_sha256": "a83ce14bd6a4667d60910229e0ffdbae2ee5c65f4dd2871536376a7f3ad3f8b9"
+      },
+      "2022-23": {
+        "fixtures": 380,
+        "rows": 15185,
+        "missing_identity_rows": 30,
+        "invalid_minutes_rows": 15,
+        "observed_minutes_label_rows": 11325,
+        "fixture_source_sha256": "8e6b4100aa5dbbda9c7fe559c745160cee30aab5081923ed4912c43492fd408a",
+        "players_source_sha256": "01b6cc37d1dee2fa156679b0d266e5670aaca49354a19be07aa44f277e9dd35a",
+        "fixture_crosswalk_sha256": "b425d6e1a9332fd5c51ebaa4cb966da7d895bd5c32c2d48f3c69c9f1a72a8462",
+        "observation_sha256": "eb874c12396a69031c24c6b096c47989e24286f521c7ad04e8eaa77e76a5d854"
+      },
+      "2023-24": {
+        "fixtures": 380,
+        "rows": 15180,
+        "missing_identity_rows": 17,
+        "invalid_minutes_rows": 0,
+        "observed_minutes_label_rows": 11384,
+        "fixture_source_sha256": "5a00d7a85a9f04fd95b5b77a0daba38aa8bc4e2da55c0f304f6ea565221c0182",
+        "players_source_sha256": "5d2f835fa6002185cfad71634d9ad0203d38a86ac09a2547a855554d70f95e31",
+        "fixture_crosswalk_sha256": "80202fd621d48dbd185b904dd7d63d6c01798276c5aa52548f7739772a286622",
+        "observation_sha256": "9e75fc625b1ae90c76275ee21b2cf36f9fe082be183e3807e60ea2cd2e3ea2fa"
+      },
+      "2024-25": {
+        "fixtures": 380,
+        "rows": 15188,
+        "missing_identity_rows": 151,
+        "invalid_minutes_rows": 0,
+        "observed_minutes_label_rows": 11528,
+        "fixture_source_sha256": "fe923584fe0f6fcfeea2a83040148cb7f5b7312023326817e3915df37ddb8035",
+        "players_source_sha256": "bbea3c684e8f8e6ca8f01705c4a4c2147f0efd1548d69672ecb37c5945316100",
+        "fixture_crosswalk_sha256": "9433cfb6a38e56a948c647a39a988f75bceaf48a153d0c07af97984dc50c789b",
+        "observation_sha256": "fecfda6cf719bd0b79a4b7183ba59fc5438674ddf1917485bf4940ad33f66e7a"
+      },
+      "2025-26": {
+        "fixtures": 380,
+        "rows": 15189,
+        "missing_identity_rows": 166,
+        "invalid_minutes_rows": 0,
+        "observed_minutes_label_rows": 11428,
+        "fixture_source_sha256": "a1a1023ba5aa66e46da797b085908a0a955cbd104f69667695a2f58f3635c719",
+        "players_source_sha256": "eb30fc2ffeefd780f0ba9d48ce9a07a9d1d8d398e26ebbe6d62b539a40b4926a",
+        "fixture_crosswalk_sha256": "9af7dba5df431c3a4fdf0480c64f02648be4441b16723366c82503a79f4e2d2e",
+        "observation_sha256": "01bd89a345963ba0943f8982e4a4bf724e639c8f5793c6bbdce00c045e82b96f"
+      }
+    }
+  },
+  "fpl_2014_identity": {
+    "rows": 24876,
+    "players": 711,
+    "resolved_players": 486,
+    "resolved_rows": 17769,
+    "played_rows": 10428,
+    "resolved_played_rows": 10206,
+    "minutes_disagreement_witness_rows": 3553,
+    "identity_method": "exact_name_tokens_club_fixture_two_played_witnesses_unique_code",
+    "minute_values_policy": "preserve_each_source_no_rounding_or_replacement",
+    "labels_sha256": "4cfa6a94567b333ebc79cbb108c7ccf8a9cad8da57b8c909317879cf18c65fee",
+    "unresolved_sha256": "ed36b2bc63ea5cc816259d2800633dd5a1a731a4e7d5e1b0526e689fa34f888a",
+    "evidence_sha256": "fbe683e144c012efcbb6263763ce32b8465f51e0579a6d60c5403fc12a205f6a",
+    "source_label_sha256": "4623899e536886454781ccce3b16dd97ee781a66ee7c10f0fff9fdfe03bc8a1c",
+    "source_observation_sha256": "28b91df6a23cd75ba3c07b1c90594e35870050f48ec741b3c607dfa63630822c"
+  }
+}

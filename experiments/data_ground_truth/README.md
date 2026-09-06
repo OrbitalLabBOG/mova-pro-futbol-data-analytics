@@ -208,3 +208,46 @@ que estén reconstruidas las reglas, precios predeadline o acciones legales del
 replay 2014/15. Los archivos `pastseasons*.RData` contienen resúmenes por temporada
 con sesgo de supervivencia de los jugadores presentes en el snapshot; se archivan
 pero no se cuentan como temporadas completas adicionales.
+
+## Gate G4: namespaces de partidos e identidad histórica
+
+Resultado en [results-g4.json](results-g4.json). La unión entre archivos PL exige
+una pareja local–visitante única y completa dentro de cada temporada, con ambos
+participantes presentes en los registros de jugadores. No se presume igualdad de
+IDs ni de jornadas: las rondas cambian en partidos aplazados. El crosswalk enlaza
+los 6.460 partidos de las 17 temporadas, conservando ambos IDs y la fecha local.
+Un club par duplicado, lado ausente o partido sin correspondencia aborta el build.
+Este contrato solo aplica a liga con un partido por pareja local–visitante/temporada.
+
+Las 241.241 observaciones quedan enlazadas: 2.010 sin código oficial y 15 con minutos
+fuera de 0–90 permanecen señaladas. Hay 179.439 filas con identidad y minutos
+observados dentro de rango, utilizables como etiquetas deportivas bajo esa semántica.
+Las restantes con minutos ausentes NO se convierten en no-apariciones. No se sustituye
+el valor de minutos FPL por el de PL: son observaciones de fuentes distintas.
+
+En 2014/15 se resolvieron 486 identidades y 17.769 filas: 10.206/10.428 apariciones
+con minutos (97,87%). El enlace requiere tokens exactos de nombre normalizado,
+coincidencia de club y fixture en dos apariciones distintas, un único código candidato
+y ninguna asignación del mismo código a dos IDs FPL. No se escoge el candidato de
+mayor score ni se fuerza equivalencia entre posiciones deportivas y posiciones FPL.
+Se conservan 225 jugadores sin resolver (incluidos jugadores sin apariciones);
+`identity/unresolved.csv` mantiene el detalle. Entre los testigos aceptados hay 3.553
+diferencias de minutos: la identidad no se usa para sobrescribir esa discrepancia.
+
+```bash
+python -m experiments.data_ground_truth.crosswalk --root "$RAW_HISTORY_ROOT"
+python -m experiments.data_ground_truth.identity_2014 \
+  --root "$FPL_2014_ROOT" --archive-root "$RAW_HISTORY_ROOT"
+```
+
+Los archivos y resultados llevan hashes de sus entradas y salidas. El código no
+conecta estas tablas al modelo productivo. `eligible_predeadline` permanece falso:
+el enlace de identidad retrospectivo no acredita publicación antes del deadline.
+
+Búsqueda adicional: ORBIX Research localizó el paper
+[Time Series Modeling for Dream Team in Fantasy Premier League](https://arxiv.org/pdf/1909.12938),
+que describe datos 2013/14–2015/16 pero no enlaza un archivo recuperable: su referencia
+Kaggle es genérica y su procesamiento excluye jugadores. No se contabiliza cobertura
+por esa referencia. [FPL Analytics 2015/16](https://www.fplanalytics.com/history1516.html)
+conserva una tabla de resumen; su URL JSON pública referenciada por la página devuelve
+HTTP 403 en esta auditoría. No se descargó ni se declara recuperada 2015/16.

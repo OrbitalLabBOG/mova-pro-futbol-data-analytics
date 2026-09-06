@@ -176,3 +176,34 @@ def test_2014_reconciles_double_gameweek_without_backfilling_final_club():
         reconcile_2014(weekly, players, pd.concat([fixtures, fixtures]))
     with pytest.raises(ValueError, match='unresolved fixtures'):
         reconcile_2014(weekly, players, fixtures.iloc[:1])
+
+
+def test_archive_crosswalk_resolves_namespaces_without_assuming_equal_rounds():
+    from experiments.data_ground_truth.crosswalk import fixture_crosswalk
+    players = pd.DataFrame([dict(matchId=100,venue='Home',team_id=3),dict(matchId=100,venue='Away',team_id=31)])
+    events = pd.DataFrame([dict(matchId=900,home_team_id=3,away_team_id=31,kickoff='2014-08-16 17:30:00')])
+    linked=fixture_crosswalk(players,events)
+    assert linked.matchId_players.tolist()==[100]
+    assert linked.matchId_events.tolist()==[900]
+    with pytest.raises(ValueError,match='ambiguous club pair'):
+        fixture_crosswalk(players,pd.concat([events,events.assign(matchId=901)]))
+    with pytest.raises(ValueError,match='missing match participant'):
+        fixture_crosswalk(players.iloc[:1],events)
+    with pytest.raises(ValueError,match='unresolved fixture'):
+        fixture_crosswalk(players,events.assign(away_team_id=8))
+
+
+def test_historical_identity_requires_unique_code_and_multiple_witnesses():
+    from experiments.data_ground_truth.identity_2014 import resolve
+    labels=pd.DataFrame([dict(id=1,name='Davies',pos='Defender',matchId=m,match_team_code=3,mins=68,gw_pts=2) for m in [1,2]])
+    observations=pd.DataFrame([dict(matchId_events=m,team_id=3,official_player_code=10,minutesPlayed=69,playerName='Ben Davies',position='D') for m in [1,2]])
+    linked,unresolved,evidence,report=resolve(labels,observations)
+    assert report['resolved_players']==1
+    assert report['minutes_disagreement_witness_rows']==2
+    assert linked.mins.tolist()==[68,68]
+    assert unresolved.empty
+    assert evidence.matching_fixtures.tolist()==[2]
+    assert resolve(labels.iloc[:1],observations)[3]['resolved_players']==0
+    ambiguous=pd.concat([observations,observations.assign(official_player_code=11)])
+    assert resolve(labels,ambiguous)[3]['resolved_players']==0
+    assert resolve(labels,observations.assign(team_id=8))[3]['resolved_players']==0
