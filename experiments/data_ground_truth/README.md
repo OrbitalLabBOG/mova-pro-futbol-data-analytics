@@ -116,8 +116,10 @@ La métrica predeadline verificada de este lote es **0%**, intencionalmente expl
   del README mezcla cierre de GW y deadline: no constituye prueba temporal por fila.
 - [StatsBomb Open Data](https://github.com/hudl/open-data): su
   [inventario](https://raw.githubusercontent.com/hudl/open-data/master/data/competitions.json)
-  lista Premier 2015/16 y 2003/04, fuera de nuestras diez temporadas. Puede apoyar
-  investigación de eventos, pero no cierra directamente esta brecha histórica FPL.
+  lista Premier 2015/16 y 2003/04. En el corte inicial ambas quedaban fuera del
+  canónico de diez temporadas; GT v7 ya incluye etiquetas FPL de 2015/16. Es un
+  candidato para enriquecer esa temporada con eventos de otra fuente; aún falta
+  adquirirlos y medir su cobertura e identidad. No aporta por sí solo etiquetas FPL.
 - Football-data.co.uk: candidato para contraste de resultados/cuotas por partido;
   las páginas oficiales devolvieron error al consultarlas en esta iteración. No se
   contabiliza nueva cobertura ni se trata una cuota de cierre como previa al deadline.
@@ -3568,3 +3570,68 @@ contraste retrospectivo; `training_admitted=false` y `eligible_predeadline=false
 incluso en los 378 partidos concordantes. No hay etiquetas FPL nuevas, nuevas
 temporadas, cambios productivos ni modificaciones de GT v7/G55. Sigue pendiente
 recuperar observaciones respaldadas y contrastar estadísticas/posiciones faltantes.
+
+## G66 — linaje de huecos y conservación de incidentes excluidos
+
+Se inspeccionan las **31 apariciones sin estadísticas adicionales** y las **44
+sin posiciones medias** de G64. Sus 28 archivos de jornada se contrastan contra
+el corte inicial `4f12bc1069f59137fcb03e34ab8bcf60502f1b22`, la integración
+`b18f816fbaa21db5b55f9c4af117da4d0f8f11c1` y la proyección `By Gameweek` del pin
+Core `ce03f31b4032f3f89a1aa460ddc8a709ddeb56b6`. La proyección alternativa es otra
+representación del mismo proveedor, no una validación independiente.
+
+El archivo `core-detail-gap-history-g66` conserva **86 archivos, 2.091.368 bytes**:
+84 CSV de contraste, el CSV de incidentes descartados y la revisión documental
+upstream. El manifiesto tiene URL, revisión, hash y fecha de descarga por objeto.
+El auditor deriva la matriz esperada desde los huecos de G64 y rechaza descargas
+incompletas, duplicados de path/revisión, objetos corruptos o tamaños distintos.
+
+| Tipo de hueco | Casos | ID exacto ausente en corte inicial | En integración | En proyección actual por jornada |
+| --- | ---: | ---: | ---: | ---: |
+| Posiciones medias | 44 | 44 | 44 | 44 |
+| Estadísticas adicionales | 31 | 31 | 31 | 31 |
+
+No aparece una clave exacta `(match_id, player_id)` recuperable en estos cortes.
+Esto no equivale a demostrar que ningún registro sin identificar corresponda al
+jugador: `gap-lineage.json` conserva también el número de filas del partido con
+ID vacío, fuente, path y cualquier coincidencia exacta, sin resolver por nombre.
+Tampoco se declara agotada la búsqueda en todas las fuentes posibles.
+
+La revisión del proveedor declara 31 exclusiones de estadísticas de relleno con
+minutos detallados cero/vacíos pese a minutos positivos FPL. **La coincidencia del
+conteo no verifica cada registro del stream original**: ese stream no se encontró
+en el árbol inspeccionado. No se convierten estas ausencias en observaciones cero.
+La auditoría de minutos FPL de los huecos sí es directa: 29/31 estadísticas faltan
+en GW1 y doce de las 31 apariciones tienen 90 minutos. En posiciones medias,
+34/44 ausencias tienen un minuto FPL; las otras diez llegan hasta 32 minutos.
+Esa distribución no demuestra por sí sola la causa de la ausencia.
+
+Se adquiere además el archivo público
+[`incidents_quarantined.csv`](https://github.com/olbauday/FPL-Core-Insights/blob/ce03f31b4032f3f89a1aa460ddc8a709ddeb56b6/data/2025-2026/supplemental/incidents_quarantined.csv),
+que aún no estaba incluido en G64:
+
+- 48 filas de 44 partidos, todos enlazados con la referencia de Premier League.
+- Las 48 tienen minuto negativo, actor `Unknown` e ID de jugador vacío.
+- Las 48 declaran `unknown_player_and_invalid_minute` como razón de exclusión.
+- El contraste de los 6.455 incidentes depurados de G64 encuentra cero minutos
+  negativos y cero actores `Unknown`. No es una validación completa de cronología.
+
+Los bytes excluidos se conservan íntegros y separados; no se incorporan a los
+incidentes canónicos ni a las etiquetas de entrenamiento. Esta cuarentena de
+incidentes **no es** el stream de los 31 jugadores excluidos: son poblaciones y
+artefactos diferentes.
+
+```bash
+python -m experiments.data_ground_truth.detail_gap_lineage \
+  --details-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/core-match-detail-coverage-v1 \
+  --calibration-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/defensive-match-calibration-v5 \
+  --history-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/core-detail-gap-history-g66 \
+  --out /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/detail-gap-lineage-v1
+```
+
+Reporte y dos artefactos reproducidos byte por byte en v2. Suite completa:
+**1.622 passed, 1 skipped, 79 deselected** (32,96 s).
+[Resultados G66](results-g66.json). GT v7, G55 y producción permanecen intactos;
+sin nuevas etiquetas, temporadas completas, entrenamiento ni reparaciones.
+El siguiente enriquecimiento debe aportar registros originales identificables o
+una fuente adicional, conservando estos huecos y exclusiones como evidencia.
