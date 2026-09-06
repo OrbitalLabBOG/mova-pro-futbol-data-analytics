@@ -1,0 +1,98 @@
+{
+  "version": "historical-data-g56",
+  "audit_report_sha256": "6f9c225700330501f1eaab28de16cfe404f3baf2a7eb6a8bd0c4f5207d862ac8",
+  "audit": {
+    "version": "published-manager-reference-v1",
+    "source_pdf_sha256": "f96623fdc04e3521119e6ec29ea0df7841edc6428409ee668b41e08804873f32",
+    "extractor": "PyMuPDF 1.26.4",
+    "source_pages": 17,
+    "extracted_text_sha256": "728c02c38f0209cf7f95bd05a5604ff7870911778c851fce5ed517f2e57dd5b0",
+    "implementation_sha256": "45b036bdd34d2d39d3195775ff3ec7c677379b1b9b41136df55a32f5b494ff3a",
+    "weekly_rows": 152,
+    "seasonal_summary_rows": 5,
+    "artifacts": {
+      "weekly-cohorts.csv": "b2b5524f4e171f85be91a53922e2e3bb564d73996453eff3761c8f82267b7246",
+      "season-cohorts.csv": "eeabe495523e44cea2128ef7c62e23884894dfc893ca72f0902d77e7dcfa044c"
+    },
+    "represented_managers": 901912,
+    "reconciliation": [
+      {
+        "published_cohort": "10^3",
+        "weekly_mean_sum": "2489.80",
+        "published_season_mean": "2489.82",
+        "difference": "-0.02",
+        "two_decimal_rounding_compatible": true
+      },
+      {
+        "published_cohort": "10^4",
+        "weekly_mean_sum": "2412.68",
+        "published_season_mean": "2412.68",
+        "difference": "0.00",
+        "two_decimal_rounding_compatible": true
+      },
+      {
+        "published_cohort": "10^5",
+        "weekly_mean_sum": "2310.80",
+        "published_season_mean": "2310.82",
+        "difference": "-0.02",
+        "two_decimal_rounding_compatible": true
+      },
+      {
+        "published_cohort": "10^6",
+        "weekly_mean_sum": "2150.09",
+        "published_season_mean": "2150.11",
+        "difference": "-0.02",
+        "two_decimal_rounding_compatible": true
+      }
+    ],
+    "source_doi": "10.1371/journal.pone.0246698.s001",
+    "training_admitted": false,
+    "promotion_benchmark_admitted": false,
+    "production_changed": false,
+    "limitations": [
+      "aggregate_reference_not_individual_manager_actions",
+      "cohorts_selected_by_final_rank_not_preseason_information",
+      "sample_is_not_a_census_of_all_managers",
+      "weekly_standard_deviations_do_not_determine_joint_season_uncertainty",
+      "rounded_means_not_exact_individual_scores_or_rank_thresholds",
+      "no_new_player_labels_or_complete_FPL_seasons"
+    ]
+  },
+  "source_manifest_sha256": "9e584f73d447c1139632648b571d03dbca7d6c97c2041957d9e4d6ba3637df15",
+  "sources": {
+    "records": [
+      {
+        "url": "https://web.archive.org/cdx/search/cdx?url=s3.eu-central-1.amazonaws.com%2Ffpl.data%2Fdb%2Fhistory201314.json&output=json&filter=statuscode%3A200&collapse=digest&limit=20",
+        "error": "OSError",
+        "checked_at": "2026-09-06T12:52:51.881770+00:00"
+      },
+      {
+        "url": "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0246698",
+        "sha256": "04222c32f3cb4f60cd7cb624012e877f9fff1a077b5b163d2807352ef3ce2589",
+        "bytes": 199348,
+        "fetched_at": "2026-09-06T12:52:53.598921+00:00",
+        "available_at": null
+      },
+      {
+        "url": "https://journals.plos.org/plosone/article/file?type=supplementary&id=10.1371/journal.pone.0246698.s001",
+        "sha256": "f96623fdc04e3521119e6ec29ea0df7841edc6428409ee668b41e08804873f32",
+        "bytes": 727408,
+        "fetched_at": "2026-09-06T12:53:56.138222+00:00",
+        "available_at": null
+      }
+    ]
+  },
+  "verification": {
+    "reproduced_byte_for_byte": true,
+    "tests_passed": 1582,
+    "tests_skipped": 1,
+    "tests_deselected": 79,
+    "visual_table_page": 3
+  },
+  "new_aggregate_weekly_rows": 152,
+  "new_aggregate_seasonal_rows": 5,
+  "new_player_label_rows": 0,
+  "new_complete_fpl_seasons": 0,
+  "production_changed": false,
+  "training_admitted": false
+}
