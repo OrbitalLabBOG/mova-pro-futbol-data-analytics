@@ -1,0 +1,76 @@
+{
+  "version": "historical-data-g73",
+  "audit_report_sha256": "622f74eaca70acf6e20e806142e7f5b62cec1d050a0d364f403f04d1656bc71f",
+  "audit": {
+    "version": "legacy-scoring-audit-v1",
+    "dataset_id": "d4baf849fb4a051be103f8c469e61a4753edb0b4004f980a000fe5c86ef573db",
+    "season": "2015-16",
+    "partition_sha256": "d74cf06e3a811584b004a9721e5d053f816d5255b94ebbf779d7d02da1216b68",
+    "metadata_manifest_sha256": "adac2f3a9bc6d1e660743167b6ad7f23b527284453e871ed730e8ff552436bcd",
+    "comparison_report_sha256": "e7abbb7c9a34cffb280c8aeb46b4f1a8076e09cc79ce54932359ec5187afb51a",
+    "implementation_sha256": "6339c7948f19ebbf8b04a315a03803e62093a802c1065698ee112f91ff7825e2",
+    "rule_source": "https://eprints.lse.ac.uk/60283/1/dp1283.pdf",
+    "rule_source_page": 46,
+    "rule_source_year": 2014,
+    "metadata_players": 723,
+    "rows": 24741,
+    "arithmetic_status": {
+      "equal": 24741
+    },
+    "positive_arithmetic_status": {
+      "equal": 10469
+    },
+    "disputed_arithmetic_status": {
+      "equal": 19
+    },
+    "disputed_partial_substitution_matches": 0,
+    "training_admitted": false,
+    "commercial_runtime_admitted": false,
+    "raw_redistribution_admitted": false,
+    "new_FPL_labels": 0,
+    "production_changed": false,
+    "limitations": [
+      "declared_historical_formula_not_certified_2015_official_rules",
+      "internal_arithmetic_not_independent_truth_validation",
+      "archived_clean_sheet_and_bonus_values_used_without_recalculation",
+      "partial_goal_substitution_keeps_assists_bonus_other_components_fixed_not_full_counterfactual",
+      "no_attribution_revision_cause_inferred_for_disputed_rows",
+      "research_only_StatsBomb_rights_and_temporal_limits_inherited"
+    ],
+    "artifacts": {
+      "rows.jsonl.gz": "f4138e90650fd6b0d6c7d4cf42f1c7b69f36b8f68afa983e9ebb14700967bbdd",
+      "disputes.json": "b2ce92dbc60a9647a1d0b4814ac710809c8f26573326b32461ba99012ec5e44a"
+    }
+  },
+  "evidence_sources": [
+    {
+      "file": "historical-formula.pdf",
+      "url": "https://eprints.lse.ac.uk/60283/1/dp1283.pdf",
+      "sha256": "9c13a18c01cdcecd4863e85074e1cb468cdde3f33f91971a00312840ce2eb0e4",
+      "bytes": 816296,
+      "fetched_at": "2026-09-06T15:55:18.773051+00:00",
+      "available_at": null,
+      "eligible_predeadline": false
+    },
+    {
+      "file": "club-attribution-discussion.html",
+      "url": "https://www.mancity.com/news/first-team/first-team-news/2015/august/whose-goal-was-it-anyway-yaya-or-silva",
+      "sha256": "304ab1c9a7f0e7da2295c5017d0f79a3e2dff3f14cc36eb2699f268446f3014b",
+      "bytes": 226034,
+      "fetched_at": "2026-09-06T15:55:19.988388+00:00",
+      "available_at": null,
+      "eligible_predeadline": false
+    },
+    {
+      "file": "club-match-report.html",
+      "url": "https://www.mancity.com/news/first-team/match-report/2015/august/west-brom-v-city",
+      "sha256": "08ba95ef6649c10a9fa9276a866b5d55d25d0a21c81afa0f7e7e9b684b47cf61",
+      "bytes": 232679,
+      "fetched_at": "2026-09-06T15:55:21.096845+00:00",
+      "available_at": null,
+      "eligible_predeadline": false
+    }
+  ],
+  "reproduction": "report and two artifacts byte-identical in v1/v2",
+  "tests": "1640 passed, 1 skipped, 79 deselected in 43.22s"
+}
