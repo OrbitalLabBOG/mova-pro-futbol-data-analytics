@@ -1,0 +1,373 @@
+{
+  "version": "historical-data-g80",
+  "audit_report_sha256": "b7e8fdc083bab7e7860dd39c9e2a9dbe2c45033fb756184efb3b5f50b20f08eb",
+  "audit": {
+    "version": "calendar-deadline-tail-v1",
+    "fixture_audit_sha256": "448a774a7a32815a64655999542af121e188a6fbcd58cd1847430c1a0ba47c24",
+    "implementation_sha256": "35dd7033d3fda5380fd5d288c2a030f2afb66d8b54e559e10ab7b7ed15bb614d",
+    "plan": [
+      {
+        "candidate": {
+          "season": "2021-22",
+          "gw": 32,
+          "path": "data/2021-22/fixtures.csv",
+          "commit": "ddf97caea4220a48959cb3b6628f6d89146e5f95",
+          "source_sha256": "c3e4627128df7d4947ee34b5836fa5469d10d6aadc32f45ce501746b1e734858",
+          "committer_at": "2022-04-07T14:14:36+00:00",
+          "deadline": "2022-04-08T17:30:00Z",
+          "normalized_sha256": "f7f97e3e3de47e57812b4b08bbfc4eb4ac10a4f3f18ceb283e0ff10f9ba661ab"
+        },
+        "hours": [
+          "2022-04-08-15",
+          "2022-04-08-16",
+          "2022-04-08-17"
+        ]
+      },
+      {
+        "candidate": {
+          "season": "2022-23",
+          "gw": 23,
+          "path": "data/2022-23/fixtures.csv",
+          "commit": "4e199d6bb3ace61fd390a9d63e6a5f81d96094c7",
+          "source_sha256": "3303384219e5ee612bdd85ac5b13a8610def3ec21395d6fdfed3da7ad22f7014",
+          "committer_at": "2023-02-09T17:08:48+00:00",
+          "deadline": "2023-02-11T11:00:00Z",
+          "normalized_sha256": "e20165db5b2a2320dd2b8ae2bdb0d003df6d8fad391b8473780ee75dbf96895b"
+        },
+        "hours": [
+          "2023-02-10-18",
+          "2023-02-10-19",
+          "2023-02-10-20",
+          "2023-02-10-21",
+          "2023-02-10-22",
+          "2023-02-10-23",
+          "2023-02-11-00",
+          "2023-02-11-01",
+          "2023-02-11-02",
+          "2023-02-11-03",
+          "2023-02-11-04",
+          "2023-02-11-05",
+          "2023-02-11-06",
+          "2023-02-11-07",
+          "2023-02-11-08",
+          "2023-02-11-09",
+          "2023-02-11-10"
+        ]
+      }
+    ],
+    "acquired_hours": 20,
+    "downloaded_bytes": 1390032797,
+    "errors": [],
+    "resolved": 0,
+    "push_events": 0,
+    "merge_events": 0,
+    "hour_report_sha256": {
+      "2022-04-08-15": "0cb67e085e898a8c6e16909fcf72ee4e88ea9634bb898da277e6448e1f87314b",
+      "2022-04-08-16": "1db3975b7859a3c3816cd685b7f2f6677f728ec3283b50b118b072036bdba8f1",
+      "2022-04-08-17": "9030fd21cb51ce3d1e1e4f05b984408aed59fe36e50ff0d336ab8c2378bb16a2",
+      "2023-02-10-18": "c4d72eb4976585fd0f34d31676f4737cb900943819a85bc0820ca6a3f43df225",
+      "2023-02-10-19": "91c5d3c6103a558a3bf70077996d5d5ff3d89d2c1fd6e535125bdc38839d5170",
+      "2023-02-10-20": "c7efc6329e5197223db215dd2504d417b2bd62194316eed697168a14a9e36a39",
+      "2023-02-10-21": "d9df306b456a5c81655adf9eccd7a60314a38460490b27d39fd1405bdb74ebe6",
+      "2023-02-10-22": "312c65bbb9914a2fa9c931ee0786f88a307f3e3741dcd8114683f6fae63cfe47",
+      "2023-02-10-23": "1bfe49d45d8515d7ef5cfa2d841a7227116e0b1778e866b1a30ad6899cb30aef",
+      "2023-02-11-00": "427d5cb1f5976669ab4984278c3f7402d303aff7665188e08d71eea3b96e4601",
+      "2023-02-11-01": "975252e0ecc425c4a6f3a3c9be02a5e96df9b01a46fd0b28fff2d112169b9c7e",
+      "2023-02-11-02": "62dcf14b499090533260957e8086c794445b9fc2caf1d9123e85931444f91171",
+      "2023-02-11-03": "145a50dee69c2d2d5b75eb4ecad078f2b85f0e8e725b7162409a989de10a2802",
+      "2023-02-11-04": "ea7efbf92843a6ae405ef28423fbe2ed4b4a4a006cbfa773865b55330e832249",
+      "2023-02-11-05": "3d82c7e560865486f8ff1e3b7de8a19b47f435de4536a4d93cd2dcd776bd8e78",
+      "2023-02-11-06": "93043835899f353c0534e99c741babc4d6ede07b13d2b908257eb8d635154838",
+      "2023-02-11-07": "b364aed241fb806218b3dbf0c7bfc318195e836c341123282f6b2346c14cf0a5",
+      "2023-02-11-08": "38c9451c414da165839e7deceb479ea753138e32564b23ba538fbc40352177f7",
+      "2023-02-11-09": "ee0718d53ded525e1e8617c7da51d750404c4c6fa5a3385a22fbb77fd0860e33",
+      "2023-02-11-10": "e994d8ecae5b972929dc1059bc1986672c41eeccefed6267dc055c752b14214e"
+    },
+    "witnesses_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "training_admitted": false,
+    "production_changed": false,
+    "new_FPL_labels": 0,
+    "limitations": [
+      "negative_archive_search_is_not_proof_of_nonpublication",
+      "only_offsets_25_to_deadline_are_examined_here_prior_search_remains_separate",
+      "compressed_source_hash_retained_relevant_events_retained_unrelated_activity_discarded",
+      "publication_witness_is_not_API_capture_time"
+    ]
+  },
+  "prior_hour_inventory": [
+    {
+      "season": "2021-22",
+      "gw": 32,
+      "prior_hours": [
+        {
+          "hour": "2022-04-07-14",
+          "root": "historical-fixture-publication-v3",
+          "receipt_sha256": "952247a7b6e7d1b8dd94d49e9d4acee56b0c27d60b393d72412507cb9345b977"
+        },
+        {
+          "hour": "2022-04-07-15",
+          "root": "historical-fixture-publication-v3",
+          "receipt_sha256": "d9c68fee8b1882d39148abfaf2b0bbe3dea8e3d8f1be4988693602b66e5c574a"
+        },
+        {
+          "hour": "2022-04-07-16",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "f14e4b8f2144e8c54fa82261893e49cc08e01676eb993faedf5effbffaceaf84"
+        },
+        {
+          "hour": "2022-04-07-17",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "c20ce9f00ec7fd0c13de3799ecf8ebf818587d6b7e833b98ca590d2ddfe9e648"
+        },
+        {
+          "hour": "2022-04-07-18",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "bcb87dc724e6962bda192433f2d6b3459d2c6213c3bc173a2a427fb90bfb3bed"
+        },
+        {
+          "hour": "2022-04-07-19",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "5480e0505af6f62d5ec5bf25b3a02d583de45ab669291a8246f1e9eccabd6d8c"
+        },
+        {
+          "hour": "2022-04-07-20",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "605abfea08e474c5ebfe171366610f48ad8849f959351fa4b052d7df45faa2d9"
+        },
+        {
+          "hour": "2022-04-07-21",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "659e6ec0a2d03cf1fd7eab1a5169a231671954939e1ae4b2a638d4af65106d3e"
+        },
+        {
+          "hour": "2022-04-07-22",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "1273b2093ce6fc29113f8c8293553c589dc6d32a23d9e7e11d6363d8ce76599d"
+        },
+        {
+          "hour": "2022-04-07-23",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "6df94c4a72db504cdddf420f8e2659674f81d2d4c502a9ad7d3d47fb39176ee3"
+        },
+        {
+          "hour": "2022-04-08-00",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "0a1cf6b14000248100da7e5f9ae5e0054b5122e799425fd2a204e4ce07e74fbf"
+        },
+        {
+          "hour": "2022-04-08-01",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "7875c9a47fa4cb2ebb285e6ca848e995970bbea489d97f65d5883c1762903461"
+        },
+        {
+          "hour": "2022-04-08-02",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "26a30d4e5eb62349a176d5a96b2c15355c7a638ba358648d438935fbaebd1b7a"
+        },
+        {
+          "hour": "2022-04-08-03",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "c16b94c9f2b3fce5d74ac1d205a3288b2e1ba5cd6b9ea5113ef0cfbfee022d43"
+        },
+        {
+          "hour": "2022-04-08-04",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "c53d851d8a59b9ce6b473f4024995a94d60dd2439e7d23e9efdad31da05cd00a"
+        },
+        {
+          "hour": "2022-04-08-05",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "4c9f2f5ee21905f2c968285cb0dcf8b37b1bc37dfec023a8cf1fbc8e087b7330"
+        },
+        {
+          "hour": "2022-04-08-06",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "3059108db933467ac003489e9d87632c25a17094a5d4122d279609c2013cf3dc"
+        },
+        {
+          "hour": "2022-04-08-07",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "3c4324c13bd081cc961b389de95811e8d35460e7e1e1a089466c53e161c0b0e7"
+        },
+        {
+          "hour": "2022-04-08-08",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "1cdd7635b1809c9526aa339a6455e195297fb56c8a36114b4559dccbb3b16266"
+        },
+        {
+          "hour": "2022-04-08-09",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "469e6201d7b559c2e900adf009b30c24f89c01f48963db84a3bb25bae9dafda6"
+        },
+        {
+          "hour": "2022-04-08-10",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "9ffca1948029d1b789c958dc6630b6afac30d49a7a98c9c2abf75cb7ec9bc9fe"
+        },
+        {
+          "hour": "2022-04-08-11",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "d8104a2456b93b10b96bdca74e9ea7d70746d3be8afef95e48eb744861e04d94"
+        },
+        {
+          "hour": "2022-04-08-12",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "9dad2cec019483f82a61add87736e46e5f9fd468af11dd5a555e03bb358d9c20"
+        },
+        {
+          "hour": "2022-04-08-13",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "18648248c55bf6606921b7f5e7aa9f598708b3b89bc5af418bb57d3466c267f1"
+        },
+        {
+          "hour": "2022-04-08-14",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "c0eb57abfab92a8875b3d9cec442d8061f42c6d9eb49f8d5dcbfed939a562d43"
+        }
+      ],
+      "additional_hours": 3,
+      "total_hour_bins": 28
+    },
+    {
+      "season": "2022-23",
+      "gw": 23,
+      "prior_hours": [
+        {
+          "hour": "2023-02-09-17",
+          "root": "historical-fixture-publication-v3",
+          "receipt_sha256": "c003be5d215b1eaed2d5619dc3091bb8edd351ad15cbf1f3500b8498eed1a05f"
+        },
+        {
+          "hour": "2023-02-09-18",
+          "root": "historical-fixture-publication-v3",
+          "receipt_sha256": "369e03fe0155465e9ec2e4062f3bb2f75681e67b4ee71529dbf4acdd3c3faadc"
+        },
+        {
+          "hour": "2023-02-09-19",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "b19c5e148a6cf2a421374f84595f588d2e1567c6843a04b7a67b656afd4ef4c5"
+        },
+        {
+          "hour": "2023-02-09-20",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "7ba482aa110e219e5388ff5a065cde97a0a8b83564f8d0ab372c23e39d07cfa0"
+        },
+        {
+          "hour": "2023-02-09-21",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "3b53f2674a7fabb70491ac595566427cd267e121c40b3ec978d853adf0f74222"
+        },
+        {
+          "hour": "2023-02-09-22",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "badadbf83d8c0dabb95642ade27ce3752597bf940ab235177edcbc5cac60b9d8"
+        },
+        {
+          "hour": "2023-02-09-23",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "188d6e1fb344b2382933745bad87f23f3b83e637afc762b6ed896736c9620c8f"
+        },
+        {
+          "hour": "2023-02-10-00",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "6e1d6f064f059a5b649cc4aa9559ed65031bb48faeea22c9c914fc80faa90373"
+        },
+        {
+          "hour": "2023-02-10-01",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "376e15794f6e8f961b4b1c0b7e8e3a98c454afd25d416067e0e15b521fd337b5"
+        },
+        {
+          "hour": "2023-02-10-02",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "95bfa1c8bbb9ddf5c454acb4523f9ae828eeb47bacc4d6f6fc98447ee2fd669d"
+        },
+        {
+          "hour": "2023-02-10-03",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "542676eb3880386214e377b2f9bfc95db6f74cdcf5e5991326ee698c42241cc8"
+        },
+        {
+          "hour": "2023-02-10-04",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "a2447ad19997543a9106a79c29e1203c8f09aab4cee0ebf8fd9d601d3fe45eb5"
+        },
+        {
+          "hour": "2023-02-10-05",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "d80725395405c8dd2088564fe03a0b1e71afc9c3a1bfe7ed1198fe5353ef4d03"
+        },
+        {
+          "hour": "2023-02-10-06",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "6912f3d2d852dabb57be688510bc0328412e3a6cfc3d99bd74dfb8c40243ba08"
+        },
+        {
+          "hour": "2023-02-10-07",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "155b1a56f3accab3699830e7c3be56ea6ac6b885220d73f999008a9cae7f15df"
+        },
+        {
+          "hour": "2023-02-10-08",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "a991df01fa4801cb37461db3c3de87bfc9eef03a36264db3ac862b3edfa52c9c"
+        },
+        {
+          "hour": "2023-02-10-09",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "b4ab20e81e29cd3922be0bf17dbf176ff6129df274c7d3f587c55b12d715b357"
+        },
+        {
+          "hour": "2023-02-10-10",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "713fee82637d205ef103f9243b4f4bb297879f1220d44d701eb7016c01473a7a"
+        },
+        {
+          "hour": "2023-02-10-11",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "6c6c9b0f086ac0a2fb5c60dbebd3b1fda60d56754b21d47f01a31a9d77187b5f"
+        },
+        {
+          "hour": "2023-02-10-12",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "b694d1b1eb38b4b5a2236ca51bd0751d33d301f897a5bea34df73e76da73aae4"
+        },
+        {
+          "hour": "2023-02-10-13",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "31018cb80642a468c8ee4cee62475c38ec0159d880bdb3218f049d19d5b4346c"
+        },
+        {
+          "hour": "2023-02-10-14",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "285f082b707108d3e36407bff21aa02fe0eed4fc98cab563e6475179bc0b0891"
+        },
+        {
+          "hour": "2023-02-10-15",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "231cba22d6b61ca533d7a1ffcfc35d099d13ad949e97b654e4277298408b124b"
+        },
+        {
+          "hour": "2023-02-10-16",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "62e410c493875d1b096a8cc90532a97caadafc85042956da35e46763acfc36ec"
+        },
+        {
+          "hour": "2023-02-10-17",
+          "root": "calendar-publication-extension-v2",
+          "receipt_sha256": "417550160c298efbdde55fc06a1bd24fd5ac314bfc13790f1204519ac21411ab"
+        }
+      ],
+      "additional_hours": 17,
+      "total_hour_bins": 42
+    }
+  ],
+  "offline_reproduction_identical": true,
+  "tests": {
+    "passed": 1660,
+    "skipped": 1,
+    "deselected": 79
+  },
+  "calendar_coverage_unchanged": "195/199",
+  "gt_labels_unchanged": 303126
+}

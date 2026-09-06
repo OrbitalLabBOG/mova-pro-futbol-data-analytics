@@ -4522,3 +4522,53 @@ Producción no se modificó ni se volvió a comprobar en este gate.
 Suite completa: **1.658 passed, 1 skipped, 79 deselected**, en 33,93 s.
 Las pruebas cubren relaciones de hoja, preservación del cache de fórmulas,
 rechazo de destinos externos y separación del juego Yahoo.
+
+## G80 — Completar la búsqueda horaria antes de dos deadlines
+
+G35 examinó las primeras 25 horas nominales de los candidatos que seguían sin
+prueba de publicación. `calendar_deadline_tail.py` completa el tramo posterior
+para dos candidatos cuyo deadline cae dentro de las 48 horas revisadas. Revalida
+objetos, blobs Git, ascendencia, población y relojes mediante el auditor existente.
+No amplía artificialmente el límite de antigüedad del calendario ni declara que
+la fecha del commit pruebe su publicación.
+
+| Ventana | Deadline UTC | Horas adicionales | Intervalos horarios acumulados, incluidos los anteriores |
+| --- | --- | ---: | ---: |
+| 2021/22 GW32 | 2022-04-08 17:30 | 3: 15, 16 y 17 UTC del 8 de abril | 28 |
+| 2022/23 GW23 | 2023-02-11 11:00 | 17: desde el 10 de febrero 18 UTC hasta el 11 a las 10 UTC | 42 |
+
+Los **veinte archivos horarios** se procesaron sin errores: **1.390.032.797 bytes
+comprimidos examinados**, cero PushEvent y cero PullRequestEvent de merge del
+repositorio objetivo `vaastav/Fantasy-Premier-League`. La validación de testigos
+conserva el deadline exclusivo a nivel de evento: el archivo de las 17 UTC puede
+contener actividad posterior al cierre de las 17:30 y no se admitiría por ello.
+
+El resultado es **cero ventanas nuevas acreditadas**. No demuestra ausencia de
+publicación en otra fuente, ni cobertura perfecta de GHArchive. Evita repetir
+este tramo concreto de búsqueda. Los recibos conservan URL, hash/tamaño del
+archivo comprimido, hora, fecha de adquisición y proyección de eventos; se
+retienen los eventos relevantes cuando existen, no todos los bytes de actividad
+GitHub ajena. Por ello no se presenta como una copia completa de GHArchive ni
+como una ampliación del archivo portable G78.
+
+```bash
+python -m experiments.data_ground_truth.calendar_deadline_tail \
+  --base-root "$DATA_BASE" --out "$DATA_BASE/calendar-deadline-tail-v1"
+python -m experiments.data_ground_truth.calendar_deadline_tail \
+  --base-root "$DATA_BASE" --out "$DATA_BASE/calendar-deadline-tail-v1" --offline
+```
+
+El ensayo independiente copió únicamente los recibos/eventos a una raíz v2 y
+repitió el auditor en modo offline. `report.json` y `witnesses.json` coinciden
+byte por byte. [Resultados G80](results-g80.json) incluye también hashes del
+inventario de las 25 horas anteriores por candidato. No reconstruye ni pretende
+validar íntegramente aquellos archivos comprimidos desde sus recibos.
+
+Suite completa: **1.660 passed, 1 skipped, 79 deselected**, en 34,73 s. Las pruebas
+nuevas cubren inicio después del tramo previo, deadline parcial y rechazo de
+intervalos mayores al límite revisado; las existentes verifican testigos y el
+modo offline. Calendarios siguen en **195/199**: pendientes 2021/22 GW31–32,
+2022/23 GW23 y 2026/27 GW1. GT v7 conserva 303.126 etiquetas/doce temporadas;
+producción y entrenamiento permanecen sin cambios. Para estas dos ventanas,
+el siguiente intento requiere otra fuente de evidencia o contenido de otro
+calendario publicado, no volver a recorrer las mismas horas.
