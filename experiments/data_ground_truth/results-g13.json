@@ -1,0 +1,223 @@
+{
+  "version": "historical-data-g13",
+  "season_evidence": {
+    "version": "historical-season-evidence-v1",
+    "database_overlap": {
+      "sources": {
+        "Differential/Database/DiffGen_13.db3": {
+          "12": {
+            "rows": 11720,
+            "observed_rows": 9462
+          },
+          "13": {
+            "rows": 10814,
+            "observed_rows": 10076
+          }
+        },
+        "Differential/Database/DiffGen_14.db3": {
+          "12": {
+            "rows": 11720,
+            "observed_rows": 9462
+          },
+          "13": {
+            "rows": 10814,
+            "observed_rows": 10076
+          },
+          "14": {
+            "rows": 17244,
+            "observed_rows": 5173
+          }
+        },
+        "Differential/Database/DiffGen_15.db3": {
+          "12": {
+            "rows": 11720,
+            "observed_rows": 9462
+          },
+          "13": {
+            "rows": 10814,
+            "observed_rows": 10076
+          },
+          "14": {
+            "rows": 10858,
+            "observed_rows": 10389
+          }
+        },
+        "Differential/Database/DiffGen_15a.db3": {
+          "12": {
+            "rows": 11720,
+            "observed_rows": 9462
+          },
+          "13": {
+            "rows": 10814,
+            "observed_rows": 10076
+          },
+          "14": {
+            "rows": 10858,
+            "observed_rows": 10389
+          }
+        },
+        "Differential/Database/diffgen14b.db3": {
+          "12": {
+            "rows": 11720,
+            "observed_rows": 9462
+          },
+          "13": {
+            "rows": 10814,
+            "observed_rows": 10076
+          },
+          "14": {
+            "rows": 10858,
+            "observed_rows": 10389
+          }
+        },
+        "Differential/Database/diffgen15_final.db3": {
+          "12": {
+            "rows": 11720,
+            "observed_rows": 9462
+          },
+          "13": {
+            "rows": 10814,
+            "observed_rows": 10076
+          },
+          "14": {
+            "rows": 10858,
+            "observed_rows": 10389
+          }
+        },
+        "Differential/Database/diffgen16.db3": {
+          "12": {
+            "rows": 11720,
+            "observed_rows": 9462
+          },
+          "13": {
+            "rows": 10814,
+            "observed_rows": 10076
+          },
+          "14": {
+            "rows": 10858,
+            "observed_rows": 10389
+          }
+        }
+      },
+      "seasons": {
+        "12": {
+          "season": "2011-12",
+          "archived_versions": 7,
+          "union_keys": 11720,
+          "union_observed_keys": 9462,
+          "best_single_version_observed_rows": 9462,
+          "additional_observed_keys_over_best": 0,
+          "conflicting_keys": 0,
+          "conflicting_key_examples": []
+        },
+        "13": {
+          "season": "2012-13",
+          "archived_versions": 7,
+          "union_keys": 10814,
+          "union_observed_keys": 10076,
+          "best_single_version_observed_rows": 10076,
+          "additional_observed_keys_over_best": 0,
+          "conflicting_keys": 0,
+          "conflicting_key_examples": []
+        },
+        "14": {
+          "season": "2013-14",
+          "archived_versions": 6,
+          "union_keys": 17729,
+          "union_observed_keys": 10389,
+          "best_single_version_observed_rows": 10389,
+          "additional_observed_keys_over_best": 0,
+          "conflicting_keys": 0,
+          "conflicting_key_examples": []
+        }
+      },
+      "null_policy": "preserved_not_filled_or_composed_between_versions"
+    },
+    "season_total_rows": 1976,
+    "season_counts": {
+      "2006/07": 83,
+      "2007/08": 101,
+      "2008/09": 135,
+      "2009/10": 142,
+      "2010/11": 182,
+      "2011/12": 222,
+      "2012/13": 291,
+      "2013/14": 356,
+      "2014/15": 464
+    },
+    "complete_population_seasons": 0,
+    "comparison": {
+      "season": "2014/15",
+      "matched_players": 441,
+      "disagreements": 0,
+      "unmatched_players": 23,
+      "unmatched_positive_minutes": 0,
+      "unmatched_status": "not_proof_of_historical_registration_or_fixture_eligibility"
+    },
+    "source_database_sha256": {
+      "Differential/Database/DiffGen_13.db3": "6d1635feaa22d93365e3cd75bd76ecb48c637e57064b9f40855d7ceea096faa9",
+      "Differential/Database/DiffGen_14.db3": "9f8dbfd15004a07a0e0e4d67daf36a3fc2818de36bc9b8c191492b8773437d5a",
+      "Differential/Database/DiffGen_15.db3": "b7a19fa2731f4edd768d64e201bfcff88e12e8ee522376b9ccaec9d1c48e63a1",
+      "Differential/Database/DiffGen_15a.db3": "216bce91f2a8417f8cc9d41d31290199ae7098ec8340f7a4352f0640f3eddc1b",
+      "Differential/Database/diffgen14b.db3": "8408813f9659f023b7f177fe6092ae4fe0d0834b7d0177e91f0c8508e406d7d2",
+      "Differential/Database/diffgen15_final.db3": "ab3b54e1b9364eb908824db57719d0fb5f5a19633795e2a510bbf4ee84c2792b",
+      "Differential/Database/diffgen16.db3": "e4f1e637702f69cfa513a5719b05f87bb0aab47ddd2cd4864b40d567c1ac9f80"
+    },
+    "later_manifest_sha256": "adac2f3a9bc6d1e660743167b6ad7f23b527284453e871ed730e8ff552436bcd",
+    "reference_labels_sha256": "af9b553f33ef3ce3d21d863a325900276a5a9ce1b1fcd80a4033a347b6801668",
+    "season_totals_sha256": "0a2fb31e72a3d978670f3e23f5f12dcf2159589a070cfebe17d45b47d7a29e6d",
+    "selection_bias": "survivors_present_in_2015_16_not_complete_historical_population",
+    "new_complete_fpl_seasons": 0
+  },
+  "history_consensus": {
+    "version": "history-consensus-v1",
+    "acquired_files": 5978,
+    "parsed_nonempty_files": 5978,
+    "empty_files": 0,
+    "quarantined_files": 0,
+    "acquired_bytes": 3864197,
+    "prior_rows": 1976,
+    "source_observation_rows": 25479,
+    "consensus_player_seasons": 8284,
+    "conflicting_player_seasons": 0,
+    "additional_consensus_keys_over_prior": 6308,
+    "season_counts": {
+      "2006/07": 101,
+      "2007/08": 126,
+      "2008/09": 166,
+      "2009/10": 187,
+      "2010/11": 229,
+      "2011/12": 267,
+      "2012/13": 339,
+      "2013/14": 412,
+      "2014/15": 529,
+      "2015/16": 508,
+      "2016/17": 683,
+      "2017/18": 472,
+      "2018/19": 476,
+      "2019/20": 538,
+      "2020/21": 713,
+      "2021/22": 533,
+      "2022/23": 606,
+      "2023/24": 865,
+      "2024/25": 534
+    },
+    "artifacts": {
+      "source_observations.csv": "0f933412627546ebe851d321f37ede989ee8f77173600db92a090eeda336c8d9",
+      "consensus_totals.csv": "e09af8dbb136887f8696f2f08348026a67e736ec263c6190275dd6e856422137",
+      "conflicting_observations.csv": "3a327953a30ccb1a694cacd1b2223ee17f0829ebecf17f81cd2d0c2631945357",
+      "file_audit.json": "4c0874b455d44c9f9fcf400be9799b36f55c457f647938ff7f61855467c844a4"
+    },
+    "manifest_sha256": "b857404933e15cca6b0f79cb855b69f14eeeff10aec4aedcbeeedda852b88b7b",
+    "prior_sha256": "0a2fb31e72a3d978670f3e23f5f12dcf2159589a070cfebe17d45b47d7a29e6d",
+    "source_independence": "repeated_API_archives_not_independent_measurements",
+    "complete_population_seasons": 0,
+    "new_complete_gameweek_seasons": 0
+  },
+  "training_package": {
+    "version": "fpl-labels-v3",
+    "rows": 303448,
+    "complete_seasons": 12
+  },
+  "production_changed": false
+}

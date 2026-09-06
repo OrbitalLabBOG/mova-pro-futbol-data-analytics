@@ -656,3 +656,59 @@ faltante de Sammy Ameobi. Se conserva `eligible_training=false` y
 `eligible_predeadline=false`; no se integra este archivo como temporada completa
 al paquete v3. Los siguientes pasos siguen siendo completar las apariciones y
 el universo elegible, contrastar otras temporadas antiguas y acreditar causalidad.
+
+## Gate G13: historial de jugador y solapamiento entre archivos
+
+La comparación de versiones Differential de 2011/12–2013/14 utiliza claves de
+jugador interno, temporada y partido. Unir las siete versiones no añade filas con
+minutos y puntos respecto a la mejor versión individual: 9.462 en 2011/12,
+10.076 en 2012/13 y 10.389 en 2013/14. No hay contradicciones entre los valores
+no nulos comparados. Los NULL complementarios de dos versiones no se combinan
+para fabricar una fila observada. La ausencia de contradicción tampoco prueba
+que una versión contenga todos los partidos de cada jugador.
+
+El JSON FPL 2015/16 aporta 1.976 registros jugador-temporada de 2006/07–2014/15,
+extraídos con código, minutos, puntos y hash del registro fuente. Para 2014/15,
+441 coinciden con las sumas de etiquetas reconciliadas, sin diferencias. Otros
+23 tienen cero minutos y puntos y no aparecen en esa referencia: no prueban que
+estuvieran inscritos ni que fueran elegibles en cada partido de 2014/15.
+
+La adquisición adicional de Vaastav usa el inventario completo de la revisión
+`9779cdbc0c07f6c900c2d0c181ddf6bb9c800f88`, selecciona exclusivamente
+`data/2016-17`…`data/2025-26/players/*/history.csv` y conserva bytes por SHA-256.
+Se ejecuta por la misma primitiva GET, con cuatro trabajadores y caché verificable.
+No selecciona la temporada abierta 2026/27 en este gate.
+
+La auditoría normaliza únicamente código, temporada, minutos y puntos. Los demás
+componentes permanecen en los CSV crudos; no se interpreta un cero histórico de
+una métrica introducida posteriormente como medición real. Cada registro normalizado
+conserva ruta y hash fuente. Un jugador-temporada con resultados contradictorios
+queda fuera del consenso, sin elegir automáticamente la versión más nueva ni la
+mayoría. Las copias de API no constituyen mediciones independientes.
+
+La adquisición completó **5.978 archivos / 3.864.197 bytes**, todos parseados,
+sin errores de descarga ni archivos en cuarentena. Al combinarlos con los 1.976
+registros anteriores hay 25.479 registros fuente y **8.284 claves jugador-temporada
+únicas**, de 2006/07 a 2024/25: **6.308 claves adicionales** respecto al archivo
+anterior. Ninguna clave comparada presentó contradicciones de minutos o puntos.
+Por ejemplo, 2010/11 pasa de 182 a 229 jugadores con totales; 2011/12 de 222 a 267,
+2012/13 de 291 a 339 y 2013/14 de 356 a 412. Los detalles y hashes están en
+[results-g13.json](results-g13.json). Los datos no publicados permanecen en
+`source_observations.csv`, `consensus_totals.csv` y la auditoría por archivo.
+
+Los totales son **observaciones jugador-temporada**, no filas de gameweek. No se
+suman al benchmark de 303.448 etiquetas ni acreditan temporadas con población
+completa. Se conservan flags de entrenamiento/predeadline desactivados y se
+explicita el sesgo de jugadores presentes en cada archivo posterior.
+
+```bash
+python -m experiments.data_ground_truth.season_evidence \
+  --database-root "$DIFFERENTIAL_ROOT" --later-root "$SEASON_2015_ROOT" \
+  --identity-root "$IDENTITY_REGISTRY_ROOT" --out "$SEASON_EVIDENCE_ROOT"
+python -m experiments.data_ground_truth.history_archive \
+  --root "$PLAYER_HISTORIES_ROOT" --inventory "$VAASTAV_PINNED_INVENTORY" \
+  --revision 9779cdbc0c07f6c900c2d0c181ddf6bb9c800f88
+python -m experiments.data_ground_truth.history_consensus \
+  --root "$PLAYER_HISTORIES_ROOT" --prior-root "$SEASON_EVIDENCE_ROOT" \
+  --out "$HISTORY_CONSENSUS_ROOT"
+```
