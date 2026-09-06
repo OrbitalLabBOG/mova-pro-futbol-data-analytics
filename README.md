@@ -107,6 +107,20 @@ el historial de investigación con comparaciones por protocolo, PVA-38 e incerti
 [MLflow privado](docs/operations/mlflow.md) añade comparación interactiva, archivo
 de modelos por hash y exportación revisable, sin promover modelos al runtime.
 
+## Histórico para investigación
+
+La [auditoría raw-history-v1](experiments/data_ground_truth/README.md) mide las diez
+temporadas y añade 427 archivos fijados por commit y SHA-256, metadatos de identidad
+y observaciones complementarias de partidos. Conserva staging separado del canónico:
+la disponibilidad anterior al deadline todavía no está demostrada. Incluye cobertura,
+reconciliación y comandos para repetir la medición antes de experimentar.
+El gate G2 amplía a 1.161 archivos y genera 253.890 etiquetas con identidad oficial.
+El archivo deportivo adicional abarca 17 temporadas desde 2009/10; sus claves de
+partido requieren reconciliación y todavía no alimenta entrenamiento.
+El gate G3 recupera además 2014/15: 24.876 filas, 38 jornadas y 380 partidos
+reconciliados. Hay once temporadas FPL de resultados; 2015/16 e identidad conjunta
+de 2014/15 siguen pendientes.
+
 ## Empezar
 
 Requiere Python 3.13.
