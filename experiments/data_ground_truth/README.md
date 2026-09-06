@@ -3142,8 +3142,8 @@ separados los totales anuales y las etiquetas por partido.
 Se verificaron por manifiesto, tamaño y SHA **6.495 archivos history.csv** de las
 dos adquisiciones Vaastav existentes. `annual_defensive_reference.py` extrae las
 filas declaradas 2024/25: **894 observaciones**, 535 del primer conjunto y 359 del
-archivo 2026/27, correspondientes a **562 códigos únicos**. Las versiones nuevas
-añaden 27 códigos a los 535 del primer conjunto; no representan nuevas temporadas.
+archivo 2026/27, correspondientes a **562 códigos únicos**. El primer conjunto tiene 534 códigos en 535 observaciones; las versiones nuevas
+añaden 28 códigos. No representan nuevas temporadas.
 
 El gate conserva cada observación con manifiesto, objeto, ruta y número de fila;
 genera una referencia anual separada e índice de contraste con GW1 2025/26.

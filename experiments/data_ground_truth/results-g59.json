@@ -94,5 +94,10 @@
   "new_derived_annual_player_seasons": 562,
   "new_player_match_labels": 0,
   "new_complete_fpl_seasons": 0,
-  "production_changed": false
+  "production_changed": false,
+  "source_unique_codes": {
+    "raw-player-histories": 534,
+    "raw-player-histories-2026": 359,
+    "added_by_2026": 28
+  }
 }
