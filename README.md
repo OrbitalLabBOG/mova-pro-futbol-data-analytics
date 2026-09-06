@@ -195,6 +195,12 @@ testigo. Las 32 capturas sustituidas son 4–36 horas más antiguas; se registra
 cambios de precios, disponibilidad y ownership. Quedan sin testigo GW1–3 2026/27.
 No se habilita entrenamiento ni replay completo.
 [Resultados G21](experiments/data_ground_truth/results-g21.json).
+G22 extrae reglas y calendarios de esos snapshots: **7.562 observaciones de jornada**,
+141 cambios de deadline y **cero calendarios de fixtures**. Chips/scoring están
+explícitos desde GW16 2024/25 en la selección; antes se conservan como ausentes.
+Se documentan overrides que requieren interpretación, sin ejecutarlos como reglas.
+[Resultados G22](experiments/data_ground_truth/results-g22.json).
+
 
 
 

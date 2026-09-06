@@ -1,0 +1,218 @@
+{
+  "version": "historical-data-g22",
+  "cutoff_date_colombia": "2026-09-06",
+  "rule_audit": {
+    "version": "bootstrap-rules-v1",
+    "source_manifest_sha256": "d9eed1e354d0a35443e480a0c4bfcbdebee97f28b73b04309e4bef0f8bcc243e",
+    "selection_report_sha256": "1ace4506377f6bf92ff79d71f7b1083070f273c58f802518754f96fccb87b6fc",
+    "implementation_sha256": "2d6f422e8ecd28af5b6d9fc6827f9483b0e6c29a70ebcc0bf0a624976e3ef4ea",
+    "snapshots": 199,
+    "verified_snapshots": 196,
+    "seasons": {
+      "2020-21": {
+        "candidates": 6,
+        "verified": 6,
+        "sections": {
+          "game_settings": 6,
+          "element_types": 6
+        },
+        "scoring_present": 0,
+        "calendar_rows": 228,
+        "fixture_schedule_snapshots": 0,
+        "strategic_hashes": [
+          "f857f8ccd626e142ddf405cd964ea1f576d49ffb581e2816c542f40b6efc7585"
+        ],
+        "chip_hashes": [],
+        "scoring_hashes": []
+      },
+      "2021-22": {
+        "candidates": 38,
+        "verified": 38,
+        "sections": {
+          "game_settings": 38,
+          "element_types": 38
+        },
+        "scoring_present": 0,
+        "calendar_rows": 1444,
+        "fixture_schedule_snapshots": 0,
+        "strategic_hashes": [
+          "f8004be8c2f31cd6b3f9c45b316d180337a563b8e920113ed4311fff13cab516",
+          "f857f8ccd626e142ddf405cd964ea1f576d49ffb581e2816c542f40b6efc7585"
+        ],
+        "chip_hashes": [],
+        "scoring_hashes": []
+      },
+      "2022-23": {
+        "candidates": 38,
+        "verified": 38,
+        "sections": {
+          "game_settings": 38,
+          "element_types": 38
+        },
+        "scoring_present": 0,
+        "calendar_rows": 1444,
+        "fixture_schedule_snapshots": 0,
+        "strategic_hashes": [
+          "f8004be8c2f31cd6b3f9c45b316d180337a563b8e920113ed4311fff13cab516"
+        ],
+        "chip_hashes": [],
+        "scoring_hashes": []
+      },
+      "2023-24": {
+        "candidates": 38,
+        "verified": 38,
+        "sections": {
+          "game_settings": 38,
+          "element_types": 38
+        },
+        "scoring_present": 0,
+        "calendar_rows": 1444,
+        "fixture_schedule_snapshots": 0,
+        "strategic_hashes": [
+          "aa4cd7502b356d69392c6b5ba15e4d8c93eacb4f266df87c1b98291d5544457c",
+          "f8004be8c2f31cd6b3f9c45b316d180337a563b8e920113ed4311fff13cab516"
+        ],
+        "chip_hashes": [],
+        "scoring_hashes": []
+      },
+      "2024-25": {
+        "candidates": 38,
+        "verified": 38,
+        "sections": {
+          "game_settings": 38,
+          "element_types": 38,
+          "game_config": 23,
+          "chips": 23
+        },
+        "scoring_present": 23,
+        "calendar_rows": 1444,
+        "fixture_schedule_snapshots": 0,
+        "strategic_hashes": [
+          "4493f97fe1baa861c5beb0a052e77957ba324a4bfbcaf2eae36780a215489622",
+          "77a6b301ec4ed7eb16cc2159af6f899ac6cef78504ef5f561dfaaaaaed3a4718",
+          "e1945104d629ca80cefb58aa8893cb27614b11a00d7cbc262f71c145e084e857",
+          "e3f61f9bac21bd01edb4056483bb0ab1982d27b16f50de27bbd22cf498961892"
+        ],
+        "chip_hashes": [
+          "bc8a9d7199dd4f35c17acd532faa6c8681cca3279e83b796e3152baefdd7fc1f",
+          "fa5a5829ca3fc2474376903f48c281ebd5311af0fdb293f49d272edfd9c00191"
+        ],
+        "scoring_hashes": [
+          "229b2ef6f3274d432f463f69f4e45f27785c0b096d40ecbc7c2bebf6be38a14f",
+          "8077f5856f709e8e3df5d2be62cf37549a79f2d6637a91f45db5d16ca15fc53c",
+          "b4eccdc906514a2c393c0b0c6d5a887e44c03d00ae23058218102b9af4430e4a"
+        ]
+      },
+      "2025-26": {
+        "candidates": 38,
+        "verified": 38,
+        "sections": {
+          "game_settings": 38,
+          "game_config": 38,
+          "chips": 38,
+          "element_types": 38
+        },
+        "scoring_present": 38,
+        "calendar_rows": 1444,
+        "fixture_schedule_snapshots": 0,
+        "strategic_hashes": [
+          "01b2fa7c2e41b7856b36ede69b33d69ce22b62faa4a09d4ab522bfa5c257ff36",
+          "d521fa3829add139df0a5d094f40bcc93cdc05d387b792a7d8d939410a05c3f2"
+        ],
+        "chip_hashes": [
+          "36187f257261dac54705d2d8268f0777a53294ce99bc0f589076c3793364aec7",
+          "d19992de812f7cfd3845f9cdfeb81b594c0caef94a15b8fd04713e8321e339cd"
+        ],
+        "scoring_hashes": [
+          "ef60cdc06135e8143eacf8816a940b92d976e86d98296412db8c7b1547fc278c"
+        ]
+      },
+      "2026-27": {
+        "candidates": 3,
+        "verified": 0,
+        "sections": {
+          "game_settings": 3,
+          "game_config": 3,
+          "chips": 3,
+          "element_types": 3
+        },
+        "scoring_present": 3,
+        "calendar_rows": 114,
+        "fixture_schedule_snapshots": 0,
+        "strategic_hashes": [
+          "01b2fa7c2e41b7856b36ede69b33d69ce22b62faa4a09d4ab522bfa5c257ff36"
+        ],
+        "chip_hashes": [
+          "36187f257261dac54705d2d8268f0777a53294ce99bc0f589076c3793364aec7"
+        ],
+        "scoring_hashes": [
+          "ef60cdc06135e8143eacf8816a940b92d976e86d98296412db8c7b1547fc278c"
+        ]
+      }
+    },
+    "deadline_changes": 141,
+    "rule_conflicts": 0,
+    "nonempty_chip_override_observations": 30,
+    "artifacts": {
+      "snapshots.json": "8b5aff139e89d3dd6d4aaa484d6ec73f938955af98bf823cc91345870c023c49",
+      "deadline_changes.json": "790be526407fce218f6a4a30dd0419dc23bac02d115da3d14d8f3d0c35377434",
+      "rule_conflicts.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "chip_overrides.json": "04c0bc77aa9363b3a38f5367038587e48487b046613aeac14e88f77da2e239f1"
+    },
+    "eligible_replay": false,
+    "eligible_training": false,
+    "production_changed": false,
+    "limitations": [
+      "GW_deadlines_are_not_fixture_assignments_or_kickoffs",
+      "raw_configuration_is_not_a_complete_rule_interpreter",
+      "absent_chip_or_scoring_section_does_not_mean_no_chips_or_zero_points",
+      "field_semantics_and_overrides_require_validation"
+    ]
+  },
+  "editorial_reference": {
+    "records": [
+      {
+        "url": "https://www.premierleague.com/en/news/4362211/all-you-need-to-know-about-changes-to-fantasy-for-202526",
+        "sha256": "c523044cfd0651c596662f87526920cf60b0393a9d17c216d311ba8bfff1792d",
+        "bytes": 91531,
+        "fetched_at": "2026-09-06T05:46:05.594048+00:00",
+        "available_at": null,
+        "eligible_predeadline": false,
+        "semantics": "current_editorial_reference_not_historical_publication_witness"
+      },
+      {
+        "url": "https://www.premierleague.com/en/news/4362027",
+        "sha256": "7c6428cf48811a579d1b20d1f1fa4665342bfc329d83ecb94a7b661a915dd199",
+        "bytes": 94463,
+        "fetched_at": "2026-09-06T05:46:06.790202+00:00",
+        "available_at": null,
+        "eligible_predeadline": false,
+        "semantics": "current_editorial_reference_not_historical_publication_witness"
+      }
+    ]
+  },
+  "editorial_scope": "retrieved_now_not_admitted_as_historical_publication",
+  "observations": {
+    "calendar_rows": 7562,
+    "fixture_schedule_snapshots": 0,
+    "manager_override_observations_2024_25": 16,
+    "freehit_squadsize_16_observations_2025_26": 14,
+    "freehit_override_absent_from_observed_gw": 15,
+    "missing_scoring_and_chips_before_2024_25_gw16": true
+  },
+  "verification": {
+    "report_reproduced_byte_for_byte": true,
+    "implementation_hash_verified": true,
+    "local_tests_passed": 1458,
+    "local_tests_skipped": 1,
+    "local_tests_deselected": 79
+  },
+  "pending": [
+    "historical fixture assignment/kickoff snapshots",
+    "explicit scoring/transfer/chip interpretation per season",
+    "resolve published future Free Hit squad-size override without automatic repair",
+    "2026-27 public-push evidence missing",
+    "78 kickoff discrepancies and historical eligible universe"
+  ],
+  "production_changed": false
+}
