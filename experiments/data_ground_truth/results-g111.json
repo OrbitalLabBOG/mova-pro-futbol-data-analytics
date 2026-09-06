@@ -1,0 +1,48 @@
+{
+  "version": "historical-data-g111",
+  "audit": {
+    "version": "geek-publication-extension-v1",
+    "implementation_sha256": "e0694b4e108eab182b61e9b7375e877026dc2bce040ef8d1284b5dec2c85e5a1",
+    "parent_report_sha256": "05baaab7549e93e23b2ec49b04ab0c9d6779dc131c4c9947dfe5e2bc260999b7",
+    "git_bundle_manifest_sha256": "3aa94ecd7ed1be259792f74613939f67bd51ff555914f0811766fc99371404af",
+    "git_bundle_sha256": "185aa851c5b8fe52343d41c6b97890ab3539ff8bf51cdfaf6dfea3c72a09f519",
+    "git_fsck_passed": true,
+    "extensions": 4,
+    "evidence_kinds": {
+      "identical_blob_public_push": 2,
+      "ancestor_public_push": 2
+    },
+    "candidates": 99,
+    "published_snapshots": 98,
+    "witnessed_player_states": 65163,
+    "finalized_labels_admitted": 0,
+    "training_admitted": false,
+    "gt_changed": false,
+    "production_changed": false,
+    "limitations": [
+      "later_witness_may_be_less_fresh",
+      "identical_blob_proves_bytes_not_original_commit_publication",
+      "unmodified_clock_conflicts_remain_in_parent_gate",
+      "no_deadline_or_field_admission"
+    ],
+    "artifacts": {
+      "witnesses.json": "a5ab3f8080575c6a0244cc7967a94aba86c392d0c9a15cbf386bb68fcefb81aa",
+      "extensions.json": "df94e0ddb00e9bcc3fdd6eff2fcf555fb8a05898e29cff4d7a494121dcf923cf"
+    }
+  },
+  "report_sha256": "5b598dd356d6571c217426bc18523bf185c7baaa9a0fa58c38b28c7da2856d22",
+  "reproduction": {
+    "identical_files": [
+      "report.json",
+      "witnesses.json",
+      "extensions.json"
+    ],
+    "git_source": "independent_clone_of_preserved_bundle"
+  },
+  "validation": {
+    "command": "python -m pytest -q",
+    "passed": 1728,
+    "skipped": 1,
+    "deselected": 79
+  }
+}
