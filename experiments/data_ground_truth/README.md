@@ -2107,3 +2107,58 @@ byte en reporte, evidencia y manifiesto. **1.525 passed, 1 skipped, 79 deselecte
 Pruebas: localizadores ambiguos/ausentes, fecha ausente, exclusión de scripts,
 modo offline, corrupción de objetos y restricción de URL. GT v5 y producción
 intactos. [Resultados G38](results-g38.json).
+
+## Gate G39: calendarios oficiales en PDF y dificultad de pretemporada
+
+Fuentes adquiridas por la primitiva GET del proyecto, fuera de Git en
+`raw-official-calendar-pdf-v1`:
+
+- [Calendario FA 2013/14](https://www.thefa.com/~/media/Files/PDF/Leagues/PL-fixtures1314.pdf):
+  82.680 bytes, SHA-256 `f12d8c479c8118fba89b3e93ee27e8ebbaec2f5fc9ea7ef84ad899b331aa6f12`.
+- [FDR oficial PL 2025/26](https://resources.premierleague.pulselive.com/premierleague/document/2025/06/18/ce06a980-45c1-4e10-b9ae-88a08262b869/FDR-2025-26.pdf):
+  91.365 bytes, SHA-256 `a4c113029d0d6de143f89b60937fc6b8d00b45670a85eda3c18a16fc93f07db5`.
+
+`official_calendar_pdf.py` valida hashes y tamaños, conserva texto, coordenadas y
+rellenos vectoriales con PyMuPDF 1.26.4 en un entorno aislado de `uv`. El parser
+2013/14 consume todas las líneas y verifica veinte clubes y cada cruce dirigido
+exactamente una vez: **380 partidos**, quince páginas. Las horas quedan locales,
+sin zona inferida ni GW FPL inventada. Esto no incorpora una temporada de etiquetas
+FPL: es evidencia adicional de calendario.
+
+Para FDR, se verificaron visualmente las dos mitades de la tabla y su leyenda.
+El parser usa las coordenadas de GW1–38 y cuarenta etiquetas de filas para extraer
+**760 celdas**. Cada cruce debe tener reciprocidad local/visitante y el conjunto
+completo debe formar 380 partidos únicos. Los valores de dificultad proceden del
+color exacto de la leyenda, sin aproximación al color más cercano. Distribución:
+190 celdas de dificultad 2, 399 de dificultad 3, 152 de dificultad 4 y 19 de
+dificultad 5; cero colores sin clasificar. La leyenda incluye 1, sin celdas con
+ese valor en esta versión.
+
+El contraste con el bootstrap GW1 2025/26 y el calendario G23 final confirma
+**380/380 cruces**. Hay **10 diferencias de GW** (observaciones por club, no diez
+partidos) y **304 diferencias de dificultad** en las 760 observaciones frente a
+la versión final. `reference-comparison.json` conserva ambos valores y los hashes
+de las referencias. Es diagnóstico retrospectivo; no corrige el PDF con valores
+posteriores. FDR de junio es una versión de pretemporada, no una serie temporal.
+
+Fechas de creación PDF y cabeceras HTTP `Last-Modified` se conservan como metadata,
+no como pruebas de publicación. Permanecen `available_at=null`,
+`eligible_training=false` y `eligible_replay=false`. El índice G37 sigue en
+195/199; este gate no acredita nuevos deadlines.
+
+```bash
+uv run --no-project --with pymupdf==1.26.4 python \
+  -m experiments.data_ground_truth.official_calendar_pdf extract \
+  --source /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/raw-official-calendar-pdf-v1 \
+  --out /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/official-calendar-pdf-extraction-v2
+python -m experiments.data_ground_truth.official_calendar_pdf audit \
+  --source /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/official-calendar-pdf-extraction-v2 \
+  --out /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/official-calendar-pdf-audit-v2 \
+  --base-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments
+```
+
+Extracción y auditoría `v2` reproducidas byte por byte en `v3`, incluyendo todos
+sus JSON. Las versiones `v1` previas al contraste final se conservan. Los tests
+cubren población, duplicados, autocruces, reciprocidad, rechazo de líneas sin
+parsear y rellenos ausentes o ambiguos. **1.529 passed, 1 skipped, 79 deselected**;
+GT v5 y producción intactos. [Resultados G39](results-g39.json).
