@@ -148,10 +148,18 @@ G13 adquiere 5.978 archivos de historiales de jugador: el consenso alcanza 8.284
 registros jugador-temporada de 2006/07–2024/25, con 6.308 claves adicionales.
 Son totales retrospectivos con cobertura parcial, separados del benchmark por jornada.
 G14 completa los 6.495 historiales de jugadores del inventario y alcanza 8.786
-registros jugador-temporada. El GT experimental vigente es **fpl-labels-v4**: corrige
+registros jugador-temporada. El paquete G14 **fpl-labels-v4**: corrige
 cuatro valores en dos filas (Leno 2018/19 y Ferguson 2024/25), con evidencia directa
 de CSV individuales y totales finales. Conserva 303.448 filas y doce temporadas;
 6.934 totales coinciden tras la corrección. V3 y el runtime permanecen intactos.
+G15 audita los 7.365 CSV individuales por partido del inventario 2016/17–2025/26.
+El GT experimental vigente **fpl-labels-v5** contiene **303.126 filas de jugadores**
+y conserva aparte 322 filas de Assistant Manager; añade una corrección de BPS
+corroborada para Cucho Hernández. La auditoría explicita archivos repetidos o
+incompletos, 15 filas adicionales con cero minutos/puntos y 78 fechas discrepantes.
+Son doce temporadas de etiquetas retrospectivas, sin disponibilidad predeadline
+acreditada; [G15](experiments/data_ground_truth/results-g15.json) no acredita
+un replay causal completo ni una mejora del modelo.
 
 ## Empezar
 

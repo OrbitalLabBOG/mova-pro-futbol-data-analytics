@@ -85,6 +85,18 @@ def normalize(frame: pd.DataFrame, season: str, historical: bool) -> pd.DataFram
     return result.sort_values(['gw','element','fixture']).reset_index(drop=True)
 
 
+def separate_entities(frame: pd.DataFrame,season: str):
+    kinds=frame['season_position_type']
+    if kinds.isna().any() or not kinds.isin([1,2,3,4,5]).all():raise ValueError('unknown FPL entity type')
+    managers=frame.loc[kinds.eq(5)].copy()
+    columns=['element','fixture','gw','total_points','official_player_code','kickoff_time']+[c for c in managers if c.startswith('mng_')]
+    managers=managers[columns].rename(columns={'official_player_code':'source_element_code','kickoff_time':'event_time_utc'})
+    managers['season']=season;managers['entity_type']='assistant_manager'
+    managers['identity_key']=[f'fpl_manager:{season}:{int(x)}' for x in managers.element]
+    managers['available_at']=pd.NA;managers['eligible_predeadline']=False;managers['eligible_player_training']=False
+    return frame.loc[~kinds.eq(5)].copy(),managers
+
+
 def verify(package: Path) -> dict:
     manifest=json.loads((package/'manifest.json').read_text())
     descriptor={k:v for k,v in manifest.items() if k!='dataset_id'}
@@ -103,6 +115,7 @@ def verify(package: Path) -> dict:
             raise ValueError('duplicate labels')
         if frame.eligible_predeadline.any() or frame.available_at.notna().any():
             raise ValueError('unproven temporal availability')
+        if manifest.get('version')=='fpl-labels-v5' and not frame.entity_type.eq('player').all():raise ValueError('non-player in player partition')
         rows+=len(frame)
     for entry in manifest.get('quarantines',[]):
         if Path(entry['file']).name!=entry['file']:
@@ -110,6 +123,16 @@ def verify(package: Path) -> dict:
         frame=pd.read_csv(io.BytesIO(gzip.decompress(checked(package/entry['file'],entry['sha256']))))
         if len(frame)!=entry['rows'] or not frame.exclusion_reason.eq(entry['reason']).all():
             raise ValueError('quarantine content mismatch')
+    manager_rows=0
+    for entry in manifest.get('manager_partitions',[]):
+        if Path(entry['file']).name!=entry['file']:raise ValueError('unsafe manager partition path')
+        frame=pd.read_csv(io.BytesIO(gzip.decompress(checked(package/entry['file'],entry['sha256']))))
+        if len(frame)!=entry['rows'] or set(frame.season)!={entry['season']} or not frame.entity_type.eq('assistant_manager').all():raise ValueError('invalid manager partition')
+        if frame.eligible_player_training.any() or frame.eligible_predeadline.any() or frame.available_at.notna().any():raise ValueError('invalid manager eligibility')
+        if frame.duplicated(['element','fixture']).any():raise ValueError('duplicate manager label')
+        if not frame.identity_key.str.startswith('fpl_manager:'+entry['season']+':').all():raise ValueError('invalid manager identity namespace')
+        manager_rows+=len(frame)
+    if manager_rows!=manifest.get('manager_rows',0):raise ValueError('manager count mismatch')
     if rows!=manifest['rows']:
         raise ValueError('row count mismatch')
     return manifest
@@ -123,13 +146,13 @@ def load_partition(package: Path, split: str) -> pd.DataFrame:
     return pd.concat(parts,ignore_index=True) if parts else pd.DataFrame()
 
 
-def build(recent_root: Path, old_root: Path, output: Path, identity_root: Path | None = None, season_2015_root: Path | None = None, repairs_root: Path | None = None) -> Path:
+def build(recent_root: Path, old_root: Path, output: Path, identity_root: Path | None = None, season_2015_root: Path | None = None, repairs_root: Path | None = None, separate_managers: bool = False) -> Path:
     recent_manifest=json.loads((recent_root/'labels-manifest.json').read_text())
     identity_root=identity_root or old_root/'identity'
     old_manifest=json.loads((identity_root/'report.json').read_text())
     inputs=[];frames=[];quarantines=[]
     raw_records=json.loads((recent_root/'manifest.json').read_text())['records']
-    repairs=[]
+    repairs=[];manager_frames=[]
     repair_records=json.loads((repairs_root/'manifest.json').read_text())['records'] if repairs_root else []
     for season,info in sorted(recent_manifest['seasons'].items()):
         data=checked(recent_root/'labels'/f'{season}.csv',info['artifact_sha256'])
@@ -157,6 +180,9 @@ def build(recent_root: Path, old_root: Path, output: Path, identity_root: Path |
                 repairs.extend(dict(season=season,source_sha256=record['sha256'],metadata_sha256=meta_record['sha256'],**change) for change in changes)
                 inputs.extend([dict(season=season,sha256=record['sha256'],role='individual_fpl_history_repair'),
                     dict(season=season,sha256=meta_record['sha256'],role='season_totals_repair_evidence')])
+        if separate_managers:
+            frame,managers=separate_entities(frame,season)
+            if not managers.empty:manager_frames.append((season,managers))
         frames.append((season,normalize(frame,season,False)))
     data=checked(identity_root/'labels.csv',old_manifest['labels_sha256'])
     inputs.append(dict(season='2014-15',sha256=old_manifest['labels_sha256'],role='reconciled_historical_fpl_labels'))
@@ -175,6 +201,7 @@ def build(recent_root: Path, old_root: Path, output: Path, identity_root: Path |
     # No claim of unseen test data: 2025/26 has already been used in earlier research.
     partitions=[];payloads={}
     for season,frame in sorted(frames):
+        if separate_managers:frame['entity_type']='player'
         split='evaluation' if season=='2025-26' else 'validation' if season=='2024-25' else 'train'
         if season>'2025-26':
             raise ValueError('unreviewed season partition')
@@ -190,7 +217,12 @@ def build(recent_root: Path, old_root: Path, output: Path, identity_root: Path |
         payloads[filename]=payload
         exclusions.append(dict(season=season,file=filename,rows=len(frame),sha256=digest(payload),
             reason='superseded_zero_postponement_placeholder'))
-    manifest=dict(schema_version=1,version='fpl-labels-v4' if repairs_root else VERSION,implementation_sha256=digest(Path(__file__).read_bytes()),
+    manager_partitions=[]
+    for season,frame in manager_frames:
+        filename=season+'-assistant-managers.csv.gz';payload=gzip.compress(frame.to_csv(index=False).encode(),mtime=0)
+        payloads[filename]=payload
+        manager_partitions.append(dict(season=season,file=filename,rows=len(frame),sha256=digest(payload),purpose='assistant_manager_chip_research'))
+    manifest=dict(schema_version=1,version='fpl-labels-v5' if separate_managers else 'fpl-labels-v4' if repairs_root else VERSION,implementation_sha256=digest(Path(__file__).read_bytes()),
         pandas_version=pd.__version__,inputs=sorted(inputs,key=lambda x:x['season']),
         quarantines=exclusions,partitions=partitions,rows=sum(p['rows'] for p in partitions),
         purpose='retrospective_label_training_not_predeadline_replay',
@@ -198,6 +230,10 @@ def build(recent_root: Path, old_root: Path, output: Path, identity_root: Path |
         missing_complete_seasons=[] if season_2015_root else ['2015-16'],
         partial_seasons_excluded=[] if season_2015_root else ['2015-16'],unknown_available_at=True,
         excluded=['final_season_snapshots','prices','ownership','official_xp','pl_minutes_substitution'])
+    if separate_managers:
+        manifest['manager_partitions']=manager_partitions
+        manifest['manager_rows']=sum(x['rows'] for x in manager_partitions)
+        manifest['entity_scope']='player_partitions_and_separate_assistant_manager_labels'
     if repairs_root:
         if not repairs:raise ValueError('repair package requires verified changes')
         manifest['label_repairs']=repairs
@@ -224,7 +260,8 @@ def main():
     ap.add_argument('--identity-root',type=Path)
     ap.add_argument('--season-2015-root',type=Path)
     ap.add_argument('--repairs-root',type=Path)
-    args=ap.parse_args();path=build(args.recent_root,args.old_root,args.output,args.identity_root,args.season_2015_root,args.repairs_root)
+    ap.add_argument('--separate-managers',action='store_true')
+    args=ap.parse_args();path=build(args.recent_root,args.old_root,args.output,args.identity_root,args.season_2015_root,args.repairs_root,args.separate_managers)
     manifest=verify(path)
     print(json.dumps(dict(path=str(path),dataset_id=manifest['dataset_id'],rows=manifest['rows'],
         partitions=[{k:p[k] for k in ['season','split','rows']} for p in manifest['partitions']]),indent=2))

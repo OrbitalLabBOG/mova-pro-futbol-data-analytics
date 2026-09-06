@@ -1,0 +1,2033 @@
+{
+  "version": "historical-data-g15",
+  "acquisition": {
+    "files": 7365,
+    "bytes": 39523460,
+    "errors": [],
+    "repository": "vaastav/Fantasy-Premier-League",
+    "revision": "9779cdbc0c07f6c900c2d0c181ddf6bb9c800f88"
+  },
+  "audit": {
+    "version": "individual-gameweek-audit-v1",
+    "source_manifest_sha256": "5465bc735e9d726822523d9d8e168c9eee8597da3949ee8494b7b99ebee0b588",
+    "reference_dataset_id": "f69c13a09b55c131fcae3e53bb09da43a827f31f58a501eef7a3c60239857456",
+    "input_sha256": {
+      "data/2016-17/players_raw.csv": "824183cf6c00db4c476706112230a16a8135f5dee82240f56df14547ad22db84",
+      "data/2017-18/players_raw.csv": "c40f7e6a74160f3a151fb32ee79d5843e87daf58e1a002ccfff412a224804264",
+      "data/2018-19/fixtures.csv": "f50cbc202ea89289e359a74c2e82e988965f063f4016bbe49426d3de483cc046",
+      "data/2018-19/players_raw.csv": "a2ad425f5692842d05ddc8de7eafa63cece551fde788278427594790e982046a",
+      "data/2019-20/fixtures.csv": "81851c3c55373c443aa6b7062be85d5710d61ab784239e9810655b343728e0ed",
+      "data/2019-20/players_raw.csv": "6ebf73e7f4fe0d697869a12cbf39ccb1df444c6b9b1be6c02e61677ebbfc243f",
+      "data/2020-21/fixtures.csv": "75ca4859c7898bff9c73055337651893c041e596462d08935f2a6964c437f65d",
+      "data/2020-21/players_raw.csv": "e3aff899fc2486bd96fe5d11d8c8e8c066dea36cc71de2bf8a85e8aa7245ed32",
+      "data/2021-22/fixtures.csv": "9fc11cc675ff49dd5b8858211aa5cbe08375e064810536931e0ac38c060dee64",
+      "data/2021-22/players_raw.csv": "78e185fb0b5c81f58c2b89f232358b1097bededc9852d4171edaea2e9d3bd887",
+      "data/2022-23/fixtures.csv": "e783060da73700d4ec6fd12acec4568524eac8bb3ba3ccd8ce68a374dadba8f8",
+      "data/2022-23/players_raw.csv": "a874c12817bbf4d454e60a5765629742b528d4ad0c2f39f56e4fc89640605f7f",
+      "data/2023-24/fixtures.csv": "d8521bdbb80edb5141bc17df71bf6026275f2e56fd6a6dc6041b3ae23a39ce6a",
+      "data/2023-24/players_raw.csv": "43d8cf5efb3d901f2499558c40b392b7f0ee22afe28030f36266ad29024c63d9",
+      "data/2024-25/fixtures.csv": "ce696e187569ca7c45da2562811d3c38f525b58e65575531be37bebd0769ee28",
+      "data/2024-25/players_raw.csv": "75686051b265cbe7755ac71213ecaad21b26ee1cc46a8bafbba19c39ce894b05",
+      "data/2025-26/fixtures.csv": "2d7e3950d346df14ca486cb09e9b9ba406d37d943775244eed06cdc021ffb3a9",
+      "data/2025-26/players_raw.csv": "412ce0172016f8f98f25177dc6de9f3cd2a8ec7a6135f9aa638d7fdee784d67b"
+    },
+    "files": 7365,
+    "errors": 0,
+    "seasons": {
+      "2016-17": {
+        "files": 683,
+        "empty_files": 0,
+        "rows": 23679,
+        "changed_fields": 0,
+        "changed_rows": 0,
+        "players_with_season_total_disagreements": 0,
+        "reference_players_without_compared_file": 0,
+        "manager_files": 0,
+        "reference_only_rows": 0,
+        "individual_only_rows": 0,
+        "kickoff_disagreements": 0,
+        "gameweek_disagreements": 0
+      },
+      "2017-18": {
+        "files": 647,
+        "empty_files": 0,
+        "rows": 22467,
+        "changed_fields": 0,
+        "changed_rows": 0,
+        "players_with_season_total_disagreements": 0,
+        "reference_players_without_compared_file": 0,
+        "manager_files": 0,
+        "reference_only_rows": 0,
+        "individual_only_rows": 0,
+        "kickoff_disagreements": 0,
+        "gameweek_disagreements": 0
+      },
+      "2018-19": {
+        "files": 624,
+        "empty_files": 0,
+        "rows": 21790,
+        "changed_fields": 0,
+        "changed_rows": 0,
+        "players_with_season_total_disagreements": 0,
+        "reference_players_without_compared_file": 0,
+        "manager_files": 0,
+        "reference_only_rows": 0,
+        "individual_only_rows": 0,
+        "kickoff_disagreements": 0,
+        "gameweek_disagreements": 0
+      },
+      "2019-20": {
+        "files": 666,
+        "empty_files": 0,
+        "rows": 22502,
+        "changed_fields": 0,
+        "changed_rows": 0,
+        "players_with_season_total_disagreements": 0,
+        "reference_players_without_compared_file": 0,
+        "manager_files": 0,
+        "reference_only_rows": 3,
+        "individual_only_rows": 4,
+        "kickoff_disagreements": 0,
+        "gameweek_disagreements": 0
+      },
+      "2020-21": {
+        "files": 713,
+        "empty_files": 0,
+        "rows": 24365,
+        "changed_fields": 0,
+        "changed_rows": 0,
+        "players_with_season_total_disagreements": 0,
+        "reference_players_without_compared_file": 0,
+        "manager_files": 0,
+        "reference_only_rows": 11,
+        "individual_only_rows": 11,
+        "kickoff_disagreements": 0,
+        "gameweek_disagreements": 0
+      },
+      "2021-22": {
+        "files": 737,
+        "empty_files": 0,
+        "rows": 25447,
+        "changed_fields": 1,
+        "changed_rows": 1,
+        "players_with_season_total_disagreements": 0,
+        "reference_players_without_compared_file": 0,
+        "manager_files": 0,
+        "reference_only_rows": 0,
+        "individual_only_rows": 0,
+        "kickoff_disagreements": 78,
+        "gameweek_disagreements": 0
+      },
+      "2022-23": {
+        "files": 778,
+        "empty_files": 0,
+        "rows": 26505,
+        "changed_fields": 0,
+        "changed_rows": 0,
+        "players_with_season_total_disagreements": 0,
+        "reference_players_without_compared_file": 0,
+        "manager_files": 0,
+        "reference_only_rows": 0,
+        "individual_only_rows": 0,
+        "kickoff_disagreements": 0,
+        "gameweek_disagreements": 0
+      },
+      "2023-24": {
+        "files": 869,
+        "empty_files": 0,
+        "rows": 29761,
+        "changed_fields": 0,
+        "changed_rows": 0,
+        "players_with_season_total_disagreements": 3,
+        "reference_players_without_compared_file": 0,
+        "manager_files": 0,
+        "reference_only_rows": 93,
+        "individual_only_rows": 0,
+        "kickoff_disagreements": 0,
+        "gameweek_disagreements": 0
+      },
+      "2024-25": {
+        "files": 805,
+        "empty_files": 0,
+        "rows": 27614,
+        "changed_fields": 0,
+        "changed_rows": 0,
+        "players_with_season_total_disagreements": 1,
+        "reference_players_without_compared_file": 0,
+        "manager_files": 21,
+        "reference_only_rows": 7,
+        "individual_only_rows": 0,
+        "kickoff_disagreements": 0,
+        "gameweek_disagreements": 0
+      },
+      "2025-26": {
+        "files": 843,
+        "empty_files": 0,
+        "rows": 29757,
+        "changed_fields": 0,
+        "changed_rows": 0,
+        "players_with_season_total_disagreements": 2,
+        "reference_players_without_compared_file": 0,
+        "manager_files": 0,
+        "reference_only_rows": 66,
+        "individual_only_rows": 0,
+        "kickoff_disagreements": 0,
+        "gameweek_disagreements": 0
+      }
+    },
+    "changed_fields": 1,
+    "artifacts": {
+      "file_audit": "1de0bc1ea991e7478b387c9b37f010dea9a242fcc14c1d861217baf02b438bbb",
+      "differences": "894cdfdde44cb4a971fda043f81db03471003f677aae64103015dac4c6f178a2"
+    }
+  },
+  "triage": {
+    "duplicate_player_paths": [
+      {
+        "season": "2023-24",
+        "element": 687,
+        "paths": [
+          "data/2023-24/players/Djordje_Petrovic_687/gw.csv",
+          "data/2023-24/players/\u0110or\u0111e_Petrovi\u0107_687/gw.csv"
+        ]
+      },
+      {
+        "season": "2023-24",
+        "element": 802,
+        "paths": [
+          "data/2023-24/players/Max_Kinsey-Wellings_802/gw.csv",
+          "data/2023-24/players/Max_Kinsey_802/gw.csv"
+        ]
+      },
+      {
+        "season": "2023-24",
+        "element": 620,
+        "paths": [
+          "data/2023-24/players/Michael_Olakigbe_620/gw.csv",
+          "data/2023-24/players/Michale_Olakigbe_620/gw.csv"
+        ]
+      },
+      {
+        "season": "2023-24",
+        "element": 120,
+        "paths": [
+          "data/2023-24/players/Yegor_Yarmoliuk_120/gw.csv",
+          "data/2023-24/players/Yegor_Yarmolyuk_120/gw.csv"
+        ]
+      },
+      {
+        "season": "2024-25",
+        "element": 748,
+        "paths": [
+          "data/2024-25/players/Ivan_Juric_748/gw.csv",
+          "data/2024-25/players/Simon_Rusk_748/gw.csv"
+        ]
+      },
+      {
+        "season": "2025-26",
+        "element": 391,
+        "paths": [
+          "data/2025-26/players/Ben_Doak_391/gw.csv",
+          "data/2025-26/players/Ben_Gannon-Doak_391/gw.csv"
+        ]
+      },
+      {
+        "season": "2025-26",
+        "element": 100,
+        "paths": [
+          "data/2025-26/players/Eli Junior_Kroupi_100/gw.csv",
+          "data/2025-26/players/Junior_Kroupi_100/gw.csv"
+        ]
+      }
+    ],
+    "key_differences": [
+      {
+        "path": "data/2019-20/players/Cenk_Tosun_146/gw.csv",
+        "reference_only": [
+          {
+            "fixture": 315,
+            "minutes": 0,
+            "total_points": 0
+          }
+        ],
+        "individual_only": [
+          {
+            "fixture": 316,
+            "minutes": 0,
+            "total_points": 0
+          }
+        ]
+      },
+      {
+        "path": "data/2019-20/players/C\u00e9dric_Soares_486/gw.csv",
+        "reference_only": [],
+        "individual_only": [
+          {
+            "fixture": 238,
+            "minutes": 0,
+            "total_points": 0
+          }
+        ]
+      },
+      {
+        "path": "data/2019-20/players/Ryan_Bennett_404/gw.csv",
+        "reference_only": [
+          {
+            "fixture": 237,
+            "minutes": 0,
+            "total_points": 0
+          }
+        ],
+        "individual_only": [
+          {
+            "fixture": 234,
+            "minutes": 0,
+            "total_points": 0
+          }
+        ]
+      },
+      {
+        "path": "data/2019-20/players/Tariq_Lamptey_586/gw.csv",
+        "reference_only": [
+          {
+            "fixture": 238,
+            "minutes": 0,
+            "total_points": 0
+          }
+        ],
+        "individual_only": [
+          {
+            "fixture": 232,
+            "minutes": 0,
+            "total_points": 0
+          }
+        ]
+      },
+      {
+        "path": "data/2020-21/players/Ainsley_Maitland-Niles_15/gw.csv",
+        "reference_only": [
+          {
+            "fixture": 199,
+            "minutes": 0,
+            "total_points": 0
+          }
+        ],
+        "individual_only": [
+          {
+            "fixture": 207,
+            "minutes": 0,
+            "total_points": 0
+          }
+        ]
+      },
+      {
+        "path": "data/2020-21/players/Dale_Stephens_55/gw.csv",
+        "reference_only": [
+          {
+            "fixture": 16,
+            "minutes": 0,
+            "total_points": 0
+          }
+        ],
+        "individual_only": [
+          {
+            "fixture": 14,
+            "minutes": 0,
+            "total_points": 0
+          }
+        ]
+      },
+      {
+        "path": "data/2020-21/players/Diogo_Jota_468/gw.csv",
+        "reference_only": [
+          {
+            "fixture": 18,
+            "minutes": 0,
+            "total_points": 0
+          }
+        ],
+        "individual_only": [
+          {
+            "fixture": 11,
+            "minutes": 0,
+            "total_points": 0
+          }
+        ]
+      },
+      {
+        "path": "data/2020-21/players/Emiliano_Mart\u00ednez_12/gw.csv",
+        "reference_only": [
+          {
+            "fixture": 2,
+            "minutes": 0,
+            "total_points": 0
+          }
+        ],
+        "individual_only": []
+      },
+      {
+        "path": "data/2020-21/players/Joseph_Willock_20/gw.csv",
+        "reference_only": [
+          {
+            "fixture": 199,
+            "minutes": 0,
+            "total_points": 0
+          }
+        ],
+        "individual_only": [
+          {
+            "fixture": 203,
+            "minutes": 0,
+            "total_points": 0
+          }
+        ]
+      },
+      {
+        "path": "data/2020-21/players/Mathew_Ryan_70/gw.csv",
+        "reference_only": [
+          {
+            "fixture": 182,
+            "minutes": 0,
+            "total_points": 0
+          }
+        ],
+        "individual_only": [
+          {
+            "fixture": 179,
+            "minutes": 0,
+            "total_points": 0
+          }
+        ]
+      },
+      {
+        "path": "data/2020-21/players/Rhian_Brewster_262/gw.csv",
+        "reference_only": [
+          {
+            "fixture": 23,
+            "minutes": 0,
+            "total_points": 0
+          }
+        ],
+        "individual_only": [
+          {
+            "fixture": 25,
+            "minutes": 0,
+            "total_points": 0
+          }
+        ]
+      },
+      {
+        "path": "data/2020-21/players/Robert_Snodgrass_428/gw.csv",
+        "reference_only": [
+          {
+            "fixture": 163,
+            "minutes": 0,
+            "total_points": 0
+          }
+        ],
+        "individual_only": [
+          {
+            "fixture": 168,
+            "minutes": 0,
+            "total_points": 0
+          }
+        ]
+      },
+      {
+        "path": "data/2020-21/players/Ross_Barkley_106/gw.csv",
+        "reference_only": [
+          {
+            "fixture": 27,
+            "minutes": 0,
+            "total_points": 0
+          }
+        ],
+        "individual_only": [
+          {
+            "fixture": 22,
+            "minutes": 0,
+            "total_points": 0
+          }
+        ]
+      },
+      {
+        "path": "data/2020-21/players/Ruben_Loftus-Cheek_115/gw.csv",
+        "reference_only": [
+          {
+            "fixture": 31,
+            "minutes": 0,
+            "total_points": 0
+          }
+        ],
+        "individual_only": [
+          {
+            "fixture": 38,
+            "minutes": 0,
+            "total_points": 0
+          }
+        ]
+      },
+      {
+        "path": "data/2020-21/players/Takumi_Minamino_258/gw.csv",
+        "reference_only": [
+          {
+            "fixture": 208,
+            "minutes": 0,
+            "total_points": 0
+          }
+        ],
+        "individual_only": [
+          {
+            "fixture": 206,
+            "minutes": 0,
+            "total_points": 0
+          }
+        ]
+      },
+      {
+        "path": "data/2020-21/players/Theo_Walcott_148/gw.csv",
+        "reference_only": [],
+        "individual_only": [
+          {
+            "fixture": 37,
+            "minutes": 0,
+            "total_points": 0
+          }
+        ]
+      },
+      {
+        "path": "data/2023-24/players/Djordje_Petrovic_687/gw.csv",
+        "reference_only": [
+          {
+            "fixture": 206,
+            "minutes": 90,
+            "total_points": 10
+          },
+          {
+            "fixture": 219,
+            "minutes": 90,
+            "total_points": 3
+          },
+          {
+            "fixture": 226,
+            "minutes": 90,
+            "total_points": 1
+          },
+          {
+            "fixture": 232,
+            "minutes": 90,
+            "total_points": 3
+          },
+          {
+            "fixture": 246,
+            "minutes": 90,
+            "total_points": 2
+          },
+          {
+            "fixture": 261,
+            "minutes": 90,
+            "total_points": 2
+          },
+          {
+            "fixture": 275,
+            "minutes": 90,
+            "total_points": 0
+          },
+          {
+            "fixture": 294,
+            "minutes": 90,
+            "total_points": 2
+          },
+          {
+            "fixture": 307,
+            "minutes": 90,
+            "total_points": 1
+          },
+          {
+            "fixture": 318,
+            "minutes": 90,
+            "total_points": 2
+          },
+          {
+            "fixture": 325,
+            "minutes": 90,
+            "total_points": 6
+          },
+          {
+            "fixture": 281,
+            "minutes": 90,
+            "total_points": 2
+          },
+          {
+            "fixture": 255,
+            "minutes": 90,
+            "total_points": 9
+          },
+          {
+            "fixture": 341,
+            "minutes": 90,
+            "total_points": 2
+          },
+          {
+            "fixture": 355,
+            "minutes": 90,
+            "total_points": 6
+          },
+          {
+            "fixture": 332,
+            "minutes": 90,
+            "total_points": 2
+          },
+          {
+            "fixture": 367,
+            "minutes": 90,
+            "total_points": 1
+          },
+          {
+            "fixture": 375,
+            "minutes": 90,
+            "total_points": 3
+          }
+        ],
+        "individual_only": []
+      },
+      {
+        "path": "data/2023-24/players/Max_Kinsey-Wellings_802/gw.csv",
+        "reference_only": [
+          {
+            "fixture": 253,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 262,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 162,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 273,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 292,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 302,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 316,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 322,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 290,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 331,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 342,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 351,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 362,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 375,
+            "minutes": 0,
+            "total_points": 0
+          }
+        ],
+        "individual_only": []
+      },
+      {
+        "path": "data/2023-24/players/Michale_Olakigbe_620/gw.csv",
+        "reference_only": [
+          {
+            "fixture": 46,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 52,
+            "minutes": 1,
+            "total_points": 1
+          },
+          {
+            "fixture": 67,
+            "minutes": 1,
+            "total_points": 1
+          },
+          {
+            "fixture": 78,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 83,
+            "minutes": 2,
+            "total_points": 1
+          },
+          {
+            "fixture": 95,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 101,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 117,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 121,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 133,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 142,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 158,
+            "minutes": 24,
+            "total_points": 1
+          },
+          {
+            "fixture": 163,
+            "minutes": 1,
+            "total_points": 1
+          },
+          {
+            "fixture": 183,
+            "minutes": 4,
+            "total_points": 1
+          },
+          {
+            "fixture": 192,
+            "minutes": 10,
+            "total_points": 1
+          },
+          {
+            "fixture": 203,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 216,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 223,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 240,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 176,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 241,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 259,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 261,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 271,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 283,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 293,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 303,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 311,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 323,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 336,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 343,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 352,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 362,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 372,
+            "minutes": 0,
+            "total_points": 0
+          }
+        ],
+        "individual_only": []
+      },
+      {
+        "path": "data/2023-24/players/Yegor_Yarmolyuk_120/gw.csv",
+        "reference_only": [
+          {
+            "fixture": 117,
+            "minutes": 18,
+            "total_points": 1
+          },
+          {
+            "fixture": 121,
+            "minutes": 71,
+            "total_points": 3
+          },
+          {
+            "fixture": 133,
+            "minutes": 69,
+            "total_points": 3
+          },
+          {
+            "fixture": 142,
+            "minutes": 45,
+            "total_points": 1
+          },
+          {
+            "fixture": 158,
+            "minutes": 45,
+            "total_points": 1
+          },
+          {
+            "fixture": 163,
+            "minutes": 2,
+            "total_points": 0
+          },
+          {
+            "fixture": 183,
+            "minutes": 45,
+            "total_points": 1
+          },
+          {
+            "fixture": 192,
+            "minutes": 10,
+            "total_points": 1
+          },
+          {
+            "fixture": 203,
+            "minutes": 1,
+            "total_points": 1
+          },
+          {
+            "fixture": 216,
+            "minutes": 33,
+            "total_points": 0
+          },
+          {
+            "fixture": 223,
+            "minutes": 14,
+            "total_points": 1
+          },
+          {
+            "fixture": 240,
+            "minutes": 21,
+            "total_points": 1
+          },
+          {
+            "fixture": 176,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 241,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 259,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 261,
+            "minutes": 3,
+            "total_points": 1
+          },
+          {
+            "fixture": 271,
+            "minutes": 12,
+            "total_points": 1
+          },
+          {
+            "fixture": 283,
+            "minutes": 31,
+            "total_points": 1
+          },
+          {
+            "fixture": 293,
+            "minutes": 70,
+            "total_points": 3
+          },
+          {
+            "fixture": 303,
+            "minutes": 63,
+            "total_points": 3
+          },
+          {
+            "fixture": 311,
+            "minutes": 9,
+            "total_points": 1
+          },
+          {
+            "fixture": 323,
+            "minutes": 11,
+            "total_points": 1
+          },
+          {
+            "fixture": 336,
+            "minutes": 8,
+            "total_points": 1
+          },
+          {
+            "fixture": 343,
+            "minutes": 12,
+            "total_points": 1
+          },
+          {
+            "fixture": 352,
+            "minutes": 24,
+            "total_points": 1
+          },
+          {
+            "fixture": 362,
+            "minutes": 7,
+            "total_points": 1
+          },
+          {
+            "fixture": 372,
+            "minutes": 6,
+            "total_points": 1
+          }
+        ],
+        "individual_only": []
+      },
+      {
+        "path": "data/2024-25/players/Ivan_Juric_748/gw.csv",
+        "reference_only": [
+          {
+            "fixture": 319,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 330,
+            "minutes": 0,
+            "total_points": 4
+          },
+          {
+            "fixture": 339,
+            "minutes": 0,
+            "total_points": 1
+          },
+          {
+            "fixture": 348,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 358,
+            "minutes": 0,
+            "total_points": 10
+          },
+          {
+            "fixture": 367,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 378,
+            "minutes": 0,
+            "total_points": 1
+          }
+        ],
+        "individual_only": []
+      },
+      {
+        "path": "data/2025-26/players/Ben_Doak_391/gw.csv",
+        "reference_only": [
+          {
+            "fixture": 12,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 29,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 32,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 42,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 56,
+            "minutes": 17,
+            "total_points": 1
+          },
+          {
+            "fixture": 63,
+            "minutes": 12,
+            "total_points": 4
+          },
+          {
+            "fixture": 73,
+            "minutes": 14,
+            "total_points": 1
+          },
+          {
+            "fixture": 83,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 96,
+            "minutes": 10,
+            "total_points": 1
+          },
+          {
+            "fixture": 101,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 112,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 128,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 132,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 142,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 157,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 162,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 172,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 184,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 192,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 202,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 212,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 222,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 240,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 242,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 255,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 270,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 272,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 282,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 293,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 302,
+            "minutes": 3,
+            "total_points": 1
+          },
+          {
+            "fixture": 311,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 328,
+            "minutes": 12,
+            "total_points": 1
+          },
+          {
+            "fixture": 332,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 343,
+            "minutes": 4,
+            "total_points": 1
+          },
+          {
+            "fixture": 354,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 363,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 377,
+            "minutes": 33,
+            "total_points": 1
+          }
+        ],
+        "individual_only": []
+      },
+      {
+        "path": "data/2025-26/players/Eli Junior_Kroupi_100/gw.csv",
+        "reference_only": [
+          {
+            "fixture": 96,
+            "minutes": 61,
+            "total_points": 2
+          },
+          {
+            "fixture": 101,
+            "minutes": 27,
+            "total_points": 1
+          },
+          {
+            "fixture": 112,
+            "minutes": 85,
+            "total_points": 2
+          },
+          {
+            "fixture": 128,
+            "minutes": 10,
+            "total_points": 1
+          },
+          {
+            "fixture": 132,
+            "minutes": 60,
+            "total_points": 2
+          },
+          {
+            "fixture": 142,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 157,
+            "minutes": 12,
+            "total_points": 5
+          },
+          {
+            "fixture": 162,
+            "minutes": 26,
+            "total_points": 1
+          },
+          {
+            "fixture": 172,
+            "minutes": 45,
+            "total_points": 1
+          },
+          {
+            "fixture": 184,
+            "minutes": 0,
+            "total_points": 0
+          },
+          {
+            "fixture": 192,
+            "minutes": 16,
+            "total_points": 5
+          },
+          {
+            "fixture": 202,
+            "minutes": 63,
+            "total_points": 7
+          },
+          {
+            "fixture": 212,
+            "minutes": 71,
+            "total_points": 2
+          },
+          {
+            "fixture": 222,
+            "minutes": 66,
+            "total_points": 1
+          },
+          {
+            "fixture": 240,
+            "minutes": 67,
+            "total_points": 7
+          },
+          {
+            "fixture": 242,
+            "minutes": 64,
+            "total_points": 2
+          },
+          {
+            "fixture": 255,
+            "minutes": 32,
+            "total_points": 1
+          },
+          {
+            "fixture": 270,
+            "minutes": 88,
+            "total_points": 2
+          },
+          {
+            "fixture": 272,
+            "minutes": 80,
+            "total_points": 2
+          },
+          {
+            "fixture": 282,
+            "minutes": 16,
+            "total_points": 1
+          },
+          {
+            "fixture": 293,
+            "minutes": 79,
+            "total_points": 2
+          },
+          {
+            "fixture": 302,
+            "minutes": 17,
+            "total_points": 5
+          },
+          {
+            "fixture": 311,
+            "minutes": 84,
+            "total_points": 6
+          },
+          {
+            "fixture": 328,
+            "minutes": 65,
+            "total_points": 2
+          },
+          {
+            "fixture": 332,
+            "minutes": 72,
+            "total_points": 8
+          },
+          {
+            "fixture": 343,
+            "minutes": 69,
+            "total_points": 6
+          },
+          {
+            "fixture": 354,
+            "minutes": 78,
+            "total_points": 2
+          },
+          {
+            "fixture": 363,
+            "minutes": 75,
+            "total_points": 8
+          },
+          {
+            "fixture": 377,
+            "minutes": 72,
+            "total_points": 2
+          }
+        ],
+        "individual_only": []
+      }
+    ],
+    "kickoff_differences": [
+      {
+        "path": "data/2021-22/players/Aaron_Connolly_72/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Aaron_Ramsey_496/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Adam_Lallana_53/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Adam_Webster_61/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Alexis_Mac Allister_74/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Alireza_Jahanbakhsh_66/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Andi_Zeqiri_535/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Ashley_Young_52/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Benjamin_Chrisene_703/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Bernardo_Fernandes Da Silva Junior_68/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Bertrand_Traor\u00e9_32/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Bj\u00f6rn_Engels_31/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Calum_Chambers_10/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Cameron_Archer_568/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Carney_Chukwuemeka_526/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Conor_Hourihane_29/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Danny_Ings_337/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Danny_Welbeck_447/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Davy_Pr\u00f6pper_57/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Douglas Luiz_Soares de Paulo_50/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Ed_Turns_653/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Emiliano_Buend\u00eda Stati_43/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Emiliano_Mart\u00ednez_30/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Enock_Mwepu_462/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Evan_Ferguson_655/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Ezri_Konsa Ngoyo_45/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Filip_Marschall_650/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Florin_Andone_500/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Fr\u00e9d\u00e9ric_Guilbert_46/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Haydon_Roberts_560/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Jacob_Ramsey_51/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Jaden_Philogene-Bidace_497/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Jakub_Moder_75/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Jason_Steele_54/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Jed_Steer_28/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Jeremy_Sarmiento_612/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/John_McGinn_35/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Josh_Feeney_670/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Jo\u00ebl_Veltman_62/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/J\u00fcrgen_Locadia_595/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Kaine_Hayden_684/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Keinan_Davis_49/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Kjell_Scherpen_476/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Kortney_Hause_36/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Lamare_Bogarde_610/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Leandro_Trossard_64/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Leon_Bailey_492/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Lewis_Dunk_59/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Lucas_Digne_168/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Mahmoud Ahmed_Ibrahim Hassan_37/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Marc_Cucurella_584/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Marc_Leonard_654/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Marvelous_Nakamba_41/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Mathew_Ryan_65/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Matthew_Cash_44/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Mbwana Ally_Samatta_48/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Michal_Karbownik_536/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Mois\u00e9s_Caicedo_538/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Morgan_Sanson_34/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Neal_Maupay_63/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Odeluga_Offiah_712/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Ollie_Watkins_40/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Pascal_Gro\u00df_55/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Philippe_Coutinho Correia_681/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Robert_S\u00e1nchez_69/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Robin_Olsen_691/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Shane_Duffy_56/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Solomon_March_60/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Steven_Alzate_73/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Tariq_Lamptey_71/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Taylor_Richards_537/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Thomas_McGill_688/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Tim_Iroegbunam_638/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Tommi_O'Reilly_713/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Tyrone_Mings_38/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Viljami_Sinisalo_596/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Wesley_Moraes_47/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      },
+      {
+        "path": "data/2021-22/players/Yves_Bissouma_70/gw.csv",
+        "fixture": 263,
+        "event_time_utc": "2022-02-26T15:00:00Z",
+        "kickoff_time": "2022-02-26T15:30:00Z"
+      }
+    ]
+  },
+  "package": {
+    "dataset_id": "1d111a458c9074fcd7ec2da516e82d9d1984600f6f057716112b92e855240df4",
+    "version": "fpl-labels-v5",
+    "rows": 303126,
+    "partitions": [
+      {
+        "season": "2014-15",
+        "split": "train",
+        "file": "2014-15.csv.gz",
+        "rows": 24876,
+        "sha256": "dcf4128954d44c06accb6bfc76576d1635b5631010304b5fd02581a8c4d3b3b8",
+        "official_identity_rows": 24202,
+        "season_scoped_identity_rows": 674
+      },
+      {
+        "season": "2015-16",
+        "split": "train",
+        "file": "2015-16.csv.gz",
+        "rows": 24741,
+        "sha256": "d74cf06e3a811584b004a9721e5d053f816d5255b94ebbf779d7d02da1216b68",
+        "official_identity_rows": 24741,
+        "season_scoped_identity_rows": 0
+      },
+      {
+        "season": "2016-17",
+        "split": "train",
+        "file": "2016-17.csv.gz",
+        "rows": 23679,
+        "sha256": "ead76c85d4ea01b44909fb32935dd1e107429b2b1d9c14abbc46d742a9a7665a",
+        "official_identity_rows": 23679,
+        "season_scoped_identity_rows": 0
+      },
+      {
+        "season": "2017-18",
+        "split": "train",
+        "file": "2017-18.csv.gz",
+        "rows": 22467,
+        "sha256": "5b9602265b540e92e16275f4cffd2a0943ef5d4cda33ef183cffa9f38c254b9a",
+        "official_identity_rows": 22467,
+        "season_scoped_identity_rows": 0
+      },
+      {
+        "season": "2018-19",
+        "split": "train",
+        "file": "2018-19.csv.gz",
+        "rows": 21790,
+        "sha256": "0aaf874915ae122fec7b3f316a4683d0ca6485c693930ccb8c2084d8bca76870",
+        "official_identity_rows": 21790,
+        "season_scoped_identity_rows": 0
+      },
+      {
+        "season": "2019-20",
+        "split": "train",
+        "file": "2019-20.csv.gz",
+        "rows": 22501,
+        "sha256": "4c625059ba8ffbdc1291d02acb6d16921ec8c8ce4366e927572304c61318a289",
+        "official_identity_rows": 22501,
+        "season_scoped_identity_rows": 0
+      },
+      {
+        "season": "2020-21",
+        "split": "train",
+        "file": "2020-21.csv.gz",
+        "rows": 24365,
+        "sha256": "aa063ffc471e566ef4091c78fb4077ec9d527f09fb87491d49d86205f1835b65",
+        "official_identity_rows": 24365,
+        "season_scoped_identity_rows": 0
+      },
+      {
+        "season": "2021-22",
+        "split": "train",
+        "file": "2021-22.csv.gz",
+        "rows": 25447,
+        "sha256": "2c2ed1cc0b989b2381364fca3daf755056ab17cc010c50273689afbf60bc706c",
+        "official_identity_rows": 25447,
+        "season_scoped_identity_rows": 0
+      },
+      {
+        "season": "2022-23",
+        "split": "train",
+        "file": "2022-23.csv.gz",
+        "rows": 26505,
+        "sha256": "5e1fe79e52ec7cbdaf94a8f39d55cade4a94b013fbeb3d14f634014ba0727636",
+        "official_identity_rows": 26505,
+        "season_scoped_identity_rows": 0
+      },
+      {
+        "season": "2023-24",
+        "split": "train",
+        "file": "2023-24.csv.gz",
+        "rows": 29725,
+        "sha256": "e81d282f7f26b6b21be8f4f004742708e1e1208869762b980cbc288a7b5bed37",
+        "official_identity_rows": 29725,
+        "season_scoped_identity_rows": 0
+      },
+      {
+        "season": "2024-25",
+        "split": "validation",
+        "file": "2024-25.csv.gz",
+        "rows": 27283,
+        "sha256": "826db6a35ec8028a4771343c0d7c41206d00bcb557376f5807a85649d108133b",
+        "official_identity_rows": 27283,
+        "season_scoped_identity_rows": 0
+      },
+      {
+        "season": "2025-26",
+        "split": "evaluation",
+        "file": "2025-26.csv.gz",
+        "rows": 29747,
+        "sha256": "ec7706ca56a891f7bf999eeda92b23556e083093adf77f1d9ddcfb4b23d5e72f",
+        "official_identity_rows": 29747,
+        "season_scoped_identity_rows": 0
+      }
+    ],
+    "manager_rows": 322,
+    "manager_partitions": [
+      {
+        "season": "2024-25",
+        "file": "2024-25-assistant-managers.csv.gz",
+        "rows": 322,
+        "sha256": "3d386017f8886dd3d48d2dd168de1dd119449458d2da59f40762e104623e9c3e",
+        "purpose": "assistant_manager_chip_research"
+      }
+    ],
+    "label_repairs": [
+      {
+        "season": "2018-19",
+        "source_sha256": "e2f0894ce7974adeae8ffad72cfb8431cf94fda93fbeb65f061e15cbf28372c0",
+        "metadata_sha256": "a2ad425f5692842d05ddc8de7eafa63cece551fde788278427594790e982046a",
+        "element": 2,
+        "official_player_code": 80201,
+        "fixture": 61,
+        "field": "minutes",
+        "before": 42,
+        "after": 45
+      },
+      {
+        "season": "2021-22",
+        "source_sha256": "4e51f222aeaa7a89d7e418588d74806dd6fdb7022ec3b2e78e59077aecfa49dd",
+        "metadata_sha256": "78e185fb0b5c81f58c2b89f232358b1097bededc9852d4171edaea2e9d3bd887",
+        "element": 472,
+        "official_player_code": 244716,
+        "fixture": 8,
+        "field": "bps",
+        "before": 28,
+        "after": 29
+      },
+      {
+        "season": "2024-25",
+        "source_sha256": "de490b05e4b8d33ff05dad9d397ee87fcc054a5390d83aab3f03ec8521db5a44",
+        "metadata_sha256": "75686051b265cbe7755ac71213ecaad21b26ee1cc46a8bafbba19c39ce894b05",
+        "element": 123,
+        "official_player_code": 487117,
+        "fixture": 239,
+        "field": "minutes",
+        "before": 0,
+        "after": 17
+      },
+      {
+        "season": "2024-25",
+        "source_sha256": "de490b05e4b8d33ff05dad9d397ee87fcc054a5390d83aab3f03ec8521db5a44",
+        "metadata_sha256": "75686051b265cbe7755ac71213ecaad21b26ee1cc46a8bafbba19c39ce894b05",
+        "element": 123,
+        "official_player_code": 487117,
+        "fixture": 239,
+        "field": "total_points",
+        "before": 0,
+        "after": 1
+      },
+      {
+        "season": "2024-25",
+        "source_sha256": "de490b05e4b8d33ff05dad9d397ee87fcc054a5390d83aab3f03ec8521db5a44",
+        "metadata_sha256": "75686051b265cbe7755ac71213ecaad21b26ee1cc46a8bafbba19c39ce894b05",
+        "element": 123,
+        "official_player_code": 487117,
+        "fixture": 239,
+        "field": "goals_conceded",
+        "before": 0,
+        "after": 2
+      }
+    ]
+  },
+  "limits": [
+    "file coverage is not unique population completeness",
+    "individual files include seven repeated season element keys; manager slot is not stable coach identity",
+    "15 individual-only rows have zero minutes and points; eligibility unresolved",
+    "78 kickoff differences for fixture 263 in 2021-22 remain unmodified; archived fixture supports 15:30 UTC",
+    "unknown predeadline availability",
+    "no additional complete seasons in G15"
+  ],
+  "production_changed": false
+}
