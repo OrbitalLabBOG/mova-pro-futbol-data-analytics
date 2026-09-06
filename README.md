@@ -111,7 +111,7 @@ de modelos por hash y exportación revisable, sin promover modelos al runtime.
 
 La capa experimental conserva los datos crudos fuera de Git, con manifiestos,
 SHA-256, fuentes fijadas por commit y auditorías reproducibles. El
-[registro de gates G1–G77](experiments/data_ground_truth/README.md) contiene
+[registro de gates G1–G78](experiments/data_ground_truth/README.md) contiene
 adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 
 | Capa | Cobertura verificada | Límite pendiente |
@@ -157,6 +157,7 @@ adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 | Variantes documentadas, G75 | 499 identidades y 10.361/10.469 apariciones positivas enlazadas (98,97%); +49 | 108 pendientes; tres equivalencias revisadas con fuente/hash, sin inferencia general de apodos |
 | Grafía y registro FIFA, G76 | 501 identidades; 10.397/10.469 apariciones positivas (99,31%); +36 | 72 pendientes; aparece una discrepancia adicional de autogol, conservada sin reparar GT |
 | Apariciones de temporada, G77 | 503 identidades; 10.422/10.469 apariciones positivas (99,55%); +25 | 47 jugadores de una aparición pendientes; cubiertos 503/503 con al menos dos, sólo identidad retrospectiva |
+| Archivo consolidado, G78 | G55 más 39 directorios y 27 archivos explícitos; 30.295 rutas, 27.449 contenidos únicos (3.189.886.957 bytes) | Corte interno con grupo StatsBomb separado; no añade etiquetas ni acredita respaldo externo |
 | Collector propio, G36 | 55 bundles públicos; 34.512 estados de jugadores y 20.900 observaciones de fixtures | Dos candidatos anteriores a GW2/GW3 2026/27 vinculados al cierre de ingesta; evidencia interna identificada en el índice común G37 |
 | Reglas y chips de snapshots | Explícitos desde GW16 de 2024/25 y en toda 2025/26 | Faltan reglas históricas anteriores e interpretación de overrides |
 | Reglas documentales oficiales, G38 | 10 artículos archivados, 30 afirmaciones parciales en seis temporadas | Descargas actuales: la fecha del artículo no prueba disponibilidad histórica; no son un intérprete de reglas |
