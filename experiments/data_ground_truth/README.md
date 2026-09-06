@@ -3301,3 +3301,63 @@ Reporte y 562 comparaciones reproducidos byte por byte en una raíz v2.
 faltantes, porteros y sensibilidad sin sustituir el resultado principal.
 Suite: **1.600 passed, 1 skipped, 79 deselected**.
 GT v7, G55, entrenamiento y producción permanecen intactos.
+
+
+## G62 — contraste defensivo por partido 2025/26
+
+`defensive_match_calibration.py` verifica 117 archivos Core/Vaastav, el GT v7 y
+el payload suplementario G46. Selecciona `tournament=prem` antes del cruce:
+380 partidos de liga, separando 145 encuentros de otras competiciones. Los 15.340
+registros deportivos se distribuyen en 12.754 de Premier, 1.047 Champions,
+835 EFL Cup, 463 Europa League y 241 Conference League. No se mezclan en el contraste.
+
+El cruce usa clubes dirigidos/fecha y exige identidad estacional/código oficial.
+Las **12.754 filas de Premier** tienen referencia FPL, sin identidades irresueltas.
+Cubren todas las **11.492 apariciones GT con minutos positivos**: 10.725 de jugadores
+de campo y 767 de porteros. Las otras 1.262 filas tienen cero minutos FPL. La
+referencia de posición es la metadata oficial de 2025/26; no se reescriben posiciones.
+La deduplicación de 31.182 registros de identidad conserva 841 pares distintos;
+no hay conflictos de identidad ni de claves deportivas en los campos seleccionados.
+
+El reporte separa estratos excluyentes para evitar inflar concordancias con
+no participantes o comparar reglas de jugadores de campo con porteros. Resultado
+para **jugadores de campo con minutos positivos**:
+
+| Campo o cálculo | Iguales | Diferentes | Proveedor desconocido |
+| --- | ---: | ---: | ---: |
+| tackles | 10.443 | 282 | 0 |
+| recoveries | 10.562 | 163 | 0 |
+| clearances + blocks + interceptions | 10.155 | 302 | 268 |
+| defensive_contributions publicado por Core | 9.641 | 816 | 268 |
+| CBIT/CBIRT derivado con tackles | 9.841 | 616 | 268 |
+
+En total hay **293 blocks desconocidos** (268 de campo y 25 de porteros); los
+otros cinco componentes Core están poblados. La columna nativa de contribución
+también es desconocida en 293 filas. Los valores no se completan con cero.
+La contribución derivada de porteros queda fuera de alcance, mientras sus tackles,
+recuperaciones y CBI se comparan en un estrato propio. La procedencia de la columna
+nativa Core sigue pendiente de inspección: no se considera observador independiente.
+
+G61 mostró concordancia anual 368/369 en 2024/25; G62 demuestra que eso **no
+permite asumir equivalencia por partido ni entre temporadas**. Se preservan los
+seis componentes Core, valor nativo, valores FPL comparables, deltas, fixture, código,
+ID del partido de origen, minutos y GW FPL. Coincidir con el GT no selecciona filas
+ni autoriza sustituir etiquetas. Faltan definiciones/versiones y evidencia temporal.
+
+```bash
+python -m experiments.data_ground_truth.defensive_match_calibration \
+  --raw-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/raw-history-v1 \
+  --supplemental-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/supplemental-components-v3 \
+  --package /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/training-datasets/d4baf849fb4a051be103f8c469e61a4753edb0b4004f980a000fe5c86ef573db \
+  --out /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/defensive-match-calibration-v5
+```
+
+Reporte, comparaciones comprimidas e índice de apariciones positivas ausentes
+(vacío) reproducidos byte por byte en una raíz v6. Las raíces preliminares v1–v4
+preceden los estratos excluyentes y la inclusión de componentes/ID del proveedor;
+la evidencia final es v5/v6. [Resultados G62](results-g62.json).
+Pruebas distinguen nulo/cero, discrepancias, dominios inválidos y los cuatro estratos.
+Suite: **1.610 passed, 1 skipped, 79 deselected**.
+GT v7, G55 y producción permanecen intactos; no hay nuevas temporadas ni admisión
+de entrenamiento. Siguiente investigación: procedencia de la columna nativa,
+semántica de blocks ausentes y consistencia interna de los componentes FPL.
