@@ -1,0 +1,158 @@
+{
+  "version": "historical-data-g29",
+  "alternatives": {
+    "version": "fixture-publication-alternatives-v1",
+    "parent_publication_report_sha256": "57cb4b6e74ac51ca6bfd6fcb476c2cf5dfe078f6771e588aebbc9cf78bd7cc9e",
+    "fixture_audit_sha256": "3c8581f15d6443b7d96978e68f7adb50ee856c4a39e295f0cf91df129691408c",
+    "implementation_sha256": "3661472fd3b84b237a6b06c8d86e3d2f10fc0cd5b597e77f50a772d7bcfb2d59",
+    "max_nominal_age_hours": 336,
+    "selected_calendars": 36,
+    "holes": 10,
+    "planned_candidates": 48,
+    "attempts": 13,
+    "resolved": 10,
+    "unresolved_gws": [],
+    "acquired_hours": 26,
+    "downloaded_bytes": 1043275936,
+    "errors": [],
+    "hour_report_sha256": {
+      "2025-10-20-05": "2a1b9fce3ddba43c5cca258d8221181f259b6e92b4dc61e9a0491a6a886ebde6",
+      "2025-10-20-06": "937c3059346a2509cee0eead56ef4faa983c9c8d6dde2293ed63d94e7d7006c4",
+      "2025-11-24-05": "435c145ae981c4c4b87b71c13f48c854d2d9a47aa0af86342b970787bce71cca",
+      "2025-11-24-06": "f1bcd01f50cdb778ef2b200e5a5ecc33716df587ce7c95bd200b5c8891795881",
+      "2025-12-15-05": "e670a2925051bf4eafb00db6b37564c94a9ce94d2d38add1f1652e2c6c517f1a",
+      "2025-12-15-06": "379af4344808d271734ab4c4c1daedaac42f921dceb9130feacc6f05c2cfbdd9",
+      "2025-12-16-05": "2a117bab1270f3b58f67b320f50f1269cfae5e5044224d982785c0ec24ef34e0",
+      "2025-12-16-06": "13e288633f6f7e634058267c5d5e1fe07709f8e2d86f921c65d93fe1fb9f81dc",
+      "2025-12-22-05": "110616002164db0761489dec1ec907749ff4721eb7c3695da3d79eb5c1af0f22",
+      "2025-12-22-06": "940b77e6c0f8bb88102f926d416f0e8eb09775472320ffeba059dc4997c7ea50",
+      "2026-02-05-05": "ed930b257bfdb8c59c70e0d776f1deb4d51e62741d126a041c8389ef3f9ed752",
+      "2026-02-05-06": "0a5fd222b0ab012f8809e76adf173c474bbb51ad4dfdaf3731a84de417648da5",
+      "2026-02-08-06": "9d09df382492908978be8114e63ff9b2e9dc536bff882956c049a19341dba1fe",
+      "2026-02-08-07": "aebd24a87f40eb706d80955e3fce9904eda32b2daf35725bb7e083ee9bbde23f",
+      "2026-02-13-05": "c2c1c6fcadeb9b8143e34018ee4771956747b9ac415a292c07f8c4cd7078add8",
+      "2026-02-13-06": "7848b408873cfa7504415b06637f646110967431a8694b5b68a43bc89905101e",
+      "2026-02-17-05": "2f2cb87d22f5c420322bf9c708c2032d65586349ee83ed911c9092c5eb82d365",
+      "2026-02-17-06": "26bf9d36634f840dd996d050083db45e42829caffcee79db08e38ccdd7e5dd52",
+      "2026-02-23-06": "0fc77b7e01d42d091414857978023eeeeb935d6935660070214c50baf5cb4d8f",
+      "2026-02-23-07": "5e98d2380cf42fb1d47cde99978cc5d901d71d8405d6ea217c200504e39dd17c",
+      "2026-03-16-06": "8ffd68d0e447a2c919215fb5ee1ad54fd9b07ae7e99cbf01c882c15a5f0e49ef",
+      "2026-03-16-07": "2ef527116ef38433a6dafef8212bee1920c71289b4ae5952271e7f8b033ed2a3",
+      "2026-04-06-06": "bbf3728f9ebf881cf751bd229ba76229b5a0bdd7cd201d1b2fd27e18c7a63bb8",
+      "2026-04-06-07": "684befa5354968f5d3f5901df3e345104ed698a0b38e0715387f825498b958b4",
+      "2026-04-07-06": "02e8f1fd7847350e6178646d389fa8c82089af36b48073c5a05e5b41b62aa151",
+      "2026-04-07-07": "70316a2b10dc6e1e410126affde3e3d0689b91195bd4d20092f9b1eb7d12faf7"
+    },
+    "artifacts": {
+      "plan.json": "72ff7a0964449fadf336b20902bcd4bd4b9a6772b412f1c3b2d132b3f510150e",
+      "attempts.json": "fbb6a8789d098e08dcfeb7433b1d30e979e1aa94991498aa234525319f8b2866",
+      "replacements.json": "144acfee22ad2b7724be199958b97e373195660c9bcfcd4ee64188510853f645",
+      "selected_calendars.json": "df7d22d86fbfd01581b5f23c27fb686dae7dac5160380812acb4dd0724e84a24"
+    },
+    "production_changed": false,
+    "training_admitted": false,
+    "limitations": [
+      "older_calendar_is_not_the_latest_unproven_calendar",
+      "publication_is_not_API_capture_time",
+      "schedule_deltas_are_retrospective_diagnostics"
+    ]
+  },
+  "coverage": {
+    "reproduced": true,
+    "selected": 36,
+    "within48h": 14,
+    "max_nominal_age_hours": 199.7436111111111,
+    "future_observations": 6648,
+    "schedule_delta_fields": {
+      "kickoff_time": 32,
+      "event": 4
+    },
+    "changed_fixture_observations": 32
+  },
+  "replacement_summary": [
+    {
+      "gw": 9,
+      "commit": "4542f26277d87fa1b8c9d99bdc509c871f49f439",
+      "nominal_age_hours": 108.17416666666666,
+      "older_than_original_hours": 23.989166666666666,
+      "changed_fields": 0
+    },
+    {
+      "gw": 13,
+      "commit": "2a6723d6ed9ab07d8c95eb00a8683b984dae3413",
+      "nominal_age_hours": 128.15083333333334,
+      "older_than_original_hours": 23.991944444444446,
+      "changed_fields": 0
+    },
+    {
+      "gw": 17,
+      "commit": "b48daec1daf2ac83fd1356d146789d5701c8d773",
+      "nominal_age_hours": 125.5736111111111,
+      "older_than_original_hours": 71.94888888888889,
+      "changed_fields": 25
+    },
+    {
+      "gw": 18,
+      "commit": "24ecb2d813a216ed6b70ec96e35dc947e4764d59",
+      "nominal_age_hours": 109.08944444444444,
+      "older_than_original_hours": 23.999444444444446,
+      "changed_fields": 0
+    },
+    {
+      "gw": 25,
+      "commit": "4293f517519fde872581c08b1405137b57c9d8f5",
+      "nominal_age_hours": 36.57277777777778,
+      "older_than_original_hours": 23.97861111111111,
+      "changed_fields": 4
+    },
+    {
+      "gw": 26,
+      "commit": "b2ab29d4f6d2908ba9c3e0d4818513c5bd4d8b82",
+      "nominal_age_hours": 59.99666666666667,
+      "older_than_original_hours": 24.12472222222222,
+      "changed_fields": 0
+    },
+    {
+      "gw": 27,
+      "commit": "ab1082f3ad1e0b48442891a10319b4801fb60720",
+      "nominal_age_hours": 199.5052777777778,
+      "older_than_original_hours": 143.99416666666667,
+      "changed_fields": 1
+    },
+    {
+      "gw": 28,
+      "commit": "e8c5d77bc3880ff3ce4be6e7119142a5f148cb96",
+      "nominal_age_hours": 108.40416666666667,
+      "older_than_original_hours": 23.894166666666667,
+      "changed_fields": 0
+    },
+    {
+      "gw": 31,
+      "commit": "4bcf9fc77003bd29097ec4fe45b82e50398ffc0c",
+      "nominal_age_hours": 108.15833333333333,
+      "older_than_original_hours": 23.648055555555555,
+      "changed_fields": 0
+    },
+    {
+      "gw": 32,
+      "commit": "a69917fc2231bd0f61a8a9f2a5948f431671df32",
+      "nominal_age_hours": 106.58222222222223,
+      "older_than_original_hours": 47.443888888888885,
+      "changed_fields": 6
+    }
+  ],
+  "pending_deadlines": [
+    1,
+    2
+  ],
+  "verification": {
+    "reproduced_byte_for_byte": true,
+    "parent_witnesses_revalidated": true,
+    "tests_passed": 1475,
+    "tests_skipped": 1,
+    "tests_deselected": 79
+  },
+  "production_changed": false,
+  "gt_v5_changed": false,
+  "training_admitted": false
+}

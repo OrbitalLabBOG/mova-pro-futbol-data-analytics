@@ -231,6 +231,11 @@ de la nueva fuente mediante GH Archive y ascendencia Git verificada. Cubren
 5.015 observaciones futuras; quedan diez candidatos sin testigo y GW1–2 sin
 candidato de esta fuente. [Resultados G28](experiments/data_ground_truth/results-g28.json).
 
+G29 recupera diez calendarios anteriores con testigo y consolida **36/38 deadlines
+2025/26 (GW3–38)** con publicación previa corroborada. Conserva antigüedad y
+36 cambios de campos frente a versiones posteriores; quedan GW1–2.
+[Resultados G29](experiments/data_ground_truth/results-g29.json).
+
 ## Empezar
 
 Requiere Python 3.13.
