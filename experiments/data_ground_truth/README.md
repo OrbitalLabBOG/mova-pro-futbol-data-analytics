@@ -1,13 +1,13 @@
 ---
 type: research
 name: MOVA historical raw data and ground truth audit
-updated: 2026-09-05
+updated: 2026-09-06
 status: experimental
 ---
 
 # Histórico crudo y ground truth: raw-history-v1
 
-Corte del 5 de septiembre de 2026 (Colombia). Este experimento adquiere y audita
+Corte acumulado al 6 de septiembre de 2026 (Colombia). Este experimento adquiere y audita
 histórico público sin escribir en el canónico, entrenar modelos ni modificar el VPS.
 Los resultados medidos están en [results.json](results.json); los bytes y tablas
 intermedias permanecen fuera de Git. No es una publicación de un dataset.
@@ -1067,3 +1067,83 @@ NULL a true/false. G19 conserva el modo sin alias, los paquetes anteriores y los
 raw originales. Todos los estados siguen con admisión temporal y entrenamiento
 desactivados. GT v5 y producción no cambian. Siguen pendientes el contrato temporal,
 los 78 kickoffs discrepantes de G15 y el universo histórico antiguo incompleto.
+
+## Gate G20: procedencia Git y publicación externa de snapshots
+
+`bootstrap_time` contrasta los bytes comprimidos de los 7.837 snapshots con el
+SHA-1 del objeto Git del inventario fijado. Examina un export del historial Git
+completo, sin nombres ni correos de autores, y encuentra una sola adición por
+archivo, sin modificaciones posteriores registradas. Los relojes declarados en
+las rutas, interpretados explícitamente como UTC, preceden al commit entre 0 y
+62 segundos. Los 199 candidatos tienen commit anterior al deadline y coincidencia
+entre fecha de autor y committer. Estos relojes pertenecen a la fuente: por sí
+solos no acreditan publicación histórica y no activan admisión temporal.
+
+`publication_archive` descarga los archivos horarios de
+[GH Archive](https://www.gharchive.org/), que preserva eventos públicos de GitHub.
+Busca `PushEvent` del nombre e ID exactos de `Randdalf/fplcache` y exige que el SHA
+del commit candidato aparezca como `head` o en su lista de commits. Solo admite
+como testigo un evento público fechado entre el commit y el deadline. Su fecha
+constituye un límite superior conservador de publicación, no la hora exacta de
+captura ni una garantía de exactitud de cada campo. Un evento ausente no demuestra
+que el archivo no estuviera publicado.
+
+Se conservan URL, tamaño y hash del archivo horario, fecha de descarga y
+Last-Modified cuando existe; solo se retienen los eventos originales del
+repositorio investigado. Los demás eventos se descartan. Las horas se procesan
+con cuatro workers y cache verificable; las URLs usan hora sin cero inicial.
+`publication_coverage` vuelve a verificar hashes, identidad del repositorio,
+proyección exacta de cada evento, derivación de cada testigo y correspondencia
+con el hash/deadline de los estados G19. Mide jornadas y filas cubiertas por
+temporada. El testigo vive separado: no reescribe los estados G19 ni activa
+entrenamiento, integración con `Store` o promoción de modelos.
+
+```bash
+# Exportar desde el clon completo del repositorio fuente fijado:
+git log --format='commit%x09%H%x09%cI%x09%aI' --raw --no-abbrev --no-renames \
+  dda55fefed3104e428a32e4a1f278d42f3c03407 -- cache/ > "$BOOTSTRAP_GIT_LOG"
+python -m experiments.data_ground_truth.bootstrap_time \
+  --root "$BOOTSTRAP_RAW_ROOT" --log "$BOOTSTRAP_GIT_LOG" \
+  --audit-root "$BOOTSTRAP_AUDIT_ROOT" --out "$BOOTSTRAP_TIME_ROOT"
+python -m experiments.data_ground_truth.publication_archive \
+  --root "$PUBLICATION_ARCHIVE_ROOT" --provenance-root "$BOOTSTRAP_TIME_ROOT"
+python -m experiments.data_ground_truth.publication_coverage \
+  --archive-root "$PUBLICATION_ARCHIVE_ROOT" --provenance-root "$BOOTSTRAP_TIME_ROOT" \
+  --state-root "$BOOTSTRAP_STATE_V2_ROOT" --out "$PUBLICATION_COVERAGE_ROOT"
+```
+
+Los resultados y límites medidos se conservan en [results-g20.json](results-g20.json).
+Los archivos raw y las evidencias por evento quedan fuera de Git. La publicación
+no resuelve los flags de selección desconocidos, las reglas históricas de chips,
+los calendarios completos conocidos en cada fecha ni la falta de estados de las
+primeras temporadas del GT. El paquete de etiquetas v5 conserva su versión.
+
+Resultado de la corrida: **198/199 horas adquiridas**, 12.415.091.475 bytes
+comprimidos procesados, **164/199 deadlines con testigo** (82,4%). Sus snapshots
+contienen **117.195/143.720 filas de jugadores** (81,5%) y los 320 managers.
+Estas son filas de estado por jornada; no nuevas observaciones independientes
+ni nuevas temporadas de etiquetas.
+
+| Temporada | Candidatos | Deadlines corroborados | Filas jugador corroboradas |
+| --- | ---: | ---: | ---: |
+| 2020/21, parcial GW33–38 | 6 | 6 | 4.191 |
+| 2021/22 | 38 | 36 | 23.826 |
+| 2022/23 | 38 | 37 | 25.438 |
+| 2023/24 | 38 | 34 | 26.507 |
+| 2024/25 | 38 | 38 | 27.159 |
+| 2025/26 | 38 | 13 | 10.074 |
+| 2026/27, abierta GW1–3 | 3 | 0 | 0 |
+
+Quedan 35 candidatos sin testigo: una hora con HTTP 404 (GW9 2021/22), confirmado
+al reintentar, y 34 horas descargadas sin PushEvent del repositorio objetivo.
+Consultar también la hora siguiente para GW26 2021/22 y GW33 2022/23 no añadió
+evidencia. No se atribuye la ausencia a una causa no verificada. El comando de
+adquisición terminó con exit 1 por el 404; la auditoría posterior completó y
+verificó explícitamente la cobertura parcial. La suite local obtuvo 1.453 passed,
+1 skipped y 79 deselected. No debe comunicarse este gate como adquisición completa.
+
+El siguiente gate debe buscar testigos alternativos o capturas anteriores para
+esos huecos, priorizando 2025/26, y definir la admisión del estado junto con sus
+campos desconocidos. Una temporada con 38 testigos bootstrap todavía necesita
+reglas de juego, calendario conocido, transiciones y etiquetas compatibles para
+constituir un benchmark estratégico completo.
