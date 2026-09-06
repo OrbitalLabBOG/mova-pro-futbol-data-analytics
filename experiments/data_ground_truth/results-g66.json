@@ -1,0 +1,139 @@
+{
+  "version": "historical-data-g66",
+  "audit_report_sha256": "2f2b852563565d7cce6e3a65d06b5527e4d195cca3ffeb70675d1f4fd3e93f0e",
+  "audit": {
+    "version": "detail-gap-lineage-v1",
+    "dataset_id": "d4baf849fb4a051be103f8c469e61a4753edb0b4004f980a000fe5c86ef573db",
+    "detail_report_sha256": "b8a70cc8e53302242a6ee0d7d395bded0829c33652aa522f0863b1c3d1baf6eb",
+    "calibration_report_sha256": "77cc1a7db361a30cf981568081c185e59a1d2cca796a110ae2dff70787474ca7",
+    "history_manifest_sha256": "50e973b1157091065f03cbe2ec9cd1682a2c167f7c05b230002ce34fd939b58f",
+    "implementation_sha256": "83e0edbfd79be561277616e5a8742839f812e9ff7078ba2e6d136b84376e15c6",
+    "review_document_sha256": "7febb38e490925336221ed488366063bb77cfb5ed3bd49c2fb8d36561a7a7059",
+    "source_files": 86,
+    "source_bytes": 2091368,
+    "gaps": 75,
+    "lineage_counts": {
+      "average_positions:initial": {
+        "absent_exact_key": 44
+      },
+      "average_positions:integrated": {
+        "absent_exact_key": 44
+      },
+      "average_positions:current_gameweek": {
+        "absent_exact_key": 44
+      },
+      "player_match_enrichment:initial": {
+        "absent_exact_key": 31
+      },
+      "player_match_enrichment:integrated": {
+        "absent_exact_key": 31
+      },
+      "player_match_enrichment:current_gameweek": {
+        "absent_exact_key": 31
+      }
+    },
+    "gap_minutes": {
+      "average_positions": {
+        "1": 34,
+        "2": 1,
+        "3": 2,
+        "5": 1,
+        "10": 1,
+        "12": 1,
+        "19": 2,
+        "30": 1,
+        "32": 1
+      },
+      "player_match_enrichment": {
+        "1": 2,
+        "5": 1,
+        "8": 3,
+        "16": 1,
+        "17": 1,
+        "19": 1,
+        "21": 2,
+        "24": 1,
+        "27": 1,
+        "30": 1,
+        "45": 1,
+        "65": 1,
+        "72": 1,
+        "81": 1,
+        "83": 1,
+        "90": 12
+      }
+    },
+    "gap_gameweeks": {
+      "average_positions": {
+        "2": 2,
+        "3": 2,
+        "4": 1,
+        "6": 2,
+        "9": 4,
+        "10": 2,
+        "13": 1,
+        "14": 1,
+        "15": 1,
+        "16": 1,
+        "17": 8,
+        "19": 1,
+        "20": 1,
+        "21": 1,
+        "22": 1,
+        "23": 1,
+        "24": 1,
+        "25": 2,
+        "27": 2,
+        "29": 1,
+        "30": 1,
+        "32": 2,
+        "34": 1,
+        "35": 3,
+        "36": 1
+      },
+      "player_match_enrichment": {
+        "1": 29,
+        "4": 1,
+        "25": 1
+      }
+    },
+    "quarantine": {
+      "rows": 48,
+      "negative_minute": 48,
+      "unknown_actor": 48,
+      "missing_player_id": 48,
+      "reasons": {
+        "unknown_player_and_invalid_minute": 48
+      },
+      "matches": 44,
+      "outside_reference_matches": [],
+      "canonical_rows": 6455,
+      "canonical_negative_minute": 0,
+      "canonical_unknown_actor": 0
+    },
+    "upstream_claim": "31 enrichment rows excluded as placeholder statistics; number agreement is not individual raw-stream verification",
+    "training_admitted": false,
+    "new_FPL_labels": 0,
+    "production_changed": false,
+    "limitations": [
+      "absent_exact_key_does_not_exclude_unidentified_row",
+      "earlier_present_row_not_automatically_valid_or_recoverable",
+      "same_provider_projections_not_independent_evidence",
+      "upstream_private_raw_stream_not_available_in_inspected_repository",
+      "no_fuzzy_identity_match_zero_imputation_or_label_repair"
+    ],
+    "artifacts": {
+      "gap-lineage.json": "3b8b7f1a958c0a0e1062e4345e3face313768c0b302f346419b0f32028dffda6",
+      "incidents-quarantined.csv": "3309290283e2a3db6032d6c67e4fb9fcf0079e667929a292c4134d7410133c75"
+    }
+  },
+  "verification": {
+    "reproduced_byte_for_byte": true,
+    "pytest": {
+      "passed": 1622,
+      "skipped": 1,
+      "deselected": 79,
+      "seconds": 32.96
+    }
+  }
+}
