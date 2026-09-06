@@ -1,0 +1,305 @@
+{
+  "version": "historical-data-g17",
+  "state_report": {
+    "version": "bootstrap-state-v1",
+    "source_manifest_sha256": "d9eed1e354d0a35443e480a0c4bfcbdebee97f28b73b04309e4bef0f8bcc243e",
+    "candidate_sha256": "58dc58afef7aaea0dee8996a2141abc47dbf8c0a3734b3b837f261bf024521f4",
+    "reference_dataset_id": "1d111a458c9074fcd7ec2da516e82d9d1984600f6f057716112b92e855240df4",
+    "implementation_sha256": "66df169c5177c9f9b04c4ad3b2b33ffd0ee5789a38e447ba31ccccd02245d27e",
+    "candidates": 199,
+    "rows": 144038,
+    "rejected_rows": 2,
+    "seasons": {
+      "2020-21": {
+        "rows": 4191,
+        "player_rows": 4191,
+        "manager_rows": 0,
+        "deadlines": 6,
+        "identity_status": {
+          "matched": 4191
+        },
+        "flags": {
+          "can_select": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          },
+          "can_transact": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          },
+          "removed": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          },
+          "has_temporary_code": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          }
+        }
+      },
+      "2021-22": {
+        "rows": 25150,
+        "player_rows": 25150,
+        "manager_rows": 0,
+        "deadlines": 38,
+        "identity_status": {
+          "matched": 25150
+        },
+        "flags": {
+          "can_select": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          },
+          "can_transact": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          },
+          "removed": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          },
+          "has_temporary_code": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          }
+        }
+      },
+      "2022-23": {
+        "rows": 26196,
+        "player_rows": 26196,
+        "manager_rows": 0,
+        "deadlines": 38,
+        "identity_status": {
+          "matched": 26196
+        },
+        "flags": {
+          "can_select": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          },
+          "can_transact": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          },
+          "removed": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          },
+          "has_temporary_code": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          }
+        }
+      },
+      "2023-24": {
+        "rows": 29510,
+        "player_rows": 29510,
+        "manager_rows": 0,
+        "deadlines": 38,
+        "identity_status": {
+          "matched": 29510
+        },
+        "flags": {
+          "can_select": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          },
+          "can_transact": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          },
+          "removed": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          },
+          "has_temporary_code": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          }
+        }
+      },
+      "2024-25": {
+        "rows": 27479,
+        "player_rows": 27159,
+        "manager_rows": 320,
+        "deadlines": 38,
+        "identity_status": {
+          "matched": 27159
+        },
+        "flags": {
+          "can_select": {
+            "present": 17226,
+            "nonnull": 17226,
+            "true": 13841,
+            "false": 3385
+          },
+          "can_transact": {
+            "present": 17226,
+            "nonnull": 17226,
+            "true": 17226,
+            "false": 0
+          },
+          "removed": {
+            "present": 17226,
+            "nonnull": 17226,
+            "true": 0,
+            "false": 17226
+          },
+          "has_temporary_code": {
+            "present": 12273,
+            "nonnull": 12273,
+            "true": 0,
+            "false": 12273
+          }
+        }
+      },
+      "2025-26": {
+        "rows": 29645,
+        "player_rows": 29645,
+        "manager_rows": 0,
+        "deadlines": 38,
+        "identity_status": {
+          "matched": 29645
+        },
+        "flags": {
+          "can_select": {
+            "present": 29645,
+            "nonnull": 29645,
+            "true": 23203,
+            "false": 6442
+          },
+          "can_transact": {
+            "present": 29645,
+            "nonnull": 29645,
+            "true": 29645,
+            "false": 0
+          },
+          "removed": {
+            "present": 29645,
+            "nonnull": 29645,
+            "true": 0,
+            "false": 29645
+          },
+          "has_temporary_code": {
+            "present": 29645,
+            "nonnull": 29645,
+            "true": 0,
+            "false": 29645
+          }
+        }
+      },
+      "2026-27": {
+        "rows": 1867,
+        "player_rows": 1867,
+        "manager_rows": 0,
+        "deadlines": 3,
+        "identity_status": {
+          "reference_season_unavailable": 1867
+        },
+        "flags": {
+          "can_select": {
+            "present": 1867,
+            "nonnull": 1867,
+            "true": 1685,
+            "false": 182
+          },
+          "can_transact": {
+            "present": 1867,
+            "nonnull": 1867,
+            "true": 1867,
+            "false": 0
+          },
+          "removed": {
+            "present": 1867,
+            "nonnull": 1867,
+            "true": 0,
+            "false": 1867
+          },
+          "has_temporary_code": {
+            "present": 1867,
+            "nonnull": 1867,
+            "true": 0,
+            "false": 1867
+          }
+        }
+      }
+    },
+    "artifacts": {
+      "player_states.csv.gz": "c439eaaa77467a3c1cb214c076bd22bdd6bded82a1c1cc0dd4be041db921e903",
+      "manager_states.csv.gz": "dd78fe5bc6d999e7c4870c6d65af078d747c374f3e2c983611fb752030cf625c",
+      "rejected.json": "641905300af08f7a2db33d5f6933a6d4d3a09fddf3a6e42a0af19e8875282b49"
+    },
+    "eligible_predeadline": false,
+    "eligible_training": false,
+    "semantics": "published_source_roster_is_not_proof_of_buy_or_lineup_eligibility"
+  },
+  "quarantine": [
+    {
+      "season": "2022-23",
+      "gw": 1,
+      "deadline": "2022-08-05T17:30:00Z",
+      "source_claimed_at": "2022-08-05T12:49:00",
+      "source_sha256": "725f2c09a4aa8f928b83021924562843d515550eaa344121466af347739638b3",
+      "clock_assumption": "UTC_for_nominal_selection_only",
+      "season_scope": "closed",
+      "element": 546,
+      "source_code": 536122,
+      "reference_code": 515024,
+      "error": "reference code conflict"
+    },
+    {
+      "season": "2022-23",
+      "gw": 1,
+      "deadline": "2022-08-05T17:30:00Z",
+      "source_claimed_at": "2022-08-05T12:49:00",
+      "source_sha256": "725f2c09a4aa8f928b83021924562843d515550eaa344121466af347739638b3",
+      "clock_assumption": "UTC_for_nominal_selection_only",
+      "season_scope": "closed",
+      "element": 558,
+      "source_code": 530332,
+      "reference_code": 490721,
+      "error": "reference code conflict"
+    }
+  ],
+  "summary": {
+    "player_rows": 143718,
+    "manager_rows": 320,
+    "closed_player_identity_matches": 141851,
+    "open_player_rows": 1867,
+    "unknown_can_select_rows": 94980,
+    "validated_scope": "199_nominal_deadline_candidates_not_all_7837_snapshots"
+  },
+  "production_changed": false
+}
