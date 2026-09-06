@@ -866,3 +866,30 @@ def test_bootstrap_state_units_unknown_flags_and_identity_conflicts():
     with pytest.raises(ValueError,match='code conflict'):normalize(e,{3:99},{1:21})
     assert normalize(e,{3:99},None)['reference_identity_status']=='reference_season_unavailable'
     assert normalize(dict(e,element_type=5),{3:99},{1:21})['reference_identity_status']=='manager_slot_not_player_identity'
+
+
+def test_bootstrap_identity_tracks_variants_without_merging_slots_or_people():
+    from experiments.data_ground_truth.bootstrap_identity import observe,summarize
+    registry={}
+    event=dict(id=1,deadline_time='2024-08-16T17:30:00Z')
+    def record(day):return dict(path=f'cache/2024/8/{day}/1100.json.xz',sha256=str(day)*32)
+    def element(eid,code,name='First',position=2):return dict(id=eid,code=code,first_name=name,second_name='Last',element_type=position,team=1)
+    observe(registry,dict(events=[event],elements=[element(1,20),element(2,30,'Coach',5)]),record(16))
+    observe(registry,dict(events=[event],elements=[element(1,21),element(2,30,'Replacement',5),element(3,20)]),record(17))
+    entries,collisions=summarize(registry)
+    assert entries[0]['code_count']==2 and entries[0]['name_count']==1
+    assert entries[1]['code_count']==1 and entries[1]['name_count']==2 and entries[1]['entity_types']==[5]
+    assert collisions==[dict(season='2024-25',code=20,elements=[1,3])]
+    assert entries[0]['variants'][0]['first']['source_claimed_at']=='2024-08-16T11:00:00'
+    assert entries[0]['variants'][0]['last']['source_claimed_at']=='2024-08-16T11:00:00'
+
+
+def test_bootstrap_identity_rejects_a_snapshot_without_partial_witnesses():
+    from experiments.data_ground_truth.bootstrap_identity import observe
+    registry={}
+    good=dict(id=1,code=20,first_name='A',second_name='B',element_type=2,team=1)
+    snapshot=dict(events=[dict(id=1,deadline_time='2024-08-16T17:30:00Z')],
+                  elements=[good,dict(good,id=2,code=False)])
+    with pytest.raises(ValueError,match='identity integer'):
+        observe(registry,snapshot,dict(path='cache/2024/8/16/1100.json.xz',sha256='a'*64))
+    assert registry=={}

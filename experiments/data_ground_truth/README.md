@@ -975,3 +975,47 @@ este staging en un benchmark causal ni se modifica el GT v5 o producción.
 Los siguientes pasos son corroborar las dos transiciones de código y definir
 admisión temporal explícita, conservando la distinción entre evidencia de fuente
 y disponibilidad verificada. Los históricos antiguos incompletos siguen pendientes.
+
+## Gate G18: variantes de identidad en todo el archivo bootstrap
+
+`bootstrap_identity` examina todos los snapshots adquiridos, agrupando las
+observaciones por temporada y elemento FPL. Conserva cada variante de código,
+nombre y posición, los clubes observados y testigos con ruta/hash para la primera
+y última aparición. Valida el snapshot completo antes de incorporar testigos:
+una fila inválida no deja observaciones parciales en el registro. Los cambios de
+código y nombre se miden por separado; no se fusionan personas automáticamente.
+
+La corrida completa examinó 7.837 snapshots sin errores y observó 5.391
+claves temporada-elemento, incluidas veinte de manager en 2024/25. Encontró cuatro
+claves con cambios de código y trece con cambios de nombre. No encontró un mismo
+código usado por más de un elemento dentro de una misma temporada. Esto no prueba
+unicidad universal del proveedor ni identidad personal estable a través de años.
+
+| Temporada / elemento | Variantes observadas | Naturaleza que debe investigarse |
+| --- | --- | --- |
+| 2022/23 · 546 | Luke Harris: 536122 → 515024 | Cambio de código con nombre conservado |
+| 2022/23 · 558 | Hugo Bueno López: 530332 → 490721 | Cambio de código con nombre conservado |
+| 2023/24 · 120 | Yegor Yarmolyuk: 601975 → 508395; después Yarmoliuk | Código y escritura del nombre cambian en momentos distintos |
+| 2024/25 · 748 | Ivan Juric 100045653 → Simon Rusk 100047426 | Sustitución de persona en un puesto de manager |
+
+Harris conserva su código anterior en catorce snapshots del 3–6 de agosto de
+2022; el nuevo aparece desde el 7 de agosto. Bueno conserva el anterior en trece
+snapshots del 3–6 de agosto y cambia durante el 6 de agosto. Yarmolyuk cambia
+código durante julio de 2023, antes de GW1; la modificación de escritura llega en
+noviembre. Las fechas son las declaradas por el archivo, sin admisión predeadline.
+
+El caso del manager impide interpretar cualquier cambio de código como un alias
+personal. La ausencia de colisiones también es solo una propiedad del archivo
+observado. Primera/última observación no son intervalos continuos de vigencia.
+No se aplican reparaciones de identidad a G17 ni se altera el GT v5 con este gate.
+
+```bash
+python -m experiments.data_ground_truth.bootstrap_identity \
+  --root "$BOOTSTRAP_RAW_ROOT" --out "$BOOTSTRAP_IDENTITY_ROOT"
+```
+
+[results-g18.json](results-g18.json) conserva métricas, cambios y hashes. El registro
+detallado, colisiones e incidencias permanecen fuera de Git. La corrida final con
+validación previa de todo el snapshot reprodujo exactamente los hashes de los
+artefactos de la primera corrida; ambas tuvieron cero errores. Queda pendiente corroborar los alias de jugadores por
+una regla explícita y trazable, distinguiéndolos de sustituciones de personas.
