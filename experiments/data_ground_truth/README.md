@@ -3076,3 +3076,62 @@ La prioridad de datos para un futuro replay sigue siendo conciliar GW1, cerrar
 las cuatro ventanas del índice de calendario, mejorar frescura y formalizar reglas
 históricas/chips. Rescatar etiquetas antiguas continúa siendo complementario:
 no sustituye las entradas que realmente estaban disponibles antes del deadline.
+
+
+## G58 — período de xG, titularidades y defensa antes de GW1
+
+G32/G33 cubrían trece componentes básicos. `preseason_supplemental.py` añade
+nueve campos suplementarios sobre los **3.622 estados GW1** de seis temporadas.
+Revalida los hashes de G31/G46, restringe el contraste a la temporada inmediatamente
+anterior y exige cobertura completa del archivo de referencia. Normaliza códigos
+oficiales enteros/texto con validación; no une por IDs de elemento entre temporadas.
+Códigos ambiguos, campos ausentes y referencias parciales permanecen desconocidos.
+
+Para `starts` y cuatro campos xG/xA, el resultado es:
+
+| GW1 | Celdas iguales | Comparables | Sin código previo | Ausentes en snapshot |
+| --- | ---: | ---: | ---: | ---: |
+| 2021/22 | 0 | 0 | 0 | 2.645 |
+| 2022/23 | 0 | 0 | 0 | 2.790 |
+| 2023/24 | 2.376 | 2.380 | 825 | 0 |
+| 2024/25 | 2.383 | 2.385 | 665 | 0 |
+| 2025/26 | 2.527 | 2.555 | 870 | 0 |
+| 2026/27 | 2.276 | 2.305 | 690 | 0 |
+
+**9.562/9.625 celdas comparables coinciden exactamente**. Las 63 diferencias son
+13 de starts, 39 de valores esperados fuera de la cota de redondeo y once dentro.
+La cota supone redondeo independiente al centésimo en partidos y acumulado;
+compatibilidad no acredita igualdad ni explica la causa. El índice conserva deltas
+y valores discrepantes. Las 3.050 celdas sin código previo no se imputan a cero.
+
+Las cuatro métricas defensivas tienen otra cobertura: ausentes en GW1 hasta
+2024/25; presentes en 2025/26 pero **sin componentes por partido de 2024/25** para
+conciliar 511 jugadores con código previo, más 174 sin referencia. En GW1 2026/27,
+460 de 461 códigos comparables coinciden en los cuatro campos: 1.840/1.844 celdas.
+El código 216055 tiene cuatro diferencias (incluida contribución defensiva 0 frente
+a 313); 138 códigos siguen sin referencia. No se corrige el snapshot ni se asume
+que cero signifique ausencia de actividad deportiva.
+
+Esto amplía la evidencia del período anterior para GW1, **sin relabeling global**:
+no todos los campos, jugadores y temporadas comparten cobertura. La igualdad con
+GT final no selecciona ejemplos ni sustituye datos publicados; falta cerrar el
+contrato temporal y la procedencia independiente. No se admite entrenamiento.
+
+```bash
+python -m experiments.data_ground_truth.preseason_supplemental \
+  --supplemental-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/supplemental-components-v3 \
+  --performance-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/bootstrap-performance-v2 \
+  --out /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/preseason-supplemental-v3
+```
+
+Reporte e índice reproducidos byte por byte en `preseason-supplemental-v4`.
+Las primeras raíces v1/v2 se descartan: una diferencia de tipo de código (texto
+frente a entero) impedía las coincidencias. Se corrigió y añadió prueba específica,
+además de aislamiento por temporada, referencias ambiguas/incompletas, duplicados
+y códigos inválidos. Suite: **1.592 passed, 1 skipped, 79 deselected**.
+[Resultados G58](results-g58.json).
+
+Sin nuevas etiquetas, temporadas completas, cambios del GT v7 ni producción.
+Siguiente adquisición concreta: buscar referencia anual o por partido para las
+métricas defensivas 2024/25 observadas en la pretemporada 2025/26; conservar
+separados los totales anuales y las etiquetas por partido.
