@@ -67,3 +67,24 @@ def test_archive_recomputes_content_counts_even_with_rehashed_descriptor(tmp_pat
     (package/'cut.json').write_bytes(canonical(cut))
     with pytest.raises(ValueError,match='content counts'):
         verify(package)
+
+
+def test_active_gt_requires_restorable_partitions_and_retains_legacy_identity(tmp_path):
+    import gzip
+    base,registry_path=fixture_registry(tmp_path)
+    payload=gzip.compress(b'season,element,fixture,eligible_predeadline,available_at,entity_type\n2014-15,1,8,False,,player\n',mtime=0)
+    descriptor=dict(version='fpl-labels-v8',rows=1,manager_rows=0,partitions=[dict(file='2014-15.csv.gz',sha256=digest(payload),season='2014-15',rows=1)])
+    dataset_id=digest(json.dumps(descriptor,sort_keys=True,separators=(',',':')).encode())
+    manifest=json.dumps(dict(descriptor,dataset_id=dataset_id)).encode()
+    relative='training-datasets/'+dataset_id;root=base/relative;root.mkdir(parents=True)
+    registry=json.loads(registry_path.read_text())
+    for name,data in [('manifest.json',manifest),('2014-15.csv.gz',payload)]:
+        (root/name).write_bytes(data)
+        registry['files'].append(dict(origin='base',source=relative+'/'+name,path=relative+'/'+name,group='source_extension',role='test_gt',sha256=digest(data),bytes=len(data)))
+    registry['active_gt']=dict(path=relative,dataset_id=dataset_id,manifest_sha256=digest(manifest));registry_path.write_text(json.dumps(registry))
+    package=build(base,registry_path,tmp_path,tmp_path/'packages');cut,_=verify(package)
+    assert cut['gt_dataset_id']==dataset_id and cut['legacy_gt_dataset_id']=='test-gt'
+    restore(package,tmp_path/'restored')
+    assert (tmp_path/'restored'/relative/'2014-15.csv.gz').read_bytes()==payload
+    registry['files'].pop();registry_path.write_text(json.dumps(registry))
+    with pytest.raises(ValueError,match='partition absent'):build(base,registry_path,tmp_path,tmp_path/'incomplete')

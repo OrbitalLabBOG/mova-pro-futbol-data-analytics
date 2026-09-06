@@ -19,6 +19,10 @@ El cockpit read-only comparte un único contrato entre CLI y API. Su dashboard e
 sólo expone tres indicadores humanos; diagnóstico, métricas y JSON permanecen en loopback.
 Supabase sólo refleja seguimiento PM y nunca recibe estado operativo.
 
+G104: corte activo restaurado y verificado: 43.741 archivos, 23,56 GB de
+contenidos únicos, con GT v8 explícito. Las auditorías recientes se reprodujeron
+desde la copia restaurada; no equivale a un backup offsite.
+
 G103: seguimiento de 1.446 snapshots muestra que las tres filas candidatas 0/0
 dejan de aparecer cuando los perfiles muestran otro club. Se conservan las trazas
 y no se promueven como etiquetas finales faltantes.
@@ -190,7 +194,7 @@ adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 | Archivo Azure, G84 | 2.524 snapshots / 3,12 GB adquiridos y reproducidos; cobertura nominal 37/38 GW en 2020/21 y 38/38 en 2021/22 | 1.620.223 observaciones de estado; relojes y publicación separados; sin nuevas etiquetas jugador–partido ni admisión temporal |
 | Enlace Azure–GT, G85 | 52.639/52.640 observaciones jugador–ventana enlazan por ID estacional y código oficial; un conflicto en cuarentena | 35 apariciones positivas sin identidad en alguna captura; no se imputa ausencia ni se admite replay temporal |
 | Observación de jugadores, G86 | 309 identidades trazadas en 2.524 snapshots; 35 huecos positivos distinguidos en 29 ausencias posteriores, cuatro intervalos y dos cambios de variante | Primeras observaciones nominales, no fechas de alta; sin imputación, alias automático o admisión temporal |
-| Archivo portable vigente, G92 | 35.636 rutas y 32.770 contenidos únicos (6,45 GB); incluye G88–G91, reproducidos desde una restauración independiente | Corte interno; G87 intacto, sin acreditar backup externo o admisión temporal |
+| Archivo portable vigente, G104 | 43.741 rutas y 40.850 contenidos únicos (23,56 GB); GT activo v8, paquete parcial G94 y evidencia hasta G103, con reproducciones desde la restauración | Corte interno; G92 conservado, sin acreditar backup externo o admisión temporal |
 | Collector propio, G36 | 55 bundles públicos; 34.512 estados de jugadores y 20.900 observaciones de fixtures | Dos candidatos anteriores a GW2/GW3 2026/27 vinculados al cierre de ingesta; evidencia interna identificada en el índice común G37 |
 | Reglas y chips de snapshots | Explícitos desde GW16 de 2024/25 y en toda 2025/26 | Faltan reglas históricas anteriores e interpretación de overrides |
 | Reglas documentales oficiales, G38 | 10 artículos archivados, 30 afirmaciones parciales en seis temporadas | Descargas actuales: la fecha del artículo no prueba disponibilidad histórica; no son un intérprete de reglas |
