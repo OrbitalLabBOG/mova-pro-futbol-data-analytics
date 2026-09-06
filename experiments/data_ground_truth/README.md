@@ -2584,3 +2584,48 @@ Reporte y observaciones reproducidos byte por byte en
 precisión numérica frente a formato y población parcial o inválida.
 GT v7, modelos y producción no cambian. Falta convertir esta evidencia en una
 admisión por campo y ventana, manteniendo separadas semántica y publicación.
+
+## Gate G49: filtro observable sin selección por resultados futuros
+
+`snapshot_field_screening.py` construye un filtro preliminar por campo sin leer
+etiquetas finales, discrepancias G44/G47 ni la segmentación retrospectiva G48.
+**La igualdad con el GT no puede ser un criterio de inclusión histórica**: usarla
+para seleccionar sólo snapshots correctos condicionaría el experimento a
+información posterior. Los diagnósticos retrospectivos siguen separados.
+
+El gate reproduce la selección y sus testigos externos de publicación, luego
+reproduce la extracción numérica G31. Exige igualdad de todos los artefactos
+padres y liga cada fila a su hash y deadline antes de evaluar:
+
+- Publicación externa acreditada o pendiente.
+- Campo observado válido, ausente, nulo o inválido.
+- GW1 con período todavía no resuelto.
+- Para starts y métricas esperadas: población entera en cero pese a minutos
+  positivos observados en ese mismo snapshot. Es sospecha para revisión, no
+  prueba de placeholder ni regla que rellene valores.
+
+Resultado: **143.720 estados, 199 ventanas y 3.161.840 celdas**.
+**2.423.700 `screen_pass`**, 738.140 `review_required`. Los motivos se solapan:
+642.042 ausencias de campo, 79.684 celdas GW1, 41.074 sin publicación acreditada
+y 3.305 con población cero sospechosa. Este último motivo localiza exactamente
+los cinco campos de los 661 jugadores de GW16 2022/23 sin consultar el GT.
+
+`screen_pass` **no es admisión a entrenamiento** ni certificación semántica. El
+resultado conserva `training_admitted=false`; período, identidad, calendarios,
+reglas y publicación/captura requieren sus contratos separados. Una discrepancia
+retrospectiva como Ferguson no es por sí misma motivo para excluir el dato raw.
+La fecha de publicación es un límite acreditado, no la hora exacta de captura API.
+
+```bash
+python -m experiments.data_ground_truth.snapshot_field_screening \
+  --base-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments \
+  --out /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/snapshot-field-screening-v1
+```
+
+Reporte y filtro comprimido reproducidos byte por byte en
+`snapshot-field-screening-v2`; cada corrida revalida publicación y extracción raw.
+**1.557 passed, 1 skipped, 79 deselected**. Las pruebas conservan idéntico filtro
+al cambiar una etiqueta informativa de igualdad retrospectiva, y separan población
+cero, período y publicación. [Resultados G49](results-g49.json).
+GT v7 y producción permanecen intactos. El filtro prepara la admisión experimental;
+no modifica por sí mismo la configuración de benchmarks ni el entrenamiento.
