@@ -27,3 +27,19 @@ def test_name_normalization_requires_two_tokens():
 def test_even_single_witness_competitor_blocks_reciprocal_uniqueness():
     rows=[witness(1,'10',100),witness(1,'10',101),witness(2,'10',102)]
     assert resolve(rows)=={}
+
+
+def test_single_token_requires_explicit_alias_and_enabled_mode():
+    from experiments.data_ground_truth.statsbomb_player_crosswalk import name_evidence
+    player={'player_name':'Willian Borges da Silva','player_nickname':'Willian'}
+    assert name_evidence(player,'Willian') is None
+    assert name_evidence(player,'Willian',True)=='declared_alias'
+    assert name_evidence({'player_name':'Willian Borges da Silva'},'Willian',True) is None
+    assert name_evidence(player,'William',True) is None
+
+
+def test_alias_must_match_whole_normalized_name_not_subset():
+    from experiments.data_ground_truth.statsbomb_player_crosswalk import name_evidence
+    player={'player_name':'Francesc Fabregas i Soler','player_nickname':'Cesc Fàbregas'}
+    assert name_evidence(player,'Cesc Fabregas',True)=='declared_alias'
+    assert name_evidence(player,'Cesc',True) is None

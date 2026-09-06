@@ -3847,3 +3847,68 @@ Reporte y tres artefactos reproducidos byte por byte en v3. Suite completa:
 [Resultados G69](results-g69.json). Sigue pendiente examinar las identidades no
 resueltas con evidencia adicional y validar semántica de eventos/minutos. No se
 modifican GT v7, G55, etiquetas, permisos comerciales o producción.
+
+## G70 — alias declarados y comparación de cobertura contra G69
+
+<img src="https://static.hudl.com/craft/productAssets/statsbomb_icon.svg" alt="Hudl StatsBomb" width="40" height="40">
+
+Fuente: **StatsBomb Open Data (Hudl)**. Condiciones investigativas de G67 vigentes;
+no se habilita explotación comercial, redistribución raw, entrenamiento ni uso
+productivo. No hay nuevas descargas: se aprovecha el campo original
+`player_nickname` de las alineaciones ya archivadas.
+
+El modo optativo `--declared-aliases` amplía G69 con una segunda evidencia de nombre:
+el alias **declarado por StatsBomb** debe coincidir con todos los tokens normalizados
+del nombre PL. Se permite un solo token únicamente bajo esa declaración explícita;
+no se extraen apodos desde el nombre completo ni se aceptan prefijos, subconjuntos
+del alias o distancia difusa. Se mantienen club/partido, participación observada,
+dos partidos distintos y unicidad de candidato en ambas direcciones. El modo
+predeterminado conserva el criterio anterior de nombre completo.
+
+Hay **174 jugadores con alias declarado**. Se obtienen 576 filas testigo por alias,
+además de las 9.690 del criterio anterior. El witness conserva el valor original del
+alias, método, club, partido, nombre PL y hash de alineación. La normalización no
+constituye una verificación biográfica independiente.
+
+| Métrica | G69 | G70 |
+| --- | ---: | ---: |
+| Identidades aceptadas para investigación | 462 | 490 |
+| Apariciones FPL positivas enlazadas y con intervalos de posición | 9.645 | 10.220 |
+| Apariciones positivas sin resolver | 824 | 249 |
+| Cobertura sobre 10.469 apariciones positivas | 92,13% | 97,62% |
+
+**28 identidades y 575 apariciones adicionales**. La comparación con G69 conserva
+los 462 enlaces anteriores: cero perdidos y cero cambiados. Un testigo no equivale
+a una nueva aparición cubierta; por eso 576 testigos adicionales no se reportan
+como 576 apariciones nuevas.
+
+Sobre las 24.741 filas GT, 12.856 tienen identidad y presencia en alineación;
+4.771 tienen identidad enlazada pero están fuera de esa alineación (sin minutos
+positivos); 7.114 quedan sin identidad. De los 644 jugadores StatsBomb, 490 se
+aceptan, 108 no tienen testigo admisible y 46 tienen evidencia ambigua o insuficiente.
+No se presume que todos los casos restantes se deban a nombres.
+
+El modo requiere `--baseline-root` y verifica que GT, enlace de partidos,
+observaciones PL y manifiesto StatsBomb sean los mismos en ambas corridas.
+`identity-delta.json` registra enlaces conservados, nuevos, perdidos o cambiados;
+los otros artefactos de G69 conservan candidatos, testigos y apariciones pendientes.
+Todos permanecen locales. Los reportes previos se reproducen con su revisión Git;
+G69 no se sobrescribe ni se relabela retrospectivamente con resultados de G70.
+
+```bash
+python -m experiments.data_ground_truth.statsbomb_player_crosswalk \
+  --declared-aliases \
+  --baseline-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/statsbomb-player-crosswalk-v2 \
+  --statsbomb-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/statsbomb-open-g67 \
+  --fixture-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/statsbomb-fixture-crosswalk-v2 \
+  --archive-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/raw-history-v2 \
+  --package /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/training-datasets/d4baf849fb4a051be103f8c469e61a4753edb0b4004f980a000fe5c86ef573db \
+  --out /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/statsbomb-alias-crosswalk-v2
+```
+
+Reporte y cuatro artefactos reproducidos byte por byte en v3. Suite completa:
+**1.633 passed, 1 skipped, 79 deselected** (43,59 s).
+[Resultados G70](results-g70.json). GT v7, G55 y producción intactos, sin nuevas
+etiquetas. Queda revisar las 249 apariciones pendientes con evidencia adicional
+y contrastar la semántica de eventos/minutos antes de cualquier uso analítico
+más amplio. La cobertura de identidad no resuelve los derechos comerciales.
