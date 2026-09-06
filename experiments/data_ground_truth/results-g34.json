@@ -1,0 +1,169 @@
+{
+  "version": "historical-data-g34",
+  "report_sha256": "eb9709fa623730efa2bef23620899b2b511cc69a1998cd038881be8a3b1cb61d",
+  "carryforward": {
+    "version": "calendar-carryforward-v1",
+    "parent_report_sha256": "ad90cb01c53b3cc39d384c3b075e70b8e8c64edf0e8ddc2df5b63f0527cd085b",
+    "implementation_sha256": "81544662116034a965ceb29298e022675b889183a2d5d6745a77ba92f8630a09",
+    "max_addition_nominal_age_hours": 336,
+    "expected_deadlines": 199,
+    "parent_deadlines": 184,
+    "selected_deadlines": 191,
+    "additions": [
+      {
+        "season": "2021-22",
+        "gw": 10,
+        "origin_gw": 9,
+        "nominal_age_hours": 264.9172222222222,
+        "available_at": "2021-10-19T09:05:12Z",
+        "normalized_sha256": "cc2dbf7a69d601704583b5947a09adb1ba751ec4af6cb319d7506584c6863bad",
+        "changed_fields": 2,
+        "future_or_unknown_changed_fields": 2
+      },
+      {
+        "season": "2021-22",
+        "gw": 28,
+        "origin_gw": 27,
+        "nominal_age_hours": 192.47805555555556,
+        "available_at": "2022-02-25T10:31:27Z",
+        "normalized_sha256": "96679d30f1bcdc726afce408ed466272ca88d6fe0e79240b37747e18860d541b",
+        "changed_fields": 0,
+        "future_or_unknown_changed_fields": 0
+      },
+      {
+        "season": "2022-23",
+        "gw": 14,
+        "origin_gw": 13,
+        "nominal_age_hours": 289.5783333333333,
+        "available_at": "2022-10-17T08:25:27Z",
+        "normalized_sha256": "c0b35ebe827dbe1df8b4a2c7f0753032fa7ce31c8a231ba42a89d16f71f2b5a8",
+        "changed_fields": 22,
+        "future_or_unknown_changed_fields": 22
+      },
+      {
+        "season": "2023-24",
+        "gw": 17,
+        "origin_gw": 16,
+        "nominal_age_hours": 177.9777777777778,
+        "available_at": "2023-12-08T08:31:29Z",
+        "normalized_sha256": "f4bc549d4c7b160a1073db582f3cbae73cbbccfa160157a1438186c0056822f0",
+        "changed_fields": 0,
+        "future_or_unknown_changed_fields": 0
+      },
+      {
+        "season": "2023-24",
+        "gw": 37,
+        "origin_gw": 36,
+        "nominal_age_hours": 193.42777777777778,
+        "available_at": "2024-05-03T08:34:29Z",
+        "normalized_sha256": "0de20d1e5d34216cf63696cab4b35c9b151b186a1695baf87f942a388bafd05e",
+        "changed_fields": 0,
+        "future_or_unknown_changed_fields": 0
+      },
+      {
+        "season": "2024-25",
+        "gw": 15,
+        "origin_gw": 14,
+        "nominal_age_hours": 127.1025,
+        "available_at": "2024-12-02T03:54:10Z",
+        "normalized_sha256": "6be88f3921b362a81ccbb6395105c5ec6f20bbf830bd42a0d1c6d6afc86be542",
+        "changed_fields": 0,
+        "future_or_unknown_changed_fields": 0
+      },
+      {
+        "season": "2024-25",
+        "gw": 27,
+        "origin_gw": 26,
+        "nominal_age_hours": 116.98472222222222,
+        "available_at": "2025-02-20T21:01:08Z",
+        "normalized_sha256": "b8a0f7fab879a8db124301c7a4b866289118adeae148a55c6db291bf0b7cd453",
+        "changed_fields": 0,
+        "future_or_unknown_changed_fields": 0
+      }
+    ],
+    "coverage": {
+      "2020-21": {
+        "deadlines": 6,
+        "within48h": 4
+      },
+      "2021-22": {
+        "deadlines": 36,
+        "within48h": 18
+      },
+      "2022-23": {
+        "deadlines": 37,
+        "within48h": 19
+      },
+      "2023-24": {
+        "deadlines": 38,
+        "within48h": 20
+      },
+      "2024-25": {
+        "deadlines": 36,
+        "within48h": 17
+      },
+      "2025-26": {
+        "deadlines": 38,
+        "within48h": 14
+      }
+    },
+    "missing": [
+      {
+        "season": "2021-22",
+        "gw": 31
+      },
+      {
+        "season": "2021-22",
+        "gw": 32
+      },
+      {
+        "season": "2022-23",
+        "gw": 23
+      },
+      {
+        "season": "2024-25",
+        "gw": 1
+      },
+      {
+        "season": "2024-25",
+        "gw": 5
+      },
+      {
+        "season": "2026-27",
+        "gw": 1
+      },
+      {
+        "season": "2026-27",
+        "gw": 2
+      },
+      {
+        "season": "2026-27",
+        "gw": 3
+      }
+    ],
+    "delta_fields": {
+      "kickoff_time": 24
+    },
+    "artifacts": {
+      "selected_calendars.json": "77dc81de2794cc7faa4a6d26203cde902acad2ad935022364d682d280c7fddc2",
+      "deltas.json": "39835550d6d6937419f40d3e10be94dc448bdf8cc73cc4dca6562f2324010b5e"
+    },
+    "production_changed": false,
+    "training_admitted": false,
+    "limitations": [
+      "carryforward_does_not_increase_source_sampling_freshness",
+      "later_unproven_values_are_diagnostics_not_features",
+      "age_bound_is_experimental_not_replay_readiness"
+    ]
+  },
+  "verification": {
+    "reproduced_byte_for_byte": true,
+    "parent_revalidated": true,
+    "tests_passed": 1509,
+    "tests_skipped": 1,
+    "tests_deselected": 79
+  },
+  "production_changed": false,
+  "gt_v5_changed": false,
+  "training_admitted": false
+}
