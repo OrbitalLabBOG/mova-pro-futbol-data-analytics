@@ -1,0 +1,290 @@
+{
+  "version": "historical-data-g58",
+  "audit_report_sha256": "6606af8e2eb7d65942e4f0e96c4ffc49625f0bb5be027dbe74798819400680b0",
+  "audit": {
+    "version": "preseason-supplemental-v1",
+    "rows": 3622,
+    "coverage": {
+      "2021-22": {
+        "rows": 529,
+        "fields": {
+          "starts": {
+            "snapshot_absent": 529
+          },
+          "expected_goals": {
+            "snapshot_absent": 529
+          },
+          "expected_assists": {
+            "snapshot_absent": 529
+          },
+          "expected_goals_conceded": {
+            "snapshot_absent": 529
+          },
+          "expected_goal_involvements": {
+            "snapshot_absent": 529
+          },
+          "defensive_contribution": {
+            "snapshot_absent": 529
+          },
+          "recoveries": {
+            "snapshot_absent": 529
+          },
+          "tackles": {
+            "snapshot_absent": 529
+          },
+          "clearances_blocks_interceptions": {
+            "snapshot_absent": 529
+          }
+        }
+      },
+      "2022-23": {
+        "rows": 558,
+        "fields": {
+          "starts": {
+            "snapshot_absent": 558
+          },
+          "expected_goals": {
+            "snapshot_absent": 558
+          },
+          "expected_assists": {
+            "snapshot_absent": 558
+          },
+          "expected_goals_conceded": {
+            "snapshot_absent": 558
+          },
+          "expected_goal_involvements": {
+            "snapshot_absent": 558
+          },
+          "defensive_contribution": {
+            "snapshot_absent": 558
+          },
+          "recoveries": {
+            "snapshot_absent": 558
+          },
+          "tackles": {
+            "snapshot_absent": 558
+          },
+          "clearances_blocks_interceptions": {
+            "snapshot_absent": 558
+          }
+        }
+      },
+      "2023-24": {
+        "rows": 641,
+        "fields": {
+          "starts": {
+            "no_reference_code": 165,
+            "equal": 475,
+            "different": 1
+          },
+          "expected_goals": {
+            "no_reference_code": 165,
+            "equal": 476
+          },
+          "expected_assists": {
+            "no_reference_code": 165,
+            "equal": 475,
+            "within_rounding_bound": 1
+          },
+          "expected_goals_conceded": {
+            "no_reference_code": 165,
+            "equal": 475,
+            "outside_rounding_bound": 1
+          },
+          "expected_goal_involvements": {
+            "no_reference_code": 165,
+            "equal": 475,
+            "within_rounding_bound": 1
+          },
+          "defensive_contribution": {
+            "snapshot_absent": 641
+          },
+          "recoveries": {
+            "snapshot_absent": 641
+          },
+          "tackles": {
+            "snapshot_absent": 641
+          },
+          "clearances_blocks_interceptions": {
+            "snapshot_absent": 641
+          }
+        }
+      },
+      "2024-25": {
+        "rows": 610,
+        "fields": {
+          "starts": {
+            "equal": 477,
+            "no_reference_code": 133
+          },
+          "expected_goals": {
+            "equal": 477,
+            "no_reference_code": 133
+          },
+          "expected_assists": {
+            "equal": 477,
+            "no_reference_code": 133
+          },
+          "expected_goals_conceded": {
+            "equal": 475,
+            "no_reference_code": 133,
+            "outside_rounding_bound": 2
+          },
+          "expected_goal_involvements": {
+            "equal": 477,
+            "no_reference_code": 133
+          },
+          "defensive_contribution": {
+            "snapshot_absent": 610
+          },
+          "recoveries": {
+            "snapshot_absent": 610
+          },
+          "tackles": {
+            "snapshot_absent": 610
+          },
+          "clearances_blocks_interceptions": {
+            "snapshot_absent": 610
+          }
+        }
+      },
+      "2025-26": {
+        "rows": 685,
+        "fields": {
+          "starts": {
+            "equal": 505,
+            "no_reference_code": 174,
+            "different": 6
+          },
+          "expected_goals": {
+            "equal": 507,
+            "no_reference_code": 174,
+            "outside_rounding_bound": 3,
+            "within_rounding_bound": 1
+          },
+          "expected_assists": {
+            "equal": 505,
+            "no_reference_code": 174,
+            "outside_rounding_bound": 2,
+            "within_rounding_bound": 4
+          },
+          "expected_goals_conceded": {
+            "equal": 505,
+            "no_reference_code": 174,
+            "outside_rounding_bound": 6
+          },
+          "expected_goal_involvements": {
+            "equal": 505,
+            "no_reference_code": 174,
+            "outside_rounding_bound": 4,
+            "within_rounding_bound": 2
+          },
+          "defensive_contribution": {
+            "unknown_reference_component": 511,
+            "no_reference_code": 174
+          },
+          "recoveries": {
+            "unknown_reference_component": 511,
+            "no_reference_code": 174
+          },
+          "tackles": {
+            "unknown_reference_component": 511,
+            "no_reference_code": 174
+          },
+          "clearances_blocks_interceptions": {
+            "unknown_reference_component": 511,
+            "no_reference_code": 174
+          }
+        }
+      },
+      "2026-27": {
+        "rows": 599,
+        "fields": {
+          "starts": {
+            "equal": 455,
+            "no_reference_code": 138,
+            "different": 6
+          },
+          "expected_goals": {
+            "equal": 455,
+            "no_reference_code": 138,
+            "within_rounding_bound": 1,
+            "outside_rounding_bound": 5
+          },
+          "expected_assists": {
+            "equal": 455,
+            "no_reference_code": 138,
+            "outside_rounding_bound": 5,
+            "within_rounding_bound": 1
+          },
+          "expected_goals_conceded": {
+            "equal": 456,
+            "no_reference_code": 138,
+            "outside_rounding_bound": 5
+          },
+          "expected_goal_involvements": {
+            "equal": 455,
+            "no_reference_code": 138,
+            "outside_rounding_bound": 6
+          },
+          "defensive_contribution": {
+            "equal": 460,
+            "no_reference_code": 138,
+            "different": 1
+          },
+          "recoveries": {
+            "equal": 460,
+            "no_reference_code": 138,
+            "different": 1
+          },
+          "tackles": {
+            "equal": 460,
+            "no_reference_code": 138,
+            "different": 1
+          },
+          "clearances_blocks_interceptions": {
+            "equal": 460,
+            "no_reference_code": 138,
+            "different": 1
+          }
+        }
+      }
+    },
+    "supplemental_report_sha256": "504cfd547e9b2ca9374214cbee1ad9a85cd6f4a1ae9df660b2bad93cb372a186",
+    "performance_report_sha256": "45366aadfe7002e2369082a334a7c64d21bb6b7e0541baa5f27798040fee395b",
+    "dataset_id": "d4baf849fb4a051be103f8c469e61a4753edb0b4004f980a000fe5c86ef573db",
+    "implementation_sha256": "b2fc4b411f5322a790dc868fbfd73a521ba41f73df0876c03cec9c935d309a3c",
+    "comparisons_sha256": "4a5ce70c9c9c1daccec3f4342fb06cf02ed06c21b2db7ea2024ee2efa3263d6e",
+    "training_admitted": false,
+    "production_changed": false,
+    "limitations": [
+      "retrospective_final_totals_not_predeadline_feature_values",
+      "agreement_is_not_selection_criterion_or_global_period_relabeling",
+      "source_code_match_not_independent_identity_proof",
+      "missing_reference_components_not_imputed_zero",
+      "rounding_bound_is_hypothesis_not_exact_equality",
+      "publication_witnesses_remain_separate",
+      "new_defensive_fields_do_not_have_prior_match_reference_for_2025_GW1"
+    ]
+  },
+  "verification": {
+    "reproduced_byte_for_byte": true,
+    "accepted_roots": [
+      "preseason-supplemental-v3",
+      "preseason-supplemental-v4"
+    ],
+    "rejected_roots": {
+      "roots": [
+        "preseason-supplemental-v1",
+        "preseason-supplemental-v2"
+      ],
+      "reason": "string/integer source code mismatch before normalization fix"
+    },
+    "tests_passed": 1592,
+    "tests_skipped": 1,
+    "tests_deselected": 79
+  },
+  "new_player_label_rows": 0,
+  "new_complete_fpl_seasons": 0,
+  "production_changed": false
+}
