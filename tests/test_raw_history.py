@@ -207,3 +207,92 @@ def test_historical_identity_requires_unique_code_and_multiple_witnesses():
     ambiguous=pd.concat([observations,observations.assign(official_player_code=11)])
     assert resolve(labels,ambiguous)[3]['resolved_players']==0
     assert resolve(labels,observations.assign(team_id=8))[3]['resolved_players']==0
+
+
+def test_training_quarantines_only_verified_postponement_zeros():
+    from experiments.data_ground_truth.training_dataset import quarantine_postponed
+    frame=pd.DataFrame([
+        dict(element=1,fixture=275,gw=29,minutes=0,total_points=0,kickoff_time='2020-03-11T19:30:00Z'),
+        dict(element=1,fixture=275,gw=39,minutes=90,total_points=6,kickoff_time='2020-06-17T19:15:00Z'),
+    ])
+    fixtures=pd.DataFrame([dict(id=275,event=39,finished=True,kickoff_time='2020-06-17T19:15:00Z')])
+    kept,excluded=quarantine_postponed(frame,fixtures)
+    assert kept.gw.tolist()==[39]
+    assert excluded.gw.tolist()==[29]
+    with pytest.raises(ValueError,match='finished fixture'):
+        quarantine_postponed(frame,fixtures.assign(finished=False))
+    with pytest.raises(ValueError,match='actual observation'):
+        quarantine_postponed(frame,fixtures.assign(event=38))
+    changed=frame.copy();changed.loc[0,'total_points']=1
+    with pytest.raises(ValueError,match='conflicting'):
+        quarantine_postponed(changed,fixtures)
+    assert len(quarantine_postponed(frame.iloc[1:],fixtures)[0])==1
+
+
+def test_training_package_reproducibility_splits_and_integrity(tmp_path):
+    from experiments.data_ground_truth.training_dataset import build, load_partition, verify
+    recent=tmp_path/'recent';old=tmp_path/'old';out=tmp_path/'packages'
+    (recent/'labels').mkdir(parents=True);(old/'identity').mkdir(parents=True)
+    seasons={}
+    for season in ['2023-24','2024-25','2025-26']:
+        data=pd.DataFrame([dict(element=1,fixture=2,gw=1,minutes=90,total_points=4,
+            official_player_code=123,kickoff_time='2025-08-01T15:00:00Z',final_season_value=99)]).to_csv(index=False).encode()
+        (recent/'labels'/f'{season}.csv').write_bytes(data)
+        seasons[season]={'artifact_sha256':raw.digest(data)}
+    (recent/'labels-manifest.json').write_text(json.dumps({'seasons':seasons}))
+    (recent/'manifest.json').write_text(json.dumps({'records':[]}))
+    data=pd.DataFrame([dict(id=1,matchId=2,gw=1,mins=0,gw_pts=0,official_player_code=None,
+        match_local_time='2014-08-16 17:30:00',final_season_value=99)]).to_csv(index=False).encode()
+    (old/'identity/labels.csv').write_bytes(data)
+    (old/'identity/report.json').write_text(json.dumps({'labels_sha256':raw.digest(data)}))
+    package=build(recent,old,out)
+    assert build(recent,old,out)==package
+    assert verify(package)['rows']==4
+    train=load_partition(package,'train')
+    assert set(train.season)=={'2014-15','2023-24'}
+    assert set(load_partition(package,'evaluation').season)=={'2025-26'}
+    assert 'fpl:2014-15:1' in set(train.identity_key)
+    assert 'final_season_value' not in train
+    assert train.available_at.isna().all()
+    assert not train.eligible_predeadline.any()
+    artifact=package/'2025-26.csv.gz';original=artifact.read_bytes();artifact.write_bytes(original+b'changed')
+    with pytest.raises(ValueError,match='hash mismatch'):
+        load_partition(package,'train')
+    artifact.write_bytes(original)
+    manifest=json.loads((package/'manifest.json').read_text());manifest['rows']=99
+    (package/'manifest.json').write_text(json.dumps(manifest))
+    with pytest.raises(ValueError,match='manifest identity mismatch'):
+        verify(package)
+
+
+def test_snapshot_identity_enrichment_requires_matching_labels_and_unique_codes():
+    from experiments.data_ground_truth.snapshots import enrich_identity, unpack
+    labels=pd.DataFrame([dict(id=1,matchId=100,gw=1,mins=90,gw_pts=6,official_player_code=None)])
+    snapshot=labels.assign(official_player_code=123)
+    enriched,report=enrich_identity(labels,snapshot)
+    assert enriched.official_player_code.tolist()==[123]
+    assert report['added_players']==1
+    with pytest.raises(ValueError,match='ground truth disagreement'):
+        enrich_identity(labels,snapshot.assign(gw_pts=5))
+    with pytest.raises(ValueError,match='conflicting snapshot identity'):
+        enrich_identity(labels.assign(official_player_code=124),snapshot)
+    collision=pd.concat([labels,labels.assign(id=2,official_player_code=123)])
+    with pytest.raises(ValueError,match='cross-source identity collision'):
+        enrich_identity(collision,snapshot)
+    player=dict(id=1,total_points=6,code=123,web_name='Example',fixture_history="{'all': [['bad schema']]}")
+    with pytest.raises(ValueError,match='unknown snapshot history schema'):
+        unpack([player])
+
+
+def test_partial_snapshot_reconciliation_preserves_season_and_missing_fixtures():
+    from experiments.data_ground_truth.historical_2014 import reconcile_2014
+    weekly=pd.DataFrame([dict(id=1,gw=1,date='08 Aug 15:00',opp='NOR(A) 3-1',mins=90,gw_pts=6)])
+    players=pd.DataFrame([dict(id=1,pts=6)])
+    fixtures=pd.DataFrame([
+        dict(matchId=100,kickoff='2015-08-08 15:00:00',home_team_id=45,away_team_id=31),
+        dict(matchId=101,kickoff='2016-05-15 15:00:00',home_team_id=31,away_team_id=45),
+    ])
+    labels,report=reconcile_2014(weekly,players,fixtures,season_start=2015,opponent_codes={'NOR':45})
+    assert labels.season.tolist()==['2015-16']
+    assert labels.match_team_code.tolist()==[31]
+    assert report['missing_fixture_ids']==[101]

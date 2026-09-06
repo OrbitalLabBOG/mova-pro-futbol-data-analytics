@@ -119,9 +119,12 @@ El archivo deportivo adicional abarca 17 temporadas desde 2009/10; sus claves de
 partido se reconciliaron en G4 mediante clubes local/visitante; conserva anomalías
 y procedencia separadas del entrenamiento productivo.
 El gate G3 recupera además 2014/15: 24.876 filas, 38 jornadas y 380 partidos
-reconciliados. Hay once temporadas FPL de resultados; 2015/16 e identidad conjunta
-de parte de 2014/15 siguen pendientes: 486 jugadores ya están enlazados,
-cubriendo el 97,87% de sus apariciones con minutos.
+reconciliados. G5 empaqueta 278.707 etiquetas de once temporadas, verificadas por
+hash y separadas temporalmente: excluye 59 ceros de un partido aplazado en 2019/20.
+La identidad de 2014/15 alcanza 652 jugadores y el 99,80% de apariciones con minutos.
+Además recupera 17.373 observaciones de 2015/16: 292/380 partidos (76,84%), todavía
+parcial y fuera del benchmark de temporadas completas. El manifiesto de datos permite
+fijar exactamente las entradas de cada experimento; no acredita replay predeadline.
 
 ## Empezar
 

@@ -251,3 +251,66 @@ Kaggle es genérica y su procesamiento excluye jugadores. No se contabiliza cobe
 por esa referencia. [FPL Analytics 2015/16](https://www.fplanalytics.com/history1516.html)
 conserva una tabla de resumen; su URL JSON pública referenciada por la página devuelve
 HTTP 403 en esta auditoría. No se descargó ni se declara recuperada 2015/16.
+
+
+## Gate G5: paquete verificable y recuperación parcial de 2015/16
+
+[results-g5.json](results-g5.json) conserva el manifiesto del paquete, hashes,
+cuarentenas y cobertura. Se adquirieron otros cinco archivos (4.996.406 bytes),
+sin errores, con los commits de `pins-g5.json`.
+
+- [Snapshot de clwatkins](https://github.com/clwatkins/fantasy_premier_league):
+  17.373 etiquetas, 620 jugadores, 292/380 partidos (76,84%), GW1–30 parcial.
+  Hay 88 partidos ausentes. Otras 71 filas no tienen marcador en el snapshot:
+  se conservan en cuarentena y no se interpretan como no-apariciones. La suma
+  de puntos observados coincide con el total del snapshot para sus 620 jugadores.
+  El JSON original usa `web_name` como clave, por lo que no demuestra cobertura
+  del universo completo ni preservación de homónimos. No es una temporada completa.
+- [Snapshot de prathmesh](https://github.com/prathmesh/Fantasy-Premier-League-Points-Predictor):
+  9.822 observaciones de 2014/15, 623 jugadores y 160 partidos, GW1–16. Todas
+  coinciden con el histórico completo en jugador, fixture, jornada, minutos y puntos.
+  Sus códigos oficiales resuelven 166 identidades adicionales, sin conflicto con
+  las anteriores. No se suman estas filas como datos nuevos: son solapamiento.
+
+El histórico completo 2014/15 conserva ahora 652 jugadores y 24.012 filas con
+identidad oficial; resuelve 10.407/10.428 apariciones con minutos (99,80%). Quedan
+59 jugadores, 864 filas y 21 apariciones sin código. La nueva salida vive separada
+bajo `SNAPSHOT_ROOT/identity`; no se sobrescribe la evidencia G4.
+
+```bash
+python -m experiments.data_ground_truth.raw \
+  --root "$SNAPSHOT_ROOT" --pins experiments/data_ground_truth/pins-g5.json
+python -m experiments.data_ground_truth.snapshots \
+  --root "$SNAPSHOT_ROOT" --archive-root "$RAW_HISTORY_ROOT" \
+  --old-root "$FPL_2014_ROOT"
+python -m experiments.data_ground_truth.training_dataset \
+  --recent-root "$RAW_HISTORY_ROOT" --old-root "$FPL_2014_ROOT" \
+  --identity-root "$SNAPSHOT_ROOT/identity" --output "$DATASET_ROOT"
+```
+
+El paquete de etiquetas de temporadas completas contiene **278.707 filas**.
+La diferencia frente a las 278.766 filas raw es una cuarentena de 59 placeholders
+cero de 2019/20: fixture 275 aparece en GW29 y nuevamente en GW39 después del
+aplazamiento. Solo se excluye una observación anterior si todos sus resultados son
+cero y existe una única observación que coincide con jornada y kickoff del fixture
+finalizado en la fuente fijada. Una discrepancia positiva o evidencia insuficiente
+aborta el build. Los bytes originales y las filas excluidas se conservan.
+
+La partición es entrenamiento 2014/15 y 2016/17–2023/24 (221.355 filas), validación
+2024/25 (27.605) y evaluación 2025/26 (29.747). Esta última ya fue usada en
+investigación previa: **no se presenta como test nunca visto**. Los datos parciales
+2015/16 quedan fuera del paquete de temporadas completas; están disponibles aparte
+para un protocolo futuro que declare esa cobertura y su sesgo de selección.
+
+Cada paquete tiene ID SHA-256, hashes de entradas, implementación y particiones,
+CSV comprimido determinista, publicación atómica y verificación al cargar. Repetir
+un build idéntico reutiliza la versión. `load_partition(package, split)` valida
+el paquete entero antes de entregar datos. Los IDs oficiales se conservan; los
+faltantes usan un namespace FPL por temporada para evitar uniones inventadas.
+Se excluyen snapshots finales, precios, ownership y xP. Es un contrato de etiquetas,
+no una matriz causal de features ni un replay de decisiones listo para promoción.
+
+La siguiente brecha es recuperar los 88 partidos ausentes de 2015/16, completar
+identidades y reconstruir evidencia de disponibilidad anterior al deadline. Los
+resultados observados por sí solos no acreditan noticias, lesiones, precios,
+calendario conocido, reglas de chips ni acciones legales en cada momento histórico.
