@@ -2685,3 +2685,48 @@ fuente. **1.560 passed, 1 skipped, 79 deselected**. Pruebas de corrupción del
 mismo tamaño, digest inválido, allowlist de cuerpos públicos y separación de
 salida/entrada. [Resultados G50](results-g50.json). Sin entrenamiento, promoción
 ni cambios en producción; las brechas de cobertura y causalidad siguen abiertas.
+
+## Gate G51: clasificación de los seis auxiliares Differential
+
+La inspección precisa el hallazgo G50: los seis archivos fuera del manifiesto
+son **tres pares con sufijos SQLite `-wal`/`-shm`**, asociados por nombre a cuerpos
+`.db3` ya registrados. `sqlite_sidecar_audit.py` verifica los hashes de las bases,
+su cabecera SQLite y los hashes/tamaños de cada auxiliar. No atribuye qué proceso
+los creó ni los incorpora al manifiesto como nuevas adquisiciones.
+
+Los tres WAL tienen **cero bytes**. Los tres SHM tienen 32.768 bytes cada uno y
+el mismo hash. Como explica la [documentación SQLite WAL](https://www.sqlite.org/wal.html),
+SQLite puede usar archivos auxiliares incluso al abrir una base en modo de sólo
+lectura; la opción [immutable](https://www.sqlite.org/uri.html) tiene un contrato
+separado. El lector Differential vigente ya utiliza `mode=ro&immutable=1`,
+`trusted_schema=OFF`, `query_only=ON` y `quick_check`; no se modificó ese lector.
+
+Para cada base se hizo una copia temporal **sin auxiliares**, se comprobó la
+igualdad de las tres tablas permitidas y se verificó que la lectura no cambiara
+la copia ni creara archivos adicionales:
+
+| Base registrada | player_match | player_season | fixture |
+| --- | ---: | ---: | ---: |
+| diffgen14b.db3 | 42.049 | 5.014 | 1.520 |
+| diffgen15_final.db3 | 44.426 | 5.933 | 1.900 |
+| diffgen16.db3 | 64.718 | 6.561 | 2.280 |
+
+Las tablas son iguales en contenido, no sólo en conteo, y el reporte conserva
+sus hashes. Estos conteos incluyen datos parciales/superpuestos ya auditados;
+**no son nuevas etiquetas completas**. Los originales, manifiesto y seis
+auxiliares conservaron sus hashes antes/después. Un WAL no vacío impide este
+ensayo de lectura independiente y exige revisión; nunca se ignora o elimina
+para forzar un resultado.
+
+```bash
+python -m experiments.data_ground_truth.sqlite_sidecar_audit \
+  --raw-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/raw-history-differential \
+  --out /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/sqlite-sidecar-audit-v1
+```
+
+Reporte reproducido byte por byte en `sqlite-sidecar-audit-v2`.
+**1.561 passed, 1 skipped, 79 deselected**. Prueba de asociación a padre SQLite,
+WAL no vacío y nombres no clasificados. [Resultados G51](results-g51.json).
+G50 sigue describiendo seis archivos no referenciados físicamente; G51 resuelve
+su clasificación como auxiliares conservados. No hay nuevas fuentes, temporadas,
+entrenamiento ni cambios productivos en este gate.
