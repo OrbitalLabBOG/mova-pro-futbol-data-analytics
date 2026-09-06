@@ -111,12 +111,12 @@ de modelos por hash y exportación revisable, sin promover modelos al runtime.
 
 La capa experimental conserva los datos crudos fuera de Git, con manifiestos,
 SHA-256, fuentes fijadas por commit y auditorías reproducibles. El
-[registro de gates G1–G40](experiments/data_ground_truth/README.md) contiene
+[registro de gates G1–G41](experiments/data_ground_truth/README.md) contiene
 adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 
 | Capa | Cobertura verificada | Límite pendiente |
 | --- | --- | --- |
-| Etiquetas FPL, GT experimental v5 | 303.126 filas de jugadores, doce temporadas 2014/15–2025/26; 322 filas de managers separadas | Son resultados retrospectivos, no entradas disponibles antes del deadline |
+| Etiquetas FPL, GT experimental v6 | 303.126 filas de jugadores, doce temporadas 2014/15–2025/26; 322 filas de managers separadas | Son resultados retrospectivos, no entradas disponibles antes del deadline |
 | Bootstrap raw | 7.837 snapshots; estados, precios, clubes y posiciones | Disponibilidad y semántica varían por campo y temporada |
 | Estados con publicación histórica acreditada | 196/199 deadlines; 38/38 en cada temporada 2021/22–2025/26 | GW1–3 de 2026/27 sin testigo; selección desconocida no se convierte en elegibilidad |
 | Calendarios con publicación histórica acreditada, G35 | 193/199 deadlines; 38/38 en 2023/24, 2024/25 y 2025/26 | Seis ventanas pendientes y frescura desigual: 93 calendarios tienen commit de hasta 48 horas; en 2025/26 son 14/38 |
@@ -127,6 +127,7 @@ adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 | Reglas documentales oficiales, G38 | 10 artículos archivados, 30 afirmaciones parciales en seis temporadas | Descargas actuales: la fecha del artículo no prueba disponibilidad histórica; no son un intérprete de reglas |
 | Calendarios PDF oficiales, G39 | 380 cruces de 2013/14 y 760 celdas FDR de 2025/26 | Versiones aisladas; sin disponibilidad histórica acreditada ni nuevas etiquetas FPL |
 | Conciliación FPL Discovery 2014/15, G40 | 24.876 filas; 665 códigos coinciden con GT v5 y 46 son candidatos | Cero filas nuevas; los candidatos cubren 674 filas sin minutos jugados y siguen sin admisión al GT |
+| Enriquecimiento de identidad, G41 | GT v6 enlaza 19 jugadores y 223 filas de 2014/15 mediante código y nombre completo | Quedan 27 jugadores y 451 filas con identidad limitada a la temporada; sin cambios deportivos |
 | Fuentes antiguas complementarias | Material parcial desde 2010/11 y totales desde 2006/07 | No cuentan como nuevas temporadas completas; persisten huecos de población e identidad |
 
 G30 combina calendarios completos de dos fuentes, revalidando cada testigo contra
@@ -135,7 +136,7 @@ la antigüedad nominal máxima es 344,67 horas; la hora del commit no es la hora
 captura API. [Resultados G30](experiments/data_ground_truth/results-g30.json).
 
 Los datos permiten investigar más temporadas y estados, pero todavía no acreditan
-un replay causal completo ni mejoras del modelo. GT v5, evidencia temporal y
+un replay causal completo ni mejoras del modelo. GT v6, evidencia temporal y
 reglas se versionan por separado; este trabajo no habilita entrenamiento ni
 modifica el histórico productivo de 253.890 filas. El siguiente trabajo de datos
 es cerrar ventanas de publicación, mejorar frescura y conciliar el período de
@@ -181,6 +182,10 @@ G40 contrasta otro CSV de 2014/15 con el histórico reconciliado: no hay diferen
 de valores ni filas nuevas. La base original tenía 225 identidades pendientes;
 el contraste con GT v5 reduce los pendientes reales a 46 candidatos, todos sin minutos jugados.
 [Resultados G40](experiments/data_ground_truth/results-g40.json).
+G41 contrasta perfiles completos posteriores y deriva GT v6 sin cambiar resultados,
+particiones temporales ni archivos de otras temporadas. Su versión vigente está
+en [current-labels.json](experiments/data_ground_truth/current-labels.json).
+[Resultados G41](experiments/data_ground_truth/results-g41.json).
 
 ## Empezar
 

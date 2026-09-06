@@ -2209,3 +2209,55 @@ por byte en v5: reporte, candidatos y ambos archivos de diferencias. La prueba
 de regresión impide contar como nuevo un código ya resuelto en GT v5.
 **1.534 passed, 1 skipped, 79 deselected**.
 [Resultados G40](results-g40.json).
+
+## Gate G41: corroboración de perfiles y GT v6 experimental
+
+`discovery_identity_enrichment.py` reproduce G40 contra el GT v5 y contrasta sus
+46 candidatos con **7.338 perfiles de jugadores** de diez archivos FPL
+`players_raw.csv`, temporadas 2016/17–2025/26. Verifica hashes, unicidad de código
+por temporada y exclusión de managers. La igualdad exige código declarado y
+nombre completo; sólo normaliza Unicode, mayúsculas y espacios, sin fuzzy matching.
+
+Resultado: **19 códigos corroborados**, un caso con variante de nombre que
+requiere revisión (Matthew/Matt Macey) y 26 sin perfil en estas diez fuentes.
+Que un código aparezca en otra partición del GT no sustituye al perfil completo:
+el descubrimiento de G40 incluía además 2015/16 y tenía un alcance diferente.
+Se conservan todos los perfiles coincidentes y las variantes observadas.
+
+GT v6 experimental:
+`58e2e08833a157601e3e6bf75ea71adcd84211bf96a2139e9490b8936aa9e7cb`.
+Deriva del GT v5
+`1d111a458c9074fcd7ec2da516e82d9d1984600f6f057716112b92e855240df4`,
+que se conserva intacto. Cambia exclusivamente `official_player_code`,
+`source_official_player_code` e `identity_key` en **223 filas existentes** de
+2014/15. Son filas sin minutos jugados; no se crean ejemplos ni se alteran puntos,
+minutos, componentes, jornadas, tiempos o particiones de entrenamiento/evaluación.
+
+2014/15 pasa de 24.202 a **24.425 filas con código enlazado**. Quedan 451 filas y
+27 jugadores con identidad limitada a la temporada. El conjunto sigue teniendo
+**303.126 filas de jugadores en doce temporadas**, con 322 filas de managers
+separadas. Todos los archivos ajenos a la partición 2014/15 y al manifiesto se
+comparan byte por byte contra el padre. El verificador mantiene la restricción de
+entidades de jugador también para v6.
+
+Los perfiles de temporadas posteriores se usan únicamente para identidad estable.
+No se incorporan sus precios, estados, ownership, resultados futuros ni otros
+campos como features. No se acredita replay anterior al deadline, no se entrena
+un modelo ni se promueve el paquete al runtime productivo. El puntero documental
+[current-labels.json](current-labels.json) identifica el GT experimental vigente;
+no cambia configuraciones de benchmarks ni despliegues.
+
+```bash
+python -m experiments.data_ground_truth.discovery_identity_enrichment \
+  --base-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments \
+  --out /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/discovery-identity-enrichment-v2 \
+  --datasets-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/training-datasets
+```
+
+La auditoría v2 se reproduce en v3. El paquete se reconstruye en una raíz
+independiente (`g41-reproduced-datasets`) y sus quince archivos son idénticos.
+La primera versión exploratoria se conserva, pero no es el paquete vigente.
+Las pruebas cubren códigos sin nombre coincidente, variantes no admitidas,
+colisiones, conservación de valores, población y exclusión de managers en v5/v6.
+**1.539 passed, 1 skipped, 79 deselected**.
+[Resultados G41](results-g41.json).
