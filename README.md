@@ -216,6 +216,11 @@ Cup documentados por los clubes. La hipótesis UTC no acredita identidad ni relo
 de origen; continúa sin admitirse ese calendario al GT.
 [Resultados G25](experiments/data_ground_truth/results-g25.json).
 
+G26 contrasta 207.363 etiquetas con calendarios finales de ocho temporadas. Las
+78 diferencias corresponden a un único partido retrasado 30 minutos el día de
+juego; se conservan ambos horarios y su historial sin sobrescribir GT v5.
+[Resultados G26](experiments/data_ground_truth/results-g26.json).
+
 ## Empezar
 
 Requiere Python 3.13.
