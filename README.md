@@ -138,6 +138,9 @@ no nuevas temporadas completas: el conteo validado sigue siendo doce temporadas.
 G10 cruza los 380 partidos de 2010/11 con el archivo deportivo y localiza tres
 diferencias de conteo de apariciones; conserva 524 candidatos de identidad sin
 promoverlos. Las filas con minutos desconocidos siguen siendo desconocidas.
+G11 recupera 268 códigos de fila deportivos con ID nativo, nombre completo y
+partidos testigo: quedan 1.502 sin identidad; hay 179.847 observaciones deportivas
+con identidad y minutos válidos, separadas de las etiquetas FPL y del runtime.
 
 ## Empezar
 

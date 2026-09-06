@@ -1,0 +1,157 @@
+{
+  "version": "native-identity-v1",
+  "seasons": {
+    "2009-10": {
+      "rows": 13593,
+      "added_identity_rows": 0,
+      "missing_identity_rows": 192,
+      "eligible_observed_minutes_rows": 10226,
+      "artifact_sha256": "bc0ce1499e1a851f4162d142ce80d8da2ae4de246ecf99abebbe996eadf6ad90",
+      "source_sha256": "e5b4beeecd3e7f2848a3bc118a42d9f8228883dc9df2e49c763883a318cc4cb1"
+    },
+    "2010-11": {
+      "rows": 13655,
+      "added_identity_rows": 59,
+      "missing_identity_rows": 88,
+      "eligible_observed_minutes_rows": 10295,
+      "artifact_sha256": "bba2458f4b0deccb9747af3d08ed1207f948656b7a353c4122247d1b7bc42e7d",
+      "source_sha256": "e72ccd7486e66eb50c6d93495aea170019631cc777d14fe2e78fbcc6ec8fa8b1"
+    },
+    "2011-12": {
+      "rows": 13675,
+      "added_identity_rows": 65,
+      "missing_identity_rows": 61,
+      "eligible_observed_minutes_rows": 10327,
+      "artifact_sha256": "565b0ff0f021151a3bc3424f21ca2e0a02fc420b5ceca287e27af2ff4a98cc06",
+      "source_sha256": "ee6063157cd29cc4a95e164a9e22f0b1e56eec800835b3e364741883c3927baa"
+    },
+    "2012-13": {
+      "rows": 13676,
+      "added_identity_rows": 3,
+      "missing_identity_rows": 99,
+      "eligible_observed_minutes_rows": 9539,
+      "artifact_sha256": "5e56c52640f6361536e17c377d0c12f7e54f99113a57b385caf528cdaf6dc16e",
+      "source_sha256": "5c33c08f531d2cf80e655fded89248713b7cc1ad27e9258d669946df9252c299"
+    },
+    "2013-14": {
+      "rows": 13679,
+      "added_identity_rows": 38,
+      "missing_identity_rows": 93,
+      "eligible_observed_minutes_rows": 10381,
+      "artifact_sha256": "9c143fe5508319c7236ec4cc6be315b3bc17472c07639d18c1cdb3ba1fba3f6a",
+      "source_sha256": "49f06de258bee012baf4ae2bcc4cf80f1892184d06ad0b30d34f6f524dc24886"
+    },
+    "2014-15": {
+      "rows": 13674,
+      "added_identity_rows": 0,
+      "missing_identity_rows": 54,
+      "eligible_observed_minutes_rows": 10330,
+      "artifact_sha256": "c7d5b9873ab964107b155b7f247a6379e82c1f150c7fc396bba3913271d05666",
+      "source_sha256": "a8fa6368a087a549714f32b51fa6f762ebad55398e103e644242cd4c8f54c5a3"
+    },
+    "2015-16": {
+      "rows": 13678,
+      "added_identity_rows": 0,
+      "missing_identity_rows": 76,
+      "eligible_observed_minutes_rows": 10437,
+      "artifact_sha256": "c7a465638944133de3623f0a1e6f1b89cc0b0d077f762349cd12131fca945606",
+      "source_sha256": "c493376d19dd422e9353f0dd75df8092312ec8d71c6d93756257812ed191c84d"
+    },
+    "2016-17": {
+      "rows": 13675,
+      "added_identity_rows": 33,
+      "missing_identity_rows": 104,
+      "eligible_observed_minutes_rows": 10424,
+      "artifact_sha256": "62456978596aeb9048b9c1b6047f30c023ea7a5c923c609338f3a06ccafee240",
+      "source_sha256": "74579ec9d0a16d68e623ca53b327032ba4cf53de6843cbba83d3c835ecfeb2a4"
+    },
+    "2017-18": {
+      "rows": 13675,
+      "added_identity_rows": 0,
+      "missing_identity_rows": 92,
+      "eligible_observed_minutes_rows": 10397,
+      "artifact_sha256": "c933310962a3ca75ef1a4a161590aa83ba9b71899d4efcf8bb5ed382fa1caefe",
+      "source_sha256": "c302309d326b39759ce58ca451c606511b53ea6f373b584dd214ded7dc26dafe"
+    },
+    "2018-19": {
+      "rows": 13679,
+      "added_identity_rows": 0,
+      "missing_identity_rows": 30,
+      "eligible_observed_minutes_rows": 10455,
+      "artifact_sha256": "aba3978f14024211217b4201d244914f64ad735a2f46b6b2d3796bd2458ba0bc",
+      "source_sha256": "d9451cf9dcd90b6522e8544359def6f7d7669b2b0fb49b524f0c991041334d15"
+    },
+    "2019-20": {
+      "rows": 14034,
+      "added_identity_rows": 32,
+      "missing_identity_rows": 165,
+      "eligible_observed_minutes_rows": 10529,
+      "artifact_sha256": "c11956e712706bbdc1cd1682d5a361958099655881fa2f22b70465a3bcde82b9",
+      "source_sha256": "ca68af8426561453f14f35e448117e677390118d8872bb17760521d813961d35"
+    },
+    "2020-21": {
+      "rows": 14643,
+      "added_identity_rows": 38,
+      "missing_identity_rows": 60,
+      "eligible_observed_minutes_rows": 10367,
+      "artifact_sha256": "ea828248a69899b3f5b1c4f9d9b6aacd206e9bbbb1935b0812fe455c95036416",
+      "source_sha256": "401714c5d0ea2486d424b89e147915efb59e060ecf770905722bc28c7edf080d"
+    },
+    "2021-22": {
+      "rows": 15163,
+      "added_identity_rows": 0,
+      "missing_identity_rows": 24,
+      "eligible_observed_minutes_rows": 10475,
+      "artifact_sha256": "972f30839bf9ed44959e2dcf70718e29e88f73a0d528ca09c41ff1d100209660",
+      "source_sha256": "6c85bc6f105b4d57ccdd37a2db33cc1b91e8cec74237f285473ebdcf7d1e8b79"
+    },
+    "2022-23": {
+      "rows": 15185,
+      "added_identity_rows": 0,
+      "missing_identity_rows": 30,
+      "eligible_observed_minutes_rows": 11325,
+      "artifact_sha256": "5021db164412c3282e02fec9b3396939e39bfeab3f1ee92fed5d5c1e6d401abf",
+      "source_sha256": "8bccb7baade4212991c54b18b60a4eea8aa0677d9f7b4eb9833b9464252b3346"
+    },
+    "2023-24": {
+      "rows": 15180,
+      "added_identity_rows": 0,
+      "missing_identity_rows": 17,
+      "eligible_observed_minutes_rows": 11384,
+      "artifact_sha256": "63c2543eba2c981cd1bcab31598caec87646cfb056ad5f4d2549e1c57442a3c6",
+      "source_sha256": "29be477b2988a38524b5a39124bb7265709364b8001a3f660e3f4502ff152ef2"
+    },
+    "2024-25": {
+      "rows": 15188,
+      "added_identity_rows": 0,
+      "missing_identity_rows": 151,
+      "eligible_observed_minutes_rows": 11528,
+      "artifact_sha256": "0bcfe14c4d48ecfda2759e537d6eccaafdc1491a0cf0bfa3649b6c5100d01069",
+      "source_sha256": "edf57790272574a3eeef551406a88b447fa55ac5db160fb56c18e0d65442cd5d"
+    },
+    "2025-26": {
+      "rows": 15189,
+      "added_identity_rows": 0,
+      "missing_identity_rows": 166,
+      "eligible_observed_minutes_rows": 11428,
+      "artifact_sha256": "8d96a018a48f63bbe77f1249873360084656cf2e3f94d37a99375236161fd407",
+      "source_sha256": "e2c72d3bfa8f13c7532f0b47b290d6e8d426954c3732d378aa52a9316f41a255"
+    }
+  },
+  "source_manifest_sha256": "b513caf63bb91b105a405ebfb2af8ccf85ea82a9cca93e5b0d0b41843957a1af",
+  "evidence_sha256": "6a5a3286f5364b701b5de1a49dd31619f047ef346ba83a4d9d9822ba64684d9f",
+  "added_identity_rows": 268,
+  "missing_identity_rows": 1502,
+  "added_minutes_labels": 211,
+  "eligible_observed_minutes_rows": 179847,
+  "source_identity_preserved": true,
+  "status": "retrospective_identity_not_predeadline_features",
+  "new_complete_seasons": 0,
+  "discovery": {
+    "repository": "sjp4/differentialfpl",
+    "scope": "Differential/Database at pinned 6bb3366343998ac016f6a3120e9cba9a3f0037eb",
+    "commits_returned": 1,
+    "sha256": "de97180358dd515b4f7fa16a3d30a357a40c5b0fea35ef4f36c75e6f24895266",
+    "finding": "single initial commit; no earlier database revisions in this history"
+  }
+}

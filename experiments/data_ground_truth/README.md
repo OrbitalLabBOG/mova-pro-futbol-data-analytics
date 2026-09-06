@@ -580,3 +580,42 @@ de `fixture_team_coverage.csv` e `identity_candidates.csv`, cuyos bytes permanec
 fuera de Git. Se mantiene el paquete v3 sin incorporar estas filas. El próximo
 paso es corroborar identidad y apariciones concretas, incluyendo los casos de
 Bolton, antes de considerar la reconstrucción del universo de no apariciones.
+
+## Gate G11: códigos recuperados con IDs nativos y nombres completos
+
+[results-g11.json](results-g11.json) mide la propagación retrospectiva de identidad
+en las 17 temporadas deportivas. Antes de propagar se exige que ningún ID nativo
+conocido corresponda a varios códigos oficiales. Cada recuperación exige el mismo
+ID nativo, nombre completo normalizado idéntico y al menos dos partidos distintos
+con código conocido; repeticiones del mismo partido no cuentan como dos testigos.
+No usa coincidencia difusa ni propaga solo por apellido. Los testigos originales
+se congelan antes del recorrido: una recuperación no alimenta otra.
+
+Se recuperan **268 identidades de fila**: 59 en 2010/11, 65 en 2011/12, 3 en 2012/13,
+38 en 2013/14, 33 en 2016/17, 32 en 2019/20 y 38 en 2020/21. Son siete temporadas.
+El faltante de identidad deportivo baja de 1.770 a **1.502 filas**. De las recuperadas,
+211 tienen minutos válidos: el total deportivo con identidad y minutos pasa de
+179.636 a **179.847 observaciones**. Las otras 57 no se convierten en ceros ni en
+etiquetas de minutos por el hecho de haber recuperado su identidad.
+
+Los CSV conservan `source_official_player_code`, añaden `native_identity_recovered`
+y permanecen fuera de Git. `evidence.json` enumera los partidos testigo por jugador
+y temporada; su SHA-256 y los de entradas y salidas están en el informe. Todo sigue
+con `eligible_predeadline=false`: enlazar retrospectivamente a una persona no prueba
+que sus features fueran conocidas antes de decidir. Tampoco valida por sí solo los
+524 candidatos FPL de G10: falta corroborar su correspondencia con el ID deportivo.
+
+```bash
+python -m experiments.data_ground_truth.native_identity \
+  --registry-root "$IDENTITY_REGISTRY_ROOT" --out "$NATIVE_IDENTITY_ROOT"
+```
+
+El paquete FPL v3 conserva 303.448 etiquetas y doce temporadas. Este gate mejora
+el archivo deportivo complementario; no sustituye minutos FPL, no incorpora datos
+al canónico y no promueve un modelo.
+
+La consulta del historial Git público de `Differential/Database` en la revisión
+fijada devolvió un único commit inicial. Su respuesta está archivada con hash en
+G11: esta ruta no aporta versiones previas para reparar 2011/12–2013/14. Hay que
+contrastar las bases existentes o buscar otras fuentes, no asumir que un checkout
+anterior de ese repositorio contiene temporadas más completas.
