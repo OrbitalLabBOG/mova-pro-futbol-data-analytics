@@ -2163,54 +2163,49 @@ cubren población, duplicados, autocruces, reciprocidad, rechazo de líneas sin
 parsear y rellenos ausentes o ambiguos. **1.529 passed, 1 skipped, 79 deselected**;
 GT v5 y producción intactos. [Resultados G39](results-g39.json).
 
-## Gate G40: conciliación de FPL Discovery 2014/15 e identidades candidatas
+## Gate G40: conciliación de FPL Discovery 2014/15 contra el GT vigente
 
 La [página del autor](https://fpldiscovery.wordpress.com/summary_14_15/) enlaza un
 [CSV público de puntos 2014/15](https://docs.google.com/spreadsheets/d/1wndu_erCorQ1G3eBaLax9AJ891HD6ZtHfPLzT3986kw/export?format=csv).
 Se adquirieron 3.526.952 bytes, SHA-256
 `f00f3723720c61bd74c0023b065af2fa590aef0d13470676f698ca485dd7bf79`,
 en `raw-fpl-discovery-v1/points-2014-15.csv`, fuera de Git. La fecha de descarga
-no acredita disponibilidad histórica. No se afirma independencia de linaje
-respecto a la fuente RData existente.
+no acredita disponibilidad histórica ni independencia de linaje frente al RData.
 
-`discovery_2014.py` verifica hashes y concilia ID de temporada, GW, fecha local y
-fixture textual, sin asumir que ID de jugador y GW forman una clave única. Las
-**24.876 filas** coinciden: cero claves nuevas o ausentes. Compara veinte campos
-numéricos y tres textuales (**572.148 celdas**), con conversión decimal exacta de
-precios por diez y separador decimal de ownership: **cero discrepancias**.
+**Resultado frente al GT v5 vigente:** 24.876 filas, cero nuevas; 665 códigos de
+jugador coincidentes y **46 códigos candidatos** para 674 filas existentes sin
+minutos jugados. Quince campos por fila, **373.140 celdas**, coinciden sin
+excepciones. El paquete GT v5 completo se verifica antes de leer su partición;
+sus hashes se conservan en `gt_v5_comparison`. Ningún candidato pendiente tiene
+corroboración en dos partidos jugados. No se modifica GT v5 ni se reclama una
+mejora nueva de identidades de jugadores con participación.
 
-El CSV declara códigos para sus **711 jugadores**. Los 486 códigos ya resueltos
-coinciden y no hay conflictos. Quedan **225 candidatos nuevos** que corresponden
-a 7.107 filas existentes; no son nuevos resultados deportivos. Los perfiles de
-final de temporada se conservan como tales, sin convertir ownership, estado o
-precio final en features anteriores al deadline.
+La auditoría también conserva la comparación contra la base original de
+identidades: veinte campos numéricos y tres textuales, 572.148 celdas iguales,
+486 códigos ya resueltos y 225 candidatos frente a esa base antigua. Tres de
+ellos tienen evidencia de código, club y partidos jugados: Matthew Phillips
+(50229, 25 partidos), Steven Davis (17339, 35) y Kelvin Davis (3673, siete).
+**Los tres ya estaban resueltos en GT v5.** Esa corroboración confirma trabajo
+previo; no añade 114 identidades de fila al GT actual. El reporte distingue
+`reference_scope=original_identity_baseline_before_GT_v5` y `gt_v5_comparison`.
 
-Se contrastaron los códigos declarados con observaciones de partidos jugados en
-el archivo PL. Tres candidatos tienen al menos dos cruces de club/partido
-coincidentes y ninguno conflictivo:
-
-| ID FPL 2014/15 | Código declarado | Nombre de la fuente | Partidos jugados coincidentes | Filas existentes |
-| --- | --- | --- | --- | --- |
-| 333 | 50229 | Matthew Phillips | 25 | 38 |
-| 350 | 17339 | Steven Davis | 35 | 38 |
-| 577 | 3673 | Kelvin Davis | 7 | 38 |
-
-El archivo PL utiliza Matt Phillips para el primero; la relación se contrasta por
-código, club y partidos, sin introducir una equivalencia general de nombres. Las
-3.307 observaciones PL sin minutos se excluyen de corroboración de participación;
-no se convierten en cero. Los demás candidatos siguen sin ese respaldo suficiente.
-El gate entrega evidencia y perfiles candidatos, sin cambiar GT v5 ni producción.
+Las claves incluyen ID de temporada, GW, fecha local y fixture textual: ID+GW
+no basta en jornadas dobles. Precios se comparan mediante conversión decimal
+exacta por diez; ownership conserva su separador decimal. Los perfiles finales
+permanecen retrospectivos. Las 3.307 observaciones PL sin minutos se excluyen de
+corroboración de participación, sin imputarlas a cero. Los códigos declarados
+son candidatos y no reemplazan automáticamente las identidades del GT.
 
 ```bash
 python -m experiments.data_ground_truth.discovery_2014 \
   --base-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments \
-  --out /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/discovery-2014-audit-v2
+  --out /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/discovery-2014-audit-v4
 ```
 
-La primera corrida se detuvo ante minutos ausentes del archivo PL; se corrigió
-la exclusión explícita de esos registros, sin imputación. Auditoría aceptada
-`discovery-2014-audit-v2`, reproducida byte por byte en `v3`: reporte,
-`identity-candidates.json` y `cell-disagreements.json`. **1.533 passed, 1 skipped,
-79 deselected**. Pruebas de unidades decimales, conflictos conservados, claves y
-códigos duplicados, minutos ausentes y conflictos de club en la corroboración.
+La primera corrida se detuvo ante minutos ausentes. Las auditorías v2/v3 sólo
+comparaban la base inicial; se conservan como alcance parcial y no prueban
+progreso frente al GT vigente. **v4 es la auditoría aceptada**, reproducida byte
+por byte en v5: reporte, candidatos y ambos archivos de diferencias. La prueba
+de regresión impide contar como nuevo un código ya resuelto en GT v5.
+**1.534 passed, 1 skipped, 79 deselected**.
 [Resultados G40](results-g40.json).

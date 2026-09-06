@@ -46,3 +46,18 @@ def test_missing_minutes_do_not_become_played_witness_and_club_conflicts_block()
     assert identities[0]['two_played_fixture_corroboration']
     obs[1]['team_id']='4';corroborate(identities,ref,obs)
     assert not identities[0]['two_played_fixture_corroboration']
+
+
+def test_current_gt_prevents_counting_already_resolved_baseline_identity_as_new():
+    from experiments.data_ground_truth.discovery_2014 import GT_FIELDS,compare_gt
+    s,r=rows();identities,_,_=reconcile([s],[r])
+    identities[0]['two_played_fixture_corroboration']=True
+    gt={v:s[k] for k,v in GT_FIELDS.items()}
+    gt.update(element='1',fixture='1',official_player_code='101')
+    report,diff=compare_gt(identities,[s],[r],[gt])
+    assert identities[0]['status']=='new_source_code_candidate'
+    assert identities[0]['gt_v5_status']=='agrees_existing_code'
+    assert report['new_candidate_rows']==0 and not diff
+    gt['official_player_code']=''
+    report,_=compare_gt(identities,[s],[r],[gt])
+    assert report['new_candidate_rows']==1 and report['new_candidate_played_rows']==0

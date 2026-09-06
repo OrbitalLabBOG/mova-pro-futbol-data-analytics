@@ -5,11 +5,12 @@ from collections import Counter,defaultdict
 import csv
 from decimal import Decimal, InvalidOperation
 import io
+import gzip
 import json
 from pathlib import Path
 
 from experiments.data_ground_truth.raw import digest
-from experiments.data_ground_truth.training_dataset import checked
+from experiments.data_ground_truth.training_dataset import checked,verify
 
 NUMERIC={'M':'mins','G':'goals','A':'assists','CS':'cs','GC':'ga','OG':'og','PS':'pens_svd',
          'PM':'pens_msd','YC':'yel','RC':'red','S':'saves','B':'bonus','ESP':'ea_ppi','BPS':'bps',
@@ -95,6 +96,37 @@ def corroborate(identities,reference,observations):
                 new_candidate_rows=sum(r['reference_rows'] for r in identities if r['status']=='new_source_code_candidate'))
 
 
+GT_ID='1d111a458c9074fcd7ec2da516e82d9d1984600f6f057716112b92e855240df4'
+GT_FIELDS={'M':'minutes','G':'goals_scored','A':'assists','CS':'clean_sheets','GC':'goals_conceded',
+           'OG':'own_goals','PS':'penalties_saved','PM':'penalties_missed','YC':'yellow_cards',
+           'RC':'red_cards','S':'saves','B':'bonus','BPS':'bps','P':'total_points','GW':'gw'}
+
+
+def compare_gt(identities,source,reference,gt_rows):
+    by_raw={key(r,True):r for r in source};by_gt={(integer(r['element']),integer(r['fixture'])):r for r in gt_rows}
+    if len(by_gt)!=len(gt_rows):raise ValueError('duplicate GT player fixture')
+    refkeys={(integer(r['id']),integer(r['matchId'])) for r in reference}
+    if refkeys!=by_gt.keys():raise ValueError('GT label population mismatch')
+    codes=defaultdict(set);counts=Counter();played=Counter();diff=[]
+    for r in reference:
+        pid=integer(r['id']);g=by_gt[(pid,integer(r['matchId']))];a=by_raw[key(r,False)]
+        counts[pid]+=1;played[pid]+=number(g['minutes'])>0
+        if g['official_player_code']:codes[pid].add(integer(g['official_player_code']))
+        for source_field,gt_field in GT_FIELDS.items():
+            if number(a[source_field])!=number(g[gt_field]):diff.append(dict(player_id=pid,fixture=integer(g['fixture']),field=gt_field,source=a[source_field],gt=g[gt_field]))
+    for identity in identities:
+        pid=identity['player_id'];known=codes[pid]
+        if len(known)>1:raise ValueError('ambiguous GT player code')
+        identity['gt_v5_codes']=sorted(known)
+        identity['gt_v5_status']='agrees_existing_code' if known=={identity['source_code']} else ('conflicts_existing_code' if known else 'new_source_code_candidate')
+    candidates=[r for r in identities if r['gt_v5_status']=='new_source_code_candidate']
+    return dict(identity_status=dict(Counter(r['gt_v5_status'] for r in identities)),
+                new_candidate_rows=sum(counts[r['player_id']] for r in candidates),
+                new_candidate_played_rows=sum(played[r['player_id']] for r in candidates),
+                new_candidates_with_two_played_fixtures=sum(r['two_played_fixture_corroboration'] for r in candidates),
+                compared_cells=len(reference)*len(GT_FIELDS),cell_disagreements=len(diff)),diff
+
+
 def build(base,out):
     root=base/'raw-fpl-discovery-v1';record_bytes=(root/'points-2014-15.csv.json').read_bytes();record=json.loads(record_bytes)
     data=checked(root/'points-2014-15.csv',record['sha256'])
@@ -106,13 +138,20 @@ def build(base,out):
     obsroot=base/'raw-history-v2';obsreport_bytes=(obsroot/'crosswalk-report.json').read_bytes();obsreport=json.loads(obsreport_bytes)
     obsdata=checked(obsroot/'crosswalk/2014-15/player_match_observations.csv',obsreport['seasons']['2014-15']['observation_sha256'])
     extra=corroborate(identities,reference,read(obsdata))
+    package=base/'training-datasets'/GT_ID;verify(package)
+    gt_manifest_bytes=(package/'manifest.json').read_bytes();gt_manifest=json.loads(gt_manifest_bytes)
+    partition=next(p for p in gt_manifest['partitions'] if p['season']=='2014-15')
+    gtdata=checked(package/partition['file'],partition['sha256'])
+    current,gt_differences=compare_gt(identities,read(data),reference,read(gzip.decompress(gtdata)))
     out.mkdir(parents=True,exist_ok=True);artifacts={}
-    for name,value in [('identity-candidates.json',identities),('cell-disagreements.json',differences)]:
+    for name,value in [('identity-candidates.json',identities),('cell-disagreements.json',differences),('gt-cell-disagreements.json',gt_differences)]:
         payload=(json.dumps(value,indent=2)+'\n').encode();(out/name).write_bytes(payload);artifacts[name]=digest(payload)
     report=dict(version='discovery-2014-reconciliation-v1',source_record_sha256=digest(record_bytes),source_csv_sha256=digest(data),
                 reference_report_sha256=digest(refbytes),reference_csv_sha256=digest(refdata),
                 observation_report_sha256=digest(obsreport_bytes),observation_csv_sha256=digest(obsdata),
                 implementation_sha256=digest(Path(__file__).read_bytes()),**summary,**extra,artifacts=artifacts,
+                reference_scope='original_identity_baseline_before_GT_v5',
+                gt_v5_comparison=dict(dataset_id=GT_ID,manifest_sha256=digest(gt_manifest_bytes),partition_sha256=digest(gtdata),**current),
                 production_changed=False,gt_v5_changed=False,training_admitted=False,
                 limitations=['source_lineage_may_be_shared_not_independent_truth_votes',
                              'source_codes_are_candidates_not_automatic_GT_replacements',

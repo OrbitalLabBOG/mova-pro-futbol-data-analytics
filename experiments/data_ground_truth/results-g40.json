@@ -1,6 +1,6 @@
 {
   "version": "historical-data-g40",
-  "audit_report_sha256": "c98f070a5127344cec20eee7bcae63a08980dabd912029e808d7f03b99750591",
+  "audit_report_sha256": "5c3f4ca1093e98fe9cb98d302ddf39b68489d334bde27798294090fd94819ee6",
   "audit": {
     "version": "discovery-2014-reconciliation-v1",
     "source_record_sha256": "2820f3994332283a94e81009fa6bc4cf7f9bbf3420cfaea15c9c7c545c49fde6",
@@ -9,7 +9,7 @@
     "reference_csv_sha256": "4cfa6a94567b333ebc79cbb108c7ccf8a9cad8da57b8c909317879cf18c65fee",
     "observation_report_sha256": "7f0c2f387368214054450e2c4ef65b547c56e38d195e596c650bd2d831cf487e",
     "observation_csv_sha256": "28b91df6a23cd75ba3c07b1c90594e35870050f48ec741b3c607dfa63630822c",
-    "implementation_sha256": "cd7461e3fc70d11076369013cf2b217d4a941bf67a9f627215d39c9be73205b4",
+    "implementation_sha256": "e3a2430790a4a7c1ac8544de76e7be47adafb96323a55a218082707eb89aa4a3",
     "source_rows": 24876,
     "reference_rows": 24876,
     "shared_rows": 24876,
@@ -27,8 +27,24 @@
     "candidates_with_conflicting_played_fixtures": 0,
     "new_candidate_rows": 7107,
     "artifacts": {
-      "identity-candidates.json": "29816fffe83a2f53cec9dbdfd2612ff497c63ee0ac7271248e8167f9e6a49725",
-      "cell-disagreements.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+      "identity-candidates.json": "4b1f60752eb462a1dd4d8512ed8396f3b953c299f113e706c1a139a6b3d2826a",
+      "cell-disagreements.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "gt-cell-disagreements.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    "reference_scope": "original_identity_baseline_before_GT_v5",
+    "gt_v5_comparison": {
+      "dataset_id": "1d111a458c9074fcd7ec2da516e82d9d1984600f6f057716112b92e855240df4",
+      "manifest_sha256": "83ca3a671f74674082cb3c1a9f6e829476e0cd1116e5c382071f43886d8268f9",
+      "partition_sha256": "dcf4128954d44c06accb6bfc76576d1635b5631010304b5fd02581a8c4d3b3b8",
+      "identity_status": {
+        "agrees_existing_code": 665,
+        "new_source_code_candidate": 46
+      },
+      "new_candidate_rows": 674,
+      "new_candidate_played_rows": 0,
+      "new_candidates_with_two_played_fixtures": 0,
+      "compared_cells": 373140,
+      "cell_disagreements": 0
     },
     "production_changed": false,
     "gt_v5_changed": false,
@@ -41,7 +57,7 @@
   },
   "verification": {
     "reproduced_byte_for_byte": true,
-    "tests_passed": 1533,
+    "tests_passed": 1534,
     "tests_skipped": 1,
     "tests_deselected": 79
   },
