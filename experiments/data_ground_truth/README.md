@@ -3186,3 +3186,61 @@ Suite: **1.595 passed, 1 skipped, 79 deselected**.
 [Resultados G59](results-g59.json). Pruebas preservan conflictos, valores ausentes,
 ceros y snapshots discrepantes. Sin cambios del GT v7, del paquete G55 ni producción.
 La disponibilidad histórica sigue desconocida para estos CSV retrospectivos.
+
+
+## G60 — cobertura defensiva por partido de Core Insights 2024/25
+
+`core_defensive_matches.py` convierte el material Core ya archivado en una tabla
+separada de seis campos defensivos. Verifica **79 archivos** por SHA/tamaño:
+38 CSV de partidos, 38 de estadísticas, metadatos de jugadores Core y fixtures/equipos
+oficiales archivados por Vaastav. No vuelve a adquirir ni contar ese material como
+nueva temporada. Revalida el paquete GT v7 antes de contrastar resultados.
+
+La clave de partido se obtiene con **códigos de club local/visitante y fecha**;
+no con la GW, el nombre ni el ID sintético de Core. El reloj Core es naive y la
+coincidencia de fecha con el calendario UTC no acredita su zona horaria. Un cruce
+ambiguo o con claves ausentes falla explícitamente. Las identidades de jugador
+exigen acuerdo entre ID estacional y código oficial del GT; no se unen nombres.
+
+- **380/380 partidos enlazados**, todos con estadísticas.
+- **11.567 filas jugador-partido**, sin claves nulas, duplicadas o conflictivas en
+  los campos seleccionados. Todas enlazan con el GT y cubren sus **11.567 apariciones
+  con minutos positivos**, sin ausencias. No se filtra por minutos del proveedor.
+- 784 identidades de metadatos concuerdan; cero códigos discrepantes. Otras veinte
+  filas de metadatos no están en el GT de jugadores, sin afectar las filas enlazadas.
+- **8.625 minutos iguales y 2.942 diferentes**: 2.726 diferencias de +1 minuto,
+  199 de −1, siete de +2 y diez entre −4 y −17. No se atribuye una causa sin prueba
+  ni se cambian los minutos oficiales. No hay minutos Core nulos o fuera de 0–90.
+
+| Campo Core | Valores válidos | Positivos | Ceros |
+| --- | ---: | ---: | ---: |
+| tackles | 11.567 | 6.493 | 5.074 |
+| tackles_won | 11.567 | 4.956 | 6.611 |
+| interceptions | 11.567 | 4.034 | 7.533 |
+| recoveries | 11.567 | 9.722 | 1.845 |
+| blocks | 11.567 | 2.118 | 9.449 |
+| clearances | 11.567 | 6.497 | 5.070 |
+
+No hay campos nulos o fuera del dominio entero no negativo. Eso no acredita
+completitud de medición ni equivalencia con FPL: `tackles` y `tackles_won`, por
+ejemplo, se conservan separados. Los seis campos no se incorporan como etiquetas
+FPL, puntos históricos ni features con disponibilidad predeadline demostrada.
+
+```bash
+python -m experiments.data_ground_truth.core_defensive_matches \
+  --raw-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/raw-history-v1 \
+  --package /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/training-datasets/d4baf849fb4a051be103f8c469e61a4753edb0b4004f980a000fe5c86ef573db \
+  --out /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/core-defensive-matches-v3
+```
+
+Reporte y tres CSV reproducidos byte por byte en `core-defensive-matches-v4`:
+observaciones enlazadas, mapa de fixtures e índice de apariciones positivas ausentes
+(vacío con esquema conservado). Las raíces preliminares v1/v2 tienen las mismas
+observaciones, anteriores al resumen de deltas de minutos. [Resultados G60](results-g60.json).
+Pruebas exigen fecha y dirección de clubes, rechazan cruces ambiguos y aceptan
+precisión ISO de hora con o sin segundos. Suite: **1.597 passed, 1 skipped,
+79 deselected**. GT v7, G55 y producción permanecen intactos.
+
+Siguiente contraste: totales defensivos del proveedor frente a la referencia anual
+G59, conservando hipótesis de composición y posición explícitas; la coincidencia
+numérica no autoriza elegir fórmulas retrospectivamente para maximizar concordancia.
