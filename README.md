@@ -111,7 +111,7 @@ de modelos por hash y exportación revisable, sin promover modelos al runtime.
 
 La capa experimental conserva los datos crudos fuera de Git, con manifiestos,
 SHA-256, fuentes fijadas por commit y auditorías reproducibles. El
-[registro de gates G1–G91](experiments/data_ground_truth/README.md) contiene
+[registro de gates G1–G92](experiments/data_ground_truth/README.md) contiene
 adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 
 | Capa | Cobertura verificada | Límite pendiente |
@@ -166,7 +166,7 @@ adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 | Archivo Azure, G84 | 2.524 snapshots / 3,12 GB adquiridos y reproducidos; cobertura nominal 37/38 GW en 2020/21 y 38/38 en 2021/22 | 1.620.223 observaciones de estado; relojes y publicación separados; sin nuevas etiquetas jugador–partido ni admisión temporal |
 | Enlace Azure–GT, G85 | 52.639/52.640 observaciones jugador–ventana enlazan por ID estacional y código oficial; un conflicto en cuarentena | 35 apariciones positivas sin identidad en alguna captura; no se imputa ausencia ni se admite replay temporal |
 | Observación de jugadores, G86 | 309 identidades trazadas en 2.524 snapshots; 35 huecos positivos distinguidos en 29 ausencias posteriores, cuatro intervalos y dos cambios de variante | Primeras observaciones nominales, no fechas de alta; sin imputación, alias automático o admisión temporal |
-| Archivo portable vigente, G87 | 35.446 rutas y 32.597 contenidos únicos (6,33 GB), incluyendo Azure; G85/G86 reproducidos desde una restauración independiente | Corte interno; G78 intacto, sin acreditar backup externo o admisión temporal |
+| Archivo portable vigente, G92 | 35.636 rutas y 32.770 contenidos únicos (6,45 GB); incluye G88–G91, reproducidos desde una restauración independiente | Corte interno; G87 intacto, sin acreditar backup externo o admisión temporal |
 | Collector propio, G36 | 55 bundles públicos; 34.512 estados de jugadores y 20.900 observaciones de fixtures | Dos candidatos anteriores a GW2/GW3 2026/27 vinculados al cierre de ingesta; evidencia interna identificada en el índice común G37 |
 | Reglas y chips de snapshots | Explícitos desde GW16 de 2024/25 y en toda 2025/26 | Faltan reglas históricas anteriores e interpretación de overrides |
 | Reglas documentales oficiales, G38 | 10 artículos archivados, 30 afirmaciones parciales en seis temporadas | Descargas actuales: la fecha del artículo no prueba disponibilidad histórica; no son un intérprete de reglas |
