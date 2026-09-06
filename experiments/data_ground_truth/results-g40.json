@@ -1,0 +1,50 @@
+{
+  "version": "historical-data-g40",
+  "audit_report_sha256": "c98f070a5127344cec20eee7bcae63a08980dabd912029e808d7f03b99750591",
+  "audit": {
+    "version": "discovery-2014-reconciliation-v1",
+    "source_record_sha256": "2820f3994332283a94e81009fa6bc4cf7f9bbf3420cfaea15c9c7c545c49fde6",
+    "source_csv_sha256": "f00f3723720c61bd74c0023b065af2fa590aef0d13470676f698ca485dd7bf79",
+    "reference_report_sha256": "cc4ad3d50fc28b356244aaf4a7f34b17cadd1e8433957b3ddf93643e47653fc7",
+    "reference_csv_sha256": "4cfa6a94567b333ebc79cbb108c7ccf8a9cad8da57b8c909317879cf18c65fee",
+    "observation_report_sha256": "7f0c2f387368214054450e2c4ef65b547c56e38d195e596c650bd2d831cf487e",
+    "observation_csv_sha256": "28b91df6a23cd75ba3c07b1c90594e35870050f48ec741b3c607dfa63630822c",
+    "implementation_sha256": "cd7461e3fc70d11076369013cf2b217d4a941bf67a9f627215d39c9be73205b4",
+    "source_rows": 24876,
+    "reference_rows": 24876,
+    "shared_rows": 24876,
+    "new_keys": 0,
+    "missing_keys": 0,
+    "compared_cells": 572148,
+    "cell_disagreements": 0,
+    "source_players": 711,
+    "identity_status": {
+      "agrees_existing_code": 486,
+      "new_source_code_candidate": 225
+    },
+    "observation_rows_without_minutes": 3307,
+    "new_candidates_with_two_played_fixtures": 3,
+    "candidates_with_conflicting_played_fixtures": 0,
+    "new_candidate_rows": 7107,
+    "artifacts": {
+      "identity-candidates.json": "29816fffe83a2f53cec9dbdfd2612ff497c63ee0ac7271248e8167f9e6a49725",
+      "cell-disagreements.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    "production_changed": false,
+    "gt_v5_changed": false,
+    "training_admitted": false,
+    "limitations": [
+      "source_lineage_may_be_shared_not_independent_truth_votes",
+      "source_codes_are_candidates_not_automatic_GT_replacements",
+      "final_season_profile_fields_are_not_historical_features"
+    ]
+  },
+  "verification": {
+    "reproduced_byte_for_byte": true,
+    "tests_passed": 1533,
+    "tests_skipped": 1,
+    "tests_deselected": 79
+  },
+  "gt_v5_changed": false,
+  "production_changed": false
+}
