@@ -130,7 +130,11 @@ verifica puntos y trece componentes contra totales finales de 2015/16. El manifi
 permite fijar las entradas de cada experimento; no acredita replay predeadline.
 G8 archiva y audita ocho bases históricas Differential, con material desde 2010/11:
 permanecen fuera del entrenamiento por cobertura incompleta, nulos y discrepancias
-con snapshots de totales. El conteo validado sigue siendo doce temporadas.
+con snapshots de totales. G9 recupera 10.353 apariciones de 2010/11 del SQL
+anterior a esas transformaciones, pero detecta un jugador con minutos sin fila y
+un universo sin no apariciones. Audita además siete snapshots BSON de 2015/16,
+con cuarentena de identidades y resultados conflictivos. Son evidencia adicional,
+no nuevas temporadas completas: el conteo validado sigue siendo doce temporadas.
 
 ## Empezar
 

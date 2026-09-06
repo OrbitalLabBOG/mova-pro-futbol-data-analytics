@@ -443,3 +443,54 @@ def test_archive_audit_does_not_count_future_placeholders_as_labels(tmp_path):
     assert report['status']=='unreconciled_archive_not_full_season_ground_truth'
     tables['player_season']['points']=3
     assert quality(tables)['11']['player_total_disagreements']==1
+
+
+def test_sql_literals_preserve_quoted_comments_and_never_execute():
+    from experiments.data_ground_truth.sql_archive import extract,literals
+    text="""-- archived data
+    INSERT INTO player (_id,name) VALUES (1,'O''Brien;\n--literal');
+    UPDATE player SET name=NULL; DELETE FROM player;
+    """
+    tables,ignored=extract(text)
+    assert tables['player'].name.tolist()==["O'Brien;\n--literal"]
+    assert ignored=={'update':1,'delete':1}
+    assert literals('0,NULL,-2,1.5')==[0,None,-2,1.5]
+    for bad in ["load_extension('anything')",'1e999','1,']:
+        with pytest.raises(ValueError):literals(bad)
+    with pytest.raises(ValueError,match='unsupported SQL insert'):
+        extract('INSERT INTO player SELECT * FROM elsewhere;')
+    with pytest.raises(ValueError,match='unterminated'):
+        extract("INSERT INTO player (name) VALUES ('broken);")
+
+
+def test_archive_detects_missing_positive_appearance_despite_matching_present_totals():
+    from experiments.data_ground_truth.differential_audit import quality
+    tables=dict(player_match=pd.DataFrame([dict(season=11,player_fpl_id=1,fixture_id=10,gameweek=1,minutes=90,total=2)]),
+        player_season=pd.DataFrame([dict(season=11,fpl_id=1,minutes=90,points=2),dict(season=11,fpl_id=2,minutes=9,points=1)]),
+        fixture=pd.DataFrame([dict(season=11,_id=10)]))
+    report=quality(tables)['11']
+    assert report['player_total_disagreements']==0
+    assert report['positive_minutes_players_without_match_rows']==1
+    assert report['missing_appearance_player_ids']==[2]
+
+
+def test_bson_audit_quarantines_conflicts_without_repairing_identity():
+    from experiments.data_ground_truth.bson_archive import reconcile
+    import copy
+    player=dict(id=1,code=100,total_points=2,fixture_history=[dict(date='01 Jan 15:00',gameweek=1,
+        opponent_result='ARS(H) 1-0',mins_played=90,points=2)])
+    reference=pd.DataFrame([dict(id=1,date='01 Jan 15:00',opp='ARS(H) 1-0',matchId=10,mins=90,gw_pts=2,gw=1,official_player_code=100)])
+    good=reconcile([player],reference)
+    assert good['corroborated_rows']==1
+    assert good['quarantined_conflict_rows']==0
+    duplicate=player|{'id':2}
+    report=reconcile([player,duplicate],reference)
+    assert report['corroborated_rows']==0
+    assert all('ambiguous_identity' in r['reasons'] for r in report['quarantined_player_records'])
+    bad=copy.deepcopy(player);bad['fixture_history'][0]['points']=3
+    report=reconcile([bad],reference)
+    assert report['quarantined_conflict_rows']==1
+    assert 'gw_pts_disagreement' in report['quarantined_player_records'][0]['reasons']
+    assert not report['eligible_training']
+    unmatched=copy.deepcopy(player);unmatched['fixture_history'][0]['date']='02 Jan 15:00'
+    assert 'unmatched_observations' in reconcile([unmatched],reference)['quarantined_player_records'][0]['reasons']

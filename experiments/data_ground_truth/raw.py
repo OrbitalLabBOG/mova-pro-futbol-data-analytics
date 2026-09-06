@@ -17,7 +17,8 @@ from mova_fpl.data.sources import _get
 REPOS = ('vaastav/Fantasy-Premier-League', 'olbauday/FPL-Core-Insights',
          'imadeddine-belkat/Premier-League-Stats', 'TopMarxFPL/fpl-mirror', 'durtal/fantasysocceR',
          'prathmesh/Fantasy-Premier-League-Points-Predictor', 'clwatkins/fantasy_premier_league',
-         'mvbfontes/premierleaguedatasets', 'sjp4/differentialfpl')
+         'mvbfontes/premierleaguedatasets', 'sjp4/differentialfpl',
+         'darrenvong/fpl-data-visualiser')
 
 
 def digest(data: bytes) -> str:
@@ -70,6 +71,8 @@ def capture(root: Path, repo: str, revision: str, path: str) -> dict:
 def select(repo: str, path: str) -> bool:
     if path in ('README.md', 'LICENSE', 'DATA_INTEGRATION_REVIEW.md'):
         return True
+    if repo == REPOS[9]:
+        return bool(re.fullmatch(r'dump/players/(?:current_gw|gw[0-9]+)\.(?:bson|metadata\.json)',path))
     if repo == REPOS[8]:
         return path in {
             'README.MD', 'LICENCE.txt',

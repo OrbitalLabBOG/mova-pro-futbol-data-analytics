@@ -478,3 +478,62 @@ literales sin ejecutar sus instrucciones, y los BSON de
 [darrenvong/fpl-data-visualiser](https://github.com/darrenvong/fpl-data-visualiser),
 aún no adquiridos. Sigue pendiente la propagación corroborada de IDs deportivos
 entre temporadas. No hay promoción de modelo ni cambio de producción en este gate.
+
+## Gate G9: recuperación SQL y auditoría BSON
+
+[results-g9.json](results-g9.json) registra la extracción literal del SQL archivado
+sin ejecutar sus instrucciones. Recupera **10.353 apariciones de 2010/11**, con
+minutos y puntos presentes, 380 partidos y 38 jornadas. Las sumas cuadran con el
+snapshot para los 543 jugadores con filas. El parser conserva strings y ceros,
+rechaza expresiones y separa los INSERT de las transformaciones posteriores.
+Estas últimas convertían ceros a NULL y eliminaban jugadores que no continuaban
+en la siguiente temporada: las bases derivadas no eran una muestra completa.
+
+La comprobación de cobertura ahora detecta jugadores con minutos de temporada
+pero sin apariciones. En este dump hay uno: FPL ID 670, Ameobi, Newcastle,
+9 minutos y 1 punto. El archivo deportivo identifica una aparición de Sammy
+Ameobi en Chelsea–Newcastle del 15 de mayo de 2011, pero registra 8 minutos.
+La [crónica del encuentro](https://www.skysports.com/football/chelsea-vs-newcastle-united/234069)
+corrobora su entrada. No se inserta una etiqueta sintética ni se convierte este
+indicio en una temporada completa. Además, el dump contiene apariciones positivas,
+no el universo de jugadores elegibles con ceros: usarlo directamente para aprender
+probabilidad de jugar introduciría sesgo de selección.
+
+Se adquirieron **15 archivos / 56.492.039 bytes** de los snapshots BSON de
+[darrenvong/fpl-data-visualiser](https://github.com/darrenvong/fpl-data-visualiser/tree/9e05f1270c91388c08f7c932ce03505b3d3871d1),
+con revisión y hashes fijados. Los siete snapshots pertenecen a 2015/16:
+
+| Snapshot | Filas crudas | Corroboradas contra 2015/16 | Filas en registros conflictivos |
+| --- | ---: | ---: | ---: |
+| current_gw | 19.946 | 19.946 | 0 |
+| gw19 | 11.610 | 11.609 | 1 |
+| gw26 | 16.231 | 16.046 | 185 |
+| gw27 | 16.798 | 16.632 | 166 |
+| gw30 | 18.547 | 18.547 | 0 |
+| gw31 | 19.251 | 19.242 | 9 |
+| gw32 | 19.946 | 19.946 | 0 |
+
+Estas cifras se solapan entre snapshots y con la temporada ya validada: **no se
+suman como nuevos ejemplos**. Cada conflicto conserva índice del documento, ID,
+conteo y razones en el informe; el BSON original permanece inmutable. Se excluye
+el documento completo cuando difieren identidad, partido, resultados o suma del
+snapshot. También se reportan documentos vacíos. `gw31` incluye un documento
+`Dummy` que comparte código con Stewart: ambos quedan en cuarentena por ambigüedad.
+El timestamp del ObjectId es una afirmación del archivo, no prueba de publicación
+antes del deadline. Ninguno de estos snapshots se habilita como feature causal.
+
+```bash
+python -m experiments.data_ground_truth.sql_archive --root "$DIFFERENTIAL_ROOT"
+python -m experiments.data_ground_truth.raw \
+  --root "$BSON_ROOT" --pins experiments/data_ground_truth/pins-g9.json
+uv run --quiet --no-project --with pymongo==4.14.1 --with pandas==2.3.3 \
+  python -m experiments.data_ground_truth.bson_archive \
+  --root "$BSON_ROOT" --season-root "$SEASON_2015_ROOT"
+```
+
+La dependencia BSON se ejecuta aislada, sin conexión MongoDB. El benchmark mantiene
+303.448 etiquetas, doce temporadas y el paquete v3. Quedan pendientes: reconciliar
+los archivos anteriores a 2014/15 contra partidos e identidades, completar el universo
+de no apariciones y acreditar disponibilidad temporal de features. Este gate mejora
+la trazabilidad y detección de huecos; no acredita cierre de la brecha causal ni
+promoción del modelo.

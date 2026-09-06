@@ -54,6 +54,8 @@ def quality(tables: dict) -> dict:
             duplicate_keys=int(frame.duplicated([player_key,'fixture_id']).sum()),
             comparable_player_totals=int(comparable.sum()),player_total_disagreements=int(differences.sum()),
             players_without_match_rows=int(comparison['_merge'].eq('left_only').sum()),
+            positive_minutes_players_without_match_rows=int((comparison['_merge'].eq('left_only') & comparison.minutes_snapshot.gt(0)).sum()),
+            missing_appearance_player_ids=[int(x) for x in comparison.loc[comparison['_merge'].eq('left_only') & comparison.minutes_snapshot.gt(0),metadata_key]],
             players_without_season_metadata=int(comparison['_merge'].eq('right_only').sum()),
             status='unreconciled_archive_not_full_season_ground_truth')
     return result
