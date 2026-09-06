@@ -111,7 +111,7 @@ de modelos por hash y exportación revisable, sin promover modelos al runtime.
 
 La capa experimental conserva los datos crudos fuera de Git, con manifiestos,
 SHA-256, fuentes fijadas por commit y auditorías reproducibles. El
-[registro de gates G1–G83](experiments/data_ground_truth/README.md) contiene
+[registro de gates G1–G84](experiments/data_ground_truth/README.md) contiene
 adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 
 | Capa | Cobertura verificada | Límite pendiente |
@@ -163,7 +163,7 @@ adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 | Antigüedad de calendarios, G81 | Tres ventanas pendientes tienen calendarios anteriores publicados, de 14,65–20,97 días; diagnóstico de cambios por club/GW | 9, 35 y 23 campos difieren de referencias posteriores; selección sigue 195/199 y no se admiten referencias futuras como entradas |
 | Anuncios de reprogramación, G82 | Cinco páginas oficiales archivadas; 47 horarios, ocho condicionales; 20 cambios de kickoff coinciden con declaraciones actuales | Cuatro horarios difieren de ambos snapshots; fecha visible no prueba contenido histórico; sin elevar 195/199 ni admisión temporal |
 | Integridad de temporadas parciales, G83 | 29.927 etiquetas antiguas pasan controles estructurales; 16.724 localías derivadas por clubes conservando NULL crudo | 3.465 filas con etiquetas incompletas; no implica cobertura poblacional ni admisión de entrenamiento |
-| Archivo Azure, G84 en curso | Descubiertos dos contenedores públicos: 2.524 snapshots, 3,12 GB enumerados; capturador verificable en adquisición | Descarga y cobertura completa pendientes; estados bootstrap, sin nuevas temporadas de etiquetas ni admisión temporal |
+| Archivo Azure, G84 | 2.524 snapshots / 3,12 GB adquiridos y reproducidos; cobertura nominal 37/38 GW en 2020/21 y 38/38 en 2021/22 | 1.620.223 observaciones de estado; relojes y publicación separados; sin nuevas etiquetas jugador–partido ni admisión temporal |
 | Collector propio, G36 | 55 bundles públicos; 34.512 estados de jugadores y 20.900 observaciones de fixtures | Dos candidatos anteriores a GW2/GW3 2026/27 vinculados al cierre de ingesta; evidencia interna identificada en el índice común G37 |
 | Reglas y chips de snapshots | Explícitos desde GW16 de 2024/25 y en toda 2025/26 | Faltan reglas históricas anteriores e interpretación de overrides |
 | Reglas documentales oficiales, G38 | 10 artículos archivados, 30 afirmaciones parciales en seis temporadas | Descargas actuales: la fecha del artículo no prueba disponibilidad histórica; no son un intérprete de reglas |
