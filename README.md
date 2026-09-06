@@ -111,7 +111,7 @@ de modelos por hash y exportación revisable, sin promover modelos al runtime.
 
 La capa experimental conserva los datos crudos fuera de Git, con manifiestos,
 SHA-256, fuentes fijadas por commit y auditorías reproducibles. El
-[registro de gates G1–G58](experiments/data_ground_truth/README.md) contiene
+[registro de gates G1–G59](experiments/data_ground_truth/README.md) contiene
 adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 
 | Capa | Cobertura verificada | Límite pendiente |
@@ -138,6 +138,7 @@ adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 | Referencia publicada, G56 | 152 agregados jornada–cohorte y cinco resúmenes de 2018/19, extraídos y reconciliados | Cohortes por rank final; referencia descriptiva, sin acciones individuales ni admisión como benchmark causal |
 | Etiquetas antiguas, G57 | 114 ventanas auditadas en 2011/12–2013/14; 732 apariciones con puntos desconocidos | Cobertura sobre filas archivadas, no población completa; NULL no se convierte en cero |
 | Período suplementario GW1, G58 | 3.622 estados; 9.562/9.625 celdas comparables de starts/xG coinciden con temporada anterior | 63 diferencias conservadas; métricas defensivas GW1 2025/26 sin referencia previa por partido |
+| Referencia defensiva anual, G59 | 894 observaciones, 562 jugadores de 2024/25; 392 contribuciones positivas; GW1 siguiente coincide en 508/511 códigos comparables | Tres componentes publicados sólo como ceros; no reconstruyen partidos ni nuevos puntos FPL |
 | Collector propio, G36 | 55 bundles públicos; 34.512 estados de jugadores y 20.900 observaciones de fixtures | Dos candidatos anteriores a GW2/GW3 2026/27 vinculados al cierre de ingesta; evidencia interna identificada en el índice común G37 |
 | Reglas y chips de snapshots | Explícitos desde GW16 de 2024/25 y en toda 2025/26 | Faltan reglas históricas anteriores e interpretación de overrides |
 | Reglas documentales oficiales, G38 | 10 artículos archivados, 30 afirmaciones parciales en seis temporadas | Descargas actuales: la fecha del artículo no prueba disponibilidad histórica; no son un intérprete de reglas |

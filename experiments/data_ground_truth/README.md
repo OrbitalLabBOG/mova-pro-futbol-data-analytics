@@ -3135,3 +3135,54 @@ Sin nuevas etiquetas, temporadas completas, cambios del GT v7 ni producción.
 Siguiente adquisición concreta: buscar referencia anual o por partido para las
 métricas defensivas 2024/25 observadas en la pretemporada 2025/26; conservar
 separados los totales anuales y las etiquetas por partido.
+
+
+## G59 — referencia anual defensiva 2024/25
+
+Se verificaron por manifiesto, tamaño y SHA **6.495 archivos history.csv** de las
+dos adquisiciones Vaastav existentes. `annual_defensive_reference.py` extrae las
+filas declaradas 2024/25: **894 observaciones**, 535 del primer conjunto y 359 del
+archivo 2026/27, correspondientes a **562 códigos únicos**. El primer conjunto tiene 534 códigos en 535 observaciones; las versiones nuevas
+añaden 28 códigos. No representan nuevas temporadas.
+
+El gate conserva cada observación con manifiesto, objeto, ruta y número de fila;
+genera una referencia anual separada e índice de contraste con GW1 2025/26.
+La consolidación distingue ausente, vacío, inválido, cero observado y conflictos.
+No utiliza mayoría de versiones para resolver contradicciones. Se encontraron
+cuatro campos numéricos válidos en las 894 observaciones, sin conflictos de valor
+entre versiones por código/campo. Estas versiones comparten upstream: no equivalen
+a fuentes independientes.
+
+| Campo anual | Códigos con valor positivo | Ceros explícitos | Iguales a GW1 2025/26 | Diferentes |
+| --- | ---: | ---: | ---: | ---: |
+| defensive_contribution | 392 | 170 | 508 | 3 |
+| recoveries | 0 | 562 | 511 | 0 |
+| tackles | 0 | 562 | 511 | 0 |
+| clearances_blocks_interceptions | 0 | 562 | 511 | 0 |
+
+De 685 estados GW1, **511 tienen referencia anual y 174 no**. Los códigos 503714,
+440323 y 75115 tienen contribución 0 en snapshot frente a 164, 17 y 15 en la
+referencia anual. Se preservan ambas versiones. Otros 51 códigos anuales no están
+en ese snapshot; el conjunto no es un censo completo del universo FPL.
+
+La contribución positiva junto a tres componentes universalmente cero **no permite
+reconstruir la composición defensiva** ni interpretar esos ceros como ausencia
+completa de actividad deportiva. No se reconstruyen partidos desde sumas anuales,
+no se conceden retroactivamente puntos de reglas nuevas y no se reemplazan los
+snapshots por valores finales. El gate cierra una falta de referencia **anual** de
+G58 para los 511 códigos, mientras sigue faltando la referencia por partido.
+
+```bash
+python -m experiments.data_ground_truth.annual_defensive_reference \
+  --raw-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/raw-player-histories \
+  --raw-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/raw-player-histories-2026 \
+  --performance-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/bootstrap-performance-v2 \
+  --out /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/annual-defensive-reference-v1
+```
+
+`report.json`, `observations.jsonl.gz`, `annual-reference.jsonl.gz` y
+`comparisons.jsonl.gz` reproducidos byte por byte en una raíz v2.
+Suite: **1.595 passed, 1 skipped, 79 deselected**.
+[Resultados G59](results-g59.json). Pruebas preservan conflictos, valores ausentes,
+ceros y snapshots discrepantes. Sin cambios del GT v7, del paquete G55 ni producción.
+La disponibilidad histórica sigue desconocida para estos CSV retrospectivos.

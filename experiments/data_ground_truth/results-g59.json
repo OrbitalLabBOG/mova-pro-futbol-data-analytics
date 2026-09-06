@@ -1,0 +1,103 @@
+{
+  "version": "historical-data-g59",
+  "audit_report_sha256": "d113652680e2f4ef1d090e8efa6a085093c97d69d02f60be3c69b4e9bcba237e",
+  "audit": {
+    "version": "annual-defensive-reference-v1",
+    "season": "2024/25",
+    "source_manifest_sha256": [
+      "b857404933e15cca6b0f79cb855b69f14eeeff10aec4aedcbeeedda852b88b7b",
+      "161c17b119b6ff32adef080cf2d3e4e5660a063448da35271f3bbd86fc25a797"
+    ],
+    "scanned_files": 6495,
+    "performance_report_sha256": "45366aadfe7002e2369082a334a7c64d21bb6b7e0541baa5f27798040fee395b",
+    "implementation_sha256": "c5db4131bc991f0822df6d006a535e1fee6fa4523a8ed68889b867825d477133",
+    "source_observations": 894,
+    "unique_player_seasons": 562,
+    "observed_fields": {
+      "defensive_contribution": {
+        "valid": 894
+      },
+      "recoveries": {
+        "valid": 894
+      },
+      "tackles": {
+        "valid": 894
+      },
+      "clearances_blocks_interceptions": {
+        "valid": 894
+      }
+    },
+    "consensus_fields": {
+      "defensive_contribution": {
+        "observed_value": 562
+      },
+      "recoveries": {
+        "observed_value": 562
+      },
+      "tackles": {
+        "observed_value": 562
+      },
+      "clearances_blocks_interceptions": {
+        "observed_value": 562
+      }
+    },
+    "unique_positive_values": {
+      "defensive_contribution": 392,
+      "recoveries": 0,
+      "tackles": 0,
+      "clearances_blocks_interceptions": 0
+    },
+    "snapshot_rows": 685,
+    "comparisons": {
+      "defensive_contribution": {
+        "equal": 508,
+        "no_annual_reference": 174,
+        "different": 3
+      },
+      "recoveries": {
+        "equal": 511,
+        "no_annual_reference": 174
+      },
+      "tackles": {
+        "equal": 511,
+        "no_annual_reference": 174
+      },
+      "clearances_blocks_interceptions": {
+        "equal": 511,
+        "no_annual_reference": 174
+      }
+    },
+    "artifacts": {
+      "observations.jsonl.gz": "5f73cfd72147fee92cd783b39db597d8a13b10564ba16453ab6e50169ce7a3b6",
+      "annual-reference.jsonl.gz": "d8fafa062ebbcba26e9412d52bfd20addb2413fe2840eb56f92a61a9c2571517",
+      "comparisons.jsonl.gz": "f77f02af1e41a1abcdbc1c962125901bdaa4e08061a5790a8e49bc432b976a62"
+    },
+    "training_admitted": false,
+    "production_changed": false,
+    "limitations": [
+      "annual_totals_not_player_match_labels_or_new_complete_season",
+      "repeated_versions_of_one_upstream_not_independent_sources",
+      "explicit_zero_components_do_not_establish_complete_sporting_measurement",
+      "positive_contribution_with_zero_components_is_not_reconstructible",
+      "retrospective_acquisition_not_predeadline_availability",
+      "agreement_does_not_authorize_overwriting_snapshot_or_training_selection",
+      "no_retrospective_award_of_new_rules_points",
+      "source_code_match_not_independent_person_identity_proof"
+    ]
+  },
+  "verification": {
+    "reproduced_byte_for_byte": true,
+    "tests_passed": 1595,
+    "tests_skipped": 1,
+    "tests_deselected": 79
+  },
+  "new_derived_annual_player_seasons": 562,
+  "new_player_match_labels": 0,
+  "new_complete_fpl_seasons": 0,
+  "production_changed": false,
+  "source_unique_codes": {
+    "raw-player-histories": 534,
+    "raw-player-histories-2026": 359,
+    "added_by_2026": 28
+  }
+}
