@@ -2965,3 +2965,57 @@ archivos operativos declarados. El auditor revalidó el GT de 303.126 filas y do
 temporadas desde la copia restaurada. Repetir build conserva ID y verifica el
 paquete existente. **1.580 passed, 1 skipped, 79 deselected**; pruebas de corrupción
 del mismo tamaño, rutas inseguras, destino existente e independencia de copias.
+
+## G56 — referencia agregada publicada de managers 2018/19
+
+La búsqueda de suplementos y archivos antiguos identificó una fuente pública
+adicional: [O’Brien, Gleeson y O’Sullivan, PLOS ONE 2021](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0246698).
+Su declaración de disponibilidad indica que el corpus individual no está publicado
+abiertamente y remite a solicitud institucional. El análisis detallado corresponde
+a 2018/19; las referencias a trece años son históricos de puntos/rank de temporada,
+no trece temporadas completas de acciones por jornada. No se contactó a terceros.
+
+Se descargaron el artículo HTML y el
+[suplemento público S1](https://doi.org/10.1371/journal.pone.0246698.s001):
+**926.756 bytes**, con hashes en `historical-discovery-g56/manifest.json`.
+La consulta CDX del antiguo `history201314.json` terminó con `OSError`; no produjo
+un índice utilizable. Es un fallo de consulta, no prueba de ausencia en el archivo.
+La búsqueda no añadió temporadas completas ni etiquetas de jugadores.
+
+`published_manager_reference.py` verifica el SHA del PDF, extrae su texto con
+PyMuPDF 1.26.4 y convierte S2/S3 en tablas independientes:
+
+- **152 filas jornada–cohorte:** 38 jornadas por cuatro etiquetas publicadas de
+  clasificación final, con media y desviación estándar de puntos.
+- **Cinco resúmenes de temporada:** cuatro cohortes y muestra total; tamaños de
+  1.000, 8.493, 83.897 y 808.522, que suman **901.912 managers**.
+- Las medias de temporada publicadas son 2.489,82; 2.412,68; 2.310,82 y 2.150,11.
+  Sus sumas semanales difieren en −0,02; 0; −0,02 y −0,02, compatibles con la
+  cota de redondeo de 38 medias y una media anual a dos decimales. No se igualan
+  ni se reemplazan los números publicados.
+
+Se inspeccionó visualmente la página 3 para verificar etiquetas y disposición
+S2. La extracción exige 38 jornadas únicas, orden y dimensiones de tablas y
+reconciliación de población/media; un cambio de formato falla explícitamente.
+Los CSV mantienen las etiquetas publicadas; no infieren censos completos ni
+umbrales exactos de rank a partir de medias.
+
+**Uso: referencia descriptiva externa.** Las cohortes se seleccionaron después de
+conocer la clasificación final. No son información predeadline, acciones de
+managers, etiquetas jugador–partido, un benchmark causal ni evidencia para
+promover un modelo. Las desviaciones por jornada tampoco determinan la
+incertidumbre conjunta de temporada, pues faltan las dependencias entre jornadas.
+Se conservan `training_admitted=false` y `promotion_benchmark_admitted=false`.
+
+```bash
+uv run --no-project --with pymupdf==1.26.4 python \
+  -m experiments.data_ground_truth.published_manager_reference \
+  --root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/historical-discovery-g56 \
+  --out /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/published-manager-reference-v1
+```
+
+`report.json`, `weekly-cohorts.csv` y `season-cohorts.csv` reproducidos byte por
+byte en `published-manager-reference-v2`. **1.582 passed, 1 skipped, 79 deselected**.
+PyMuPDF es dependencia del comando de investigación, no del runtime productivo.
+[Resultados G56](results-g56.json). El paquete G55 conserva su corte congelado;
+estos documentos y agregados quedan versionados aparte, sin modificarlo.
