@@ -172,6 +172,11 @@ separados. Las identidades admitidas de temporadas cerradas coinciden con v5;
 dos cambios de código quedan en cuarentena. Se conservan 94.980 valores
 desconocidos de selección y se mantienen deshabilitados entrenamiento y admisión
 predeadline. [Resultados G17](experiments/data_ground_truth/results-g17.json).
+G18 revisa identidades en los 7.837 snapshots: 5.391 claves temporada-elemento,
+cuatro cambios de código, trece de nombre y cero colisiones de código entre
+elementos dentro de temporada. Distingue tres casos de jugadores de una
+sustitución de entrenador; no aplica alias automáticamente.
+[Resultados G18](experiments/data_ground_truth/results-g18.json).
 
 ## Empezar
 

@@ -1,0 +1,311 @@
+{
+  "version": "historical-data-g18",
+  "identity_report": {
+    "version": "bootstrap-identity-v1",
+    "manifest_sha256": "d9eed1e354d0a35443e480a0c4bfcbdebee97f28b73b04309e4bef0f8bcc243e",
+    "implementation_sha256": "ad848358024bf00bca664b95f14bc1895b3883523de9f60245988708ed6f996b",
+    "snapshots": 7837,
+    "errors": 0,
+    "elements": 5391,
+    "elements_with_code_changes": 4,
+    "code_collisions": 0,
+    "seasons": {
+      "2020-21": {
+        "elements": 713,
+        "code_changes": 0,
+        "name_changes": 0,
+        "managers": 0,
+        "code_collisions": 0
+      },
+      "2021-22": {
+        "elements": 737,
+        "code_changes": 0,
+        "name_changes": 1,
+        "managers": 0,
+        "code_collisions": 0
+      },
+      "2022-23": {
+        "elements": 778,
+        "code_changes": 2,
+        "name_changes": 1,
+        "managers": 0,
+        "code_collisions": 0
+      },
+      "2023-24": {
+        "elements": 865,
+        "code_changes": 1,
+        "name_changes": 4,
+        "managers": 0,
+        "code_collisions": 0
+      },
+      "2024-25": {
+        "elements": 804,
+        "code_changes": 1,
+        "name_changes": 2,
+        "managers": 20,
+        "code_collisions": 0
+      },
+      "2025-26": {
+        "elements": 841,
+        "code_changes": 0,
+        "name_changes": 4,
+        "managers": 0,
+        "code_collisions": 0
+      },
+      "2026-27": {
+        "elements": 653,
+        "code_changes": 0,
+        "name_changes": 1,
+        "managers": 0,
+        "code_collisions": 0
+      }
+    },
+    "artifacts": {
+      "registry.json": "ee251c0159eef4116df15b2f5f507a45c05ed95d16517851cb144235ebc30019",
+      "code_changes.json": "1f78a6034b8855f5dae10d42ee69cfdabb2ee35a5c2738da69d7d2b636163044",
+      "code_collisions.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "errors.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    "eligible_identity_repair": false,
+    "eligible_predeadline": false,
+    "limitation": "variants_are_source_observations_not_automatic_person_equivalence"
+  },
+  "code_changes": [
+    {
+      "season": "2022-23",
+      "element": 546,
+      "variants": [
+        {
+          "code": 515024,
+          "first_name": "Luke",
+          "second_name": "Harris",
+          "position": 3,
+          "observations": 1329,
+          "distinct_snapshot_objects": 1218,
+          "observed_team_ids": [
+            9
+          ],
+          "first": {
+            "source_claimed_at": "2022-08-07T02:21:00",
+            "path": "cache/2022/8/7/0221.json.xz",
+            "sha256": "020e3ba21c8902ca342ae60cc709938b85d7f144b613477af047d338c1be61bc"
+          },
+          "last": {
+            "source_claimed_at": "2023-07-05T12:44:00",
+            "path": "cache/2023/7/5/1244.json.xz",
+            "sha256": "91a36ede9e07ef8ea18232df322d1d9a8ad7753b26544253144a7973f437097e"
+          }
+        },
+        {
+          "code": 536122,
+          "first_name": "Luke",
+          "second_name": "Harris",
+          "position": 3,
+          "observations": 14,
+          "distinct_snapshot_objects": 14,
+          "observed_team_ids": [
+            9
+          ],
+          "first": {
+            "source_claimed_at": "2022-08-03T12:50:00",
+            "path": "cache/2022/8/3/1250.json.xz",
+            "sha256": "d49ae4aa11198b14562c56c126aca6575a90b26019f5a87e849c9edc6e78d7c4"
+          },
+          "last": {
+            "source_claimed_at": "2022-08-06T18:27:00",
+            "path": "cache/2022/8/6/1827.json.xz",
+            "sha256": "11833c402c9852b322f76fb05615eb73526017e68107e621a7207e95359b2ba9"
+          }
+        }
+      ],
+      "code_count": 2,
+      "name_count": 1,
+      "entity_types": [
+        3
+      ]
+    },
+    {
+      "season": "2022-23",
+      "element": 558,
+      "variants": [
+        {
+          "code": 490721,
+          "first_name": "Hugo",
+          "second_name": "Bueno L\u00f3pez",
+          "position": 2,
+          "observations": 1330,
+          "distinct_snapshot_objects": 1219,
+          "observed_team_ids": [
+            20
+          ],
+          "first": {
+            "source_claimed_at": "2022-08-06T18:27:00",
+            "path": "cache/2022/8/6/1827.json.xz",
+            "sha256": "11833c402c9852b322f76fb05615eb73526017e68107e621a7207e95359b2ba9"
+          },
+          "last": {
+            "source_claimed_at": "2023-07-05T12:44:00",
+            "path": "cache/2023/7/5/1244.json.xz",
+            "sha256": "91a36ede9e07ef8ea18232df322d1d9a8ad7753b26544253144a7973f437097e"
+          }
+        },
+        {
+          "code": 530332,
+          "first_name": "Hugo",
+          "second_name": "Bueno L\u00f3pez",
+          "position": 2,
+          "observations": 13,
+          "distinct_snapshot_objects": 13,
+          "observed_team_ids": [
+            20
+          ],
+          "first": {
+            "source_claimed_at": "2022-08-03T12:50:00",
+            "path": "cache/2022/8/3/1250.json.xz",
+            "sha256": "d49ae4aa11198b14562c56c126aca6575a90b26019f5a87e849c9edc6e78d7c4"
+          },
+          "last": {
+            "source_claimed_at": "2022-08-06T12:38:00",
+            "path": "cache/2022/8/6/1238.json.xz",
+            "sha256": "6dc0df225ca17476f63fa7546800c18b9dfd0093d5e43973d06bb8a9ecf00f66"
+          }
+        }
+      ],
+      "code_count": 2,
+      "name_count": 1,
+      "entity_types": [
+        2
+      ]
+    },
+    {
+      "season": "2023-24",
+      "element": 120,
+      "variants": [
+        {
+          "code": 508395,
+          "first_name": "Yegor",
+          "second_name": "Yarmoliuk",
+          "position": 3,
+          "observations": 982,
+          "distinct_snapshot_objects": 781,
+          "observed_team_ids": [
+            4
+          ],
+          "first": {
+            "source_claimed_at": "2023-11-14T18:19:00",
+            "path": "cache/2023/11/14/1819.json.xz",
+            "sha256": "4a7b7eda05173337c33102e1796e35cb28ffcffe231a4b3b563d689ec838fb5d"
+          },
+          "last": {
+            "source_claimed_at": "2024-07-17T06:27:00",
+            "path": "cache/2024/7/17/0627.json.xz",
+            "sha256": "024f5dc1ee971ee0e77917cf7d40056b2744c5c544d90ebeeb50f4106395f99a"
+          }
+        },
+        {
+          "code": 508395,
+          "first_name": "Yegor",
+          "second_name": "Yarmolyuk",
+          "position": 3,
+          "observations": 504,
+          "distinct_snapshot_objects": 504,
+          "observed_team_ids": [
+            4
+          ],
+          "first": {
+            "source_claimed_at": "2023-07-11T18:24:00",
+            "path": "cache/2023/7/11/1824.json.xz",
+            "sha256": "8428429eb711dc2a4401e5bb5c4ede5bbca67d332db672109f706a8b873553a4"
+          },
+          "last": {
+            "source_claimed_at": "2023-11-14T12:34:00",
+            "path": "cache/2023/11/14/1234.json.xz",
+            "sha256": "d9836af926fa9b762b02e063650e31fc02c7ddad767d939858270bc3e4080ea6"
+          }
+        },
+        {
+          "code": 601975,
+          "first_name": "Yegor",
+          "second_name": "Yarmolyuk",
+          "position": 3,
+          "observations": 24,
+          "distinct_snapshot_objects": 24,
+          "observed_team_ids": [
+            4
+          ],
+          "first": {
+            "source_claimed_at": "2023-07-05T18:26:00",
+            "path": "cache/2023/7/5/1826.json.xz",
+            "sha256": "723ed7c1208da6a89e780bd7ec6b0e41be9f1d3201f63aba2f5a947946c0a3b6"
+          },
+          "last": {
+            "source_claimed_at": "2023-07-11T12:41:00",
+            "path": "cache/2023/7/11/1241.json.xz",
+            "sha256": "7f31caf76b27e3972cf96f8cea0f251d11705e16ce4c9392dfa44a1203af0893"
+          }
+        }
+      ],
+      "code_count": 2,
+      "name_count": 2,
+      "entity_types": [
+        3
+      ]
+    },
+    {
+      "season": "2024-25",
+      "element": 748,
+      "variants": [
+        {
+          "code": 100045653,
+          "first_name": "Ivan",
+          "second_name": "Juric",
+          "position": 5,
+          "observations": 332,
+          "distinct_snapshot_objects": 332,
+          "observed_team_ids": [
+            17
+          ],
+          "first": {
+            "source_claimed_at": "2025-01-23T12:43:00",
+            "path": "cache/2025/1/23/1243.json.xz",
+            "sha256": "9c61cb3dc771b2080372c0384e564819a124543bbb4269eb787cba0839448de0"
+          },
+          "last": {
+            "source_claimed_at": "2025-04-16T06:34:00",
+            "path": "cache/2025/4/16/0634.json.xz",
+            "sha256": "cd18417362e75894e041ae9482cd5e5a9b925b3a828c1456829fd2d15c24415c"
+          }
+        },
+        {
+          "code": 100047426,
+          "first_name": "Simon",
+          "second_name": "Rusk",
+          "position": 5,
+          "observations": 380,
+          "distinct_snapshot_objects": 181,
+          "observed_team_ids": [
+            17
+          ],
+          "first": {
+            "source_claimed_at": "2025-04-16T12:50:00",
+            "path": "cache/2025/4/16/1250.json.xz",
+            "sha256": "0fd3520f66a0b6d9858bf95e40ae0e98519d927cb2cdf2feeb89862ff65b878b"
+          },
+          "last": {
+            "source_claimed_at": "2025-07-20T18:35:00",
+            "path": "cache/2025/7/20/1835.json.xz",
+            "sha256": "54f59d8c7fc09ec53ce09cbb5ab1ec6c467a377b5e953d1cb0ea8311c27d79bd"
+          }
+        }
+      ],
+      "code_count": 2,
+      "name_count": 2,
+      "entity_types": [
+        5
+      ]
+    }
+  ],
+  "total_name_changes": 13,
+  "production_changed": false,
+  "identity_repairs_applied": 0
+}
