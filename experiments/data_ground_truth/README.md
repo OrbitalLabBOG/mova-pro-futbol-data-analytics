@@ -5990,3 +5990,46 @@ python -m experiments.data_ground_truth.workshop_source_audit \
   --base "$RAW_HISTORY_ROOT" \
   --out "$RAW_HISTORY_ROOT/workshop-audit-g107-v1"
 ```
+
+
+## G108 — EPL Fantasy Geek: colección histórica de estados
+
+La búsqueda de repositorios anteriores a 2015 devolvió 41 resultados y se
+inspeccionaron nueve árboles fijados por SHA. No apareció una copia indexada de
+`history201314.json`. Los resultados crudos y árboles quedan en
+`historical-discovery-g108`; esta búsqueda no agota forks o ramas históricas.
+
+En [jokecamp/epl-fantasy-geek](https://github.com/jokecamp/epl-fantasy-geek)
+se localizaron 186 cambios del path `app/js/data.json`, paginados en dos respuestas
+GitHub. Uno renombra el archivo a `app/js/15-16/data.json`; el detalle del commit
+se conserva como evidencia. Se adquirieron las otras 185 versiones más README,
+licencia y extractor como contexto: **188 archivos, 39.223.568 bytes**, sin errores
+de descarga. La licencia y código del extractor se archivan sin ejecutar.
+
+De las 185 versiones, 183 contienen `elStat` y `elInfo` válidos, una está vacía
+y otra conserva sólo configuración sin arrays de jugadores. Hay 184 contenidos
+distintos entre los snapshots. El decodificador usa el índice declarado por
+cada versión, verifica enteros, unicidad de IDs/códigos y referencia al club.
+Extrae **118.634 estados**, entre 529 y 716 jugadores por versión, con dos
+conjuntos distintos de códigos de clubes. Son estados repetidos, no ejemplos
+independientes ni filas por partido.
+
+Se exportan identidad de origen, club, posición, precio, minutos y puntos
+acumulados, puntos de evento, status, `added` y puntos de temporada anterior.
+La selección de equipo y los pronósticos del documento original no entran a la
+tabla derivada. `added` es metadata del jugador: no fecha de captura.
+Las fechas de autor Git se conservan como metadata sin convertirlas en prueba
+de publicación. No se asigna temporada, jornada ni deadline por similitud;
+los puntos de evento sin período acreditado no se admiten como etiquetas.
+
+[Resultados G108](results-g108.json): dos corridas producen reporte,
+`snapshots.json` y `player_states.csv` idénticos. Raw:
+`geek-history-g108`; auditorías: `geek-audit-g108-v1` y `-v2`, fuera de Git y
+todavía fuera del corte G104. Aumenta el archivo de estados, pero no las doce
+temporadas de GT ni las ventanas con publicación acreditada. Producción intacta.
+
+```bash
+python -m experiments.data_ground_truth.geek_history_audit \
+  --base "$RAW_HISTORY_ROOT" \
+  --out "$RAW_HISTORY_ROOT/geek-audit-g108-v1"
+```
