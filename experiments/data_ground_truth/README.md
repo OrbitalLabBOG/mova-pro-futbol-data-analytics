@@ -2484,3 +2484,53 @@ El siguiente contraste debe evaluar estos componentes contra los snapshots y
 medir revisiones/precisión decimal, sin suponer disponibilidad anterior al deadline
 ni convertir automáticamente métricas antiguas en puntos de reglas modernas.
 GT v7 y producción permanecen intactos; no se añade una temporada completa nueva.
+
+## Gate G47: acumulados suplementarios y precisión decimal
+
+`supplemental_cumulative.py` compara los nueve componentes G46 con los snapshots
+G31, usando `Decimal` y sumas por kickoff estrictamente anterior al deadline.
+Sólo compara temporadas cuya referencia de jugadores está totalmente enlazada;
+los snapshots GW1 se excluyen por su semántica diferente. No cuenta filas
+incompletas como ceros. El estado acumulado avanza por deadlines crecientes y
+conserva nulos/ausencias de cualquier partido de la suma.
+
+**110.018 estados en 148 ventanas de cuatro temporadas**. En 2023/24 hay
+144.060 celdas comparables exactamente iguales; en 2025/26, 260.154. Los campos
+sin columna y jugadores sin referencia permanecen fuera de esa afirmación.
+En 2024/25 hay 132.466 celdas iguales y nueve diferentes de Ferguson en GW25–27:
+xA y xG involvement difieren −0,01 (seis celdas), y xG encajado −0,74 (tres).
+
+La categoría `within_rounding_bound` no significa igualdad. Sólo cuando los
+valores tienen precisión numérica compatible con centésimas se calcula el margen
+`0,005 × (n_partidos + 1)`, bajo la hipótesis explícita de redondeo al más cercano
+en cada partido y en el acumulado. Una diferencia fuera del margen se conserva
+como tal; una precisión distinta no se fuerza a esa hipótesis. Starts y los
+contadores enteros no reciben tolerancia.
+
+2022/23 requiere tratamiento por tramo:
+
+- GW2–15: starts y los cuatro campos esperados están ausentes del snapshot.
+- GW16: 383 discrepancias de starts; no se explican por redondeo.
+- GW17–21: xG incluye discrepancias con precisión incompatible con centésimas.
+- GW22: xG tiene 173 diferencias dentro del margen hipotético, 534 igualdades y
+  27 jugadores sin referencia.
+- GW23–38: todas las celdas xG comparables coinciden exactamente.
+
+En el total 2022/23 se conservan 9.260 celdas `different` (incluye enteros y
+precisión fuera de la hipótesis), 1.573 fuera del margen y 2.773 dentro del margen.
+No se atribuye una causa única ni se rellenan los campos ausentes con resultados
+finales. La auditoría mide consistencia retrospectiva, no publicación ni causalidad.
+
+```bash
+python -m experiments.data_ground_truth.supplemental_cumulative \
+  --supplemental-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/supplemental-components-v3 \
+  --performance-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/bootstrap-performance-v2 \
+  --out /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/supplemental-cumulative-v1
+```
+
+Reporte y comparaciones reproducidos byte por byte en `supplemental-cumulative-v2`.
+**1.553 passed, 1 skipped, 79 deselected**. Pruebas de aritmética decimal,
+tolerancia separada de igualdad, enteros, precisión distinta y desconocidos.
+[Resultados G47](results-g47.json). GT v7 y runtime intactos; el siguiente gate
+debe investigar la introducción y precisión de estos campos en 2022/23 antes de
+proponer un contrato de features por temporada y ventana.

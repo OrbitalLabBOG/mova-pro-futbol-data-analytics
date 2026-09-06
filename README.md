@@ -111,7 +111,7 @@ de modelos por hash y exportación revisable, sin promover modelos al runtime.
 
 La capa experimental conserva los datos crudos fuera de Git, con manifiestos,
 SHA-256, fuentes fijadas por commit y auditorías reproducibles. El
-[registro de gates G1–G46](experiments/data_ground_truth/README.md) contiene
+[registro de gates G1–G47](experiments/data_ground_truth/README.md) contiene
 adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 
 | Capa | Cobertura verificada | Límite pendiente |
@@ -126,6 +126,7 @@ adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 | Acumulados por jornada y fecha, G44 | 191 ventanas, 138.830 estados; 138.544 iguales, tres diferentes y 283 sin referencia | Nueve celdas de diferencia compatibles con la corrección histórica de Ferguson; no se modifica el snapshot |
 | Historia de la discrepancia, G45 | 219 capturas de Ferguson: pérdida observada de tres componentes en febrero y recuperación en marzo de 2025 | Ventanas nominales entre archivos; no acreditan el instante ni la causa de una corrección de la API |
 | Componentes por partido, G46 | xG/xA y starts: 113.260 filas en cuatro temporadas; métricas defensivas antiguas y 2025/26 preservadas | Valores retrospectivos; definiciones entre épocas y disponibilidad histórica pendientes de conciliación |
+| Conciliación suplementaria, G47 | 110.018 estados; igualdad exacta en campos comparables de 2023/24 y 2025/26 | 2022/23 tiene ausencia y cambios de precisión; 2024/25 conserva nueve diferencias de Ferguson; sin admisión automática |
 | Collector propio, G36 | 55 bundles públicos; 34.512 estados de jugadores y 20.900 observaciones de fixtures | Dos candidatos anteriores a GW2/GW3 2026/27 vinculados al cierre de ingesta; evidencia interna identificada en el índice común G37 |
 | Reglas y chips de snapshots | Explícitos desde GW16 de 2024/25 y en toda 2025/26 | Faltan reglas históricas anteriores e interpretación de overrides |
 | Reglas documentales oficiales, G38 | 10 artículos archivados, 30 afirmaciones parciales en seis temporadas | Descargas actuales: la fecha del artículo no prueba disponibilidad histórica; no son un intérprete de reglas |
