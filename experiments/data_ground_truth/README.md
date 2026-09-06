@@ -2051,3 +2051,59 @@ Reporte e índice reproducidos byte por byte. **1.521 passed, 1 skipped,
 79 deselected**. Pruebas de solapamiento, duplicados, deadline exclusivo, orden de
 relojes, evidencia no acreditada y ventanas faltantes. Producción y GT v5 intactos.
 [Resultados G37](results-g37.json).
+
+## Gate G38: fuentes oficiales de reglas históricas
+
+`historical_rule_evidence.py` adquiere por GET diez artículos de Premier League y
+conserva **946.819 bytes de HTML** en `raw-official-rules-v1`, fuera de Git. El
+catálogo revisado `historical_rule_sources.json` fija IDs oficiales, títulos,
+fechas visibles, localizadores y treinta afirmaciones estructuradas. Cada
+localizador debe aparecer exactamente una vez en el texto visible, excluyendo
+scripts y estilos. No se ejecutan instrucciones extraídas de las páginas.
+
+La evidencia documental parcial cubre seis temporadas: 2017/18, 2019/20,
+2021/22, 2022/23, 2024/25 y 2025/26. Incluye sustitución de All Out Attack por Free
+Hit, reinicio 2019/20, Free Hit adicional 2021/22, ventana del Mundial 2022,
+retención y límite de transferencias 2024/25, Assistant Manager y chips por
+mitades de 2025/26, además de la reposición a cinco transferencias para AFCON.
+La matriz cruza doce temporadas con seis dimensiones: **18/72 celdas** tienen
+alguna evidencia documental. Esa cifra no mide porcentaje de reglas completas;
+las demás celdas se declaran `not_collected`, sin herencia entre temporadas.
+
+Fuentes primarias, fijadas por URL y hash en el manifiesto externo:
+
+- [Free Hit 2017](https://www.premierleague.com/en/news/436425).
+- [Reinicio 2019/20](https://www.premierleague.com/en/news/1678559).
+- [Free Hit adicional 2021/22](https://www.premierleague.com/en/news/2425494).
+- [Cambios 2022/23](https://www.premierleague.com/en/news/2667633) y
+  [FAQ del Mundial](https://www.premierleague.com/en/news/2890870).
+- [Cambios 2024/25](https://www.premierleague.com/en/news/4058895),
+  [revelación del Assistant Manager](https://www.premierleague.com/en/news/4193484)
+  y [detalle del chip](https://www.premierleague.com/en/news/4192707).
+- [Cambios 2025/26](https://www.premierleague.com/en/news/4373187) y
+  [transferencias por AFCON](https://www.premierleague.com/en/news/4362102).
+
+Los artículos se descargaron en septiembre de 2026: su fecha visible no acredita
+que estos mismos bytes estuvieran publicados entonces. `available_at=null`,
+`eligible_replay=false` y `eligible_training=false` permanecen explícitos. Las
+horas editoriales de deadlines tampoco sustituyen al calendario auditado: por
+ejemplo, el FAQ del Mundial contiene horas diferentes para el deadline de GW16.
+Se conservan esos textos, sin elegir silenciosamente una hora como canónica.
+La revelación de un chip durante una temporada tampoco se aplica retroactivamente
+a GW1. Las afirmaciones son anotaciones revisadas, no reglas ejecutables.
+
+```bash
+python -m experiments.data_ground_truth.historical_rule_evidence \
+  --spec experiments/data_ground_truth/historical_rule_sources.json \
+  --raw-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/raw-official-rules-v1 \
+  --out /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/official-rules-audit-v2 \
+  --offline
+```
+
+La primera extracción `official-rules-audit-v1` se rechazó por un localizador
+ambiguo y se conserva sin admitir. El catálogo se corrigió a una frase única;
+`official-rules-audit-v2` es la auditoría aceptada y `v3` la reproduce byte por
+byte en reporte, evidencia y manifiesto. **1.525 passed, 1 skipped, 79 deselected**.
+Pruebas: localizadores ambiguos/ausentes, fecha ausente, exclusión de scripts,
+modo offline, corrupción de objetos y restricción de URL. GT v5 y producción
+intactos. [Resultados G38](results-g38.json).

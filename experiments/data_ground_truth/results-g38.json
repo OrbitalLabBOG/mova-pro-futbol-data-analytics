@@ -1,0 +1,133 @@
+{
+  "version": "historical-data-g38",
+  "audit_report_sha256": "b54bdfd8cabde0612d3303184b8a83a5339f2a96943c46f2cff61bad053a2e98",
+  "audit": {
+    "version": "historical-rule-evidence-v1",
+    "spec_sha256": "53eb8b09a2431651f9c632b5e7f8e6c9c5a204d71d21c65a64f04434166040b2",
+    "implementation_sha256": "d7331798092890aa400f0066aa567011ae0ca640ca871b20f03534a0b2220f1c",
+    "articles": 10,
+    "raw_bytes": 946819,
+    "assertions": 30,
+    "seasons_with_evidence": 6,
+    "coverage": {
+      "2014-15": {
+        "chip_inventory": "not_collected",
+        "chip_constraints": "not_collected",
+        "transfer_limits": "not_collected",
+        "transfer_retention": "not_collected",
+        "exceptional_transfers": "not_collected",
+        "scoring_changes": "not_collected"
+      },
+      "2015-16": {
+        "chip_inventory": "not_collected",
+        "chip_constraints": "not_collected",
+        "transfer_limits": "not_collected",
+        "transfer_retention": "not_collected",
+        "exceptional_transfers": "not_collected",
+        "scoring_changes": "not_collected"
+      },
+      "2016-17": {
+        "chip_inventory": "not_collected",
+        "chip_constraints": "not_collected",
+        "transfer_limits": "not_collected",
+        "transfer_retention": "not_collected",
+        "exceptional_transfers": "not_collected",
+        "scoring_changes": "not_collected"
+      },
+      "2017-18": {
+        "chip_inventory": "partial_documentary_evidence",
+        "chip_constraints": "partial_documentary_evidence",
+        "transfer_limits": "not_collected",
+        "transfer_retention": "not_collected",
+        "exceptional_transfers": "not_collected",
+        "scoring_changes": "not_collected"
+      },
+      "2018-19": {
+        "chip_inventory": "not_collected",
+        "chip_constraints": "not_collected",
+        "transfer_limits": "not_collected",
+        "transfer_retention": "not_collected",
+        "exceptional_transfers": "not_collected",
+        "scoring_changes": "not_collected"
+      },
+      "2019-20": {
+        "chip_inventory": "partial_documentary_evidence",
+        "chip_constraints": "not_collected",
+        "transfer_limits": "not_collected",
+        "transfer_retention": "not_collected",
+        "exceptional_transfers": "partial_documentary_evidence",
+        "scoring_changes": "not_collected"
+      },
+      "2020-21": {
+        "chip_inventory": "not_collected",
+        "chip_constraints": "not_collected",
+        "transfer_limits": "not_collected",
+        "transfer_retention": "not_collected",
+        "exceptional_transfers": "not_collected",
+        "scoring_changes": "not_collected"
+      },
+      "2021-22": {
+        "chip_inventory": "partial_documentary_evidence",
+        "chip_constraints": "partial_documentary_evidence",
+        "transfer_limits": "not_collected",
+        "transfer_retention": "not_collected",
+        "exceptional_transfers": "not_collected",
+        "scoring_changes": "not_collected"
+      },
+      "2022-23": {
+        "chip_inventory": "partial_documentary_evidence",
+        "chip_constraints": "not_collected",
+        "transfer_limits": "partial_documentary_evidence",
+        "transfer_retention": "partial_documentary_evidence",
+        "exceptional_transfers": "partial_documentary_evidence",
+        "scoring_changes": "not_collected"
+      },
+      "2023-24": {
+        "chip_inventory": "not_collected",
+        "chip_constraints": "not_collected",
+        "transfer_limits": "not_collected",
+        "transfer_retention": "not_collected",
+        "exceptional_transfers": "not_collected",
+        "scoring_changes": "not_collected"
+      },
+      "2024-25": {
+        "chip_inventory": "partial_documentary_evidence",
+        "chip_constraints": "partial_documentary_evidence",
+        "transfer_limits": "partial_documentary_evidence",
+        "transfer_retention": "partial_documentary_evidence",
+        "exceptional_transfers": "not_collected",
+        "scoring_changes": "partial_documentary_evidence"
+      },
+      "2025-26": {
+        "chip_inventory": "partial_documentary_evidence",
+        "chip_constraints": "not_collected",
+        "transfer_limits": "not_collected",
+        "transfer_retention": "not_collected",
+        "exceptional_transfers": "partial_documentary_evidence",
+        "scoring_changes": "partial_documentary_evidence"
+      }
+    },
+    "artifacts": {
+      "evidence.json": "48116ec843b0e1b6d70096a7dcec85c88d1a66207bcd25427c2f34647a7e2785",
+      "source_manifest.json": "b084d0f85d6848e2dc2bc95bdbfa55454a9019442d0ae6d15e382d408780dc20"
+    },
+    "production_changed": false,
+    "training_admitted": false,
+    "replay_admitted": false,
+    "limitations": [
+      "displayed_article_date_is_not_proven_historical_publication",
+      "current_article_bytes_may_include_later_edits",
+      "curated_assertions_are_not_an_executable_complete_ruleset",
+      "no_cross_season_rule_inheritance",
+      "article_deadline_clocks_are_not_canonical_GW_deadlines"
+    ]
+  },
+  "verification": {
+    "reproduced_byte_for_byte": true,
+    "tests_passed": 1525,
+    "tests_skipped": 1,
+    "tests_deselected": 79
+  },
+  "production_changed": false,
+  "gt_v5_changed": false
+}

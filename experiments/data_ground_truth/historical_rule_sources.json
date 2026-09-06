@@ -1,0 +1,335 @@
+{
+  "version": "historical-rule-sources-v1",
+  "coverage_dimensions": [
+    "chip_inventory",
+    "chip_constraints",
+    "transfer_limits",
+    "transfer_retention",
+    "exceptional_transfers",
+    "scoring_changes"
+  ],
+  "articles": [
+    {
+      "article_id": "436425",
+      "season": "2017-18",
+      "title": "'Free Hit' arrives to shake up Fantasy",
+      "displayed_date_text": "11 Jul 2017",
+      "assertions": [
+        {
+          "dimension": "chip_inventory",
+          "anchor": "replaces last season",
+          "statement": {
+            "free_hit_replaces": "all_out_attack",
+            "free_hit_uses": 1
+          }
+        },
+        {
+          "dimension": "chip_constraints",
+          "anchor": "cannot be cancelled",
+          "statement": {
+            "free_hit_reversible_after_confirmation": false
+          }
+        },
+        {
+          "dimension": "chip_constraints",
+          "anchor": "price changes applied",
+          "statement": {
+            "free_hit_squad_temporary": true,
+            "original_squad_price_changes_apply": true
+          }
+        }
+      ]
+    },
+    {
+      "article_id": "1678559",
+      "season": "2019-20",
+      "title": "Fantasy Premier League is back: What you need to know",
+      "displayed_date_text": "14 Jun 2020",
+      "assertions": [
+        {
+          "dimension": "exceptional_transfers",
+          "anchor": "without playing a Wildcard",
+          "statement": {
+            "event_label": "GW30+",
+            "free_transfers": "unlimited"
+          }
+        },
+        {
+          "dimension": "exceptional_transfers",
+          "anchor": "Prices of players",
+          "statement": {
+            "event_label": "GW30+",
+            "price_changes_frozen_until_deadline": true
+          }
+        },
+        {
+          "dimension": "chip_inventory",
+          "anchor": "Any unused chips",
+          "statement": {
+            "existing_unused_chips_retained_for_restart": true
+          }
+        }
+      ]
+    },
+    {
+      "article_id": "2425494",
+      "season": "2021-22",
+      "title": "FPL managers to get extra Free Hit chip",
+      "displayed_date_text": "23 Dec 2021",
+      "assertions": [
+        {
+          "dimension": "chip_inventory",
+          "anchor": "one extra Free Hit",
+          "statement": {
+            "free_hit_added": 1,
+            "first_usable_gw": 20
+          }
+        },
+        {
+          "dimension": "chip_constraints",
+          "anchor": "consecutive Gameweeks",
+          "statement": {
+            "free_hit_consecutive_allowed": false
+          }
+        },
+        {
+          "dimension": "chip_inventory",
+          "anchor": "first Wildcard is available",
+          "statement": {
+            "wildcard_first_last_gw": 20,
+            "wildcard_second_first_gw": 21
+          }
+        }
+      ]
+    },
+    {
+      "article_id": "2667633",
+      "season": "2022-23",
+      "title": "What's new in 2022/23 FPL: Unlimited transfers during World Cup",
+      "displayed_date_text": "04 Jul 2022",
+      "assertions": [
+        {
+          "dimension": "exceptional_transfers",
+          "anchor": "unlimited free transfers between",
+          "statement": {
+            "preparation_gw": 17,
+            "free_transfers": "unlimited"
+          }
+        },
+        {
+          "dimension": "transfer_limits",
+          "anchor": "limited to 20 transfers",
+          "statement": {
+            "max_total_transfers_normal_gw": 20,
+            "exceptions": [
+              "wildcard",
+              "free_hit",
+              "world_cup_window"
+            ]
+          }
+        },
+        {
+          "dimension": "chip_inventory",
+          "anchor": "Two Wildcards",
+          "statement": {
+            "wildcard_uses": 2,
+            "first_last_gw": 16,
+            "second_first_gw": 18
+          }
+        },
+        {
+          "dimension": "transfer_retention",
+          "anchor": "saved free transfers will be lost",
+          "statement": {
+            "wildcard_and_free_hit_next_gw_free_transfers": 1
+          }
+        }
+      ]
+    },
+    {
+      "article_id": "2890870",
+      "season": "2022-23",
+      "title": "FPL and FIFA World Cup: All you need to know about free unlimited transfers",
+      "displayed_date_text": "19 Nov 2022",
+      "assertions": [
+        {
+          "dimension": "exceptional_transfers",
+          "anchor": "If you make two or more",
+          "statement": {
+            "gw17_two_or_more_transfers_lose_saved_transfer": true
+          }
+        },
+        {
+          "dimension": "exceptional_transfers",
+          "anchor": "prices will be frozen during",
+          "statement": {
+            "world_cup_price_freeze": true
+          }
+        },
+        {
+          "dimension": "exceptional_transfers",
+          "anchor": "total transfers impact",
+          "statement": {
+            "world_cup_transfers_count_for_classic_tiebreak": true
+          }
+        }
+      ]
+    },
+    {
+      "article_id": "4058895",
+      "season": "2024-25",
+      "title": "BIG changes announced in FPL for 2024/25 season",
+      "displayed_date_text": "13 Aug 2024",
+      "assertions": [
+        {
+          "dimension": "transfer_limits",
+          "anchor": "accumulate up to FIVE",
+          "statement": {
+            "max_free_transfers": 5
+          }
+        },
+        {
+          "dimension": "transfer_retention",
+          "anchor": "saved transfers will no longer",
+          "statement": {
+            "saved_free_transfers_retained_after_wildcard_and_free_hit": true
+          }
+        },
+        {
+          "dimension": "chip_inventory",
+          "anchor": "There’s a new chip",
+          "statement": {
+            "mystery_chip_announced": true,
+            "mechanics_known_in_this_article": false
+          }
+        },
+        {
+          "dimension": "scoring_changes",
+          "anchor": "six to 10",
+          "statement": {
+            "goalkeeper_goal_points": 10
+          }
+        }
+      ]
+    },
+    {
+      "article_id": "4193484",
+      "season": "2024-25",
+      "title": "Mystery Chip REVEALED: Introducing the Assistant Manager chip",
+      "displayed_date_text": "12 Dec 2024",
+      "assertions": [
+        {
+          "dimension": "chip_inventory",
+          "anchor": "THREE successive Gameweeks",
+          "statement": {
+            "assistant_manager_first_usable_gw": 24,
+            "duration_gws": 3
+          }
+        },
+        {
+          "dimension": "scoring_changes",
+          "anchor": "six points for each win",
+          "statement": {
+            "manager_win": 6,
+            "draw": 3,
+            "clean_sheet": 2,
+            "goal": 1
+          }
+        },
+        {
+          "dimension": "scoring_changes",
+          "anchor": "at least five places higher",
+          "statement": {
+            "table_rank_gap": 5,
+            "extra_win": 10,
+            "extra_draw": 5
+          }
+        }
+      ]
+    },
+    {
+      "article_id": "4192707",
+      "season": "2024-25",
+      "title": "Assistant Manager chip in FPL: All you need to know",
+      "displayed_date_text": "31 Jan 2025",
+      "assertions": [
+        {
+          "dimension": "chip_constraints",
+          "anchor": "one chip in a Gameweek",
+          "statement": {
+            "other_chips_blocked_during_manager_active_period": true
+          }
+        },
+        {
+          "dimension": "chip_constraints",
+          "anchor": "three-players-per-club quota",
+          "statement": {
+            "manager_counts_toward_club_limit": true
+          }
+        },
+        {
+          "dimension": "chip_constraints",
+          "anchor": "money you have spent",
+          "statement": {
+            "manager_cost_returns_after_chip": true
+          }
+        }
+      ]
+    },
+    {
+      "article_id": "4373187",
+      "season": "2025-26",
+      "title": "What's new for 2025/26: Changes in Fantasy Premier League",
+      "displayed_date_text": "10 Aug 2025",
+      "assertions": [
+        {
+          "dimension": "chip_inventory",
+          "anchor": "eight chips in total",
+          "statement": {
+            "chips_each_half": [
+              "wildcard",
+              "free_hit",
+              "triple_captain",
+              "bench_boost"
+            ],
+            "assistant_manager": false
+          }
+        },
+        {
+          "dimension": "chip_inventory",
+          "anchor": "cannot be carried over",
+          "statement": {
+            "first_set_last_gw": 19,
+            "unused_first_set_expires": true
+          }
+        },
+        {
+          "dimension": "scoring_changes",
+          "anchor": "10 clearances",
+          "statement": {
+            "defender_cbit_threshold": 10,
+            "midfielder_forward_cbirt_threshold": 12,
+            "defensive_contribution_points": 2
+          }
+        }
+      ]
+    },
+    {
+      "article_id": "4362102",
+      "season": "2025-26",
+      "title": "What's new in 2025/26 Fantasy: Extra transfers for AFCON",
+      "displayed_date_text": "18 Oct 2025",
+      "assertions": [
+        {
+          "dimension": "exceptional_transfers",
+          "anchor": "topped up to the maximum",
+          "statement": {
+            "gw": 16,
+            "free_transfers_top_up_to": 5,
+            "add_five_unconditionally": false
+          }
+        }
+      ]
+    }
+  ]
+}
