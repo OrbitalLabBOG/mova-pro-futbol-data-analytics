@@ -19,6 +19,10 @@ El cockpit read-only comparte un único contrato entre CLI y API. Su dashboard e
 sólo expone tres indicadores humanos; diagnóstico, métricas y JSON permanecen en loopback.
 Supabase sólo refleja seguimiento PM y nunca recibe estado operativo.
 
+G103: seguimiento de 1.446 snapshots muestra que las tres filas candidatas 0/0
+dejan de aparecer cuando los perfiles muestran otro club. Se conservan las trazas
+y no se promueven como etiquetas finales faltantes.
+
 G102: 173 de las 177 variantes antes rechazadas se enlazan sin inventar
 marcadores. Se detectan 16.928 ceros sin marcador que corresponden a minutos
 positivos en el GT final; quedan excluidos como etiquetas de no participación.
