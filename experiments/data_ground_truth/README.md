@@ -1281,3 +1281,69 @@ objetos y calendarios quedan fuera de Git, asociados al hash del snapshot y al
 testigo G21 cuando existe. No se activa entrenamiento, replay ni producción.
 La prioridad siguiente es adquirir calendarios históricos de fixtures y cerrar
 la interpretación de reglas por temporada antes de comparar políticas de chips.
+
+## Gate G23: versiones históricas de fixtures desde Git
+
+Se inspeccionó el historial completo alcanzable del commit fijado
+`9779cdbc0c07f6c900c2d0c181ddf6bb9c800f88` de
+`vaastav/Fantasy-Premier-League`: clon no shallow, 531 commits alcanzables y nueve
+rutas de datos de fixtures. Buscar todas las rutas históricas que contienen
+`fixtures` no reveló rutas adicionales. El export conserva hashes y fechas de
+committer/autor, sin nombres ni correos. Esto describe el historial alcanzable de
+ese pin; no garantiza que nunca hayan existido otras ramas o historia reescrita.
+
+`fixture_history` adquirió **254 versiones distintas**, 86.020.330 bytes, cero
+errores. Cada archivo coincide con el SHA-1 del blob Git y queda guardado además
+por SHA-256. Se preservan las versiones por commit, sin sustituirlas por el estado
+final de temporada. Su fecha Git sigue siendo una declaración de fuente;
+`available_at` permanece desconocido y la admisión predeadline está desactivada.
+
+`fixture_history_audit` normaliza IDs, jornadas, kickoffs, flags y dificultades.
+Conserva jornadas/horarios sin asignar y booleanos desconocidos; excluye los
+resultados y estadísticas de partido de esta proyección de calendario. Rechaza
+CSV ambiguos, IDs repetidos, pares home/away repetidos, partidos de un equipo
+contra sí mismo y fechas sin zona horaria. Las 254 versiones pasaron y contienen
+380 partidos cada una: **96.520 filas de versión de fixture**, no partidos nuevos.
+
+Se observaron **2.020 transiciones de kickoff** y **387 de jornada asignada** entre
+versiones consecutivas. Un mismo partido puede cambiar varias veces. No hubo
+cambios observados de código, equipos o población de fixtures al comparar por ID
+dentro de temporada. Esto no autoriza unir IDs de temporadas distintas.
+
+| Temporada | Versiones adquiridas | Deadlines comparados | Commit previo ≤48h | Commit previo ≤7 días |
+| --- | ---: | ---: | ---: | ---: |
+| 2018/19 | 1, con commit posterior a temporada | — | — | — |
+| 2019/20 | 45 | — | — | — |
+| 2020/21 | 40 | 6 | 4 | 5 |
+| 2021/22 | 40 | 38 | 19 | 34 |
+| 2022/23 | 38 | 38 | 20 | 34 |
+| 2023/24 | 38 | 38 | 21 | 32 |
+| 2024/25 | 37 | 38 | 20 | 32 |
+| 2025/26 | 12 | 38 | 6 | 11 |
+| 2026/27, abierta | 3 | 3 | 2 | 2 |
+
+La comparación utiliza los 199 deadlines de G21. Todos tienen una versión con
+commit anterior, pero solo 92 están dentro de 48 horas y 150 dentro de siete días.
+Son medidas **nominales**, no disponibilidad comprobada. En 2025/26 la antigüedad
+máxima es 2.197,30 horas (unos 92 días): tener los 380 partidos no demuestra un
+calendario suficientemente actualizado. Es prioritario complementar esa temporada.
+2018/19 y 2019/20 no están representadas por los deadlines G21; el guion no
+significa cobertura cero ni comparación realizada.
+
+```bash
+# En el clon completo del repositorio fuente fijado:
+git log --format='commit%x09%H%x09%cI%x09%aI' --raw --no-abbrev --no-renames \
+  9779cdbc0c07f6c900c2d0c181ddf6bb9c800f88 -- 'data/*/fixtures.csv' > "$FIXTURE_GIT_LOG"
+python -m experiments.data_ground_truth.fixture_history \
+  --log "$FIXTURE_GIT_LOG" --out "$FIXTURE_HISTORY_ROOT"
+python -m experiments.data_ground_truth.fixture_history_audit \
+  --root "$FIXTURE_HISTORY_ROOT" --selection-root "$PUBLICATION_SELECTION_ROOT" \
+  --out "$FIXTURE_HISTORY_AUDIT_ROOT"
+```
+
+[results-g23.json](results-g23.json) conserva cobertura, hashes y límites. El
+manifiesto raw contiene los 254 registros y las tablas normalizadas permanecen
+fuera de Git. Auditoría reproducida byte por byte; 1.460 passed, 1 skipped,
+79 deselected. No se habilita entrenamiento ni se modifica GT v5 o producción.
+Faltan testigos externos de publicación de estos commits y una fuente más densa
+para 2025/26, además de las brechas de reglas y etiquetas ya documentadas.

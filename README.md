@@ -200,6 +200,12 @@ G22 extrae reglas y calendarios de esos snapshots: **7.562 observaciones de jorn
 explícitos desde GW16 2024/25 en la selección; antes se conservan como ausentes.
 Se documentan overrides que requieren interpretación, sin ejecutarlos como reglas.
 [Resultados G22](experiments/data_ground_truth/results-g22.json).
+G23 adquiere **254 versiones históricas de fixtures**, todas con 380 partidos,
+y mide 2.020 cambios de kickoff y 387 de jornada. Para los 199 deadlines G21,
+92 tienen una versión con commit previo de hasta 48 horas; esa fecha aún no
+acredita publicación. 2025/26 solo tiene doce versiones y requiere una fuente
+más densa. [Resultados G23](experiments/data_ground_truth/results-g23.json).
+
 
 
 
