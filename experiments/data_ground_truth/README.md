@@ -1220,3 +1220,64 @@ predeadline deshabilitados. No hay cambios en GT v5 ni producción. Faltan el
 contrato de admisión y replay, reglas/calendarios históricos, flags desconocidos,
 los 78 kickoffs discrepantes y el universo elegible antiguo. Para 2026/27 conviene
 contrastar la evidencia propia del collector antes de ampliar búsquedas externas.
+
+## Gate G22: reglas y calendario de jornadas observados
+
+`bootstrap_rules` extrae los 199 snapshots seleccionados en G21; 196 tienen
+publicación corroborada. Conserva las secciones originales `game_settings`,
+`game_config`, `chips` y `element_types` en objetos con hash, distinguiendo ausencia
+real de una sección vacía o nula. No rellena reglas antiguas con las actuales.
+Una proyección estratégica separa restricciones de plantilla de los conteos
+variables de jugadores. El calendario exporta campos explícitos de jornada y
+excluye resultados agregados y IDs de entradas ganadoras.
+
+Se recuperan **7.562 observaciones de calendario de jornada** y **141 cambios de
+deadline** entre snapshots seleccionados. Son cambios observados entre capturas,
+no fechas exactas del anuncio. **Ninguno contiene fixtures**: saber los deadlines
+no reconstruye qué equipos jugaban, dobles jornadas, aplazamientos o kickoffs
+conocidos en esa fecha. Ese histórico continúa siendo una brecha específica.
+
+| Temporada | Snapshots | Con chips y scoring explícitos | Con fixtures |
+| --- | ---: | ---: | ---: |
+| 2020/21, parcial | 6 | 0 | 0 |
+| 2021/22 | 38 | 0 | 0 |
+| 2022/23 | 38 | 0 | 0 |
+| 2023/24 | 38 | 0 | 0 |
+| 2024/25 | 38 | 23, desde GW16 | 0 |
+| 2025/26 | 38 | 38 | 0 |
+| 2026/27, abierta | 3 | 3, sin testigo temporal | 0 |
+
+Los campos compartidos de `game_settings` y `game_config.rules` coinciden en los
+snapshots que contienen ambas secciones. Esto no valida toda la semántica del
+juego. `transfers_cap` no debe convertirse en capacidad de acumular transferencias
+gratuitas; los campos, límites y excepciones requieren contratos diferenciados.
+Las variantes de estructura también pueden reflejar la aparición de campos,
+sin demostrar un cambio efectivo de reglas.
+
+Se conservaron treinta observaciones de overrides no vacíos: dieciséis del
+Assistant Manager en 2024/25 y catorce de Free Hit en 2025/26. En estas últimas,
+GW1–14, la configuración del chip de la segunda mitad contiene
+`rules.squad_squadsize=16`; el override desaparece desde la captura de GW15.
+El dato queda pendiente de interpretación y no se aplica al simulador ni se
+corrige automáticamente. Publicación probada no equivale a regla ejecutable válida.
+
+Como contraste editorial, se adquirieron dos páginas oficiales con URL, hash y
+fecha de descarga. [Los cambios de 2025/26](https://www.premierleague.com/en/news/4362211/all-you-need-to-know-about-changes-to-fantasy-for-202526)
+describen ocho chips, ausencia de Assistant Manager y la recarga excepcional de
+transferencias de GW16. [La explicación de los chips](https://www.premierleague.com/en/news/4362027)
+explicita su caducidad por mitad de temporada y que Free Hit no puede jugarse en
+GW19 y GW20 consecutivamente. Son referencias recuperadas ahora: la fecha editorial
+no se transforma en un testigo histórico de publicación del contenido actual.
+
+```bash
+python -m experiments.data_ground_truth.bootstrap_rules \
+  --raw-root "$BOOTSTRAP_RAW_ROOT" --selection-root "$PUBLICATION_SELECTION_ROOT" \
+  --out "$BOOTSTRAP_RULES_ROOT"
+```
+
+[results-g22.json](results-g22.json) conserva cobertura, referencias y hashes.
+Reporte reproducido byte por byte; 1.458 passed, 1 skipped, 79 deselected. Los
+objetos y calendarios quedan fuera de Git, asociados al hash del snapshot y al
+testigo G21 cuando existe. No se activa entrenamiento, replay ni producción.
+La prioridad siguiente es adquirir calendarios históricos de fixtures y cerrar
+la interpretación de reglas por temporada antes de comparar políticas de chips.

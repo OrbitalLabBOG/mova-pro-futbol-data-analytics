@@ -1086,3 +1086,22 @@ def test_publication_state_audit_detects_same_snapshot_drift_and_admission(tmp_p
     with pytest.raises(ValueError,match='drift'):audit.build(tmp_path,tmp_path/'current',tmp_path/'old',tmp_path/'bad')
     current[key]=dict(row,eligible_training='True')
     with pytest.raises(ValueError,match='admission'):audit.build(tmp_path,tmp_path/'current',tmp_path/'old',tmp_path/'bad')
+
+
+def test_bootstrap_rule_extraction_preserves_unknown_sections_and_excludes_event_results():
+    from experiments.data_ground_truth.bootstrap_rules import extract
+    candidate=dict(season='2024-25',gw=1,path='cache/2024/8/16/1200.json.xz',deadline='2024-08-16T17:30:00Z')
+    event=dict(id=1,name='Gameweek 1',deadline_time=candidate['deadline'],finished=False,highest_scoring_entry=123,average_entry_score=99)
+    snapshot=dict(elements=[dict(id=1,element_type=1)],events=[event],game_settings=dict(squad_squadsize=15,transfers_cap=20),
+                  element_types=[dict(id=1,squad_select=2,element_count=80)])
+    sections,calendar,strategic=extract(snapshot,candidate)
+    assert 'chips' not in sections and not strategic['chips_present'] and strategic['chips'] is None
+    assert not strategic['scoring_present'] and strategic['scoring'] is None
+    assert 'highest_scoring_entry' not in calendar[0] and 'average_entry_score' not in calendar[0]
+    assert 'element_count' not in strategic['element_types'][0]
+    chip=dict(id=6,name='freehit',overrides=dict(rules=dict(squad_squadsize=16)))
+    _,_,configured=extract(dict(snapshot,chips=[chip],game_config=dict(scoring=dict(goals_scored={'GKP':10}))),candidate)
+    assert configured['chips'][0]['overrides']['rules']['squad_squadsize']==16
+    assert configured['scoring']['goals_scored']['GKP']==10
+    with pytest.raises(ValueError,match='calendar'):extract(snapshot,dict(candidate,deadline='2024-08-16T18:30:00Z'))
+    with pytest.raises(ValueError,match='rules section'):extract(dict(snapshot,game_settings=[]),candidate)
