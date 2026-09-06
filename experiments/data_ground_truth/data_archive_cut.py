@@ -9,7 +9,7 @@ import tempfile
 from experiments.data_ground_truth.azure_history import ACCOUNT, CONTAINERS
 from experiments.data_ground_truth.raw import digest
 from experiments.data_ground_truth.raw_bundle import canonical, hashfile, safe, verify_bundle
-from experiments.data_ground_truth.training_dataset import checked
+from experiments.data_ground_truth.training_dataset import checked, verify as verify_gt
 
 GROUPS=('source_extension','statsbomb_research')
 
@@ -58,6 +58,27 @@ def data_references(manifest):
         elif 'compressed_sha256' in row:references.append((row['compressed_sha256'],row['compressed_bytes']))
         else:raise ValueError('unsupported documentary source record')
     return references,failed
+
+
+def verify_active_gt(active, files, read):
+    if active['path']!='training-datasets/'+active['dataset_id']:raise ValueError('noncanonical active GT path')
+    prefix=active['path']+'/'
+    row=files.get(prefix+'manifest.json')
+    if row is None or row['sha256']!=active['manifest_sha256']:raise ValueError('active GT manifest absent from cut')
+    payload=read(row)
+    if digest(payload)!=active['manifest_sha256']:raise ValueError('active GT manifest checksum mismatch')
+    manifest=json.loads(payload)
+    if manifest['dataset_id']!=active['dataset_id']:raise ValueError('active GT identity mismatch')
+    with tempfile.TemporaryDirectory(prefix='mova-archive-gt-') as tmp:
+        root=Path(tmp);(root/'manifest.json').write_bytes(payload)
+        for group in ('partitions','quarantines','manager_partitions'):
+            for entry in manifest.get(group,[]):
+                name=entry['file']
+                if Path(name).name!=name:raise ValueError('unsafe active GT partition')
+                row=files.get(prefix+name)
+                if row is None or row['sha256']!=entry['sha256']:raise ValueError('active GT partition absent from cut')
+                (root/name).write_bytes(read(row))
+        verify_gt(root)
 
 
 def plan(base, registry_path, repository_root):
@@ -118,6 +139,9 @@ def plan(base, registry_path, repository_root):
             'local_restore_does_not_prove_offsite_backup_or_predeadline_availability',
             'failed_acquisition_receipt_is_not_recovered_source_data',
             'StatsBomb_and_general_source_groups_do_not_share_publication_permissions'])
+    if 'active_gt' in registry:
+        verify_active_gt(registry['active_gt'],merged,lambda row:(base/row['path']).read_bytes())
+        descriptor.update(active_gt=registry['active_gt'],legacy_gt_dataset_id=legacy['gt_dataset_id'],gt_dataset_id=registry['active_gt']['dataset_id'])
     cut=dict(descriptor,cut_id=digest(canonical(descriptor)))
     return cut,legacy_path,descriptors,sources
 
@@ -142,6 +166,12 @@ def verify(package):
     contents={r['sha256']:r['bytes'] for r in merged.values()}
     if len(contents)!=cut['unique_content_objects'] or sum(contents.values())!=cut['unique_content_bytes']:
         raise ValueError('archive content counts differ')
+    if 'active_gt' in cut:
+        if cut['gt_dataset_id']!=cut['active_gt']['dataset_id']:raise ValueError('active GT descriptor mismatch')
+        objects={}
+        for m in manifests:
+            for row in m['files']:objects.setdefault(row['sha256'],package/'bundles'/m['bundle_id']/'objects'/row['sha256'])
+        verify_active_gt(cut['active_gt'],merged,lambda row:objects[row['sha256']].read_bytes())
     return cut,manifests
 
 

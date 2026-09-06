@@ -5830,3 +5830,59 @@ muestra que la asociación histórica de ciertos ceros con un fixture puede camb
 al actualizarse el perfil; no permite reconstruir por sí sola elegibilidad o club
 antes del deadline. No se declara cuál de las referencias representa inscripción
 real ni se modifica el GT a partir de esa inferencia.
+
+## G104 — corte restaurable con GT activo explícito
+
+El registro `archive-cut-g104.json` amplía G92 con adquisiciones y auditorías
+G93–G103, el paquete parcial seleccionado de 2013/14, GT v8 y las evidencias
+anteriores que necesita la reproducción de identidad de G99. Se incluyen solo
+los paquetes seleccionados, no prototipos descartados ni directorios completos de
+experimentos de modelos.
+
+El contrato opcional `active_gt` identifica ruta, dataset y hash del manifiesto.
+El plan y la verificación exigen que el manifiesto y todas sus particiones estén
+incluidos en el corte y superen el verificador de GT. `gt_dataset_id` identifica
+ahora el paquete activo; `legacy_gt_dataset_id` conserva el identificador heredado
+de G55. Cortes antiguos sin `active_gt` mantienen su semántica original. La prueba
+nueva falla aunque la partición exista en el disco original si no forma parte del
+archivo restaurable.
+
+```bash
+python -m experiments.data_ground_truth.data_archive_cut build \
+  --base "$DATA_BASE" \
+  --registry experiments/data_ground_truth/archive-cut-g104.json \
+  --repository-root "$PWD" --out "$DATA_BASE/data-archives"
+python -m experiments.data_ground_truth.data_archive_cut restore \
+  --package "$ARCHIVE_PACKAGE" --out "$NEW_RESTORE_ROOT"
+```
+
+Se conserva la separación del archivo general y **StatsBomb Open Data (Hudl)**,
+que permanece exclusivamente como material de investigación, sin admisión a
+entrenamiento o runtime comercial ni autorización colectiva de publicación.
+
+<img src="https://static.hudl.com/craft/productAssets/statsbomb_icon.svg" alt="Hudl StatsBomb" width="40" height="40">
+
+La restauración requiere un destino nuevo, copia contenidos independientes y
+verifica hashes/tamaños. La reproducción usa el código versionado de Git y los
+datos restaurados. No equivale a un backup offsite, una prueba de disponibilidad
+predeadline ni una reproducción de todos los experimentos de modelos.
+
+Verificación local G104 completada el 6 de septiembre de 2026: **43.741 rutas**,
+**40.850 contenidos únicos**, **23.557.461.772 bytes**, 80 directorios registrados
+y 81 archivos explícitos. Frente a G92 son 8.105 rutas y 17.103.525.495 bytes únicos
+adicionales. Se verifican 8.024 referencias de fuentes. El contador de un recibo
+fallido corresponde a registros reconocidos de manifiestos; otros recibos HTTP
+conservados y los cinco JSON inválidos de G100 tienen su evidencia propia.
+
+Las 43.741 rutas se restauraron en un directorio nuevo con hashes/tamaños
+verificados. Desde esa copia se reprodujeron G93–G97 y G99–G103, además del paquete
+GT v8 completo: **43 archivos comparados directamente, todos idénticos**. G99
+revalida además las cinco salidas y métricas de G98 con su cambio explícito de hash
+de implementación por fijar el padre v7; no se afirma identidad byte a byte del
+reporte antiguo de G98 con otra implementación. El paquete parcial G94 también
+quedó reproducido íntegramente. No se usaron los datos originales como fallback.
+
+`current-data-archive.json` selecciona el nuevo corte; `results-g104.json` conserva
+el padre G92, manifiesto, alcance y hashes de las reproducciones. GT activo v8 y
+GT heredado v7 quedan distinguidos. Suite completa: **1.715 passed, 1 skipped,
+79 deselected**, 39,94 s. Producción y modelos permanecen intactos.
