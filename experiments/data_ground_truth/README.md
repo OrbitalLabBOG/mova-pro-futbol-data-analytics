@@ -2349,3 +2349,50 @@ suite completa: **1.544 passed, 1 skipped, 79 deselected**.
 [Resultados G43](results-g43.json). El siguiente contraste debe ampliar las
 jornadas respetando aplazamientos y tiempos de partido; sumar por número de GW
 sin esa precaución no constituye un estado causal.
+
+## Gate G44: conciliación de acumulados por jornada y fecha
+
+`cumulative_period.py` amplía G43 a las ventanas posteriores a GW1 con temporada
+presente en GT v7. Contrasta trece componentes con dos referencias retrospectivas:
+la suma de GWs anteriores y la suma de partidos con kickoff anterior al deadline.
+No confunde kickoff con finalización o publicación. Registra partidos cercanos
+al cierre y excluye la inferencia de totales completos cuando faltan fechas.
+Los jugadores sin referencia y los componentes nulos permanecen desconocidos.
+
+```bash
+python -m experiments.data_ground_truth.cumulative_period \
+  --performance-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/bootstrap-performance-v2 \
+  --package /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/training-datasets/d4baf849fb4a051be103f8c469e61a4753edb0b4004f980a000fe5c86ef573db \
+  --out /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/cumulative-period-v1
+```
+
+Los resultados finales pueden incluir correcciones posteriores al snapshot. Una
+diferencia no se clasifica automáticamente como error de ingesta ni se repara
+con información futura. El timestamp nominal del snapshot y su prueba de
+publicación siguen siendo contratos separados. El gate no incorpora features,
+no modifica GT v7 y no promueve modelos o cambios productivos.
+
+Resultado: **191 ventanas y 138.830 estados**, seis temporadas con referencia
+(2020/21 parcial, 2021/22–2025/26 con 37 ventanas posteriores a GW1 por temporada).
+2026/27 queda sin referencia. En las ventanas medidas, ambos criterios seleccionan
+las mismas filas; no hay tiempos ausentes ni kickoffs dentro de las cuatro horas
+anteriores al cierre. Esto describe el GT final, no demuestra el calendario
+conocido por el operador en cada fecha.
+
+**138.544 estados coinciden**, 283 carecen de código en la referencia y tres
+presentan diferencias: **1.801.102 celdas iguales y nueve diferentes**. Entre los
+estados con minutos positivos en el snapshot, 91.496 coinciden y tres difieren;
+la conclusión no descansa sólo en filas de cero minutos.
+
+Las tres diferencias corresponden al código 487117, elemento 123, en GW25–27 de
+2024/25: el snapshot tiene 17 minutos, un punto y dos goles encajados menos que
+la referencia final en cada ventana. Las magnitudes y campos coinciden con la
+corrección del fixture 239 conservada en [G14](results-g14.json). Es evidencia
+compatible con una revisión de resultados; no prueba la hora exacta de la
+corrección ni autoriza sobrescribir los snapshots históricos.
+
+Reporte y comparaciones comprimidas se reprodujeron byte por byte en
+`cumulative-period-v2`. **1.547 passed, 1 skipped, 79 deselected**.
+[Resultados G44](results-g44.json). La siguiente investigación debe localizar
+la transición de esas tres celdas en el archivo raw y conservar sus versiones,
+sin introducir el GT final como feature anterior al deadline.
