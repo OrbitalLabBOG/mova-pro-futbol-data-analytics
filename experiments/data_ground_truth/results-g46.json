@@ -1,0 +1,680 @@
+{
+  "version": "historical-data-g46",
+  "audit_report_sha256": "504cfd547e9b2ca9374214cbee1ad9a85cd6f4a1ae9df660b2bad93cb372a186",
+  "audit": {
+    "version": "supplemental-components-v1",
+    "source_manifest_sha256": "5465bc735e9d726822523d9d8e168c9eee8597da3949ee8494b7b99ebee0b588",
+    "dataset_id": "d4baf849fb4a051be103f8c469e61a4753edb0b4004f980a000fe5c86ef573db",
+    "implementation_sha256": "72ea8ffb28ccb840852def88d10e017ba87c9df5df7ed079f2ebaafa3c2f98fb",
+    "linked_rows": 253417,
+    "quarantined_keys": 415,
+    "coverage": {
+      "2014-15": {
+        "files": 0,
+        "empty_files": 0,
+        "reference_rows": 24876,
+        "statuses": {
+          "reference_without_source": 24876
+        },
+        "fields": {
+          "starts": {},
+          "expected_goals": {},
+          "expected_assists": {},
+          "expected_goals_conceded": {},
+          "expected_goal_involvements": {},
+          "defensive_contribution": {},
+          "recoveries": {},
+          "tackles": {},
+          "clearances_blocks_interceptions": {}
+        },
+        "value_activity": {
+          "starts": {},
+          "expected_goals": {},
+          "expected_assists": {},
+          "expected_goals_conceded": {},
+          "expected_goal_involvements": {},
+          "defensive_contribution": {},
+          "recoveries": {},
+          "tackles": {},
+          "clearances_blocks_interceptions": {}
+        }
+      },
+      "2015-16": {
+        "files": 0,
+        "empty_files": 0,
+        "reference_rows": 24741,
+        "statuses": {
+          "reference_without_source": 24741
+        },
+        "fields": {
+          "starts": {},
+          "expected_goals": {},
+          "expected_assists": {},
+          "expected_goals_conceded": {},
+          "expected_goal_involvements": {},
+          "defensive_contribution": {},
+          "recoveries": {},
+          "tackles": {},
+          "clearances_blocks_interceptions": {}
+        },
+        "value_activity": {
+          "starts": {},
+          "expected_goals": {},
+          "expected_assists": {},
+          "expected_goals_conceded": {},
+          "expected_goal_involvements": {},
+          "defensive_contribution": {},
+          "recoveries": {},
+          "tackles": {},
+          "clearances_blocks_interceptions": {}
+        }
+      },
+      "2016-17": {
+        "files": 683,
+        "empty_files": 0,
+        "reference_rows": 23679,
+        "statuses": {
+          "linked": 23679
+        },
+        "fields": {
+          "starts": {
+            "absent": 23679
+          },
+          "expected_goals": {
+            "absent": 23679
+          },
+          "expected_assists": {
+            "absent": 23679
+          },
+          "expected_goals_conceded": {
+            "absent": 23679
+          },
+          "expected_goal_involvements": {
+            "absent": 23679
+          },
+          "defensive_contribution": {
+            "absent": 23679
+          },
+          "recoveries": {
+            "valid": 23679
+          },
+          "tackles": {
+            "valid": 23679
+          },
+          "clearances_blocks_interceptions": {
+            "valid": 23679
+          }
+        },
+        "value_activity": {
+          "starts": {},
+          "expected_goals": {},
+          "expected_assists": {},
+          "expected_goals_conceded": {},
+          "expected_goal_involvements": {},
+          "defensive_contribution": {},
+          "recoveries": {
+            "zero": 14312,
+            "positive": 9367
+          },
+          "tackles": {
+            "zero": 19291,
+            "positive": 4388
+          },
+          "clearances_blocks_interceptions": {
+            "zero": 16072,
+            "positive": 7607
+          }
+        }
+      },
+      "2017-18": {
+        "files": 647,
+        "empty_files": 0,
+        "reference_rows": 22467,
+        "statuses": {
+          "linked": 22467
+        },
+        "fields": {
+          "starts": {
+            "absent": 22467
+          },
+          "expected_goals": {
+            "absent": 22467
+          },
+          "expected_assists": {
+            "absent": 22467
+          },
+          "expected_goals_conceded": {
+            "absent": 22467
+          },
+          "expected_goal_involvements": {
+            "absent": 22467
+          },
+          "defensive_contribution": {
+            "absent": 22467
+          },
+          "recoveries": {
+            "valid": 22467
+          },
+          "tackles": {
+            "valid": 22467
+          },
+          "clearances_blocks_interceptions": {
+            "valid": 22467
+          }
+        },
+        "value_activity": {
+          "starts": {},
+          "expected_goals": {},
+          "expected_assists": {},
+          "expected_goals_conceded": {},
+          "expected_goal_involvements": {},
+          "defensive_contribution": {},
+          "recoveries": {
+            "zero": 13119,
+            "positive": 9348
+          },
+          "tackles": {
+            "zero": 18619,
+            "positive": 3848
+          },
+          "clearances_blocks_interceptions": {
+            "zero": 14978,
+            "positive": 7489
+          }
+        }
+      },
+      "2018-19": {
+        "files": 624,
+        "empty_files": 0,
+        "reference_rows": 21790,
+        "statuses": {
+          "linked": 21790
+        },
+        "fields": {
+          "starts": {
+            "absent": 21790
+          },
+          "expected_goals": {
+            "absent": 21790
+          },
+          "expected_assists": {
+            "absent": 21790
+          },
+          "expected_goals_conceded": {
+            "absent": 21790
+          },
+          "expected_goal_involvements": {
+            "absent": 21790
+          },
+          "defensive_contribution": {
+            "absent": 21790
+          },
+          "recoveries": {
+            "valid": 21790
+          },
+          "tackles": {
+            "valid": 21790
+          },
+          "clearances_blocks_interceptions": {
+            "valid": 21790
+          }
+        },
+        "value_activity": {
+          "starts": {},
+          "expected_goals": {},
+          "expected_assists": {},
+          "expected_goals_conceded": {},
+          "expected_goal_involvements": {},
+          "defensive_contribution": {},
+          "recoveries": {
+            "positive": 9425,
+            "zero": 12365
+          },
+          "tackles": {
+            "zero": 18539,
+            "positive": 3251
+          },
+          "clearances_blocks_interceptions": {
+            "positive": 7348,
+            "zero": 14442
+          }
+        }
+      },
+      "2019-20": {
+        "files": 666,
+        "empty_files": 0,
+        "reference_rows": 22501,
+        "statuses": {
+          "linked": 22498,
+          "no_player_reference": 4,
+          "reference_without_source": 3
+        },
+        "fields": {
+          "starts": {
+            "absent": 22498
+          },
+          "expected_goals": {
+            "absent": 22498
+          },
+          "expected_assists": {
+            "absent": 22498
+          },
+          "expected_goals_conceded": {
+            "absent": 22498
+          },
+          "expected_goal_involvements": {
+            "absent": 22498
+          },
+          "defensive_contribution": {
+            "absent": 22498
+          },
+          "recoveries": {
+            "absent": 22498
+          },
+          "tackles": {
+            "absent": 22498
+          },
+          "clearances_blocks_interceptions": {
+            "absent": 22498
+          }
+        },
+        "value_activity": {
+          "starts": {},
+          "expected_goals": {},
+          "expected_assists": {},
+          "expected_goals_conceded": {},
+          "expected_goal_involvements": {},
+          "defensive_contribution": {},
+          "recoveries": {},
+          "tackles": {},
+          "clearances_blocks_interceptions": {}
+        }
+      },
+      "2020-21": {
+        "files": 713,
+        "empty_files": 0,
+        "reference_rows": 24365,
+        "statuses": {
+          "linked": 24354,
+          "no_player_reference": 11,
+          "reference_without_source": 11
+        },
+        "fields": {
+          "starts": {
+            "absent": 24354
+          },
+          "expected_goals": {
+            "absent": 24354
+          },
+          "expected_assists": {
+            "absent": 24354
+          },
+          "expected_goals_conceded": {
+            "absent": 24354
+          },
+          "expected_goal_involvements": {
+            "absent": 24354
+          },
+          "defensive_contribution": {
+            "absent": 24354
+          },
+          "recoveries": {
+            "absent": 24354
+          },
+          "tackles": {
+            "absent": 24354
+          },
+          "clearances_blocks_interceptions": {
+            "absent": 24354
+          }
+        },
+        "value_activity": {
+          "starts": {},
+          "expected_goals": {},
+          "expected_assists": {},
+          "expected_goals_conceded": {},
+          "expected_goal_involvements": {},
+          "defensive_contribution": {},
+          "recoveries": {},
+          "tackles": {},
+          "clearances_blocks_interceptions": {}
+        }
+      },
+      "2021-22": {
+        "files": 737,
+        "empty_files": 0,
+        "reference_rows": 25447,
+        "statuses": {
+          "linked": 25369,
+          "kickoff_mismatch": 78
+        },
+        "fields": {
+          "starts": {
+            "absent": 25369
+          },
+          "expected_goals": {
+            "absent": 25369
+          },
+          "expected_assists": {
+            "absent": 25369
+          },
+          "expected_goals_conceded": {
+            "absent": 25369
+          },
+          "expected_goal_involvements": {
+            "absent": 25369
+          },
+          "defensive_contribution": {
+            "absent": 25369
+          },
+          "recoveries": {
+            "absent": 25369
+          },
+          "tackles": {
+            "absent": 25369
+          },
+          "clearances_blocks_interceptions": {
+            "absent": 25369
+          }
+        },
+        "value_activity": {
+          "starts": {},
+          "expected_goals": {},
+          "expected_assists": {},
+          "expected_goals_conceded": {},
+          "expected_goal_involvements": {},
+          "defensive_contribution": {},
+          "recoveries": {},
+          "tackles": {},
+          "clearances_blocks_interceptions": {}
+        }
+      },
+      "2022-23": {
+        "files": 778,
+        "empty_files": 0,
+        "reference_rows": 26505,
+        "statuses": {
+          "linked": 26505
+        },
+        "fields": {
+          "starts": {
+            "valid": 26505
+          },
+          "expected_goals": {
+            "valid": 26505
+          },
+          "expected_assists": {
+            "valid": 26505
+          },
+          "expected_goals_conceded": {
+            "valid": 26505
+          },
+          "expected_goal_involvements": {
+            "valid": 26505
+          },
+          "defensive_contribution": {
+            "absent": 26505
+          },
+          "recoveries": {
+            "absent": 26505
+          },
+          "tackles": {
+            "absent": 26505
+          },
+          "clearances_blocks_interceptions": {
+            "absent": 26505
+          }
+        },
+        "value_activity": {
+          "starts": {
+            "zero": 18145,
+            "positive": 8360
+          },
+          "expected_goals": {
+            "zero": 21308,
+            "positive": 5197
+          },
+          "expected_assists": {
+            "zero": 18912,
+            "positive": 7593
+          },
+          "expected_goals_conceded": {
+            "zero": 15705,
+            "positive": 10800
+          },
+          "expected_goal_involvements": {
+            "zero": 18110,
+            "positive": 8395
+          },
+          "defensive_contribution": {},
+          "recoveries": {},
+          "tackles": {},
+          "clearances_blocks_interceptions": {}
+        }
+      },
+      "2023-24": {
+        "files": 869,
+        "empty_files": 0,
+        "reference_rows": 29725,
+        "statuses": {
+          "linked": 29725
+        },
+        "fields": {
+          "starts": {
+            "valid": 29725
+          },
+          "expected_goals": {
+            "valid": 29725
+          },
+          "expected_assists": {
+            "valid": 29725
+          },
+          "expected_goals_conceded": {
+            "valid": 29725
+          },
+          "expected_goal_involvements": {
+            "valid": 29725
+          },
+          "defensive_contribution": {
+            "absent": 29725
+          },
+          "recoveries": {
+            "absent": 29725
+          },
+          "tackles": {
+            "absent": 29725
+          },
+          "clearances_blocks_interceptions": {
+            "absent": 29725
+          }
+        },
+        "value_activity": {
+          "starts": {
+            "zero": 21365,
+            "positive": 8360
+          },
+          "expected_goals": {
+            "zero": 24279,
+            "positive": 5446
+          },
+          "expected_assists": {
+            "zero": 21814,
+            "positive": 7911
+          },
+          "expected_goals_conceded": {
+            "zero": 18788,
+            "positive": 10937
+          },
+          "expected_goal_involvements": {
+            "zero": 21033,
+            "positive": 8692
+          },
+          "defensive_contribution": {},
+          "recoveries": {},
+          "tackles": {},
+          "clearances_blocks_interceptions": {}
+        }
+      },
+      "2024-25": {
+        "files": 805,
+        "empty_files": 0,
+        "reference_rows": 27283,
+        "statuses": {
+          "linked": 27283,
+          "no_player_reference": 322
+        },
+        "fields": {
+          "starts": {
+            "valid": 27283
+          },
+          "expected_goals": {
+            "valid": 27283
+          },
+          "expected_assists": {
+            "valid": 27283
+          },
+          "expected_goals_conceded": {
+            "valid": 27283
+          },
+          "expected_goal_involvements": {
+            "valid": 27283
+          },
+          "defensive_contribution": {
+            "absent": 27283
+          },
+          "recoveries": {
+            "absent": 27283
+          },
+          "tackles": {
+            "absent": 27283
+          },
+          "clearances_blocks_interceptions": {
+            "absent": 27283
+          }
+        },
+        "value_activity": {
+          "starts": {
+            "zero": 18923,
+            "positive": 8360
+          },
+          "expected_goals": {
+            "zero": 21963,
+            "positive": 5320
+          },
+          "expected_assists": {
+            "zero": 19319,
+            "positive": 7964
+          },
+          "expected_goals_conceded": {
+            "zero": 16245,
+            "positive": 11038
+          },
+          "expected_goal_involvements": {
+            "zero": 18470,
+            "positive": 8813
+          },
+          "defensive_contribution": {},
+          "recoveries": {},
+          "tackles": {},
+          "clearances_blocks_interceptions": {}
+        }
+      },
+      "2025-26": {
+        "files": 843,
+        "empty_files": 0,
+        "reference_rows": 29747,
+        "statuses": {
+          "linked": 29747
+        },
+        "fields": {
+          "starts": {
+            "valid": 29747
+          },
+          "expected_goals": {
+            "valid": 29747
+          },
+          "expected_assists": {
+            "valid": 29747
+          },
+          "expected_goals_conceded": {
+            "valid": 29747
+          },
+          "expected_goal_involvements": {
+            "valid": 29747
+          },
+          "defensive_contribution": {
+            "valid": 29747
+          },
+          "recoveries": {
+            "valid": 29747
+          },
+          "tackles": {
+            "valid": 29747
+          },
+          "clearances_blocks_interceptions": {
+            "valid": 29747
+          }
+        },
+        "value_activity": {
+          "starts": {
+            "positive": 8360,
+            "zero": 21387
+          },
+          "expected_goals": {
+            "zero": 24377,
+            "positive": 5370
+          },
+          "expected_assists": {
+            "zero": 21830,
+            "positive": 7917
+          },
+          "expected_goals_conceded": {
+            "positive": 11034,
+            "zero": 18713
+          },
+          "expected_goal_involvements": {
+            "zero": 20938,
+            "positive": 8809
+          },
+          "defensive_contribution": {
+            "zero": 20026,
+            "positive": 9721
+          },
+          "recoveries": {
+            "positive": 9616,
+            "zero": 20131
+          },
+          "tackles": {
+            "zero": 23441,
+            "positive": 6306
+          },
+          "clearances_blocks_interceptions": {
+            "positive": 8161,
+            "zero": 21586
+          }
+        }
+      }
+    },
+    "artifacts": {
+      "components.jsonl.gz": "0f45d8035ec3ecfdca4340934be4bd296d9f726e2feb82828307c87675c79de4",
+      "quarantine.json": "d4cd1175ca371c78f40a2facc4305da681e6f10afa72522494cc504c88376b8d"
+    },
+    "training_admitted": false,
+    "production_changed": false,
+    "limitations": [
+      "retrospective_match_values_not_predeadline_features",
+      "fixture_and_time_match_not_independent_identity_corroboration",
+      "no_cross_source_semantic_confirmation_of_supplemental_values",
+      "absent_columns_and_null_cells_remain_unknown",
+      "nonplayer_or_unmatched_rows_not_admitted"
+    ]
+  },
+  "verification": {
+    "reproduced_byte_for_byte": true,
+    "tests_passed": 1551,
+    "tests_skipped": 1,
+    "tests_deselected": 79
+  },
+  "production_changed": false,
+  "training_admitted": false
+}
