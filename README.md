@@ -221,6 +221,11 @@ G26 contrasta 207.363 etiquetas con calendarios finales de ocho temporadas. Las
 juego; se conservan ambos horarios y su historial sin sobrescribir GT v5.
 [Resultados G26](experiments/data_ground_truth/results-g26.json).
 
+G27 añade 199 versiones de fixtures de una nueva fuente fijada: 132 versiones
+con identidad FPL completa para 2025/26. La unión con el archivo anterior aumenta
+de 6 a 18 los deadlines con commit previo de hasta 48 horas; falta corroborar
+publicación histórica. [Resultados G27](experiments/data_ground_truth/results-g27.json).
+
 ## Empezar
 
 Requiere Python 3.13.

@@ -1,0 +1,229 @@
+{
+  "version": "historical-data-g27",
+  "acquisition": {
+    "version": "additional-fixture-history-v1",
+    "repository": "Schwetche/fpl_project",
+    "pinned_revision": "34f681c7b756ae901982e53cdcb6cd061dbd0482",
+    "git_log_sha256": "c2ab1374731901b6e3088db654162be75d0c6dda6ad377a2feb2e6511d5066b3",
+    "implementation_sha256": "f104d52596ad9a0c97b5e67af86aa48616f89f9848fbbe42bd8ea807bc95cea9",
+    "expected_versions": 199,
+    "errors": [],
+    "deleted_versions": [],
+    "bytes": 79817488,
+    "distinct_objects": 155,
+    "eligible_predeadline": false,
+    "production_changed": false,
+    "limitation": "Git_commit_time_is_not_verified_publication_time"
+  },
+  "audit": {
+    "version": "additional-fixture-audit-v1",
+    "source_manifest_sha256": "cf389ac7ccdc66cde5bdbb8b94acb1da5ac75fc457fb5c67d98d87d810093fc0",
+    "fixture_reference_report_sha256": "448a774a7a32815a64655999542af121e188a6fbcd58cd1847430c1a0ba47c24",
+    "selection_report_sha256": "1ace4506377f6bf92ff79d71f7b1083070f273c58f802518754f96fccb87b6fc",
+    "implementation_sha256": "0051e4e6057aa463dc61f4cd5641d6a551f540e82358d6e51cc1e28679cb7082",
+    "parsed_versions": 193,
+    "parse_errors": 6,
+    "identity_verified_versions": 146,
+    "main_series_versions": 147,
+    "main_series_seasons": [
+      "2025-26",
+      "2026-27",
+      "unknown"
+    ],
+    "nominal_deadlines_with_prior_version": 36,
+    "within_48h": 15,
+    "future_kickoff_observations": 6647,
+    "artifacts": {
+      "versions.json": "09d92207adf66110f51a3d011802281d169b50de0518f87970605dac4dd3e1b6",
+      "errors.json": "de8771f0857c4ffe84dc4ce1289dcf9621e9fe5ffd695edea4b696085827a1d8",
+      "coverage.json": "29aa9f7bb7eb1f670c33b697e18d370d41dbbf333f63a0980ac7b06c425c35a1"
+    },
+    "production_changed": false,
+    "eligible_predeadline": false,
+    "limitations": [
+      "identity_match_does_not_prove_publication",
+      "derived_snapshots_excluded_from_deadline_selection",
+      "Git_commit_age_is_nominal_not_capture_age"
+    ]
+  },
+  "discovery": [
+    {
+      "repo": "FPLYogi/FPL-Data",
+      "pin": "05df12ac7be13edbace16208d946784f297af7d5",
+      "created_at": "2025-07-24T17:42:59Z",
+      "truncated": false,
+      "tree_files": 310,
+      "candidate_paths": 0,
+      "examples": []
+    },
+    {
+      "repo": "freyrsae/fpl-data",
+      "pin": "e5a440f50834ac4b03b43e2baaa982cc8dbe92ec",
+      "created_at": "2024-02-10T08:31:38Z",
+      "truncated": false,
+      "tree_files": 5,
+      "candidate_paths": 0,
+      "examples": []
+    },
+    {
+      "repo": "James-Leslie/fplstat-archive",
+      "pin": "114cf38d2d9077be1d8ebe738f0a3e4ee70eb18e",
+      "created_at": "2025-09-13T00:55:57Z",
+      "truncated": false,
+      "tree_files": 53,
+      "candidate_paths": 6,
+      "examples": [
+        "fplstat/api/models/bootstrap/bootstrap.py",
+        "fplstat/api/models/bootstrap/element.py",
+        "fplstat/api/models/bootstrap/element_type.py",
+        "fplstat/api/models/bootstrap/event.py",
+        "fplstat/api/models/bootstrap/team.py",
+        "fplstat/api/models/fixtures.py"
+      ]
+    },
+    {
+      "repo": "Schwetche/fpl_project",
+      "pin": "34f681c7b756ae901982e53cdcb6cd061dbd0482",
+      "created_at": "2025-08-22T21:20:06Z",
+      "truncated": false,
+      "tree_files": 2585,
+      "candidate_paths": 84,
+      "examples": [
+        "data/ALERT_fixtures_diff_20250913-080012.txt",
+        "data/fixtures.csv",
+        "data/fixtures_diffs/diff_20250821-224329_to_20250821-224333.csv",
+        "data/fixtures_diffs/diff_20250821-224333_to_20250821-231003.csv",
+        "data/fixtures_diffs/diff_20250821-231003_to_20250821-235245.csv",
+        "data/fixtures_diffs/diff_20250821-235245_to_20250822-000332.csv",
+        "data/fixtures_diffs/diff_20250822-000332_to_20250822-000422.csv",
+        "data/fixtures_diffs/diff_20250822-000422_to_20250822-001339.csv",
+        "data/fixtures_diffs/diff_20250822-001339_to_20250822-003603.csv",
+        "data/fixtures_diffs/diff_20250822-003603_to_20250822-004130.csv",
+        "data/fixtures_diffs/diff_20250822-004130_to_20250822-004559.csv",
+        "data/fixtures_diffs/diff_20250822-004559_to_20250822-010356.csv"
+      ]
+    },
+    {
+      "repo": "martgra/fpl-timeseries-data",
+      "pin": "f5135c27cc75e56370d310bb359157dd84c29cee",
+      "created_at": "2020-09-11T13:06:53Z",
+      "truncated": false,
+      "tree_files": 49,
+      "candidate_paths": 1,
+      "examples": [
+        "tests/data_tests/fixtures_mock.json"
+      ]
+    },
+    {
+      "repo": "withouttheh/fpl-player-comparison",
+      "pin": "2d20bd7e0dced88c087fab199990c47343434eac",
+      "created_at": "2023-09-03T03:04:53Z",
+      "truncated": false,
+      "tree_files": 99,
+      "candidate_paths": 10,
+      "examples": [
+        "data/bootstrap_static.json",
+        "handlers/fixtures_handler.py",
+        "tests/fixtures/bootstrap_static.json",
+        "tests/fixtures/element_summary.json",
+        "tests/handlers/test_fixtures_handler.py",
+        "tests/utils/loaders/test_bootstrap_loader.py",
+        "utils/loaders/__pycache__/bootstrap_static_loader.cpython-39.pyc",
+        "utils/loaders/bootstrap_static_loader.py",
+        "utils/preprocessors/__pycache__/bootstrap_static_preprocessors.cpython-39.pyc",
+        "utils/preprocessors/bootstrap_static_preprocessors.py"
+      ]
+    },
+    {
+      "repo": "qazybekb/smartplayfpl-dastan",
+      "pin": "19376523afdec4836d0e6b5632c6773d0fe40c53",
+      "created_at": "2026-08-08T14:56:06Z",
+      "truncated": false,
+      "tree_files": 115,
+      "candidate_paths": 0,
+      "examples": []
+    },
+    {
+      "repo": "TopMarx/fpl",
+      "pin": "e2278178493dd45fd1bbf46f4d3cdfd9bb184149",
+      "created_at": "2026-04-11T18:35:14Z",
+      "truncated": false,
+      "tree_files": 4553,
+      "candidate_paths": 8,
+      "examples": [
+        "data/2025/csv/fixtures.csv",
+        "data/2025/fpl-bootstrap_2025.json",
+        "data/2025/fpl-fixtures_2025.json",
+        "data/2026/csv/fixtures.csv",
+        "data/2026/fpl-bootstrap_2026.json",
+        "data/2026/fpl-fixtures_2026.json",
+        "latest/fpl-bootstrap.json",
+        "latest/fpl-fixtures.json"
+      ]
+    }
+  ],
+  "discovery_artifact_sha256": {
+    "martgra--fpl-timeseries-data-tree.json": "5b4f8b336207de1d23ca2cdab2e1dfc15dcc8ad96ce0729e6a9890545ba46f0a",
+    "FPLYogi--FPL-Data-tree.json": "12dfad1550ab01cab495f9154e54f885913b01224a46a87e1a33c5f4ba92459f",
+    "qazybekb--smartplayfpl-dastan-meta.json": "09d1984b03eeaa6db86a908537a36cc2b1ce8e199d84af96110f485265924293",
+    "freyrsae--fpl-data-commit.json": "8f7fb769a8eb16004ad619c04b6ab3439dfeb9c0774b33b1cc75f97ddc128f56",
+    "martgra--fpl-timeseries-data-meta.json": "b289a06d7229c1cb35c9388b8a2ca416b12aea72fb027d9655ba361cd8ae1275",
+    "withouttheh--fpl-player-comparison-commit.json": "ecb773d6348b96fd2a4d740cc2e0401c6754d5bfb9b86cd70cac2f399d5013de",
+    "James-Leslie--fplstat-archive-meta.json": "42990a80d2c29bafb3ea79f901fa43579d2ce7be0db0d003bc67b0590f729f59",
+    "qazybekb--smartplayfpl-dastan-commit.json": "210ac597f15d545c19f06b18cd6d758e589ee14af36ee87073b4a0f5c8dd16c0",
+    "FPLYogi--FPL-Data-commit.json": "e7de27e5a5a94e4b3bcc5b2da38e34240cbeb7f8297beb85164b5e5eb023451e",
+    "FPLYogi--FPL-Data-meta.json": "c08fb08991f4d8724a4a7e3406eb644fc180b632d51c121fc11be0d457396e6f",
+    "qazybekb--smartplayfpl-dastan-tree.json": "830071d13ca0a39af584c0baa459575d9b034fbd14ccc35569bc02b8315d38a4",
+    "Schwetche--fpl_project-meta.json": "8b951ca45b9daa60a26b3a971ab57288655d3210112c1b33499dac43529870f4",
+    "Schwetche--fpl_project-commit.json": "2a976b15a05e98c17c9e7efda02aa63b60c03aed433dd1a9e3178329f5174ee5",
+    "Schwetche--fpl_project-tree.json": "52ae4eb68a4c832eb1b445fdaf65b00baf458ec89da138053c7f519187c6f64d",
+    "withouttheh--fpl-player-comparison-tree.json": "e8b7ecdd7e5f84b4e3b1f2f722975384329a9c05fde6e3f0d3c8b428d40f8a17",
+    "TopMarx--fpl-tree.json": "195973dc7e00e392f8e4f92ca8431f1fc18487db32fdadd6804198a792fc6984",
+    "TopMarx--fpl-meta.json": "dcbb86addb0bd1d8cde605850e0c7dee5a537e31f1f5c9261e0e3974cd9f1d33",
+    "report.json": "e93dc9b6384172092b3bf7e7dce9e22782b0a3e86f79b2d644e3f296566e35c6",
+    "TopMarx--fpl-commit.json": "3b7d80a5d5e7c9df56607aa9f8a6b123bf508eb4e088fd8406137084610a19fd",
+    "James-Leslie--fplstat-archive-commit.json": "79aafc18929b3d7afc72bfca63ba8a33370c247e3c42c92de06a3ee1248a49b9",
+    "martgra--fpl-timeseries-data-commit.json": "57e85f5c8e77b56d9a889bbecab5cca7873e959ffb6c7ffb8c563e53f5c10914",
+    "withouttheh--fpl-player-comparison-meta.json": "f0fbc7c47d67ee687661f5ca980c75272eeed496243f6efdd809107b9a337e22",
+    "James-Leslie--fplstat-archive-tree.json": "ec2adf0eb4e01f2164b4d0fab13980be06cba1354cba8120b7e9bde235b25ee1",
+    "freyrsae--fpl-data-tree.json": "40b19098760c2048effc1b48136f75190dd85dcc4612e2b05a3b7c784727c3e8",
+    "freyrsae--fpl-data-meta.json": "2f6b01370f302ffd251529a12d2fbd7752adefab5ed53daa74bfb1861e53398e"
+  },
+  "source_git": {
+    "nonshallow": true,
+    "pinned_reachable_commits": 2292
+  },
+  "coverage_comparison": {
+    "previous_within_48h": 6,
+    "new_source_within_48h": 15,
+    "union_within_48h": 18,
+    "additional_deadlines": [
+      12,
+      14,
+      15,
+      19,
+      20,
+      21,
+      26,
+      29,
+      33,
+      34,
+      36,
+      37
+    ]
+  },
+  "interpretation": {
+    "main_versions_2025_26": 132,
+    "main_versions_2026_27": 13,
+    "main_versions_without_codes": 2,
+    "derived_schema_errors": 6,
+    "publication_proven": false
+  },
+  "verification": {
+    "reproduced_byte_for_byte": true,
+    "tests_passed": 1470,
+    "tests_skipped": 1,
+    "tests_deselected": 79
+  },
+  "production_changed": false
+}
