@@ -2396,3 +2396,44 @@ Reporte y comparaciones comprimidas se reprodujeron byte por byte en
 [Resultados G44](results-g44.json). La siguiente investigación debe localizar
 la transición de esas tres celdas en el archivo raw y conservar sus versiones,
 sin introducir el GT final como feature anterior al deadline.
+
+## Gate G45: versiones observadas de la discrepancia de Ferguson
+
+`correction_history.py` parte de las excepciones selladas de G44 y verifica GT v7,
+manifest raw, inventario auditado y cada objeto comprimido. Extrae los tres campos
+del jugador correcto, comprueba entidad/código y calcula residuos contra sus
+partidos finales anteriores al reloj nominal del archivo. La hipótesis UTC sólo
+sirve para ese diagnóstico; `available_at` permanece desconocido.
+
+La ventana explícita va desde catorce días antes del primer deadline afectado
+hasta treinta días después del último: **31 de enero–27 de marzo de 2025**.
+Se auditan **219 capturas**, 146 iguales y 73 diferentes. Hay cuatro observaciones
+con kickoff del jugador dentro de las cuatro horas anteriores (una igual, tres
+diferentes); el margen es una señal diagnóstica, no prueba de finalización.
+
+| Transición nominal observada | Antes | Después |
+| --- | --- | --- |
+| 12 febrero 18:31 → 13 febrero 01:46 | 234 minutos, 20 puntos, 7 goles encajados | 217 minutos, 19 puntos, 5 goles encajados |
+| 2 marzo 18:29 → 3 marzo 01:52 | 287 minutos, 22 puntos, 5 goles encajados | 304 minutos, 23 puntos, 7 goles encajados |
+
+Los valores **ya coincidían, disminuyeron y después volvieron a coincidir**.
+Esto precisa G44: el archivo no muestra simplemente una carga inicial tardía.
+Las magnitudes coinciden con el fixture 239 de G14, pero ni su causa ni el
+instante exacto de modificación en la API quedan demostrados. Las dos transiciones
+adicionales del 1 de febrero están próximas al kickoff y se conservan aparte.
+Los estados de ambas fronteras, campos, residuos y hashes quedan en el reporte;
+las 219 observaciones completas permanecen fuera de Git en `timelines.json`.
+
+```bash
+python -m experiments.data_ground_truth.correction_history \
+  --base-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments \
+  --package /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/training-datasets/d4baf849fb4a051be103f8c469e61a4753edb0b4004f980a000fe5c86ef573db \
+  --out /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/correction-history-v1
+```
+
+Reporte y timeline reproducidos byte por byte en `correction-history-v2`.
+**1.549 passed, 1 skipped, 79 deselected**. Pruebas de residuos sin mutar el
+valor observado, ausencia, identidad incorrecta, fecha desconocida, campo ausente
+y reloj con zona no esperado. [Resultados G45](results-g45.json).
+GT v7, features y producción no cambian. Acreditar publicación de las fronteras
+sigue siendo un paso separado; la trayectoria nominal no concede admisión causal.
