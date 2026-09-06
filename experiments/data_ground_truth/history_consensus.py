@@ -50,12 +50,17 @@ def consensus(frame: pd.DataFrame):
     return accepted,rejected
 
 
-def build(root: Path,prior_root: Path,out: Path):
+def build(root: Path,prior_root: Path,out: Path,closed_through: int | None=None):
     manifest_bytes=(root/'manifest.json').read_bytes();manifest=json.loads(manifest_bytes)
     if manifest['errors'] or len(manifest['records'])!=manifest['expected_files']:raise ValueError('incomplete history acquisition')
     prior_report=json.loads((prior_root/'report.json').read_text())
-    prior=pd.read_csv(io.BytesIO(checked(prior_root/'season_totals.csv',prior_report['season_totals_sha256'])))
-    prior=prior[KEYS+['minutes','points','source_sha256']].assign(source_path='archived_2015_16_player_json')
+    if prior_report['version']=='history-consensus-v1':
+        prior_sha=prior_report['artifacts']['source_observations.csv']
+        prior=pd.read_csv(io.BytesIO(checked(prior_root/'source_observations.csv',prior_sha)))
+    else:
+        prior_sha=prior_report['season_totals_sha256']
+        prior=pd.read_csv(io.BytesIO(checked(prior_root/'season_totals.csv',prior_sha)))
+        prior=prior[KEYS+['minutes','points','source_sha256']].assign(source_path='archived_2015_16_player_json')
     frames=[];files=[];quarantine=[]
     for record in manifest['records']:
         data=checked(root/'objects'/record['sha256'],record['sha256'])
@@ -67,21 +72,23 @@ def build(root: Path,prior_root: Path,out: Path):
     if not frames:raise ValueError('no parsed player histories')
     observations=pd.concat(frames+[prior],ignore_index=True)
     observations['available_at']=None;observations['eligible_predeadline']=False;observations['eligible_training']=False
-    accepted,rejected=consensus(observations)
-    comparison=accepted.merge(prior[KEYS],on=KEYS,how='left',indicator=True,validate='one_to_one')
+    open_season=observations.season.str[:4].astype(int).gt(closed_through) if closed_through is not None else pd.Series(False,index=observations.index)
+    accepted,rejected=consensus(observations.loc[~open_season])
+    comparison=accepted.merge(prior[KEYS].drop_duplicates(),on=KEYS,how='left',indicator=True,validate='one_to_one')
     out.mkdir(parents=True,exist_ok=True)
-    for name,frame in [('source_observations',observations),('consensus_totals',accepted),('conflicting_observations',rejected)]:
+    for name,frame in [('source_observations',observations),('consensus_totals',accepted),('conflicting_observations',rejected),('open_season_observations',observations.loc[open_season])]:
         frame.to_csv(out/(name+'.csv'),index=False)
     (out/'file_audit.json').write_text(json.dumps(dict(files=files,quarantine=quarantine),indent=2)+'\n')
     report=dict(version='history-consensus-v1',acquired_files=len(manifest['records']),
         parsed_nonempty_files=len(frames),empty_files=sum(f['rows']==0 for f in files),quarantined_files=len(quarantine),
         acquired_bytes=sum((root/'objects'/r['sha256']).stat().st_size for r in manifest['records']),
-        prior_rows=len(prior),source_observation_rows=len(observations),
+        prior_rows=len(prior),prior_unique_keys=len(prior[KEYS].drop_duplicates()),source_observation_rows=len(observations),
+        closed_through=closed_through,excluded_open_season_rows=int(open_season.sum()),
         consensus_player_seasons=len(accepted),conflicting_player_seasons=len(rejected[KEYS].drop_duplicates()),
         additional_consensus_keys_over_prior=int(comparison['_merge'].eq('left_only').sum()),
         season_counts={s:len(g) for s,g in accepted.groupby('season')},
-        artifacts={name:digest((out/name).read_bytes()) for name in ['source_observations.csv','consensus_totals.csv','conflicting_observations.csv','file_audit.json']},
-        manifest_sha256=digest(manifest_bytes),prior_sha256=prior_report['season_totals_sha256'],
+        artifacts={name:digest((out/name).read_bytes()) for name in ['source_observations.csv','consensus_totals.csv','conflicting_observations.csv','open_season_observations.csv','file_audit.json']},
+        manifest_sha256=digest(manifest_bytes),prior_sha256=prior_sha,
         source_independence='repeated_API_archives_not_independent_measurements',
         complete_population_seasons=0,new_complete_gameweek_seasons=0)
     (out/'report.json').write_text(json.dumps(report,indent=2)+'\n');return report
@@ -90,7 +97,8 @@ def build(root: Path,prior_root: Path,out: Path):
 def main():
     ap=argparse.ArgumentParser(description=__doc__)
     for arg in ['root','prior-root','out']:ap.add_argument('--'+arg,type=Path,required=True)
-    args=ap.parse_args();print(json.dumps(build(args.root,args.prior_root,args.out),indent=2))
+    ap.add_argument('--closed-through',type=int)
+    args=ap.parse_args();print(json.dumps(build(args.root,args.prior_root,args.out,args.closed_through),indent=2))
 
 
 if __name__=='__main__':main()

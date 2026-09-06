@@ -147,6 +147,11 @@ temporada sigue fuera del paquete completo por el universo elegible pendiente.
 G13 adquiere 5.978 archivos de historiales de jugador: el consenso alcanza 8.284
 registros jugador-temporada de 2006/07–2024/25, con 6.308 claves adicionales.
 Son totales retrospectivos con cobertura parcial, separados del benchmark por jornada.
+G14 completa los 6.495 historiales de jugadores del inventario y alcanza 8.786
+registros jugador-temporada. El GT experimental vigente es **fpl-labels-v4**: corrige
+cuatro valores en dos filas (Leno 2018/19 y Ferguson 2024/25), con evidencia directa
+de CSV individuales y totales finales. Conserva 303.448 filas y doce temporadas;
+6.934 totales coinciden tras la corrección. V3 y el runtime permanecen intactos.
 
 ## Empezar
 

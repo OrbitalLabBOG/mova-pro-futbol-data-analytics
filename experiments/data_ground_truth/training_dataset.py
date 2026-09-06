@@ -123,12 +123,14 @@ def load_partition(package: Path, split: str) -> pd.DataFrame:
     return pd.concat(parts,ignore_index=True) if parts else pd.DataFrame()
 
 
-def build(recent_root: Path, old_root: Path, output: Path, identity_root: Path | None = None, season_2015_root: Path | None = None) -> Path:
+def build(recent_root: Path, old_root: Path, output: Path, identity_root: Path | None = None, season_2015_root: Path | None = None, repairs_root: Path | None = None) -> Path:
     recent_manifest=json.loads((recent_root/'labels-manifest.json').read_text())
     identity_root=identity_root or old_root/'identity'
     old_manifest=json.loads((identity_root/'report.json').read_text())
     inputs=[];frames=[];quarantines=[]
     raw_records=json.loads((recent_root/'manifest.json').read_text())['records']
+    repairs=[]
+    repair_records=json.loads((repairs_root/'manifest.json').read_text())['records'] if repairs_root else []
     for season,info in sorted(recent_manifest['seasons'].items()):
         data=checked(recent_root/'labels'/f'{season}.csv',info['artifact_sha256'])
         inputs.append(dict(season=season,sha256=info['artifact_sha256'],role='official_fpl_observed_labels'))
@@ -142,6 +144,19 @@ def build(recent_root: Path, old_root: Path, output: Path, identity_root: Path |
             inputs.append(dict(season=season,sha256=record['sha256'],role='finished_fixture_postponement_evidence'))
             frame,quarantine=quarantine_postponed(frame,pd.read_csv(io.BytesIO(evidence)))
             quarantines.append((season,quarantine))
+        if repairs_root:
+            from experiments.data_ground_truth.label_repairs import repair_player
+            for record in repair_records:
+                if not record['path'].startswith('data/'+season+'/players/') or not record['path'].endswith('/gw.csv'):
+                    continue
+                if record['repository']!='vaastav/Fantasy-Premier-League':raise ValueError('unsupported repair source')
+                raw=checked(repairs_root/'objects'/record['sha256'],record['sha256'])
+                meta_record=next(r for r in raw_records if r['repository']=='vaastav/Fantasy-Premier-League' and r['path']=='data/'+season+'/players_raw.csv')
+                metadata=checked(recent_root/'objects'/meta_record['sha256'],meta_record['sha256'])
+                frame,changes=repair_player(frame,pd.read_csv(io.BytesIO(raw)),pd.read_csv(io.BytesIO(metadata)),COMPONENTS)
+                repairs.extend(dict(season=season,source_sha256=record['sha256'],metadata_sha256=meta_record['sha256'],**change) for change in changes)
+                inputs.extend([dict(season=season,sha256=record['sha256'],role='individual_fpl_history_repair'),
+                    dict(season=season,sha256=meta_record['sha256'],role='season_totals_repair_evidence')])
         frames.append((season,normalize(frame,season,False)))
     data=checked(identity_root/'labels.csv',old_manifest['labels_sha256'])
     inputs.append(dict(season='2014-15',sha256=old_manifest['labels_sha256'],role='reconciled_historical_fpl_labels'))
@@ -175,7 +190,7 @@ def build(recent_root: Path, old_root: Path, output: Path, identity_root: Path |
         payloads[filename]=payload
         exclusions.append(dict(season=season,file=filename,rows=len(frame),sha256=digest(payload),
             reason='superseded_zero_postponement_placeholder'))
-    manifest=dict(schema_version=1,version=VERSION,implementation_sha256=digest(Path(__file__).read_bytes()),
+    manifest=dict(schema_version=1,version='fpl-labels-v4' if repairs_root else VERSION,implementation_sha256=digest(Path(__file__).read_bytes()),
         pandas_version=pd.__version__,inputs=sorted(inputs,key=lambda x:x['season']),
         quarantines=exclusions,partitions=partitions,rows=sum(p['rows'] for p in partitions),
         purpose='retrospective_label_training_not_predeadline_replay',
@@ -183,6 +198,10 @@ def build(recent_root: Path, old_root: Path, output: Path, identity_root: Path |
         missing_complete_seasons=[] if season_2015_root else ['2015-16'],
         partial_seasons_excluded=[] if season_2015_root else ['2015-16'],unknown_available_at=True,
         excluded=['final_season_snapshots','prices','ownership','official_xp','pl_minutes_substitution'])
+    if repairs_root:
+        if not repairs:raise ValueError('repair package requires verified changes')
+        manifest['label_repairs']=repairs
+        manifest['repair_implementation_sha256']=digest((Path(__file__).parent/'label_repairs.py').read_bytes())
     manifest['dataset_id']=digest(json.dumps(manifest,sort_keys=True,separators=(',',':')).encode())
     target=output/manifest['dataset_id'];output.mkdir(parents=True,exist_ok=True)
     if target.exists():
@@ -204,7 +223,8 @@ def main():
     ap.add_argument('--output',type=Path,required=True)
     ap.add_argument('--identity-root',type=Path)
     ap.add_argument('--season-2015-root',type=Path)
-    args=ap.parse_args();path=build(args.recent_root,args.old_root,args.output,args.identity_root,args.season_2015_root)
+    ap.add_argument('--repairs-root',type=Path)
+    args=ap.parse_args();path=build(args.recent_root,args.old_root,args.output,args.identity_root,args.season_2015_root,args.repairs_root)
     manifest=verify(path)
     print(json.dumps(dict(path=str(path),dataset_id=manifest['dataset_id'],rows=manifest['rows'],
         partitions=[{k:p[k] for k in ['season','split','rows']} for p in manifest['partitions']]),indent=2))

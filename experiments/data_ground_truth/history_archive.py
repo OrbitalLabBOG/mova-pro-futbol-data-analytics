@@ -12,11 +12,15 @@ from experiments.data_ground_truth.raw import capture,digest
 REPOSITORY='vaastav/Fantasy-Premier-League'
 
 
-def acquire(root: Path,inventory: Path,revision: str):
+def acquire(root: Path,inventory: Path,revision: str,snapshot_season: str | None=None):
     raw=inventory.read_bytes();tree=json.loads(raw)
     if tree.get('sha')!=revision or tree.get('truncated',True):raise ValueError('invalid pinned history inventory')
+    if snapshot_season is not None and (not re.fullmatch(r'[0-9]{4}-[0-9]{2}',snapshot_season) or (int(snapshot_season[:4])+1)%100!=int(snapshot_season[-2:])):
+        raise ValueError('invalid snapshot season')
+    pattern=(r'data/'+re.escape(snapshot_season)+r'/players/[^/]+/history\.csv') if snapshot_season else r'data/20(?:1[6-9]|2[0-5])-[0-9]{2}/players/[^/]+/history\.csv'
     paths=sorted(r['path'] for r in tree['tree'] if r.get('type')=='blob' and
-        re.fullmatch(r'data/20(?:1[6-9]|2[0-5])-[0-9]{2}/players/[^/]+/history\.csv',r['path']))
+        re.fullmatch(pattern,r['path']))
+    if not paths:raise ValueError('no player histories in selected snapshot')
     if len(set(paths))!=len(paths):raise ValueError('duplicate history path')
     root.mkdir(parents=True,exist_ok=True);(root/'inventory.json').write_bytes(raw)
     records=[];errors=[]
@@ -29,13 +33,15 @@ def acquire(root: Path,inventory: Path,revision: str):
     records.sort(key=lambda r:r['path']);errors.sort(key=lambda r:r['path'])
     report=dict(version='player-history-acquisition-v1',repository=REPOSITORY,revision=revision,
         inventory_sha256=digest(raw),expected_files=len(paths),records=records,errors=errors)
+    if snapshot_season:report['snapshot_season']=snapshot_season
     (root/'manifest.json').write_text(json.dumps(report,indent=2)+'\n');return report
 
 
 def main():
     ap=argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--root',type=Path,required=True);ap.add_argument('--inventory',type=Path,required=True);ap.add_argument('--revision',required=True)
-    args=ap.parse_args();r=acquire(args.root,args.inventory,args.revision)
+    ap.add_argument('--snapshot-season')
+    args=ap.parse_args();r=acquire(args.root,args.inventory,args.revision,args.snapshot_season)
     print(json.dumps(dict(files=len(r['records']),errors=r['errors'])),flush=True)
     if r['errors']:raise SystemExit(1)
 
