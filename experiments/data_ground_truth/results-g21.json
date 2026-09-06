@@ -1,0 +1,519 @@
+{
+  "version": "historical-data-g21",
+  "cutoff_date_colombia": "2026-09-06",
+  "alternatives": {
+    "version": "publication-alternatives-v1",
+    "plan_sha256": "0926afea353033e0a75626c9e3f56186219aee472aea02fc94b9bacb42cf95c7",
+    "implementation_sha256": "4c445440260ab9d9fdc0cd68058d33187e7d9a0f7a6f3e2c073b9bdac5a93eab",
+    "original_candidates": 199,
+    "preserved_witnesses": 164,
+    "searched_deadlines": 35,
+    "new_witnesses": 32,
+    "remaining_deadlines": 3,
+    "acquired_hours": 85,
+    "compressed_bytes": 3211301171,
+    "artifacts": {
+      "found.json": "788af35026c54101106b3ccd7c25b9a765473c9baeab593494ece3d343208c90",
+      "attempts.json": "8eea2d651c80a61ebe7a39eee250e4cb488be576f196d0e0054ba7f81b7d9d33",
+      "unresolved.json": "d033a60a9bb10b7466bacb8289dab750c4c2d2631c96a6c8d539cd3247b73667"
+    },
+    "errors": [
+      {
+        "round": 1,
+        "hour": "2021-10-22-06",
+        "error": "OSError"
+      }
+    ],
+    "hour_report_sha256": {
+      "2021-10-21-12": "e30b2ef04040336b49b8a0407df42870b586a1dcde523d4899093d2c4aa6a567",
+      "2021-10-21-18": "8f827c0ec33a6079ce53813ccd7bd62522661af57da207641cadae8ef521ba45",
+      "2021-10-22-01": "13071135f12289a298c97257c3958a206d6a582b5c56b78b696682dacb74e3d6",
+      "2022-02-19-01": "20de263296043b2986e9562743a9075307d7a71995e9fbb3afda3581c8d9365d",
+      "2023-04-25-06": "244885fe7b48e77ecbcdc57b37fdd17efd0e45577af0fc08df6e893559f2a57b",
+      "2023-08-11-06": "f01732db2524d204fdbef8b62d8012cf9180969820629ab811abeb35c2f0fab9",
+      "2023-10-27-06": "b87ee92bb5beacca1f9d3e9b12d48f664b52fb484516d65611ede20e5e0cd053",
+      "2024-01-30-06": "6e093ee5427e0b869c6a6e069544547103b53c1bd0c7f00120336a8bfed4cd5c",
+      "2024-04-02-06": "91209ff546fa1b94b3d8f8985ca8af587b20cd7771d9094fd82b8111cd50a23a",
+      "2025-08-21-18": "bf7589165df43b7065e12478b19762350ad130b5c180eae2df0ea98d20be24a3",
+      "2025-08-22-01": "06a391aaa7a671e967b502161e599d42c3cc8ca965f4db24e05c3b629a2035ec",
+      "2025-08-22-06": "9e1e22df972adcbbb31e9388f0e876ab34ffa37ab14cfe24dc5edee53d566b8b",
+      "2025-08-29-18": "162044e3e770e2cfb5777b12db9cc895da5fc629bee6a9683111d01ef262a8a3",
+      "2025-08-30-01": "32623188969d9d74a5b2dc7abd34e3e3cac2ce02ba537dfaca220b48cf4899b4",
+      "2025-09-13-01": "2d321426f2f5682ebaa907ab6c808b74472021c33f2ae48719200a15b72ce13e",
+      "2025-09-20-01": "e1a1f3079c503d75f91a1bf22a524bb1b962ae1311799c79549216804aadfecf",
+      "2025-10-03-06": "1a6a297166fd5abb0239d59efe06d808ba31ff79936ad871c0d298f67cba47fc",
+      "2025-10-16-18": "cb471f32e645d969c59d2d62fe02f2d57118d6bab1d388358456c58dd06d0589",
+      "2025-10-17-01": "e3a97108daf76c4e97c845d3e207bd80da36c829cb4ef7a3c1523625d5c5469b",
+      "2025-10-17-06": "772695f8451124d6d377b1d222ec77857aa562ab6946eeb2b9b92589eb7177b2",
+      "2025-10-17-12": "4b7524be9467407ca93f2ee678d25f208c6cfc8c764e8d1e1d46f4ebda0b4ccf",
+      "2025-10-17-18": "23bace4caac0efc29f1279516240cff499886a2efe5785e96688a81bf6a231e3",
+      "2025-10-18-01": "639d40a5eb615bbf197b9fa4da3755bd6369a7883a67ac59e8aa397247750671",
+      "2025-10-24-01": "b475997c2a503eaa461d7fef103aa286971a0e053ddb4859b88e0609d9d229c2",
+      "2025-10-24-06": "393129845e6bf51d4da70a685f57822029513e0c91ef5d2153f50d2272d19ef2",
+      "2025-11-01-06": "6fd8a262cdf820671b9eb6f5f96ee737e4ac940573dc5beb7c95fa330e6c78a6",
+      "2025-12-02-02": "ba3f4dfa7d3ff3faf625a46fb6081ba73fc23c479728581cdeae61ffd41b6f0d",
+      "2025-12-02-06": "79d6f51d380852520cda56b70682f1ef7ef97c3cf34bbd3c7cf8f4f2db739257",
+      "2025-12-13-06": "3c978f3e65babae52ebb17b861c740b1f690efc701b7383eb41f2e8c1426540c",
+      "2025-12-26-06": "33cc4dbc7c556cd6adebe302ab1528163dd262c310b59e5188487550f7bee1e6",
+      "2025-12-29-06": "1d4217392bf116928dbff3fe757e20720c128603d7b2fc82347cd1d249609270",
+      "2025-12-29-12": "7b4fe98f30f209ef041672ac766bd53da81f5765b5f4ad34d810dc20a13594b6",
+      "2025-12-29-18": "e49d57ded1265558ef88a20b914070bcd7b2475a6ca2a901bdc20692ce71138f",
+      "2025-12-30-02": "ab44dccb1ead6081b1a6e0fe23870a9a123e53712c22483329836e765c3dc534",
+      "2025-12-30-06": "2c34053cf6dfbfa30015c069dc8951cad42c611bb804c92e497de1b1c8739491",
+      "2026-01-06-02": "8d98da1642bea78daa6aed85c1dce570eda0dd41414bfb9b69dc96fb712ab771",
+      "2026-01-06-06": "c1d2ba16eef99c9c2a127f79913fc45d71046ebd18a4b6c2e346aa095c80508c",
+      "2026-01-16-18": "c043f6021a1acf0564329b248cc87bd3d95d5f228315d4b2903006ff505b60d8",
+      "2026-01-17-02": "67a5a636985983756f244d1dad0db3691b6e6a42b6fc1a00d643bfc3e62eee28",
+      "2026-01-31-06": "122a3f1fbe2bd6b949671141d8d6a07a47c6e40b4f85e8bee00ae26b30f42bcc",
+      "2026-02-21-02": "d4dc406963ee0a00e79b4a0331cb2b6ce1142700d7dde04b529a6be97788b43d",
+      "2026-02-21-06": "95e790e010a6d5f745f8c1032ad4ba52a4e6fc80fe3895ff024dcd3bda0c0faf",
+      "2026-02-27-07": "c61d48d12077847d4ff21576141bfae679a0ad1d0061a35ea88e8a51f7433fc2",
+      "2026-03-14-02": "b64bd3773add56df8b51acd5ff5a996d90de5d1fb2d75e3a48cb2acb5acecd3d",
+      "2026-03-14-06": "2fef4de2dbfb30fe2132d18ceb5fb55942a43999d4794e136d7bdfa704b180e9",
+      "2026-03-20-07": "9a0cd568e2b137b00314d1fdff4b2ea4a0d406ccfa39dbae5046f5113d8205c3",
+      "2026-04-09-07": "8a48f3d175129ad5a3341896f30db23086817c5c265ca9c0d59b103bd41b997a",
+      "2026-04-09-14": "bc10392fea9694ebafe84a85a9035e4e3bddb4dd2b19d8f3341e94738a68ec1c",
+      "2026-04-09-19": "b044f5157baab06e05834cb7a32a79b35a0ca07a544da807a8c96d280a64094e",
+      "2026-04-10-03": "13b4376c20ebc367e7eeb69bcddfd7b2f5cb964f8ef2d38a808e95234022475f",
+      "2026-04-10-07": "0d7350cd8873cde351aff354812db5c7cc180df8d7741d678a4d109408f2f2ed",
+      "2026-04-18-03": "d656e5b0769633293aacd2e49145a65ed2f5f36e2cb52ecaa9e1fa68ec469b1d",
+      "2026-04-23-08": "0f909dd58ed3324de19995f12d0de894a252105ed27b4fbefd064b8fcd13f7aa",
+      "2026-04-23-14": "24398a7cf29cd39e39960a96ed99c82afedbb31eb266524601105bdc9aaa7a4f",
+      "2026-04-23-19": "7caabc2a216c2c3a2c4eef6ba0c848901b47f16e17b6d2ae62323c58df35144e",
+      "2026-04-24-03": "77413525baaeaefde888c7fe68f30305de42fefacc76db74d0df3b965adcd3c5",
+      "2026-04-24-08": "806d33d20cf0f9dd9a070b094129eba715e9125d8bcc39095b8bb1e947930519",
+      "2026-05-01-04": "3c0cfa8d747128b6b8caf2cc38e14a57b887763f841c9a0b874a457aef29a9d0",
+      "2026-05-01-08": "90b901486f88676fec1acbc97b5e7d4378a174e71baf9c2ce0a123f00f327d24",
+      "2026-05-08-07": "6e04bc8b3818eebff511317a0a4f10073dbe9f10053d771184c2ae1c91deac92",
+      "2026-05-08-14": "714b524609d875d54635a7ac7b0333922364bc400695c38b988dae80e29b791f",
+      "2026-05-08-19": "b2848ea7f8b398d7e29c7e0611bd35b4892865d2d0dc176edbfd00ad2d9debf7",
+      "2026-05-09-03": "7daba7ccf7c9c24e29a1c7d14457e6d4b59f2d09c5ea8abd98266a66641e1bea",
+      "2026-05-14-08": "45ed694a2074d86d4700d412e22cf241af2de33fcde2a92697456e9f57d0ddf1",
+      "2026-05-14-14": "99b96c3b13f903025fabe71ba42eb78817ed68d577735edb9984bb9c427d9831",
+      "2026-05-14-19": "64e23fe16994076781901727562033115245c55318c584f413581fd00f12d7a6",
+      "2026-05-15-04": "b47a4de6d075e4b5b4fa872e4ea39a50a6775a28aa2339fa4a98a29439326399",
+      "2026-05-15-09": "b5d4dee95bc486174e287ddf96b1b2919ae19aff23ba8788b2eddf6912402512",
+      "2026-08-19-18": "393982962fc7bb54c9809ebde0d616be4521a2cb6967c9a0d156f9f36e772bef",
+      "2026-08-20-01": "e8e2ea46f5a01750328ff47561327e0f86f1da751cb601359b3cfe9d267e10fb",
+      "2026-08-20-06": "0f1b4350837434b346e1ece5bdb16dd0b4c5401f04b3d52e21d932a2bdd574d8",
+      "2026-08-20-13": "b45c699b33695bc9f363bb3421c2856ced7a40a4eaa2554a10c7a2298a7a95cf",
+      "2026-08-20-18": "79813ea33c23a641c1a53a82d0d1ad710af43db64c9519814a3bbb91c75f01d9",
+      "2026-08-21-01": "4401d21aca7c4f7a7758f57c4a07642efd4db950c431054767fdf5565a96549d",
+      "2026-08-21-06": "0280b24309666cf4dde4f884f09e2ab2ea74c8a08dfbac0ec1d1083868f91be4",
+      "2026-08-26-19": "12abe412ae1348ccb9da37bc92b8c7fd69495f53b6bfd9471ef1007f555b29a6",
+      "2026-08-27-08": "efa3735d001dee024447f6823ef549cc5592707a314c825f8dfd7aa53108d839",
+      "2026-08-27-22": "5a53ee087d5bfb7bc86af376d31f6492c385c2dca1f07652ce399b6a15df1953",
+      "2026-09-02-20": "9934f664e60f4aff6b7546695de2f710eb149c79ace8a9c3df53a415ce8ceeae",
+      "2026-09-03-04": "21ca67d345f4fb5b66427464009349d6aeef91cbac5c88c7c1787dfb2591d604",
+      "2026-09-03-11": "98ea9d1ea68dcaba575e4d5beadf152a2d977b2feb1061dc1a82b9d8233780ad",
+      "2026-09-03-16": "7eb515c42f272ec7c7256da1316f1653cdded7a999e8e88dd561eb2443d09e84",
+      "2026-09-03-20": "ac98311a2566becc8df965217f037f835f17f7e8c60bb5801f3da165d6674bb0",
+      "2026-09-04-04": "2b44eeb05b84fcca4b0ab706abcd86fa4d5c7bf185e2f7a29694e41f4788c45f",
+      "2026-09-04-11": "969998863ef3f0087b635963511f8d9f3448bd23f33d62da45d4cfdb64258d4d"
+    },
+    "training_admitted": false,
+    "production_changed": false
+  },
+  "selection": {
+    "version": "publication-selection-v1",
+    "manifest_sha256": "d9eed1e354d0a35443e480a0c4bfcbdebee97f28b73b04309e4bef0f8bcc243e",
+    "errors": [],
+    "alternatives_report_sha256": "134ba51ebe752454d1511d3827d08ec3ab17baca4520e232c37f546823fe20c1",
+    "original_audit_report_sha256": "703fd327692e9d8c45bbbd0f7b8a91947fbfbb2df308a61ce71b0b7fe1c47f90",
+    "implementation_sha256": "41469493975bbbd289b62154ab89d1536d0c156b1fbe23709ef280ce53eeb0fa",
+    "artifacts": {
+      "nominal_deadline_candidates.json": "1688ebad1f57a3640bad056db7e8ce5d5771a937313d2bee97c5f2f11598bf71",
+      "publication_witnesses.json": "434bf969dde81f9fbeda8af3656913786beec52a3d7b811fd8e6cd1ae34a7a5e"
+    },
+    "candidates": 199,
+    "verified_deadlines": 196,
+    "replaced_snapshots": 32,
+    "unresolved_deadlines": 3,
+    "seasons": {
+      "2020-21": {
+        "candidates": 6,
+        "verified_deadlines": 6,
+        "changed_snapshots": 0
+      },
+      "2021-22": {
+        "candidates": 38,
+        "verified_deadlines": 38,
+        "changed_snapshots": 2
+      },
+      "2022-23": {
+        "candidates": 38,
+        "verified_deadlines": 38,
+        "changed_snapshots": 1
+      },
+      "2023-24": {
+        "candidates": 38,
+        "verified_deadlines": 38,
+        "changed_snapshots": 4
+      },
+      "2024-25": {
+        "candidates": 38,
+        "verified_deadlines": 38,
+        "changed_snapshots": 0
+      },
+      "2025-26": {
+        "candidates": 38,
+        "verified_deadlines": 38,
+        "changed_snapshots": 25
+      },
+      "2026-27": {
+        "candidates": 3,
+        "verified_deadlines": 0,
+        "changed_snapshots": 0
+      }
+    },
+    "max_extra_staleness_hours": 35.93333333333333,
+    "min_extra_staleness_hours": 4.016666666666667,
+    "scope": "snapshot_selection_only_not_training_admission",
+    "training_admitted": false,
+    "production_changed": false,
+    "acquisition_errors": [
+      {
+        "round": 1,
+        "hour": "2021-10-22-06",
+        "error": "OSError"
+      }
+    ]
+  },
+  "state": {
+    "version": "bootstrap-state-v2",
+    "source_manifest_sha256": "d9eed1e354d0a35443e480a0c4bfcbdebee97f28b73b04309e4bef0f8bcc243e",
+    "candidate_sha256": "1688ebad1f57a3640bad056db7e8ce5d5771a937313d2bee97c5f2f11598bf71",
+    "reference_dataset_id": "1d111a458c9074fcd7ec2da516e82d9d1984600f6f057716112b92e855240df4",
+    "implementation_sha256": "f85296a1ccc856ed123b362ae12a7d08fa389f98d27d32310953fb6d99564ce9",
+    "candidates": 199,
+    "rows": 144040,
+    "rejected_rows": 0,
+    "seasons": {
+      "2020-21": {
+        "rows": 4191,
+        "player_rows": 4191,
+        "manager_rows": 0,
+        "deadlines": 6,
+        "identity_status": {
+          "matched": 4191
+        },
+        "flags": {
+          "can_select": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          },
+          "can_transact": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          },
+          "removed": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          },
+          "has_temporary_code": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          }
+        }
+      },
+      "2021-22": {
+        "rows": 25150,
+        "player_rows": 25150,
+        "manager_rows": 0,
+        "deadlines": 38,
+        "identity_status": {
+          "matched": 25150
+        },
+        "flags": {
+          "can_select": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          },
+          "can_transact": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          },
+          "removed": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          },
+          "has_temporary_code": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          }
+        }
+      },
+      "2022-23": {
+        "rows": 26198,
+        "player_rows": 26198,
+        "manager_rows": 0,
+        "deadlines": 38,
+        "identity_status": {
+          "matched": 26196,
+          "matched_via_audited_alias": 2
+        },
+        "flags": {
+          "can_select": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          },
+          "can_transact": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          },
+          "removed": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          },
+          "has_temporary_code": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          }
+        }
+      },
+      "2023-24": {
+        "rows": 29510,
+        "player_rows": 29510,
+        "manager_rows": 0,
+        "deadlines": 38,
+        "identity_status": {
+          "matched": 29510
+        },
+        "flags": {
+          "can_select": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          },
+          "can_transact": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          },
+          "removed": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          },
+          "has_temporary_code": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          }
+        }
+      },
+      "2024-25": {
+        "rows": 27479,
+        "player_rows": 27159,
+        "manager_rows": 320,
+        "deadlines": 38,
+        "identity_status": {
+          "matched": 27159
+        },
+        "flags": {
+          "can_select": {
+            "present": 17226,
+            "nonnull": 17226,
+            "true": 13841,
+            "false": 3385
+          },
+          "can_transact": {
+            "present": 17226,
+            "nonnull": 17226,
+            "true": 17226,
+            "false": 0
+          },
+          "removed": {
+            "present": 17226,
+            "nonnull": 17226,
+            "true": 0,
+            "false": 17226
+          },
+          "has_temporary_code": {
+            "present": 12273,
+            "nonnull": 12273,
+            "true": 0,
+            "false": 12273
+          }
+        }
+      },
+      "2025-26": {
+        "rows": 29645,
+        "player_rows": 29645,
+        "manager_rows": 0,
+        "deadlines": 38,
+        "identity_status": {
+          "matched": 29645
+        },
+        "flags": {
+          "can_select": {
+            "present": 29645,
+            "nonnull": 29645,
+            "true": 23203,
+            "false": 6442
+          },
+          "can_transact": {
+            "present": 29645,
+            "nonnull": 29645,
+            "true": 29645,
+            "false": 0
+          },
+          "removed": {
+            "present": 29645,
+            "nonnull": 29645,
+            "true": 0,
+            "false": 29645
+          },
+          "has_temporary_code": {
+            "present": 29645,
+            "nonnull": 29645,
+            "true": 0,
+            "false": 29645
+          }
+        }
+      },
+      "2026-27": {
+        "rows": 1867,
+        "player_rows": 1867,
+        "manager_rows": 0,
+        "deadlines": 3,
+        "identity_status": {
+          "reference_season_unavailable": 1867
+        },
+        "flags": {
+          "can_select": {
+            "present": 1867,
+            "nonnull": 1867,
+            "true": 1685,
+            "false": 182
+          },
+          "can_transact": {
+            "present": 1867,
+            "nonnull": 1867,
+            "true": 1867,
+            "false": 0
+          },
+          "removed": {
+            "present": 1867,
+            "nonnull": 1867,
+            "true": 0,
+            "false": 1867
+          },
+          "has_temporary_code": {
+            "present": 1867,
+            "nonnull": 1867,
+            "true": 0,
+            "false": 1867
+          }
+        }
+      }
+    },
+    "artifacts": {
+      "player_states.csv.gz": "7014c17717744cedb0cf4519e80f35f367bbd7f21e2f5c65c4906d0440970d67",
+      "manager_states.csv.gz": "eec5b89ec6ee3de39ef278d69f111474c5a20174c350858676179aef434d79d1",
+      "rejected.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    "eligible_predeadline": false,
+    "eligible_training": false,
+    "semantics": "published_source_roster_is_not_proof_of_buy_or_lineup_eligibility",
+    "alias_report_sha256": "d61fab0e14e29985b3919b06ba662652f87e1ae9f0e80a34984fff13353684dd",
+    "aliases_applied_rows": 2
+  },
+  "state_audit": {
+    "version": "publication-state-audit-v1",
+    "selection_report_sha256": "1ace4506377f6bf92ff79d71f7b1083070f273c58f802518754f96fccb87b6fc",
+    "state_report_sha256": "0e5caaa744109de91b16257c7116b93ef6a9a694e7f12118be35e93907b3dcf1",
+    "previous_state_report_sha256": "fd7d7df03d5ca5e48aaabbad356e322874c5545d4ec6e3a6ab54f03fdc289b8f",
+    "implementation_sha256": "6365e55681837ddc0617015f232d8d7f05628eb8fe987d364198402d05dbf8b0",
+    "seasons": {
+      "2020-21": {
+        "player_rows": 4191,
+        "verified_player_rows": 4191
+      },
+      "2021-22": {
+        "player_rows": 25150,
+        "verified_player_rows": 25150
+      },
+      "2022-23": {
+        "player_rows": 26198,
+        "verified_player_rows": 26198
+      },
+      "2023-24": {
+        "player_rows": 29510,
+        "verified_player_rows": 29510
+      },
+      "2024-25": {
+        "player_rows": 27159,
+        "verified_player_rows": 27159,
+        "manager_rows": 320,
+        "verified_manager_rows": 320
+      },
+      "2025-26": {
+        "player_rows": 29645,
+        "verified_player_rows": 29645
+      },
+      "2026-27": {
+        "player_rows": 1867
+      }
+    },
+    "unchanged_snapshot_rows": 119382,
+    "changed_snapshot_comparable_rows": 24658,
+    "added_keys": 0,
+    "removed_keys": 0,
+    "changed_field_counts": {
+      "source_claimed_at": 24658,
+      "source_sha256": 24658,
+      "ownership_percent": 3064,
+      "price_tenths_gbp": 152,
+      "price_gbp": 152,
+      "chance_of_playing_next_round": 212,
+      "status": 174,
+      "news_added": 57
+    },
+    "rejected_rows": 0,
+    "training_admitted": false,
+    "production_changed": false
+  },
+  "verification": {
+    "selection_and_state_audit_reproduced_byte_for_byte": true,
+    "implementation_hashes_verified": true,
+    "local_tests_passed": 1457,
+    "local_tests_skipped": 1,
+    "local_tests_deselected": 79
+  },
+  "pending": [
+    "2026-27 GW1-3 no external push witness within searched 48h window",
+    "typed state training admission remains disabled; full replay still requires calendar/rules/actions contracts",
+    "94982 can_select values remain unknown",
+    "78 kickoff discrepancies and historical eligible universe remain unresolved"
+  ],
+  "production_changed": false
+}

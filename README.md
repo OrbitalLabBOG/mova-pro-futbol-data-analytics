@@ -188,6 +188,14 @@ publicación anterior corroborada** y 35 sin evidencia suficiente. Cubren
 **117.195 estados de jugadores y 320 managers**. 2024/25 alcanza 38/38; 2025/26,
 13/38. Son testigos temporales separados: G19 y GT v5 no se reescriben ni se
 habilita entrenamiento. [Resultados G20](experiments/data_ground_truth/results-g20.json).
+G21 recupera 32 testigos con capturas anteriores: **196/199 deadlines** corroborados,
+con **38/38 en cada temporada 2021/22–2025/26**. El paquete seleccionado conserva
+143.720 estados de jugadores y 320 managers; 141.853 estados de jugadores tienen
+testigo. Las 32 capturas sustituidas son 4–36 horas más antiguas; se registran sus
+cambios de precios, disponibilidad y ownership. Quedan sin testigo GW1–3 2026/27.
+No se habilita entrenamiento ni replay completo.
+[Resultados G21](experiments/data_ground_truth/results-g21.json).
+
 
 
 ## Empezar
