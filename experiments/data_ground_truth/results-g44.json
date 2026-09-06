@@ -1,0 +1,6712 @@
+{
+  "version": "historical-data-g44",
+  "audit_report_sha256": "4e9324e1f59d7c6f7fa4b06b57ff3fe47ca355b0c38ac5d53d1568ce1f305935",
+  "audit": {
+    "version": "cumulative-period-v1",
+    "dataset_id": "d4baf849fb4a051be103f8c469e61a4753edb0b4004f980a000fe5c86ef573db",
+    "performance_report_sha256": "45366aadfe7002e2369082a334a7c64d21bb6b7e0541baa5f27798040fee395b",
+    "implementation_sha256": "2bd9bbb05604b452be44450c6eb9f27cd2277f3fe25cbe9edb9d9629ccaecc0f",
+    "rows": 138830,
+    "coverage": {
+      "2020-21": {
+        "status": "compared",
+        "windows": [
+          {
+            "gw": 33,
+            "deadline": "2021-04-23T17:30:00Z",
+            "rows": 691,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 691
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 691
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8983
+              },
+              "kickoff_before_deadline": {
+                "equal": 8983
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 691
+              }
+            ]
+          },
+          {
+            "gw": 34,
+            "deadline": "2021-04-30T17:30:00Z",
+            "rows": 693,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 693
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 693
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9009
+              },
+              "kickoff_before_deadline": {
+                "equal": 9009
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 693
+              }
+            ]
+          },
+          {
+            "gw": 35,
+            "deadline": "2021-05-07T17:30:00Z",
+            "rows": 695,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 695
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 695
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9035
+              },
+              "kickoff_before_deadline": {
+                "equal": 9035
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 695
+              }
+            ]
+          },
+          {
+            "gw": 36,
+            "deadline": "2021-05-14T17:30:00Z",
+            "rows": 703,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 703
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 703
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9139
+              },
+              "kickoff_before_deadline": {
+                "equal": 9139
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 703
+              }
+            ]
+          },
+          {
+            "gw": 37,
+            "deadline": "2021-05-18T15:30:00Z",
+            "rows": 703,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 703
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 703
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9139
+              },
+              "kickoff_before_deadline": {
+                "equal": 9139
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 703
+              }
+            ]
+          },
+          {
+            "gw": 38,
+            "deadline": "2021-05-23T13:30:00Z",
+            "rows": 706,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 706
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 706
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9178
+              },
+              "kickoff_before_deadline": {
+                "equal": 9178
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 706
+              }
+            ]
+          }
+        ]
+      },
+      "2021-22": {
+        "status": "compared",
+        "windows": [
+          {
+            "gw": 2,
+            "deadline": "2021-08-21T10:00:00Z",
+            "rows": 559,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 554,
+                "no_reference_code": 5
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 554,
+                "no_reference_code": 5
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 7202
+              },
+              "kickoff_before_deadline": {
+                "equal": 7202
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 554
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 5
+              }
+            ]
+          },
+          {
+            "gw": 3,
+            "deadline": "2021-08-28T10:00:00Z",
+            "rows": 567,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 566,
+                "no_reference_code": 1
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 566,
+                "no_reference_code": 1
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 7358
+              },
+              "kickoff_before_deadline": {
+                "equal": 7358
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 566
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 1
+              }
+            ]
+          },
+          {
+            "gw": 4,
+            "deadline": "2021-09-11T10:00:00Z",
+            "rows": 594,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 577,
+                "no_reference_code": 17
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 577,
+                "no_reference_code": 17
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 7501
+              },
+              "kickoff_before_deadline": {
+                "equal": 7501
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 577
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 17
+              }
+            ]
+          },
+          {
+            "gw": 5,
+            "deadline": "2021-09-17T17:30:00Z",
+            "rows": 599,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 599
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 599
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 7787
+              },
+              "kickoff_before_deadline": {
+                "equal": 7787
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 599
+              }
+            ]
+          },
+          {
+            "gw": 6,
+            "deadline": "2021-09-25T10:00:00Z",
+            "rows": 606,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 606
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 606
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 7878
+              },
+              "kickoff_before_deadline": {
+                "equal": 7878
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 606
+              }
+            ]
+          },
+          {
+            "gw": 7,
+            "deadline": "2021-10-02T10:00:00Z",
+            "rows": 611,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 611
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 611
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 7943
+              },
+              "kickoff_before_deadline": {
+                "equal": 7943
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 611
+              }
+            ]
+          },
+          {
+            "gw": 8,
+            "deadline": "2021-10-16T10:00:00Z",
+            "rows": 613,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 613
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 613
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 7969
+              },
+              "kickoff_before_deadline": {
+                "equal": 7969
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 613
+              }
+            ]
+          },
+          {
+            "gw": 9,
+            "deadline": "2021-10-22T17:30:00Z",
+            "rows": 617,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 617
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 617
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8021
+              },
+              "kickoff_before_deadline": {
+                "equal": 8021
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 617
+              }
+            ]
+          },
+          {
+            "gw": 10,
+            "deadline": "2021-10-30T10:00:00Z",
+            "rows": 618,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 618
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 618
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8034
+              },
+              "kickoff_before_deadline": {
+                "equal": 8034
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 618
+              }
+            ]
+          },
+          {
+            "gw": 11,
+            "deadline": "2021-11-05T18:30:00Z",
+            "rows": 623,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 623
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 623
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8099
+              },
+              "kickoff_before_deadline": {
+                "equal": 8099
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 623
+              }
+            ]
+          },
+          {
+            "gw": 12,
+            "deadline": "2021-11-20T11:00:00Z",
+            "rows": 624,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 624
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 624
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8112
+              },
+              "kickoff_before_deadline": {
+                "equal": 8112
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 624
+              }
+            ]
+          },
+          {
+            "gw": 13,
+            "deadline": "2021-11-27T11:00:00Z",
+            "rows": 631,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 631
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 631
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8203
+              },
+              "kickoff_before_deadline": {
+                "equal": 8203
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 631
+              }
+            ]
+          },
+          {
+            "gw": 14,
+            "deadline": "2021-11-30T18:00:00Z",
+            "rows": 633,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 633
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 633
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8229
+              },
+              "kickoff_before_deadline": {
+                "equal": 8229
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 633
+              }
+            ]
+          },
+          {
+            "gw": 15,
+            "deadline": "2021-12-04T11:00:00Z",
+            "rows": 636,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 636
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 636
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8268
+              },
+              "kickoff_before_deadline": {
+                "equal": 8268
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 636
+              }
+            ]
+          },
+          {
+            "gw": 16,
+            "deadline": "2021-12-10T18:30:00Z",
+            "rows": 641,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 640,
+                "no_reference_code": 1
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 640,
+                "no_reference_code": 1
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8320
+              },
+              "kickoff_before_deadline": {
+                "equal": 8320
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 640
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 1
+              }
+            ]
+          },
+          {
+            "gw": 17,
+            "deadline": "2021-12-14T18:15:00Z",
+            "rows": 647,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 647
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 647
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8411
+              },
+              "kickoff_before_deadline": {
+                "equal": 8411
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 647
+              }
+            ]
+          },
+          {
+            "gw": 18,
+            "deadline": "2021-12-18T13:30:00Z",
+            "rows": 656,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 656
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 656
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8528
+              },
+              "kickoff_before_deadline": {
+                "equal": 8528
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 656
+              }
+            ]
+          },
+          {
+            "gw": 19,
+            "deadline": "2021-12-26T13:30:00Z",
+            "rows": 661,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 661
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 661
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8593
+              },
+              "kickoff_before_deadline": {
+                "equal": 8593
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 661
+              }
+            ]
+          },
+          {
+            "gw": 20,
+            "deadline": "2021-12-28T13:30:00Z",
+            "rows": 665,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 665
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 665
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8645
+              },
+              "kickoff_before_deadline": {
+                "equal": 8645
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 665
+              }
+            ]
+          },
+          {
+            "gw": 21,
+            "deadline": "2022-01-01T11:00:00Z",
+            "rows": 669,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 669
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 669
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8697
+              },
+              "kickoff_before_deadline": {
+                "equal": 8697
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 669
+              }
+            ]
+          },
+          {
+            "gw": 22,
+            "deadline": "2022-01-14T18:30:00Z",
+            "rows": 683,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 678,
+                "no_reference_code": 5
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 678,
+                "no_reference_code": 5
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8814
+              },
+              "kickoff_before_deadline": {
+                "equal": 8814
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 678
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 5
+              }
+            ]
+          },
+          {
+            "gw": 23,
+            "deadline": "2022-01-21T18:30:00Z",
+            "rows": 691,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 688,
+                "no_reference_code": 3
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 688,
+                "no_reference_code": 3
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8944
+              },
+              "kickoff_before_deadline": {
+                "equal": 8944
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 688
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 3
+              }
+            ]
+          },
+          {
+            "gw": 24,
+            "deadline": "2022-02-08T18:15:00Z",
+            "rows": 702,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 697,
+                "no_reference_code": 5
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 697,
+                "no_reference_code": 5
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9061
+              },
+              "kickoff_before_deadline": {
+                "equal": 9061
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 697
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 5
+              }
+            ]
+          },
+          {
+            "gw": 25,
+            "deadline": "2022-02-12T11:00:00Z",
+            "rows": 705,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 705
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 705
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9165
+              },
+              "kickoff_before_deadline": {
+                "equal": 9165
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 705
+              }
+            ]
+          },
+          {
+            "gw": 26,
+            "deadline": "2022-02-19T11:00:00Z",
+            "rows": 707,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 707
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 707
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9191
+              },
+              "kickoff_before_deadline": {
+                "equal": 9191
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 707
+              }
+            ]
+          },
+          {
+            "gw": 27,
+            "deadline": "2022-02-25T18:30:00Z",
+            "rows": 711,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 711
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 711
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9243
+              },
+              "kickoff_before_deadline": {
+                "equal": 9243
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 711
+              }
+            ]
+          },
+          {
+            "gw": 28,
+            "deadline": "2022-03-05T11:00:00Z",
+            "rows": 714,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 714
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 714
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9282
+              },
+              "kickoff_before_deadline": {
+                "equal": 9282
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 714
+              }
+            ]
+          },
+          {
+            "gw": 29,
+            "deadline": "2022-03-12T11:00:00Z",
+            "rows": 714,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 714
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 714
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9282
+              },
+              "kickoff_before_deadline": {
+                "equal": 9282
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 714
+              }
+            ]
+          },
+          {
+            "gw": 30,
+            "deadline": "2022-03-18T18:30:00Z",
+            "rows": 714,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 714
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 714
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9282
+              },
+              "kickoff_before_deadline": {
+                "equal": 9282
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 714
+              }
+            ]
+          },
+          {
+            "gw": 31,
+            "deadline": "2022-04-02T10:00:00Z",
+            "rows": 714,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 714
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 714
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9282
+              },
+              "kickoff_before_deadline": {
+                "equal": 9282
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 714
+              }
+            ]
+          },
+          {
+            "gw": 32,
+            "deadline": "2022-04-08T17:30:00Z",
+            "rows": 720,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 720
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 720
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9360
+              },
+              "kickoff_before_deadline": {
+                "equal": 9360
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 720
+              }
+            ]
+          },
+          {
+            "gw": 33,
+            "deadline": "2022-04-16T10:00:00Z",
+            "rows": 722,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 722
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 722
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9386
+              },
+              "kickoff_before_deadline": {
+                "equal": 9386
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 722
+              }
+            ]
+          },
+          {
+            "gw": 34,
+            "deadline": "2022-04-23T10:00:00Z",
+            "rows": 726,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 726
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 726
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9438
+              },
+              "kickoff_before_deadline": {
+                "equal": 9438
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 726
+              }
+            ]
+          },
+          {
+            "gw": 35,
+            "deadline": "2022-04-30T10:00:00Z",
+            "rows": 728,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 728
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 728
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9464
+              },
+              "kickoff_before_deadline": {
+                "equal": 9464
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 728
+              }
+            ]
+          },
+          {
+            "gw": 36,
+            "deadline": "2022-05-07T12:30:00Z",
+            "rows": 730,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 730
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 730
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9490
+              },
+              "kickoff_before_deadline": {
+                "equal": 9490
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 730
+              }
+            ]
+          },
+          {
+            "gw": 37,
+            "deadline": "2022-05-15T09:30:00Z",
+            "rows": 734,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 734
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 734
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9542
+              },
+              "kickoff_before_deadline": {
+                "equal": 9542
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 734
+              }
+            ]
+          },
+          {
+            "gw": 38,
+            "deadline": "2022-05-22T13:30:00Z",
+            "rows": 736,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 736
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 736
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9568
+              },
+              "kickoff_before_deadline": {
+                "equal": 9568
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 736
+              }
+            ]
+          }
+        ]
+      },
+      "2022-23": {
+        "status": "compared",
+        "windows": [
+          {
+            "gw": 2,
+            "deadline": "2022-08-13T10:00:00Z",
+            "rows": 580,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 573,
+                "no_reference_code": 7
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 573,
+                "no_reference_code": 7
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 7449
+              },
+              "kickoff_before_deadline": {
+                "equal": 7449
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 573
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 7
+              }
+            ]
+          },
+          {
+            "gw": 3,
+            "deadline": "2022-08-20T10:00:00Z",
+            "rows": 589,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 581,
+                "no_reference_code": 8
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 581,
+                "no_reference_code": 8
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 7553
+              },
+              "kickoff_before_deadline": {
+                "equal": 7553
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 581
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 8
+              }
+            ]
+          },
+          {
+            "gw": 4,
+            "deadline": "2022-08-27T10:00:00Z",
+            "rows": 594,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 592,
+                "no_reference_code": 2
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 592,
+                "no_reference_code": 2
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 7696
+              },
+              "kickoff_before_deadline": {
+                "equal": 7696
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 592
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 2
+              }
+            ]
+          },
+          {
+            "gw": 5,
+            "deadline": "2022-08-30T17:00:00Z",
+            "rows": 603,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 601,
+                "no_reference_code": 2
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 601,
+                "no_reference_code": 2
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 7813
+              },
+              "kickoff_before_deadline": {
+                "equal": 7813
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 601
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 2
+              }
+            ]
+          },
+          {
+            "gw": 6,
+            "deadline": "2022-09-03T10:00:00Z",
+            "rows": 623,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 608,
+                "no_reference_code": 15
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 608,
+                "no_reference_code": 15
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 7904
+              },
+              "kickoff_before_deadline": {
+                "equal": 7904
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 608
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 15
+              }
+            ]
+          },
+          {
+            "gw": 7,
+            "deadline": "2022-09-10T10:00:00Z",
+            "rows": 624,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 624
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 624
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8112
+              },
+              "kickoff_before_deadline": {
+                "equal": 8112
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 624
+              }
+            ]
+          },
+          {
+            "gw": 8,
+            "deadline": "2022-09-16T17:30:00Z",
+            "rows": 628,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 624,
+                "no_reference_code": 4
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 624,
+                "no_reference_code": 4
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8112
+              },
+              "kickoff_before_deadline": {
+                "equal": 8112
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 624
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 4
+              }
+            ]
+          },
+          {
+            "gw": 9,
+            "deadline": "2022-10-01T10:00:00Z",
+            "rows": 631,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 631
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 631
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8203
+              },
+              "kickoff_before_deadline": {
+                "equal": 8203
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 631
+              }
+            ]
+          },
+          {
+            "gw": 10,
+            "deadline": "2022-10-08T12:30:00Z",
+            "rows": 638,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 638
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 638
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8294
+              },
+              "kickoff_before_deadline": {
+                "equal": 8294
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 638
+              }
+            ]
+          },
+          {
+            "gw": 11,
+            "deadline": "2022-10-14T17:30:00Z",
+            "rows": 641,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 641
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 641
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8333
+              },
+              "kickoff_before_deadline": {
+                "equal": 8333
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 641
+              }
+            ]
+          },
+          {
+            "gw": 12,
+            "deadline": "2022-10-18T17:00:00Z",
+            "rows": 643,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 643
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 643
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8359
+              },
+              "kickoff_before_deadline": {
+                "equal": 8359
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 643
+              }
+            ]
+          },
+          {
+            "gw": 13,
+            "deadline": "2022-10-22T10:00:00Z",
+            "rows": 645,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 645
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 645
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8385
+              },
+              "kickoff_before_deadline": {
+                "equal": 8385
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 645
+              }
+            ]
+          },
+          {
+            "gw": 14,
+            "deadline": "2022-10-29T10:00:00Z",
+            "rows": 648,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 648
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 648
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8424
+              },
+              "kickoff_before_deadline": {
+                "equal": 8424
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 648
+              }
+            ]
+          },
+          {
+            "gw": 15,
+            "deadline": "2022-11-05T13:30:00Z",
+            "rows": 656,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 656
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 656
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8528
+              },
+              "kickoff_before_deadline": {
+                "equal": 8528
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 656
+              }
+            ]
+          },
+          {
+            "gw": 16,
+            "deadline": "2022-11-12T11:00:00Z",
+            "rows": 661,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 661
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 661
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8593
+              },
+              "kickoff_before_deadline": {
+                "equal": 8593
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 661
+              }
+            ]
+          },
+          {
+            "gw": 17,
+            "deadline": "2022-12-26T11:00:00Z",
+            "rows": 667,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 667
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 667
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8671
+              },
+              "kickoff_before_deadline": {
+                "equal": 8671
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 667
+              }
+            ]
+          },
+          {
+            "gw": 18,
+            "deadline": "2022-12-30T18:15:00Z",
+            "rows": 675,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 675
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 675
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8775
+              },
+              "kickoff_before_deadline": {
+                "equal": 8775
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 675
+              }
+            ]
+          },
+          {
+            "gw": 19,
+            "deadline": "2023-01-02T16:00:00Z",
+            "rows": 683,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 678,
+                "no_reference_code": 5
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 678,
+                "no_reference_code": 5
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8814
+              },
+              "kickoff_before_deadline": {
+                "equal": 8814
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 678
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 5
+              }
+            ]
+          },
+          {
+            "gw": 20,
+            "deadline": "2023-01-13T18:30:00Z",
+            "rows": 694,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 689,
+                "no_reference_code": 5
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 689,
+                "no_reference_code": 5
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8957
+              },
+              "kickoff_before_deadline": {
+                "equal": 8957
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 689
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 5
+              }
+            ]
+          },
+          {
+            "gw": 21,
+            "deadline": "2023-01-21T11:00:00Z",
+            "rows": 705,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 699,
+                "no_reference_code": 6
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 699,
+                "no_reference_code": 6
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9087
+              },
+              "kickoff_before_deadline": {
+                "equal": 9087
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 699
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 6
+              }
+            ]
+          },
+          {
+            "gw": 22,
+            "deadline": "2023-02-03T18:30:00Z",
+            "rows": 734,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 707,
+                "no_reference_code": 27
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 707,
+                "no_reference_code": 27
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9191
+              },
+              "kickoff_before_deadline": {
+                "equal": 9191
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 707
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 27
+              }
+            ]
+          },
+          {
+            "gw": 23,
+            "deadline": "2023-02-11T11:00:00Z",
+            "rows": 740,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 740
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 740
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9620
+              },
+              "kickoff_before_deadline": {
+                "equal": 9620
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 740
+              }
+            ]
+          },
+          {
+            "gw": 24,
+            "deadline": "2023-02-18T11:00:00Z",
+            "rows": 745,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 745
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 745
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9685
+              },
+              "kickoff_before_deadline": {
+                "equal": 9685
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 745
+              }
+            ]
+          },
+          {
+            "gw": 25,
+            "deadline": "2023-02-24T18:30:00Z",
+            "rows": 746,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 746
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 746
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9698
+              },
+              "kickoff_before_deadline": {
+                "equal": 9698
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 746
+              }
+            ]
+          },
+          {
+            "gw": 26,
+            "deadline": "2023-03-04T11:00:00Z",
+            "rows": 746,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 746
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 746
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9698
+              },
+              "kickoff_before_deadline": {
+                "equal": 9698
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 746
+              }
+            ]
+          },
+          {
+            "gw": 27,
+            "deadline": "2023-03-11T11:00:00Z",
+            "rows": 747,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 747
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 747
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9711
+              },
+              "kickoff_before_deadline": {
+                "equal": 9711
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 747
+              }
+            ]
+          },
+          {
+            "gw": 28,
+            "deadline": "2023-03-17T18:30:00Z",
+            "rows": 750,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 750
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 750
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9750
+              },
+              "kickoff_before_deadline": {
+                "equal": 9750
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 750
+              }
+            ]
+          },
+          {
+            "gw": 29,
+            "deadline": "2023-04-01T10:00:00Z",
+            "rows": 751,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 751
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 751
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9763
+              },
+              "kickoff_before_deadline": {
+                "equal": 9763
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 751
+              }
+            ]
+          },
+          {
+            "gw": 30,
+            "deadline": "2023-04-08T10:00:00Z",
+            "rows": 754,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 754
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 754
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9802
+              },
+              "kickoff_before_deadline": {
+                "equal": 9802
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 754
+              }
+            ]
+          },
+          {
+            "gw": 31,
+            "deadline": "2023-04-15T10:00:00Z",
+            "rows": 754,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 754
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 754
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9802
+              },
+              "kickoff_before_deadline": {
+                "equal": 9802
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 754
+              }
+            ]
+          },
+          {
+            "gw": 32,
+            "deadline": "2023-04-21T17:30:00Z",
+            "rows": 759,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 759
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 759
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9867
+              },
+              "kickoff_before_deadline": {
+                "equal": 9867
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 759
+              }
+            ]
+          },
+          {
+            "gw": 33,
+            "deadline": "2023-04-25T17:00:00Z",
+            "rows": 760,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 760
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 760
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9880
+              },
+              "kickoff_before_deadline": {
+                "equal": 9880
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 760
+              }
+            ]
+          },
+          {
+            "gw": 34,
+            "deadline": "2023-04-29T10:00:00Z",
+            "rows": 761,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 761
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 761
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9893
+              },
+              "kickoff_before_deadline": {
+                "equal": 9893
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 761
+              }
+            ]
+          },
+          {
+            "gw": 35,
+            "deadline": "2023-05-06T12:30:00Z",
+            "rows": 762,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 762
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 762
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9906
+              },
+              "kickoff_before_deadline": {
+                "equal": 9906
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 762
+              }
+            ]
+          },
+          {
+            "gw": 36,
+            "deadline": "2023-05-13T10:00:00Z",
+            "rows": 763,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 763
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 763
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9919
+              },
+              "kickoff_before_deadline": {
+                "equal": 9919
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 763
+              }
+            ]
+          },
+          {
+            "gw": 37,
+            "deadline": "2023-05-20T10:00:00Z",
+            "rows": 765,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 765
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 765
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9945
+              },
+              "kickoff_before_deadline": {
+                "equal": 9945
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 765
+              }
+            ]
+          },
+          {
+            "gw": 38,
+            "deadline": "2023-05-28T14:00:00Z",
+            "rows": 775,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 775
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 775
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10075
+              },
+              "kickoff_before_deadline": {
+                "equal": 10075
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 775
+              }
+            ]
+          }
+        ]
+      },
+      "2023-24": {
+        "status": "compared",
+        "windows": [
+          {
+            "gw": 2,
+            "deadline": "2023-08-18T17:15:00Z",
+            "rows": 666,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 658,
+                "no_reference_code": 8
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 658,
+                "no_reference_code": 8
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8554
+              },
+              "kickoff_before_deadline": {
+                "equal": 8554
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 658
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 8
+              }
+            ]
+          },
+          {
+            "gw": 3,
+            "deadline": "2023-08-25T17:30:00Z",
+            "rows": 678,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 668,
+                "no_reference_code": 10
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 668,
+                "no_reference_code": 10
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8684
+              },
+              "kickoff_before_deadline": {
+                "equal": 8684
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 668
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 10
+              }
+            ]
+          },
+          {
+            "gw": 4,
+            "deadline": "2023-09-01T17:30:00Z",
+            "rows": 697,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 685,
+                "no_reference_code": 12
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 685,
+                "no_reference_code": 12
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8905
+              },
+              "kickoff_before_deadline": {
+                "equal": 8905
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 685
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 12
+              }
+            ]
+          },
+          {
+            "gw": 5,
+            "deadline": "2023-09-16T10:00:00Z",
+            "rows": 714,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 703,
+                "no_reference_code": 11
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 703,
+                "no_reference_code": 11
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9139
+              },
+              "kickoff_before_deadline": {
+                "equal": 9139
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 703
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 11
+              }
+            ]
+          },
+          {
+            "gw": 6,
+            "deadline": "2023-09-23T12:30:00Z",
+            "rows": 717,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 717
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 717
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9321
+              },
+              "kickoff_before_deadline": {
+                "equal": 9321
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 717
+              }
+            ]
+          },
+          {
+            "gw": 7,
+            "deadline": "2023-09-30T10:00:00Z",
+            "rows": 718,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 718
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 718
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9334
+              },
+              "kickoff_before_deadline": {
+                "equal": 9334
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 718
+              }
+            ]
+          },
+          {
+            "gw": 8,
+            "deadline": "2023-10-07T10:00:00Z",
+            "rows": 722,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 722
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 722
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9386
+              },
+              "kickoff_before_deadline": {
+                "equal": 9386
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 722
+              }
+            ]
+          },
+          {
+            "gw": 9,
+            "deadline": "2023-10-21T10:00:00Z",
+            "rows": 726,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 725,
+                "no_reference_code": 1
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 725,
+                "no_reference_code": 1
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9425
+              },
+              "kickoff_before_deadline": {
+                "equal": 9425
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 725
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 1
+              }
+            ]
+          },
+          {
+            "gw": 10,
+            "deadline": "2023-10-27T17:30:00Z",
+            "rows": 730,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 730
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 730
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9490
+              },
+              "kickoff_before_deadline": {
+                "equal": 9490
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 730
+              }
+            ]
+          },
+          {
+            "gw": 11,
+            "deadline": "2023-11-04T11:00:00Z",
+            "rows": 731,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 731
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 731
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9503
+              },
+              "kickoff_before_deadline": {
+                "equal": 9503
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 731
+              }
+            ]
+          },
+          {
+            "gw": 12,
+            "deadline": "2023-11-11T11:00:00Z",
+            "rows": 733,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 733
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 733
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9529
+              },
+              "kickoff_before_deadline": {
+                "equal": 9529
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 733
+              }
+            ]
+          },
+          {
+            "gw": 13,
+            "deadline": "2023-11-25T11:00:00Z",
+            "rows": 743,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 743
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 743
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9659
+              },
+              "kickoff_before_deadline": {
+                "equal": 9659
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 743
+              }
+            ]
+          },
+          {
+            "gw": 14,
+            "deadline": "2023-12-02T13:30:00Z",
+            "rows": 747,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 747
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 747
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9711
+              },
+              "kickoff_before_deadline": {
+                "equal": 9711
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 747
+              }
+            ]
+          },
+          {
+            "gw": 15,
+            "deadline": "2023-12-05T18:00:00Z",
+            "rows": 753,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 753
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 753
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9789
+              },
+              "kickoff_before_deadline": {
+                "equal": 9789
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 753
+              }
+            ]
+          },
+          {
+            "gw": 16,
+            "deadline": "2023-12-09T11:00:00Z",
+            "rows": 757,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 757
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 757
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9841
+              },
+              "kickoff_before_deadline": {
+                "equal": 9841
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 757
+              }
+            ]
+          },
+          {
+            "gw": 17,
+            "deadline": "2023-12-15T18:30:00Z",
+            "rows": 758,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 758
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 758
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9854
+              },
+              "kickoff_before_deadline": {
+                "equal": 9854
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 758
+              }
+            ]
+          },
+          {
+            "gw": 18,
+            "deadline": "2023-12-21T18:30:00Z",
+            "rows": 765,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 765
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 765
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9945
+              },
+              "kickoff_before_deadline": {
+                "equal": 9945
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 765
+              }
+            ]
+          },
+          {
+            "gw": 19,
+            "deadline": "2023-12-26T11:00:00Z",
+            "rows": 769,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 769
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 769
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9997
+              },
+              "kickoff_before_deadline": {
+                "equal": 9997
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 769
+              }
+            ]
+          },
+          {
+            "gw": 20,
+            "deadline": "2023-12-30T11:00:00Z",
+            "rows": 771,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 771
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 771
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10023
+              },
+              "kickoff_before_deadline": {
+                "equal": 10023
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 771
+              }
+            ]
+          },
+          {
+            "gw": 21,
+            "deadline": "2024-01-12T18:15:00Z",
+            "rows": 775,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 773,
+                "no_reference_code": 2
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 773,
+                "no_reference_code": 2
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10049
+              },
+              "kickoff_before_deadline": {
+                "equal": 10049
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 773
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 2
+              }
+            ]
+          },
+          {
+            "gw": 22,
+            "deadline": "2024-01-30T18:00:00Z",
+            "rows": 790,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 787,
+                "no_reference_code": 3
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 787,
+                "no_reference_code": 3
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10231
+              },
+              "kickoff_before_deadline": {
+                "equal": 10231
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 787
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 3
+              }
+            ]
+          },
+          {
+            "gw": 23,
+            "deadline": "2024-02-03T11:00:00Z",
+            "rows": 808,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 799,
+                "no_reference_code": 9
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 799,
+                "no_reference_code": 9
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10387
+              },
+              "kickoff_before_deadline": {
+                "equal": 10387
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 799
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 9
+              }
+            ]
+          },
+          {
+            "gw": 24,
+            "deadline": "2024-02-10T11:00:00Z",
+            "rows": 809,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 809
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 809
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10517
+              },
+              "kickoff_before_deadline": {
+                "equal": 10517
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 809
+              }
+            ]
+          },
+          {
+            "gw": 25,
+            "deadline": "2024-02-17T11:00:00Z",
+            "rows": 815,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 814,
+                "no_reference_code": 1
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 814,
+                "no_reference_code": 1
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10582
+              },
+              "kickoff_before_deadline": {
+                "equal": 10582
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 814
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 1
+              }
+            ]
+          },
+          {
+            "gw": 26,
+            "deadline": "2024-02-24T13:30:00Z",
+            "rows": 823,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 823
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 823
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10699
+              },
+              "kickoff_before_deadline": {
+                "equal": 10699
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 823
+              }
+            ]
+          },
+          {
+            "gw": 27,
+            "deadline": "2024-03-02T13:30:00Z",
+            "rows": 828,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 828
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 828
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10764
+              },
+              "kickoff_before_deadline": {
+                "equal": 10764
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 828
+              }
+            ]
+          },
+          {
+            "gw": 28,
+            "deadline": "2024-03-09T11:00:00Z",
+            "rows": 832,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 832
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 832
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10816
+              },
+              "kickoff_before_deadline": {
+                "equal": 10816
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 832
+              }
+            ]
+          },
+          {
+            "gw": 29,
+            "deadline": "2024-03-16T13:30:00Z",
+            "rows": 838,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 838
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 838
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10894
+              },
+              "kickoff_before_deadline": {
+                "equal": 10894
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 838
+              }
+            ]
+          },
+          {
+            "gw": 30,
+            "deadline": "2024-03-30T11:00:00Z",
+            "rows": 838,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 838
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 838
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10894
+              },
+              "kickoff_before_deadline": {
+                "equal": 10894
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 838
+              }
+            ]
+          },
+          {
+            "gw": 31,
+            "deadline": "2024-04-02T17:00:00Z",
+            "rows": 842,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 842
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 842
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10946
+              },
+              "kickoff_before_deadline": {
+                "equal": 10946
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 842
+              }
+            ]
+          },
+          {
+            "gw": 32,
+            "deadline": "2024-04-06T10:00:00Z",
+            "rows": 844,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 844
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 844
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10972
+              },
+              "kickoff_before_deadline": {
+                "equal": 10972
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 844
+              }
+            ]
+          },
+          {
+            "gw": 33,
+            "deadline": "2024-04-13T10:00:00Z",
+            "rows": 846,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 846
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 846
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10998
+              },
+              "kickoff_before_deadline": {
+                "equal": 10998
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 846
+              }
+            ]
+          },
+          {
+            "gw": 34,
+            "deadline": "2024-04-20T12:30:00Z",
+            "rows": 851,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 851
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 851
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 11063
+              },
+              "kickoff_before_deadline": {
+                "equal": 11063
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 851
+              }
+            ]
+          },
+          {
+            "gw": 35,
+            "deadline": "2024-04-27T10:00:00Z",
+            "rows": 856,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 856
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 856
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 11128
+              },
+              "kickoff_before_deadline": {
+                "equal": 11128
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 856
+              }
+            ]
+          },
+          {
+            "gw": 36,
+            "deadline": "2024-05-03T17:30:00Z",
+            "rows": 859,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 859
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 859
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 11167
+              },
+              "kickoff_before_deadline": {
+                "equal": 11167
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 859
+              }
+            ]
+          },
+          {
+            "gw": 37,
+            "deadline": "2024-05-11T10:00:00Z",
+            "rows": 859,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 859
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 859
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 11167
+              },
+              "kickoff_before_deadline": {
+                "equal": 11167
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 859
+              }
+            ]
+          },
+          {
+            "gw": 38,
+            "deadline": "2024-05-19T13:30:00Z",
+            "rows": 861,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 861
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 861
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 11193
+              },
+              "kickoff_before_deadline": {
+                "equal": 11193
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 861
+              }
+            ]
+          }
+        ]
+      },
+      "2024-25": {
+        "status": "compared",
+        "windows": [
+          {
+            "gw": 2,
+            "deadline": "2024-08-24T10:00:00Z",
+            "rows": 625,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 616,
+                "no_reference_code": 9
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 616,
+                "no_reference_code": 9
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8008
+              },
+              "kickoff_before_deadline": {
+                "equal": 8008
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 616
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 9
+              }
+            ]
+          },
+          {
+            "gw": 3,
+            "deadline": "2024-08-31T10:00:00Z",
+            "rows": 637,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 627,
+                "no_reference_code": 10
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 627,
+                "no_reference_code": 10
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8151
+              },
+              "kickoff_before_deadline": {
+                "equal": 8151
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 627
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 10
+              }
+            ]
+          },
+          {
+            "gw": 4,
+            "deadline": "2024-09-14T10:00:00Z",
+            "rows": 655,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 648,
+                "no_reference_code": 7
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 648,
+                "no_reference_code": 7
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8424
+              },
+              "kickoff_before_deadline": {
+                "equal": 8424
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 648
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 7
+              }
+            ]
+          },
+          {
+            "gw": 5,
+            "deadline": "2024-09-21T10:00:00Z",
+            "rows": 659,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 659
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 659
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8567
+              },
+              "kickoff_before_deadline": {
+                "equal": 8567
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 659
+              }
+            ]
+          },
+          {
+            "gw": 6,
+            "deadline": "2024-09-28T10:00:00Z",
+            "rows": 661,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 661
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 661
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8593
+              },
+              "kickoff_before_deadline": {
+                "equal": 8593
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 661
+              }
+            ]
+          },
+          {
+            "gw": 7,
+            "deadline": "2024-10-05T10:00:00Z",
+            "rows": 664,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 664
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 664
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8632
+              },
+              "kickoff_before_deadline": {
+                "equal": 8632
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 664
+              }
+            ]
+          },
+          {
+            "gw": 8,
+            "deadline": "2024-10-19T10:00:00Z",
+            "rows": 666,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 666
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 666
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8658
+              },
+              "kickoff_before_deadline": {
+                "equal": 8658
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 666
+              }
+            ]
+          },
+          {
+            "gw": 9,
+            "deadline": "2024-10-25T17:30:00Z",
+            "rows": 667,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 667
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 667
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8671
+              },
+              "kickoff_before_deadline": {
+                "equal": 8671
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 667
+              }
+            ]
+          },
+          {
+            "gw": 10,
+            "deadline": "2024-11-02T11:00:00Z",
+            "rows": 670,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 670
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 670
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8710
+              },
+              "kickoff_before_deadline": {
+                "equal": 8710
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 670
+              }
+            ]
+          },
+          {
+            "gw": 11,
+            "deadline": "2024-11-09T13:30:00Z",
+            "rows": 674,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 674
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 674
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8762
+              },
+              "kickoff_before_deadline": {
+                "equal": 8762
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 674
+              }
+            ]
+          },
+          {
+            "gw": 12,
+            "deadline": "2024-11-23T11:00:00Z",
+            "rows": 678,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 678
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 678
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8814
+              },
+              "kickoff_before_deadline": {
+                "equal": 8814
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 678
+              }
+            ]
+          },
+          {
+            "gw": 13,
+            "deadline": "2024-11-29T18:30:00Z",
+            "rows": 684,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 684
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 684
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8892
+              },
+              "kickoff_before_deadline": {
+                "equal": 8892
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 684
+              }
+            ]
+          },
+          {
+            "gw": 14,
+            "deadline": "2024-12-03T18:00:00Z",
+            "rows": 690,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 690
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 690
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8970
+              },
+              "kickoff_before_deadline": {
+                "equal": 8970
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 690
+              }
+            ]
+          },
+          {
+            "gw": 15,
+            "deadline": "2024-12-07T11:00:00Z",
+            "rows": 693,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 693
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 693
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9009
+              },
+              "kickoff_before_deadline": {
+                "equal": 9009
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 693
+              }
+            ]
+          },
+          {
+            "gw": 16,
+            "deadline": "2024-12-14T13:30:00Z",
+            "rows": 693,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 693
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 693
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9009
+              },
+              "kickoff_before_deadline": {
+                "equal": 9009
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 693
+              }
+            ]
+          },
+          {
+            "gw": 17,
+            "deadline": "2024-12-21T11:00:00Z",
+            "rows": 701,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 701
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 701
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9113
+              },
+              "kickoff_before_deadline": {
+                "equal": 9113
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 701
+              }
+            ]
+          },
+          {
+            "gw": 18,
+            "deadline": "2024-12-26T11:00:00Z",
+            "rows": 701,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 701
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 701
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9113
+              },
+              "kickoff_before_deadline": {
+                "equal": 9113
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 701
+              }
+            ]
+          },
+          {
+            "gw": 19,
+            "deadline": "2024-12-29T13:00:00Z",
+            "rows": 705,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 705
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 705
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9165
+              },
+              "kickoff_before_deadline": {
+                "equal": 9165
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 705
+              }
+            ]
+          },
+          {
+            "gw": 20,
+            "deadline": "2025-01-04T11:00:00Z",
+            "rows": 709,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 709
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 709
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9217
+              },
+              "kickoff_before_deadline": {
+                "equal": 9217
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 709
+              }
+            ]
+          },
+          {
+            "gw": 21,
+            "deadline": "2025-01-14T18:00:00Z",
+            "rows": 718,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 711,
+                "no_reference_code": 7
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 711,
+                "no_reference_code": 7
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9243
+              },
+              "kickoff_before_deadline": {
+                "equal": 9243
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 711
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 7
+              }
+            ]
+          },
+          {
+            "gw": 22,
+            "deadline": "2025-01-18T11:00:00Z",
+            "rows": 726,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 724,
+                "no_reference_code": 2
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 724,
+                "no_reference_code": 2
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9412
+              },
+              "kickoff_before_deadline": {
+                "equal": 9412
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 724
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 2
+              }
+            ]
+          },
+          {
+            "gw": 23,
+            "deadline": "2025-01-25T13:30:00Z",
+            "rows": 735,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 729,
+                "no_reference_code": 6
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 729,
+                "no_reference_code": 6
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9477
+              },
+              "kickoff_before_deadline": {
+                "equal": 9477
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 729
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 6
+              }
+            ]
+          },
+          {
+            "gw": 24,
+            "deadline": "2025-02-01T11:00:00Z",
+            "rows": 737,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 736,
+                "no_reference_code": 1
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 736,
+                "no_reference_code": 1
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9568
+              },
+              "kickoff_before_deadline": {
+                "equal": 9568
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 736
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 1
+              }
+            ]
+          },
+          {
+            "gw": 25,
+            "deadline": "2025-02-14T18:30:00Z",
+            "rows": 753,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 741,
+                "no_reference_code": 11,
+                "different": 1
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 741,
+                "no_reference_code": 11,
+                "different": 1
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9643,
+                "different": 3
+              },
+              "kickoff_before_deadline": {
+                "equal": 9643,
+                "different": 3
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 741
+              },
+              {
+                "nominal": "different",
+                "temporal": "different",
+                "rows": 1
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 11
+              }
+            ]
+          },
+          {
+            "gw": 26,
+            "deadline": "2025-02-21T18:30:00Z",
+            "rows": 759,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 758,
+                "different": 1
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 758,
+                "different": 1
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9864,
+                "different": 3
+              },
+              "kickoff_before_deadline": {
+                "equal": 9864,
+                "different": 3
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 758
+              },
+              {
+                "nominal": "different",
+                "temporal": "different",
+                "rows": 1
+              }
+            ]
+          },
+          {
+            "gw": 27,
+            "deadline": "2025-02-25T18:00:00Z",
+            "rows": 763,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 762,
+                "different": 1
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 762,
+                "different": 1
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9916,
+                "different": 3
+              },
+              "kickoff_before_deadline": {
+                "equal": 9916,
+                "different": 3
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 762
+              },
+              {
+                "nominal": "different",
+                "temporal": "different",
+                "rows": 1
+              }
+            ]
+          },
+          {
+            "gw": 28,
+            "deadline": "2025-03-08T11:00:00Z",
+            "rows": 765,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 764,
+                "no_reference_code": 1
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 764,
+                "no_reference_code": 1
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9932
+              },
+              "kickoff_before_deadline": {
+                "equal": 9932
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 764
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 1
+              }
+            ]
+          },
+          {
+            "gw": 29,
+            "deadline": "2025-03-15T13:30:00Z",
+            "rows": 769,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 769
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 769
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9997
+              },
+              "kickoff_before_deadline": {
+                "equal": 9997
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 769
+              }
+            ]
+          },
+          {
+            "gw": 30,
+            "deadline": "2025-04-01T17:15:00Z",
+            "rows": 769,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 769
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 769
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9997
+              },
+              "kickoff_before_deadline": {
+                "equal": 9997
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 769
+              }
+            ]
+          },
+          {
+            "gw": 31,
+            "deadline": "2025-04-05T10:00:00Z",
+            "rows": 771,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 771
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 771
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10023
+              },
+              "kickoff_before_deadline": {
+                "equal": 10023
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 771
+              }
+            ]
+          },
+          {
+            "gw": 32,
+            "deadline": "2025-04-12T10:00:00Z",
+            "rows": 772,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 772
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 772
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10036
+              },
+              "kickoff_before_deadline": {
+                "equal": 10036
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 772
+              }
+            ]
+          },
+          {
+            "gw": 33,
+            "deadline": "2025-04-19T12:30:00Z",
+            "rows": 778,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 778
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 778
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10114
+              },
+              "kickoff_before_deadline": {
+                "equal": 10114
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 778
+              }
+            ]
+          },
+          {
+            "gw": 34,
+            "deadline": "2025-04-26T10:00:00Z",
+            "rows": 779,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 779
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 779
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10127
+              },
+              "kickoff_before_deadline": {
+                "equal": 10127
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 779
+              }
+            ]
+          },
+          {
+            "gw": 35,
+            "deadline": "2025-05-02T17:30:00Z",
+            "rows": 780,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 780
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 780
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10140
+              },
+              "kickoff_before_deadline": {
+                "equal": 10140
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 780
+              }
+            ]
+          },
+          {
+            "gw": 36,
+            "deadline": "2025-05-10T12:30:00Z",
+            "rows": 781,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 781
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 781
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10153
+              },
+              "kickoff_before_deadline": {
+                "equal": 10153
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 781
+              }
+            ]
+          },
+          {
+            "gw": 37,
+            "deadline": "2025-05-16T17:00:00Z",
+            "rows": 781,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 781
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 781
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10153
+              },
+              "kickoff_before_deadline": {
+                "equal": 10153
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 781
+              }
+            ]
+          },
+          {
+            "gw": 38,
+            "deadline": "2025-05-25T13:30:00Z",
+            "rows": 781,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 781
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 781
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10153
+              },
+              "kickoff_before_deadline": {
+                "equal": 10153
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 781
+              }
+            ]
+          }
+        ]
+      },
+      "2025-26": {
+        "status": "compared",
+        "windows": [
+          {
+            "gw": 2,
+            "deadline": "2025-08-22T17:30:00Z",
+            "rows": 698,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 690,
+                "no_reference_code": 8
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 690,
+                "no_reference_code": 8
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 8970
+              },
+              "kickoff_before_deadline": {
+                "equal": 8970
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 690
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 8
+              }
+            ]
+          },
+          {
+            "gw": 3,
+            "deadline": "2025-08-30T10:00:00Z",
+            "rows": 709,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 705,
+                "no_reference_code": 4
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 705,
+                "no_reference_code": 4
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9165
+              },
+              "kickoff_before_deadline": {
+                "equal": 9165
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 705
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 4
+              }
+            ]
+          },
+          {
+            "gw": 4,
+            "deadline": "2025-09-13T10:00:00Z",
+            "rows": 738,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 712,
+                "no_reference_code": 26
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 712,
+                "no_reference_code": 26
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9256
+              },
+              "kickoff_before_deadline": {
+                "equal": 9256
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 712
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 26
+              }
+            ]
+          },
+          {
+            "gw": 5,
+            "deadline": "2025-09-20T10:00:00Z",
+            "rows": 740,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 740
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 740
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9620
+              },
+              "kickoff_before_deadline": {
+                "equal": 9620
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 740
+              }
+            ]
+          },
+          {
+            "gw": 6,
+            "deadline": "2025-09-27T10:00:00Z",
+            "rows": 741,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 741
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 741
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9633
+              },
+              "kickoff_before_deadline": {
+                "equal": 9633
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 741
+              }
+            ]
+          },
+          {
+            "gw": 7,
+            "deadline": "2025-10-03T17:30:00Z",
+            "rows": 742,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 742
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 742
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9646
+              },
+              "kickoff_before_deadline": {
+                "equal": 9646
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 742
+              }
+            ]
+          },
+          {
+            "gw": 8,
+            "deadline": "2025-10-18T10:00:00Z",
+            "rows": 743,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 743
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 743
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9659
+              },
+              "kickoff_before_deadline": {
+                "equal": 9659
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 743
+              }
+            ]
+          },
+          {
+            "gw": 9,
+            "deadline": "2025-10-24T17:30:00Z",
+            "rows": 745,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 745
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 745
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9685
+              },
+              "kickoff_before_deadline": {
+                "equal": 9685
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 745
+              }
+            ]
+          },
+          {
+            "gw": 10,
+            "deadline": "2025-11-01T13:30:00Z",
+            "rows": 746,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 746
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 746
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9698
+              },
+              "kickoff_before_deadline": {
+                "equal": 9698
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 746
+              }
+            ]
+          },
+          {
+            "gw": 11,
+            "deadline": "2025-11-08T11:00:00Z",
+            "rows": 748,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 747,
+                "no_reference_code": 1
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 747,
+                "no_reference_code": 1
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9711
+              },
+              "kickoff_before_deadline": {
+                "equal": 9711
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 747
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 1
+              }
+            ]
+          },
+          {
+            "gw": 12,
+            "deadline": "2025-11-22T11:00:00Z",
+            "rows": 752,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 752
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 752
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9776
+              },
+              "kickoff_before_deadline": {
+                "equal": 9776
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 752
+              }
+            ]
+          },
+          {
+            "gw": 13,
+            "deadline": "2025-11-29T13:30:00Z",
+            "rows": 755,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 755
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 755
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9815
+              },
+              "kickoff_before_deadline": {
+                "equal": 9815
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 755
+              }
+            ]
+          },
+          {
+            "gw": 14,
+            "deadline": "2025-12-02T18:00:00Z",
+            "rows": 755,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 755
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 755
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9815
+              },
+              "kickoff_before_deadline": {
+                "equal": 9815
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 755
+              }
+            ]
+          },
+          {
+            "gw": 15,
+            "deadline": "2025-12-06T11:00:00Z",
+            "rows": 758,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 758
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 758
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9854
+              },
+              "kickoff_before_deadline": {
+                "equal": 9854
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 758
+              }
+            ]
+          },
+          {
+            "gw": 16,
+            "deadline": "2025-12-13T13:30:00Z",
+            "rows": 759,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 759
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 759
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9867
+              },
+              "kickoff_before_deadline": {
+                "equal": 9867
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 759
+              }
+            ]
+          },
+          {
+            "gw": 17,
+            "deadline": "2025-12-20T11:00:00Z",
+            "rows": 760,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 760
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 760
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 9880
+              },
+              "kickoff_before_deadline": {
+                "equal": 9880
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 760
+              }
+            ]
+          },
+          {
+            "gw": 18,
+            "deadline": "2025-12-26T18:30:00Z",
+            "rows": 770,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 770
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 770
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10010
+              },
+              "kickoff_before_deadline": {
+                "equal": 10010
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 770
+              }
+            ]
+          },
+          {
+            "gw": 19,
+            "deadline": "2025-12-30T18:00:00Z",
+            "rows": 775,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 775
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 775
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10075
+              },
+              "kickoff_before_deadline": {
+                "equal": 10075
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 775
+              }
+            ]
+          },
+          {
+            "gw": 20,
+            "deadline": "2026-01-03T11:00:00Z",
+            "rows": 780,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 780
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 780
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10140
+              },
+              "kickoff_before_deadline": {
+                "equal": 10140
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 780
+              }
+            ]
+          },
+          {
+            "gw": 21,
+            "deadline": "2026-01-06T18:30:00Z",
+            "rows": 790,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 790
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 790
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10270
+              },
+              "kickoff_before_deadline": {
+                "equal": 10270
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 790
+              }
+            ]
+          },
+          {
+            "gw": 22,
+            "deadline": "2026-01-17T11:00:00Z",
+            "rows": 796,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 795,
+                "no_reference_code": 1
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 795,
+                "no_reference_code": 1
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10335
+              },
+              "kickoff_before_deadline": {
+                "equal": 10335
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 795
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 1
+              }
+            ]
+          },
+          {
+            "gw": 23,
+            "deadline": "2026-01-24T11:00:00Z",
+            "rows": 802,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 799,
+                "no_reference_code": 3
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 799,
+                "no_reference_code": 3
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10387
+              },
+              "kickoff_before_deadline": {
+                "equal": 10387
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 799
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 3
+              }
+            ]
+          },
+          {
+            "gw": 24,
+            "deadline": "2026-01-31T13:30:00Z",
+            "rows": 808,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 803,
+                "no_reference_code": 5
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 803,
+                "no_reference_code": 5
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10439
+              },
+              "kickoff_before_deadline": {
+                "equal": 10439
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 803
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 5
+              }
+            ]
+          },
+          {
+            "gw": 25,
+            "deadline": "2026-02-06T18:30:00Z",
+            "rows": 817,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 811,
+                "no_reference_code": 6
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 811,
+                "no_reference_code": 6
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10543
+              },
+              "kickoff_before_deadline": {
+                "equal": 10543
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 811
+              },
+              {
+                "nominal": "no_reference_code",
+                "temporal": "no_reference_code",
+                "rows": 6
+              }
+            ]
+          },
+          {
+            "gw": 26,
+            "deadline": "2026-02-10T18:00:00Z",
+            "rows": 817,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 817
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 817
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10621
+              },
+              "kickoff_before_deadline": {
+                "equal": 10621
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 817
+              }
+            ]
+          },
+          {
+            "gw": 27,
+            "deadline": "2026-02-21T13:30:00Z",
+            "rows": 817,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 817
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 817
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10621
+              },
+              "kickoff_before_deadline": {
+                "equal": 10621
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 817
+              }
+            ]
+          },
+          {
+            "gw": 28,
+            "deadline": "2026-02-27T18:30:00Z",
+            "rows": 818,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 818
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 818
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10634
+              },
+              "kickoff_before_deadline": {
+                "equal": 10634
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 818
+              }
+            ]
+          },
+          {
+            "gw": 29,
+            "deadline": "2026-03-03T18:00:00Z",
+            "rows": 819,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 819
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 819
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10647
+              },
+              "kickoff_before_deadline": {
+                "equal": 10647
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 819
+              }
+            ]
+          },
+          {
+            "gw": 30,
+            "deadline": "2026-03-14T13:30:00Z",
+            "rows": 820,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 820
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 820
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10660
+              },
+              "kickoff_before_deadline": {
+                "equal": 10660
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 820
+              }
+            ]
+          },
+          {
+            "gw": 31,
+            "deadline": "2026-03-20T18:30:00Z",
+            "rows": 822,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 822
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 822
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10686
+              },
+              "kickoff_before_deadline": {
+                "equal": 10686
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 822
+              }
+            ]
+          },
+          {
+            "gw": 32,
+            "deadline": "2026-04-10T17:30:00Z",
+            "rows": 825,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 825
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 825
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10725
+              },
+              "kickoff_before_deadline": {
+                "equal": 10725
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 825
+              }
+            ]
+          },
+          {
+            "gw": 33,
+            "deadline": "2026-04-18T10:00:00Z",
+            "rows": 826,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 826
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 826
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10738
+              },
+              "kickoff_before_deadline": {
+                "equal": 10738
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 826
+              }
+            ]
+          },
+          {
+            "gw": 34,
+            "deadline": "2026-04-24T17:30:00Z",
+            "rows": 829,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 829
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 829
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10777
+              },
+              "kickoff_before_deadline": {
+                "equal": 10777
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 829
+              }
+            ]
+          },
+          {
+            "gw": 35,
+            "deadline": "2026-05-01T17:30:00Z",
+            "rows": 830,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 830
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 830
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10790
+              },
+              "kickoff_before_deadline": {
+                "equal": 10790
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 830
+              }
+            ]
+          },
+          {
+            "gw": 36,
+            "deadline": "2026-05-09T10:00:00Z",
+            "rows": 832,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 832
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 832
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10816
+              },
+              "kickoff_before_deadline": {
+                "equal": 10816
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 832
+              }
+            ]
+          },
+          {
+            "gw": 37,
+            "deadline": "2026-05-15T17:30:00Z",
+            "rows": 838,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 838
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 838
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10894
+              },
+              "kickoff_before_deadline": {
+                "equal": 10894
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 838
+              }
+            ]
+          },
+          {
+            "gw": 38,
+            "deadline": "2026-05-24T13:30:00Z",
+            "rows": 840,
+            "diagnostics": {
+              "missing_event_times": 0,
+              "differing_row_membership": 0,
+              "kickoffs_within_four_hours": 0
+            },
+            "statuses": {
+              "nominal_gw": {
+                "all_compared_equal": 840
+              },
+              "kickoff_before_deadline": {
+                "all_compared_equal": 840
+              }
+            },
+            "cells": {
+              "nominal_gw": {
+                "equal": 10920
+              },
+              "kickoff_before_deadline": {
+                "equal": 10920
+              }
+            },
+            "transitions": [
+              {
+                "nominal": "all_compared_equal",
+                "temporal": "all_compared_equal",
+                "rows": 840
+              }
+            ]
+          }
+        ]
+      },
+      "2026-27": {
+        "status": "no_reference_season"
+      }
+    },
+    "comparisons_sha256": "2d82962b71db529ab9596e4a4662e772bc635f3c8ac662795e19139c7bc7a78b",
+    "training_admitted": false,
+    "production_changed": false,
+    "limitations": [
+      "retrospective_final_labels_not_historical_versions",
+      "kickoff_before_deadline_does_not_prove_match_finished_or_data_published",
+      "snapshot_can_predate_deadline_and_latest_matches",
+      "unknown_event_times_invalidate_code_temporal_total",
+      "missing_reference_rows_not_imputed_to_zero",
+      "GW1_excluded_due_to_prior_season_semantics",
+      "publication_and_identity_witnesses_not_revalidated"
+    ]
+  },
+  "summary": {
+    "statuses": {
+      "all_compared_equal": 138544,
+      "no_reference_code": 283,
+      "different": 3
+    },
+    "cells": {
+      "equal": 1801102,
+      "different": 9
+    },
+    "positive_snapshot_minutes_statuses": {
+      "all_compared_equal": 91496,
+      "different": 3
+    }
+  },
+  "verification": {
+    "reproduced_byte_for_byte": true,
+    "tests_passed": 1547,
+    "tests_skipped": 1,
+    "tests_deselected": 79
+  },
+  "production_changed": false,
+  "training_admitted": false
+}
