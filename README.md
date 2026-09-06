@@ -111,7 +111,7 @@ de modelos por hash y exportación revisable, sin promover modelos al runtime.
 
 La capa experimental conserva los datos crudos fuera de Git, con manifiestos,
 SHA-256, fuentes fijadas por commit y auditorías reproducibles. El
-[registro de gates G1–G80](experiments/data_ground_truth/README.md) contiene
+[registro de gates G1–G81](experiments/data_ground_truth/README.md) contiene
 adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 
 | Capa | Cobertura verificada | Límite pendiente |
@@ -160,6 +160,7 @@ adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 | Archivo consolidado, G78 | G55 más 39 directorios y 27 archivos explícitos; 30.295 rutas, 27.449 contenidos únicos (3.189.886.957 bytes) | Corte interno con grupo StatsBomb separado; no añade etiquetas ni acredita respaldo externo |
 | Libros históricos, G79 | Tres XLSM, nueve hojas y 2.266 filas de precios/métricas agregadas preservadas | Sin código oficial, fixture ni GW; nombres de archivo no acreditan período; cero nuevas temporadas completas |
 | Búsqueda hasta deadline, G80 | Veinte horas adicionales de GHArchive verificadas para GW32 2021/22 y GW23 2022/23 | Sin testigos nuevos; calendario sigue en 195/199; resultado negativo acotado al repositorio y horas consultadas |
+| Antigüedad de calendarios, G81 | Tres ventanas pendientes tienen calendarios anteriores publicados, de 14,65–20,97 días; diagnóstico de cambios por club/GW | 9, 35 y 23 campos difieren de referencias posteriores; selección sigue 195/199 y no se admiten referencias futuras como entradas |
 | Collector propio, G36 | 55 bundles públicos; 34.512 estados de jugadores y 20.900 observaciones de fixtures | Dos candidatos anteriores a GW2/GW3 2026/27 vinculados al cierre de ingesta; evidencia interna identificada en el índice común G37 |
 | Reglas y chips de snapshots | Explícitos desde GW16 de 2024/25 y en toda 2025/26 | Faltan reglas históricas anteriores e interpretación de overrides |
 | Reglas documentales oficiales, G38 | 10 artículos archivados, 30 afirmaciones parciales en seis temporadas | Descargas actuales: la fecha del artículo no prueba disponibilidad histórica; no son un intérprete de reglas |

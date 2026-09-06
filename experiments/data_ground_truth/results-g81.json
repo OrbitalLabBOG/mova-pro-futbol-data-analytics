@@ -1,0 +1,97 @@
+{
+  "version": "historical-data-g81",
+  "audit_report_sha256": "c2a314d8cb274b4b7544d984c2246057dae690d37d4467700db05fc3224af55b",
+  "audit": {
+    "version": "calendar-staleness-audit-v1",
+    "parent_report_sha256": "ad90cb01c53b3cc39d384c3b075e70b8e8c64edf0e8ddc2df5b63f0527cd085b",
+    "fixture_audit_sha256": "448a774a7a32815a64655999542af121e188a6fbcd58cd1847430c1a0ba47c24",
+    "implementation_sha256": "9a8fa3bae336319b03f5c6d43011cfbdf9931d4547838d7b2498f060a81a7b8e",
+    "targets": 4,
+    "older_published_calendars": 3,
+    "summary": [
+      {
+        "season": "2021-22",
+        "gw": 31,
+        "status": "older_published_calendar_only",
+        "origin_gw": 30,
+        "nominal_commit_age_hours": 351.7111111111111,
+        "available_at": "2022-03-18T18:17:35Z",
+        "calendar_fixtures": 380,
+        "fields_different": 9,
+        "fixtures_different": 6,
+        "future_or_unknown_fields_different": 9,
+        "event_fields_different": 3,
+        "six_GW_club_count_changes": 6,
+        "older_unassigned_fixtures": 6,
+        "age_passes": {
+          "14": false,
+          "21": true,
+          "28": true
+        }
+      },
+      {
+        "season": "2021-22",
+        "gw": 32,
+        "status": "older_published_calendar_only",
+        "origin_gw": 30,
+        "nominal_commit_age_hours": 503.2111111111111,
+        "available_at": "2022-03-18T18:17:35Z",
+        "calendar_fixtures": 380,
+        "fields_different": 35,
+        "fixtures_different": 26,
+        "future_or_unknown_fields_different": 35,
+        "event_fields_different": 9,
+        "six_GW_club_count_changes": 22,
+        "older_unassigned_fixtures": 6,
+        "age_passes": {
+          "14": false,
+          "21": true,
+          "28": true
+        }
+      },
+      {
+        "season": "2022-23",
+        "gw": 23,
+        "status": "older_published_calendar_only",
+        "origin_gw": 22,
+        "nominal_commit_age_hours": 432.78194444444443,
+        "available_at": "2023-01-24T10:13:06Z",
+        "calendar_fixtures": 380,
+        "fields_different": 23,
+        "fixtures_different": 19,
+        "future_or_unknown_fields_different": 23,
+        "event_fields_different": 4,
+        "six_GW_club_count_changes": 8,
+        "older_unassigned_fixtures": 9,
+        "age_passes": {
+          "14": false,
+          "21": true,
+          "28": true
+        }
+      },
+      {
+        "season": "2026-27",
+        "gw": 1,
+        "status": "no_previously_selected_public_calendar"
+      }
+    ],
+    "selected_calendar_coverage_unchanged": "195/199",
+    "training_admitted": false,
+    "production_changed": false,
+    "new_FPL_labels": 0,
+    "limitations": [
+      "availability_and_freshness_are_different_measurements",
+      "age_is_Git_commit_age_not_API_capture_age",
+      "later_unproven_snapshot_is_diagnostic_not_predeadline_ground_truth",
+      "horizon_counts_describe_snapshot_schedules_not_realized_matches",
+      "age_sensitivity_does_not_change_existing_selection_or_admission_thresholds",
+      "no_previous_selected_calendar_does_not_prove_no_public_source_exists"
+    ],
+    "artifacts": {
+      "older_observed_calendars.json": "2606b8d9d746735ee5156ea3cb1d7764a32731a2bcb23d1c2e36fa897f698aaa",
+      "later_reference_diagnostics.json": "dcf99ac98a8b698b8743421dfef5631812855a5d40e6ce5e17c6f1eb4837957a"
+    }
+  },
+  "reproduction_identical": true,
+  "gt_unchanged": true
+}
