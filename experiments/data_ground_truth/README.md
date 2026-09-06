@@ -116,8 +116,10 @@ La métrica predeadline verificada de este lote es **0%**, intencionalmente expl
   del README mezcla cierre de GW y deadline: no constituye prueba temporal por fila.
 - [StatsBomb Open Data](https://github.com/hudl/open-data): su
   [inventario](https://raw.githubusercontent.com/hudl/open-data/master/data/competitions.json)
-  lista Premier 2015/16 y 2003/04, fuera de nuestras diez temporadas. Puede apoyar
-  investigación de eventos, pero no cierra directamente esta brecha histórica FPL.
+  lista Premier 2015/16 y 2003/04. En el corte inicial ambas quedaban fuera del
+  canónico de diez temporadas; GT v7 ya incluye etiquetas FPL de 2015/16. Es un
+  candidato para enriquecer esa temporada con eventos de otra fuente; aún falta
+  adquirirlos y medir su cobertura e identidad. No aporta por sí solo etiquetas FPL.
 - Football-data.co.uk: candidato para contraste de resultados/cuotas por partido;
   las páginas oficiales devolvieron error al consultarlas en esta iteración. No se
   contabiliza nueva cobertura ni se trata una cuota de cierre como previa al deadline.
