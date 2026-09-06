@@ -1,0 +1,58 @@
+{
+  "version": "historical-data-g91",
+  "audit_report_sha256": "821ee27f3ccc695c8ad7257a80372f141f4cb4aea6f7bafcc5020dfe199174dd",
+  "audit": {
+    "version": "early-identity-evidence-v1",
+    "manifest_sha256": {
+      "early-fpl-json-g88": "9ed3ca7f5e83daff8e85cde6bc928f82ac0f82ecb54a17a5fcd5b107232b9326",
+      "early-fpl-state-history-g88": "b097b408189ed0fb7e6449f58980b5688942f5bd3a43cd01b8750ba3262d94a3",
+      "early-fpl-successor-g90": "7cdf50da4cc37f0a45f7ab17b5579e7916ceeaa315fbe5c8fbb2089f5793705e"
+    },
+    "later_profile_sha256": "a59256902b2efdc734dc6f86494b54d6cf1e512df90ba14cef95bf03de786865",
+    "confirmation_profile_sha256": "c40f7e6a74160f3a151fb32ee79d5843e87daf58e1a002ccfff412a224804264",
+    "gt_dataset_id": "d4baf849fb4a051be103f8c469e61a4753edb0b4004f980a000fe5c86ef573db",
+    "gt_manifest_sha256": "dfedf1d67e1432149704f07f788df3fef1f6f68e752603404ebffe4769289ccf",
+    "implementation_sha256": "dab1e13a846e9d6c3ba44db6fd81aee36939e194760b9111da6880f91d8bc546",
+    "reference": {
+      "canonical_code": 112516,
+      "season_fpl_id": 93,
+      "gt_rows": 38,
+      "minutes": 12,
+      "points": 1,
+      "reference_method": "full_name_later_profile_and_same_season_annual_totals"
+    },
+    "raw_records_checked": 65,
+    "target_absent_records": 0,
+    "evidence_records": 65,
+    "unique_source_mappings": 50,
+    "observed_codes": [
+      81132
+    ],
+    "differing_code_mappings": 50,
+    "global_alias_admitted": false,
+    "training_admitted": false,
+    "source_labels_modified": false,
+    "production_changed": false,
+    "limitations": [
+      "corroborated_candidate_not_universal_alias",
+      "no_exact_code_change_date_or_cause_proven",
+      "annual_total_agreement_not_independent_match_label_recovery",
+      "raw_observed_codes_remain_unchanged",
+      "references_may_overlap_existing_GT_identity_provenance"
+    ],
+    "artifacts": {
+      "source_identity_evidence.json": "33b5c915dfdf77621921e94a6b077c825ba4a72ca6e8ba8cb513a05ad010d185",
+      "candidate_identity_crosswalk.csv": "41e7aff35d9a0df509fb1e7835e0413345459646f7c8b9c0ae749b37df5e9563"
+    }
+  },
+  "reproduction_identical": true,
+  "discovery_receipt": {
+    "url": "https://s3.eu-central-1.amazonaws.com/fpl.data/db/history201314.json",
+    "status": "failed",
+    "error": "fallo GET tras 1 intentos: https://s3.eu-central-1.amazonaws.com/fpl.data/db/history201314.json (HTTP 403)",
+    "downloaded_bytes": 0,
+    "recorded_at": "2026-09-06T20:06:06.701683+00:00",
+    "linked_from": "https://www.fplanalytics.com/history1314.html"
+  },
+  "discovery_receipt_sha256": "4cf46c61424f2cf523cdc4d2f360f071ffef4b80aa0c5acc3d80a08f03eb01f0"
+}
