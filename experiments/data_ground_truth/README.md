@@ -1897,3 +1897,30 @@ revalida también el padre en una carpeta separada. Suite: **1.509 passed,
 aislamiento de temporada, identidad y conservación de valores anteriores.
 [Resultados G34](results-g34.json). La cobertura no acredita frescura suficiente
 para replay completo: GT v5, entrenamiento y producción continúan intactos.
+
+## Gate G35 en curso: ampliar horas de publicación
+
+La rama experimental `feat/extended-calendar-publication` amplía la búsqueda para
+las ocho ventanas pendientes G34. Examina desde la tercera hora del commit hasta
+el offset 24, siempre antes del deadline, reteniendo PushEvent y PullRequestEvent
+públicos fusionados en la misma adquisición. Detiene cada ventana al acreditar
+un testigo. Un evento ausente no se interpreta como prueba de no publicación.
+
+`calendar_publication_extension` conserva objetos por SHA y reportes horarios;
+`calendar_extension_selection` revalida el padre y cada testigo antes de combinar
+la selección. La adquisición en curso usa `calendar-publication-extension-v1`.
+No se declara cerrado este gate ni se modifica la cobertura aceptada G34 hasta
+finalizar la búsqueda, reproducir índices y verificar la selección conjunta.
+
+```bash
+python -m experiments.data_ground_truth.calendar_publication_extension \
+  --base-root "$EXPERIMENTS_ROOT" --out "$CALENDAR_EXTENSION_ROOT" --max-offset 24
+python -m experiments.data_ground_truth.calendar_extension_selection \
+  --base-root "$EXPERIMENTS_ROOT" --extension-root "$CALENDAR_EXTENSION_ROOT" \
+  --out "$CALENDAR_EXTENSION_SELECTION_ROOT"
+```
+
+El primer proceso puede repetir la evaluación desde horas cacheadas con
+`--offline`; no debe reiniciarse una adquisición activa por un timeout de
+observación. Suite del código en esta etapa: 1.512 passed, 1 skipped,
+79 deselected. GT v5, entrenamiento y producción permanecen intactos.
