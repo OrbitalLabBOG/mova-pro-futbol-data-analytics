@@ -1,0 +1,193 @@
+{
+  "version": "historical-data-g23",
+  "cutoff_date_colombia": "2026-09-06",
+  "acquisition": {
+    "version": "fixture-history-v1",
+    "repository": "vaastav/Fantasy-Premier-League",
+    "pinned_revision": "9779cdbc0c07f6c900c2d0c181ddf6bb9c800f88",
+    "git_log_sha256": "64df175aaba47154831659b19ff3888312ed29c1bd433f96fb9ed4c8c28c151b",
+    "implementation_sha256": "a498071b9834426358ba76ad62454546131925e5d6d6f7c042535af6b9e57677",
+    "expected_versions": 254,
+    "errors": [],
+    "deleted_versions": [],
+    "bytes": 86020330,
+    "distinct_objects": 254,
+    "eligible_predeadline": false,
+    "production_changed": false,
+    "limitation": "Git_commit_time_is_not_verified_publication_time"
+  },
+  "audit": {
+    "version": "fixture-history-audit-v1",
+    "manifest_sha256": "8a8e51d6dd0df3e6aeb62474577e004918eeea157bd88ac8fcf23f202660f8fd",
+    "selection_report_sha256": "1ace4506377f6bf92ff79d71f7b1083070f273c58f802518754f96fccb87b6fc",
+    "implementation_sha256": "7b949db58da8943e673f42199a4f87bc6e98967114a362f39490fa3af9feb9ac",
+    "versions": 254,
+    "errors": 0,
+    "seasons": {
+      "2018-19": {
+        "versions": 1,
+        "row_counts": [
+          380
+        ],
+        "first_commit": "2019-08-16T21:23:36+00:00",
+        "last_commit": "2019-08-16T21:23:36+00:00",
+        "compared_deadlines": 0,
+        "with_prior_commit": 0,
+        "within_48h": 0,
+        "within_7d": 0,
+        "max_nominal_age_hours": null
+      },
+      "2019-20": {
+        "versions": 45,
+        "row_counts": [
+          380
+        ],
+        "first_commit": "2019-07-18T13:08:50+00:00",
+        "last_commit": "2020-07-27T09:22:32+00:00",
+        "compared_deadlines": 0,
+        "with_prior_commit": 0,
+        "within_48h": 0,
+        "within_7d": 0,
+        "max_nominal_age_hours": null
+      },
+      "2020-21": {
+        "versions": 40,
+        "row_counts": [
+          380
+        ],
+        "first_commit": "2020-08-21T04:49:25+00:00",
+        "last_commit": "2021-05-24T08:22:40+00:00",
+        "compared_deadlines": 6,
+        "with_prior_commit": 6,
+        "within_48h": 4,
+        "within_7d": 5,
+        "max_nominal_age_hours": 176.52055555555555
+      },
+      "2021-22": {
+        "versions": 40,
+        "row_counts": [
+          380
+        ],
+        "first_commit": "2021-07-21T20:57:13+00:00",
+        "last_commit": "2022-05-23T11:50:22+00:00",
+        "compared_deadlines": 38,
+        "with_prior_commit": 38,
+        "within_48h": 19,
+        "within_7d": 34,
+        "max_nominal_age_hours": 289.3880555555556
+      },
+      "2022-23": {
+        "versions": 38,
+        "row_counts": [
+          380
+        ],
+        "first_commit": "2022-07-16T16:13:47+00:00",
+        "last_commit": "2023-05-29T06:53:24+00:00",
+        "compared_deadlines": 38,
+        "with_prior_commit": 38,
+        "within_48h": 20,
+        "within_7d": 34,
+        "max_nominal_age_hours": 798.8283333333334
+      },
+      "2023-24": {
+        "versions": 38,
+        "row_counts": [
+          380
+        ],
+        "first_commit": "2023-07-31T13:29:10+00:00",
+        "last_commit": "2024-05-27T18:05:02+00:00",
+        "compared_deadlines": 38,
+        "with_prior_commit": 38,
+        "within_48h": 21,
+        "within_7d": 32,
+        "max_nominal_age_hours": 268.0138888888889
+      },
+      "2024-25": {
+        "versions": 37,
+        "row_counts": [
+          380
+        ],
+        "first_commit": "2024-08-02T08:16:31+00:00",
+        "last_commit": "2025-06-04T15:20:23+00:00",
+        "compared_deadlines": 38,
+        "with_prior_commit": 38,
+        "within_48h": 20,
+        "within_7d": 32,
+        "max_nominal_age_hours": 288.95972222222224
+      },
+      "2025-26": {
+        "versions": 12,
+        "row_counts": [
+          380
+        ],
+        "first_commit": "2025-08-01T08:49:42+00:00",
+        "last_commit": "2026-06-17T12:07:17+00:00",
+        "compared_deadlines": 38,
+        "with_prior_commit": 38,
+        "within_48h": 6,
+        "within_7d": 11,
+        "max_nominal_age_hours": 2197.303888888889
+      },
+      "2026-27": {
+        "versions": 3,
+        "row_counts": [
+          380
+        ],
+        "first_commit": "2026-08-04T08:38:11+00:00",
+        "last_commit": "2026-08-28T09:47:53+00:00",
+        "compared_deadlines": 3,
+        "with_prior_commit": 3,
+        "within_48h": 2,
+        "within_7d": 2,
+        "max_nominal_age_hours": 175.70194444444445
+      }
+    },
+    "observed_field_changes": {
+      "kickoff_time": 2020,
+      "event": 387
+    },
+    "artifacts": {
+      "versions.json": "2aa6885219c376a177c37e01aa7967c5521575d46c26013119ce0c2f35069984",
+      "changes.json": "24ac832ffe4fb026626d82fe5a95c61d801704a85c03013f1a423cbbe7c53021",
+      "nominal_candidates.json": "71ec50f2518b4651bee9dfe3acd34622a55be936a7064d55cb2a4632da45211d",
+      "errors.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    "eligible_predeadline": false,
+    "eligible_training": false,
+    "production_changed": false,
+    "limitations": [
+      "Git_time_is_source_claim_only",
+      "old_calendar_is_not_guaranteed_latest_known_calendar",
+      "no_fixture_or_team_ID_mapping_across_seasons"
+    ]
+  },
+  "git_provenance": {
+    "shallow": false,
+    "reachable_commits": 531,
+    "revision": "9779cdbc0c07f6c900c2d0c181ddf6bb9c800f88",
+    "fixture_paths_in_full_history": 9
+  },
+  "totals": {
+    "fixture_version_rows": 96520,
+    "compared_deadlines": 199,
+    "with_prior_git_commit": 199,
+    "within_48h": 92,
+    "within_7d": 150,
+    "verified_publication_times": 0
+  },
+  "verification": {
+    "report_reproduced_byte_for_byte": true,
+    "implementation_hashes_verified": true,
+    "local_tests_passed": 1460,
+    "local_tests_skipped": 1,
+    "local_tests_deselected": 79
+  },
+  "pending": [
+    "public push witnesses for fixture versions",
+    "denser 2025-26 fixture history",
+    "historical rule interpretation",
+    "78 kickoff discrepancies",
+    "historical eligible universe"
+  ],
+  "production_changed": false
+}

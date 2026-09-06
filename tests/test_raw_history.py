@@ -1105,3 +1105,29 @@ def test_bootstrap_rule_extraction_preserves_unknown_sections_and_excludes_event
     assert configured['scoring']['goals_scored']['GKP']==10
     with pytest.raises(ValueError,match='calendar'):extract(snapshot,dict(candidate,deadline='2024-08-16T18:30:00Z'))
     with pytest.raises(ValueError,match='rules section'):extract(dict(snapshot,game_settings=[]),candidate)
+
+
+def test_fixture_history_inventory_preserves_changes_and_excludes_deletions():
+    from experiments.data_ground_truth.fixture_history import inventory
+    sha='a'*40;blob='b'*40;zero='0'*40
+    header=f'commit\t{sha}\t2024-08-01T12:00:00Z\t2024-08-01T12:00:00Z\n'
+    log=header+f':000000 100644 {zero} {blob} A\tdata/2024-25/fixtures.csv\n'
+    versions,excluded=inventory(log.encode())
+    assert len(versions)==1 and versions[0]['new_blob']==blob and not excluded
+    deleted=header+f':100644 000000 {blob} {zero} D\tdata/2024-25/fixtures.csv\n'
+    assert inventory(deleted.encode())[0]==[]
+    with pytest.raises(ValueError,match='path'):inventory(log.replace('fixtures.csv','players.csv').encode())
+
+
+def test_fixture_csv_preserves_unassigned_events_and_rejects_ambiguous_identity():
+    from experiments.data_ground_truth.fixture_history_audit import parse
+    header='id,event,kickoff_time,team_h,team_a,started,finished\n'
+    row='1,,,1,2,,False\n'
+    result=parse((header+row).encode())
+    assert result[0]['event'] is None and result[0]['kickoff_time'] is None and result[0]['started'] is None
+    assert result[0]['finished'] is False and not result[0]['finished_provisional_present']
+    played=parse((header+'1,2.0,2024-08-16T20:00:00+01:00,1,2,True,False\n').encode())
+    assert played[0]['event']==2 and played[0]['kickoff_time']=='2024-08-16T19:00:00+00:00'
+    for bad in [header+row+row,header+'1,,,1,1,,False\n',header+'1,,,1,2,yes,False\n',
+                header+'1,2,2024-08-16T19:00:00,1,2,,False\n',header+'1,2.5,,1,2,,False\n']:
+        with pytest.raises(ValueError):parse(bad.encode())
