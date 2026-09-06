@@ -1,0 +1,208 @@
+{
+  "version": "historical-data-g65",
+  "audit_report_sha256": "6f27d1eb19017ed52ba5b16551c28e35fe606259c37855c9f0d63ef3d25eed3c",
+  "audit": {
+    "version": "lineup-integrity-v1",
+    "dataset_id": "d4baf849fb4a051be103f8c469e61a4753edb0b4004f980a000fe5c86ef573db",
+    "details_report_sha256": "b8a70cc8e53302242a6ee0d7d395bded0829c33652aa522f0863b1c3d1baf6eb",
+    "supplemental_report_sha256": "504cfd547e9b2ca9374214cbee1ad9a85cd6f4a1ae9df660b2bad93cb372a186",
+    "raw_manifest_sha256": "b4807899c1ef38cd5279b1c9b3eb5a74de8fa5995733f08f024b5d19fedf7c01",
+    "history_manifest_sha256": "8137b8fbb541d70aaf7839a8bf98c2261e845f7deac7c093e571ed7e049debe1",
+    "implementation_sha256": "e020bb97116a96a16c93b4bb695bfff64a6d3d9bac0ea20aadef4868c60a6a4a",
+    "metadata_sources": [
+      {
+        "path": "data/2025-2026/By Gameweek/GW1/players.csv",
+        "sha256": "8762cd3d16a72c3b13f7a8b94b50dc42476f4a13bfc39db53e59e28bb7fe976e"
+      },
+      {
+        "path": "data/2025-2026/By Gameweek/GW10/players.csv",
+        "sha256": "d84a51d3258d97fd9eb4be0717f13e4435ff113b97d5ce13ebf1d34f62315e7e"
+      },
+      {
+        "path": "data/2025-2026/By Gameweek/GW11/players.csv",
+        "sha256": "d84a51d3258d97fd9eb4be0717f13e4435ff113b97d5ce13ebf1d34f62315e7e"
+      },
+      {
+        "path": "data/2025-2026/By Gameweek/GW12/players.csv",
+        "sha256": "d84a51d3258d97fd9eb4be0717f13e4435ff113b97d5ce13ebf1d34f62315e7e"
+      },
+      {
+        "path": "data/2025-2026/By Gameweek/GW13/players.csv",
+        "sha256": "d84a51d3258d97fd9eb4be0717f13e4435ff113b97d5ce13ebf1d34f62315e7e"
+      },
+      {
+        "path": "data/2025-2026/By Gameweek/GW14/players.csv",
+        "sha256": "d84a51d3258d97fd9eb4be0717f13e4435ff113b97d5ce13ebf1d34f62315e7e"
+      },
+      {
+        "path": "data/2025-2026/By Gameweek/GW15/players.csv",
+        "sha256": "d84a51d3258d97fd9eb4be0717f13e4435ff113b97d5ce13ebf1d34f62315e7e"
+      },
+      {
+        "path": "data/2025-2026/By Gameweek/GW16/players.csv",
+        "sha256": "d84a51d3258d97fd9eb4be0717f13e4435ff113b97d5ce13ebf1d34f62315e7e"
+      },
+      {
+        "path": "data/2025-2026/By Gameweek/GW17/players.csv",
+        "sha256": "d84a51d3258d97fd9eb4be0717f13e4435ff113b97d5ce13ebf1d34f62315e7e"
+      },
+      {
+        "path": "data/2025-2026/By Gameweek/GW18/players.csv",
+        "sha256": "d84a51d3258d97fd9eb4be0717f13e4435ff113b97d5ce13ebf1d34f62315e7e"
+      },
+      {
+        "path": "data/2025-2026/By Gameweek/GW19/players.csv",
+        "sha256": "d84a51d3258d97fd9eb4be0717f13e4435ff113b97d5ce13ebf1d34f62315e7e"
+      },
+      {
+        "path": "data/2025-2026/By Gameweek/GW2/players.csv",
+        "sha256": "840bf611e9ffc29aada8fb367d889f2c19fceeeaa094c76658a601f3515b6ee8"
+      },
+      {
+        "path": "data/2025-2026/By Gameweek/GW20/players.csv",
+        "sha256": "c82d482577d4dcebdf2ed530bfcf5d987e5a1a3d50cfecf605504f291f918731"
+      },
+      {
+        "path": "data/2025-2026/By Gameweek/GW21/players.csv",
+        "sha256": "c82d482577d4dcebdf2ed530bfcf5d987e5a1a3d50cfecf605504f291f918731"
+      },
+      {
+        "path": "data/2025-2026/By Gameweek/GW22/players.csv",
+        "sha256": "ddfb8822bc347035de86cbec6fe90a08f766d3a5bb52a0af806f6198e4a5357d"
+      },
+      {
+        "path": "data/2025-2026/By Gameweek/GW23/players.csv",
+        "sha256": "ccb26a7f7032438c54bacd558a4c3cf2a8d9351d229a3fc545d44c5e49f381d7"
+      },
+      {
+        "path": "data/2025-2026/By Gameweek/GW24/players.csv",
+        "sha256": "1c4c5bbdc2b89cc75b6fdcb59e6efd536367bacc605024c70878bfeea8fa7f94"
+      },
+      {
+        "path": "data/2025-2026/By Gameweek/GW25/players.csv",
+        "sha256": "f51b6ca193ec18eac56e0c87c5a811ae7a07aa05fb7e4c9c1b0253c511007628"
+      },
+      {
+        "path": "data/2025-2026/By Gameweek/GW26/players.csv",
+        "sha256": "be39204bb0a8434c8b51a51202c33dbd45ebf261f71c181585c2a7bf2debacd1"
+      },
+      {
+        "path": "data/2025-2026/By Gameweek/GW27/players.csv",
+        "sha256": "ae319c089788577d17669f4ff06e30db5968d116bbb00ff0ce04c7df23d7c9d1"
+      },
+      {
+        "path": "data/2025-2026/By Gameweek/GW28/players.csv",
+        "sha256": "96ed054642be499b3084a172ebe53f47004c0ab5c254cd2144df820be54e3c67"
+      },
+      {
+        "path": "data/2025-2026/By Gameweek/GW29/players.csv",
+        "sha256": "d85674b07fb4be658af5d775baba1e9ad24f9956c474515a8e3afb9254b60cc1"
+      },
+      {
+        "path": "data/2025-2026/By Gameweek/GW3/players.csv",
+        "sha256": "a7a3f69ed588a1811474de0a2a3e63c231ce501d6dae7ed30b6cd8cfc544d5a4"
+      },
+      {
+        "path": "data/2025-2026/By Gameweek/GW30/players.csv",
+        "sha256": "67918b51127c21756beab80715c6a2aa8befa5a58c919acec4aeb2c33678e29f"
+      },
+      {
+        "path": "data/2025-2026/By Gameweek/GW31/players.csv",
+        "sha256": "a861229699fd8a9f3e3d150592fa0d3ecb285c771e53b2656b475f9d9ffc9f8e"
+      },
+      {
+        "path": "data/2025-2026/By Gameweek/GW32/players.csv",
+        "sha256": "5a43d0d07acf536aef9872c30b95a7d5733b7d367bb607b46222c63bbe9ab4a0"
+      },
+      {
+        "path": "data/2025-2026/By Gameweek/GW33/players.csv",
+        "sha256": "242fe1592e83bba22532ded35696c94c68c9815092dc45ac4a8688cc3ec57ccb"
+      },
+      {
+        "path": "data/2025-2026/By Gameweek/GW34/players.csv",
+        "sha256": "d5f36eb1562b976c4185292fc20a9babe08897044e7f14370310815f7faf03be"
+      },
+      {
+        "path": "data/2025-2026/By Gameweek/GW35/players.csv",
+        "sha256": "119bcbbca9e5fc3f3ed8c54c59f94066dd339925b4ea3193237a30fa5ad2d612"
+      },
+      {
+        "path": "data/2025-2026/By Gameweek/GW36/players.csv",
+        "sha256": "f6a4a640667d15ed99ec9fa1a5af25819448703ba012f945259802f51de109d6"
+      },
+      {
+        "path": "data/2025-2026/By Gameweek/GW37/players.csv",
+        "sha256": "af1e42be6f65c5f31cba60287a8d3d2bad97a25b98a219392391ca3b2fae6802"
+      },
+      {
+        "path": "data/2025-2026/By Gameweek/GW38/players.csv",
+        "sha256": "7162fe150057a15521409c3b63e7f988b05721ddd15d70dcb15ab2c470a37336"
+      },
+      {
+        "path": "data/2025-2026/By Gameweek/GW4/players.csv",
+        "sha256": "d84a51d3258d97fd9eb4be0717f13e4435ff113b97d5ce13ebf1d34f62315e7e"
+      },
+      {
+        "path": "data/2025-2026/By Gameweek/GW5/players.csv",
+        "sha256": "d84a51d3258d97fd9eb4be0717f13e4435ff113b97d5ce13ebf1d34f62315e7e"
+      },
+      {
+        "path": "data/2025-2026/By Gameweek/GW6/players.csv",
+        "sha256": "d84a51d3258d97fd9eb4be0717f13e4435ff113b97d5ce13ebf1d34f62315e7e"
+      },
+      {
+        "path": "data/2025-2026/By Gameweek/GW7/players.csv",
+        "sha256": "d84a51d3258d97fd9eb4be0717f13e4435ff113b97d5ce13ebf1d34f62315e7e"
+      },
+      {
+        "path": "data/2025-2026/By Gameweek/GW8/players.csv",
+        "sha256": "d84a51d3258d97fd9eb4be0717f13e4435ff113b97d5ce13ebf1d34f62315e7e"
+      },
+      {
+        "path": "data/2025-2026/By Gameweek/GW9/players.csv",
+        "sha256": "d84a51d3258d97fd9eb4be0717f13e4435ff113b97d5ce13ebf1d34f62315e7e"
+      }
+    ],
+    "player_identities": 841,
+    "row_comparisons": {
+      "equal": 15142,
+      "no_FPL_reference": 1,
+      "different": 10
+    },
+    "match_status": {
+      "equal": 378,
+      "different": 2
+    },
+    "historical_comparisons": 4,
+    "historical_recovery_candidates": 0,
+    "new_FPL_labels": 0,
+    "production_changed": false,
+    "training_admitted": false,
+    "limitations": [
+      "retrospective_FPL_starts_not_independent_match_video_validation",
+      "starter_set_agreement_not_complete_bench_or_substitution_validation",
+      "current_metadata_not_proof_of_historical_identity_publication",
+      "confirmed_label_not_proof_of_predeadline_availability",
+      "sampled_history_not_exhaustive_no_raw_repair"
+    ],
+    "artifacts": {
+      "match-quality.json": "22de38dac0fc8230e7030ee31b92e6a567c9e850d5c6882041882f05cc1ce53f",
+      "row-comparisons.json": "edcc256be1022ca893e55e81c35315f5e8e55180ab8c31ecda1979baa1243aac",
+      "historical-comparisons.json": "886b1b45bab8eff4d73cd42cda2948017551d0dcd06484a88042d13cfbc72e5f"
+    }
+  },
+  "acquisition": {
+    "files": 4,
+    "bytes": 162026,
+    "errors": []
+  },
+  "verification": {
+    "reproduced_byte_for_byte": true,
+    "pytest": {
+      "passed": 1619,
+      "skipped": 1,
+      "deselected": 79,
+      "seconds": 33.04
+    }
+  }
+}

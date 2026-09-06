@@ -3504,3 +3504,67 @@ No se admiten estas tablas a entrenamiento, ni se modifican GT v7, G55 o producc
 No hay nuevas temporadas FPL completas. G55 es un bundle congelado anterior y no
 incluye esta adquisición. El siguiente contraste debe evaluar coherencia de
 identidades/eventos y procedencia temporal, además de completar las ausencias.
+
+## G65 — integridad de titulares y ampliación de referencia de identidades
+
+`lineup_integrity.py` verifica el artefacto G64, G46 y los **38 CSV de jugadores
+Core**, conservando hashes de entrada. Los **841 pares de identidad** amplían la
+referencia limitada a apariciones G62: de las 302 filas de alineación que G64 no
+podía contrastar, **301 ahora enlazan con FPL y coinciden en starts=0**. Una fila
+sigue sin referencia FPL de esa aparición; no se rellena como cero ni se declara
+inválida. No se resuelven nombres mediante similitud textual.
+
+| Contraste de filas de alineación | Cantidad |
+| --- | ---: |
+| Flag de titular coincide con FPL | 15.142 |
+| Flag de titular distinto de FPL | 10 |
+| Sin referencia FPL de la aparición | 1 |
+| Total archivado | 15.153 |
+
+Aunque G64 comprobó once titulares por equipo, **tener once no prueba que sean los
+once correctos**. G65 contrasta el conjunto completo de códigos con `starts=1` en
+FPL, detectando tanto titulares extra como los ausentes de la tabla:
+
+| Partido | Fixture FPL | Titulares extra / faltantes |
+| --- | ---: | ---: |
+| Manchester United–Leeds United | 317 | 5 / 5 |
+| Brentford–Fulham | 322 | 5 / 5 |
+
+Los **378 partidos restantes** coinciden en su conjunto de titulares con esa
+referencia retrospectiva. `match-quality.json` marca los dos anteriores como
+`different` y `retrospective_starter_set_consistent=false`; conserva los códigos
+extra/faltantes y los recuentos por partido. Los diez flags discrepantes figuran
+con valores y coordenadas de fuente en `row-comparisons.json`.
+
+El campo upstream `lineup_status=confirmed` no basta para calificar una alineación
+como GT. Este contraste no demuestra la causa de los errores, ni que fueran
+predicciones, ni que exista error en las etiquetas FPL. Tampoco valida toda la
+banca, sustituciones o cronología de publicación. Los archivos crudos se conservan
+intactos; no se ejecuta ninguna reparación a partir de FPL.
+
+Se adquirieron **cuatro CSV históricos, 162.026 bytes**, dos jornadas en dos cortes:
+`4f12bc1069f59137fcb03e34ab8bcf60502f1b22` y
+`b18f816fbaa21db5b55f9c4af117da4d0f8f11c1`. Los objetos y manifiesto están en
+`core-lineup-history-g65`. La primera revisión tiene 20 y 3 titulares sin ID en
+los dos partidos respectivamente: su contraste queda `unknown`. La posterior
+conserva cinco extra/cinco faltantes en cada partido. **Cero candidatos de
+recuperación respaldados** en estos cortes; no se afirma agotar todas las fuentes.
+Los IDs vacíos impiden declarar una recuperación aunque el subconjunto conocido
+coincida. `historical-comparisons.json` conserva esa distinción.
+
+```bash
+python -m experiments.data_ground_truth.lineup_integrity \
+  --details-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/core-match-detail-coverage-v1 \
+  --supplemental-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/supplemental-components-v3 \
+  --raw-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/raw-history-v1 \
+  --history-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/core-lineup-history-g65 \
+  --out /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/lineup-integrity-v1
+```
+
+Reporte y tres artefactos reproducidos byte por byte en v2. Suite completa:
+**1.619 passed, 1 skipped, 79 deselected** (33,04 s).
+[Resultados G65](results-g65.json). Las marcas de consistencia sólo describen este
+contraste retrospectivo; `training_admitted=false` y `eligible_predeadline=false`
+incluso en los 378 partidos concordantes. No hay etiquetas FPL nuevas, nuevas
+temporadas, cambios productivos ni modificaciones de GT v7/G55. Sigue pendiente
+recuperar observaciones respaldadas y contrastar estadísticas/posiciones faltantes.
