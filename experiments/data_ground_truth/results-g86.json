@@ -1,0 +1,54 @@
+{
+  "version": "historical-data-g86",
+  "audit_report_sha256": "3022d26f4f76cfbcdc5e1aa6a3a137e2b94fa7a155229b381469470de9907441",
+  "audit": {
+    "version": "azure-observation-brackets-v1",
+    "parent_report_sha256": "8f9737656c0c9262bb42b297e787f07a0cb1f2efedf9be6d3ee1c6b5ce8ff2dd",
+    "manifest_sha256": "8b05db7e1ee6c8865edeb0e7258998ee6e6a4e1cc70d6e18edfa7f5d9a6a0566",
+    "implementation_sha256": "3ea7e32a200c1383dfefb30a94aa5d733ead596585da1d9aa27f0ee4d16dfa69",
+    "snapshots_checked": 2524,
+    "excluded_clock_snapshots": 2,
+    "target_identities": 309,
+    "identities_with_native_observation": 309,
+    "identities_with_exact_observation": 309,
+    "first_native_code_differs_from_gt": 1,
+    "window_cases": 388,
+    "positive_minute_cases": 35,
+    "native_classes": {
+      "absent_in_snapshot_at_or_after_deadline": 359,
+      "observation_interval_straddles_deadline": 15,
+      "first_observed_before_deadline": 14
+    },
+    "exact_classes": {
+      "absent_in_snapshot_at_or_after_deadline": 361,
+      "observation_interval_straddles_deadline": 15,
+      "first_observed_before_deadline": 12
+    },
+    "positive_native_classes": {
+      "absent_in_snapshot_at_or_after_deadline": 29,
+      "first_observed_before_deadline": 2,
+      "observation_interval_straddles_deadline": 4
+    },
+    "positive_exact_classes": {
+      "absent_in_snapshot_at_or_after_deadline": 29,
+      "first_observed_before_deadline": 2,
+      "observation_interval_straddles_deadline": 4
+    },
+    "positive_first_before_deadline_with_changed_deadline": 2,
+    "artifacts": {
+      "identity_observation_brackets.json": "3791db3408138db2e46f3f394d6321303e7113cdfca103db01e8f66b389a83f9",
+      "window_cases.json": "012f81ac5bcc9afb92a2c55c992ff852ba2be28b67b27877d02385172bcf9cc7",
+      "excluded_clocks.json": "7f0e5d791e8485b1a3da4032c32f2c2b830a43646f142c5860091d6900934cb8"
+    },
+    "training_admitted": false,
+    "production_changed": false,
+    "limitations": [
+      "nominal_observation_brackets_not_registration_or_publication_times",
+      "absence_in_one_snapshot_not_continuous_absence_or_proof_of_ineligibility",
+      "first_native_observation_not_identity_correction_authorization",
+      "aligned_wall_clocks_do_not_prove_UTC_capture",
+      "postdeadline_evidence_is_diagnostic_only_not_a_feature"
+    ]
+  },
+  "reproduction_identical": true
+}

@@ -4876,3 +4876,59 @@ completa: **1.675 passed, 1 skipped, 79 deselected**, 49,16 s; incluye rechazo d
 IDs/códigos incompatibles, duplicados y mapas GT ambiguos.
 [Resultados G85](results-g85.json) fija métricas y hashes. No añade etiquetas ni
 modifica el GT v7, el runtime o el archivo portable G78 congelado.
+
+## G86 — Intervalos de observación de jugadores ausentes
+
+`azure_observation_brackets.py` revalida G85 y los **2.524 objetos** del manifiesto
+G84. Ordena las capturas por temporada y reloj nominal; conserva aparte los dos
+relojes discordantes. Sobre las otras 2.522 capturas mide, para cada identidad:
+primera presencia del ID estacional, primera coincidencia exacta ID/código y
+la captura alineada inmediatamente anterior donde todavía falta cada criterio.
+Estas son primeras observaciones **dentro del archivo filtrado**, no fechas
+exactas de alta o de publicación.
+
+Se encontraron las **309 identidades** presentes en los 388 huecos de comparación
+G85, tanto por ID como por ID/código. Una aparece primero con código diferente al
+GT. El ID 671 de 2020/21 se observa con 490098 el 22-02-2021 00:00:02 nominal UTC
+y con 465390 el 04-03-2021 18:00:00. Las capturas previas sin cada coincidencia
+quedan referenciadas por SHA/URL. Se conserva la secuencia sin autorizar un alias,
+reescribir códigos crudos ni asumir identidad sólo por el nombre.
+
+| Clasificación nominal respecto al deadline de cada caso | ID estacional | ID y código exactos |
+| --- | ---: | ---: |
+| Aún ausente en una captura en/postdeadline | 359 | 361 |
+| Intervalo ausencia–presencia cruza el deadline | 15 | 15 |
+| Primera observación anterior al deadline | 14 | 12 |
+| Total de comparaciones G85 | 388 | 388 |
+
+Entre las **35 apariciones con minutos positivos**, ambas pruebas producen:
+29 con ausencia observada en/postdeadline, cuatro intervalos que cruzan el
+deadline y dos primeras observaciones anteriores. Una ausencia puntual no prueba
+ausencia continua ni inelegibilidad, y los relojes siguen siendo nominales.
+No se fabrican ceros para estas apariciones ni se usan snapshots posteriores
+como entradas de decisión.
+
+Los dos casos positivos anteriores al deadline corresponden a IDs 626 y 627,
+GW19 2020/21. La variante comparada declara 15-01-2021 18:30 UTC. La primera
+captura exacta es 11-01-2021 18:01:06 nominal UTC y ya declara otro deadline,
+16-01-2021 11:00 UTC. El artefacto conserva el deadline de esa captura para
+separar este cambio de versión de una identidad nunca observada. No se fusionan
+variantes silenciosamente ni se identifica un deadline operativo final por
+concordancia con etiquetas futuras.
+
+```bash
+python -m experiments.data_ground_truth.azure_observation_brackets \
+  --base "$DATA_BASE" \
+  --out "$DATA_BASE/azure-observation-brackets-g86-v3"
+```
+
+Reporte y tres artefactos (`identity_observation_brackets.json`, `window_cases.json`,
+`excluded_clocks.json`) idénticos byte por byte en v3/v4. Suite completa:
+**1.677 passed, 1 skipped, 79 deselected**, 34,43 s. Pruebas de cambio de código,
+separación ID/identidad exacta, intervalos que cruzan deadline y límites ausentes.
+[Resultados G86](results-g86.json) fija hashes, entradas y métricas.
+
+No se recuperaron nuevas etiquetas ni se admitieron estados al benchmark.
+GT v7, runtime y archivo portable G78 permanecen sin cambios. El avance permite
+investigar elegibilidad y resolver variantes con evidencia explícita; aún falta
+el contrato temporal que permita usar estos estados como entradas históricas.
