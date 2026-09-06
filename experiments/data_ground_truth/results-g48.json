@@ -1,0 +1,456 @@
+{
+  "version": "historical-data-g48",
+  "audit_report_sha256": "71baeb67fe1c1f35f869998868de8e06272e4e075f1c869c81440f30845ded5c",
+  "audit": {
+    "version": "supplemental-field-history-v1",
+    "season": "2022-23",
+    "source_manifest_sha256": "d9eed1e354d0a35443e480a0c4bfcbdebee97f28b73b04309e4bef0f8bcc243e",
+    "source_audit_sha256": "703fd327692e9d8c45bbbd0f7b8a91947fbfbb2df308a61ce71b0b7fe1c47f90",
+    "implementation_sha256": "57e4623052dff01a8ebb6faaf6d719cd6689cea5ca42ee35f35e6f1f9552b380",
+    "snapshots": 1458,
+    "first_claimed_at": "2022-07-05T18:28:00",
+    "last_claimed_at": "2023-07-05T12:44:00",
+    "summaries": {
+      "starts": {
+        "regimes": {
+          "absent": 508,
+          "all_zero": 11,
+          "positive_hundredth_compatible": 939
+        },
+        "transitions": [
+          {
+            "before_claimed_at": "2022-11-09T12:54:00",
+            "after_claimed_at": "2022-11-09T18:30:00",
+            "before_sha256": "62dbb5ea7e4142f9dc4ce81835c0fc6f40d39bec08c2a3a630f5273cf2f62e7e",
+            "after_sha256": "40b6a7a7e5c8502c192328b3a788940338dda4db00b80208c5e6bd635ed6d978",
+            "before": {
+              "regime": "absent",
+              "statuses": {
+                "absent": 661
+              },
+              "positive": 0,
+              "zero": 0,
+              "subcent_precision": 0,
+              "players": 661
+            },
+            "after": {
+              "regime": "all_zero",
+              "statuses": {
+                "valid": 661
+              },
+              "positive": 0,
+              "zero": 661,
+              "subcent_precision": 0,
+              "players": 661
+            }
+          },
+          {
+            "before_claimed_at": "2022-11-12T06:29:00",
+            "after_claimed_at": "2022-11-12T12:41:00",
+            "before_sha256": "d065fca372cf2dfbdde004c5d87fd7b0fcf2b6f452b3bdacddc036c952d97fb3",
+            "after_sha256": "0d0e1a7d241717c0e2c0e7ffaa438e1def621ecc6ac98634ca7c7d1a277a9770",
+            "before": {
+              "regime": "all_zero",
+              "statuses": {
+                "valid": 661
+              },
+              "positive": 0,
+              "zero": 661,
+              "subcent_precision": 0,
+              "players": 661
+            },
+            "after": {
+              "regime": "positive_hundredth_compatible",
+              "statuses": {
+                "valid": 661
+              },
+              "positive": 22,
+              "zero": 639,
+              "subcent_precision": 0,
+              "players": 661
+            }
+          }
+        ]
+      },
+      "expected_goals": {
+        "regimes": {
+          "absent": 508,
+          "all_zero": 11,
+          "positive_subcent_precision": 317,
+          "positive_hundredth_compatible": 622
+        },
+        "transitions": [
+          {
+            "before_claimed_at": "2022-11-09T12:54:00",
+            "after_claimed_at": "2022-11-09T18:30:00",
+            "before_sha256": "62dbb5ea7e4142f9dc4ce81835c0fc6f40d39bec08c2a3a630f5273cf2f62e7e",
+            "after_sha256": "40b6a7a7e5c8502c192328b3a788940338dda4db00b80208c5e6bd635ed6d978",
+            "before": {
+              "regime": "absent",
+              "statuses": {
+                "absent": 661
+              },
+              "positive": 0,
+              "zero": 0,
+              "subcent_precision": 0,
+              "players": 661
+            },
+            "after": {
+              "regime": "all_zero",
+              "statuses": {
+                "valid": 661
+              },
+              "positive": 0,
+              "zero": 661,
+              "subcent_precision": 0,
+              "players": 661
+            }
+          },
+          {
+            "before_claimed_at": "2022-11-12T06:29:00",
+            "after_claimed_at": "2022-11-12T12:41:00",
+            "before_sha256": "d065fca372cf2dfbdde004c5d87fd7b0fcf2b6f452b3bdacddc036c952d97fb3",
+            "after_sha256": "0d0e1a7d241717c0e2c0e7ffaa438e1def621ecc6ac98634ca7c7d1a277a9770",
+            "before": {
+              "regime": "all_zero",
+              "statuses": {
+                "valid": 661
+              },
+              "positive": 0,
+              "zero": 661,
+              "subcent_precision": 0,
+              "players": 661
+            },
+            "after": {
+              "regime": "positive_subcent_precision",
+              "statuses": {
+                "valid": 661
+              },
+              "positive": 5,
+              "zero": 656,
+              "subcent_precision": 5,
+              "players": 661
+            }
+          },
+          {
+            "before_claimed_at": "2023-01-30T12:39:00",
+            "after_claimed_at": "2023-01-30T18:24:00",
+            "before_sha256": "e613a9c6ed58ba008781239f97bbf02a0f5514103f13a6bf8453f6fa518f177c",
+            "after_sha256": "064854115fb60dc752a60785813c2a68f509a1e53b754414dff1cd8c019a956e",
+            "before": {
+              "regime": "positive_subcent_precision",
+              "statuses": {
+                "valid": 712
+              },
+              "positive": 402,
+              "zero": 310,
+              "subcent_precision": 400,
+              "players": 712
+            },
+            "after": {
+              "regime": "positive_hundredth_compatible",
+              "statuses": {
+                "valid": 717
+              },
+              "positive": 402,
+              "zero": 315,
+              "subcent_precision": 0,
+              "players": 717
+            }
+          }
+        ]
+      },
+      "expected_assists": {
+        "regimes": {
+          "absent": 508,
+          "all_zero": 11,
+          "positive_subcent_precision": 317,
+          "positive_hundredth_compatible": 622
+        },
+        "transitions": [
+          {
+            "before_claimed_at": "2022-11-09T12:54:00",
+            "after_claimed_at": "2022-11-09T18:30:00",
+            "before_sha256": "62dbb5ea7e4142f9dc4ce81835c0fc6f40d39bec08c2a3a630f5273cf2f62e7e",
+            "after_sha256": "40b6a7a7e5c8502c192328b3a788940338dda4db00b80208c5e6bd635ed6d978",
+            "before": {
+              "regime": "absent",
+              "statuses": {
+                "absent": 661
+              },
+              "positive": 0,
+              "zero": 0,
+              "subcent_precision": 0,
+              "players": 661
+            },
+            "after": {
+              "regime": "all_zero",
+              "statuses": {
+                "valid": 661
+              },
+              "positive": 0,
+              "zero": 661,
+              "subcent_precision": 0,
+              "players": 661
+            }
+          },
+          {
+            "before_claimed_at": "2022-11-12T06:29:00",
+            "after_claimed_at": "2022-11-12T12:41:00",
+            "before_sha256": "d065fca372cf2dfbdde004c5d87fd7b0fcf2b6f452b3bdacddc036c952d97fb3",
+            "after_sha256": "0d0e1a7d241717c0e2c0e7ffaa438e1def621ecc6ac98634ca7c7d1a277a9770",
+            "before": {
+              "regime": "all_zero",
+              "statuses": {
+                "valid": 661
+              },
+              "positive": 0,
+              "zero": 661,
+              "subcent_precision": 0,
+              "players": 661
+            },
+            "after": {
+              "regime": "positive_subcent_precision",
+              "statuses": {
+                "valid": 661
+              },
+              "positive": 19,
+              "zero": 642,
+              "subcent_precision": 19,
+              "players": 661
+            }
+          },
+          {
+            "before_claimed_at": "2023-01-30T12:39:00",
+            "after_claimed_at": "2023-01-30T18:24:00",
+            "before_sha256": "e613a9c6ed58ba008781239f97bbf02a0f5514103f13a6bf8453f6fa518f177c",
+            "after_sha256": "064854115fb60dc752a60785813c2a68f509a1e53b754414dff1cd8c019a956e",
+            "before": {
+              "regime": "positive_subcent_precision",
+              "statuses": {
+                "valid": 712
+              },
+              "positive": 490,
+              "zero": 222,
+              "subcent_precision": 490,
+              "players": 712
+            },
+            "after": {
+              "regime": "positive_hundredth_compatible",
+              "statuses": {
+                "valid": 717
+              },
+              "positive": 448,
+              "zero": 269,
+              "subcent_precision": 0,
+              "players": 717
+            }
+          }
+        ]
+      },
+      "expected_goals_conceded": {
+        "regimes": {
+          "absent": 508,
+          "all_zero": 11,
+          "positive_subcent_precision": 317,
+          "positive_hundredth_compatible": 622
+        },
+        "transitions": [
+          {
+            "before_claimed_at": "2022-11-09T12:54:00",
+            "after_claimed_at": "2022-11-09T18:30:00",
+            "before_sha256": "62dbb5ea7e4142f9dc4ce81835c0fc6f40d39bec08c2a3a630f5273cf2f62e7e",
+            "after_sha256": "40b6a7a7e5c8502c192328b3a788940338dda4db00b80208c5e6bd635ed6d978",
+            "before": {
+              "regime": "absent",
+              "statuses": {
+                "absent": 661
+              },
+              "positive": 0,
+              "zero": 0,
+              "subcent_precision": 0,
+              "players": 661
+            },
+            "after": {
+              "regime": "all_zero",
+              "statuses": {
+                "valid": 661
+              },
+              "positive": 0,
+              "zero": 661,
+              "subcent_precision": 0,
+              "players": 661
+            }
+          },
+          {
+            "before_claimed_at": "2022-11-12T06:29:00",
+            "after_claimed_at": "2022-11-12T12:41:00",
+            "before_sha256": "d065fca372cf2dfbdde004c5d87fd7b0fcf2b6f452b3bdacddc036c952d97fb3",
+            "after_sha256": "0d0e1a7d241717c0e2c0e7ffaa438e1def621ecc6ac98634ca7c7d1a277a9770",
+            "before": {
+              "regime": "all_zero",
+              "statuses": {
+                "valid": 661
+              },
+              "positive": 0,
+              "zero": 661,
+              "subcent_precision": 0,
+              "players": 661
+            },
+            "after": {
+              "regime": "positive_subcent_precision",
+              "statuses": {
+                "valid": 661
+              },
+              "positive": 22,
+              "zero": 639,
+              "subcent_precision": 22,
+              "players": 661
+            }
+          },
+          {
+            "before_claimed_at": "2023-01-30T12:39:00",
+            "after_claimed_at": "2023-01-30T18:24:00",
+            "before_sha256": "e613a9c6ed58ba008781239f97bbf02a0f5514103f13a6bf8453f6fa518f177c",
+            "after_sha256": "064854115fb60dc752a60785813c2a68f509a1e53b754414dff1cd8c019a956e",
+            "before": {
+              "regime": "positive_subcent_precision",
+              "statuses": {
+                "valid": 712
+              },
+              "positive": 487,
+              "zero": 225,
+              "subcent_precision": 484,
+              "players": 712
+            },
+            "after": {
+              "regime": "positive_hundredth_compatible",
+              "statuses": {
+                "valid": 717
+              },
+              "positive": 487,
+              "zero": 230,
+              "subcent_precision": 0,
+              "players": 717
+            }
+          }
+        ]
+      },
+      "expected_goal_involvements": {
+        "regimes": {
+          "absent": 508,
+          "all_zero": 11,
+          "positive_subcent_precision": 317,
+          "positive_hundredth_compatible": 622
+        },
+        "transitions": [
+          {
+            "before_claimed_at": "2022-11-09T12:54:00",
+            "after_claimed_at": "2022-11-09T18:30:00",
+            "before_sha256": "62dbb5ea7e4142f9dc4ce81835c0fc6f40d39bec08c2a3a630f5273cf2f62e7e",
+            "after_sha256": "40b6a7a7e5c8502c192328b3a788940338dda4db00b80208c5e6bd635ed6d978",
+            "before": {
+              "regime": "absent",
+              "statuses": {
+                "absent": 661
+              },
+              "positive": 0,
+              "zero": 0,
+              "subcent_precision": 0,
+              "players": 661
+            },
+            "after": {
+              "regime": "all_zero",
+              "statuses": {
+                "valid": 661
+              },
+              "positive": 0,
+              "zero": 661,
+              "subcent_precision": 0,
+              "players": 661
+            }
+          },
+          {
+            "before_claimed_at": "2022-11-12T06:29:00",
+            "after_claimed_at": "2022-11-12T12:41:00",
+            "before_sha256": "d065fca372cf2dfbdde004c5d87fd7b0fcf2b6f452b3bdacddc036c952d97fb3",
+            "after_sha256": "0d0e1a7d241717c0e2c0e7ffaa438e1def621ecc6ac98634ca7c7d1a277a9770",
+            "before": {
+              "regime": "all_zero",
+              "statuses": {
+                "valid": 661
+              },
+              "positive": 0,
+              "zero": 661,
+              "subcent_precision": 0,
+              "players": 661
+            },
+            "after": {
+              "regime": "positive_subcent_precision",
+              "statuses": {
+                "valid": 661
+              },
+              "positive": 20,
+              "zero": 641,
+              "subcent_precision": 20,
+              "players": 661
+            }
+          },
+          {
+            "before_claimed_at": "2023-01-30T12:39:00",
+            "after_claimed_at": "2023-01-30T18:24:00",
+            "before_sha256": "e613a9c6ed58ba008781239f97bbf02a0f5514103f13a6bf8453f6fa518f177c",
+            "after_sha256": "064854115fb60dc752a60785813c2a68f509a1e53b754414dff1cd8c019a956e",
+            "before": {
+              "regime": "positive_subcent_precision",
+              "statuses": {
+                "valid": 712
+              },
+              "positive": 492,
+              "zero": 220,
+              "subcent_precision": 491,
+              "players": 712
+            },
+            "after": {
+              "regime": "positive_hundredth_compatible",
+              "statuses": {
+                "valid": 717
+              },
+              "positive": 457,
+              "zero": 260,
+              "subcent_precision": 0,
+              "players": 717
+            }
+          }
+        ]
+      }
+    },
+    "observations_sha256": "202df3ebff94d2cd1b78633268fed0e9915b75515d179d4d48d3364aedcee924",
+    "training_admitted": false,
+    "production_changed": false,
+    "limitations": [
+      "source_clock_not_publication_or_exact_API_change_time",
+      "all_zero_is_observation_not_proven_placeholder",
+      "precision_compatibility_not_proven_rounding_policy",
+      "no_reference_values_backfilled_into_snapshots"
+    ]
+  },
+  "official_context": {
+    "url": "https://www.premierleague.com/en/news/3118332",
+    "sha256": "a9ff43ecdad043b693a294014b21abef39920f5cbab911c8c110525286929e8f",
+    "bytes": 88787,
+    "fetched_at": "2026-09-06T11:32:07.710656+00:00",
+    "available_at": null,
+    "time_semantics": "retrospective_unknown_publication",
+    "eligible_predeadline": false
+  },
+  "verification": {
+    "reproduced_byte_for_byte": true,
+    "official_raw_hash_verified": true,
+    "tests_passed": 1555,
+    "tests_skipped": 1,
+    "tests_deselected": 79
+  },
+  "production_changed": false,
+  "training_admitted": false
+}

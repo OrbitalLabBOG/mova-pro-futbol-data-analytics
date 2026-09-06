@@ -2534,3 +2534,53 @@ tolerancia separada de igualdad, enteros, precisión distinta y desconocidos.
 [Resultados G47](results-g47.json). GT v7 y runtime intactos; el siguiente gate
 debe investigar la introducción y precisión de estos campos en 2022/23 antes de
 proponer un contrato de features por temporada y ventana.
+
+## Gate G48: introducción y precisión de campos en 2022/23
+
+`supplemental_field_history.py` verifica **1.458 snapshots** de 2022/23, desde
+5 julio 2022 hasta 5 julio 2023 según el reloj nominal de los archivos. Para cada
+población de jugadores clasifica los cinco campos (starts y cuatro métricas
+esperadas) como ausentes, todos cero, positivos compatibles con centésimas,
+positivos con precisión inferior a una centésima o población parcial/inválida.
+La compatibilidad se calcula por valor numérico, sin confundir ceros decimales
+finales de una cadena con precisión efectiva.
+
+| Frontera nominal entre capturas | Cambio observado |
+| --- | --- |
+| 9 noviembre 2022, 12:54 → 18:30 | Ausente → columna poblada sólo con ceros |
+| 12 noviembre 2022, 06:29 → 12:41 | Ceros → valores positivos; métricas esperadas con fracciones de centésima |
+| 30 enero 2023, 12:39 → 18:24 | Métricas esperadas pasan a valores compatibles con centésimas |
+
+Cada campo estuvo ausente en **508 capturas**, seguido por **once capturas sólo
+con ceros**. Starts tiene luego 939 capturas con valores positivos; cada métrica
+esperada tiene 317 capturas de precisión inferior a la centésima y 622
+compatibles con centésimas. Los reportes conservan las fronteras, hashes, conteos
+positivos/cero y estados de toda la población. Las observaciones completas
+permanecen fuera de Git y se verifican por hash.
+
+El snapshot G31 seleccionado para GW16 está fechado nominalmente el 12 noviembre
+2022 a las 06:29 y su deadline es 11:00Z: conserva la población de ceros. La primera
+captura positiva observada es 12:41. Esa secuencia precisa G47, **sin acreditar
+la hora exacta de cambio de la API, disponibilidad externa ni que todo cero sea
+un placeholder**. No se rellenan los snapshots con el resultado posterior.
+
+Como contexto adicional se archivó la [explicación oficial de xG en Fantasy](https://www.premierleague.com/en/news/3118332),
+cuya página consultada declara 22 septiembre 2023. Explica xG, xA y xGI, pero no
+establece las fechas de introducción de 2022/23. Cuerpo HTML de 88.787 bytes,
+SHA-256 `a9ff43ecdad043b693a294014b21abef39920f5cbab911c8c110525286929e8f`;
+fecha de descarga y disponibilidad desconocida en [resultados G48](results-g48.json).
+No se utiliza como prueba de publicación histórica de las capturas.
+
+```bash
+python -m experiments.data_ground_truth.supplemental_field_history \
+  --raw-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/raw-bootstrap-snapshots \
+  --audit-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/bootstrap-audit-v1 \
+  --out /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/supplemental-field-history-v1
+```
+
+Reporte y observaciones reproducidos byte por byte en
+`supplemental-field-history-v2`; hash del HTML archivado verificado.
+**1.555 passed, 1 skipped, 79 deselected**. Pruebas de ausencia/cero/positivo,
+precisión numérica frente a formato y población parcial o inválida.
+GT v7, modelos y producción no cambian. Falta convertir esta evidencia en una
+admisión por campo y ventana, manteniendo separadas semántica y publicación.
