@@ -1426,3 +1426,57 @@ Sigue siendo necesario corroborar el reloj de Core, resolver identidad/jornada
 del proveedor, obtener testigos de publicación y complementar el calendario de
 la primera parte de 2025/26. La evidencia negativa de esta auditoría evita tratar
 un repositorio muy activo como un calendario futuro completo.
+
+## Gate G25: reloj del exportador e identidad de competición
+
+Se adquieren y verifican por SHA-256 y blob Git **81 versiones del exportador**
+Core; el historial también contiene un borrado. Cinco versiones no son Python
+parseable y se conservan como evidencia desconocida. El código descargado se
+inspecciona mediante AST, nunca se ejecuta. Los 38 árboles seleccionados tienen
+un exportador adquirido.
+
+Desde el commit `2c00c3886c421d488ff017d83e96631474b80847`
+(9 de febrero de 2026), `infer_gameweek` usa `to_datetime(..., utc=True)`.
+Es una hipótesis del consumidor para inferir jornadas; no demuestra la zona del
+productor ni convierte por sí misma la columna exportada. El exportador lee una
+tabla externa `matches`; no se accede a esa base de terceros.
+
+El diagnóstico cruza pares de códigos de equipo con el calendario final FPL,
+únicamente cuando ambas fechas comparadas son anteriores al commit de origen.
+No usa ese calendario final como entrada predeadline. Hay **6.552 comparaciones**,
+**6.233 coincidencias bajo UTC** y **319 discrepancias**, correspondientes a
+71 IDs del proveedor. Las observaciones se repiten entre capturas: no son ensayos
+independientes ni una medida de calidad predictiva. El enlace por equipos es
+solo candidato: no acredita identidad de partido entre competiciones.
+
+Dos ejemplos muestran por qué no basta corregir la zona horaria:
+
+| Registro bajo Premier League | Fecha raw Core | Fecha de liga en referencia | Evidencia editorial |
+| --- | --- | --- | --- |
+| Brentford–Aston Villa, observado en árbol GW5 | 2025-09-16 19:00 sin zona | 2025-08-23 14:00 UTC | [Brentford anuncia Carabao Cup el 16 de septiembre, 20:00 BST](https://www.brentfordfc.com/en/news/article/first-team-carabao-cup-round-three-brentford-v-aston-villa) |
+| Wolves–Everton, observado en árbol GW6 | 2025-09-23 18:45 sin zona | 2025-08-30 14:00 UTC | [Wolves anuncia Carabao Cup el 23 de septiembre, 19:45 local](https://www.wolves.co.uk/news/mens-first-team/20250903-new-september-fixture-dates/) |
+
+Las fechas coinciden con encuentros de copa, pese a la carpeta y slug de liga.
+Esto indica contaminación de identidad/fecha en esos registros; no prueba el
+mecanismo que la produjo ni que todas las discrepancias tengan la misma causa.
+Ambas páginas oficiales se archivaron con hash y fecha de descarga actual; no
+constituyen testigos de publicación histórica del repositorio.
+
+```bash
+python -m experiments.data_ground_truth.core_clock_evidence \
+  --repo "$CORE_SOURCE_GIT" --export-log "$CORE_EXPORTER_GIT_LOG" \
+  --code-root "$CORE_CLOCK_SOURCE_ROOT" --tree-root "$CORE_FIXTURE_TREE_AUDIT_ROOT" \
+  --fixture-root "$FIXTURE_HISTORY_AUDIT_ROOT" --teams-root "$RAW_HISTORY_V2_ROOT" \
+  --out "$CORE_CLOCK_EVIDENCE_ROOT"
+```
+
+El log se exporta con el mismo formato de G24, fijado a su pin, para
+`scripts/export_data.py`. Los cuatro artefactos del diagnóstico se reprodujeron
+byte por byte. Las pruebas verifican inspección sin ejecución, fuentes inválidas,
+exclusión de fechas futuras y tratamiento estacional del reloj británico.
+Hashes, revisiones, ejemplos y referencias: [results-g25.json](results-g25.json).
+
+El gate no normaliza las 749 fechas futuras raw, no admite fixtures al replay y
+no modifica GT v5 ni producción. La siguiente prioridad es acreditar competición,
+ID de evento y calendario publicado antes del deadline, además del reloj; más
+archivos de esta fuente por sí solos no cierran la brecha.
