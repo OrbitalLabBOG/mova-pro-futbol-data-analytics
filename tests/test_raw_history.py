@@ -1131,3 +1131,37 @@ def test_fixture_csv_preserves_unassigned_events_and_rejects_ambiguous_identity(
     for bad in [header+row+row,header+'1,,,1,1,,False\n',header+'1,,,1,2,yes,False\n',
                 header+'1,2,2024-08-16T19:00:00,1,2,,False\n',header+'1,2.5,,1,2,,False\n']:
         with pytest.raises(ValueError):parse(bad.encode())
+
+
+def test_fixture_complement_selection_avoids_duplicate_folders_and_keeps_deletions():
+    from experiments.data_ground_truth.fixture_complement import select
+    c='a'*40;b='b'*40;z='0'*40
+    header=f'commit\t{c}\t2025-08-01T00:00:00Z\t2025-08-01T00:00:00Z\n'
+    path='data/2025-2026/By Tournament/Premier League/GW1/'
+    log=header+f':000000 100644 {z} {b} A\t{path}fixtures.csv\n'+f':100644 000000 {b} {z} D\t{path}matches.csv\n'
+    log+=f':000000 100644 {z} {b} A\tdata/2025-2026/By Gameweek/GW1/fixtures.csv\n'
+    versions,deleted=select(log.encode(),'core')
+    assert len(versions)==1 and len(deleted)==1 and versions[0]['path'].startswith(path)
+
+
+def test_source_tree_schedule_union_preserves_unknowns_and_quarantines_conflicts():
+    from experiments.data_ground_truth.fixture_tree_audit import parse,consolidate
+    header='match_id,gameweek,home_team,away_team,kickoff_time\n'
+    blank=parse((header+'game,1,2.0,11.0,\n').encode(),'core')
+    actual=parse((header+'game,1,2,11,2025-08-18T20:00:00+01:00\n').encode(),'core')
+    rows,conflicts=consolidate([('fixtures.csv',blank),('matches.csv',actual)])
+    assert len(rows)==1 and rows[0]['kickoff_time']=='2025-08-18T19:00:00+00:00' and not conflicts
+    assert blank[0]['kickoff_time'] is None
+    changed=[dict(actual[0],provider_gameweek=2)]
+    rows,conflicts=consolidate([('fixtures.csv',blank),('matches.csv',changed)])
+    assert rows[0]['schedule_conflict'] and rows[0]['provider_gameweek'] is None and conflicts
+    with pytest.raises(ValueError,match='ambiguous'):parse((header+'game,1,2,11,\ngame,1,2,11,\n').encode(),'core')
+
+
+def test_complement_dates_keep_naive_values_without_inventing_utc_or_team_codes():
+    from experiments.data_ground_truth.fixture_tree_audit import parse
+    core=parse(b'match_id,gameweek,home_team,away_team,kickoff_time\ngame,26,2,11,2026-02-15T15:00:00\n','core')[0]
+    assert core['kickoff_time'] is None and core['kickoff_timezone_unknown']
+    assert core['kickoff_time_raw']=='2026-02-15T15:00:00'
+    mirror=parse(b'fpl_id,gameweek,team_h_fpl_id,team_a_fpl_id,kickoff_time\n1,1,2,3,\n','mirror')[0]
+    assert mirror['home_team_code'] is None and mirror['source_team_ids']['team_h_fpl_id']=='2'

@@ -205,6 +205,12 @@ y mide 2.020 cambios de kickoff y 387 de jornada. Para los 199 deadlines G21,
 92 tienen una versión con commit previo de hasta 48 horas; esa fecha aún no
 acredita publicación. 2025/26 solo tiene doce versiones y requiere una fuente
 más densa. [Resultados G23](experiments/data_ground_truth/results-g23.json).
+G24 incorpora 5.019 versiones de archivos Core y 28 del mirror. Reconstruye árboles
+coherentes por commit, pero encuentra fechas sin zona, tres calendarios Core de
+370 partidos y conflictos de jornada. Hay 749 fechas futuras raw pendientes de
+reloj; el mirror aporta 209 observaciones futuras con zona en GW33–38. La brecha
+no se declara cerrada. [Resultados G24](experiments/data_ground_truth/results-g24.json).
+
 
 
 
