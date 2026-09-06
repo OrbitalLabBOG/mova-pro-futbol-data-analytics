@@ -1,0 +1,95 @@
+{
+  "version": "historical-data-g102",
+  "audit": {
+    "version": "unscored-history-rows-v1",
+    "parent_report_sha256": "a0ea2f7a0a370527728aaee7dfae74dbda7d93b7453831ab015b7f2ea6134f10",
+    "implementation_sha256": "72ad45ddc48becbdf3fa5fb8a10ce97a8fa3425812bdd51014cb9c4e624494dd",
+    "gt_dataset_id": "e0b5ab38c46df8eae793742421965cf80665764cbbf23dfcb99e3c8b50247998",
+    "gt_manifest_sha256": "9a71bb11bf6ed5351b2084e104b7b4e8e279995d2f3d25cd8a095989af50798e",
+    "fixture_sha256": {
+      "2014": "4f6c42e636040f1910a914e4c7c4d43aa4a81a00af5549daefe62b28345ed51f",
+      "2015": "7b1c5b8cc70e551413b981a58988fee9205fc7987ec2ba5745c93d8aa69d3a66"
+    },
+    "projections": 177,
+    "statuses": {
+      "mapped_not_finalized": 173,
+      "unmapped": 4
+    },
+    "scoreless_rows": 39861,
+    "scoreless_unique_keys": 13330,
+    "scoreless_nonzero_minutes_or_points": 0,
+    "coverage": {
+      "2014-15": {
+        "mapped_keys": 24866,
+        "overlap_keys": 24866,
+        "missing_gt_keys": 0
+      },
+      "2015-16": {
+        "mapped_keys": 7815,
+        "overlap_keys": 7812,
+        "missing_gt_keys": 3
+      }
+    },
+    "disagreement_rows": 22975,
+    "conflict_counts": {
+      "minutes_conflict": 22098,
+      "points_conflict": 21083,
+      "gameweek_conflict": 0,
+      "code_conflict": 0,
+      "missing_in_gt": 19
+    },
+    "finalized_labels_admitted": 0,
+    "training_admitted": false,
+    "gt_changed": false,
+    "production_changed": false,
+    "limitations": [
+      "missing_score_not_proof_of_nonappearance",
+      "present_score_not_proof_of_finalization",
+      "one_representative_per_history_projection",
+      "fixture_mapping_does_not_establish_historic_publication",
+      "snapshot_observations_are_repeated_states"
+    ],
+    "artifacts": {
+      "projections.json": "062ff5392fa219f90fa29f3d162b9927b3a4e6e5d9862b9015329fd463a28bba",
+      "scoreless_rows.csv": "d0eb35e0e1b8e132f52b877ec8b7447529c4bcdc8911d0cacc58fd163fd5c115",
+      "disagreements.csv": "3c4295817dc44be7679f95f04782284397d58bbf12582ac436b4eaaab2edb4ed"
+    }
+  },
+  "report_sha256": "b3b646e2d4b19fbdfb38b71bf29ee9f0acc7a6769b499e0691a949ce4cc035a7",
+  "reproduction_identical": true,
+  "scoreless_zeros_with_positive_gt_minutes": 16928,
+  "scoreless_unique_keys_with_positive_gt_minutes": 5689,
+  "missing_gt_candidates": [
+    {
+      "season": "2015-16",
+      "id": 84,
+      "matchId": 803174,
+      "gw_src": 2,
+      "mins": 0,
+      "gw_pts": 0,
+      "code": 126184
+    },
+    {
+      "season": "2015-16",
+      "id": 201,
+      "matchId": 803201,
+      "gw_src": 4,
+      "mins": 0,
+      "gw_pts": 0,
+      "code": 77454
+    },
+    {
+      "season": "2015-16",
+      "id": 231,
+      "matchId": 803196,
+      "gw_src": 4,
+      "mins": 0,
+      "gw_pts": 0,
+      "code": 37642
+    }
+  ],
+  "missing_gt_occurrences_by_score_presence": {
+    "False": 13,
+    "True": 6
+  }
+}

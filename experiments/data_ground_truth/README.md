@@ -5722,3 +5722,55 @@ GT v8, paquete parcial G94, entrenamiento y producción permanecen intactos;
 no hay admisión predeadline ni nuevas temporadas completas.
 
 Suite completa G101: **1.710 passed, 1 skipped, 79 deselected**, 38,26 s.
+
+## G102 — filas sin marcador: mapeo sin inventar resultados
+
+Se revisan los representantes de las **177 variantes rechazadas en G101** por el
+formato del rival. El parser acepta tanto `CRY(H) 0-0` como `CRY(H) `, pero conserva
+la diferencia: marcador ausente permanece nulo y `source_score_present=false`.
+La fecha, rival y localía deben identificar una sola temporada/fixture. Se
+verifican integridad de la fuente, claves, códigos, enteros, minutos y suma del
+historial contra el total real del perfil. Ninguna fila se declara finalizada.
+
+**173 representantes se mapean** y cuatro siguen bloqueados por discrepancia de
+total del perfil en el calendario correspondiente. No se corrigen esos totales
+ni se descartan silenciosamente las filas que los originan.
+
+Los representantes mapeados contienen **39.861 filas sin marcador**, que abarcan
+**13.330 claves jugador-partido**. Todas guardan cero minutos y cero puntos.
+Sin embargo, **16.928 de esas filas**, correspondientes a **5.689 claves únicas**,
+tienen minutos positivos en el GT final. Por tanto, los ceros de estos snapshots
+no se admiten como etiquetas de no participación. Son conteos de estados repetidos,
+no probabilidades de jugar ni nuevos ejemplos independientes de entrenamiento.
+
+| Unión de claves de los representantes G102 | Total | En GT | Ausentes de GT |
+| --- | ---: | ---: | ---: |
+| 2014/15 | 24.866 | 24.866 | 0 |
+| 2015/16 | 7.815 | 7.812 | 3 |
+
+Esta cobertura complementa G101; no se deben sumar ambas tablas por el solapamiento.
+Las tres claves ausentes son Aké/FPL84/código126184/fixture803174/GW2, Borini/FPL201/
+fixture803201/GW4 y Evans/FPL231/fixture803196/GW4, todas 0/0. Aparecen 19 veces en
+los representantes (13 sin marcador y seis con marcador). Permanecen candidatas
+sin promoción: presencia o ausencia de marcador no demuestra finalización ni
+que el jugador perteneciera al universo elegible para ese fixture.
+
+La comparación conserva **22.975 registros de discrepancia**: 22.098 de minutos,
+21.083 de puntos, cero de jornada/código y 19 ausencias. Las categorías se solapan
+y comparan estados con etiquetas finales, no errores confirmados del GT.
+
+```bash
+python -m experiments.data_ground_truth.unscored_history_rows \
+  --base "$DATA_BASE" --out "$DATA_BASE/unscored-history-g102-new"
+```
+
+`scoreless_rows.csv` conserva marcador desconocido y valores originales;
+`projections.json` identifica representantes, fuentes y errores;
+`disagreements.csv` conserva ambos valores y si el marcador estaba presente.
+Dos ejecuciones producen reporte y los tres artefactos idénticos byte por byte.
+Pruebas cubren ausencia de marcador, estadísticas parciales, totales incompatibles
+y la distinción entre marcador `0-0` explícito y desconocido.
+
+GT v8, paquete parcial G94, entrenamiento y producción permanecen intactos.
+No hay admisión de etiquetas finalizadas ni predeadline. Suite completa G102:
+**1.712 passed, 1 skipped, 79 deselected**, 37,39 s.

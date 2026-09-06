@@ -19,6 +19,10 @@ El cockpit read-only comparte un único contrato entre CLI y API. Su dashboard e
 sólo expone tres indicadores humanos; diagnóstico, métricas y JSON permanecen en loopback.
 Supabase sólo refleja seguimiento PM y nunca recibe estado operativo.
 
+G102: 173 de las 177 variantes antes rechazadas se enlazan sin inventar
+marcadores. Se detectan 16.928 ceros sin marcador que corresponden a minutos
+positivos en el GT final; quedan excluidos como etiquetas de no participación.
+
 G101: de 253 variantes de historial, 62 se reconcilian con fixtures y totales.
 La comparación con GT v8 conserva 599 discrepancias de estado y dos claves
 candidatas ausentes (ambas 0/0); no se incorporan automáticamente al GT.
