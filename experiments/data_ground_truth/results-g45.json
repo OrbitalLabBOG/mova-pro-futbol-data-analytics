@@ -1,0 +1,120 @@
+{
+  "version": "historical-data-g45",
+  "audit_report_sha256": "571ee5f732efa2d4bb75451a4867dfa110ed64fa2eaf4845e9e4f7c3db13f061",
+  "audit": {
+    "version": "correction-history-v1",
+    "source_manifest_sha256": "d9eed1e354d0a35443e480a0c4bfcbdebee97f28b73b04309e4bef0f8bcc243e",
+    "source_audit_sha256": "703fd327692e9d8c45bbbd0f7b8a91947fbfbb2df308a61ce71b0b7fe1c47f90",
+    "reconciliation_report_sha256": "4e9324e1f59d7c6f7fa4b06b57ff3fe47ca355b0c38ac5d53d1568ce1f305935",
+    "dataset_id": "d4baf849fb4a051be103f8c469e61a4753edb0b4004f980a000fe5c86ef573db",
+    "implementation_sha256": "80ac816f697aba6443eb45351e778adc12e4beb330e865d547133a550c3d62e4",
+    "targets": 1,
+    "summaries": [
+      {
+        "season": "2024-25",
+        "element": 123,
+        "source_code": 487117,
+        "fields": [
+          "goals_conceded",
+          "minutes",
+          "total_points"
+        ],
+        "nominal_window_start": "2025-01-31T18:30:00+00:00",
+        "nominal_window_end": "2025-03-27T18:00:00+00:00",
+        "observations": 219,
+        "statuses": {
+          "equal": 146,
+          "different": 73
+        },
+        "transitions": [
+          {
+            "before_sha256": "defec1e4132073efa69356ee67ccdf97fdb3b6e1ae2998561b9c0104024d4dd8",
+            "after_sha256": "61f5b1ef00d66e5b910797af4b8b85d31853fec41f55b264b8b3d43b50a97ff1",
+            "before_claimed_at": "2025-02-01T06:28:00",
+            "after_claimed_at": "2025-02-01T12:38:00",
+            "before_residuals": {
+              "goals_conceded": 0,
+              "minutes": 0,
+              "total_points": 0
+            },
+            "after_residuals": {
+              "goals_conceded": -2,
+              "minutes": -17,
+              "total_points": -1
+            },
+            "near_kickoff": true
+          },
+          {
+            "before_sha256": "61f5b1ef00d66e5b910797af4b8b85d31853fec41f55b264b8b3d43b50a97ff1",
+            "after_sha256": "f952bdeebf32cb15841701b71c7178b8d143224b6183db26dcd736a3422d426e",
+            "before_claimed_at": "2025-02-01T12:38:00",
+            "after_claimed_at": "2025-02-01T18:26:00",
+            "before_residuals": {
+              "goals_conceded": -2,
+              "minutes": -17,
+              "total_points": -1
+            },
+            "after_residuals": {
+              "goals_conceded": 0,
+              "minutes": 0,
+              "total_points": 0
+            },
+            "near_kickoff": true
+          },
+          {
+            "before_sha256": "f180844288a084efb8cfac61b6dde4d21dfd74dcfc29164e1a356b3faf89c2d2",
+            "after_sha256": "90c9ad2218509b887ab30c45a7c767bc7602fb43419b510782921665b3ee24b2",
+            "before_claimed_at": "2025-02-12T18:31:00",
+            "after_claimed_at": "2025-02-13T01:46:00",
+            "before_residuals": {
+              "goals_conceded": 0,
+              "minutes": 0,
+              "total_points": 0
+            },
+            "after_residuals": {
+              "goals_conceded": -2,
+              "minutes": -17,
+              "total_points": -1
+            },
+            "near_kickoff": false
+          },
+          {
+            "before_sha256": "4252d5c4a3d8d8d1773db9249e213397b9e6398194e422399841f2604b0f2ef0",
+            "after_sha256": "e9bb7557107f6db75f371d91607693f092fa8d7bb5309446a1ec039e1812086c",
+            "before_claimed_at": "2025-03-02T18:29:00",
+            "after_claimed_at": "2025-03-03T01:52:00",
+            "before_residuals": {
+              "goals_conceded": -2,
+              "minutes": -17,
+              "total_points": -1
+            },
+            "after_residuals": {
+              "goals_conceded": 0,
+              "minutes": 0,
+              "total_points": 0
+            },
+            "near_kickoff": false
+          }
+        ]
+      }
+    ],
+    "timelines_sha256": "3b8a278a6e3fcfadc8f66b5b003da749fa2ac8b64a12880a98f222814713081a",
+    "training_admitted": false,
+    "production_changed": false,
+    "limitations": [
+      "source_clock_UTC_hypothesis_not_publication_or_capture_proof",
+      "four_hour_flag_does_not_prove_settlement",
+      "final_labels_are_retrospective_reference",
+      "transition_between_captures_not_exact_correction_time",
+      "bounded_window_not_complete_season_trace"
+    ]
+  },
+  "verification": {
+    "reproduced_byte_for_byte": true,
+    "tests_passed": 1549,
+    "tests_skipped": 1,
+    "tests_deselected": 79
+  },
+  "production_changed": false,
+  "training_admitted": false
+}
