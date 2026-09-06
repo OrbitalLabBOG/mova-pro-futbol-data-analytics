@@ -5914,3 +5914,41 @@ python -m experiments.data_ground_truth.profile_total_consistency \
   --base "$RAW_HISTORY_ROOT" \
   --out "$RAW_HISTORY_ROOT/profile-total-consistency-g105-v1"
 ```
+
+
+## G106 — Footieviz: archivos vigentes e historial Git
+
+Se preservaron ocho archivos del repositorio
+[sandalsoft/footieviz_py](https://github.com/sandalsoft/footieviz_py/tree/01b060a6874f88f5755d67e6b9347455a0e7e059)
+y nueve versiones adicionales de `raw_data.json` y `sqlalchemy_example.db`:
+17 registros, 15 contenidos únicos y 315.322 bytes sumados por registro.
+El historial consultado es el de esos dos paths en la rama predeterminada;
+no acredita una búsqueda exhaustiva de todas las ramas y forks.
+
+La versión JSON `34f057facaee7ab360b1803c0542ccf54ef06a9e` contiene nueve
+jugadores y 99 filas GW1–11 de 2013/14. Las 99 se enlazan por ID, código y
+clave original fecha/jornada/oponente al archivo G88 de keithxm23/fplPlayer:
+los veinte campos coinciden exactamente. No hay etiquetas adicionales.
+Las versiones JSON posteriores contienen un solo perfil sin historial por
+partido y resúmenes anuales 2008/09–2013/14, que no son temporadas completas.
+
+Las seis capturas SQLite, incluida la vigente y cinco históricas, tienen cero
+filas en todas sus tablas. Se verificaron integridad y lectura inmutable;
+no se ejecutó código, SQL de instalación ni vistas del repositorio fuente.
+Un commit elimina la base y devuelve HTTP 404: se conserva el detalle Git que
+confirma `removed`. Una versión JSON es inválida (`Extra data`, offset 4954)
+y permanece sin reparar. Los SQL vigentes contienen esquemas y semillas de
+catálogo, no resultados de jugadores.
+
+[Resultados G106](results-g106.json) fija hashes de manifiestos, código, inventario
+y comparación. Dos corridas producen tres archivos idénticos. Datos crudos:
+`footieviz-source-g106` y `footieviz-history-g106`; auditorías:
+`footieviz-audit-g106-v1` y `-v2`, fuera de Git y todavía fuera del corte G104.
+No cambia GT, entrenamiento ni producción. La fecha del archivo o del commit
+no se convierte automáticamente en disponibilidad predeadline.
+
+```bash
+python -m experiments.data_ground_truth.footieviz_source_audit \
+  --base "$RAW_HISTORY_ROOT" \
+  --out "$RAW_HISTORY_ROOT/footieviz-audit-g106-v1"
+```
