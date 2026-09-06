@@ -5886,3 +5886,31 @@ quedó reproducido íntegramente. No se usaron los datos originales como fallbac
 el padre G92, manifiesto, alcance y hashes de las reproducciones. GT activo v8 y
 GT heredado v7 quedan distinguidos. Suite completa: **1.715 passed, 1 skipped,
 79 deselected**, 39,94 s. Producción y modelos permanecen intactos.
+
+
+## G105 — Consistencia de totales en snapshots rechazados
+
+Se examinan los cuatro representantes G102 rechazados por discrepancia entre
+`total_points` y la suma de puntos del historial, junto con sus capturas válidas
+inmediatamente anterior y posterior en el orden nominal de los archivos.
+Son doce snapshots y seis perfiles: Fonte, Gomis, Fernández, Hernández, Noble y
+Skrtel. En los seis casos el historial suma un punto más que el perfil; las
+capturas vecinas concuerdan y conservan el mismo ID y código de jugador.
+
+Las últimas filas de los snapshots afectados muestran 3, 5 o 61 minutos,
+mientras las posteriores muestran 77, 80 o 90. Esto documenta estados distintos;
+no acredita el instante de publicación, la causa de la inconsistencia ni que
+los totales coincidentes sean definitivos. Los originales no se reparan y no
+se admiten nuevas etiquetas. Esta auditoría cubre cuatro representantes, no
+los totales de toda la colección G100.
+
+[Resultados y hashes G105](results-g105.json). El reporte y `traces.json` se
+reprodujeron byte a byte usando únicamente los datos de `restored-data-g104-v1`.
+Los nuevos artefactos viven en `profile-total-consistency-g105-v1` y `-v2`, fuera
+de Git; no están incluidos en el corte G104 ya sellado.
+
+```bash
+python -m experiments.data_ground_truth.profile_total_consistency \
+  --base "$RAW_HISTORY_ROOT" \
+  --out "$RAW_HISTORY_ROOT/profile-total-consistency-g105-v1"
+```

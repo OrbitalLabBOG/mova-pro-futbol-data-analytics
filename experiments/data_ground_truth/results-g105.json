@@ -1,0 +1,43 @@
+{
+  "version": "historical-data-g105",
+  "audit": {
+    "version": "profile-total-consistency-v1",
+    "implementation_sha256": "67e79cae9e2a608caafa70008cecd4a92ad8f3ddcd845c306a2dab6e73b1a8c5",
+    "source_inventory_sha256": "90cff64bf4519ec925335ddfae8dd8d273881cfef15db5768bb5c17b77042f25",
+    "source_projections_sha256": "062ff5392fa219f90fa29f3d162b9927b3a4e6e5d9862b9015329fd463a28bba",
+    "target_snapshots": 4,
+    "inspected_snapshots": 12,
+    "inconsistent_profiles": 6,
+    "consistent_previous": 6,
+    "consistent_next": 6,
+    "neighbor_identity_mismatches": 0,
+    "finalized_labels_admitted": 0,
+    "gt_changed": false,
+    "production_changed": false,
+    "limitations": [
+      "four_rejected_representatives_not_full_collection_total_audit",
+      "nominal_filename_order_not_publication_proof",
+      "adjacent_valid_schema_snapshots_only",
+      "consistent_totals_do_not_prove_finalization",
+      "neighbors_do_not_authorize_source_repair",
+      "no_cause_or_atomicity_inferred"
+    ],
+    "artifacts": {
+      "traces.json": "7dd6b4a20b24f2ec57ef4984848b7ab74ef95960c40d9aab6f8b57918b98dced"
+    }
+  },
+  "report_sha256": "ecf8f120c05f7b4e360426dc3b62c6e07682c6509c40e35b3e2cb71a45e5bc36",
+  "reproduction": {
+    "source": "restored-data-g104-v1",
+    "identical_files": [
+      "report.json",
+      "traces.json"
+    ]
+  },
+  "validation": {
+    "command": "python -m pytest -q",
+    "passed": 1717,
+    "skipped": 1,
+    "deselected": 79
+  }
+}
