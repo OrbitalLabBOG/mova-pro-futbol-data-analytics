@@ -20,7 +20,7 @@ CLUB_NAMES={'Birmingham':'Birmingham_City','Blackburn':'Blackburn_Rovers',
     'Wigan':'Wigan_Athletic','Wolves':'Wolverhampton_Wanderers'}
 
 
-def compare(matches,fixtures,teams,players,observations,reference_fixtures):
+def join_appearances(matches,fixtures,teams,observations,reference_fixtures):
     if set(matches.season)!={11} or set(fixtures.season)!={11} or set(observations.season)!={'2010-11'}:
         raise ValueError('unexpected appearance season')
     clubs=observations[['team_id','team']].drop_duplicates()
@@ -45,6 +45,11 @@ def compare(matches,fixtures,teams,players,observations,reference_fixtures):
     expected_opponent=x.team_away_id.where(x.is_home.eq(1),x.team_home_id)
     if expected_opponent.ne(x.opp_team_id).any():raise ValueError('appearance opponent disagreement')
     x['team_id']=x.team_home_id.where(x.is_home.eq(1),x.team_away_id).map(mapping)
+    return x,f,date_differences
+
+
+def compare(matches,fixtures,teams,players,observations,reference_fixtures):
+    x,f,date_differences=join_appearances(matches,fixtures,teams,observations,reference_fixtures)
     keys=['matchId_events','team_id']
     a=x.groupby(keys).agg(fpl_rows=('minutes','size'),fpl_minutes=('minutes','sum'))
     p=observations[observations.minutesPlayed.gt(0)].groupby(keys).agg(sport_rows=('minutesPlayed','size'),sport_minutes=('minutesPlayed','sum'))

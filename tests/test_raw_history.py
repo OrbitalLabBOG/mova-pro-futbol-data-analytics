@@ -543,3 +543,44 @@ def test_native_identity_requires_repeated_fullname_witnesses_and_preserves_unkn
     # A different native ID with the same name cannot donate its identity.
     renamed=frame.copy();renamed.loc[2:,'playerId']=2
     assert not propagate(renamed)[0].native_identity_recovered.any()
+
+
+def test_historical_identity_requires_every_positive_fixture_and_preserves_fpl_labels():
+    from experiments.data_ground_truth.historical_identity import resolve,name_matches
+    assert name_matches('Young L','Luke Young')
+    assert not name_matches('Young L','Ashley Young')
+    assert name_matches('Diouf EH','El Hadji Diouf')
+    assert not name_matches('Diouf EH','Mame Biram Diouf')
+    assert not name_matches('Hammil','Adam Hammill')
+    appearances=pd.DataFrame([dict(player_fpl_id=1,fixture_id=m,matchId_events=m+100,team_id=3,minutes=26,total=1) for m in [1,2]])
+    players=pd.DataFrame([dict(_id=1,name='Smith')])
+    observations=pd.DataFrame([dict(matchId_events=m+100,team_id=3,playerId=40,playerName='John Smith',minutesPlayed=25,official_player_code=20) for m in [1,2]])
+    linked,evidence,report=resolve(appearances,players,observations)
+    assert report['verified_players']==1 and report['verified_rows']==2
+    assert linked.official_player_code.tolist()==[20,20]
+    assert linked.minutes.tolist()==[26,26]
+    assert report['source_outcomes_preserved']
+    assert not linked.eligible_training.any() and not linked.eligible_predeadline.any()
+    assert evidence[0]['fixtures']==[101,102]
+    for bad in [observations.iloc[:1],observations.assign(minutesPlayed=None),observations.assign(minutesPlayed=0)]:
+        assert resolve(appearances,players,bad)[2]['verified_rows']==0
+    assert resolve(appearances.iloc[:1],players,observations)[2]['verified_rows']==0
+    ambiguous=pd.concat([observations,observations.assign(playerId=41,playerName='James Smith',official_player_code=21)])
+    assert resolve(appearances,players,ambiguous)[2]['verified_rows']==0
+    duplicate=pd.concat([appearances,appearances.assign(player_fpl_id=2)],ignore_index=True)
+    with pytest.raises(ValueError,match='cross-FPL identity collision'):
+        resolve(duplicate,pd.concat([players,players.assign(_id=2)]),observations)
+
+
+def test_later_fpl_history_can_corroborate_single_appearance_but_not_wrong_fullname():
+    from experiments.data_ground_truth.historical_identity import resolve
+    a=pd.DataFrame([dict(player_fpl_id=1,fixture_id=10,matchId_events=100,team_id=3,minutes=1,total=1)])
+    p=pd.DataFrame([dict(_id=1,name='Smith')])
+    o=pd.DataFrame([dict(matchId_events=100,team_id=3,playerId=30,playerName='John Smith',minutesPlayed=None,official_player_code=20)])
+    later=dict(code=20,first_name='John',second_name='Smith',season_history=[['2010/11',1,1]])
+    linked,evidence,report=resolve(a,p,o,[later])
+    assert report['verified_rows']==1
+    assert evidence[0]['corroborated_by_later_fpl_season_totals']
+    for bad in [later|{'first_name':'James'},later|{'season_history':[['2010/11',2,1]]},later|{'code':21}]:
+        assert resolve(a,p,o,[bad])[2]['verified_rows']==0
+    assert resolve(a,p,o.assign(minutesPlayed=1),[later|{'first_name':'James'}])[2]['verified_rows']==0
