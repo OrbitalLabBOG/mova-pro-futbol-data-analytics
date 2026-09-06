@@ -111,7 +111,7 @@ de modelos por hash y exportación revisable, sin promover modelos al runtime.
 
 La capa experimental conserva los datos crudos fuera de Git, con manifiestos,
 SHA-256, fuentes fijadas por commit y auditorías reproducibles. El
-[registro de gates G1–G90](experiments/data_ground_truth/README.md) contiene
+[registro de gates G1–G91](experiments/data_ground_truth/README.md) contiene
 adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 
 | Capa | Cobertura verificada | Límite pendiente |
@@ -251,6 +251,12 @@ contenido nuevo frente a G88. El último archivo cubre GW1–6 y sus 3.596 filas
 coinciden con GT v7 en minutos, puntos y jornada; seis diferencias de código
 permanecen pendientes. Siete versiones no concilian por filas sin marcador.
 [Resultados G90](experiments/data_ground_truth/results-g90.json).
+
+G91 explica la discrepancia de código de Isaiah Brown: 65 registros de
+procedencia, 50 contenidos distintos, usan `81132`; perfiles posteriores
+corroboran `112516`. La correspondencia candidata queda limitada al SHA del
+archivo y al ID de origen, sin sustitución global ni cambios del GT.
+[Resultados G91](experiments/data_ground_truth/results-g91.json).
 
 ## Empezar
 

@@ -5162,3 +5162,55 @@ G87 permanecen intactos; G88–G90 siguen fuera de ese corte inmutable. El sigui
 trabajo debe mantener la búsqueda de 2013/14 y conciliar las identidades discrepantes.
 
 Suite completa G90: **1.687 passed, 1 skipped, 79 deselected**, 35,63 s.
+
+
+## G91 — Evidencia de identidad acotada para Isaiah Brown
+
+Las tres diferencias de código de G88 y las seis de G90 corresponden a un mismo
+jugador: Isaiah Brown, ID FPL 93 en 2014/15. Este gate examina todos los JSON de
+los tres manifiestos de G88/G90, preservando cada registro de procedencia y
+separando el conteo de archivos con contenido idéntico.
+
+| Evidencia | Resultado |
+| --- | ---: |
+| Registros de procedencia examinados | 65 |
+| Contenidos distintos con el jugador | 50 |
+| Código observado en esos archivos | 81132 |
+| Código del perfil FPL 2015/16 y del perfil 2017/18 | 112516 |
+| Filas de ese jugador en GT v7 2014/15 | 38 |
+| Totales GT y referencia anual posterior | 12 minutos, 1 punto |
+
+Los perfiles posteriores conservan el nombre completo Isaiah Brown. El perfil
+2015/16 contiene la historia anual 2014/15; se comprueba que sus minutos y puntos
+coinciden con el GT. Estas referencias pueden solaparse con la procedencia de la
+identidad ya usada en el GT: no se presentan como fuentes independientes de su
+construcción. Tampoco se atribuye fecha exacta o causa al cambio de código.
+
+`source_identity_evidence.json` conserva los 65 registros. La tabla
+`candidate_identity_crosswalk.csv` contiene 50 correspondencias candidatas,
+identificadas por SHA del archivo y ID de jugador de origen. Conserva `81132`
+como valor observado y añade `112516` en una columna candidata separada. No se
+registra un alias universal, no se reescriben crudos y no se cambian las filas del
+GT. Las comprobaciones rechazan códigos asociados a otro nombre, colisiones de
+IDs/códigos y totales anuales incompatibles.
+
+```bash
+python -m experiments.data_ground_truth.early_identity_evidence \
+  --base "$DATA_BASE" --out "$DATA_BASE/early-identity-evidence-g91-new"
+```
+
+[Resultados G91](results-g91.json) fija los tres manifiestos, los dos perfiles de
+referencia, el GT y los hashes de implementación/artefactos. Reporte y dos
+artefactos idénticos byte por byte en v2/v3.
+
+La búsqueda también verificó el enlace público de FPL Analytics para 2013/14:
+la descarga del JSON enlazado respondió HTTP 403. El receipt de fallo conserva
+URL, error y fecha de registro en `historical-discovery-g91`; no se incorporaron
+bytes de ese dataset ni se infiere inexistencia a partir del rechazo de acceso.
+Las nueve apariciones pendientes de GW34 2013/14 siguen abiertas.
+
+Este gate aporta evidencia de identidad utilizable para revisar una futura unión
+entre fuentes. No admite entrenamiento, publicación predeadline ni cambios de
+producción; el corte portable G87 conserva su estado inmutable.
+
+Suite completa G91: **1.689 passed, 1 skipped, 79 deselected**, 33,69 s.
