@@ -4572,3 +4572,59 @@ modo offline. Calendarios siguen en **195/199**: pendientes 2021/22 GW31–32,
 producción y entrenamiento permanecen sin cambios. Para estas dos ventanas,
 el siguiente intento requiere otra fuente de evidencia o contenido de otro
 calendario publicado, no volver a recorrer las mismas horas.
+
+## G81 — Disponibilidad anterior, antigüedad y cambios de horizonte
+
+Las cuatro ventanas sin calendario seleccionado no representan la misma brecha.
+`calendar_staleness_audit.py` revalida el padre de publicación, sus fuentes y
+objetos; busca el calendario previamente seleccionado más reciente de la misma
+temporada con testigo anterior a ambos deadlines. Esta selección diagnóstica
+no usa el contenido de la referencia posterior ni cambia el umbral vigente.
+
+Tres ventanas tienen evidencia anterior, pero quedan fuera de los catorce días
+del fallback experimental. Sus relojes de commit/publicación y calendarios de
+380 identidades se conservan en `older_observed_calendars.json`. La comparación
+con snapshots nominalmente posteriores se escribe **en otro artefacto**, sin
+admisión como entrada predeadline ni corrección automática del calendario viejo.
+
+| Ventana | Origen | Edad nominal, días | Campos diferentes | Fixtures con diferencias | Pares club–GW con distinto número de partidos en seis GW |
+| --- | --- | ---: | ---: | ---: | ---: |
+| 2021/22 GW31 | GW30 | 14,65 | 9 | 6 | 6 |
+| 2021/22 GW32 | GW30 | 20,97 | 35 | 26 | 22 |
+| 2022/23 GW23 | GW22 | 18,03 | 23 | 19 | 8 |
+| 2026/27 GW1 | Sin selección anterior en este corpus | — | — | — | — |
+
+Todas las diferencias de campo pertenecen a fixtures futuros o sin fecha en al
+menos una de las dos versiones. Hay, respectivamente, 3, 9 y 4 diferencias de
+asignación de jornada; las restantes son de kickoff. El calendario anterior
+conserva 6, 6 y 9 fixtures sin jornada asignada. No se imputan sus asignaciones
+usando la referencia posterior.
+
+El cambio de conteo por club/GW muestra por qué el problema importa para dobles,
+blancos y planificación de chips. Es una diferencia entre calendarios, **no una
+medición de puntos perdidos ni una validación del calendario posterior**. Tampoco
+se toma una ausencia de fixture asignado como prueba de que el club realmente
+no jugará. La edad se mide desde el commit, no desde una captura API demostrada.
+
+La sensibilidad descriptiva a 14/21/28 días muestra que los tres calendarios
+pasarían un límite de 21 días. No se adopta ese límite para aumentar cobertura:
+las diferencias observadas requieren modelar la incertidumbre del calendario.
+El índice seleccionado permanece **195/199**; esta auditoría distingue existencia
+de información vieja y suficiencia de esa información para decidir.
+
+```bash
+python -m experiments.data_ground_truth.calendar_staleness_audit \
+  --base-root "$DATA_BASE" --out "$DATA_BASE/calendar-staleness-v1"
+```
+
+Reporte y dos artefactos reproducidos byte por byte en una segunda raíz.
+[Resultados G81](results-g81.json) fija hashes y métricas. No hubo descargas nuevas,
+modificaciones de GT, admisión a entrenamiento ni cambios productivos. GT v7
+conserva 303.126 etiquetas y doce temporadas. El siguiente trabajo de datos puede
+buscar testigos de reprogramaciones específicas sin confundir el calendario final
+con lo que se sabía entonces.
+
+Suite completa: **1.662 passed, 1 skipped, 79 deselected**, en 41,55 s. Las pruebas
+cubren rechazo de fuentes futuras, de otra temporada o sin prueba; conservación
+de observaciones antiguas; y conteos de horizonte sin asignar fixtures desconocidos
+ni extender jornadas más allá de GW38.
