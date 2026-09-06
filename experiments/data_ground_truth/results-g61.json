@@ -1,0 +1,93 @@
+{
+  "version": "historical-data-g61",
+  "audit_report_sha256": "4cfeaf377186164121f8e221ef7aaa22468736d56ec59f6b296e772986095b80",
+  "audit": {
+    "version": "defensive-annual-reconciliation-v1",
+    "rows": 562,
+    "core_report_sha256": "8735421641ea72ca4c41bbc92d3f1059655289de84661ae618d3e68bf998b0a2",
+    "annual_report_sha256": "d113652680e2f4ef1d090e8efa6a085093c97d69d02f60be3c69b4e9bcba237e",
+    "position_snapshot_sha256": "eee31c9ece4864963bff4d88543ac5d440ca4d574ec89512e680d6e697f9a086",
+    "documentary_article_sha256": "c523044cfd0651c596662f87526920cf60b0393a9d17c216d311ba8bfff1792d",
+    "implementation_sha256": "8a65f12f903005e4358399bc0874025e87bfe1c09f03b9851730261eb1ad71cc",
+    "statuses": {
+      "no_provider_appearance_reference": 125,
+      "compared": 369,
+      "goalkeeper_out_of_scope": 32,
+      "no_position_in_2025_GW1": 36
+    },
+    "primary": {
+      "formula": "CBIT_DEF_CBIRT_MID_FWD_using_tackles",
+      "equal": 368,
+      "different": 1
+    },
+    "sensitivity": {
+      "formula": "same_roles_using_tackles_won",
+      "equal": 30,
+      "different": 339
+    },
+    "positions": {
+      "2": {
+        "rows": 144,
+        "primary_equal": 144
+      },
+      "3": {
+        "rows": 186,
+        "primary_equal": 185
+      },
+      "4": {
+        "rows": 39,
+        "primary_equal": 39
+      }
+    },
+    "comparisons_sha256": "35ed51688e43be126d0ce810fdd11558bb43eb3bfae31a2d1cab152e37e4adfa",
+    "training_admitted": false,
+    "production_changed": false,
+    "limitations": [
+      "aggregate_agreement_does_not_prove_per_match_equality",
+      "2025_GW1_positions_are_a_fixed_retrospective_hypothesis_for_2024_totals",
+      "goalkeepers_and_missing_provider_rows_not_synthesized_as_zero",
+      "tackles_won_is_sensitivity_not_a_selected_replacement",
+      "no_FPL_points_awarded_under_rules_that_did_not_exist_in_2024",
+      "document_acquired_now_not_historical_publication_proof",
+      "provider_action_definitions_still_require_reconciliation"
+    ]
+  },
+  "source_manifest": {
+    "records": [
+      {
+        "url": "https://www.premierleague.com/en/news/4362211/all-you-need-to-know-about-changes-to-fantasy-for-202526",
+        "sha256": "c523044cfd0651c596662f87526920cf60b0393a9d17c216d311ba8bfff1792d",
+        "bytes": 91531,
+        "fetched_at": "2026-09-06T13:50:09.251706+00:00",
+        "available_at": null
+      }
+    ]
+  },
+  "protocol": {
+    "version": "defensive-composition-hypothesis-v1",
+    "fixed_at": "2026-09-06T13:50:09.251836+00:00",
+    "primary": "CBI + tackles for DEF; CBI + tackles + recoveries for MID/FWD",
+    "sensitivity": "replace tackles with tackles_won, without selecting a winner",
+    "goalkeepers": "excluded_not_synthetic_zero",
+    "position_source": "2025/26 GW1 snapshot eee31c9ece4864963bff4d88543ac5d440ca4d574ec89512e680d6e697f9a086",
+    "target_annual_season": "2024/25",
+    "missing": "unknown_not_zero",
+    "source": {
+      "url": "https://www.premierleague.com/en/news/4362211/all-you-need-to-know-about-changes-to-fantasy-for-202526",
+      "sha256": "c523044cfd0651c596662f87526920cf60b0393a9d17c216d311ba8bfff1792d",
+      "bytes": 91531,
+      "fetched_at": "2026-09-06T13:50:09.251706+00:00",
+      "available_at": null
+    }
+  },
+  "protocol_sha256": "93397a67593a0a133570785c6fd29aef2d72fbc9fa97c659f3729db437779632",
+  "verification": {
+    "reproduced_byte_for_byte": true,
+    "tests_passed": 1600,
+    "tests_skipped": 1,
+    "tests_deselected": 79
+  },
+  "new_FPL_labels": 0,
+  "new_complete_fpl_seasons": 0,
+  "production_changed": false
+}
