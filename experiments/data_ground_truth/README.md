@@ -1950,3 +1950,71 @@ raw del collector propio contiene 55 manifiestos FPL, desde 2026-08-24 hasta
 2026-09-06, con bootstrap y fixtures separados. El inventario no acredita todavía
 hashes ni admisión temporal al paquete; la primera captura es posterior a GW1.
 Se consultó en lectura, sin recoger perfiles autenticados ni modificar controles.
+
+## Gate G36: archivos públicos del collector propio y cierre de ingesta
+
+Se exportan en lectura **55 bundles FPL 2026/27**, desde el 24 de agosto hasta
+el corte 2026-09-06T04:30:33.627Z. Los cuerpos exportados son exclusivamente
+`bootstrap-static.json` y `fixtures.json`: **77 objetos únicos, 95.043.896 bytes**.
+Se conservan aparte los 55 manifiestos originales como metadata de procedencia;
+incluyen la referencia pública al equipo configurado, pero no se copian cuerpos
+de perfiles, historia o picks. Esa metadata de operador no debe confundirse con
+un dataset de jugadores preparado para distribución pública.
+
+El exportador verifica tamaño y SHA contra cada manifiesto original; la extracción
+local restringe nombres, tipos y tamaños de miembros y rechaza conflictos o
+referencias fuera del inventario. La auditoría vuelve a comprobar la proyección
+contra el manifiesto original sellado, evitando que una proyección alterada se
+presente como si conservara el mismo hash de origen.
+
+La consulta PostgreSQL usa `connect_readonly` y transacción `READ ONLY`. Se
+recuperan 55 registros de ingesta y se enlazan inequívocamente por ruta, hash del
+manifiesto y hash declarado del bundle. Todos están `completed`. El hash global
+del bundle queda como referencia del ledger: no se recalcula sobre archivos de
+cuenta que deliberadamente no se exportan.
+
+**`observed_at` precede a las descargas; no es una cota superior de disponibilidad.**
+La auditoría usa `finished_at` de la ingesta completada. El máximo intervalo entre
+inicio de captura y cierre es 6,482326 segundos. Es evidencia del reloj y ledger
+propios, distinta de un testigo externo de publicación; se conserva ese origen.
+
+Se normalizan **34.512 estados de jugadores**, cero managers y **20.900 observaciones
+de fixtures**. Las 55 capturas tienen 380 identidades de fixture coincidentes con
+la referencia de temporada, 20 clubes, 38 jornadas y claves de jugador no ambiguas.
+Se preservan las ausencias de campos de estado, sin introducir elegibilidad ni
+admisión a entrenamiento por la sola presencia del registro.
+
+| Ventana | Jugadores | Inicio de captura UTC | Ingesta completada UTC |
+| --- | ---: | --- | --- |
+| 2026/27 GW2 | 620 | 2026-08-28 15:06:59.164 | 2026-08-28 15:07:00.355049 |
+| 2026/27 GW3 | 652 | 2026-09-04 15:30:13.423 | 2026-09-04 15:30:15.894142 |
+
+Ambas ingestas terminan antes de su deadline: aproximadamente 2,383 y 1,996 horas,
+respectivamente. El calendario del snapshot debe coincidir con el deadline de
+referencia. GW1 no tiene captura previa en este inventario. Los dos candidatos
+se entregan en `selected_deadlines.json` con `evidence_origin=own_collector_ingestion_ledger`.
+No se mezclan silenciosamente con los 193 testigos externos G35: el índice común
+con distinción de origen queda para el siguiente gate.
+
+El exportador standalone `collector_public_export.py` se ejecuta por stdin con
+Python estándar en el host autorizado, apuntando al directorio raw `fpl` y al
+corte fijo; solo escribe el tar en stdout. El ledger se consulta con
+`collector_ledger_export.py` dentro del worker provisionado, con las credenciales
+readonly existentes. No requiere copiar secretos ni desplegar código. La API no
+monta ese secreto; no se modificaron sus mounts para obtener acceso.
+
+```bash
+python -m experiments.data_ground_truth.collector_public_export \
+  --unpack "$COLLECTOR_PUBLIC_ARCHIVE" --out "$COLLECTOR_PUBLIC_RAW_ROOT"
+python -m experiments.data_ground_truth.collector_public_audit \
+  --base-root "$EXPERIMENTS_ROOT" --raw-root "$COLLECTOR_PUBLIC_RAW_ROOT" \
+  --ledger "$COLLECTOR_READONLY_LEDGER" --out "$COLLECTOR_PUBLIC_AUDIT_ROOT"
+```
+
+La exportación aceptada es `collector-public-export-v2.tar.gz`, su contenido
+`raw-collector-public-v2` y la auditoría `collector-public-audit-v2`, reproducida
+en `v3`. Reporte, capturas e índice se reprodujeron byte por byte. Suite:
+**1.517 passed, 1 skipped, 79 deselected**. Pruebas cubren exclusión de cuerpos de
+cuenta, manifiestos originales, corrupción, traversal de tar, cierre de ingesta,
+deadline exclusivo y conflictos de ledger. [Resultados G36](results-g36.json).
+GT v5, entrenamiento, controles y despliegues de producción permanecen intactos.

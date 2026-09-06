@@ -1,0 +1,78 @@
+{
+  "version": "historical-data-g36",
+  "audit_report_sha256": "6b9bac1ce427f549a327ee860ec564ffb959e8e394ed88d5de871725ca6eca44",
+  "audit": {
+    "version": "collector-public-audit-v1",
+    "source_manifest_sha256": "3548afb9982e9461afcd901a0c192284277a1ffd47c117caba832bc32d8a1434",
+    "ledger_sha256": "f72ff8d3e66b013c4b57fcaa9351316637a4f4fd81b0aefa69f4344b2c4b6d01",
+    "reference_report_sha256": "448a774a7a32815a64655999542af121e188a6fbcd58cd1847430c1a0ba47c24",
+    "deadline_selection_report_sha256": "1ace4506377f6bf92ff79d71f7b1083070f273c58f802518754f96fccb87b6fc",
+    "implementation_sha256": "3b09cdb4df4b7966c8facafc0c938b35af1e283e6ed079cff6bad5c75ec9837d",
+    "captures": 55,
+    "player_snapshot_rows": 34512,
+    "manager_snapshot_rows": 0,
+    "fixture_snapshot_rows": 20900,
+    "completed_ledger_bindings": 55,
+    "selected_deadlines": 2,
+    "missing_gws": [
+      1
+    ],
+    "max_acquisition_duration_seconds": 6.482326,
+    "artifacts": {
+      "captures.json": "ed070e97d503ee1b71e8b47120c6ea95b1e0d6596ef04a3acc016ee996999639",
+      "selected_deadlines.json": "b47d6c9bd79c4cf5ad9520e8b7870f523c22e51927f78ea8e6ef001d34c915b4"
+    },
+    "production_changed": false,
+    "training_admitted": false,
+    "limitations": [
+      "own_ledger_clock_not_external_publication_witness",
+      "exported_public_files_only_whole_bundle_payload_hash_not_recomputed",
+      "source_fields_preserved_without_model_admission"
+    ]
+  },
+  "acquisition": {
+    "archive_sha256": "777f215ec529223fc8111acd124e79694d5aebb8c3f160f7ac4deba0d1c07354",
+    "captures": 55,
+    "public_objects": 77,
+    "public_bytes": 95043896,
+    "source_manifests": 55,
+    "account_payloads_exported": false
+  },
+  "implementations": {
+    "collector_public_export.py": "f05698079d5c5a9292df1fbaed4d4cee08e1ca29a9fedbb3522e179b04b09eba",
+    "collector_ledger_export.py": "a951b8c397a85431b2f337bc6895b4c7e2caade2cc53d6d19fd81c7b0c4205cd",
+    "collector_public_audit.py": "3b09cdb4df4b7966c8facafc0c938b35af1e283e6ed079cff6bad5c75ec9837d"
+  },
+  "selected_summary": [
+    {
+      "season": "2026-27",
+      "gw": 2,
+      "deadline": "2026-08-28T17:30:00Z",
+      "observed_at": "2026-08-28T15:06:59.164+00:00",
+      "available_at": "2026-08-28T15:07:00.355049+00:00",
+      "players": 620,
+      "age_from_completed_ingestion_hours": 2.383234708611111,
+      "evidence_origin": "own_collector_ingestion_ledger"
+    },
+    {
+      "season": "2026-27",
+      "gw": 3,
+      "deadline": "2026-09-04T17:30:00Z",
+      "observed_at": "2026-09-04T15:30:13.423+00:00",
+      "available_at": "2026-09-04T15:30:15.894142+00:00",
+      "players": 652,
+      "age_from_completed_ingestion_hours": 1.9955849605555556,
+      "evidence_origin": "own_collector_ingestion_ledger"
+    }
+  ],
+  "verification": {
+    "reproduced_byte_for_byte": true,
+    "tests_passed": 1517,
+    "tests_skipped": 1,
+    "tests_deselected": 79
+  },
+  "external_calendar_index_changed": false,
+  "production_changed": false,
+  "gt_v5_changed": false,
+  "training_admitted": false
+}
