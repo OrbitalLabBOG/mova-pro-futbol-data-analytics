@@ -2018,3 +2018,36 @@ en `v3`. Reporte, capturas e índice se reprodujeron byte por byte. Suite:
 cuenta, manifiestos originales, corrupción, traversal de tar, cierre de ingesta,
 deadline exclusivo y conflictos de ledger. [Resultados G36](results-g36.json).
 GT v5, entrenamiento, controles y despliegues de producción permanecen intactos.
+
+## Gate G37: índice común de evidencia de calendarios
+
+`calendar_evidence_index.py` reproduce G35 y G36 desde sus fuentes y exige igualdad
+byte por byte de los reportes e índices parentales antes de combinarlos. Revalida
+los objetos normalizados referenciados y su población de 380 fixtures. Cada entrada
+conserva la evidencia original y distingue `external_publication` de
+`own_collector_ingestion_ledger`; una eventual superposición cuenta una jornada,
+pero conserva ambas evidencias. No se eleva su admisión a entrenamiento.
+
+Resultado: **195/199 deadlines** (193 externos y dos del ledger propio), frente a
+193 en el índice exclusivamente externo. Cobertura por temporada: 2020/21 parcial
+6/6; 2021/22 36/38; 2022/23 37/38; 2023/24, 2024/25 y 2025/26 38/38; 2026/27 2/3.
+Faltan 2021/22 GW31–32, 2022/23 GW23 y 2026/27 GW1.
+
+La frescura se informa por reloj: 93/193 fuentes externas tienen edad de commit
+hasta 48 horas (máximo 798,83 horas); las dos internas tienen inicio de captura
+hasta 48 horas (máximo 2,384 horas). No se suman esos relojes como una medición
+homogénea de captura API. Cobertura de calendario no acredita replay causal completo.
+
+Artefactos fuera de Git: `calendar-evidence-index-v1/{report.json,calendar_evidence.json}`
+y reproducción `calendar-evidence-index-v2/`, bajo la raíz de experimentos. Ejecución:
+
+```bash
+python -m experiments.data_ground_truth.calendar_evidence_index \
+  --base-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments \
+  --out /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/calendar-evidence-index-v1
+```
+
+Reporte e índice reproducidos byte por byte. **1.521 passed, 1 skipped,
+79 deselected**. Pruebas de solapamiento, duplicados, deadline exclusivo, orden de
+relojes, evidencia no acreditada y ventanas faltantes. Producción y GT v5 intactos.
+[Resultados G37](results-g37.json).

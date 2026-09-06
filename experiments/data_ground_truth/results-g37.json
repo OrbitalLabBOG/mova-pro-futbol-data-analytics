@@ -1,0 +1,116 @@
+{
+  "version": "historical-data-g37",
+  "audit": {
+    "version": "calendar-evidence-index-v1",
+    "expected_deadlines": 199,
+    "covered_deadlines": 195,
+    "evidence_records": 195,
+    "coverage": {
+      "2020-21": {
+        "expected": 6,
+        "covered": 6,
+        "by_origin": {
+          "external_publication": 6
+        }
+      },
+      "2021-22": {
+        "expected": 38,
+        "covered": 36,
+        "by_origin": {
+          "external_publication": 36
+        }
+      },
+      "2022-23": {
+        "expected": 38,
+        "covered": 37,
+        "by_origin": {
+          "external_publication": 37
+        }
+      },
+      "2023-24": {
+        "expected": 38,
+        "covered": 38,
+        "by_origin": {
+          "external_publication": 38
+        }
+      },
+      "2024-25": {
+        "expected": 38,
+        "covered": 38,
+        "by_origin": {
+          "external_publication": 38
+        }
+      },
+      "2025-26": {
+        "expected": 38,
+        "covered": 38,
+        "by_origin": {
+          "external_publication": 38
+        }
+      },
+      "2026-27": {
+        "expected": 3,
+        "covered": 2,
+        "by_origin": {
+          "own_collector_ingestion_ledger": 2
+        }
+      }
+    },
+    "source_clock_age": {
+      "external_publication": {
+        "observations": 193,
+        "within48h": 93,
+        "maximum_age_hours": 798.8283333333334
+      },
+      "own_collector_ingestion_ledger": {
+        "observations": 2,
+        "within48h": 2,
+        "maximum_age_hours": 2.3835655555555553
+      }
+    },
+    "missing": [
+      {
+        "season": "2021-22",
+        "gw": 31,
+        "deadline": "2022-04-02T10:00:00Z"
+      },
+      {
+        "season": "2021-22",
+        "gw": 32,
+        "deadline": "2022-04-08T17:30:00Z"
+      },
+      {
+        "season": "2022-23",
+        "gw": 23,
+        "deadline": "2023-02-11T11:00:00Z"
+      },
+      {
+        "season": "2026-27",
+        "gw": 1,
+        "deadline": "2026-08-21T17:30:00Z"
+      }
+    ],
+    "external_parent_sha256": "c4899a88e3d13df9bdfb568c502e7c5875aa3248c350b5ef934b3a53f7926ad6",
+    "collector_parent_sha256": "6b9bac1ce427f549a327ee860ec564ffb959e8e394ed88d5de871725ca6eca44",
+    "target_parent_sha256": "1ace4506377f6bf92ff79d71f7b1083070f273c58f802518754f96fccb87b6fc",
+    "implementation_sha256": "ae0fdabf5e7a0622256dcfbdaf61c1c38bc503a1d9a5480046d4773eda08b9df",
+    "index_sha256": "88e376ccc5f06d0df9e96b7cec7e69df378efa408849cf9b34b61ef5c9c030d6",
+    "production_changed": false,
+    "training_admitted": false,
+    "limitations": [
+      "internal_ledger_is_not_external_publication",
+      "commit_age_is_not_api_capture_age",
+      "calendar_coverage_is_not_complete_causal_replay"
+    ]
+  },
+  "audit_report_sha256": "14e03997f32311d934dfccfd20dc4d5530d863e0ee22b798d5f31ba3585c1514",
+  "verification": {
+    "reproduced_byte_for_byte": true,
+    "tests_passed": 1521,
+    "tests_skipped": 1,
+    "tests_deselected": 79
+  },
+  "production_changed": false,
+  "gt_v5_changed": false,
+  "training_admitted": false
+}
