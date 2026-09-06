@@ -2960,7 +2960,7 @@ licencia de redistribución ni admisión a entrenamiento**. El GT permanece sepa
 de los snapshots causales y conserva sus flags de no admisión predeadline.
 La evidencia del ensayo de recuperación queda en [Resultados G55](results-g55.json).
 
-Paquete vigente: [current-raw-bundle.json](current-raw-bundle.json), ID
+Paquete histórico congelado G55: [current-raw-bundle.json](current-raw-bundle.json), ID
 `4830e5a2347de3eaaab16ffef028ef1de354a19d0d08db72f84c8eec0424ee52`.
 Restaurado en `restored-corpus-g55-v2`: `corpora.json` y `object-index.json`
 coinciden byte por byte con G50; otros formatos coinciden tras excluir los once
@@ -4400,3 +4400,71 @@ Suite completa: **1.652 passed, 1 skipped, 79 deselected** (32,40 s).
 [Resultados G77](results-g77.json). GT v7 mantiene 303.126 etiquetas y doce
 temporadas; bundle G55 y producción intactos. Las 47 identidades restantes
 requieren otra evidencia independiente; no se reduce el mínimo de partidos.
+
+## G78 — Archivo consolidado y restauración independiente
+
+El corte [current-data-archive.json](current-data-archive.json) reúne el bundle
+G55 inmutable, una extensión de fuentes/documentos y un grupo separado de
+investigación StatsBomb. El registro explícito
+[archive-cut-g78.json](archive-cut-g78.json) fija inventarios de **39 directorios**
+y **27 archivos** adicionales; no incorpora carpetas de modelos ni operación
+privada. Conserva **30.295 rutas**, **27.449 contenidos únicos** y
+**3.189.886.957 bytes** de contenido único. No representa el tamaño físico
+exacto del paquete, que conserva objetos y manifiestos por grupo.
+
+Se recuperaron los doce archivos horarios comprimidos de GHArchive que habían
+sido consultados pero no retenidos completos: **448.908.192 bytes**, todos
+iguales en SHA-256 y tamaño a las referencias anteriores. El comando
+`publication_source_archive` exige esas referencias fijadas antes del GET y
+verifica también los recibos cacheados. Esta adquisición conserva procedencia;
+no añade resultados FPL ni acredita por sí sola disponibilidad predeadline.
+
+El constructor valida **1.410 referencias de fuentes** contra bytes presentes
+en el corte completo. Preserva un recibo de adquisición fallida como tal.
+Inventarios cambiados, enlaces simbólicos, archivos temporales y rutas en
+conflicto bloquean el empaquetado. La restauración exige un destino nuevo,
+verifica los objetos antes de copiar y revisa cada archivo restaurado antes de
+hacer visible el destino final. Las copias restauradas son independientes.
+
+Reproducción desde la raíz del repositorio, con Python del entorno del proyecto:
+
+```bash
+python -m experiments.data_ground_truth.data_archive_cut build \
+  --base "$DATA_BASE" --repository-root "$PWD" \
+  --registry experiments/data_ground_truth/archive-cut-g78.json \
+  --out "$DATA_BASE/data-archives"
+python -m experiments.data_ground_truth.data_archive_cut verify \
+  --package "$DATA_BASE/data-archives/$CUT_ID"
+python -m experiments.data_ground_truth.data_archive_cut restore \
+  --package "$DATA_BASE/data-archives/$CUT_ID" --out "$RESTORED_BASE"
+python -m experiments.data_ground_truth.season_identity_signatures \
+  --root "$RESTORED_BASE/statsbomb-open-g67" \
+  --archive-root "$RESTORED_BASE/raw-history-v2" \
+  --fixture-root "$RESTORED_BASE/statsbomb-fixture-crosswalk-v2" \
+  --baseline-root "$RESTORED_BASE/statsbomb-spelling-names-v1" \
+  --package "$RESTORED_BASE/training-datasets/$GT_DATASET_ID" \
+  --out "$AUDIT_OUT"
+```
+
+`DATA_BASE` apunta al almacén local de adquisiciones; `RESTORED_BASE` y
+`AUDIT_OUT` deben ser destinos nuevos. `CUT_ID` está en el puntero vigente y
+`GT_DATASET_ID` sigue siendo el de `current-labels.json`.
+
+El grupo de investigación incluye datos y derivados de **StatsBomb Open Data
+(Hudl)**, con los límites de uso ya documentados en G67. No se autoriza publicar
+el paquete completo, redistribuir sus datos ni incorporarlos al runtime comercial.
+
+<img src="https://static.hudl.com/craft/productAssets/statsbomb_icon.svg" alt="Hudl StatsBomb" width="40" height="40">
+
+GT v7 mantiene **303.126 etiquetas de doce temporadas**. Siguen pendientes los
+47 jugadores con una sola aparición de 2015/16, las diferencias de atribución
+entre proveedores y los contratos temporales/semánticos necesarios para replay.
+Una restauración en este equipo no demuestra respaldo externo. El corte tampoco
+incluye todos los intermediarios de experimentos históricos.
+
+Validación G78: restauradas **30.295 rutas** a un destino nuevo. G77 se ejecutó
+con las fuentes y el GT de esa copia; su reporte y sus cinco artefactos son
+**idénticos byte por byte** al corte G77. Se mantienen 503 identidades y
+10.422/10.469 apariciones positivas cubiertas. Suite completa: **1.655 passed,
+1 skipped, 79 deselected**, en 34,07 s. Evidencia agregada y hashes:
+[Resultados G78](results-g78.json). No se verificó salud productiva en este gate.

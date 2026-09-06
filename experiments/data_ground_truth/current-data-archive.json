@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "cut_id": "9a119e7b37d42607cb0fc2a91dd31103146ef786f1927459c3d56620751ec542",
+  "cut_sha256": "315d32ca08498c1e662f55e639e893b48018a602141b4872f2205a67a4a779c7",
+  "gt_dataset_id": "d4baf849fb4a051be103f8c469e61a4753edb0b4004f980a000fe5c86ef573db",
+  "restoration_paths": 30295,
+  "unique_content_objects": 27449,
+  "unique_content_bytes": 3189886957,
+  "evidence": "results-g78.json",
+  "registry": "archive-cut-g78.json",
+  "scope": "internal_source_and_research_archive",
+  "publicly_published": false,
+  "offsite_backup_verified": false,
+  "predeadline_training_admitted": false
+}

@@ -1,0 +1,391 @@
+{
+  "version": "historical-data-g78",
+  "archive_cut": {
+    "cut_id": "9a119e7b37d42607cb0fc2a91dd31103146ef786f1927459c3d56620751ec542",
+    "directories": [
+      {
+        "bytes": 8561,
+        "directory": "bootstrap-capture-code-history",
+        "files": 9,
+        "group": "source_extension",
+        "inventory_sha256": "451341c44f025e0f04a29f4bde0ba98f94205b4602d4db438703b58f5cd7eb99",
+        "role": "source_or_documentary_evidence"
+      },
+      {
+        "bytes": 252015,
+        "directory": "core-competition-reference-v1",
+        "files": 3,
+        "group": "source_extension",
+        "inventory_sha256": "df9f8f0c4c8be45bb8844d7c91e7c1f9033b2a9c63dabf73c378ed7cbe9b8ea1",
+        "role": "source_or_documentary_evidence"
+      },
+      {
+        "bytes": 496855,
+        "directory": "core-defensive-discovery-g63",
+        "files": 19,
+        "group": "source_extension",
+        "inventory_sha256": "65d0c50dab2cb484b292e32c8681f97d46cd461501e0e950c582190d5653821e",
+        "role": "source_or_documentary_evidence"
+      },
+      {
+        "bytes": 9416035,
+        "directory": "core-defensive-history-g63",
+        "files": 217,
+        "group": "source_extension",
+        "inventory_sha256": "78d7801247127d34243b120c47f244e4a8ea960dc6361617798c3de7e48e823d",
+        "role": "source_or_documentary_evidence"
+      },
+      {
+        "bytes": 2009656,
+        "directory": "core-detail-gap-history-g66",
+        "files": 163,
+        "group": "source_extension",
+        "inventory_sha256": "02551115b048f727bada6ff1f71ef56e97cde83e48229361a5f15fe59a3871cb",
+        "role": "source_or_documentary_evidence"
+      },
+      {
+        "bytes": 167291,
+        "directory": "core-lineup-history-g65",
+        "files": 9,
+        "group": "source_extension",
+        "inventory_sha256": "53d5681facfb09d9a44635f91ae9e5a07654146bfe32cde4457dcc84f7ec1908",
+        "role": "source_or_documentary_evidence"
+      },
+      {
+        "bytes": 7589721,
+        "directory": "core-match-details-g64",
+        "files": 609,
+        "group": "source_extension",
+        "inventory_sha256": "a378db586ba0a15441d6fd8f97661478f9c88c1bbb34044424a5321765612dc7",
+        "role": "source_or_documentary_evidence"
+      },
+      {
+        "bytes": 92683,
+        "directory": "defensive-rule-evidence-g61",
+        "files": 3,
+        "group": "source_extension",
+        "inventory_sha256": "4f6e16edda27ff8338cb9bd930479f0408979716fe1f3fd1559613c9808e8139",
+        "role": "source_or_documentary_evidence"
+      },
+      {
+        "bytes": 45224,
+        "directory": "differential-source-g57",
+        "files": 4,
+        "group": "source_extension",
+        "inventory_sha256": "8d59019bb9fbb48f898b9e11dd11b2d9972cfdb8d4826ca0ddd4208ef2ae6cfc",
+        "role": "source_or_documentary_evidence"
+      },
+      {
+        "bytes": 11077,
+        "directory": "fixture-publication-followup-v1",
+        "files": 14,
+        "group": "source_extension",
+        "inventory_sha256": "7b8beb7f3e67aa95bc92bc9692aea4c909fedff3cfa1767cb152bba1ca531d47",
+        "role": "source_or_documentary_evidence"
+      },
+      {
+        "bytes": 974311,
+        "directory": "historical-discovery-g56",
+        "files": 5,
+        "group": "source_extension",
+        "inventory_sha256": "afcb5b50617e11e314ba621782fa113c82b79682a03a0ef6d48ce50193fd3d05",
+        "role": "source_or_documentary_evidence"
+      },
+      {
+        "bytes": 377911,
+        "directory": "identity-name-evidence-g75",
+        "files": 4,
+        "group": "source_extension",
+        "inventory_sha256": "ac2dca2afa41517003feb1b6d97c5b02e874742a0e9663a6905c615a6f6db5c6",
+        "role": "source_or_documentary_evidence"
+      },
+      {
+        "bytes": 1771345,
+        "directory": "identity-name-evidence-g76",
+        "files": 8,
+        "group": "source_extension",
+        "inventory_sha256": "003e7831d1cf4bd4ee9d00999c469db6c3bfe4909b0629ac3986b930d472ab8e",
+        "role": "source_or_documentary_evidence"
+      },
+      {
+        "bytes": 158600,
+        "directory": "kickoff-delay-reference-v1",
+        "files": 2,
+        "group": "source_extension",
+        "inventory_sha256": "cda7c9ff40e1e28aa18ce1774895c8ea96f25ad52eb234f0f195da895b61f68a",
+        "role": "source_or_documentary_evidence"
+      },
+      {
+        "bytes": 1177921,
+        "directory": "legacy-scoring-audit-v1",
+        "files": 3,
+        "group": "statsbomb_research",
+        "inventory_sha256": "73d7c5fa5ce1e260e4ac651e8293df302eb6e98f231f427885d35031fc478f5c",
+        "role": "derived_research_lineage"
+      },
+      {
+        "bytes": 950370,
+        "directory": "official-calendar-pdf-extraction-v1",
+        "files": 3,
+        "group": "source_extension",
+        "inventory_sha256": "83db044afafc24f755902c4a0e96d6f01c13a7fb0617831bfd6414f8a28aa757",
+        "role": "source_or_documentary_evidence"
+      },
+      {
+        "bytes": 950370,
+        "directory": "official-calendar-pdf-extraction-v2",
+        "files": 3,
+        "group": "source_extension",
+        "inventory_sha256": "f1dce32560326f7735c74cfbf0e3327dce52084bbe00e56d73960932d70d032a",
+        "role": "source_or_documentary_evidence"
+      },
+      {
+        "bytes": 950370,
+        "directory": "official-calendar-pdf-extraction-v3",
+        "files": 3,
+        "group": "source_extension",
+        "inventory_sha256": "f1dce32560326f7735c74cfbf0e3327dce52084bbe00e56d73960932d70d032a",
+        "role": "source_or_documentary_evidence"
+      },
+      {
+        "bytes": 540049,
+        "directory": "preseason-transfer-reference-v1",
+        "files": 2,
+        "group": "source_extension",
+        "inventory_sha256": "67d593b59c7abbc58e2d371961b28ed68caabfad625b49f89354dccb3c941a98",
+        "role": "source_or_documentary_evidence"
+      },
+      {
+        "bytes": 448918653,
+        "directory": "publication-hour-source-g78",
+        "files": 25,
+        "group": "source_extension",
+        "inventory_sha256": "f4f122fa07b1f19b623ae9f82b0e41c5f8c7dbb3cc7ee8a46f9e764d5fd4c998",
+        "role": "source_or_documentary_evidence"
+      },
+      {
+        "bytes": 186845,
+        "directory": "rule-editorial-reference-v1",
+        "files": 3,
+        "group": "source_extension",
+        "inventory_sha256": "c61f2bc53bf63f96659c55afcc26b324b4ee4c172598bc4b2f4688a727550953",
+        "role": "source_or_documentary_evidence"
+      },
+      {
+        "bytes": 1276090,
+        "directory": "scoring-evidence-g73",
+        "files": 4,
+        "group": "source_extension",
+        "inventory_sha256": "6e25aaecd49cab7a01f6f238140413e7ee3a27e9b33928b04468b5244acab126",
+        "role": "source_or_documentary_evidence"
+      },
+      {
+        "bytes": 653390,
+        "directory": "statsbomb-alias-crosswalk-v2",
+        "files": 5,
+        "group": "statsbomb_research",
+        "inventory_sha256": "1756b93aa8f52126f6c88af90d4636f134695ddb423fc927a9893559916a4e1a",
+        "role": "derived_research_lineage"
+      },
+      {
+        "bytes": 641613,
+        "directory": "statsbomb-code-recovery-goals-v1",
+        "files": 4,
+        "group": "statsbomb_research",
+        "inventory_sha256": "b731819a27253782c5ef1214358fdc99e5453797840beee8aec83687c2633c62",
+        "role": "derived_research_lineage"
+      },
+      {
+        "bytes": 669433,
+        "directory": "statsbomb-code-recovery-v2",
+        "files": 6,
+        "group": "statsbomb_research",
+        "inventory_sha256": "e7c2239433a2c2015063639f1aa5c8d95243455645c4296d96e0b212d74cfca3",
+        "role": "derived_research_lineage"
+      },
+      {
+        "bytes": 215839,
+        "directory": "statsbomb-coverage-v2",
+        "files": 2,
+        "group": "statsbomb_research",
+        "inventory_sha256": "b8de5aa098024ee6d32ced0bcd7e405c6723a2211a618b540e9293e387757bff",
+        "role": "derived_research_lineage"
+      },
+      {
+        "bytes": 291923,
+        "directory": "statsbomb-fixture-crosswalk-v2",
+        "files": 3,
+        "group": "statsbomb_research",
+        "inventory_sha256": "4a4e59fa6bb610f80423de03980fcdbefba2a07a0985c3465135a64d9f0fef34",
+        "role": "derived_research_lineage"
+      },
+      {
+        "bytes": 654462,
+        "directory": "statsbomb-fpl-name-crosswalk-v2",
+        "files": 5,
+        "group": "statsbomb_research",
+        "inventory_sha256": "6b34f590c126dfd44510d72372c046d107518c4fcd2f0148dc5185232b17e633",
+        "role": "derived_research_lineage"
+      },
+      {
+        "bytes": 640944,
+        "directory": "statsbomb-goal-calibration-v2",
+        "files": 4,
+        "group": "statsbomb_research",
+        "inventory_sha256": "289a5079b6c8d657e578195999d23857eda6775f04193a93fd013cac0d800423",
+        "role": "derived_research_lineage"
+      },
+      {
+        "bytes": 1248368377,
+        "directory": "statsbomb-open-g67",
+        "files": 1683,
+        "group": "statsbomb_research",
+        "inventory_sha256": "666f1362f8cd853e1c3928c3a746e07e837e7c8214aaa7baf2397bb4266f3551",
+        "role": "source_or_documentary_evidence"
+      },
+      {
+        "bytes": 625993,
+        "directory": "statsbomb-player-crosswalk-v2",
+        "files": 4,
+        "group": "statsbomb_research",
+        "inventory_sha256": "3af6c3bd886c0aa0f8dc2d8fb0c1323fccc3f60d7ff0ac3851c20fbbec1021c7",
+        "role": "derived_research_lineage"
+      },
+      {
+        "bytes": 642335,
+        "directory": "statsbomb-reviewed-names-goals-v1",
+        "files": 4,
+        "group": "statsbomb_research",
+        "inventory_sha256": "2ed0d6d519ade56ddd117739fad3bb33d46b363da65bf5b6840fc0b2a1208b21",
+        "role": "derived_research_lineage"
+      },
+      {
+        "bytes": 677479,
+        "directory": "statsbomb-reviewed-names-v1",
+        "files": 6,
+        "group": "statsbomb_research",
+        "inventory_sha256": "3784c9038c0e973be560c83442f59c531cdc3486e5ee7410ac06263ec3d6dcd1",
+        "role": "derived_research_lineage"
+      },
+      {
+        "bytes": 643284,
+        "directory": "statsbomb-season-signatures-goals-v1",
+        "files": 4,
+        "group": "statsbomb_research",
+        "inventory_sha256": "85fc688a3f106906ea377ccbd8e14f1d1d3fbc2229b949c49870c2b30b522cd1",
+        "role": "derived_research_lineage"
+      },
+      {
+        "bytes": 1243211,
+        "directory": "statsbomb-season-signatures-v2",
+        "files": 6,
+        "group": "statsbomb_research",
+        "inventory_sha256": "f700b9554855042cde7dc8806e602b0ae55a2949551467f7f5e04097e833cdff",
+        "role": "derived_research_lineage"
+      },
+      {
+        "bytes": 1109809,
+        "directory": "statsbomb-specs-g72",
+        "files": 5,
+        "group": "statsbomb_research",
+        "inventory_sha256": "4ac07bb898f2e35e88459625ef62dcaf641ac0169cf708b95dcd439b321604d8",
+        "role": "source_or_documentary_evidence"
+      },
+      {
+        "bytes": 642929,
+        "directory": "statsbomb-spelling-names-goals-v1",
+        "files": 4,
+        "group": "statsbomb_research",
+        "inventory_sha256": "6685b80d88378f699168e7e6a612502bf3bb3d0e1b6c07b21e18f396973e0ad0",
+        "role": "derived_research_lineage"
+      },
+      {
+        "bytes": 1178569,
+        "directory": "statsbomb-spelling-names-scoring-v1",
+        "files": 3,
+        "group": "statsbomb_research",
+        "inventory_sha256": "a203342e3423df26396ef34318a03b0b6307ef27bbb341448d735791be585acd",
+        "role": "derived_research_lineage"
+      },
+      {
+        "bytes": 680176,
+        "directory": "statsbomb-spelling-names-v1",
+        "files": 6,
+        "group": "statsbomb_research",
+        "inventory_sha256": "b8055a218e5268ed812fe5fc9f0f64c72ae2039997c6729ed68681808c263826",
+        "role": "derived_research_lineage"
+      }
+    ],
+    "failed_acquisition_receipts_preserved": 1,
+    "gt_dataset_id": "d4baf849fb4a051be103f8c469e61a4753edb0b4004f980a000fe5c86ef573db",
+    "implementation_sha256": "93e0e89d75a89ce50867a2b98b643e4f7d1b5f4cb6f8758403688c381d3aca23",
+    "limitations": [
+      "selected_source_and_lineage_archive_not_all_model_experiment_workspaces",
+      "local_restore_does_not_prove_offsite_backup_or_predeadline_availability",
+      "failed_acquisition_receipt_is_not_recovered_source_data",
+      "StatsBomb_and_general_source_groups_do_not_share_publication_permissions"
+    ],
+    "members": [
+      {
+        "bundle_id": "4830e5a2347de3eaaab16ffef028ef1de354a19d0d08db72f84c8eec0424ee52",
+        "group": "legacy_g55",
+        "manifest_sha256": "dc93f3b2a5ea45434755af097a65a1b018981c5ea0f4760f6608f4f2d9ca2561"
+      },
+      {
+        "bundle_id": "389c55e6054847a040a9354b627d2a71746aa714504dccd8cbc5c14515f31cee",
+        "group": "source_extension",
+        "manifest_sha256": "04638e9e987193de25d78c5e20f4fa051b855ce54e31d7bf1faa764e3e5d5b39"
+      },
+      {
+        "bundle_id": "27cc93acc945dd3b1d13031942573fd687320f21fdbcf3518b56ecd7be7027c2",
+        "group": "statsbomb_research",
+        "manifest_sha256": "cf3128d0753fa87c71dd12426770ca217b8165e7d445bbcf45ff1846a370e3ef"
+      }
+    ],
+    "offsite_backup_verified": false,
+    "production_changed": false,
+    "publication_authorized": false,
+    "registry_sha256": "d1dc27e5d09a4cea7569a2ab7e40931c474aefd1c5f815f0c7ab399efbcc173d",
+    "restoration_paths": 30295,
+    "training_admitted": false,
+    "unique_content_bytes": 3189886957,
+    "unique_content_objects": 27449,
+    "verified_source_references": 1410,
+    "version": "data-archive-cut-v1"
+  },
+  "archive_cut_sha256": "315d32ca08498c1e662f55e639e893b48018a602141b4872f2205a67a4a779c7",
+  "restoration": {
+    "cut_id": "9a119e7b37d42607cb0fc2a91dd31103146ef786f1927459c3d56620751ec542",
+    "restored_files": 30295,
+    "offsite_backup_verified": false
+  },
+  "reproduced_G77_artifacts": {
+    "positive-appearance-issues.json": "01f8a588719e5a1578b1340a10609d1fa018d1b1ed0eb4850c6cc0ca4d73deac",
+    "witnesses.jsonl.gz": "c3d6d47395509cce4ea7734321b69ced076776c7f8903a9f4eabd3617f3cee05",
+    "signature-candidates.json": "ee2dfc088e1756ae21990ca75f2d8b9ecfd8d52369269a470cb0c9a9af3e141f",
+    "report.json": "7ef5e18184b26cd25d0cfa2406c473a6706d1aa21ed7f4a46471f0ecbee19896",
+    "player-links.json": "084daf3ca725a1c1776a74a5931533f84f0e22d596502f00d44fe739bf3b2b4d",
+    "identity-delta.json": "8bfd2512f5894f5623fc8698f57194fb2c7ab9c2404ee16356a3b2f5ed7fa1a1"
+  },
+  "G77_byte_identical": {
+    "positive-appearance-issues.json": true,
+    "witnesses.jsonl.gz": true,
+    "signature-candidates.json": true,
+    "report.json": true,
+    "player-links.json": true,
+    "identity-delta.json": true
+  },
+  "publication_source_recovery": {
+    "records": 12,
+    "bytes": 448908192,
+    "manifest_sha256": "062b90240a1ea10461320cbf8bc112d48d53c93d459cfd136d42c2c4f4a7f778"
+  },
+  "tests": {
+    "passed": 1655,
+    "skipped": 1,
+    "deselected": 79
+  },
+  "new_FPL_labels": 0,
+  "training_admitted": false,
+  "production_changed": false
+}
