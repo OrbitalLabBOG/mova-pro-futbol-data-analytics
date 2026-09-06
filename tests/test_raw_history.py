@@ -584,3 +584,78 @@ def test_later_fpl_history_can_corroborate_single_appearance_but_not_wrong_fulln
     for bad in [later|{'first_name':'James'},later|{'season_history':[['2010/11',2,1]]},later|{'code':21}]:
         assert resolve(a,p,o,[bad])[2]['verified_rows']==0
     assert resolve(a,p,o.assign(minutesPlayed=1),[later|{'first_name':'James'}])[2]['verified_rows']==0
+
+
+def test_database_overlap_does_not_invent_labels_from_complementary_nulls():
+    from experiments.data_ground_truth.season_evidence import compare_versions
+    a=pd.DataFrame([dict(season=12,player_player_id=1,fixture_id=10,minutes=90,total=None)])
+    b=a.assign(minutes=None,total=2)
+    result=compare_versions({'a':a,'b':b})['seasons']['12']
+    assert result['union_keys']==1
+    assert result['union_observed_keys']==0
+    assert result['additional_observed_keys_over_best']==0
+    c=a.assign(total=2)
+    result=compare_versions({'a':c,'b':c.copy()})['seasons']['12']
+    assert result['union_observed_keys']==1 and result['conflicting_keys']==0
+    assert compare_versions({'a':c,'b':c.assign(total=3)})['seasons']['12']['conflicting_keys']==1
+    with pytest.raises(ValueError,match='duplicate archived appearance'):
+        compare_versions({'a':pd.concat([c,c])})
+
+
+def test_season_histories_are_aggregates_not_fixture_eligibility():
+    from experiments.data_ground_truth.season_evidence import extract_histories,reconcile_totals
+    h=['2014/15',90]+[0]*14+[2]
+    player=dict(code=20,first_name='John',second_name='Smith',season_history=[h],source_sha256='a'*64)
+    frame=extract_histories([player])
+    assert frame.observation_unit.tolist()==['player_season']
+    assert not frame.eligible_training.any() and not frame.eligible_predeadline.any()
+    labels=pd.DataFrame([dict(official_player_code=20,mins=90,gw_pts=2)])
+    assert reconcile_totals(frame,labels)['matched_players']==1
+    with pytest.raises(ValueError,match='total disagreement'):
+        reconcile_totals(frame,labels.assign(gw_pts=3))
+    with pytest.raises(ValueError,match='duplicate season identity'):extract_histories([player,player])
+    with pytest.raises(ValueError,match='schema'):extract_histories([player|{'season_history':[h[:-1]]}])
+    with pytest.raises(ValueError,match='historical season'):
+        extract_histories([player|{'season_history':[['2014/16']+h[1:]]}])
+    unknown=frame.assign(official_player_code=21,minutes=0,points=0)
+    result=reconcile_totals(unknown,labels)
+    assert result['unmatched_players']==1 and result['unmatched_positive_minutes']==0
+
+
+def test_history_csv_validation_and_conflict_consensus():
+    from experiments.data_ground_truth.history_consensus import parse,consensus
+    record=dict(path='data/2016-17/players/Example/history.csv',sha256='a'*64)
+    data=b'element_code,season_name,minutes,total_points\n20,2010/11,90,2\n'
+    frame,status=parse(data,record)
+    assert status=='parsed' and frame.minutes.tolist()==[90]
+    duplicate=frame.assign(source_sha256='b'*64)
+    accepted,rejected=consensus(pd.concat([frame,duplicate]))
+    assert len(accepted)==1 and rejected.empty
+    assert accepted.witness_records.tolist()==[2]
+    assert not accepted.eligible_predeadline.any() and not accepted.population_complete.any()
+    accepted,rejected=consensus(pd.concat([frame,duplicate.assign(points=3)]))
+    assert accepted.empty and len(rejected)==2
+    assert parse(b'',record)[1]=='empty_file'
+    with pytest.raises(ValueError,match='chronology'):
+        parse(data.replace(b'2010/11',b'2018/19'),record)
+    with pytest.raises(ValueError,match='noninteger'):
+        parse(data.replace(b',90,',b',90.5,'),record)
+    with pytest.raises(ValueError,match='duplicate'):
+        parse(data+b'20,2010/11,90,2\n',record)
+
+
+def test_player_history_acquisition_is_pinned_filtered_and_resumable(tmp_path,monkeypatch):
+    from experiments.data_ground_truth.history_archive import acquire
+    revision='a'*40;inventory=tmp_path/'tree.json'
+    inventory.write_text(json.dumps(dict(sha=revision,truncated=False,tree=[
+        dict(type='blob',path='data/2016-17/players/Example/history.csv'),
+        dict(type='blob',path='data/2026-27/players/Example/history.csv'),
+        dict(type='blob',path='data/2016-17/gws/merged_gw.csv')])))
+    calls=[]
+    def get(url):calls.append(url);return b'element_code,season_name,minutes,total_points\n'
+    monkeypatch.setattr(raw,'_get',get)
+    result=acquire(tmp_path/'raw',inventory,revision)
+    assert result['expected_files']==1 and len(result['records'])==1
+    assert acquire(tmp_path/'raw',inventory,revision)['records']==result['records']
+    assert len(calls)==1
+    with pytest.raises(ValueError,match='inventory'):acquire(tmp_path/'raw',inventory,'b'*40)

@@ -144,6 +144,9 @@ con identidad y minutos válidos, separadas de las etiquetas FPL y del runtime.
 G12 verifica identidad para 502 jugadores / 10.164 apariciones FPL de 2010/11,
 conservando los resultados originales. Quedan 189 filas sin identidad y la
 temporada sigue fuera del paquete completo por el universo elegible pendiente.
+G13 adquiere 5.978 archivos de historiales de jugador: el consenso alcanza 8.284
+registros jugador-temporada de 2006/07–2024/25, con 6.308 claves adicionales.
+Son totales retrospectivos con cobertura parcial, separados del benchmark por jornada.
 
 ## Empezar
 
