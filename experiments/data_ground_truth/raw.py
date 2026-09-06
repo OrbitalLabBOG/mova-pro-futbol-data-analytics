@@ -1,0 +1,119 @@
+"""Pinned public GitHub acquisition; immutable bytes and conservative time semantics."""
+from __future__ import annotations
+
+import argparse
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timezone
+import hashlib
+import json
+import os
+import tempfile
+from pathlib import Path, PurePosixPath
+import re
+from urllib.parse import quote
+
+from mova_fpl.data.sources import _get
+
+REPOS = ('vaastav/Fantasy-Premier-League', 'olbauday/FPL-Core-Insights')
+
+
+def digest(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+def capture(root: Path, repo: str, revision: str, path: str) -> dict:
+    if repo not in REPOS or not re.fullmatch('[0-9a-f]{40}', revision):
+        raise ValueError('allowlisted repository and full commit required')
+    if PurePosixPath(path).is_absolute() or '..' in PurePosixPath(path).parts:
+        raise ValueError('unsafe source path')
+    url = f'https://raw.githubusercontent.com/{repo}/{revision}/{quote(path, safe="/")}'
+    key = digest(url.encode())
+    record_path = root / 'records' / f'{key}.json'
+    if record_path.exists():
+        record = json.loads(record_path.read_text())
+        blob = root / 'objects' / record['sha256']
+        if digest(blob.read_bytes()) != record['sha256']:
+            raise ValueError(f'corrupt raw object: {key}')
+        return record
+    data = _get(url)
+    sha = digest(data)
+    blob = root / 'objects' / sha
+    blob.parent.mkdir(parents=True, exist_ok=True)
+    # Publish complete bytes atomically; parallel paths may contain identical data.
+    with tempfile.NamedTemporaryFile(dir=blob.parent, delete=False) as stream:
+        temporary = Path(stream.name)
+        stream.write(data)
+        stream.flush()
+        os.fsync(stream.fileno())
+    try:
+        try:
+            os.link(temporary, blob)
+        except FileExistsError:
+            if digest(blob.read_bytes()) != sha:
+                raise ValueError('content-addressed object collision or corruption')
+    finally:
+        temporary.unlink()
+    record = dict(repository=repo, revision=revision, path=path, url=url,
+                  sha256=sha, bytes=len(data), fetched_at=datetime.now(timezone.utc).isoformat(),
+                  available_at=None, time_semantics='retrospective_unknown_publication',
+                  eligible_predeadline=False)
+    record_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = record_path.with_suffix('.tmp')
+    tmp.write_text(json.dumps(record, indent=2) + '\n')
+    tmp.replace(record_path)
+    return record
+
+
+def select(repo: str, path: str) -> bool:
+    if path in ('README.md', 'LICENSE', 'DATA_INTEGRATION_REVIEW.md'):
+        return True
+    if repo == REPOS[0]:
+        return bool(re.fullmatch(r'data/20(?:1[6-9]|2[0-5])-\d{2}/(?:gws/merged_gw|players_raw|fixtures|teams)\.csv', path))
+    if path.startswith('data/2024-2025/'):
+        return bool(re.fullmatch(r'data/2024-2025/(?:(matches|playermatchstats)/GW\d+/[^/]+|(players|teams)/[^/]+)\.csv', path))
+    return bool(re.fullmatch(r'data/202[56]-202[67]/(?:By Gameweek/GW\d+/(?:matches|playermatchstats|players|player_gameweek_stats)|gameweek_summaries|players|teams)\.csv', path))
+
+
+def acquire(root: Path, pins: dict[str, str]) -> dict:
+    records, errors = [], []
+    for repo, revision in pins.items():
+        if repo not in REPOS or not re.fullmatch('[0-9a-f]{40}', revision):
+            raise ValueError('invalid pin')
+        tree = json.loads(_get(f'https://api.github.com/repos/{repo}/git/trees/{revision}?recursive=1'))
+        if tree.get('truncated'):
+            raise ValueError('incomplete source inventory')
+        # Preserve the complete inventory, including files we deliberately did not fetch.
+        inventory = root / 'inventories' / (repo.split('/')[0] + '-' + revision + '.json')
+        inventory.parent.mkdir(parents=True, exist_ok=True)
+        inventory.write_text(json.dumps(tree, indent=2) + '\n')
+        paths = [x['path'] for x in tree['tree'] if x['type'] == 'blob' and select(repo, x['path'])]
+        def one(path):
+            try:
+                return capture(root, repo, revision, path), None
+            except Exception as exc:
+                return None, dict(repository=repo, path=path, error=type(exc).__name__)
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            for record, error in pool.map(one, paths):
+                if error:
+                    errors.append(error)
+                else:
+                    records.append(record)
+        print(f'{repo}: {len(paths)} selected files', flush=True)
+    report = dict(schema_version=1, pins=pins, records=sorted(records, key=lambda x: x['url']), errors=errors)
+    (root / 'manifest.json').write_text(json.dumps(report, indent=2) + '\n')
+    return report
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--root', type=Path, required=True)
+    parser.add_argument('--pins', type=Path, required=True)
+    args = parser.parse_args()
+    report = acquire(args.root, json.loads(args.pins.read_text()))
+    print(json.dumps(dict(files=len(report['records']), bytes=sum(r['bytes'] for r in report['records']), errors=report['errors'])))
+    if report['errors']:
+        raise SystemExit(2)
+
+
+if __name__ == '__main__':
+    main()

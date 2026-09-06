@@ -1,0 +1,4486 @@
+{
+  "schema_version": 1,
+  "canonical_sha256": "43e053f68d069d76f94bf14bff35cbea5c0ebeb8172b173baae18c4cf630a2e0",
+  "pins": {
+    "vaastav/Fantasy-Premier-League": "9779cdbc0c07f6c900c2d0c181ddf6bb9c800f88",
+    "olbauday/FPL-Core-Insights": "ce03f31b4032f3f89a1aa460ddc8a709ddeb56b6"
+  },
+  "raw_files": 427,
+  "raw_bytes": 72529667,
+  "acquisition_errors": [],
+  "seasons": {
+    "2016-17": {
+      "rows": 23679,
+      "players": 683,
+      "fixtures": 380,
+      "gameweeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38
+      ],
+      "duplicate_keys": 0,
+      "null_keys": 0,
+      "invalid_minutes": 0,
+      "invalid_kickoff": 0,
+      "ambiguous_name_keys": {},
+      "columns": {
+        "season": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "gw": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "element": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "fixture": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "player_key": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "name": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "opponent_team": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "was_home": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "kickoff_time": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "round": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "minutes": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "total_points": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "goals_scored": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "assists": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "clean_sheets": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "goals_conceded": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "own_goals": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "penalties_saved": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "penalties_missed": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "yellow_cards": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "red_cards": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "saves": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "bonus": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "bps": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "influence": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "creativity": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "threat": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "ict_index": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "value": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "selected": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "transfers_in": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "transfers_out": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "transfers_balance": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "team_a_score": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "team_h_score": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "position": {
+          "non_null": 0,
+          "rows": 23679,
+          "played_non_null": 0,
+          "played_rows": 10474
+        },
+        "team": {
+          "non_null": 0,
+          "rows": 23679,
+          "played_non_null": 0,
+          "played_rows": 10474
+        },
+        "xp_official": {
+          "non_null": 0,
+          "rows": 23679,
+          "played_non_null": 0,
+          "played_rows": 10474
+        },
+        "expected_goals": {
+          "non_null": 0,
+          "rows": 23679,
+          "played_non_null": 0,
+          "played_rows": 10474
+        },
+        "expected_assists": {
+          "non_null": 0,
+          "rows": 23679,
+          "played_non_null": 0,
+          "played_rows": 10474
+        },
+        "expected_goal_involvements": {
+          "non_null": 0,
+          "rows": 23679,
+          "played_non_null": 0,
+          "played_rows": 10474
+        },
+        "expected_goals_conceded": {
+          "non_null": 0,
+          "rows": 23679,
+          "played_non_null": 0,
+          "played_rows": 10474
+        },
+        "starts": {
+          "non_null": 0,
+          "rows": 23679,
+          "played_non_null": 0,
+          "played_rows": 10474
+        },
+        "clearances_blocks_interceptions": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "recoveries": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "tackles": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "defensive_contribution": {
+          "non_null": 0,
+          "rows": 23679,
+          "played_non_null": 0,
+          "played_rows": 10474
+        },
+        "key_passes": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "big_chances_created": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "big_chances_missed": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "errors_leading_to_goal": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "open_play_crosses": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "dribbles": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "fouls": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "offside": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "penalties_conceded": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "winning_goals": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "attempted_passes": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "completed_passes": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "target_missed": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        },
+        "tackled": {
+          "non_null": 23679,
+          "rows": 23679,
+          "played_non_null": 10474,
+          "played_rows": 10474
+        }
+      },
+      "metadata_join": {
+        "identity_artifact_sha256": "91b79594fa889436b3019f6c19fbcb49f8a7d8836dd090f47e35f1ac302c89ad",
+        "duplicate_official_codes": 0,
+        "matched_rows": 23679,
+        "unmatched_elements": [],
+        "duplicate_metadata_ids": 0,
+        "missing_position_recoverable": 23679,
+        "stable_code_rows": 23679,
+        "status": "research_only_final_season_metadata_not_predeadline"
+      }
+    },
+    "2017-18": {
+      "rows": 22467,
+      "players": 647,
+      "fixtures": 380,
+      "gameweeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38
+      ],
+      "duplicate_keys": 0,
+      "null_keys": 0,
+      "invalid_minutes": 0,
+      "invalid_kickoff": 0,
+      "ambiguous_name_keys": {},
+      "columns": {
+        "season": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "gw": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "element": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "fixture": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "player_key": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "name": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "opponent_team": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "was_home": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "kickoff_time": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "round": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "minutes": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "total_points": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "goals_scored": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "assists": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "clean_sheets": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "goals_conceded": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "own_goals": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "penalties_saved": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "penalties_missed": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "yellow_cards": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "red_cards": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "saves": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "bonus": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "bps": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "influence": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "creativity": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "threat": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "ict_index": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "value": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "selected": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "transfers_in": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "transfers_out": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "transfers_balance": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "team_a_score": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "team_h_score": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "position": {
+          "non_null": 0,
+          "rows": 22467,
+          "played_non_null": 0,
+          "played_rows": 10448
+        },
+        "team": {
+          "non_null": 0,
+          "rows": 22467,
+          "played_non_null": 0,
+          "played_rows": 10448
+        },
+        "xp_official": {
+          "non_null": 0,
+          "rows": 22467,
+          "played_non_null": 0,
+          "played_rows": 10448
+        },
+        "expected_goals": {
+          "non_null": 0,
+          "rows": 22467,
+          "played_non_null": 0,
+          "played_rows": 10448
+        },
+        "expected_assists": {
+          "non_null": 0,
+          "rows": 22467,
+          "played_non_null": 0,
+          "played_rows": 10448
+        },
+        "expected_goal_involvements": {
+          "non_null": 0,
+          "rows": 22467,
+          "played_non_null": 0,
+          "played_rows": 10448
+        },
+        "expected_goals_conceded": {
+          "non_null": 0,
+          "rows": 22467,
+          "played_non_null": 0,
+          "played_rows": 10448
+        },
+        "starts": {
+          "non_null": 0,
+          "rows": 22467,
+          "played_non_null": 0,
+          "played_rows": 10448
+        },
+        "clearances_blocks_interceptions": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "recoveries": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "tackles": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "defensive_contribution": {
+          "non_null": 0,
+          "rows": 22467,
+          "played_non_null": 0,
+          "played_rows": 10448
+        },
+        "key_passes": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "big_chances_created": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "big_chances_missed": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "errors_leading_to_goal": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "open_play_crosses": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "dribbles": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "fouls": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "offside": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "penalties_conceded": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "winning_goals": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "attempted_passes": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "completed_passes": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "target_missed": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        },
+        "tackled": {
+          "non_null": 22467,
+          "rows": 22467,
+          "played_non_null": 10448,
+          "played_rows": 10448
+        }
+      },
+      "metadata_join": {
+        "identity_artifact_sha256": "7c0efd53cc276506e4f0d95dda1cc1e55fdbe3199ae6686b95cff73de4bac71d",
+        "duplicate_official_codes": 0,
+        "matched_rows": 22467,
+        "unmatched_elements": [],
+        "duplicate_metadata_ids": 0,
+        "missing_position_recoverable": 22467,
+        "stable_code_rows": 22467,
+        "status": "research_only_final_season_metadata_not_predeadline"
+      }
+    },
+    "2018-19": {
+      "rows": 21790,
+      "players": 624,
+      "fixtures": 380,
+      "gameweeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38
+      ],
+      "duplicate_keys": 0,
+      "null_keys": 0,
+      "invalid_minutes": 0,
+      "invalid_kickoff": 0,
+      "ambiguous_name_keys": {
+        "danny ward": 2
+      },
+      "columns": {
+        "season": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "gw": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "element": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "fixture": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "player_key": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "name": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "opponent_team": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "was_home": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "kickoff_time": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "round": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "minutes": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "total_points": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "goals_scored": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "assists": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "clean_sheets": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "goals_conceded": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "own_goals": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "penalties_saved": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "penalties_missed": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "yellow_cards": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "red_cards": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "saves": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "bonus": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "bps": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "influence": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "creativity": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "threat": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "ict_index": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "value": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "selected": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "transfers_in": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "transfers_out": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "transfers_balance": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "team_a_score": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "team_h_score": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "position": {
+          "non_null": 0,
+          "rows": 21790,
+          "played_non_null": 0,
+          "played_rows": 10480
+        },
+        "team": {
+          "non_null": 0,
+          "rows": 21790,
+          "played_non_null": 0,
+          "played_rows": 10480
+        },
+        "xp_official": {
+          "non_null": 0,
+          "rows": 21790,
+          "played_non_null": 0,
+          "played_rows": 10480
+        },
+        "expected_goals": {
+          "non_null": 0,
+          "rows": 21790,
+          "played_non_null": 0,
+          "played_rows": 10480
+        },
+        "expected_assists": {
+          "non_null": 0,
+          "rows": 21790,
+          "played_non_null": 0,
+          "played_rows": 10480
+        },
+        "expected_goal_involvements": {
+          "non_null": 0,
+          "rows": 21790,
+          "played_non_null": 0,
+          "played_rows": 10480
+        },
+        "expected_goals_conceded": {
+          "non_null": 0,
+          "rows": 21790,
+          "played_non_null": 0,
+          "played_rows": 10480
+        },
+        "starts": {
+          "non_null": 0,
+          "rows": 21790,
+          "played_non_null": 0,
+          "played_rows": 10480
+        },
+        "clearances_blocks_interceptions": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "recoveries": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "tackles": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "defensive_contribution": {
+          "non_null": 0,
+          "rows": 21790,
+          "played_non_null": 0,
+          "played_rows": 10480
+        },
+        "key_passes": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "big_chances_created": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "big_chances_missed": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "errors_leading_to_goal": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "open_play_crosses": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "dribbles": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "fouls": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "offside": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "penalties_conceded": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "winning_goals": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "attempted_passes": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "completed_passes": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "target_missed": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        },
+        "tackled": {
+          "non_null": 21790,
+          "rows": 21790,
+          "played_non_null": 10480,
+          "played_rows": 10480
+        }
+      },
+      "metadata_join": {
+        "identity_artifact_sha256": "36f60d40b2b786d8c9c70e31edbdee75e56094a3b70b67df1a2291272b3caaa8",
+        "duplicate_official_codes": 0,
+        "matched_rows": 21790,
+        "unmatched_elements": [],
+        "duplicate_metadata_ids": 0,
+        "missing_position_recoverable": 21790,
+        "stable_code_rows": 21790,
+        "status": "research_only_final_season_metadata_not_predeadline"
+      },
+      "fixture_join": {
+        "finished_source_fixtures": 380,
+        "missing_finished_ids": [],
+        "unmatched_canonical_ids": []
+      }
+    },
+    "2019-20": {
+      "rows": 22560,
+      "players": 666,
+      "fixtures": 380,
+      "gameweeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47
+      ],
+      "duplicate_keys": 0,
+      "null_keys": 0,
+      "invalid_minutes": 0,
+      "invalid_kickoff": 0,
+      "ambiguous_name_keys": {},
+      "columns": {
+        "season": {
+          "non_null": 22560,
+          "rows": 22560,
+          "played_non_null": 10614,
+          "played_rows": 10614
+        },
+        "gw": {
+          "non_null": 22560,
+          "rows": 22560,
+          "played_non_null": 10614,
+          "played_rows": 10614
+        },
+        "element": {
+          "non_null": 22560,
+          "rows": 22560,
+          "played_non_null": 10614,
+          "played_rows": 10614
+        },
+        "fixture": {
+          "non_null": 22560,
+          "rows": 22560,
+          "played_non_null": 10614,
+          "played_rows": 10614
+        },
+        "player_key": {
+          "non_null": 22560,
+          "rows": 22560,
+          "played_non_null": 10614,
+          "played_rows": 10614
+        },
+        "name": {
+          "non_null": 22560,
+          "rows": 22560,
+          "played_non_null": 10614,
+          "played_rows": 10614
+        },
+        "opponent_team": {
+          "non_null": 22560,
+          "rows": 22560,
+          "played_non_null": 10614,
+          "played_rows": 10614
+        },
+        "was_home": {
+          "non_null": 22560,
+          "rows": 22560,
+          "played_non_null": 10614,
+          "played_rows": 10614
+        },
+        "kickoff_time": {
+          "non_null": 22560,
+          "rows": 22560,
+          "played_non_null": 10614,
+          "played_rows": 10614
+        },
+        "round": {
+          "non_null": 22560,
+          "rows": 22560,
+          "played_non_null": 10614,
+          "played_rows": 10614
+        },
+        "minutes": {
+          "non_null": 22560,
+          "rows": 22560,
+          "played_non_null": 10614,
+          "played_rows": 10614
+        },
+        "total_points": {
+          "non_null": 22560,
+          "rows": 22560,
+          "played_non_null": 10614,
+          "played_rows": 10614
+        },
+        "goals_scored": {
+          "non_null": 22560,
+          "rows": 22560,
+          "played_non_null": 10614,
+          "played_rows": 10614
+        },
+        "assists": {
+          "non_null": 22560,
+          "rows": 22560,
+          "played_non_null": 10614,
+          "played_rows": 10614
+        },
+        "clean_sheets": {
+          "non_null": 22560,
+          "rows": 22560,
+          "played_non_null": 10614,
+          "played_rows": 10614
+        },
+        "goals_conceded": {
+          "non_null": 22560,
+          "rows": 22560,
+          "played_non_null": 10614,
+          "played_rows": 10614
+        },
+        "own_goals": {
+          "non_null": 22560,
+          "rows": 22560,
+          "played_non_null": 10614,
+          "played_rows": 10614
+        },
+        "penalties_saved": {
+          "non_null": 22560,
+          "rows": 22560,
+          "played_non_null": 10614,
+          "played_rows": 10614
+        },
+        "penalties_missed": {
+          "non_null": 22560,
+          "rows": 22560,
+          "played_non_null": 10614,
+          "played_rows": 10614
+        },
+        "yellow_cards": {
+          "non_null": 22560,
+          "rows": 22560,
+          "played_non_null": 10614,
+          "played_rows": 10614
+        },
+        "red_cards": {
+          "non_null": 22560,
+          "rows": 22560,
+          "played_non_null": 10614,
+          "played_rows": 10614
+        },
+        "saves": {
+          "non_null": 22560,
+          "rows": 22560,
+          "played_non_null": 10614,
+          "played_rows": 10614
+        },
+        "bonus": {
+          "non_null": 22560,
+          "rows": 22560,
+          "played_non_null": 10614,
+          "played_rows": 10614
+        },
+        "bps": {
+          "non_null": 22560,
+          "rows": 22560,
+          "played_non_null": 10614,
+          "played_rows": 10614
+        },
+        "influence": {
+          "non_null": 22560,
+          "rows": 22560,
+          "played_non_null": 10614,
+          "played_rows": 10614
+        },
+        "creativity": {
+          "non_null": 22560,
+          "rows": 22560,
+          "played_non_null": 10614,
+          "played_rows": 10614
+        },
+        "threat": {
+          "non_null": 22560,
+          "rows": 22560,
+          "played_non_null": 10614,
+          "played_rows": 10614
+        },
+        "ict_index": {
+          "non_null": 22560,
+          "rows": 22560,
+          "played_non_null": 10614,
+          "played_rows": 10614
+        },
+        "value": {
+          "non_null": 22560,
+          "rows": 22560,
+          "played_non_null": 10614,
+          "played_rows": 10614
+        },
+        "selected": {
+          "non_null": 22560,
+          "rows": 22560,
+          "played_non_null": 10614,
+          "played_rows": 10614
+        },
+        "transfers_in": {
+          "non_null": 22560,
+          "rows": 22560,
+          "played_non_null": 10614,
+          "played_rows": 10614
+        },
+        "transfers_out": {
+          "non_null": 22560,
+          "rows": 22560,
+          "played_non_null": 10614,
+          "played_rows": 10614
+        },
+        "transfers_balance": {
+          "non_null": 22560,
+          "rows": 22560,
+          "played_non_null": 10614,
+          "played_rows": 10614
+        },
+        "team_a_score": {
+          "non_null": 22501,
+          "rows": 22560,
+          "played_non_null": 10614,
+          "played_rows": 10614
+        },
+        "team_h_score": {
+          "non_null": 22501,
+          "rows": 22560,
+          "played_non_null": 10614,
+          "played_rows": 10614
+        },
+        "position": {
+          "non_null": 0,
+          "rows": 22560,
+          "played_non_null": 0,
+          "played_rows": 10614
+        },
+        "team": {
+          "non_null": 0,
+          "rows": 22560,
+          "played_non_null": 0,
+          "played_rows": 10614
+        },
+        "xp_official": {
+          "non_null": 0,
+          "rows": 22560,
+          "played_non_null": 0,
+          "played_rows": 10614
+        },
+        "expected_goals": {
+          "non_null": 0,
+          "rows": 22560,
+          "played_non_null": 0,
+          "played_rows": 10614
+        },
+        "expected_assists": {
+          "non_null": 0,
+          "rows": 22560,
+          "played_non_null": 0,
+          "played_rows": 10614
+        },
+        "expected_goal_involvements": {
+          "non_null": 0,
+          "rows": 22560,
+          "played_non_null": 0,
+          "played_rows": 10614
+        },
+        "expected_goals_conceded": {
+          "non_null": 0,
+          "rows": 22560,
+          "played_non_null": 0,
+          "played_rows": 10614
+        },
+        "starts": {
+          "non_null": 0,
+          "rows": 22560,
+          "played_non_null": 0,
+          "played_rows": 10614
+        },
+        "clearances_blocks_interceptions": {
+          "non_null": 0,
+          "rows": 22560,
+          "played_non_null": 0,
+          "played_rows": 10614
+        },
+        "recoveries": {
+          "non_null": 0,
+          "rows": 22560,
+          "played_non_null": 0,
+          "played_rows": 10614
+        },
+        "tackles": {
+          "non_null": 0,
+          "rows": 22560,
+          "played_non_null": 0,
+          "played_rows": 10614
+        },
+        "defensive_contribution": {
+          "non_null": 0,
+          "rows": 22560,
+          "played_non_null": 0,
+          "played_rows": 10614
+        },
+        "key_passes": {
+          "non_null": 0,
+          "rows": 22560,
+          "played_non_null": 0,
+          "played_rows": 10614
+        },
+        "big_chances_created": {
+          "non_null": 0,
+          "rows": 22560,
+          "played_non_null": 0,
+          "played_rows": 10614
+        },
+        "big_chances_missed": {
+          "non_null": 0,
+          "rows": 22560,
+          "played_non_null": 0,
+          "played_rows": 10614
+        },
+        "errors_leading_to_goal": {
+          "non_null": 0,
+          "rows": 22560,
+          "played_non_null": 0,
+          "played_rows": 10614
+        },
+        "open_play_crosses": {
+          "non_null": 0,
+          "rows": 22560,
+          "played_non_null": 0,
+          "played_rows": 10614
+        },
+        "dribbles": {
+          "non_null": 0,
+          "rows": 22560,
+          "played_non_null": 0,
+          "played_rows": 10614
+        },
+        "fouls": {
+          "non_null": 0,
+          "rows": 22560,
+          "played_non_null": 0,
+          "played_rows": 10614
+        },
+        "offside": {
+          "non_null": 0,
+          "rows": 22560,
+          "played_non_null": 0,
+          "played_rows": 10614
+        },
+        "penalties_conceded": {
+          "non_null": 0,
+          "rows": 22560,
+          "played_non_null": 0,
+          "played_rows": 10614
+        },
+        "winning_goals": {
+          "non_null": 0,
+          "rows": 22560,
+          "played_non_null": 0,
+          "played_rows": 10614
+        },
+        "attempted_passes": {
+          "non_null": 0,
+          "rows": 22560,
+          "played_non_null": 0,
+          "played_rows": 10614
+        },
+        "completed_passes": {
+          "non_null": 0,
+          "rows": 22560,
+          "played_non_null": 0,
+          "played_rows": 10614
+        },
+        "target_missed": {
+          "non_null": 0,
+          "rows": 22560,
+          "played_non_null": 0,
+          "played_rows": 10614
+        },
+        "tackled": {
+          "non_null": 0,
+          "rows": 22560,
+          "played_non_null": 0,
+          "played_rows": 10614
+        }
+      },
+      "metadata_join": {
+        "identity_artifact_sha256": "660fda6d8bf328947771d189868d59cc9d0267c45d3ce181cead0080dc5f2969",
+        "duplicate_official_codes": 0,
+        "matched_rows": 22560,
+        "unmatched_elements": [],
+        "duplicate_metadata_ids": 0,
+        "missing_position_recoverable": 22560,
+        "stable_code_rows": 22560,
+        "status": "research_only_final_season_metadata_not_predeadline"
+      },
+      "fixture_join": {
+        "finished_source_fixtures": 380,
+        "missing_finished_ids": [],
+        "unmatched_canonical_ids": []
+      }
+    },
+    "2020-21": {
+      "rows": 24365,
+      "players": 713,
+      "fixtures": 380,
+      "gameweeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38
+      ],
+      "duplicate_keys": 0,
+      "null_keys": 0,
+      "invalid_minutes": 0,
+      "invalid_kickoff": 0,
+      "ambiguous_name_keys": {
+        "ben davies": 2
+      },
+      "columns": {
+        "season": {
+          "non_null": 24365,
+          "rows": 24365,
+          "played_non_null": 10393,
+          "played_rows": 10393
+        },
+        "gw": {
+          "non_null": 24365,
+          "rows": 24365,
+          "played_non_null": 10393,
+          "played_rows": 10393
+        },
+        "element": {
+          "non_null": 24365,
+          "rows": 24365,
+          "played_non_null": 10393,
+          "played_rows": 10393
+        },
+        "fixture": {
+          "non_null": 24365,
+          "rows": 24365,
+          "played_non_null": 10393,
+          "played_rows": 10393
+        },
+        "player_key": {
+          "non_null": 24365,
+          "rows": 24365,
+          "played_non_null": 10393,
+          "played_rows": 10393
+        },
+        "name": {
+          "non_null": 24365,
+          "rows": 24365,
+          "played_non_null": 10393,
+          "played_rows": 10393
+        },
+        "opponent_team": {
+          "non_null": 24365,
+          "rows": 24365,
+          "played_non_null": 10393,
+          "played_rows": 10393
+        },
+        "was_home": {
+          "non_null": 24365,
+          "rows": 24365,
+          "played_non_null": 10393,
+          "played_rows": 10393
+        },
+        "kickoff_time": {
+          "non_null": 24365,
+          "rows": 24365,
+          "played_non_null": 10393,
+          "played_rows": 10393
+        },
+        "round": {
+          "non_null": 24365,
+          "rows": 24365,
+          "played_non_null": 10393,
+          "played_rows": 10393
+        },
+        "minutes": {
+          "non_null": 24365,
+          "rows": 24365,
+          "played_non_null": 10393,
+          "played_rows": 10393
+        },
+        "total_points": {
+          "non_null": 24365,
+          "rows": 24365,
+          "played_non_null": 10393,
+          "played_rows": 10393
+        },
+        "goals_scored": {
+          "non_null": 24365,
+          "rows": 24365,
+          "played_non_null": 10393,
+          "played_rows": 10393
+        },
+        "assists": {
+          "non_null": 24365,
+          "rows": 24365,
+          "played_non_null": 10393,
+          "played_rows": 10393
+        },
+        "clean_sheets": {
+          "non_null": 24365,
+          "rows": 24365,
+          "played_non_null": 10393,
+          "played_rows": 10393
+        },
+        "goals_conceded": {
+          "non_null": 24365,
+          "rows": 24365,
+          "played_non_null": 10393,
+          "played_rows": 10393
+        },
+        "own_goals": {
+          "non_null": 24365,
+          "rows": 24365,
+          "played_non_null": 10393,
+          "played_rows": 10393
+        },
+        "penalties_saved": {
+          "non_null": 24365,
+          "rows": 24365,
+          "played_non_null": 10393,
+          "played_rows": 10393
+        },
+        "penalties_missed": {
+          "non_null": 24365,
+          "rows": 24365,
+          "played_non_null": 10393,
+          "played_rows": 10393
+        },
+        "yellow_cards": {
+          "non_null": 24365,
+          "rows": 24365,
+          "played_non_null": 10393,
+          "played_rows": 10393
+        },
+        "red_cards": {
+          "non_null": 24365,
+          "rows": 24365,
+          "played_non_null": 10393,
+          "played_rows": 10393
+        },
+        "saves": {
+          "non_null": 24365,
+          "rows": 24365,
+          "played_non_null": 10393,
+          "played_rows": 10393
+        },
+        "bonus": {
+          "non_null": 24365,
+          "rows": 24365,
+          "played_non_null": 10393,
+          "played_rows": 10393
+        },
+        "bps": {
+          "non_null": 24365,
+          "rows": 24365,
+          "played_non_null": 10393,
+          "played_rows": 10393
+        },
+        "influence": {
+          "non_null": 24365,
+          "rows": 24365,
+          "played_non_null": 10393,
+          "played_rows": 10393
+        },
+        "creativity": {
+          "non_null": 24365,
+          "rows": 24365,
+          "played_non_null": 10393,
+          "played_rows": 10393
+        },
+        "threat": {
+          "non_null": 24365,
+          "rows": 24365,
+          "played_non_null": 10393,
+          "played_rows": 10393
+        },
+        "ict_index": {
+          "non_null": 24365,
+          "rows": 24365,
+          "played_non_null": 10393,
+          "played_rows": 10393
+        },
+        "value": {
+          "non_null": 24365,
+          "rows": 24365,
+          "played_non_null": 10393,
+          "played_rows": 10393
+        },
+        "selected": {
+          "non_null": 24365,
+          "rows": 24365,
+          "played_non_null": 10393,
+          "played_rows": 10393
+        },
+        "transfers_in": {
+          "non_null": 24365,
+          "rows": 24365,
+          "played_non_null": 10393,
+          "played_rows": 10393
+        },
+        "transfers_out": {
+          "non_null": 24365,
+          "rows": 24365,
+          "played_non_null": 10393,
+          "played_rows": 10393
+        },
+        "transfers_balance": {
+          "non_null": 24365,
+          "rows": 24365,
+          "played_non_null": 10393,
+          "played_rows": 10393
+        },
+        "team_a_score": {
+          "non_null": 24365,
+          "rows": 24365,
+          "played_non_null": 10393,
+          "played_rows": 10393
+        },
+        "team_h_score": {
+          "non_null": 24365,
+          "rows": 24365,
+          "played_non_null": 10393,
+          "played_rows": 10393
+        },
+        "position": {
+          "non_null": 24365,
+          "rows": 24365,
+          "played_non_null": 10393,
+          "played_rows": 10393
+        },
+        "team": {
+          "non_null": 24365,
+          "rows": 24365,
+          "played_non_null": 10393,
+          "played_rows": 10393
+        },
+        "xp_official": {
+          "non_null": 24365,
+          "rows": 24365,
+          "played_non_null": 10393,
+          "played_rows": 10393
+        },
+        "expected_goals": {
+          "non_null": 0,
+          "rows": 24365,
+          "played_non_null": 0,
+          "played_rows": 10393
+        },
+        "expected_assists": {
+          "non_null": 0,
+          "rows": 24365,
+          "played_non_null": 0,
+          "played_rows": 10393
+        },
+        "expected_goal_involvements": {
+          "non_null": 0,
+          "rows": 24365,
+          "played_non_null": 0,
+          "played_rows": 10393
+        },
+        "expected_goals_conceded": {
+          "non_null": 0,
+          "rows": 24365,
+          "played_non_null": 0,
+          "played_rows": 10393
+        },
+        "starts": {
+          "non_null": 0,
+          "rows": 24365,
+          "played_non_null": 0,
+          "played_rows": 10393
+        },
+        "clearances_blocks_interceptions": {
+          "non_null": 0,
+          "rows": 24365,
+          "played_non_null": 0,
+          "played_rows": 10393
+        },
+        "recoveries": {
+          "non_null": 0,
+          "rows": 24365,
+          "played_non_null": 0,
+          "played_rows": 10393
+        },
+        "tackles": {
+          "non_null": 0,
+          "rows": 24365,
+          "played_non_null": 0,
+          "played_rows": 10393
+        },
+        "defensive_contribution": {
+          "non_null": 0,
+          "rows": 24365,
+          "played_non_null": 0,
+          "played_rows": 10393
+        },
+        "key_passes": {
+          "non_null": 0,
+          "rows": 24365,
+          "played_non_null": 0,
+          "played_rows": 10393
+        },
+        "big_chances_created": {
+          "non_null": 0,
+          "rows": 24365,
+          "played_non_null": 0,
+          "played_rows": 10393
+        },
+        "big_chances_missed": {
+          "non_null": 0,
+          "rows": 24365,
+          "played_non_null": 0,
+          "played_rows": 10393
+        },
+        "errors_leading_to_goal": {
+          "non_null": 0,
+          "rows": 24365,
+          "played_non_null": 0,
+          "played_rows": 10393
+        },
+        "open_play_crosses": {
+          "non_null": 0,
+          "rows": 24365,
+          "played_non_null": 0,
+          "played_rows": 10393
+        },
+        "dribbles": {
+          "non_null": 0,
+          "rows": 24365,
+          "played_non_null": 0,
+          "played_rows": 10393
+        },
+        "fouls": {
+          "non_null": 0,
+          "rows": 24365,
+          "played_non_null": 0,
+          "played_rows": 10393
+        },
+        "offside": {
+          "non_null": 0,
+          "rows": 24365,
+          "played_non_null": 0,
+          "played_rows": 10393
+        },
+        "penalties_conceded": {
+          "non_null": 0,
+          "rows": 24365,
+          "played_non_null": 0,
+          "played_rows": 10393
+        },
+        "winning_goals": {
+          "non_null": 0,
+          "rows": 24365,
+          "played_non_null": 0,
+          "played_rows": 10393
+        },
+        "attempted_passes": {
+          "non_null": 0,
+          "rows": 24365,
+          "played_non_null": 0,
+          "played_rows": 10393
+        },
+        "completed_passes": {
+          "non_null": 0,
+          "rows": 24365,
+          "played_non_null": 0,
+          "played_rows": 10393
+        },
+        "target_missed": {
+          "non_null": 0,
+          "rows": 24365,
+          "played_non_null": 0,
+          "played_rows": 10393
+        },
+        "tackled": {
+          "non_null": 0,
+          "rows": 24365,
+          "played_non_null": 0,
+          "played_rows": 10393
+        }
+      },
+      "metadata_join": {
+        "identity_artifact_sha256": "8d11e2ff123fe8c3602d726e52d23396b67fccb242b5aabfd37b5ec80ed0cd79",
+        "duplicate_official_codes": 0,
+        "matched_rows": 24365,
+        "unmatched_elements": [],
+        "duplicate_metadata_ids": 0,
+        "missing_position_recoverable": 0,
+        "stable_code_rows": 24365,
+        "status": "research_only_final_season_metadata_not_predeadline"
+      },
+      "fixture_join": {
+        "finished_source_fixtures": 380,
+        "missing_finished_ids": [],
+        "unmatched_canonical_ids": []
+      }
+    },
+    "2021-22": {
+      "rows": 25447,
+      "players": 737,
+      "fixtures": 380,
+      "gameweeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38
+      ],
+      "duplicate_keys": 0,
+      "null_keys": 0,
+      "invalid_minutes": 0,
+      "invalid_kickoff": 0,
+      "ambiguous_name_keys": {
+        "alvaro fernandez": 2,
+        "ben davies": 2
+      },
+      "columns": {
+        "season": {
+          "non_null": 25447,
+          "rows": 25447,
+          "played_non_null": 10485,
+          "played_rows": 10485
+        },
+        "gw": {
+          "non_null": 25447,
+          "rows": 25447,
+          "played_non_null": 10485,
+          "played_rows": 10485
+        },
+        "element": {
+          "non_null": 25447,
+          "rows": 25447,
+          "played_non_null": 10485,
+          "played_rows": 10485
+        },
+        "fixture": {
+          "non_null": 25447,
+          "rows": 25447,
+          "played_non_null": 10485,
+          "played_rows": 10485
+        },
+        "player_key": {
+          "non_null": 25447,
+          "rows": 25447,
+          "played_non_null": 10485,
+          "played_rows": 10485
+        },
+        "name": {
+          "non_null": 25447,
+          "rows": 25447,
+          "played_non_null": 10485,
+          "played_rows": 10485
+        },
+        "opponent_team": {
+          "non_null": 25447,
+          "rows": 25447,
+          "played_non_null": 10485,
+          "played_rows": 10485
+        },
+        "was_home": {
+          "non_null": 25447,
+          "rows": 25447,
+          "played_non_null": 10485,
+          "played_rows": 10485
+        },
+        "kickoff_time": {
+          "non_null": 25447,
+          "rows": 25447,
+          "played_non_null": 10485,
+          "played_rows": 10485
+        },
+        "round": {
+          "non_null": 25447,
+          "rows": 25447,
+          "played_non_null": 10485,
+          "played_rows": 10485
+        },
+        "minutes": {
+          "non_null": 25447,
+          "rows": 25447,
+          "played_non_null": 10485,
+          "played_rows": 10485
+        },
+        "total_points": {
+          "non_null": 25447,
+          "rows": 25447,
+          "played_non_null": 10485,
+          "played_rows": 10485
+        },
+        "goals_scored": {
+          "non_null": 25447,
+          "rows": 25447,
+          "played_non_null": 10485,
+          "played_rows": 10485
+        },
+        "assists": {
+          "non_null": 25447,
+          "rows": 25447,
+          "played_non_null": 10485,
+          "played_rows": 10485
+        },
+        "clean_sheets": {
+          "non_null": 25447,
+          "rows": 25447,
+          "played_non_null": 10485,
+          "played_rows": 10485
+        },
+        "goals_conceded": {
+          "non_null": 25447,
+          "rows": 25447,
+          "played_non_null": 10485,
+          "played_rows": 10485
+        },
+        "own_goals": {
+          "non_null": 25447,
+          "rows": 25447,
+          "played_non_null": 10485,
+          "played_rows": 10485
+        },
+        "penalties_saved": {
+          "non_null": 25447,
+          "rows": 25447,
+          "played_non_null": 10485,
+          "played_rows": 10485
+        },
+        "penalties_missed": {
+          "non_null": 25447,
+          "rows": 25447,
+          "played_non_null": 10485,
+          "played_rows": 10485
+        },
+        "yellow_cards": {
+          "non_null": 25447,
+          "rows": 25447,
+          "played_non_null": 10485,
+          "played_rows": 10485
+        },
+        "red_cards": {
+          "non_null": 25447,
+          "rows": 25447,
+          "played_non_null": 10485,
+          "played_rows": 10485
+        },
+        "saves": {
+          "non_null": 25447,
+          "rows": 25447,
+          "played_non_null": 10485,
+          "played_rows": 10485
+        },
+        "bonus": {
+          "non_null": 25447,
+          "rows": 25447,
+          "played_non_null": 10485,
+          "played_rows": 10485
+        },
+        "bps": {
+          "non_null": 25447,
+          "rows": 25447,
+          "played_non_null": 10485,
+          "played_rows": 10485
+        },
+        "influence": {
+          "non_null": 25447,
+          "rows": 25447,
+          "played_non_null": 10485,
+          "played_rows": 10485
+        },
+        "creativity": {
+          "non_null": 25447,
+          "rows": 25447,
+          "played_non_null": 10485,
+          "played_rows": 10485
+        },
+        "threat": {
+          "non_null": 25447,
+          "rows": 25447,
+          "played_non_null": 10485,
+          "played_rows": 10485
+        },
+        "ict_index": {
+          "non_null": 25447,
+          "rows": 25447,
+          "played_non_null": 10485,
+          "played_rows": 10485
+        },
+        "value": {
+          "non_null": 25447,
+          "rows": 25447,
+          "played_non_null": 10485,
+          "played_rows": 10485
+        },
+        "selected": {
+          "non_null": 25447,
+          "rows": 25447,
+          "played_non_null": 10485,
+          "played_rows": 10485
+        },
+        "transfers_in": {
+          "non_null": 25447,
+          "rows": 25447,
+          "played_non_null": 10485,
+          "played_rows": 10485
+        },
+        "transfers_out": {
+          "non_null": 25447,
+          "rows": 25447,
+          "played_non_null": 10485,
+          "played_rows": 10485
+        },
+        "transfers_balance": {
+          "non_null": 25447,
+          "rows": 25447,
+          "played_non_null": 10485,
+          "played_rows": 10485
+        },
+        "team_a_score": {
+          "non_null": 25447,
+          "rows": 25447,
+          "played_non_null": 10485,
+          "played_rows": 10485
+        },
+        "team_h_score": {
+          "non_null": 25447,
+          "rows": 25447,
+          "played_non_null": 10485,
+          "played_rows": 10485
+        },
+        "position": {
+          "non_null": 25447,
+          "rows": 25447,
+          "played_non_null": 10485,
+          "played_rows": 10485
+        },
+        "team": {
+          "non_null": 25447,
+          "rows": 25447,
+          "played_non_null": 10485,
+          "played_rows": 10485
+        },
+        "xp_official": {
+          "non_null": 25447,
+          "rows": 25447,
+          "played_non_null": 10485,
+          "played_rows": 10485
+        },
+        "expected_goals": {
+          "non_null": 0,
+          "rows": 25447,
+          "played_non_null": 0,
+          "played_rows": 10485
+        },
+        "expected_assists": {
+          "non_null": 0,
+          "rows": 25447,
+          "played_non_null": 0,
+          "played_rows": 10485
+        },
+        "expected_goal_involvements": {
+          "non_null": 0,
+          "rows": 25447,
+          "played_non_null": 0,
+          "played_rows": 10485
+        },
+        "expected_goals_conceded": {
+          "non_null": 0,
+          "rows": 25447,
+          "played_non_null": 0,
+          "played_rows": 10485
+        },
+        "starts": {
+          "non_null": 0,
+          "rows": 25447,
+          "played_non_null": 0,
+          "played_rows": 10485
+        },
+        "clearances_blocks_interceptions": {
+          "non_null": 0,
+          "rows": 25447,
+          "played_non_null": 0,
+          "played_rows": 10485
+        },
+        "recoveries": {
+          "non_null": 0,
+          "rows": 25447,
+          "played_non_null": 0,
+          "played_rows": 10485
+        },
+        "tackles": {
+          "non_null": 0,
+          "rows": 25447,
+          "played_non_null": 0,
+          "played_rows": 10485
+        },
+        "defensive_contribution": {
+          "non_null": 0,
+          "rows": 25447,
+          "played_non_null": 0,
+          "played_rows": 10485
+        },
+        "key_passes": {
+          "non_null": 0,
+          "rows": 25447,
+          "played_non_null": 0,
+          "played_rows": 10485
+        },
+        "big_chances_created": {
+          "non_null": 0,
+          "rows": 25447,
+          "played_non_null": 0,
+          "played_rows": 10485
+        },
+        "big_chances_missed": {
+          "non_null": 0,
+          "rows": 25447,
+          "played_non_null": 0,
+          "played_rows": 10485
+        },
+        "errors_leading_to_goal": {
+          "non_null": 0,
+          "rows": 25447,
+          "played_non_null": 0,
+          "played_rows": 10485
+        },
+        "open_play_crosses": {
+          "non_null": 0,
+          "rows": 25447,
+          "played_non_null": 0,
+          "played_rows": 10485
+        },
+        "dribbles": {
+          "non_null": 0,
+          "rows": 25447,
+          "played_non_null": 0,
+          "played_rows": 10485
+        },
+        "fouls": {
+          "non_null": 0,
+          "rows": 25447,
+          "played_non_null": 0,
+          "played_rows": 10485
+        },
+        "offside": {
+          "non_null": 0,
+          "rows": 25447,
+          "played_non_null": 0,
+          "played_rows": 10485
+        },
+        "penalties_conceded": {
+          "non_null": 0,
+          "rows": 25447,
+          "played_non_null": 0,
+          "played_rows": 10485
+        },
+        "winning_goals": {
+          "non_null": 0,
+          "rows": 25447,
+          "played_non_null": 0,
+          "played_rows": 10485
+        },
+        "attempted_passes": {
+          "non_null": 0,
+          "rows": 25447,
+          "played_non_null": 0,
+          "played_rows": 10485
+        },
+        "completed_passes": {
+          "non_null": 0,
+          "rows": 25447,
+          "played_non_null": 0,
+          "played_rows": 10485
+        },
+        "target_missed": {
+          "non_null": 0,
+          "rows": 25447,
+          "played_non_null": 0,
+          "played_rows": 10485
+        },
+        "tackled": {
+          "non_null": 0,
+          "rows": 25447,
+          "played_non_null": 0,
+          "played_rows": 10485
+        }
+      },
+      "metadata_join": {
+        "identity_artifact_sha256": "8c90bf6ccc0d06336bd94e160df9af6eb499a06aa6c43196bfd1b74eb87235ec",
+        "duplicate_official_codes": 0,
+        "matched_rows": 25447,
+        "unmatched_elements": [],
+        "duplicate_metadata_ids": 0,
+        "missing_position_recoverable": 0,
+        "stable_code_rows": 25447,
+        "status": "research_only_final_season_metadata_not_predeadline"
+      },
+      "fixture_join": {
+        "finished_source_fixtures": 380,
+        "missing_finished_ids": [],
+        "unmatched_canonical_ids": []
+      }
+    },
+    "2022-23": {
+      "rows": 26505,
+      "players": 778,
+      "fixtures": 380,
+      "gameweeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38
+      ],
+      "duplicate_keys": 0,
+      "null_keys": 0,
+      "invalid_minutes": 0,
+      "invalid_kickoff": 0,
+      "ambiguous_name_keys": {
+        "ben davies": 2
+      },
+      "columns": {
+        "season": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "gw": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "element": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "fixture": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "player_key": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "name": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "opponent_team": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "was_home": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "kickoff_time": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "round": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "minutes": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "total_points": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "goals_scored": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "assists": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "clean_sheets": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "goals_conceded": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "own_goals": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "penalties_saved": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "penalties_missed": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "yellow_cards": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "red_cards": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "saves": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "bonus": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "bps": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "influence": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "creativity": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "threat": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "ict_index": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "value": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "selected": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "transfers_in": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "transfers_out": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "transfers_balance": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "team_a_score": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "team_h_score": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "position": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "team": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "xp_official": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "expected_goals": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "expected_assists": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "expected_goal_involvements": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "expected_goals_conceded": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "starts": {
+          "non_null": 26505,
+          "rows": 26505,
+          "played_non_null": 11345,
+          "played_rows": 11345
+        },
+        "clearances_blocks_interceptions": {
+          "non_null": 0,
+          "rows": 26505,
+          "played_non_null": 0,
+          "played_rows": 11345
+        },
+        "recoveries": {
+          "non_null": 0,
+          "rows": 26505,
+          "played_non_null": 0,
+          "played_rows": 11345
+        },
+        "tackles": {
+          "non_null": 0,
+          "rows": 26505,
+          "played_non_null": 0,
+          "played_rows": 11345
+        },
+        "defensive_contribution": {
+          "non_null": 0,
+          "rows": 26505,
+          "played_non_null": 0,
+          "played_rows": 11345
+        },
+        "key_passes": {
+          "non_null": 0,
+          "rows": 26505,
+          "played_non_null": 0,
+          "played_rows": 11345
+        },
+        "big_chances_created": {
+          "non_null": 0,
+          "rows": 26505,
+          "played_non_null": 0,
+          "played_rows": 11345
+        },
+        "big_chances_missed": {
+          "non_null": 0,
+          "rows": 26505,
+          "played_non_null": 0,
+          "played_rows": 11345
+        },
+        "errors_leading_to_goal": {
+          "non_null": 0,
+          "rows": 26505,
+          "played_non_null": 0,
+          "played_rows": 11345
+        },
+        "open_play_crosses": {
+          "non_null": 0,
+          "rows": 26505,
+          "played_non_null": 0,
+          "played_rows": 11345
+        },
+        "dribbles": {
+          "non_null": 0,
+          "rows": 26505,
+          "played_non_null": 0,
+          "played_rows": 11345
+        },
+        "fouls": {
+          "non_null": 0,
+          "rows": 26505,
+          "played_non_null": 0,
+          "played_rows": 11345
+        },
+        "offside": {
+          "non_null": 0,
+          "rows": 26505,
+          "played_non_null": 0,
+          "played_rows": 11345
+        },
+        "penalties_conceded": {
+          "non_null": 0,
+          "rows": 26505,
+          "played_non_null": 0,
+          "played_rows": 11345
+        },
+        "winning_goals": {
+          "non_null": 0,
+          "rows": 26505,
+          "played_non_null": 0,
+          "played_rows": 11345
+        },
+        "attempted_passes": {
+          "non_null": 0,
+          "rows": 26505,
+          "played_non_null": 0,
+          "played_rows": 11345
+        },
+        "completed_passes": {
+          "non_null": 0,
+          "rows": 26505,
+          "played_non_null": 0,
+          "played_rows": 11345
+        },
+        "target_missed": {
+          "non_null": 0,
+          "rows": 26505,
+          "played_non_null": 0,
+          "played_rows": 11345
+        },
+        "tackled": {
+          "non_null": 0,
+          "rows": 26505,
+          "played_non_null": 0,
+          "played_rows": 11345
+        }
+      },
+      "metadata_join": {
+        "identity_artifact_sha256": "8485da4b8cf12e758a38af33251737a76603468d729c0961aa457bf757e30f60",
+        "duplicate_official_codes": 0,
+        "matched_rows": 26505,
+        "unmatched_elements": [],
+        "duplicate_metadata_ids": 0,
+        "missing_position_recoverable": 0,
+        "stable_code_rows": 26505,
+        "status": "research_only_final_season_metadata_not_predeadline"
+      },
+      "fixture_join": {
+        "finished_source_fixtures": 380,
+        "missing_finished_ids": [],
+        "unmatched_canonical_ids": []
+      }
+    },
+    "2023-24": {
+      "rows": 29725,
+      "players": 865,
+      "fixtures": 380,
+      "gameweeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38
+      ],
+      "duplicate_keys": 0,
+      "null_keys": 0,
+      "invalid_minutes": 0,
+      "invalid_kickoff": 0,
+      "ambiguous_name_keys": {},
+      "columns": {
+        "season": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "gw": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "element": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "fixture": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "player_key": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "name": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "opponent_team": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "was_home": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "kickoff_time": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "round": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "minutes": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "total_points": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "goals_scored": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "assists": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "clean_sheets": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "goals_conceded": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "own_goals": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "penalties_saved": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "penalties_missed": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "yellow_cards": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "red_cards": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "saves": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "bonus": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "bps": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "influence": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "creativity": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "threat": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "ict_index": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "value": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "selected": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "transfers_in": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "transfers_out": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "transfers_balance": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "team_a_score": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "team_h_score": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "position": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "team": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "xp_official": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "expected_goals": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "expected_assists": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "expected_goal_involvements": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "expected_goals_conceded": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "starts": {
+          "non_null": 29725,
+          "rows": 29725,
+          "played_non_null": 11384,
+          "played_rows": 11384
+        },
+        "clearances_blocks_interceptions": {
+          "non_null": 0,
+          "rows": 29725,
+          "played_non_null": 0,
+          "played_rows": 11384
+        },
+        "recoveries": {
+          "non_null": 0,
+          "rows": 29725,
+          "played_non_null": 0,
+          "played_rows": 11384
+        },
+        "tackles": {
+          "non_null": 0,
+          "rows": 29725,
+          "played_non_null": 0,
+          "played_rows": 11384
+        },
+        "defensive_contribution": {
+          "non_null": 0,
+          "rows": 29725,
+          "played_non_null": 0,
+          "played_rows": 11384
+        },
+        "key_passes": {
+          "non_null": 0,
+          "rows": 29725,
+          "played_non_null": 0,
+          "played_rows": 11384
+        },
+        "big_chances_created": {
+          "non_null": 0,
+          "rows": 29725,
+          "played_non_null": 0,
+          "played_rows": 11384
+        },
+        "big_chances_missed": {
+          "non_null": 0,
+          "rows": 29725,
+          "played_non_null": 0,
+          "played_rows": 11384
+        },
+        "errors_leading_to_goal": {
+          "non_null": 0,
+          "rows": 29725,
+          "played_non_null": 0,
+          "played_rows": 11384
+        },
+        "open_play_crosses": {
+          "non_null": 0,
+          "rows": 29725,
+          "played_non_null": 0,
+          "played_rows": 11384
+        },
+        "dribbles": {
+          "non_null": 0,
+          "rows": 29725,
+          "played_non_null": 0,
+          "played_rows": 11384
+        },
+        "fouls": {
+          "non_null": 0,
+          "rows": 29725,
+          "played_non_null": 0,
+          "played_rows": 11384
+        },
+        "offside": {
+          "non_null": 0,
+          "rows": 29725,
+          "played_non_null": 0,
+          "played_rows": 11384
+        },
+        "penalties_conceded": {
+          "non_null": 0,
+          "rows": 29725,
+          "played_non_null": 0,
+          "played_rows": 11384
+        },
+        "winning_goals": {
+          "non_null": 0,
+          "rows": 29725,
+          "played_non_null": 0,
+          "played_rows": 11384
+        },
+        "attempted_passes": {
+          "non_null": 0,
+          "rows": 29725,
+          "played_non_null": 0,
+          "played_rows": 11384
+        },
+        "completed_passes": {
+          "non_null": 0,
+          "rows": 29725,
+          "played_non_null": 0,
+          "played_rows": 11384
+        },
+        "target_missed": {
+          "non_null": 0,
+          "rows": 29725,
+          "played_non_null": 0,
+          "played_rows": 11384
+        },
+        "tackled": {
+          "non_null": 0,
+          "rows": 29725,
+          "played_non_null": 0,
+          "played_rows": 11384
+        }
+      },
+      "metadata_join": {
+        "identity_artifact_sha256": "715ff2ee636d04ef39efa854ce166e923d1323b096cf73f2b46c534d8402b87f",
+        "duplicate_official_codes": 0,
+        "matched_rows": 29725,
+        "unmatched_elements": [],
+        "duplicate_metadata_ids": 0,
+        "missing_position_recoverable": 0,
+        "stable_code_rows": 29725,
+        "status": "research_only_final_season_metadata_not_predeadline"
+      },
+      "fixture_join": {
+        "finished_source_fixtures": 380,
+        "missing_finished_ids": [],
+        "unmatched_canonical_ids": []
+      }
+    },
+    "2024-25": {
+      "rows": 27605,
+      "players": 804,
+      "fixtures": 380,
+      "gameweeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38
+      ],
+      "duplicate_keys": 0,
+      "null_keys": 0,
+      "invalid_minutes": 0,
+      "invalid_kickoff": 0,
+      "ambiguous_name_keys": {},
+      "columns": {
+        "season": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "gw": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "element": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "fixture": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "player_key": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "name": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "opponent_team": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "was_home": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "kickoff_time": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "round": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "minutes": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "total_points": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "goals_scored": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "assists": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "clean_sheets": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "goals_conceded": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "own_goals": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "penalties_saved": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "penalties_missed": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "yellow_cards": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "red_cards": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "saves": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "bonus": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "bps": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "influence": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "creativity": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "threat": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "ict_index": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "value": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "selected": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "transfers_in": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "transfers_out": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "transfers_balance": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "team_a_score": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "team_h_score": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "position": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "team": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "xp_official": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "expected_goals": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "expected_assists": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "expected_goal_involvements": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "expected_goals_conceded": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "starts": {
+          "non_null": 27605,
+          "rows": 27605,
+          "played_non_null": 11566,
+          "played_rows": 11566
+        },
+        "clearances_blocks_interceptions": {
+          "non_null": 0,
+          "rows": 27605,
+          "played_non_null": 0,
+          "played_rows": 11566
+        },
+        "recoveries": {
+          "non_null": 0,
+          "rows": 27605,
+          "played_non_null": 0,
+          "played_rows": 11566
+        },
+        "tackles": {
+          "non_null": 0,
+          "rows": 27605,
+          "played_non_null": 0,
+          "played_rows": 11566
+        },
+        "defensive_contribution": {
+          "non_null": 0,
+          "rows": 27605,
+          "played_non_null": 0,
+          "played_rows": 11566
+        },
+        "key_passes": {
+          "non_null": 0,
+          "rows": 27605,
+          "played_non_null": 0,
+          "played_rows": 11566
+        },
+        "big_chances_created": {
+          "non_null": 0,
+          "rows": 27605,
+          "played_non_null": 0,
+          "played_rows": 11566
+        },
+        "big_chances_missed": {
+          "non_null": 0,
+          "rows": 27605,
+          "played_non_null": 0,
+          "played_rows": 11566
+        },
+        "errors_leading_to_goal": {
+          "non_null": 0,
+          "rows": 27605,
+          "played_non_null": 0,
+          "played_rows": 11566
+        },
+        "open_play_crosses": {
+          "non_null": 0,
+          "rows": 27605,
+          "played_non_null": 0,
+          "played_rows": 11566
+        },
+        "dribbles": {
+          "non_null": 0,
+          "rows": 27605,
+          "played_non_null": 0,
+          "played_rows": 11566
+        },
+        "fouls": {
+          "non_null": 0,
+          "rows": 27605,
+          "played_non_null": 0,
+          "played_rows": 11566
+        },
+        "offside": {
+          "non_null": 0,
+          "rows": 27605,
+          "played_non_null": 0,
+          "played_rows": 11566
+        },
+        "penalties_conceded": {
+          "non_null": 0,
+          "rows": 27605,
+          "played_non_null": 0,
+          "played_rows": 11566
+        },
+        "winning_goals": {
+          "non_null": 0,
+          "rows": 27605,
+          "played_non_null": 0,
+          "played_rows": 11566
+        },
+        "attempted_passes": {
+          "non_null": 0,
+          "rows": 27605,
+          "played_non_null": 0,
+          "played_rows": 11566
+        },
+        "completed_passes": {
+          "non_null": 0,
+          "rows": 27605,
+          "played_non_null": 0,
+          "played_rows": 11566
+        },
+        "target_missed": {
+          "non_null": 0,
+          "rows": 27605,
+          "played_non_null": 0,
+          "played_rows": 11566
+        },
+        "tackled": {
+          "non_null": 0,
+          "rows": 27605,
+          "played_non_null": 0,
+          "played_rows": 11566
+        }
+      },
+      "metadata_join": {
+        "identity_artifact_sha256": "8a99017844c48466786450adff2ad45a0cd673ae3f0d5102e3dcbfbd370ae18c",
+        "duplicate_official_codes": 0,
+        "matched_rows": 27605,
+        "unmatched_elements": [],
+        "duplicate_metadata_ids": 0,
+        "missing_position_recoverable": 0,
+        "stable_code_rows": 27605,
+        "status": "research_only_final_season_metadata_not_predeadline"
+      },
+      "fixture_join": {
+        "finished_source_fixtures": 380,
+        "missing_finished_ids": [],
+        "unmatched_canonical_ids": []
+      }
+    },
+    "2025-26": {
+      "rows": 29747,
+      "players": 841,
+      "fixtures": 380,
+      "gameweeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38
+      ],
+      "duplicate_keys": 0,
+      "null_keys": 0,
+      "invalid_minutes": 0,
+      "invalid_kickoff": 0,
+      "ambiguous_name_keys": {},
+      "columns": {
+        "season": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "gw": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "element": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "fixture": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "player_key": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "name": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "opponent_team": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "was_home": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "kickoff_time": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "round": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "minutes": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "total_points": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "goals_scored": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "assists": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "clean_sheets": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "goals_conceded": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "own_goals": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "penalties_saved": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "penalties_missed": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "yellow_cards": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "red_cards": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "saves": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "bonus": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "bps": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "influence": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "creativity": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "threat": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "ict_index": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "value": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "selected": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "transfers_in": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "transfers_out": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "transfers_balance": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "team_a_score": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "team_h_score": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "position": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "team": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "xp_official": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "expected_goals": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "expected_assists": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "expected_goal_involvements": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "expected_goals_conceded": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "starts": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "clearances_blocks_interceptions": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "recoveries": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "tackles": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "defensive_contribution": {
+          "non_null": 29747,
+          "rows": 29747,
+          "played_non_null": 11492,
+          "played_rows": 11492
+        },
+        "key_passes": {
+          "non_null": 0,
+          "rows": 29747,
+          "played_non_null": 0,
+          "played_rows": 11492
+        },
+        "big_chances_created": {
+          "non_null": 0,
+          "rows": 29747,
+          "played_non_null": 0,
+          "played_rows": 11492
+        },
+        "big_chances_missed": {
+          "non_null": 0,
+          "rows": 29747,
+          "played_non_null": 0,
+          "played_rows": 11492
+        },
+        "errors_leading_to_goal": {
+          "non_null": 0,
+          "rows": 29747,
+          "played_non_null": 0,
+          "played_rows": 11492
+        },
+        "open_play_crosses": {
+          "non_null": 0,
+          "rows": 29747,
+          "played_non_null": 0,
+          "played_rows": 11492
+        },
+        "dribbles": {
+          "non_null": 0,
+          "rows": 29747,
+          "played_non_null": 0,
+          "played_rows": 11492
+        },
+        "fouls": {
+          "non_null": 0,
+          "rows": 29747,
+          "played_non_null": 0,
+          "played_rows": 11492
+        },
+        "offside": {
+          "non_null": 0,
+          "rows": 29747,
+          "played_non_null": 0,
+          "played_rows": 11492
+        },
+        "penalties_conceded": {
+          "non_null": 0,
+          "rows": 29747,
+          "played_non_null": 0,
+          "played_rows": 11492
+        },
+        "winning_goals": {
+          "non_null": 0,
+          "rows": 29747,
+          "played_non_null": 0,
+          "played_rows": 11492
+        },
+        "attempted_passes": {
+          "non_null": 0,
+          "rows": 29747,
+          "played_non_null": 0,
+          "played_rows": 11492
+        },
+        "completed_passes": {
+          "non_null": 0,
+          "rows": 29747,
+          "played_non_null": 0,
+          "played_rows": 11492
+        },
+        "target_missed": {
+          "non_null": 0,
+          "rows": 29747,
+          "played_non_null": 0,
+          "played_rows": 11492
+        },
+        "tackled": {
+          "non_null": 0,
+          "rows": 29747,
+          "played_non_null": 0,
+          "played_rows": 11492
+        }
+      },
+      "metadata_join": {
+        "identity_artifact_sha256": "1a82bfe74d0d9ba5795a8b58fa983f272ed3e6cbd3de89376486386f71d52d13",
+        "duplicate_official_codes": 0,
+        "matched_rows": 29747,
+        "unmatched_elements": [],
+        "duplicate_metadata_ids": 0,
+        "missing_position_recoverable": 0,
+        "stable_code_rows": 29747,
+        "status": "research_only_final_season_metadata_not_predeadline"
+      },
+      "fixture_join": {
+        "finished_source_fixtures": 380,
+        "missing_finished_ids": [],
+        "unmatched_canonical_ids": []
+      }
+    }
+  },
+  "parse_errors": [
+    {
+      "repository": "vaastav/Fantasy-Premier-League",
+      "path": "data/2016-17/gws/merged_gw.csv",
+      "sha256": "49fd5f815509513fac8cf329abc0faa4e48d99ab57b56162220bcb6caeae4116",
+      "parse_error": "UnicodeDecodeError"
+    },
+    {
+      "repository": "vaastav/Fantasy-Premier-League",
+      "path": "data/2017-18/gws/merged_gw.csv",
+      "sha256": "1d8288bad9994994070100b23a4fc2b28efeb79d8be13c9e6f6be559c1c9369d",
+      "parse_error": "UnicodeDecodeError"
+    },
+    {
+      "repository": "vaastav/Fantasy-Premier-League",
+      "path": "data/2018-19/gws/merged_gw.csv",
+      "sha256": "0c96ab3e3b12ffa9d27e24483b494cc9350d24f02520f2c964ea8b8f19f08c68",
+      "parse_error": "UnicodeDecodeError"
+    }
+  ],
+  "predeadline_eligible_files": 0,
+  "complement": {
+    "2024-2025": {
+      "match_quality": {
+        "input_rows": 380,
+        "exact_duplicates": 0,
+        "conflicting_rows": 0,
+        "null_key_rows": 0,
+        "retained_rows": 380
+      },
+      "player_match_quality": {
+        "input_rows": 11567,
+        "exact_duplicates": 0,
+        "conflicting_rows": 0,
+        "null_key_rows": 0,
+        "retained_rows": 11567
+      },
+      "tournaments": {},
+      "finished_matches": 380,
+      "player_rows_without_match": 0,
+      "player_rows_without_valid_kickoff": 0,
+      "observed_minutes_rows": 11567,
+      "invalid_minutes_rows": 0,
+      "staging_sha256": "1f35f80de05b9b6c5088b089765b5e225bda95a1f9fc7621bd47881cc31d7b00",
+      "player_rows_with_canonical_element": 11567,
+      "identity_reconciliation": {
+        "quality": {
+          "input_rows": 804,
+          "exact_duplicates": 0,
+          "conflicting_rows": 0,
+          "null_key_rows": 0,
+          "retained_rows": 804
+        },
+        "paired_players": 804,
+        "code_disagreements": 0,
+        "source_players_without_canonical_metadata": 0
+      }
+    },
+    "2025-2026": {
+      "match_quality": {
+        "input_rows": 525,
+        "exact_duplicates": 0,
+        "conflicting_rows": 0,
+        "null_key_rows": 0,
+        "retained_rows": 525
+      },
+      "player_match_quality": {
+        "input_rows": 15340,
+        "exact_duplicates": 0,
+        "conflicting_rows": 0,
+        "null_key_rows": 0,
+        "retained_rows": 15340
+      },
+      "tournaments": {
+        "champions-league": 64,
+        "conference-league": 13,
+        "efl-cup": 40,
+        "europa-league": 28,
+        "prem": 380
+      },
+      "finished_matches": 521,
+      "player_rows_without_match": 0,
+      "player_rows_without_valid_kickoff": 749,
+      "observed_minutes_rows": 15340,
+      "invalid_minutes_rows": 0,
+      "staging_sha256": "1b6d21e3d6c8de568b8639dfb1d83bd6572252ba647c5873ca21e8aae5bfc0b8",
+      "player_rows_with_canonical_element": 15340,
+      "identity_reconciliation": {
+        "quality": {
+          "input_rows": 841,
+          "exact_duplicates": 0,
+          "conflicting_rows": 0,
+          "null_key_rows": 0,
+          "retained_rows": 841
+        },
+        "paired_players": 841,
+        "code_disagreements": 0,
+        "source_players_without_canonical_metadata": 0
+      },
+      "weekly_reconciliation": {
+        "quality": {
+          "input_rows": 29978,
+          "exact_duplicates": 0,
+          "conflicting_rows": 0,
+          "null_key_rows": 0,
+          "retained_rows": 29978
+        },
+        "canonical_player_weeks": 29338,
+        "paired_rows": 29338,
+        "points_disagreements": 0,
+        "minutes_disagreements": 0,
+        "negative_minutes_rows": 0
+      }
+    },
+    "2026-2027": {
+      "match_quality": {
+        "input_rows": 473,
+        "exact_duplicates": 0,
+        "conflicting_rows": 0,
+        "null_key_rows": 0,
+        "retained_rows": 473
+      },
+      "player_match_quality": {
+        "input_rows": 1055,
+        "exact_duplicates": 0,
+        "conflicting_rows": 0,
+        "null_key_rows": 0,
+        "retained_rows": 1055
+      },
+      "tournaments": {
+        "champions-league": 40,
+        "conference-league": 6,
+        "efl-cup": 23,
+        "europa-league": 24,
+        "prem": 380
+      },
+      "finished_matches": 37,
+      "player_rows_without_match": 0,
+      "player_rows_without_valid_kickoff": 0,
+      "observed_minutes_rows": 1055,
+      "invalid_minutes_rows": 0,
+      "staging_sha256": "c0372f47b14409ef0e1cc943c9d1d9623c1bf19a19beb1687f6e00f46f5a23e5",
+      "player_rows_with_canonical_element": 0
+    }
+  }
+}
