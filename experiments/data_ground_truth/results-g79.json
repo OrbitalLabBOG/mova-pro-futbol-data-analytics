@@ -1,0 +1,271 @@
+{
+  "version": "historical-data-g79",
+  "audit_report_sha256": "c31a53c934b08f00bf51d145838c4993236e1fdacfbab4377fe2019a98ae1d37",
+  "audit": {
+    "version": "historical-workbook-evidence-v1",
+    "manifest_sha256": "ba3d8fd9e6b8e4396f4e00c082685a80a729d0ea500fbf5c121559cba2b8d841",
+    "implementation_sha256": "af135292b2b2da047e9ef763c232d7fd8ce95136d3a619f1222ec438efb50e7c",
+    "source_files": 5,
+    "source_bytes": 250468,
+    "workbooks": 3,
+    "worksheets": 9,
+    "player_sheet_rows": 2266,
+    "sheets": [
+      {
+        "source_path": "Fantasy Football Team Selector 13-14.xlsm",
+        "sheet": "Ordered by Points Scored",
+        "metric": "points_aggregate_unresolved_period",
+        "player_rows": 262,
+        "literal_complete_rows": 262,
+        "incomplete_rows": 0,
+        "observed_clubs": 19,
+        "duplicate_name_club_role_groups": 0,
+        "formula_cells": 0
+      },
+      {
+        "source_path": "Fantasy Football Team Selector 13-14.xlsm",
+        "sheet": "Ordered by Value",
+        "metric": "value_unresolved_definition",
+        "player_rows": 270,
+        "literal_complete_rows": 270,
+        "incomplete_rows": 0,
+        "observed_clubs": 19,
+        "duplicate_name_club_role_groups": 0,
+        "formula_cells": 0
+      },
+      {
+        "source_path": "Fantasy Football Team Selector 13-14.xlsm",
+        "sheet": "Ordered by Popularity",
+        "metric": "popularity_unresolved_snapshot",
+        "player_rows": 270,
+        "literal_complete_rows": 270,
+        "incomplete_rows": 0,
+        "observed_clubs": 20,
+        "duplicate_name_club_role_groups": 0,
+        "formula_cells": 0
+      },
+      {
+        "source_path": "Fantasy Football Team Selector 14-15.xlsm",
+        "sheet": "Ordered by Popularity",
+        "metric": "popularity_unresolved_snapshot",
+        "player_rows": 200,
+        "literal_complete_rows": 200,
+        "incomplete_rows": 0,
+        "observed_clubs": 20,
+        "duplicate_name_club_role_groups": 0,
+        "formula_cells": 0
+      },
+      {
+        "source_path": "Fantasy Football Team Selector 14-15.xlsm",
+        "sheet": "Ordered by Value",
+        "metric": "value_unresolved_definition",
+        "player_rows": 250,
+        "literal_complete_rows": 250,
+        "incomplete_rows": 0,
+        "observed_clubs": 18,
+        "duplicate_name_club_role_groups": 0,
+        "formula_cells": 0
+      },
+      {
+        "source_path": "Fantasy Football Team Selector 14-15.xlsm",
+        "sheet": "Ordered by Points Scored",
+        "metric": "points_aggregate_unresolved_period",
+        "player_rows": 250,
+        "literal_complete_rows": 250,
+        "incomplete_rows": 0,
+        "observed_clubs": 18,
+        "duplicate_name_club_role_groups": 0,
+        "formula_cells": 0
+      },
+      {
+        "source_path": "Fantasy Football Team Selector Official 2012-13/Fantasy Football Team Selector 12-13.xlsm",
+        "sheet": "Ordered by Points Scored",
+        "metric": "points_aggregate_unresolved_period",
+        "player_rows": 268,
+        "literal_complete_rows": 268,
+        "incomplete_rows": 0,
+        "observed_clubs": 19,
+        "duplicate_name_club_role_groups": 0,
+        "formula_cells": 0
+      },
+      {
+        "source_path": "Fantasy Football Team Selector Official 2012-13/Fantasy Football Team Selector 12-13.xlsm",
+        "sheet": "Ordered by Value",
+        "metric": "value_unresolved_definition",
+        "player_rows": 268,
+        "literal_complete_rows": 268,
+        "incomplete_rows": 0,
+        "observed_clubs": 19,
+        "duplicate_name_club_role_groups": 0,
+        "formula_cells": 0
+      },
+      {
+        "source_path": "Fantasy Football Team Selector Official 2012-13/Fantasy Football Team Selector 12-13.xlsm",
+        "sheet": "Ordered by Popularity",
+        "metric": "popularity_unresolved_snapshot",
+        "player_rows": 228,
+        "literal_complete_rows": 228,
+        "incomplete_rows": 0,
+        "observed_clubs": 20,
+        "duplicate_name_club_role_groups": 0,
+        "formula_cells": 0
+      }
+    ],
+    "overlaps": [
+      {
+        "source_a": "Fantasy Football Team Selector 13-14.xlsm",
+        "source_b": "Fantasy Football Team Selector 14-15.xlsm",
+        "sheet": "Ordered by Points Scored",
+        "exact_literal_rows_in_common": 1,
+        "identical_literal_multiset": false
+      },
+      {
+        "source_a": "Fantasy Football Team Selector 13-14.xlsm",
+        "source_b": "Fantasy Football Team Selector Official 2012-13/Fantasy Football Team Selector 12-13.xlsm",
+        "sheet": "Ordered by Points Scored",
+        "exact_literal_rows_in_common": 2,
+        "identical_literal_multiset": false
+      },
+      {
+        "source_a": "Fantasy Football Team Selector 13-14.xlsm",
+        "source_b": "Fantasy Football Team Selector 14-15.xlsm",
+        "sheet": "Ordered by Value",
+        "exact_literal_rows_in_common": 1,
+        "identical_literal_multiset": false
+      },
+      {
+        "source_a": "Fantasy Football Team Selector 13-14.xlsm",
+        "source_b": "Fantasy Football Team Selector Official 2012-13/Fantasy Football Team Selector 12-13.xlsm",
+        "sheet": "Ordered by Value",
+        "exact_literal_rows_in_common": 0,
+        "identical_literal_multiset": false
+      },
+      {
+        "source_a": "Fantasy Football Team Selector 13-14.xlsm",
+        "source_b": "Fantasy Football Team Selector 14-15.xlsm",
+        "sheet": "Ordered by Popularity",
+        "exact_literal_rows_in_common": 0,
+        "identical_literal_multiset": false
+      },
+      {
+        "source_a": "Fantasy Football Team Selector 13-14.xlsm",
+        "source_b": "Fantasy Football Team Selector Official 2012-13/Fantasy Football Team Selector 12-13.xlsm",
+        "sheet": "Ordered by Popularity",
+        "exact_literal_rows_in_common": 1,
+        "identical_literal_multiset": false
+      },
+      {
+        "source_a": "Fantasy Football Team Selector 14-15.xlsm",
+        "source_b": "Fantasy Football Team Selector Official 2012-13/Fantasy Football Team Selector 12-13.xlsm",
+        "sheet": "Ordered by Popularity",
+        "exact_literal_rows_in_common": 0,
+        "identical_literal_multiset": false
+      },
+      {
+        "source_a": "Fantasy Football Team Selector 14-15.xlsm",
+        "source_b": "Fantasy Football Team Selector Official 2012-13/Fantasy Football Team Selector 12-13.xlsm",
+        "sheet": "Ordered by Value",
+        "exact_literal_rows_in_common": 0,
+        "identical_literal_multiset": false
+      },
+      {
+        "source_a": "Fantasy Football Team Selector 14-15.xlsm",
+        "source_b": "Fantasy Football Team Selector Official 2012-13/Fantasy Football Team Selector 12-13.xlsm",
+        "sheet": "Ordered by Points Scored",
+        "exact_literal_rows_in_common": 0,
+        "identical_literal_multiset": false
+      }
+    ],
+    "new_FPL_gameweek_labels": 0,
+    "new_complete_FPL_seasons": 0,
+    "eligible_predeadline": false,
+    "training_admitted": false,
+    "production_changed": false,
+    "macros_executed": false,
+    "formulas_evaluated": false,
+    "external_links_followed": false,
+    "limitations": [
+      "workbook_filename_does_not_establish_observation_or_points_period",
+      "sheet_rows_are_not_unique_players_across_sheets",
+      "names_without_official_codes_do_not_establish_cross_source_identity",
+      "overlap_is_not_proof_of_full_sheet_equivalence_or_creation_date",
+      "observed_prices_and_aggregates_are_not_gameweek_labels_or_causal_inputs"
+    ],
+    "artifacts": {
+      "tables.json": "dbec89940900ece9821e526e9f443f283f1150d651d0ef901922ba496f8f6e42"
+    }
+  },
+  "sources": [
+    {
+      "repository": "lifebeyondfife/FantasyFootball",
+      "revision": "b3a43a31d688b4ca62ecea0077a21ae36b52cbc6",
+      "path": "Fantasy Football Team Selector 13-14.xlsm",
+      "url": "https://raw.githubusercontent.com/lifebeyondfife/FantasyFootball/b3a43a31d688b4ca62ecea0077a21ae36b52cbc6/Fantasy%20Football%20Team%20Selector%2013-14.xlsm",
+      "sha256": "74a1ddecc691410b659afd2841a4eaa7b5fd3faa6b3f0ccc19fab46b3129e692",
+      "bytes": 74248,
+      "fetched_at": "2026-09-06T17:16:03.277320+00:00",
+      "available_at": null,
+      "time_semantics": "retrospective_unknown_publication",
+      "eligible_predeadline": false
+    },
+    {
+      "repository": "lifebeyondfife/FantasyFootball",
+      "revision": "b3a43a31d688b4ca62ecea0077a21ae36b52cbc6",
+      "path": "Fantasy Football Team Selector 14-15.xlsm",
+      "url": "https://raw.githubusercontent.com/lifebeyondfife/FantasyFootball/b3a43a31d688b4ca62ecea0077a21ae36b52cbc6/Fantasy%20Football%20Team%20Selector%2014-15.xlsm",
+      "sha256": "da566250cf5904f5e0cde9fdffae91fa81272d828f123c3279ba55a9237b45d8",
+      "bytes": 71867,
+      "fetched_at": "2026-09-06T17:16:03.289247+00:00",
+      "available_at": null,
+      "time_semantics": "retrospective_unknown_publication",
+      "eligible_predeadline": false
+    },
+    {
+      "repository": "lifebeyondfife/FantasyFootball",
+      "revision": "b3a43a31d688b4ca62ecea0077a21ae36b52cbc6",
+      "path": "Fantasy Football Team Selector Official 2012-13/Fantasy Football Team Selector 12-13.xlsm",
+      "url": "https://raw.githubusercontent.com/lifebeyondfife/FantasyFootball/b3a43a31d688b4ca62ecea0077a21ae36b52cbc6/Fantasy%20Football%20Team%20Selector%20Official%202012-13/Fantasy%20Football%20Team%20Selector%2012-13.xlsm",
+      "sha256": "daa838159f5f0c251054cdb03d8bd7c268339d13f467565860ef2d84789a700f",
+      "bytes": 68911,
+      "fetched_at": "2026-09-06T17:16:03.277576+00:00",
+      "available_at": null,
+      "time_semantics": "retrospective_unknown_publication",
+      "eligible_predeadline": false
+    },
+    {
+      "repository": "lifebeyondfife/FantasyFootball",
+      "revision": "b3a43a31d688b4ca62ecea0077a21ae36b52cbc6",
+      "path": "LICENCE.txt",
+      "url": "https://raw.githubusercontent.com/lifebeyondfife/FantasyFootball/b3a43a31d688b4ca62ecea0077a21ae36b52cbc6/LICENCE.txt",
+      "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903",
+      "bytes": 35147,
+      "fetched_at": "2026-09-06T17:16:03.250934+00:00",
+      "available_at": null,
+      "time_semantics": "retrospective_unknown_publication",
+      "eligible_predeadline": false
+    },
+    {
+      "repository": "lifebeyondfife/FantasyFootball",
+      "revision": "b3a43a31d688b4ca62ecea0077a21ae36b52cbc6",
+      "path": "README.md",
+      "url": "https://raw.githubusercontent.com/lifebeyondfife/FantasyFootball/b3a43a31d688b4ca62ecea0077a21ae36b52cbc6/README.md",
+      "sha256": "0890e7e984e60008b77ab8efe268b76b5b60936690df66b2934c46c8faecd5ab",
+      "bytes": 295,
+      "fetched_at": "2026-09-06T17:16:03.504681+00:00",
+      "available_at": null,
+      "time_semantics": "retrospective_unknown_publication",
+      "eligible_predeadline": false
+    }
+  ],
+  "reproducible_artifacts": [
+    "report.json",
+    "tables.json"
+  ],
+  "search_notes": {
+    "orbix_openalex_results": 4,
+    "github_query": "fantasy premier league created:<2014-08-01",
+    "returned_repositories": 25,
+    "new_complete_seasons_verified": 0
+  },
+  "portable_archive_cut": "G78 remains frozen; G79 source objects retained separately"
+}
