@@ -3973,3 +3973,78 @@ G70 y se versiona el hash del manifiesto de fichas FPL. Los artefactos con filas
 individuales permanecen locales. GT v7, G55 y producción siguen intactos; no hay
 nuevas etiquetas, admisión comercial, entrenamiento ni redistribución del corpus.
 Queda contrastar las 183 apariciones pendientes y la semántica de los eventos.
+
+## G72 — contraste de goles y autogoles derivados de eventos
+
+<img src="https://static.hudl.com/craft/productAssets/statsbomb_icon.svg" alt="Hudl StatsBomb" width="40" height="40">
+
+Fuente de eventos: **StatsBomb Open Data (Hudl)**; corpus investigativo G67, sin
+admisión comercial o productiva. Se adquirieron y leyeron dos especificaciones
+oficiales del mismo pin, **1.107.385 bytes** en `statsbomb-specs-g72`:
+`Open Data Events v4.0.0.pdf` y `StatsBomb Open Data Specification v1.1.pdf`.
+La última, página 25, distingue autogol a favor y en contra; la especificación de
+eventos v4, páginas 4–5, define ambos tipos. Los documentos quedan fijados por hash.
+
+`statsbomb_goal_calibration.py` cuenta goles desde `Shot` con outcome `Goal` y
+autogoles desde **`Own Goal Against`**, en períodos 1 y 2. Para reconstruir el
+marcador, el autogol se acredita al equipo contrario. No se vuelven a contar
+`Own Goal For` ni eventos de portero que describen el mismo gol. El auditor
+rechaza IDs de evento duplicados, goles sin actor identificado o equipos ajenos
+al partido. No se equiparan asistencias o saves mediante esta regla.
+
+### Consistencia interna del proveedor
+
+Se verifican por hash 380 archivos de eventos y sus 380 alineaciones. Los
+**1.026 eventos contabilizados** —988 goles de tiro y 38 autogoles— reconstruyen
+el marcador del calendario StatsBomb en **760/760 lados de partido**. Todos tienen
+actor identificado. Es consistencia interna, no contraste independiente del
+resultado ni evidencia de disponibilidad predeadline.
+
+### Comparación con FPL bajo las identidades G71
+
+De las 24.741 filas GT, se comparan las **12.939** con identidad aceptada y presencia
+en la alineación del mismo partido. Se excluyen 7.004 sin identidad y 4.798 fuera
+de alineación; no se las convierte en ceros StatsBomb.
+
+| Componente | Iguales / todas las filas comparadas | Distintas | Iguales / casos no cero | Distintas / casos no cero |
+| --- | ---: | ---: | ---: | ---: |
+| Goles | 12.927/12.939 | 12 | 864/876 | 12/876 |
+| Autogoles | 12.932/12.939 | 7 | 30/37 | 7/37 |
+
+Un caso no cero tiene valor positivo en **al menos una** de las dos fuentes. Ese
+denominador evita presentar concordancia dominada por miles de ceros. Entre las
+10.286 apariciones FPL con minutos positivos, las diferencias siguen siendo las
+mismas: doce en goles y siete en autogoles.
+
+En el subconjunto comparado, los totales son **983 goles StatsBomb frente a 991
+FPL**, y **37 autogoles frente a 30**. Son totales de jugadores enlazados, no los
+1.026 eventos completos de la temporada. No se reasignan autores ni se reemplaza
+el componente FPL: el contraste no determina qué versión es correcta para la
+puntuación Fantasy, ni demuestra si hubo revisiones posteriores del proveedor.
+
+El cero de una fila comparada es el conteo derivado de eventos bajo presencia en
+alineación, no una imputación de un campo crudo vacío. Valores FPL ausentes quedan
+`FPL_unknown`; no se interpretan como cero. La exhaustividad de eventos más allá
+del calendario y estas comprobaciones sigue siendo una limitación.
+
+`comparisons.jsonl.gz` conserva valores/deltas por jugador y partido;
+`score-checks.json` conserva los lados de marcador;
+`goal-witnesses.json` conserva IDs de evento, autor, equipo beneficiado y hash
+fuente. Los tres artefactos permanecen locales, sin redistribución del corpus.
+
+```bash
+python -m experiments.data_ground_truth.statsbomb_goal_calibration \
+  --root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/statsbomb-open-g67 \
+  --identity-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/statsbomb-fpl-name-crosswalk-v2 \
+  --fixture-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/statsbomb-fixture-crosswalk-v2 \
+  --package /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/training-datasets/d4baf849fb4a051be103f8c469e61a4753edb0b4004f980a000fe5c86ef573db \
+  --spec-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/statsbomb-specs-g72 \
+  --out /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/statsbomb-goal-calibration-v2
+```
+
+Reporte y tres artefactos reproducidos byte por byte en v3. Suite completa:
+**1.637 passed, 1 skipped, 79 deselected** (36,90 s).
+[Resultados G72](results-g72.json). Sin etiquetas nuevas, reparación de GT,
+entrenamiento, cambios productivos o modificación de GT v7/G55. Las discrepancias
+requieren contrastar atribución y semántica de puntuación antes de admitir una
+fuente como sustituto de otra.
