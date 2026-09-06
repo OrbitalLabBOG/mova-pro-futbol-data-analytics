@@ -4103,3 +4103,63 @@ artefactos individuales permanecen fuera de Git. Suite completa: **1.640 passed,
 GT v7, G55 y producción permanecen sin cambios. La brecha pendiente sigue siendo
 identidad, cobertura temporal y semántica verificable; contar más archivos no
 sustituye esos controles.
+
+## G74 — Recuperación de códigos ausentes con evidencia FPL
+
+La opción `--recover-missing-codes` de `statsbomb_player_crosswalk.py` aborda
+apariciones que el archivo PL conserva con nombre y club, pero sin código oficial.
+Requiere las fichas FPL verificadas y un baseline con el mismo manifiesto de
+nombres. Es una propuesta de enlace separada; **no modifica archivos crudos**.
+
+Para cada fila PL sin código y con minutos positivos, exige nombre completo
+compatible con **una sola** ficha entre las 723 de FPL y una aparición FPL positiva
+en el mismo partido. No compara goles, puntos ni igualdad de minutos. Rechaza
+nombres ambiguos, códigos ya presentes en otra fila de ese partido y dos filas
+sin código que compitan por el mismo jugador. Luego aplica el enlace StatsBomb
+vigente: mismo club/partido, nombre respaldado, presencia de posición y **dos
+partidos distintos con correspondencia recíproca única**. No relaja el umbral
+para jugadores con una sola aparición.
+
+De 32 filas PL positivas sin código, se obtienen 27 propuestas y quedan cinco
+sin nombre completo único. Veintiséis propuestas pertenecen a tres identidades
+nuevas aceptadas: Baba Rahman (15 apariciones), Yann Kermorgant (7) y Víctor Ibarbo
+(4). La restante es Javier Hernández; una sola aparición sigue siendo evidencia
+insuficiente. Las cinco no resueltas están bajo el nombre archivado Guangtai
+Jiang; no se inventa una equivalencia de nombres.
+
+| Métrica | G71 | G74 |
+| --- | ---: | ---: |
+| Identidades aceptadas para investigación | 493 | 496 |
+| Apariciones positivas con posición en lineup | 10.286/10.469 | 10.312/10.469 |
+| Apariciones pendientes | 183 | 157 |
+| Filas GT con presencia en lineup | 12.939 | 12.995 |
+| Enlaces anteriores perdidos o cambiados | — | 0 |
+
+La cobertura positiva pasa de 98,25% a **98,50%**. Se conservan los 493 enlaces
+anteriores. El corpus contiene 6.896 filas con identidad no resuelta y 4.850 fuera
+de lineup; ninguna de estas últimas tiene minutos FPL positivos. Las propuestas
+no generan etiquetas: GT v7 sigue en 303.126 filas y doce temporadas.
+
+El reporte y cinco artefactos reproducen bytes idénticos en
+`statsbomb-code-recovery-v2` y `v3`. `missing-code-proposals.json` conserva la fila
+CSV, partido, club, candidatos, razón y hash de la ficha FPL. Los testigos aceptados
+incluyen esta procedencia. Artefactos individuales fuera de Git, sólo investigación
+con **StatsBomb Open Data (Hudl)**; sin admisión comercial, entrenamiento ni
+redistribución raw.
+
+<img src="https://static.hudl.com/craft/productAssets/statsbomb_icon.svg" alt="Hudl StatsBomb" width="40" height="40">
+
+Para reproducir, usar el comando G71 con baseline
+`statsbomb-fpl-name-crosswalk-v2`, añadir `--recover-missing-codes` y escribir en
+`statsbomb-code-recovery-v2`. Los demás cuatro conjuntos fuente no cambian.
+
+También se ejecutó `statsbomb_goal_calibration.py` con el nuevo `--identity-root`
+y salida `statsbomb-code-recovery-goals-v1`: compara 12.995 filas, reconstruye
+760/760 lados del marcador y conserva las mismas doce diferencias de goles y
+siete de autogoles. Las 56 filas adicionales comparadas no añaden casos no cero
+ni discrepancias. Esto comprueba compatibilidad con el auditor posterior, sin
+reescribir los resultados congelados G72/G73.
+
+Suite completa: **1.643 passed, 1 skipped, 79 deselected** (33,65 s).
+[Resultados G74](results-g74.json). Sin descargas nuevas en este gate: se recupera
+cobertura de datos crudos ya adquiridos. GT, bundle G55 y runtime productivo intactos.

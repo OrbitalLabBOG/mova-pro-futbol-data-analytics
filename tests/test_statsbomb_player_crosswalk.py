@@ -54,3 +54,36 @@ def test_FPL_full_name_must_be_bound_to_the_same_official_code():
     kind,source=candidate_name_evidence(player,candidate,True,{'52538':metadata})
     assert kind=='fpl_metadata_full_name'
     assert source==metadata
+
+
+def test_missing_code_requires_unique_full_name_and_same_fixture_played_label():
+    from experiments.data_ground_truth.statsbomb_player_crosswalk import recover_archive_codes
+    observation=dict(playerName='Rahman Baba', official_player_code='', team_id='8', matchId_events='100', minutesPlayed='90')
+    metadata={'118335':dict(full_name='Abdul Rahman Baba',source_sha256='raw-fpl-hash')}
+    label=dict(fixture='100',official_player_code='118335',minutes='90')
+    recovered,audit=recover_archive_codes([observation],metadata,[label])
+    assert recovered[2]['official_player_code']=='118335'
+    assert audit[0]['fpl_name_source']['source_sha256']=='raw-fpl-hash'
+    assert recover_archive_codes([observation],metadata,[label|{'fixture':'101'}])[0]=={}
+    assert recover_archive_codes([observation],metadata,[label|{'minutes':'0'}])[0]=={}
+    assert recover_archive_codes([observation],metadata|{'99':metadata['118335']},[label])[0]=={}
+    assert recover_archive_codes([observation|{'playerName':'Baba'}],metadata,[label])[0]=={}
+
+
+def test_recovery_never_overwrites_existing_code_or_assigns_two_rows_to_one_player():
+    from experiments.data_ground_truth.statsbomb_player_crosswalk import recover_archive_codes
+    observation=dict(playerName='Yann Kermorgant',official_player_code='',team_id='91',matchId_events='100',minutesPlayed='37')
+    metadata={'44558':dict(full_name='Yann Kermorgant')}
+    labels=[dict(fixture='100',official_player_code='44558',minutes='37')]
+    assert recover_archive_codes([observation,observation],metadata,labels)[0]=={}
+    assert recover_archive_codes([observation,observation|{'official_player_code':'44558'}],metadata,labels)[0]=={}
+    assert recover_archive_codes([observation|{'official_player_code':'999'}],metadata,labels)==({},[])
+
+
+def test_recovered_proposal_still_needs_two_distinct_matches_for_identity():
+    from experiments.data_ground_truth.statsbomb_player_crosswalk import recover_archive_codes
+    observation=dict(playerName='Victor Ibarbo',official_player_code='',team_id='57',matchId_events='100',minutesPlayed='8')
+    recovered,_=recover_archive_codes([observation],{'59380':dict(full_name='Víctor Ibarbo')},
+        [dict(fixture='100',official_player_code='59380',minutes='8')])
+    assert recovered
+    assert resolve([witness(1,recovered[2]['official_player_code'],100)])=={}

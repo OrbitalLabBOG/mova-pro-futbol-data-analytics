@@ -56,9 +56,45 @@ def candidate_name_evidence(player, candidate, declared_aliases, metadata_by_cod
     return evidence, metadata
 
 
-def build(statsbomb_root,fixture_root,archive_root,package,out,declared_aliases=False,baseline_root=None,fpl_names_root=None):
+def recover_archive_codes(observations, metadata_by_code, labels):
+    """Propose absent PL codes from unique FPL names and same-fixture appearances."""
+    positive = {(int(r['fixture']), archive_code(r['official_player_code']))
+                for r in labels if r['minutes'] and float(r['minutes']) > 0}
+    existing = {(int(r['matchId_events']), archive_code(r['official_player_code']))
+                for r in observations if archive_code(r['official_player_code']) is not None}
+    proposals = []; output = []
+    for number, row in enumerate(observations, start=2):
+        if archive_code(row['official_player_code']) is not None or not row['minutesPlayed'] or float(row['minutesPlayed']) <= 0:
+            continue
+        fixture = int(row['matchId_events'])
+        candidates = [code for code, meta in metadata_by_code.items()
+                      if compatible_names(row['playerName'], meta['full_name'])]
+        code = candidates[0] if len(candidates) == 1 else None
+        status = ('no_unique_full_name' if code is None else
+                  'no_FPL_positive_appearance' if (fixture, code) not in positive else
+                  'code_already_present_in_fixture' if (fixture, code) in existing else 'candidate')
+        item = dict(archive_csv_row=number, fixture=fixture, club_code=int(row['team_id']),
+                    archive_name=row['playerName'], candidate_codes=sorted(candidates), status=status,
+                    official_player_code=code)
+        if code is not None:
+            item['fpl_name_source'] = metadata_by_code[code]
+        output.append(item)
+        if status == 'candidate': proposals.append(item)
+    counts = Counter((r['fixture'], r['official_player_code']) for r in proposals)
+    recovered = {}
+    for item in proposals:
+        if counts[(item['fixture'], item['official_player_code'])] != 1:
+            item['status'] = 'competing_missing_rows'
+        else:
+            item['status'] = 'proposed_code_only'
+            recovered[item['archive_csv_row']] = item
+    return recovered, output
+
+
+def build(statsbomb_root,fixture_root,archive_root,package,out,declared_aliases=False,baseline_root=None,fpl_names_root=None,recover_missing_codes=False):
     if declared_aliases and baseline_root is None: raise ValueError('alias comparison requires baseline')
     if fpl_names_root is not None and not declared_aliases: raise ValueError('FPL names require explicit alias mode')
+    if recover_missing_codes and fpl_names_root is None: raise ValueError('code recovery requires FPL metadata and baseline')
     fpl_names={};name_manifest_bytes=None
     if fpl_names_root is not None:
         name_manifest_bytes=(fpl_names_root/'manifest.json').read_bytes();name_manifest=json.loads(name_manifest_bytes)
@@ -76,9 +112,16 @@ def build(statsbomb_root,fixture_root,archive_root,package,out,declared_aliases=
     crosswalk_bytes=(archive_root/'crosswalk-report.json').read_bytes();crosswalk=json.loads(crosswalk_bytes)
     observations_bytes=checked(archive_root/'crosswalk/2015-16/player_match_observations.csv',crosswalk['seasons']['2015-16']['observation_sha256'])
     observations=list(csv.DictReader(io.StringIO(observations_bytes.decode())))
+    recovered={};recovery_audit=[]
+    if recover_missing_codes:
+        recovery_dataset=verify(package)
+        recovery_part=next(r for r in recovery_dataset['partitions'] if r['season']=='2015-16')
+        recovery_labels=list(csv.DictReader(io.StringIO(gzip.decompress(checked(package/recovery_part['file'],recovery_part['sha256'])).decode())))
+        recovered,recovery_audit=recover_archive_codes(observations,fpl_names,recovery_labels)
     candidates=defaultdict(list)
     for number,row in enumerate(observations,start=2):
         code=archive_code(row['official_player_code']);minutes=row['minutesPlayed']
+        if code is None and number in recovered: code=recovered[number]['official_player_code']
         if code is not None and minutes and float(minutes)>0:
             candidates[(int(row['matchId_events']),int(row['team_id']))].append(dict(code=code,name=row['playerName'],csv_row=number))
     manifest_bytes=(statsbomb_root/'manifest.json').read_bytes();manifest=json.loads(manifest_bytes)
@@ -104,6 +147,7 @@ def build(statsbomb_root,fixture_root,archive_root,package,out,declared_aliases=
                             archive_csv_row=candidate['csv_row'],lineup_sha256=record['sha256']))
                         if declared_aliases: witnesses[-1].update(name_evidence=evidence,declared_alias=player.get('player_nickname'))
                         if evidence.startswith('fpl_metadata_'): witnesses[-1]['fpl_name_source']=metadata
+                        if candidate['csv_row'] in recovered: witnesses[-1]['missing_code_recovery']=recovered[candidate['csv_row']]
     accepted=resolve(witnesses);reverse={c:p for p,c in accepted.items()};by_player=defaultdict(list)
     for row in witnesses:by_player[row['statsbomb_player_id']].append(row)
     player_links=[]
@@ -149,6 +193,8 @@ def build(statsbomb_root,fixture_root,archive_root,package,out,declared_aliases=
                 or baseline['archive_observations_sha256']!=digest(observations_bytes)
                 or baseline['statsbomb_manifest_sha256']!=digest(manifest_bytes)):
             raise ValueError('different identity baseline context')
+        if recover_missing_codes and baseline.get('fpl_names_manifest_sha256')!=digest(name_manifest_bytes):
+            raise ValueError('different FPL metadata baseline context')
         previous=json.loads(checked(baseline_root/'player-links.json',baseline['artifacts']['player-links.json']))
         old={r['statsbomb_player_id']:r['official_player_code'] for r in previous if r['status']=='accepted_research_identity'}
         delta=[]
@@ -169,6 +215,14 @@ def build(statsbomb_root,fixture_root,archive_root,package,out,declared_aliases=
         report.update(fpl_names_manifest_sha256=digest(name_manifest_bytes),fpl_name_records=len(fpl_names),
             method='PL_name_or_code_bound_FPL_full_name_or_explicit_SB_alias_two_fixture_club_witnesses_unique_reciprocal_code')
         report['limitations'].append('FPL_current_full_name_metadata_not_historical_availability_or_biographical_proof')
+    if recover_missing_codes:
+        (out/'missing-code-proposals.json').write_text(json.dumps(recovery_audit,indent=2)+'\n')
+        report.update(version='statsbomb-player-crosswalk-v4',
+            missing_code_status=dict(Counter(r['status'] for r in recovery_audit)),
+            recovered_code_witnesses=sum('missing_code_recovery' in r for r in witnesses),
+            method='G71_plus_unique_FPL_full_name_same_fixture_positive_appearance_for_absent_PL_codes_then_unchanged_two_fixture_reciprocal_resolution')
+        report['artifacts']['missing-code-proposals.json']=digest((out/'missing-code-proposals.json').read_bytes())
+        report['limitations'].append('missing_code_proposals_are_identity_evidence_not_raw_repairs_or_new_labels')
     (out/'report.json').write_text(json.dumps(report,indent=2)+'\n');return report
 
 
@@ -176,7 +230,8 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     for name in ('statsbomb-root','fixture-root','archive-root','package','out'):p.add_argument('--'+name,type=Path,required=True)
     p.add_argument('--declared-aliases',action='store_true');p.add_argument('--baseline-root',type=Path);p.add_argument('--fpl-names-root',type=Path)
-    a=p.parse_args();print(json.dumps(build(a.statsbomb_root,a.fixture_root,a.archive_root,a.package,a.out,a.declared_aliases,a.baseline_root,a.fpl_names_root),indent=2))
+    p.add_argument('--recover-missing-codes',action='store_true')
+    a=p.parse_args();print(json.dumps(build(a.statsbomb_root,a.fixture_root,a.archive_root,a.package,a.out,a.declared_aliases,a.baseline_root,a.fpl_names_root,a.recover_missing_codes),indent=2))
 
 
 if __name__=='__main__':main()
