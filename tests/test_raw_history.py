@@ -147,3 +147,32 @@ def test_extended_source_selection_keeps_match_and_season_granularity():
     assert raw.select(raw.REPOS[2], 'pl_stats/Arsenal_3/players_match_stats/2009-10_players_match_stats.csv')
     assert raw.select(raw.REPOS[3], 'data/2025/csv/gameweeks.csv')
     assert not raw.select(raw.REPOS[2], 'fpl_scraper/fpl/client.py')
+
+
+def test_2014_reconciles_double_gameweek_without_backfilling_final_club():
+    from experiments.data_ground_truth.historical_2014 import reconcile_2014
+    weekly = pd.DataFrame([
+        dict(id=1, name='Example', pos='Defender', team='Chelsea', pts=4, value=5, pct=10,
+             date='17 May 15:00', gw=37, opp='CRY(H) 1-0', mins=90, gw_pts=2),
+        dict(id=1, name='Example', pos='Defender', team='Chelsea', pts=4, value=5, pct=10,
+             date='20 May 19:45', gw=37, opp='QPR(H) 1-0', mins=90, gw_pts=2),
+    ])
+    players = pd.DataFrame([dict(id=1, pts=4)])
+    fixtures = pd.DataFrame([
+        dict(matchId=100, kickoff='2015-05-17 15:00:00', home_team_id=3, away_team_id=31),
+        dict(matchId=101, kickoff='2015-05-20 19:45:00', home_team_id=3, away_team_id=52),
+    ])
+    labels, report = reconcile_2014(weekly, players, fixtures)
+    assert report['fixtures'] == 2
+    assert report['double_gameweek_extra_rows'] == 1
+    assert labels.match_team_code.tolist() == [3, 3]
+    assert labels.final_season_team.tolist() == ['Chelsea', 'Chelsea']
+    assert 'pts' not in labels
+    assert labels.available_at.isna().all()
+    assert not labels.eligible_predeadline.any()
+    with pytest.raises(ValueError, match='season total'):
+        reconcile_2014(weekly, players.assign(pts=5), fixtures)
+    with pytest.raises(ValueError, match='ambiguous fixture'):
+        reconcile_2014(weekly, players, pd.concat([fixtures, fixtures]))
+    with pytest.raises(ValueError, match='unresolved fixtures'):
+        reconcile_2014(weekly, players, fixtures.iloc[:1])

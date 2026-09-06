@@ -170,3 +170,41 @@ Fuentes nuevas: [Premier League Stats](https://github.com/imadeddine-belkat/Prem
 y [TopMarx FPL mirror](https://github.com/TopMarxFPL/fpl-mirror). Sus README se archivan
 con los mismos commits que los datos. El README del primero afirma que las claves
 son intercambiables; los resultados de la auditoría contradicen esa afirmación.
+
+## Gate G3: una temporada Fantasy adicional, 2014/15
+
+[results-g3.json](results-g3.json) registra 24.876 observaciones, 711 jugadores,
+38 jornadas y 380 fixtures reconciliados, sin diferencias entre la suma de puntos
+por partido y el puntaje final de cada jugador. Se conservan 345 observaciones
+adicionales de dobles jornadas; la clave es jugador–partido, nunca jugador–GW.
+El conjunto de resultados FPL pasa a once temporadas y 278.766 observaciones:
+2014/15 más 2016/17–2025/26. La temporada 2015/16 sigue siendo un hueco.
+
+Fuente primaria: [durtal/fantasysocceR](https://github.com/durtal/fantasysocceR),
+commit fijado en `pins-g3.json`; 22 archivos / 347.337 bytes archivados. Se leen
+solo los objetos R `season201415` y `players201415`, nunca código del repositorio
+ni otros objetos del contenedor. La dependencia de conversión es opcional y se
+instala en entorno aislado, sin modificar el runtime FPL.
+
+```bash
+python -m experiments.data_ground_truth.raw \
+  --root "$FPL_2014_ROOT" --pins experiments/data_ground_truth/pins-g3.json
+uv run --no-project --with pyreadr==0.5.6 --with pandas==2.3.3 \
+  python -m experiments.data_ground_truth.historical_2014 \
+  --root "$FPL_2014_ROOT" --archive-root "$RAW_HISTORY_ROOT"
+```
+
+La unión de partidos exige coincidencia única de fecha/hora local, oponente y
+localía contra el archivo PL 2014/15. El club en cada partido se reconstruye desde
+ese fixture; no se copia el club de fin de temporada hacia atrás. La zona horaria
+no se inventa y la fecha de publicación sigue desconocida. Se preservan nombres
+`final_season_*` para los snapshots de puntos, precio, ownership y club finales,
+que NO son insumos disponibles en jornadas previas. El resultado se exporta como
+`labels-2014-15.csv`, con SHA-256 y namespaces explícitos.
+
+El gate de resultados por temporada está verificado. Para entrenamiento conjunto
+queda pendiente la unión de identidad 2014/15 a código oficial. Tampoco se afirma
+que estén reconstruidas las reglas, precios predeadline o acciones legales del
+replay 2014/15. Los archivos `pastseasons*.RData` contienen resúmenes por temporada
+con sesgo de supervivencia de los jugadores presentes en el snapshot; se archivan
+pero no se cuentan como temporadas completas adicionales.

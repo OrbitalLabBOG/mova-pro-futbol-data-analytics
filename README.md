@@ -117,6 +117,9 @@ reconciliación y comandos para repetir la medición antes de experimentar.
 El gate G2 amplía a 1.161 archivos y genera 253.890 etiquetas con identidad oficial.
 El archivo deportivo adicional abarca 17 temporadas desde 2009/10; sus claves de
 partido requieren reconciliación y todavía no alimenta entrenamiento.
+El gate G3 recupera además 2014/15: 24.876 filas, 38 jornadas y 380 partidos
+reconciliados. Hay once temporadas FPL de resultados; 2015/16 e identidad conjunta
+de 2014/15 siguen pendientes.
 
 ## Empezar
 
