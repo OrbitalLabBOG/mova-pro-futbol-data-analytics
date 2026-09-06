@@ -1,0 +1,74 @@
+{
+  "version": "historical-data-g95",
+  "audit_report_sha256": "b4e45b6081cd53f8db281f3062f9cc9067f809dc11af7472b4a6846b973ea0db",
+  "audit": {
+    "version": "partial-population-audit-v1",
+    "season": "2013-14",
+    "phases": {
+      "GW1_30": {
+        "archived_rows": 17805,
+        "known_minute_rows": 17805,
+        "positive_minute_rows": 7998,
+        "explicit_zero_minute_rows": 9807,
+        "unknown_minute_rows": 0,
+        "observed_point_and_minute_rows": 17805,
+        "known_minutes_missing_points": 0,
+        "positive_share_among_known_minutes": 0.4491996630160067,
+        "registered_player_denominator": null,
+        "eligibility_population_proven": false,
+        "sampling_status": "mixed_observed_outcomes_population_unknown",
+        "participation_training_admitted": false
+      },
+      "GW31_38": {
+        "archived_rows": 2860,
+        "known_minute_rows": 2452,
+        "positive_minute_rows": 2452,
+        "explicit_zero_minute_rows": 0,
+        "unknown_minute_rows": 408,
+        "observed_point_and_minute_rows": 2443,
+        "known_minutes_missing_points": 9,
+        "positive_share_among_known_minutes": 1.0,
+        "registered_player_denominator": null,
+        "eligibility_population_proven": false,
+        "sampling_status": "positive_only_observations",
+        "participation_training_admitted": false
+      }
+    },
+    "positive_only_gameweeks": [
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38
+    ],
+    "fixtures_with_explicit_zero_minutes": 291,
+    "fixtures_with_only_positive_known_minutes": 89,
+    "unknown_minutes_by_gameweek": {
+      "38": 408
+    },
+    "missing_points_with_known_minutes_by_gameweek": {
+      "34": 9
+    },
+    "new_labels": 0,
+    "participation_training_admitted": false,
+    "production_changed": false,
+    "limitations": [
+      "observed_positive_share_not_probability_of_playing",
+      "no_eligibility_population_proof_even_in_mixed_windows",
+      "unknown_minutes_are_not_zero",
+      "missing_points_do_not_erase_known_minutes",
+      "conditional_on_play_analysis_does_not_prove_unconditional_training_validity"
+    ],
+    "partial_dataset_id": "8bdcc426bb8c65a6b7281fb4013dbb77933844562dc7be05b5a0b54c9ebfc8ac",
+    "partial_manifest_sha256": "3f4c06cabc568497368902eb4ab74deca031ca40ce07398e3810c32e615d16f1",
+    "implementation_sha256": "030b3808e380966e18790c68523a55c2fd661083159e66f6f64da54c71c654b5",
+    "artifacts": {
+      "fixture_windows.csv": "e510e10e202218000f5f883bc46bad9d7798313c14008e1c57f472a783f1440f",
+      "gameweek_windows.csv": "93cddcd91b4630d340dc98587a0a79d9f10a68f47ba9fa8f0142aedc49943b39"
+    }
+  },
+  "reproduction_identical": true
+}
