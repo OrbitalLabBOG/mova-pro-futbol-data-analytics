@@ -1,0 +1,43 @@
+{
+  "version": "historical-data-g89",
+  "audit_report_sha256": "b2458964d2018685aa54b227cda302a9be0adaad7890002f3d82b3ab27dbf56d",
+  "audit": {
+    "version": "early-history-overlap-v1",
+    "fixture_links": 380,
+    "differential_rows": 10858,
+    "json_rows": 17805,
+    "paired_rows": 7998,
+    "json_only_rows": 9807,
+    "differential_only_rows": 2860,
+    "corroborated_rows": 7908,
+    "name_disagreements": 90,
+    "context_disagreements": 0,
+    "minutes_conflicts": 0,
+    "points_conflicts": 0,
+    "candidate_missing_points": 52,
+    "candidate_missing_minutes": 0,
+    "candidate_missing_points_players": 44,
+    "differential_positive_minutes_missing_points": 61,
+    "positive_minutes_missing_points_not_recovered": 9,
+    "positive_minutes_missing_points_candidates": 52,
+    "json_only_positive_minutes": 0,
+    "json_only_explicit_zero_minutes": 9807,
+    "new_complete_seasons": 0,
+    "training_admitted": false,
+    "source_labels_modified": false,
+    "limitations": [
+      "same_season_fpl_id_with_name_and_fixture_context_not_global_identity",
+      "json_only_relative_to_selected_differential_database_not_all_archives",
+      "candidate_recoveries_not_applied_to_GT",
+      "no_predeadline_publication_proof"
+    ],
+    "database_sha256": "e4f1e637702f69cfa513a5719b05f87bb0aab47ddd2cd4864b40d567c1ac9f80",
+    "fixture_sha256": "cae54cded8ed41bf60d44401f8f7626b8f3ac3bf3f107b4751cb5783653cb26a",
+    "g88_report_sha256": "45df3db7bed435108850bad6fa1f4046531bc5b7261a2f77eb39727834bb644d",
+    "implementation_sha256": "a4ffc4bc769b00c797517213634bf4110b017beef42be5923382f119ab4a9509",
+    "artifacts": {
+      "observations.csv": "dfdc1fe227f01dd4fd2de77bf295395cd3c24d9d3fafd5d936aa08a2a9328052"
+    }
+  },
+  "reproduction_identical": true
+}
