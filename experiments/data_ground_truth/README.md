@@ -118,8 +118,9 @@ La métrica predeadline verificada de este lote es **0%**, intencionalmente expl
   [inventario](https://raw.githubusercontent.com/hudl/open-data/master/data/competitions.json)
   lista Premier 2015/16 y 2003/04. En el corte inicial ambas quedaban fuera del
   canónico de diez temporadas; GT v7 ya incluye etiquetas FPL de 2015/16. Es un
-  candidato para enriquecer esa temporada con eventos de otra fuente; aún falta
-  adquirirlos y medir su cobertura e identidad. No aporta por sí solo etiquetas FPL.
+  candidato para enriquecer esa temporada con eventos de otra fuente. G67 adquiere
+  los eventos y verifica cobertura estructural; identidad FPL y admisión siguen
+  pendientes. No aporta por sí solo etiquetas FPL.
 - Football-data.co.uk: candidato para contraste de resultados/cuotas por partido;
   las páginas oficiales devolvieron error al consultarlas en esta iteración. No se
   contabiliza nueva cobertura ni se trata una cuota de cierre como previa al deadline.
@@ -3635,3 +3636,82 @@ Reporte y dos artefactos reproducidos byte por byte en v2. Suite completa:
 sin nuevas etiquetas, temporadas completas, entrenamiento ni reparaciones.
 El siguiente enriquecimiento debe aportar registros originales identificables o
 una fuente adicional, conservando estos huecos y exclusiones como evidencia.
+
+## G67 — StatsBomb Open Data, corpus de investigación separado
+
+<img src="https://static.hudl.com/craft/productAssets/statsbomb_icon.svg" alt="Hudl StatsBomb" width="40" height="40">
+
+**Fuente de datos: StatsBomb Open Data (Hudl).** Atribución e identificador visual
+oficial de [Hudl StatsBomb](https://www.hudl.com/en_gb/products/statsbomb).
+El [repositorio proveedor](https://github.com/hudl/open-data/tree/b0bc9f22dd77c206ddedc1d742893b3bbe64baec)
+queda fijado en `b0bc9f22dd77c206ddedc1d742893b3bbe64baec`.
+
+Se adquirieron **841 archivos, 1.247.414.992 bytes, cero errores**: README,
+licencia, inventario de competiciones, dos calendarios y los archivos de eventos
+y alineaciones de 418 partidos. Todos los bytes originales se conservan fuera de
+Git en `statsbomb-open-g67`, con URL, commit, SHA-256 y fecha de descarga. El
+capturador existente incorpora `hudl/open-data` a su allowlist; no se añade otra
+primitiva HTTP ni se ejecuta código del proveedor.
+
+### Condiciones de uso y admisión
+
+Se archivó y leyó el
+[LICENSE.pdf](https://github.com/hudl/open-data/blob/b0bc9f22dd77c206ddedc1d742893b3bbe64baec/LICENSE.pdf),
+SHA-256 `a5462e69aeb71a39268b760b110c5c2190a2e0cee3015ba976f66bd71f6c2bb4`.
+Su texto orienta el servicio a investigación, restringe explotación comercial y
+redistribución de datos, y requiere atribución con marca para publicar análisis.
+La disponibilidad pública no se interpreta como licencia comercial ni permiso de
+redistribución. El manifiesto y reporte conservan `usage=research_only`,
+`commercial_runtime_admitted=false`, `raw_redistribution_admitted=false` y
+`training_admitted=false`. No se publicó el corpus ni se incorporó a GT v7/G55.
+Este gate no declara resuelta la admisión de datos o derivados al motor MOVA.
+
+### Cobertura medida sobre archivos originales
+
+| Temporada | Partidos | Clubes | Cruces dirigidos faltantes | Eventos | Filas de jugadores en alineaciones |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 2015/16 | 380 | 20 | 0 | 1.313.773 | 13.678 |
+| 2003/04 | 38 | 20 | 342 | 129.401 | 1.111 |
+
+2015/16 contiene exactamente todos los pares local/visitante distintos de veinte
+clubes: temporada completa en **calendario y archivos de eventos**. 2003/04 es una
+colección parcial, aunque aparezcan los veinte clubes. No cuenta como temporada
+FPL nueva. Las fechas van de 2015-08-08 a 2016-05-17 y de 2003-08-16 a 2004-05-15
+respectivamente. Todos los partidos declaran `match_status=available`.
+
+En los 418 partidos se verificaron:
+
+- Cero archivos de eventos vacíos e IDs de evento duplicados dentro o entre partidos.
+- Los IDs de jugadores presentes como actor principal de un evento aparecen en la
+  alineación StatsBomb del mismo partido. Esto no valida todos los campos anidados
+  ni enlaza esos IDs con FPL.
+- Los dos equipos de cada archivo de alineación coinciden con el calendario.
+- Los manifiestos cubren exactamente los archivos derivados de ambos calendarios;
+  los objetos se comprueban por hash, tamaño, repositorio y revisión.
+
+El reporte incluye el inventario de tipos de evento. Para 2015/16 registra, entre
+otros, 9.908 tiros, 115.402 presiones, 40.943 recuperaciones, 14.839 eventos `Block`,
+21.645 despejes y 8.920 intercepciones. **La taxonomía StatsBomb no equivale por
+nombre a los componentes FPL/Core**: no se usan estos recuentos para reparar
+bloqueos de 2025/26 ni para fabricar puntuaciones históricas.
+
+`match-index.json` conserva por partido hashes de eventos/alineaciones, recuentos
+y anomalías. Es un índice local de verificación, no un dataset redistribuible.
+No se enlazaron aún fixtures o jugadores con GT v7. La cobertura estructural no
+prueba exhaustividad ni exactitud de cada evento; `available_at` histórico sigue
+desconocido y `eligible_predeadline=false`.
+
+```bash
+python -m experiments.data_ground_truth.statsbomb_open \
+  --acquire \
+  --root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/statsbomb-open-g67 \
+  --out /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/statsbomb-coverage-v1
+```
+
+La repetición revalida los 841 objetos y reproduce byte por byte el reporte y el
+índice. Suite completa: **1.625 passed, 1 skipped, 79 deselected** (41,02 s).
+[Resultados G67](results-g67.json). Las pruebas distinguen un calendario completo
+de 380 filas con un cruce duplicado y de una colección parcial con veinte clubes.
+Sin nuevas etiquetas FPL, entrenamiento o cambios productivos. El siguiente gate
+puede medir el enlace de fixtures 2015/16 y compatibilidad semántica para
+investigación, manteniendo separada la cuestión de derechos de uso comercial.
