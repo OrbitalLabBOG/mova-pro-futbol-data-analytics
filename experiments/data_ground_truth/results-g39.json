@@ -1,0 +1,151 @@
+{
+  "version": "historical-data-g39",
+  "audit_report_sha256": "2ef48e22cc8605fc9bcfea3226b840206cc096c3937046ae29567679224ffa44",
+  "audit": {
+    "version": "official-calendar-pdf-audit-v1",
+    "extraction_manifest_sha256": "5e895429e23e5ba9195d39e280c4e4ec7c18c8f2297acf0e994006ffb20c7949",
+    "implementation_sha256": "fbd60e3bb2ed91c2367e97227d32b11a8dc3843fe66b9d278b8c8572cc5c89ab",
+    "fixtures_2013_14": 380,
+    "fdr_cells_2025_26": 760,
+    "fdr_ratings": {
+      "3": 399,
+      "2": 190,
+      "5": 19,
+      "4": 152
+    },
+    "unclassified_fdr_colors": 0,
+    "reference_comparison": {
+      "selection_report_sha256": "1ace4506377f6bf92ff79d71f7b1083070f273c58f802518754f96fccb87b6fc",
+      "team_bootstrap_sha256": "eee31c9ece4864963bff4d88543ac5d440ca4d574ec89512e680d6e697f9a086",
+      "fixture_report_sha256": "448a774a7a32815a64655999542af121e188a6fbcd58cd1847430c1a0ba47c24",
+      "fixture_reference": {
+        "season": "2025-26",
+        "revision": "a8337d50698de908f92e8d1905142d968384a2ca",
+        "committer_at": "2026-06-17T12:07:17+00:00",
+        "source_sha256": "2d7e3950d346df14ca486cb09e9b9ba406d37d943775244eed06cdc021ffb3a9",
+        "normalized_sha256": "d662b69161e58bde94b5ae6421de0ffb3eaa589cb52b6b5890ba7947ef3c7d37",
+        "fixtures": 380,
+        "unassigned_events": 0,
+        "unknown_kickoffs": 0,
+        "available_at": null,
+        "eligible_predeadline": false
+      },
+      "verified_fixture_pairs": 380,
+      "compared_team_observations": 760,
+      "changed_gw_observations": 10,
+      "changed_fdr_observations": 304,
+      "comparison_kind": "retrospective_diagnostic_not_feature_repair"
+    },
+    "legend": [
+      {
+        "rgb": [
+          0.216,
+          0.337,
+          0.137
+        ],
+        "rating": 1
+      },
+      {
+        "rgb": [
+          0.0,
+          1.0,
+          0.529
+        ],
+        "rating": 2
+      },
+      {
+        "rgb": [
+          0.850919,
+          0.851041,
+          0.850889
+        ],
+        "rating": 3
+      },
+      {
+        "rgb": [
+          1.0,
+          0.0,
+          0.314
+        ],
+        "rating": 4
+      },
+      {
+        "rgb": [
+          0.502,
+          0.0,
+          0.176
+        ],
+        "rating": 5
+      }
+    ],
+    "artifacts": {
+      "fixtures-2013-14.json": "f6d8d4bac550c88beb54ff3f7b623c9d7c796ad603708f01d9ad6ca479a72a6b",
+      "fdr-2025-26.json": "2cbe4243c75c95ce352c5f2664c513879ee6310879ac7f37e3524e96e317c2ca",
+      "reference-comparison.json": "aad9a0afd87f6ad683678a8ac2ea5beb44b7de60f883b26df5bcb18f56b9edbd"
+    },
+    "production_changed": false,
+    "training_admitted": false,
+    "replay_admitted": false,
+    "limitations": [
+      "PDF_creation_and_HTTP_modified_dates_are_not_publication_proofs",
+      "2013_local_clocks_have_no_explicit_timezone_or_FPL_GW_mapping",
+      "2025_FDR_is_a_single_preseason_version_not_a_time_series",
+      "source_schedule_not_final_fixture_results"
+    ]
+  },
+  "extraction": {
+    "version": "official-calendar-pdf-extraction-v1",
+    "pymupdf_version": "1.26.4",
+    "implementation_sha256": "fbd60e3bb2ed91c2367e97227d32b11a8dc3843fe66b9d278b8c8572cc5c89ab",
+    "sources": [
+      {
+        "name": "fa-2013-14",
+        "source": {
+          "name": "fa-2013-14",
+          "url": "https://www.thefa.com/~/media/Files/PDF/Leagues/PL-fixtures1314.pdf",
+          "sha256": "f12d8c479c8118fba89b3e93ee27e8ebbaec2f5fc9ea7ef84ad899b331aa6f12",
+          "bytes": 82680,
+          "fetched_at": "2026-09-06T09:55:35.226738+00:00",
+          "last_modified": "Thu, 05 Feb 2015 13:56:50 GMT",
+          "available_at": null,
+          "eligible_training": false,
+          "eligible_replay": false,
+          "status": "raw_unvalidated"
+        },
+        "source_record_sha256": "105ab8339ce350053bded910957795d97bdc6ecf3ffd775601114e4461618de0",
+        "extracted_sha256": "1f091e63cbea1b444786d0d486909d5ca6092350a6cfde6f4898126777274dda",
+        "pages": 15,
+        "pdf_creation_date": "D:20130619085356+01'00'",
+        "pdf_modification_date": "D:20130619085356+01'00'"
+      },
+      {
+        "name": "pl-fdr-2025-26",
+        "source": {
+          "name": "pl-fdr-2025-26",
+          "url": "https://resources.premierleague.pulselive.com/premierleague/document/2025/06/18/ce06a980-45c1-4e10-b9ae-88a08262b869/FDR-2025-26.pdf",
+          "sha256": "a4c113029d0d6de143f89b60937fc6b8d00b45670a85eda3c18a16fc93f07db5",
+          "bytes": 91365,
+          "fetched_at": "2026-09-06T09:55:34.810595+00:00",
+          "last_modified": "Wed, 18 Jun 2025 08:24:01 GMT",
+          "available_at": null,
+          "eligible_training": false,
+          "eligible_replay": false,
+          "status": "raw_unvalidated"
+        },
+        "source_record_sha256": "0c2a8bd12a4ba996c05d116070be535de5b42b41c6a78fbecbd29b1a9bd8419f",
+        "extracted_sha256": "ec9ad857ec71ff832dbd3c5c61d3da45a0a7c8d5de6260ba272a8da4b5c667de",
+        "pages": 1,
+        "pdf_creation_date": "D:20250618002320-07'00'",
+        "pdf_modification_date": "D:20250618002320-07'00'"
+      }
+    ]
+  },
+  "verification": {
+    "reproduced_byte_for_byte": true,
+    "tests_passed": 1529,
+    "tests_skipped": 1,
+    "tests_deselected": 79
+  },
+  "gt_v5_changed": false,
+  "production_changed": false
+}
