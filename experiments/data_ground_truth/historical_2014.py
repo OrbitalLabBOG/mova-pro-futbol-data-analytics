@@ -15,17 +15,17 @@ OPPONENT_CODES = dict(ARS=3, AVL=7, BUR=90, CHE=8, CRY=31, EVE=11, HUL=88,
                      TOT=6, STK=110, SUN=56, SWA=80, WBA=35, WHU=21)
 
 
-def reconcile_2014(weekly: pd.DataFrame, players: pd.DataFrame, fixtures: pd.DataFrame):
+def reconcile_2014(weekly: pd.DataFrame, players: pd.DataFrame, fixtures: pd.DataFrame, *, season_start: int = 2014, opponent_codes: dict | None = None):
     frame = weekly.copy()
     parsed = frame.opp.str.extract(r'^(?P<opponent>[A-Z]{3})\((?P<venue>[HA])\) (?P<own_score>\d+)-(?P<opponent_score>\d+)$')
     if parsed.isna().any().any():
         raise ValueError('unrecognized opponent format')
-    frame['opponent_code'] = parsed.opponent.map(OPPONENT_CODES)
+    frame['opponent_code'] = parsed.opponent.map(OPPONENT_CODES if opponent_codes is None else opponent_codes)
     if frame.opponent_code.isna().any():
         raise ValueError('unrecognized opponent code')
     frame['was_home'] = parsed.venue.eq('H')
     local = pd.to_datetime('2000 ' + frame.date, format='%Y %d %b %H:%M', errors='raise')
-    frame['match_local_time'] = [d.replace(year=2014 if d.month >= 7 else 2015).isoformat() for d in local]
+    frame['match_local_time'] = [d.replace(year=season_start if d.month >= 7 else season_start+1).isoformat() for d in local]
     # This is a local wall-clock match, not an invented UTC/publication timestamp.
     fixtures = fixtures.copy()
     fixtures['match_local_time'] = pd.to_datetime(fixtures.kickoff, errors='raise').map(lambda d: d.isoformat())
@@ -51,8 +51,8 @@ def reconcile_2014(weekly: pd.DataFrame, players: pd.DataFrame, fixtures: pd.Dat
         raise ValueError('season total reconciliation failed')
     if frame.mins.isna().any() or ((frame.mins < 0) | (frame.mins > 90)).any():
         raise ValueError('invalid minutes')
-    frame['season'] = '2014-15'
-    frame['player_id_namespace'] = 'fpl_2014_15'
+    frame['season'] = f'{season_start}-{str(season_start+1)[-2:]}'
+    frame['player_id_namespace'] = f'fpl_{season_start}_{str(season_start+1)[-2:]}'
     frame['fixture_id_namespace'] = 'pl_archive_events'
     frame['available_at'] = None
     frame['eligible_predeadline'] = False

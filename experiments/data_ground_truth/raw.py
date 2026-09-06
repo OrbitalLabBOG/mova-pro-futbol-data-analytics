@@ -15,7 +15,8 @@ from urllib.parse import quote
 from mova_fpl.data.sources import _get
 
 REPOS = ('vaastav/Fantasy-Premier-League', 'olbauday/FPL-Core-Insights',
-         'imadeddine-belkat/Premier-League-Stats', 'TopMarxFPL/fpl-mirror', 'durtal/fantasysocceR')
+         'imadeddine-belkat/Premier-League-Stats', 'TopMarxFPL/fpl-mirror', 'durtal/fantasysocceR',
+         'prathmesh/Fantasy-Premier-League-Points-Predictor', 'clwatkins/fantasy_premier_league')
 
 
 def digest(data: bytes) -> str:
@@ -68,6 +69,10 @@ def capture(root: Path, repo: str, revision: str, path: str) -> dict:
 def select(repo: str, path: str) -> bool:
     if path in ('README.md', 'LICENSE', 'DATA_INTEGRATION_REVIEW.md'):
         return True
+    if repo == REPOS[5]:
+        return path == 'Data/dec15_players.csv'
+    if repo == REPOS[6]:
+        return path == 'Data/FPL_API_Dump.json'
     if repo == REPOS[0]:
         return bool(re.fullmatch(r'data/20(?:1[6-9]|2[0-5])-\d{2}/(?:gws/merged_gw|players_raw|fixtures|teams)\.csv', path))
     if repo == REPOS[2]:
