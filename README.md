@@ -160,6 +160,10 @@ incompletos, 15 filas adicionales con cero minutos/puntos y 78 fechas discrepant
 Son doce temporadas de etiquetas retrospectivas, sin disponibilidad predeadline
 acreditada; [G15](experiments/data_ground_truth/results-g15.json) no acredita
 un replay causal completo ni una mejora del modelo.
+G16 está adquiriendo un nuevo archivo de 7.837 snapshots bootstrap (2021–2026)
+para medir precios y disponibilidad histórica. Son cifras del inventario;
+la descarga y auditoría completas siguen pendientes. Las fechas declaradas
+no habilitan todavía su uso anterior al deadline.
 
 ## Empezar
 

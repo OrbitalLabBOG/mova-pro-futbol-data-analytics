@@ -1,0 +1,16 @@
+{
+  "version": "bootstrap-discovery-g16",
+  "status": "inventory_verified_acquisition_and_full_audit_pending",
+  "repository": "Randdalf/fplcache",
+  "revision": "dda55fefed3104e428a32e4a1f278d42f3c03407",
+  "inventory_sha256": "3b484efa9ba9086bfeb923b3b39c67de68b0ebbd5f34490fdfc0c7a5a6376843",
+  "expected_snapshots": 7837,
+  "expected_compressed_bytes": 867734672,
+  "first_claimed_at": "2021-04-18T16:41:00",
+  "last_claimed_at": "2026-09-05T20:12:00",
+  "source_timezone": null,
+  "available_at": null,
+  "eligible_predeadline": false,
+  "source_code_executes": false,
+  "production_changed": false
+}

@@ -845,3 +845,40 @@ anteriores a 2014/15 y disponibilidad histórica predeadline de las features.
 El siguiente gate debe reconciliar claves y fechas con evidencia temporal,
 sin convertir ceros ambiguos en no apariciones observadas. Después podrá medirse
 cobertura de estados de decisión para precios, lesiones, traspasos y chips.
+
+## Gate G16 en curso: snapshots históricos de bootstrap
+
+La fuente adicional [Randdalf/fplcache](https://github.com/Randdalf/fplcache),
+revisión `dda55fefed3104e428a32e4a1f278d42f3c03407`, contiene **7.837 capturas
+comprimidas / 867.734.672 bytes**, con fechas declaradas entre 2021-04-18 16:41
+y 2026-09-05 20:12. Son cifras del inventario fijado, no una afirmación de descarga
+o auditoría completada. Se adquieren también README, licencia, script de captura
+y workflow como evidencia de procedencia; los scripts externos no se ejecutan.
+
+`bootstrap_archive` guarda todos los bytes por hash, verifica tamaños contra el
+inventario y reutiliza objetos verificados para reanudar. Mantiene la fecha del
+nombre en `source_claimed_at`, sin zona: el código fuente usa `datetime.today()`.
+`available_at` sigue desconocido. El workflow programado y una fecha de archivo
+no certifican por sí solos disponibilidad histórica anterior al deadline.
+
+`bootstrap_audit` descomprime con límites, comprueba población y calendario,
+separa jugadores de managers y mide presencia/no nulidad de precios, club,
+posición, estado, noticias, probabilidad de jugar y métricas retrospectivas.
+Los NULL de disponibilidad no se convierten en disponibilidad segura. Mide también
+intervalos entre capturas y candidatos dentro de 48 horas de un deadline bajo una
+**hipótesis explícita de reloj UTC**, únicamente para explorar cobertura. Ningún
+candidato recibe `eligible_predeadline=true`. La temporada se deriva del deadline
+de GW1 del contenido, no del año del directorio; la temporada abierta se conserva
+separada por su identificador y no cuenta como nuevas etiquetas completas.
+
+```bash
+python -m experiments.data_ground_truth.bootstrap_archive \
+  --root "$BOOTSTRAP_RAW_ROOT" --inventory "$BOOTSTRAP_PINNED_INVENTORY" \
+  --revision dda55fefed3104e428a32e4a1f278d42f3c03407
+python -m experiments.data_ground_truth.bootstrap_audit \
+  --root "$BOOTSTRAP_RAW_ROOT" --out "$BOOTSTRAP_AUDIT_ROOT"
+```
+
+La adquisición debe terminar sin errores antes de ejecutar la auditoría completa.
+Los informes distinguirán cobertura nominal de snapshots temporalmente verificados.
+El GT v5 sigue vigente; este gate no modifica sus filas ni el runtime.

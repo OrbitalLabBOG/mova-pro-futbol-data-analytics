@@ -18,7 +18,7 @@ REPOS = ('vaastav/Fantasy-Premier-League', 'olbauday/FPL-Core-Insights',
          'imadeddine-belkat/Premier-League-Stats', 'TopMarxFPL/fpl-mirror', 'durtal/fantasysocceR',
          'prathmesh/Fantasy-Premier-League-Points-Predictor', 'clwatkins/fantasy_premier_league',
          'mvbfontes/premierleaguedatasets', 'sjp4/differentialfpl',
-         'darrenvong/fpl-data-visualiser')
+         'darrenvong/fpl-data-visualiser', 'Randdalf/fplcache')
 
 
 def digest(data: bytes) -> str:
