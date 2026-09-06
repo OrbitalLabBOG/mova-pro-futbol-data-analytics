@@ -47,8 +47,29 @@ def name_evidence(player, archive_name, declared_aliases=False):
     return None
 
 
-def build(statsbomb_root,fixture_root,archive_root,package,out,declared_aliases=False,baseline_root=None):
+def candidate_name_evidence(player, candidate, declared_aliases, metadata_by_code):
+    evidence = name_evidence(player, candidate['name'], declared_aliases)
+    metadata = metadata_by_code.get(candidate['code'])
+    if evidence is None and metadata is not None:
+        extra = name_evidence(player, metadata['full_name'], True)
+        if extra is not None: evidence = 'fpl_metadata_' + extra
+    return evidence, metadata
+
+
+def build(statsbomb_root,fixture_root,archive_root,package,out,declared_aliases=False,baseline_root=None,fpl_names_root=None):
     if declared_aliases and baseline_root is None: raise ValueError('alias comparison requires baseline')
+    if fpl_names_root is not None and not declared_aliases: raise ValueError('FPL names require explicit alias mode')
+    fpl_names={};name_manifest_bytes=None
+    if fpl_names_root is not None:
+        name_manifest_bytes=(fpl_names_root/'manifest.json').read_bytes();name_manifest=json.loads(name_manifest_bytes)
+        if name_manifest['errors']:raise ValueError('FPL name acquisition errors')
+        for record in name_manifest['records']:
+            if not record['path'].startswith('PlayersInfo/') or not record['path'].endswith('.json'):continue
+            if record['repository']!='mvbfontes/premierleaguedatasets':raise ValueError('unexpected FPL name source')
+            player=json.loads(checked(fpl_names_root/'objects'/record['sha256'],record['sha256']))
+            code=archive_code(str(player['code']));full_name=player['first_name']+' '+player['second_name']
+            if code in fpl_names:raise ValueError('duplicate FPL name code')
+            fpl_names[code]=dict(full_name=full_name,source_sha256=record['sha256'],path=record['path'])
     link_bytes=(fixture_root/'report.json').read_bytes();link_report=json.loads(link_bytes)
     links=json.loads(checked(fixture_root/'fixture-links.json',link_report['artifacts']['fixture-links.json']))
     if len(links)!=380 or not all(r['research_link_accepted'] for r in links):raise ValueError('incomplete fixture reference')
@@ -76,12 +97,13 @@ def build(statsbomb_root,fixture_root,archive_root,package,out,declared_aliases=
                 roster[key]=dict(positions_present=bool(player['positions']),source_sha256=record['sha256'])
                 if not player['positions']:continue
                 for candidate in candidates[(fixture,club)]:
-                    evidence = name_evidence(player,candidate['name'],declared_aliases)
+                    evidence, metadata = candidate_name_evidence(player,candidate,declared_aliases,fpl_names)
                     if evidence:
                         witnesses.append(dict(statsbomb_player_id=player_id,official_player_code=candidate['code'],fixture=fixture,
                             club_code=club,statsbomb_name=player['player_name'],archive_name=candidate['name'],
                             archive_csv_row=candidate['csv_row'],lineup_sha256=record['sha256']))
                         if declared_aliases: witnesses[-1].update(name_evidence=evidence,declared_alias=player.get('player_nickname'))
+                        if evidence.startswith('fpl_metadata_'): witnesses[-1]['fpl_name_source']=metadata
     accepted=resolve(witnesses);reverse={c:p for p,c in accepted.items()};by_player=defaultdict(list)
     for row in witnesses:by_player[row['statsbomb_player_id']].append(row)
     player_links=[]
@@ -107,7 +129,7 @@ def build(statsbomb_root,fixture_root,archive_root,package,out,declared_aliases=
     (out/'player-links.json').write_text(json.dumps(player_links,indent=2)+'\n')
     (out/'witnesses.jsonl.gz').write_bytes(gzip.compress(('\n'.join(json.dumps(r,sort_keys=True) for r in witnesses)+'\n').encode(),mtime=0))
     (out/'positive-appearance-issues.json').write_text(json.dumps(issues,indent=2)+'\n')
-    report=dict(version='statsbomb-player-crosswalk-v2' if declared_aliases else 'statsbomb-player-crosswalk-v1',dataset_id=dataset['dataset_id'],fixture_report_sha256=digest(link_bytes),
+    report=dict(version='statsbomb-player-crosswalk-v3' if fpl_names_root is not None else 'statsbomb-player-crosswalk-v2' if declared_aliases else 'statsbomb-player-crosswalk-v1',dataset_id=dataset['dataset_id'],fixture_report_sha256=digest(link_bytes),
         archive_crosswalk_report_sha256=digest(crosswalk_bytes),archive_observations_sha256=digest(observations_bytes),
         statsbomb_manifest_sha256=digest(manifest_bytes),implementation_sha256=digest(Path(__file__).read_bytes()),
         source_lineups=sources,statsbomb_players=len(names),identity_status=dict(Counter(r['status'] for r in player_links)),
@@ -143,14 +165,18 @@ def build(statsbomb_root,fixture_root,archive_root,package,out,declared_aliases=
             method='full_name_or_exact_declared_alias_two_distinct_played_fixture_club_witnesses_unique_reciprocal_code')
         report['artifacts']['identity-delta.json']=digest((out/'identity-delta.json').read_bytes())
         report['limitations'].append('single_token_alias_only_when_explicitly_declared_by_provider_not_inferred')
+    if fpl_names_root is not None:
+        report.update(fpl_names_manifest_sha256=digest(name_manifest_bytes),fpl_name_records=len(fpl_names),
+            method='PL_name_or_code_bound_FPL_full_name_or_explicit_SB_alias_two_fixture_club_witnesses_unique_reciprocal_code')
+        report['limitations'].append('FPL_current_full_name_metadata_not_historical_availability_or_biographical_proof')
     (out/'report.json').write_text(json.dumps(report,indent=2)+'\n');return report
 
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     for name in ('statsbomb-root','fixture-root','archive-root','package','out'):p.add_argument('--'+name,type=Path,required=True)
-    p.add_argument('--declared-aliases',action='store_true');p.add_argument('--baseline-root',type=Path)
-    a=p.parse_args();print(json.dumps(build(a.statsbomb_root,a.fixture_root,a.archive_root,a.package,a.out,a.declared_aliases,a.baseline_root),indent=2))
+    p.add_argument('--declared-aliases',action='store_true');p.add_argument('--baseline-root',type=Path);p.add_argument('--fpl-names-root',type=Path)
+    a=p.parse_args();print(json.dumps(build(a.statsbomb_root,a.fixture_root,a.archive_root,a.package,a.out,a.declared_aliases,a.baseline_root,a.fpl_names_root),indent=2))
 
 
 if __name__=='__main__':main()
