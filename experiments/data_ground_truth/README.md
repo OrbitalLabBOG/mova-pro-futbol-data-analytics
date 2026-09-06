@@ -552,6 +552,16 @@ y 321761, Newcastle en 322021. FPL contiene 10.353 apariciones; la fuente deport
 se convierten en no apariciones: ambas fuentes tienen limitaciones y sus totales
 casi iguales no acreditan cobertura completa ni igualdad de jugadores.
 
+La revisión de crónicas localiza dos omisiones deportivas: en Wigan–Bolton,
+[Sky Sports documenta la entrada de Taylor por Petrov](https://www.skysports.com/football/wigan-athletic-vs-bolton-wanderers/215211),
+pero el archivo deportivo deja a Taylor con minutos desconocidos y atribuye 90
+a Petrov. En Bolton–Tottenham,
+[la alineación de Sky Sports](https://www.skysports.com/football/bolton-vs-tottenham/teams/215196)
+registra la entrada de Blake en el añadido, ausente de sus minutos deportivos.
+Estas crónicas corroboran participación; no se usan para inventar minutos FPL
+exactos ni puntos. El tercer caso sigue siendo la ausencia de Sammy Ameobi en
+las filas SQL, ya detectada por el gate G9.
+
 El cruce de nombre y presencia en todos los partidos genera candidatos únicos
 para 524 jugadores / 9.998 apariciones. Quedan 19 sin candidato único; hay nombres
 con iniciales o grafías distintas que no se resuelven mediante distancia difusa.
