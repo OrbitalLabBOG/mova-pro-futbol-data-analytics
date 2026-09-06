@@ -3019,3 +3019,60 @@ byte en `published-manager-reference-v2`. **1.582 passed, 1 skipped, 79 deselect
 PyMuPDF es dependencia del comando de investigación, no del runtime productivo.
 [Resultados G56](results-g56.json). El paquete G55 conserva su corte congelado;
 estos documentos y agregados quedan versionados aparte, sin modificarlo.
+
+
+## G57 — cobertura de etiquetas antiguas y semántica de NULL
+
+`historical_null_coverage.py` inspecciona la base Differential `diffgen16.db3`
+por SHA fijado, mediante el lector inmutable existente. Genera 114 ventanas
+(38 por temporada), incluidas las vacías, y conserva las cuatro combinaciones
+de presencia de minutos/puntos. No modifica la base ni el GT v7.
+
+| Temporada | Filas archivadas | Minutos y puntos | Cobertura del archivo | Minutos positivos sin puntos | Ceros explícitos en puntos |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 2011/12 | 11.720 | 9.462 | 80,73% | 354 | 55 |
+| 2012/13 | 10.814 | 10.076 | 93,18% | 317 | 93 |
+| 2013/14 | 10.858 | 10.389 | 95,68% | 61 | 385 |
+
+El denominador es el archivo observado, no el universo de jugadores inscritos.
+2011/12 tiene etiquetas en 360/380 fixtures y ninguna en GW37–38. Las otras dos
+alcanzan 380 fixtures con alguna etiqueta, lo que no acredita todos sus jugadores.
+Hay 4/524, 358/519 y 275/540 discrepancias en totales comparables, respectivamente;
+los metadatos de temporada pueden ser parciales y no se asumen finales.
+
+Se archivaron dos scrapers originales en el commit
+`6bb3366343998ac016f6a3120e9cba9a3f0037eb` de
+[sjp4/differentialfpl](https://github.com/sjp4/differentialfpl/tree/6bb3366343998ac016f6a3120e9cba9a3f0037eb),
+con URL, SHA y fecha de adquisición: **44.211 bytes**. En
+`ScrapeMatchScoresCatchup.java`, líneas 250–304, el insert exige minutos positivos,
+omite varios componentes cero y escribe `total` explícitamente. En
+`ScrapeMatchScores_New.java`, líneas 333–356, también escribe minutos y total
+explícitos mientras omite componentes cero. Son rutas inspeccionadas, no prueba
+del writer que creó cada fila antigua. Por ello las **732 apariciones con puntos
+NULL siguen desconocidas**; tampoco se convierten a cero los otros componentes
+sin procedencia por fila. Una suma anual coincidente no recupera por sí sola
+etiquetas por partido ni descarta compensaciones.
+
+La consulta Orbix Research/OpenAlex sobre datos históricos e incertidumbre devolvió
+cero resultados en este intento; no prueba ausencia de literatura. La búsqueda web
+adicional devolvió archivos ya conocidos y derivados del histórico Vaastav; no se
+contaron como temporadas nuevas. La investigación previa y sus suplementos públicos
+siguen documentados en G52/G56.
+
+```bash
+python -m experiments.data_ground_truth.historical_null_coverage \
+  --database /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/raw-history-differential/objects/e4f1e637702f69cfa513a5719b05f87bb0aab47ddd2cd4864b40d567c1ac9f80 \
+  --source-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/differential-source-g57 \
+  --out /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/historical-null-coverage-v1
+```
+
+`report.json` y `windows.json` reproducidos byte por byte en una raíz v2.
+Suite completa: **1.584 passed, 1 skipped, 79 deselected**. Las pruebas distinguen
+NULL, cero y negativos, preservan la entrada y no atribuyen cobertura a ventanas vacías.
+[Resultados G57](results-g57.json). Cero nuevas etiquetas, temporadas completas o
+admisiones a entrenamiento. El paquete portable G55 mantiene su corte inmutable.
+
+La prioridad de datos para un futuro replay sigue siendo conciliar GW1, cerrar
+las cuatro ventanas del índice de calendario, mejorar frescura y formalizar reglas
+históricas/chips. Rescatar etiquetas antiguas continúa siendo complementario:
+no sustituye las entradas que realmente estaban disponibles antes del deadline.

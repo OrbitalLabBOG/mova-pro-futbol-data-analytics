@@ -1,0 +1,118 @@
+{
+  "version": "historical-data-g57",
+  "audit_report_sha256": "05ba911f6be4140c19ee63c011133cf43c6558620a220b0db21d501531526e7a",
+  "audit": {
+    "version": "historical-null-coverage-v1",
+    "database_sha256": "e4f1e637702f69cfa513a5719b05f87bb0aab47ddd2cd4864b40d567c1ac9f80",
+    "source_code_sha256": [
+      "25fc385463b3098ea79d845c0ade24ce72ce5ebe26d39edf9dd1246af2fb1e67",
+      "9c2b09fe44435264c64fa5a4ea48c6ad1da49aa6623fcf46f46480e0014a55c4"
+    ],
+    "implementation_sha256": "bad8e992527d6ce0b4431de2278bf6c71e0a5cc6132d52016621f76c2821b23d",
+    "seasons": {
+      "2011-12": {
+        "archived_rows": 11720,
+        "both_labels": 9462,
+        "minutes_only": 354,
+        "points_only": 0,
+        "neither_label": 1904,
+        "positive_minutes_missing_points": 354,
+        "explicit_zero_points": 55,
+        "explicit_negative_points": 125,
+        "explicit_zero_minutes": 0,
+        "both_label_fraction_of_archive": 0.8073378839590444,
+        "fixture_count": 380,
+        "fixtures_with_both_labels": 360,
+        "comparable_player_totals": 524,
+        "player_total_disagreements": 4,
+        "gameweeks_without_any_both_labels": [
+          37,
+          38
+        ]
+      },
+      "2012-13": {
+        "archived_rows": 10814,
+        "both_labels": 10076,
+        "minutes_only": 317,
+        "points_only": 0,
+        "neither_label": 421,
+        "positive_minutes_missing_points": 317,
+        "explicit_zero_points": 93,
+        "explicit_negative_points": 114,
+        "explicit_zero_minutes": 0,
+        "both_label_fraction_of_archive": 0.9317551322359904,
+        "fixture_count": 380,
+        "fixtures_with_both_labels": 380,
+        "comparable_player_totals": 519,
+        "player_total_disagreements": 358,
+        "gameweeks_without_any_both_labels": []
+      },
+      "2013-14": {
+        "archived_rows": 10858,
+        "both_labels": 10389,
+        "minutes_only": 61,
+        "points_only": 0,
+        "neither_label": 408,
+        "positive_minutes_missing_points": 61,
+        "explicit_zero_points": 385,
+        "explicit_negative_points": 126,
+        "explicit_zero_minutes": 0,
+        "both_label_fraction_of_archive": 0.9568060416282925,
+        "fixture_count": 380,
+        "fixtures_with_both_labels": 380,
+        "comparable_player_totals": 540,
+        "player_total_disagreements": 275,
+        "gameweeks_without_any_both_labels": []
+      }
+    },
+    "zero_imputation_authorized": false,
+    "new_label_rows": 0,
+    "new_complete_seasons": 0,
+    "training_admitted": false,
+    "limitations": [
+      "archive_row_coverage_not_registered_player_population_coverage",
+      "inspected_insert_paths_write_total_unconditionally_but_omit_some_zero_components",
+      "source_code_does_not_prove_which_writer_created_each_archived_row",
+      "annual_sum_agreement_cannot_identify_missing_per_match_labels",
+      "season_metadata_may_be_partial_not_final",
+      "no_predeadline_availability_proof"
+    ],
+    "windows_sha256": "d1747714fe0701d3cdb56679fe42d66721798c883e765b9453dc45f29e849fba"
+  },
+  "source_manifest": {
+    "commit": "6bb3366343998ac016f6a3120e9cba9a3f0037eb",
+    "records": [
+      {
+        "path": "Differential/src/com/pennas/fpl/scrape/ScrapeMatchScoresCatchup.java",
+        "url": "https://raw.githubusercontent.com/sjp4/differentialfpl/6bb3366343998ac016f6a3120e9cba9a3f0037eb/Differential/src/com/pennas/fpl/scrape/ScrapeMatchScoresCatchup.java",
+        "sha256": "25fc385463b3098ea79d845c0ade24ce72ce5ebe26d39edf9dd1246af2fb1e67",
+        "bytes": 15496,
+        "fetched_at": "2026-09-06T13:15:59.447427+00:00",
+        "available_at": null
+      },
+      {
+        "path": "Differential/src/com/pennas/fpl/scrape/ScrapeMatchScores_New.java",
+        "url": "https://raw.githubusercontent.com/sjp4/differentialfpl/6bb3366343998ac016f6a3120e9cba9a3f0037eb/Differential/src/com/pennas/fpl/scrape/ScrapeMatchScores_New.java",
+        "sha256": "9c2b09fe44435264c64fa5a4ea48c6ad1da49aa6623fcf46f46480e0014a55c4",
+        "bytes": 28715,
+        "fetched_at": "2026-09-06T13:15:59.691144+00:00",
+        "available_at": null
+      }
+    ]
+  },
+  "research": {
+    "engine": "orbix-research",
+    "query": "Fantasy Premier League historical dataset uncertainty",
+    "source": "openalex",
+    "results": 0,
+    "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "limitation": "this_query_returned_no_results_not_evidence_of_no_literature"
+  },
+  "verification": {
+    "reproduced_byte_for_byte": true,
+    "tests_passed": 1584,
+    "tests_skipped": 1,
+    "tests_deselected": 79
+  },
+  "production_changed": false
+}
