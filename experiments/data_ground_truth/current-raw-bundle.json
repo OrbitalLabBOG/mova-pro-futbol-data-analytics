@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "bundle_id": "4830e5a2347de3eaaab16ffef028ef1de354a19d0d08db72f84c8eec0424ee52",
+  "manifest_sha256": "dc93f3b2a5ea45434755af097a65a1b018981c5ea0f4760f6608f4f2d9ca2561",
+  "gt_dataset_id": "d4baf849fb4a051be103f8c469e61a4753edb0b4004f980a000fe5c86ef573db",
+  "restoration_paths": 27399,
+  "evidence": "results-g55.json",
+  "scope": "internal_raw_archive",
+  "publicly_published": false,
+  "offsite_backup_verified": false,
+  "predeadline_training_admitted": false
+}

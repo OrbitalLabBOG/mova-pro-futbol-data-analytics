@@ -2909,3 +2909,59 @@ por chip, acumulados GW1 y la prueba temporal de reglas documentales.
 Validación G54: **1.573 passed, 1 skipped, 79 deselected**. Regresiones de
 plantilla futura imposible, campos desconocidos, overrides no soportados y
 conflicto entre configuraciones base; sin reparación silenciosa.
+
+## G55 — paquete portable del corpus público y GT
+
+`raw_bundle.py` empaqueta los bytes públicos consolidados en G50, sus manifiestos,
+los auxiliares clasificados en G51, documentos añadidos en G52/G54 y el GT vigente.
+El ID del paquete se calcula sobre un descriptor canónico con rutas de restauración,
+hashes, tamaños, roles, exclusiones y hash del empaquetador. Las copias lógicas
+comparten un único objeto por contenido dentro del paquete. No se usan enlaces
+al árbol fuente; al restaurar tampoco se comparten archivos mutables entre rutas.
+
+Alcance del corte: **21 manifiestos de adquisición**, sus **27.214 objetos físicos
+referenciados**, 130 archivos de otros formatos con baseline observado, seis
+auxiliares SQLite preservados, dos manifiestos documentales y cinco documentos,
+15 archivos GT, el puntero GT y cinco resultados de auditoría G50–G54. Son
+**27.399 rutas**, **24.626 contenidos únicos** y **1.453.758.727 bytes de objetos**;
+la restauración ocupa 1.666.499.116 bytes de contenido, sin contar metadatos del
+filesystem. La deduplicación no convierte versiones en nuevas observaciones.
+
+Se excluyen explícitamente los once archivos de `raw-production-discovery-v1`:
+son diagnósticos operativos del VPS, no el corpus público para investigación.
+Los bundles públicos del collector sí están incluidos mediante su allowlist de
+bootstrap/fixtures; no se empaquetan cuerpos privados de cuenta. Los directorios
+de caché de adquisición, staging y auditorías derivadas no se copian en bloque.
+El paquete permite recuperar raw y verificar GT, **no reemplaza el checkout Git
+ni contiene todo el entorno y todos los intermedios para reproducir cada gate**.
+
+La construcción verifica los insumos contra evidencia versionada, copia a un
+directorio temporal, verifica los objetos completos y publica mediante rename.
+Una restauración exige destino nuevo, rechaza rutas inseguras y copia/verifica
+cada archivo antes de publicar el árbol. No sobrescribe directorios existentes.
+El output de construcción no puede entrar al namespace `raw*` de adquisición,
+para impedir que un inventario posterior cuente sus propias copias como fuentes.
+
+```bash
+python -m experiments.data_ground_truth.raw_bundle build \
+  --base-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments \
+  --out /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/corpus-bundles
+# BUNDLE_PACKAGE es la ruta devuelta por build.
+python -m experiments.data_ground_truth.raw_bundle verify --package "$BUNDLE_PACKAGE"
+python -m experiments.data_ground_truth.raw_bundle restore \
+  --package "$BUNDLE_PACKAGE" --out /ruta/nueva/corpus-restaurado
+```
+
+Es un paquete interno local; **no es publicación, respaldo fuera de la máquina,
+licencia de redistribución ni admisión a entrenamiento**. El GT permanece separado
+de los snapshots causales y conserva sus flags de no admisión predeadline.
+La evidencia del ensayo de recuperación queda en [Resultados G55](results-g55.json).
+
+Paquete vigente: [current-raw-bundle.json](current-raw-bundle.json), ID
+`4830e5a2347de3eaaab16ffef028ef1de354a19d0d08db72f84c8eec0424ee52`.
+Restaurado en `restored-corpus-g55-v2`: `corpora.json` y `object-index.json`
+coinciden byte por byte con G50; otros formatos coinciden tras excluir los once
+archivos operativos declarados. El auditor revalidó el GT de 303.126 filas y doce
+temporadas desde la copia restaurada. Repetir build conserva ID y verifica el
+paquete existente. **1.580 passed, 1 skipped, 79 deselected**; pruebas de corrupción
+del mismo tamaño, rutas inseguras, destino existente e independencia de copias.

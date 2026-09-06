@@ -1,0 +1,152 @@
+{
+  "version": "historical-data-g55",
+  "bundle": {
+    "schema_version": 1,
+    "bundle_id": "4830e5a2347de3eaaab16ffef028ef1de354a19d0d08db72f84c8eec0424ee52",
+    "manifest_sha256": "dc93f3b2a5ea45434755af097a65a1b018981c5ea0f4760f6608f4f2d9ca2561",
+    "gt_dataset_id": "d4baf849fb4a051be103f8c469e61a4753edb0b4004f980a000fe5c86ef573db",
+    "restoration_paths": 27399,
+    "evidence": "results-g55.json",
+    "scope": "internal_raw_archive",
+    "publicly_published": false,
+    "offsite_backup_verified": false,
+    "predeadline_training_admitted": false
+  },
+  "package": {
+    "unique_objects": 24626,
+    "unique_object_bytes": 1453758727,
+    "restoration_content_bytes": 1666499116,
+    "manifest_bytes": 5729540,
+    "roles": {
+      "documentary_manifest": 2,
+      "documentary_context": 5,
+      "experimental_gt_pointer": 1,
+      "versioned_audit_result": 5,
+      "acquisition_manifest": 21,
+      "raw": 27214,
+      "observed_baseline_not_acquisition_proof": 130,
+      "preserved_sqlite_auxiliary_not_new_observation": 6,
+      "retrospective_gt": 15
+    },
+    "excluded": [
+      {
+        "path": "raw-production-discovery-v1/cockpit-parsed.json",
+        "reason": "operative_discovery_not_public_research_corpus"
+      },
+      {
+        "path": "raw-production-discovery-v1/cockpit.json",
+        "reason": "operative_discovery_not_public_research_corpus"
+      },
+      {
+        "path": "raw-production-discovery-v1/collector-ledger-parsed.json",
+        "reason": "operative_discovery_not_public_research_corpus"
+      },
+      {
+        "path": "raw-production-discovery-v1/collector-ledger.json",
+        "reason": "operative_discovery_not_public_research_corpus"
+      },
+      {
+        "path": "raw-production-discovery-v1/data-coverage-parsed.json",
+        "reason": "operative_discovery_not_public_research_corpus"
+      },
+      {
+        "path": "raw-production-discovery-v1/data-coverage.txt",
+        "reason": "operative_discovery_not_public_research_corpus"
+      },
+      {
+        "path": "raw-production-discovery-v1/nominal-coverage.json",
+        "reason": "operative_discovery_not_public_research_corpus"
+      },
+      {
+        "path": "raw-production-discovery-v1/public-source-layout-g37.json",
+        "reason": "operative_discovery_not_public_research_corpus"
+      },
+      {
+        "path": "raw-production-discovery-v1/public-source-layout-g37.txt",
+        "reason": "operative_discovery_not_public_research_corpus"
+      },
+      {
+        "path": "raw-production-discovery-v1/raw-fpl-inventory.json",
+        "reason": "operative_discovery_not_public_research_corpus"
+      },
+      {
+        "path": "raw-production-discovery-v1/raw-inventory.json",
+        "reason": "operative_discovery_not_public_research_corpus"
+      }
+    ]
+  },
+  "restored_inventory_report_sha256": "b538ba9b5a04976d999b24f05ad6807512d963c5e2412c689833949a494d63c6",
+  "restored_inventory": {
+    "version": "raw-corpus-inventory-v1",
+    "implementation_sha256": "ddb2f2361ea28e343d0ea17ec6db382a32b4ccaa40903cb27a15239dda37a47c",
+    "corpora": 21,
+    "records": 32423,
+    "physical_referenced_objects": 27214,
+    "physical_referenced_bytes": 1585532426,
+    "unique_content_objects": 24462,
+    "unique_content_bytes": 1396855878,
+    "other_layout_files": 130,
+    "other_layout_bytes": 49701478,
+    "corpora_with_acquisition_errors": [],
+    "corpora_with_declared_count_mismatch": [],
+    "raw_directories_without_manifest": [
+      "raw-fpl-discovery-v1",
+      "raw-history-discovery",
+      "raw-official-calendar-pdf-v1",
+      "raw-official-rules-v1",
+      "raw-official-xg-g48",
+      "raw-snapshot-discovery"
+    ],
+    "current_labels": {
+      "pointer_sha256": "61585d54491185cf37e9a3b0f34f9ed000048cee4cae8bc5bc8c406e47ecc392",
+      "dataset_id": "d4baf849fb4a051be103f8c469e61a4753edb0b4004f980a000fe5c86ef573db",
+      "rows": 303126,
+      "manager_rows": 322,
+      "seasons": [
+        "2014-15",
+        "2015-16",
+        "2016-17",
+        "2017-18",
+        "2018-19",
+        "2019-20",
+        "2020-21",
+        "2021-22",
+        "2022-23",
+        "2023-24",
+        "2024-25",
+        "2025-26"
+      ]
+    },
+    "artifacts": {
+      "corpora.json": "893305ebe7e2bd5395c936cd3b8acfb4214bc1bc04d746c4c5415e7828722a8d",
+      "object-index.json": "dae4e816cbc89fabd17b5868f8ed2d50916914060ca9f0d46d0dd639698df90a",
+      "other-layout-index.json": "8675034d4abdca97debd4a948e91e0db7b317090eb2e151cf862a28ff8b84b32"
+    },
+    "production_changed": false,
+    "training_admitted": false,
+    "limitations": [
+      "other_layout_files_have_observed_hash_baseline_not_manifest_validation",
+      "all_versions_counted_including_superseded_corpora",
+      "unique_bytes_not_unique_sporting_observations",
+      "collector_account_payloads_not_read_or_exported",
+      "integrity_does_not_prove_semantics_publication_licensing_or_training_eligibility"
+    ]
+  },
+  "verification": {
+    "restored_from_final_bundle": true,
+    "restored_files": 27399,
+    "corpora_index_byte_identical_to_G50": true,
+    "object_index_byte_identical_to_G50": true,
+    "other_layouts_equal_after_declared_operative_exclusion": true,
+    "build_idempotent": true,
+    "tests_passed": 1580,
+    "tests_skipped": 1,
+    "tests_deselected": 79,
+    "tests_seconds": 432.39
+  },
+  "new_label_rows": 0,
+  "new_complete_seasons": 0,
+  "production_changed": false,
+  "training_admitted": false,
+  "offsite_backup_verified": false
+}
