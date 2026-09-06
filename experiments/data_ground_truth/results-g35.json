@@ -1,0 +1,389 @@
+{
+  "version": "historical-data-g35",
+  "extended_hours": {
+    "report_sha256": "d1d0049a33b3b8c75b3cd941a9a342015d67497c336dc53abf921005de75725e",
+    "report": {
+      "version": "calendar-publication-extension-v1",
+      "parent_report_sha256": "eb9709fa623730efa2bef23620899b2b511cc69a1998cd038881be8a3b1cb61d",
+      "fixture_audit_sha256": "448a774a7a32815a64655999542af121e188a6fbcd58cd1847430c1a0ba47c24",
+      "implementation_sha256": "3d0c011283eb2b417ba276442846a6b81a70fe4c3a26b0880f0830a4a733937c",
+      "max_offset": 24,
+      "targets": 8,
+      "resolved": 1,
+      "unresolved": [
+        {
+          "season": "2021-22",
+          "gw": 31
+        },
+        {
+          "season": "2021-22",
+          "gw": 32
+        },
+        {
+          "season": "2022-23",
+          "gw": 23
+        },
+        {
+          "season": "2024-25",
+          "gw": 5
+        },
+        {
+          "season": "2026-27",
+          "gw": 1
+        },
+        {
+          "season": "2026-27",
+          "gw": 2
+        },
+        {
+          "season": "2026-27",
+          "gw": 3
+        }
+      ],
+      "acquired_hours": 133,
+      "downloaded_bytes": 8684572272,
+      "errors": [],
+      "hour_report_sha256": {
+        "2022-03-21-11": "fc28b9e2f96e9eb468000120d6c2712b999f1c97918836fbbdb21e1e93800872",
+        "2022-03-21-12": "a9b520eb3d29bf0a3db39395cdb130b1cffb691ec5466ee6d4b31762a7a90ffa",
+        "2022-03-21-13": "74ab30bfad1843c58312664db45c6771fa57b8c614237d5bcd722de81287496c",
+        "2022-03-21-14": "8f5c885699bcbbb9a2c293d45bb5f738a9a8a6f88580fe5c36ab5c7e195e3aac",
+        "2022-03-21-15": "859ce6546dddfb7b1953ca043380c305f3439ad42f8e8355b4b90fc594a8367f",
+        "2022-03-21-16": "57efd864dfec9484088d50d970a535d980b066ac9ce96127a0ae811e9e2d741c",
+        "2022-03-21-17": "d1ee67246dd98cfcf63c783009711eae9461b0539b04a060ece535dbfbac8400",
+        "2022-03-21-18": "261fed07188d0c09d6a77b0e49f725073e71398772dc6a8133052d9757b5e99a",
+        "2022-03-21-19": "a4399ac8225e73b796bd2a3831c4fd7e529dbe1e037a07e849d9e47fd5a07ecc",
+        "2022-03-21-20": "75e403993a17f442b781f205f1006fb8cbf0b97974596439c0cd5c76540847fc",
+        "2022-03-21-21": "24d4ae51f6ef97ea3fd0370b86b2229ab830b70b47291bf6fbfdf7d612805371",
+        "2022-03-21-22": "8077227bd3d6d2189dd6c678bf92ac01e19115f20af8165be911783a6aec0894",
+        "2022-03-21-23": "b25bda5e657b86cc49be6f6c3a464ca4cd57bda848ebcc278acd548b9b863752",
+        "2022-03-22-00": "24f814562e7324210414d803ccc88e1762c58f528017a24f9aaa6bf201b17b4d",
+        "2022-03-22-01": "b4bb1bf7d941d90f729bf196c473eb57b7deaf49130b84efa12cfabcaf4303d2",
+        "2022-03-22-02": "85d39e1a4d5d7fdeac278aa10000bb03694099b3ec5c250b60eb11ce3eba0260",
+        "2022-03-22-03": "4423fead528b14af6cadb1c41e7e52bedf89ff9b1daa1268dc83cce9c5f7ebdd",
+        "2022-03-22-04": "5ed998245ca2c4ac65ea5df1770b7af540016fc33fdb2fdbe12343542a820334",
+        "2022-03-22-05": "26b46a9f22c1065cb770f417ee1cf00319a6ff1be53bdab3aa6abb85c9742c92",
+        "2022-03-22-06": "1f3e58aa780e0180f931e7ae7f43f3efa858227104bd572665157fcf68030c90",
+        "2022-03-22-07": "23e2904f52bdffaa90e3412107070c510d6ce0cf43f78af967fcfda1b7a47745",
+        "2022-03-22-08": "10481e525dbdac1bbe62a140102c2dee5b303d82e2e56990ab47bd7140f5c1ae",
+        "2022-03-22-09": "8bd4fc6400ce2e3db7842aa0d01fd1168c036e28f8b0f784722d7fd8b38974b4",
+        "2022-04-07-16": "f14e4b8f2144e8c54fa82261893e49cc08e01676eb993faedf5effbffaceaf84",
+        "2022-04-07-17": "c20ce9f00ec7fd0c13de3799ecf8ebf818587d6b7e833b98ca590d2ddfe9e648",
+        "2022-04-07-18": "bcb87dc724e6962bda192433f2d6b3459d2c6213c3bc173a2a427fb90bfb3bed",
+        "2022-04-07-19": "5480e0505af6f62d5ec5bf25b3a02d583de45ab669291a8246f1e9eccabd6d8c",
+        "2022-04-07-20": "605abfea08e474c5ebfe171366610f48ad8849f959351fa4b052d7df45faa2d9",
+        "2022-04-07-21": "659e6ec0a2d03cf1fd7eab1a5169a231671954939e1ae4b2a638d4af65106d3e",
+        "2022-04-07-22": "1273b2093ce6fc29113f8c8293553c589dc6d32a23d9e7e11d6363d8ce76599d",
+        "2022-04-07-23": "6df94c4a72db504cdddf420f8e2659674f81d2d4c502a9ad7d3d47fb39176ee3",
+        "2022-04-08-00": "0a1cf6b14000248100da7e5f9ae5e0054b5122e799425fd2a204e4ce07e74fbf",
+        "2022-04-08-01": "7875c9a47fa4cb2ebb285e6ca848e995970bbea489d97f65d5883c1762903461",
+        "2022-04-08-02": "26a30d4e5eb62349a176d5a96b2c15355c7a638ba358648d438935fbaebd1b7a",
+        "2022-04-08-03": "c16b94c9f2b3fce5d74ac1d205a3288b2e1ba5cd6b9ea5113ef0cfbfee022d43",
+        "2022-04-08-04": "c53d851d8a59b9ce6b473f4024995a94d60dd2439e7d23e9efdad31da05cd00a",
+        "2022-04-08-05": "4c9f2f5ee21905f2c968285cb0dcf8b37b1bc37dfec023a8cf1fbc8e087b7330",
+        "2022-04-08-06": "3059108db933467ac003489e9d87632c25a17094a5d4122d279609c2013cf3dc",
+        "2022-04-08-07": "3c4324c13bd081cc961b389de95811e8d35460e7e1e1a089466c53e161c0b0e7",
+        "2022-04-08-08": "1cdd7635b1809c9526aa339a6455e195297fb56c8a36114b4559dccbb3b16266",
+        "2022-04-08-09": "469e6201d7b559c2e900adf009b30c24f89c01f48963db84a3bb25bae9dafda6",
+        "2022-04-08-10": "9ffca1948029d1b789c958dc6630b6afac30d49a7a98c9c2abf75cb7ec9bc9fe",
+        "2022-04-08-11": "d8104a2456b93b10b96bdca74e9ea7d70746d3be8afef95e48eb744861e04d94",
+        "2022-04-08-12": "9dad2cec019483f82a61add87736e46e5f9fd468af11dd5a555e03bb358d9c20",
+        "2022-04-08-13": "18648248c55bf6606921b7f5e7aa9f598708b3b89bc5af418bb57d3466c267f1",
+        "2022-04-08-14": "c0eb57abfab92a8875b3d9cec442d8061f42c6d9eb49f8d5dcbfed939a562d43",
+        "2023-02-09-19": "b19c5e148a6cf2a421374f84595f588d2e1567c6843a04b7a67b656afd4ef4c5",
+        "2023-02-09-20": "7ba482aa110e219e5388ff5a065cde97a0a8b83564f8d0ab372c23e39d07cfa0",
+        "2023-02-09-21": "3b53f2674a7fabb70491ac595566427cd267e121c40b3ec978d853adf0f74222",
+        "2023-02-09-22": "badadbf83d8c0dabb95642ade27ce3752597bf940ab235177edcbc5cac60b9d8",
+        "2023-02-09-23": "188d6e1fb344b2382933745bad87f23f3b83e637afc762b6ed896736c9620c8f",
+        "2023-02-10-00": "6e1d6f064f059a5b649cc4aa9559ed65031bb48faeea22c9c914fc80faa90373",
+        "2023-02-10-01": "376e15794f6e8f961b4b1c0b7e8e3a98c454afd25d416067e0e15b521fd337b5",
+        "2023-02-10-02": "95bfa1c8bbb9ddf5c454acb4523f9ae828eeb47bacc4d6f6fc98447ee2fd669d",
+        "2023-02-10-03": "542676eb3880386214e377b2f9bfc95db6f74cdcf5e5991326ee698c42241cc8",
+        "2023-02-10-04": "a2447ad19997543a9106a79c29e1203c8f09aab4cee0ebf8fd9d601d3fe45eb5",
+        "2023-02-10-05": "d80725395405c8dd2088564fe03a0b1e71afc9c3a1bfe7ed1198fe5353ef4d03",
+        "2023-02-10-06": "6912f3d2d852dabb57be688510bc0328412e3a6cfc3d99bd74dfb8c40243ba08",
+        "2023-02-10-07": "155b1a56f3accab3699830e7c3be56ea6ac6b885220d73f999008a9cae7f15df",
+        "2023-02-10-08": "a991df01fa4801cb37461db3c3de87bfc9eef03a36264db3ac862b3edfa52c9c",
+        "2023-02-10-09": "b4ab20e81e29cd3922be0bf17dbf176ff6129df274c7d3f587c55b12d715b357",
+        "2023-02-10-10": "713fee82637d205ef103f9243b4f4bb297879f1220d44d701eb7016c01473a7a",
+        "2023-02-10-11": "6c6c9b0f086ac0a2fb5c60dbebd3b1fda60d56754b21d47f01a31a9d77187b5f",
+        "2023-02-10-12": "b694d1b1eb38b4b5a2236ca51bd0751d33d301f897a5bea34df73e76da73aae4",
+        "2023-02-10-13": "31018cb80642a468c8ee4cee62475c38ec0159d880bdb3218f049d19d5b4346c",
+        "2023-02-10-14": "285f082b707108d3e36407bff21aa02fe0eed4fc98cab563e6475179bc0b0891",
+        "2023-02-10-15": "231cba22d6b61ca533d7a1ffcfc35d099d13ad949e97b654e4277298408b124b",
+        "2023-02-10-16": "62e410c493875d1b096a8cc90532a97caadafc85042956da35e46763acfc36ec",
+        "2023-02-10-17": "417550160c298efbdde55fc06a1bd24fd5ac314bfc13790f1204519ac21411ab",
+        "2024-08-15-19": "42bad4a63475c0648b987671b7db9062cb5d36e733a1dc8643efade6670f1dc4",
+        "2024-09-16-15": "23412537300d6d02d5f9daa5e1733208a37764706966a0ccdbcc2195b56d7259",
+        "2024-09-16-16": "a9b9584cac63fb4eb89c8b93cd9072b206da2def7460418aedd308dec67e805e",
+        "2024-09-16-17": "42862e77e9fd93bf342099f64c3143071001aff783268519f320f294a6f9032b",
+        "2024-09-16-18": "6c144e4ba7a874f2679231b147f15d0f6daac98e5e79008fda3f8cdc6b9e639a",
+        "2024-09-16-19": "01a45a18d58608e8a8c49e6f2a629e367a8057ef16b47b60794cdb24fff4046f",
+        "2024-09-16-20": "ea6985dc4d94cd4ee8072813519b8f8a0cea4d99aa367c9aa60fb6596fd2db9b",
+        "2024-09-16-21": "7975164afcc9e70be1caccaace40c1f42636cd7bf85010972aaa1f7f3bcb1916",
+        "2024-09-16-22": "169685e3b2715c86fdeaaa7e8555df81dbc9c94b9bd4a8624b1df8aafdcd4d77",
+        "2024-09-16-23": "d21e2a1017ccf978f00b19801fe36c7d485e66ae6a46c238a8b23f889182850b",
+        "2024-09-17-00": "4278d1ec5438551c5a7d97498c3672c679e2f553ac0a4ae4d5b84804ada81154",
+        "2024-09-17-01": "10de5b9596ebee8f9ba4f91fc50770dcd17b4d802b0b41abd76c81624f25b4f5",
+        "2024-09-17-02": "0d77601808933f902a75d40537b4f49b5077466b647f449211fc6b26e1716ff4",
+        "2024-09-17-03": "57678af1d349f98c4498421fa4816a2f486e4447982a3c1b0e02904ee4e0e024",
+        "2024-09-17-04": "5fd2a7a950034900abf48c00a945434ca36eb80d1d4762dc237d0bb9a08c2e11",
+        "2024-09-17-05": "bcf38ccf3a1453d99588dd5bbfd4c35f77b26ddb9de34b80428a95e564a48044",
+        "2024-09-17-06": "c5fe7659654463f046304b7e234aa370a4cee0cfeaa533edb1b16c99f3fb14a8",
+        "2024-09-17-07": "3186f60a8a7e72c19ea03124ad58b9e07dc660015f861a28be7abe77d58fc94d",
+        "2024-09-17-08": "00d176c5b9c6fd7c83c7c16cd4f3e1e5aed57f352153bb6e9a78b1012cb85b18",
+        "2024-09-17-09": "0234fcd7a8610b57bb8aac7df5b164ecd7e931b3a7cdd7c1480dd0086c78e5ea",
+        "2024-09-17-10": "84ccade4049c23ca5467e12f18c7ccd1a5e49334190ddd18b6fccc647ec96c1a",
+        "2024-09-17-11": "b308eb65ad9c4180935e3335d33ed10e2ba9a6bf605aff9548d889c979beaa75",
+        "2024-09-17-12": "f2f7ad282b60017f3ee55f0e45bf3a2e1f1083338ca10cc2efa9126e171f32fe",
+        "2024-09-17-13": "bc6de4fd61432814dc5b212043ec524ce1ce1b40880067e726d4280690e426a0",
+        "2026-08-21-01": "57e557cd7b0281905383ac95c45a3608213e784ed44a0cd9998edb94722d8fcd",
+        "2026-08-21-02": "2ef8eec616b1fd55cffc0ca45157cc8cdd8011a48f4600e96934387b0a1aeddc",
+        "2026-08-21-03": "04169e32ab745ed100433032f49ba2e22c98fd2c12a5434956772b6515f7bb81",
+        "2026-08-21-04": "cb0f43131997bf44ab25f072d619c37f7de46fcf4718ab528bb19170d862f249",
+        "2026-08-21-05": "626d2f59b2551036fb59e1b248cda0dc9f334f0bf9fb7f054056539676b6d04f",
+        "2026-08-21-06": "2a384c7ef631add51a249fab9c5e35f699a2a5c5000d5b4b110af057c39b151a",
+        "2026-08-21-07": "959488f4e1139e048b7423554f196ecab47ec663f135b25b8863f014ef728169",
+        "2026-08-21-08": "621fd1013b21f37a65b8f11b46795fec3fca32bbae376ce7c142d6a1ffd4f697",
+        "2026-08-21-09": "05680c04678f61e2e735852a96a7b03780b0ff5684fc6d023c7bd4fb5fd90890",
+        "2026-08-21-10": "3b53b453adcae0a90835057a0dfe5eec77b8ab5cd713e4093165b90fe0c4b92e",
+        "2026-08-21-11": "6909a7fd98772a288d2196b2df0f3d225bd707abbe565c2e2d14133cacc3c6d5",
+        "2026-08-21-12": "ad92458028c6a97358da4a17dc04eb799fe8e4c8556c04d347ea77cd3f5136ca",
+        "2026-08-21-13": "3e97744dc70b63aa499a52034a3c5c6e6311b60eac96acc2eab5d4331ac62f42",
+        "2026-08-21-14": "abcd5813a046000acad05c33d0ef600402c3b473ec21cb32f55761b7adee11ab",
+        "2026-08-21-15": "76d115a14202363c7b0df7c6d96000ea798d9811c165ce6f154ff87fedacba58",
+        "2026-08-21-16": "1d659c227f734225a8cf20bc7fa49f536602cecd57574d06b069a44e95118b42",
+        "2026-08-21-17": "78775a48fca029d8d140f5fac2fc2db2d09bdff79157378a529e994c6df9dd68",
+        "2026-08-28-11": "3237baee75c575f755bdd7319e5c082bbf10d19a291342495567edaad96face9",
+        "2026-08-28-12": "299332cd5545b85b64516e942acfcce505fc50cde2f9a5f7948dd54f35ecd04b",
+        "2026-08-28-13": "4427322daddfc25a314f1eebb897c46a615ace1c43931a90a1a9a4bc31141e2f",
+        "2026-08-28-14": "725b4b94366f34a8926d08ee06f92a7b1bcd531283d8a2eca1855f704c59a325",
+        "2026-08-28-15": "4a6bbe3ae8ffc1d770ffbc5b5df2c056055c5815b773706aac8944e3ac5bff6f",
+        "2026-08-28-16": "da3c8575a567fc325c90891797ab3b02cc8b87dd443e903011646c24dc670ddf",
+        "2026-08-28-17": "13b1d4eda57fd9ede89191e4ade1895d61c7bab640105dc081d470700cb28fa2",
+        "2026-08-28-18": "0d89eec8c51b8d62557a1edc542ac2ad820bd95e718dca6cbc5760d05c34957d",
+        "2026-08-28-19": "64474f138378154ca2d50dfc66704b5c064c6d5693b0c765907f172316616542",
+        "2026-08-28-20": "41903b2eafc5d1e6121b04bbed52ca1ce612562aef92b9fed64056b881c56fd5",
+        "2026-08-28-21": "a1977e8b9db3e11f7bf26e8771c857306df52c02e33960ffeab3e6705a9da5aa",
+        "2026-08-28-22": "069a78a3aef6eba2bbcefa52e1cc101e67a4e1cff313c9e55ee6c6585d3cac8b",
+        "2026-08-28-23": "d43568c21512e14922a0f6f566f8cc86a101410f24ff3135ad2de7cb9e0b244e",
+        "2026-08-29-00": "8f1ea958ae99b8150dee3afcc5ff2eb4eea65efd5234ff416a10ee898908b5f6",
+        "2026-08-29-01": "6ef9d34e2926d3b60b98e0e3e0244ae97cb937976061aade2c1a23ed925e485f",
+        "2026-08-29-02": "39bd4cc1addc924c18fac4ae2ab3c7ff1df0212122921118197d751b1a7cce08",
+        "2026-08-29-03": "75cede9510ca6145bd9e0e25497d3d5f68e47ea78c741ec28fbfed4c98b6157e",
+        "2026-08-29-04": "5f16480fed3d12660a60444778282ca0e97d9d85e6bc02afa512fe859dc28c81",
+        "2026-08-29-05": "07d1cf59a0081cf98bc622e36a302d020090f3fca7519a5d8b2adb9ff2005f53",
+        "2026-08-29-06": "d23ba1b443235659e4e3ebb65454bedea3942def362076077c2324bbe15ebe31",
+        "2026-08-29-07": "656d6a104c0c31ca551c6d9b952bfa164702c56c5cb200378d108f61b7362a79",
+        "2026-08-29-08": "3a58cdf5506fe9fa2a011d92de95e76c679dda6f1271276cb4c9143b964d96d0",
+        "2026-08-29-09": "1e95b1e560d9459877da38d443aaa159da7911e308c8c72c1ba277c2683e3f76"
+      },
+      "witnesses_sha256": "325c8a19135a6b0b2936bc9d7449a76cff9a0af050ed5d8acece5c461865de2c",
+      "production_changed": false,
+      "training_admitted": false,
+      "limitations": [
+        "missing_event_not_proof_of_nonpublication",
+        "parent_selection_not_rewritten",
+        "publication_not_API_capture_time"
+      ]
+    }
+  },
+  "descendant_hours": {
+    "report_sha256": "e5836509b2acab0cf8d1cb0e839a6b5e3e35b2b3175627e3e1f891b9af94b346",
+    "report": {
+      "version": "calendar-descendant-publication-v1",
+      "parent_report_sha256": "eb9709fa623730efa2bef23620899b2b511cc69a1998cd038881be8a3b1cb61d",
+      "fixture_audit_sha256": "448a774a7a32815a64655999542af121e188a6fbcd58cd1847430c1a0ba47c24",
+      "implementation_sha256": "dc53b2e7b49575de9c6496718ff7b2add6d79f0e30c35c487b1cad52463fc14f",
+      "git_log_sha256": "4698a883c123144566ed524db5f89ac266aeec437fa46a26d32da25c5d580edf",
+      "plan": [
+        {
+          "season": "2021-22",
+          "gw": 31,
+          "hours": []
+        },
+        {
+          "season": "2021-22",
+          "gw": 32,
+          "hours": []
+        },
+        {
+          "season": "2022-23",
+          "gw": 23,
+          "hours": []
+        },
+        {
+          "season": "2024-25",
+          "gw": 1,
+          "hours": [
+            "2024-08-15-19",
+            "2024-08-15-20",
+            "2024-08-15-21",
+            "2024-08-16-13",
+            "2024-08-16-14"
+          ]
+        },
+        {
+          "season": "2024-25",
+          "gw": 5,
+          "hours": [
+            "2024-09-20-12",
+            "2024-09-20-13"
+          ]
+        },
+        {
+          "season": "2026-27",
+          "gw": 1,
+          "hours": [
+            "2026-08-21-08",
+            "2026-08-21-09"
+          ]
+        },
+        {
+          "season": "2026-27",
+          "gw": 2,
+          "hours": []
+        },
+        {
+          "season": "2026-27",
+          "gw": 3,
+          "hours": []
+        }
+      ],
+      "targets": 8,
+      "resolved": 2,
+      "acquired_hours": 9,
+      "downloaded_bytes": 762509285,
+      "errors": [],
+      "hour_report_sha256": {
+        "2024-08-15-19": "5e4e1fdd796aa319320daa331f03c0673569f72d3033316cfcdf140de8b865f3",
+        "2024-08-15-20": "676e9557a84989844784e9ff49ffcd6df7c4efce0fd1dea5e0f57e8b0724e462",
+        "2024-08-15-21": "6841fb4b455f12b5fd65804a867f9ab0fcf8462f4971b980363417a4a58e089d",
+        "2024-08-16-13": "0216143d8d942f72f0754a47ecff88779168e90d8610b8c161622d4813bf6812",
+        "2024-08-16-14": "c99fdd7e21c9c895e0965873db57215891c430c03cd88ce78a6fe037e5067cfa",
+        "2024-09-20-12": "76e0ef513a484b8b60feb97dbd9c3cf8f532210e2faef1b7be86b032d94750aa",
+        "2024-09-20-13": "cc24c9da5f4a95dda799e8c5e8df4f2c8aef7c83b14ff0b095e1d74c9399ed1c",
+        "2026-08-21-08": "87a672c02a045c9c473e6d6f763f69ff1d41b0c4ff14bbe8fcfabeabac35a12d",
+        "2026-08-21-09": "62f94a124d322c4b91de78bdc8e5de44670add382f8f409fa8628628f9262ece"
+      },
+      "witnesses_sha256": "3ab7c3f0a18bab7e1a9cc1a3eb74e5cd12464e150644311c28bf276bc9d9b103",
+      "production_changed": false,
+      "training_admitted": false,
+      "limitations": [
+        "Git_clock_guides_search_only",
+        "archive_hours_can_overlap_other_acquisitions"
+      ]
+    }
+  },
+  "selection": {
+    "report_sha256": "c4899a88e3d13df9bdfb568c502e7c5875aa3248c350b5ef934b3a53f7926ad6",
+    "report": {
+      "version": "calendar-extension-selection-v1",
+      "parent_report_sha256": "eb9709fa623730efa2bef23620899b2b511cc69a1998cd038881be8a3b1cb61d",
+      "extension_report_sha256": [
+        "d1d0049a33b3b8c75b3cd941a9a342015d67497c336dc53abf921005de75725e",
+        "e5836509b2acab0cf8d1cb0e839a6b5e3e35b2b3175627e3e1f891b9af94b346"
+      ],
+      "implementation_sha256": "6ca104549f8fd79bcdb6cfa717b9c6395826d896e6c34080bffabc72edc0e839",
+      "selected_deadlines": 193,
+      "expected_deadlines": 199,
+      "coverage": {
+        "2020-21": {
+          "deadlines": 6,
+          "within48h": 4
+        },
+        "2021-22": {
+          "deadlines": 36,
+          "within48h": 18
+        },
+        "2022-23": {
+          "deadlines": 37,
+          "within48h": 19
+        },
+        "2023-24": {
+          "deadlines": 38,
+          "within48h": 20
+        },
+        "2024-25": {
+          "deadlines": 38,
+          "within48h": 18
+        },
+        "2025-26": {
+          "deadlines": 38,
+          "within48h": 14
+        }
+      },
+      "additions": [
+        {
+          "season": "2024-25",
+          "gw": 1,
+          "nominal_age_hours": 24.219722222222224,
+          "available_at": "2024-08-15T19:58:48Z"
+        },
+        {
+          "season": "2024-25",
+          "gw": 5,
+          "nominal_age_hours": 116.13222222222223,
+          "available_at": "2024-09-20T12:24:19Z"
+        }
+      ],
+      "missing": [
+        {
+          "season": "2021-22",
+          "gw": 31
+        },
+        {
+          "season": "2021-22",
+          "gw": 32
+        },
+        {
+          "season": "2022-23",
+          "gw": 23
+        },
+        {
+          "season": "2026-27",
+          "gw": 1
+        },
+        {
+          "season": "2026-27",
+          "gw": 2
+        },
+        {
+          "season": "2026-27",
+          "gw": 3
+        }
+      ],
+      "selected_sha256": "a62d376ceca8a422200a3af45992d4717b2c8cff6555788f45b74ca10535429e",
+      "production_changed": false,
+      "training_admitted": false,
+      "limitations": [
+        "publication_not_capture_time",
+        "coverage_does_not_guarantee_freshness_or_complete_replay"
+      ]
+    }
+  },
+  "acquisition_accounting": {
+    "unique_hours": 139,
+    "unique_compressed_bytes": 9334044383,
+    "overlap_hours": 3
+  },
+  "verification": {
+    "extended_reproduced_byte_for_byte": true,
+    "descendant_reproduced_byte_for_byte": true,
+    "joint_selection_reproduced_byte_for_byte": true,
+    "parent_revalidated": true,
+    "tests_passed": 1513,
+    "tests_skipped": 1,
+    "tests_deselected": 79
+  },
+  "next_gate_discovery": {
+    "scope": "inventory_only_not_training_admission",
+    "manifests": 55,
+    "inventory_sha256": "bc18d3edb7d5ebad28a3b56a45fe86d9949573079197d3667c487ad403791dcf",
+    "first_observed_at": "2026-08-24T01:34:04.989+00:00",
+    "last_observed_at": "2026-09-06T04:30:33.627+00:00"
+  },
+  "production_changed": false,
+  "gt_v5_changed": false,
+  "training_admitted": false
+}

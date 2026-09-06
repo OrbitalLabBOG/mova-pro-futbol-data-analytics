@@ -1898,29 +1898,55 @@ aislamiento de temporada, identidad y conservación de valores anteriores.
 [Resultados G34](results-g34.json). La cobertura no acredita frescura suficiente
 para replay completo: GT v5, entrenamiento y producción continúan intactos.
 
-## Gate G35 en curso: ampliar horas de publicación
+## Gate G35: publicación ampliada y búsqueda por descendientes
 
-La rama experimental `feat/extended-calendar-publication` amplía la búsqueda para
-las ocho ventanas pendientes G34. Examina desde la tercera hora del commit hasta
-el offset 24, siempre antes del deadline, reteniendo PushEvent y PullRequestEvent
-públicos fusionados en la misma adquisición. Detiene cada ventana al acreditar
-un testigo. Un evento ausente no se interpreta como prueba de no publicación.
+La búsqueda de las ocho ventanas G34 pendientes se amplía desde la tercera hora
+del commit hasta el offset 24, siempre antes del deadline. Retiene pushes y merges
+públicos fusionados en una sola adquisición y se detiene por ventana acreditada.
+Procesa **133 horas, 8.684.572.272 bytes comprimidos**, sin errores, y acredita
+GW1 2024/25 mediante un push de las 19:58:48 UTC del 15 de agosto de 2024.
+El commit del calendario es ancestro verificado del head públicamente observado.
 
-`calendar_publication_extension` conserva objetos por SHA y reportes horarios;
-`calendar_extension_selection` revalida el padre y cada testigo antes de combinar
-la selección. La adquisición en curso usa `calendar-publication-extension-v1`.
-No se declara cerrado este gate ni se modifica la cobertura aceptada G34 hasta
-finalizar la búsqueda, reproducir índices y verificar la selección conjunta.
+Una segunda búsqueda utiliza relojes de commits descendientes para localizar
+horas relevantes; el reloj Git orienta la consulta, pero no acredita publicación.
+Examina **9 horas, 762.509.285 bytes**, sin errores, y corrobora GW1 y GW5 2024/25.
+En GW5 el testigo es un push del 20 de septiembre de 2024 a las 12:24:19 UTC,
+cuatro días después del commit del calendario y todavía antes del deadline.
+Los archivos de ambas rutas se solapan en tres horas: la unión contiene
+**139 horas únicas y 9.334.044.383 bytes comprimidos únicos**. Los eventos ajenos
+al repositorio no se retienen; se conservan líneas raw relevantes y hashes del
+archivo de origen. No se suman adquisiciones solapadas como datos nuevos únicos.
+
+El integrador revalida el padre G34 y cada nuevo testigo contra raw y grafo Git,
+y deduplica las jornadas coincidentes. Resultado: **193/199 deadlines**;
+2023/24, 2024/25 y 2025/26 alcanzan 38/38. Las nuevas selecciones GW1/GW5 de
+2024/25 tienen antigüedad nominal de 24,22 y 116,13 horas, respectivamente.
+La cobertura total con commit de hasta 48 horas pasa de 92 a 93 calendarios.
+Quedan 2021/22 GW31–32, 2022/23 GW23 y 2026/27 GW1–3. La ausencia de testigo
+en las horas examinadas no demuestra que el calendario no se hubiera publicado.
 
 ```bash
 python -m experiments.data_ground_truth.calendar_publication_extension \
   --base-root "$EXPERIMENTS_ROOT" --out "$CALENDAR_EXTENSION_ROOT" --max-offset 24
+python -m experiments.data_ground_truth.calendar_descendant_publication \
+  --base-root "$EXPERIMENTS_ROOT" --out "$CALENDAR_DESCENDANT_ROOT"
 python -m experiments.data_ground_truth.calendar_extension_selection \
   --base-root "$EXPERIMENTS_ROOT" --extension-root "$CALENDAR_EXTENSION_ROOT" \
-  --out "$CALENDAR_EXTENSION_SELECTION_ROOT"
+  --extension-root "$CALENDAR_DESCENDANT_ROOT" --out "$CALENDAR_EXTENSION_SELECTION_ROOT"
 ```
 
-El primer proceso puede repetir la evaluación desde horas cacheadas con
-`--offline`; no debe reiniciarse una adquisición activa por un timeout de
-observación. Suite del código en esta etapa: 1.512 passed, 1 skipped,
-79 deselected. GT v5, entrenamiento y producción permanecen intactos.
+Las dos búsquedas admiten `--offline`. Reportes, testigos y selección conjunta se
+reprodujeron byte por byte, con revalidación del padre y evidencia por objeto.
+Suite: **1.513 passed, 1 skipped, 79 deselected**. Pruebas incluyen límite exclusivo
+del deadline, merges sin push, reloj con zona, ascendencia y ausencia de red offline.
+[Resultados G35](results-g35.json) fija hashes, cobertura y contabilidad de archivos.
+GT v5, entrenamiento y producción permanecen intactos; la disponibilidad histórica
+no garantiza frescura suficiente ni readiness de replay completo.
+
+La exploración adicional de metadatos públicos actuales no encontró PRs asociados
+a los siete commits candidatos distintos; esto solo orienta investigación, no
+prueba no publicación. Para el siguiente gate se localizó otra fuente: el inventario
+raw del collector propio contiene 55 manifiestos FPL, desde 2026-08-24 hasta
+2026-09-06, con bootstrap y fixtures separados. El inventario no acredita todavía
+hashes ni admisión temporal al paquete; la primera captura es posterior a GW1.
+Se consultó en lectura, sin recoger perfiles autenticados ni modificar controles.

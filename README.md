@@ -111,7 +111,7 @@ de modelos por hash y exportación revisable, sin promover modelos al runtime.
 
 La capa experimental conserva los datos crudos fuera de Git, con manifiestos,
 SHA-256, fuentes fijadas por commit y auditorías reproducibles. El
-[registro de gates G1–G34](experiments/data_ground_truth/README.md) contiene
+[registro de gates G1–G35](experiments/data_ground_truth/README.md) contiene
 adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 
 | Capa | Cobertura verificada | Límite pendiente |
@@ -119,7 +119,7 @@ adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 | Etiquetas FPL, GT experimental v5 | 303.126 filas de jugadores, doce temporadas 2014/15–2025/26; 322 filas de managers separadas | Son resultados retrospectivos, no entradas disponibles antes del deadline |
 | Bootstrap raw | 7.837 snapshots; estados, precios, clubes y posiciones | Disponibilidad y semántica varían por campo y temporada |
 | Estados con publicación histórica acreditada | 196/199 deadlines; 38/38 en cada temporada 2021/22–2025/26 | GW1–3 de 2026/27 sin testigo; selección desconocida no se convierte en elegibilidad |
-| Calendarios con publicación histórica acreditada, G34 | 191/199 deadlines; 38/38 en 2023/24 y 2025/26 | Ocho ventanas pendientes; siete adiciones usan calendarios anteriores de 117–290 horas. Solo 14/38 calendarios 2025/26 tienen commit de hasta 48 horas |
+| Calendarios con publicación histórica acreditada, G35 | 193/199 deadlines; 38/38 en 2023/24, 2024/25 y 2025/26 | Seis ventanas pendientes y frescura desigual: 93 calendarios tienen commit de hasta 48 horas; en 2025/26 son 14/38 |
 | Rendimiento raw, G31 | 143.720 filas y 22 campos tipados; sin valores numéricos inválidos | 31.071 descensos de celda, 27.211 entre GW1–2: falta resolver período y semántica antes de calcular deltas |
 | Reglas y chips de snapshots | Explícitos desde GW16 de 2024/25 y en toda 2025/26 | Faltan reglas históricas anteriores e interpretación de overrides |
 | Fuentes antiguas complementarias | Material parcial desde 2010/11 y totales desde 2006/07 | No cuentan como nuevas temporadas completas; persisten huecos de población e identidad |
@@ -150,6 +150,10 @@ G34 añade siete ventanas con calendarios anteriores acreditados y conserva 24
 diferencias futuras de horario como diagnóstico. La selección alcanza 191/199;
 no aumenta frescura ni incorpora valores posteriores.
 [Resultados G34](experiments/data_ground_truth/results-g34.json).
+G35 acredita GW1 y GW5 de 2024/25 mediante nuevas horas de GH Archive y búsqueda
+por commits descendientes. La selección deduplicada alcanza 193/199 deadlines,
+con seis pendientes. Las nuevas pruebas acreditan publicación, no captura API.
+[Resultados G35](experiments/data_ground_truth/results-g35.json).
 
 ## Empezar
 
