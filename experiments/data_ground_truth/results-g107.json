@@ -1,0 +1,65 @@
+{
+  "version": "historical-data-g107",
+  "audit": {
+    "version": "workshop-source-audit-v1",
+    "implementation_sha256": "a9f7fd54664be0db6258da24514e3c7330a0874bec6a23ee9023cc40646f3695",
+    "manifest_sha256": "9018411252c809951f93720cc6c1e7ccc619aff0e89d4c18947e5a3c674ca425",
+    "reference_sha256": "b499ccddd7bcbcb78e9c429e597efe797785ead16054ec6252e07ee368737274",
+    "captured_files": 6,
+    "captured_bytes": 83285,
+    "profiles": 567,
+    "candidate_statuses": {
+      "unique_name_candidate": 567
+    },
+    "equal_field_counts": {
+      "total_points": 335,
+      "minutes": 325,
+      "now_cost": 532,
+      "goals_scored": 543,
+      "assists": 550,
+      "clean_sheets": 523,
+      "goals_conceded": 400,
+      "own_goals": 566,
+      "penalties_saved": 566,
+      "penalties_missed": 566,
+      "yellow_cards": 538,
+      "red_cards": 564,
+      "saves": 548,
+      "bonus": 540,
+      "ea_index": 332,
+      "bps": 329
+    },
+    "verified_identities": 0,
+    "new_complete_seasons": 0,
+    "finalized_labels_admitted": 0,
+    "training_admitted": false,
+    "gt_changed": false,
+    "production_changed": false,
+    "limitations": [
+      "full_name_match_only_not_verified_identity",
+      "reference_is_one_archived_state_not_final_gt",
+      "course_date_not_data_capture_time",
+      "no_season_or_gameweek_assigned",
+      "malformed_csv_not_repaired",
+      "forecast_fields_excluded_from_outcome_comparison"
+    ],
+    "artifacts": {
+      "inventory.json": "946903ce840b6e04d15066d7b0078879cb16ee3a9c402da91a21aea9de592e2c",
+      "candidates.json": "3b91aca995311a557189dfae66608a6b442136a67404dddc0658a6c047578799"
+    }
+  },
+  "report_sha256": "634e8123201f9b15d196546d7b5f9c4e5b1b4809efbe6059792ad41001722a69",
+  "reproduction": {
+    "identical_files": [
+      "report.json",
+      "inventory.json",
+      "candidates.json"
+    ]
+  },
+  "validation": {
+    "command": "python -m pytest -q",
+    "passed": 1721,
+    "skipped": 1,
+    "deselected": 79
+  }
+}
