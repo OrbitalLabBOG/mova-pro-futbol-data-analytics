@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "scope": "reviewed_identity_names_only_not_predeadline_features",
+  "claims": [
+    {
+      "official_player_code": "90517",
+      "FPL_name": "Robbie Brady",
+      "variant": "Robert Brady",
+      "kind": "reviewed_same_event_page",
+      "source_sha256": "cc5481095bd5c48c1c3a5692e3963783398fd33fe0f1ca64c45aed9bd0f9ac03",
+      "source_url": "https://www.premierleague.com/en/news/1514200",
+      "reviewed_fragments": [
+        "Burnley substitute Robbie Brady scored a late consolation for the hosts.",
+        "Robert Brady"
+      ]
+    },
+    {
+      "official_player_code": "149468",
+      "FPL_name": "Tyias Browning",
+      "variant": "Jiang Guangtai",
+      "kind": "reviewed_same_event_page",
+      "source_sha256": "84330cdef7d1d7024c83ca8f98247e67b0b3ddc7d7e5f5087601fcd78b1cbebe",
+      "source_url": "https://www.premierleague.com/en/news/946678",
+      "reviewed_fragments": [
+        "Tyias Browning set up Charsley",
+        "Jiang Guangtai"
+      ]
+    },
+    {
+      "official_player_code": "168765",
+      "FPL_name": "Joshua Onomah",
+      "variant": "Josh Onomah",
+      "kind": "same_code_FPL_csv",
+      "source_sha256": "e3aff899fc2486bd96fe5d11d8c8e8c066dea36cc71de2bf8a85e8aa7245ed32",
+      "source_url": "https://raw.githubusercontent.com/vaastav/Fantasy-Premier-League/9779cdbc0c07f6c900c2d0c181ddf6bb9c800f88/data/2020-21/players_raw.csv",
+      "reviewed_fragments": []
+    }
+  ]
+}

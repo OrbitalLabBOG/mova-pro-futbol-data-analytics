@@ -111,7 +111,7 @@ de modelos por hash y exportación revisable, sin promover modelos al runtime.
 
 La capa experimental conserva los datos crudos fuera de Git, con manifiestos,
 SHA-256, fuentes fijadas por commit y auditorías reproducibles. El
-[registro de gates G1–G74](experiments/data_ground_truth/README.md) contiene
+[registro de gates G1–G75](experiments/data_ground_truth/README.md) contiene
 adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 
 | Capa | Cobertura verificada | Límite pendiente |
@@ -154,6 +154,7 @@ adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 | Goles por eventos, G72 | Marcador interno concordante en 760 lados; comparación FPL de 12.939 filas enlazadas | Difieren 12/876 casos no cero de gol y 7/37 de autogol; conservar fuentes, sin reparación de GT |
 | Coherencia de puntos FPL, G73 | 24.741/24.741 filas de 2015/16 cuadran con fórmula histórica declarada | Las 19 discrepancias de atribución conservan coherencia FPL; sustituir goles aisladamente la rompe, sin reparación automática |
 | Códigos PL ausentes, G74 | 496 identidades y 10.312/10.469 apariciones positivas enlazadas; +26 | 157 pendientes; nombre FPL único y aparición del mismo partido, sin relajar dos testigos ni modificar raw |
+| Variantes documentadas, G75 | 499 identidades y 10.361/10.469 apariciones positivas enlazadas (98,97%); +49 | 108 pendientes; tres equivalencias revisadas con fuente/hash, sin inferencia general de apodos |
 | Collector propio, G36 | 55 bundles públicos; 34.512 estados de jugadores y 20.900 observaciones de fixtures | Dos candidatos anteriores a GW2/GW3 2026/27 vinculados al cierre de ingesta; evidencia interna identificada en el índice común G37 |
 | Reglas y chips de snapshots | Explícitos desde GW16 de 2024/25 y en toda 2025/26 | Faltan reglas históricas anteriores e interpretación de overrides |
 | Reglas documentales oficiales, G38 | 10 artículos archivados, 30 afirmaciones parciales en seis temporadas | Descargas actuales: la fecha del artículo no prueba disponibilidad histórica; no son un intérprete de reglas |

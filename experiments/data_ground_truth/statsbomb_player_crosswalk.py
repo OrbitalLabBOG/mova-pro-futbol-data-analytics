@@ -53,6 +53,13 @@ def candidate_name_evidence(player, candidate, declared_aliases, metadata_by_cod
     if evidence is None and metadata is not None:
         extra = name_evidence(player, metadata['full_name'], True)
         if extra is not None: evidence = 'fpl_metadata_' + extra
+    if evidence is None and metadata is not None:
+        for variant in metadata.get('verified_variants', []):
+            extra = name_evidence(player, variant['full_name'], True)
+            if extra is not None:
+                evidence = 'fpl_metadata_variant_' + extra
+                metadata = variant
+                break
     return evidence, metadata
 
 
@@ -68,7 +75,8 @@ def recover_archive_codes(observations, metadata_by_code, labels):
             continue
         fixture = int(row['matchId_events'])
         candidates = [code for code, meta in metadata_by_code.items()
-                      if compatible_names(row['playerName'], meta['full_name'])]
+                      if compatible_names(row['playerName'], meta['full_name']) or
+                      any(compatible_names(row['playerName'], v['full_name']) for v in meta.get('verified_variants', []))]
         code = candidates[0] if len(candidates) == 1 else None
         status = ('no_unique_full_name' if code is None else
                   'no_FPL_positive_appearance' if (fixture, code) not in positive else
@@ -91,11 +99,12 @@ def recover_archive_codes(observations, metadata_by_code, labels):
     return recovered, output
 
 
-def build(statsbomb_root,fixture_root,archive_root,package,out,declared_aliases=False,baseline_root=None,fpl_names_root=None,recover_missing_codes=False):
+def build(statsbomb_root,fixture_root,archive_root,package,out,declared_aliases=False,baseline_root=None,fpl_names_root=None,recover_missing_codes=False,name_evidence_root=None):
     if declared_aliases and baseline_root is None: raise ValueError('alias comparison requires baseline')
     if fpl_names_root is not None and not declared_aliases: raise ValueError('FPL names require explicit alias mode')
     if recover_missing_codes and fpl_names_root is None: raise ValueError('code recovery requires FPL metadata and baseline')
-    fpl_names={};name_manifest_bytes=None
+    if name_evidence_root is not None and not recover_missing_codes: raise ValueError('reviewed names require the G74 recovery path')
+    fpl_names={};name_manifest_bytes=None;reviewed_name_report=None
     if fpl_names_root is not None:
         name_manifest_bytes=(fpl_names_root/'manifest.json').read_bytes();name_manifest=json.loads(name_manifest_bytes)
         if name_manifest['errors']:raise ValueError('FPL name acquisition errors')
@@ -106,6 +115,10 @@ def build(statsbomb_root,fixture_root,archive_root,package,out,declared_aliases=
             code=archive_code(str(player['code']));full_name=player['first_name']+' '+player['second_name']
             if code in fpl_names:raise ValueError('duplicate FPL name code')
             fpl_names[code]=dict(full_name=full_name,source_sha256=record['sha256'],path=record['path'])
+    if name_evidence_root is not None:
+        from experiments.data_ground_truth.identity_name_evidence import load
+        variants,reviewed_name_report=load(name_evidence_root,fpl_names)
+        for code,entries in variants.items():fpl_names[code]['verified_variants']=entries
     link_bytes=(fixture_root/'report.json').read_bytes();link_report=json.loads(link_bytes)
     links=json.loads(checked(fixture_root/'fixture-links.json',link_report['artifacts']['fixture-links.json']))
     if len(links)!=380 or not all(r['research_link_accepted'] for r in links):raise ValueError('incomplete fixture reference')
@@ -223,6 +236,11 @@ def build(statsbomb_root,fixture_root,archive_root,package,out,declared_aliases=
             method='G71_plus_unique_FPL_full_name_same_fixture_positive_appearance_for_absent_PL_codes_then_unchanged_two_fixture_reciprocal_resolution')
         report['artifacts']['missing-code-proposals.json']=digest((out/'missing-code-proposals.json').read_bytes())
         report['limitations'].append('missing_code_proposals_are_identity_evidence_not_raw_repairs_or_new_labels')
+    if reviewed_name_report is not None:
+        report.update(version='statsbomb-player-crosswalk-v5',reviewed_name_evidence=reviewed_name_report,
+            method='G74_plus_explicit_source_hashed_code_bound_name_variants_with_unchanged_fixture_club_reciprocal_checks')
+        report['limitations'].append('reviewed_page_alias_is_contextual_identity_inference_not_automatic_text_cooccurrence_rule')
+        report['limitations'].append('later_names_for_retrospective_identity_only_not_predeadline_features')
     (out/'report.json').write_text(json.dumps(report,indent=2)+'\n');return report
 
 
@@ -231,7 +249,8 @@ def main():
     for name in ('statsbomb-root','fixture-root','archive-root','package','out'):p.add_argument('--'+name,type=Path,required=True)
     p.add_argument('--declared-aliases',action='store_true');p.add_argument('--baseline-root',type=Path);p.add_argument('--fpl-names-root',type=Path)
     p.add_argument('--recover-missing-codes',action='store_true')
-    a=p.parse_args();print(json.dumps(build(a.statsbomb_root,a.fixture_root,a.archive_root,a.package,a.out,a.declared_aliases,a.baseline_root,a.fpl_names_root,a.recover_missing_codes),indent=2))
+    p.add_argument('--name-evidence-root',type=Path)
+    a=p.parse_args();print(json.dumps(build(a.statsbomb_root,a.fixture_root,a.archive_root,a.package,a.out,a.declared_aliases,a.baseline_root,a.fpl_names_root,a.recover_missing_codes,a.name_evidence_root),indent=2))
 
 
 if __name__=='__main__':main()
