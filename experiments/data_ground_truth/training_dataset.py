@@ -115,7 +115,7 @@ def verify(package: Path) -> dict:
             raise ValueError('duplicate labels')
         if frame.eligible_predeadline.any() or frame.available_at.notna().any():
             raise ValueError('unproven temporal availability')
-        if manifest.get('version')=='fpl-labels-v5' and not frame.entity_type.eq('player').all():raise ValueError('non-player in player partition')
+        if manifest.get('version') in ('fpl-labels-v5','fpl-labels-v6') and not frame.entity_type.eq('player').all():raise ValueError('non-player in player partition')
         rows+=len(frame)
     for entry in manifest.get('quarantines',[]):
         if Path(entry['file']).name!=entry['file']:

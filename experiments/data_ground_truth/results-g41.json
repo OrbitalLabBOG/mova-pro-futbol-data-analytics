@@ -1,0 +1,94 @@
+{
+  "version": "historical-data-g41",
+  "audit_report_sha256": "64b1a6067188497ed4ac20bc77dc6476b0854043be7745047150958447482459",
+  "audit": {
+    "version": "discovery-identity-enrichment-v1",
+    "parent_report_sha256": "5c3f4ca1093e98fe9cb98d302ddf39b68489d334bde27798294090fd94819ee6",
+    "raw_manifest_sha256": "93cbcfa531157c317ec925b3b49a681051bf90cc4dcea7c2eaf8549e8758bd77",
+    "implementation_sha256": "c51fcf140e092c5b2165e57ea4d667f809f3c238a685acfcfcfe828c1b887d09",
+    "profile_inputs": [
+      {
+        "path": "data/2016-17/players_raw.csv",
+        "sha256": "824183cf6c00db4c476706112230a16a8135f5dee82240f56df14547ad22db84"
+      },
+      {
+        "path": "data/2017-18/players_raw.csv",
+        "sha256": "c40f7e6a74160f3a151fb32ee79d5843e87daf58e1a002ccfff412a224804264"
+      },
+      {
+        "path": "data/2018-19/players_raw.csv",
+        "sha256": "a2ad425f5692842d05ddc8de7eafa63cece551fde788278427594790e982046a"
+      },
+      {
+        "path": "data/2019-20/players_raw.csv",
+        "sha256": "6ebf73e7f4fe0d697869a12cbf39ccb1df444c6b9b1be6c02e61677ebbfc243f"
+      },
+      {
+        "path": "data/2020-21/players_raw.csv",
+        "sha256": "e3aff899fc2486bd96fe5d11d8c8e8c066dea36cc71de2bf8a85e8aa7245ed32"
+      },
+      {
+        "path": "data/2021-22/players_raw.csv",
+        "sha256": "78e185fb0b5c81f58c2b89f232358b1097bededc9852d4171edaea2e9d3bd887"
+      },
+      {
+        "path": "data/2022-23/players_raw.csv",
+        "sha256": "a874c12817bbf4d454e60a5765629742b528d4ad0c2f39f56e4fc89640605f7f"
+      },
+      {
+        "path": "data/2023-24/players_raw.csv",
+        "sha256": "43d8cf5efb3d901f2499558c40b392b7f0ee22afe28030f36266ad29024c63d9"
+      },
+      {
+        "path": "data/2024-25/players_raw.csv",
+        "sha256": "75686051b265cbe7755ac71213ecaad21b26ee1cc46a8bafbba19c39ce894b05"
+      },
+      {
+        "path": "data/2025-26/players_raw.csv",
+        "sha256": "412ce0172016f8f98f25177dc6de9f3cd2a8ec7a6135f9aa638d7fdee784d67b"
+      }
+    ],
+    "profile_rows": 7338,
+    "candidates": 46,
+    "statuses": {
+      "no_later_profile": 26,
+      "corroborated_code_and_full_name": 19,
+      "name_variant_requires_review": 1
+    },
+    "enriched_rows": 223,
+    "dataset_id": "58e2e08833a157601e3e6bf75ea71adcd84211bf96a2139e9490b8936aa9e7cb",
+    "dataset_rows": 303126,
+    "manager_rows": 322,
+    "partition_2014": {
+      "season": "2014-15",
+      "split": "train",
+      "file": "2014-15.csv.gz",
+      "rows": 24876,
+      "sha256": "7d40765299138558320f866ce12d0735b9ef0b9b1405c5f6a188477421c9b4fa",
+      "official_identity_rows": 24425,
+      "season_scoped_identity_rows": 451
+    },
+    "artifacts": {
+      "identities.json": "2dbcf2335f1c9d5163ef36a029d10733ee8cd9d115609d3613214df0d7000ef6",
+      "changes.json": "92b60fd591b326701aadcc081be7f0caf356d282df67276fe6c81e5f0117da82"
+    },
+    "production_changed": false,
+    "model_training_run": false,
+    "predeadline_admission": false,
+    "limitations": [
+      "future_metadata_used_only_for_stable_identity_not_features",
+      "name_variants_without_exact_witness_remain_unresolved"
+    ]
+  },
+  "dataset_manifest_sha256": "56b08e59733940b5f1308cc0eed1c4ac6ba430a8335a8727a7390fc443722544",
+  "verification": {
+    "reproduced_byte_for_byte": true,
+    "dataset_reproduced_in_independent_root": true,
+    "dataset_files": 15,
+    "tests_passed": 1539,
+    "tests_skipped": 1,
+    "tests_deselected": 79
+  },
+  "production_changed": false,
+  "model_training_run": false
+}
