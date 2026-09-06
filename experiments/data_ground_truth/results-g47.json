@@ -1,0 +1,5208 @@
+{
+  "version": "historical-data-g47",
+  "audit_report_sha256": "504df10ffb3b263fa9a6c00f8c91aa1331f01a6f4f3a8b0a05741288e87ca1b6",
+  "audit": {
+    "version": "supplemental-cumulative-v1",
+    "supplemental_report_sha256": "504cfd547e9b2ca9374214cbee1ad9a85cd6f4a1ae9df660b2bad93cb372a186",
+    "performance_report_sha256": "45366aadfe7002e2369082a334a7c64d21bb6b7e0541baa5f27798040fee395b",
+    "dataset_id": "d4baf849fb4a051be103f8c469e61a4753edb0b4004f980a000fe5c86ef573db",
+    "implementation_sha256": "aa280238195d324d202bc38e380e7e601b122bfdf18d2abeec0b674b0f8f9300",
+    "rows": 110018,
+    "coverage": {
+      "2020-21": {
+        "status": "incomplete_reference_season"
+      },
+      "2021-22": {
+        "status": "incomplete_reference_season"
+      },
+      "2022-23": {
+        "status": "compared",
+        "windows": [
+          {
+            "gw": 2,
+            "rows": 580,
+            "fields": {
+              "starts": {
+                "snapshot_absent": 580
+              },
+              "expected_goals": {
+                "snapshot_absent": 580
+              },
+              "expected_assists": {
+                "snapshot_absent": 580
+              },
+              "expected_goals_conceded": {
+                "snapshot_absent": 580
+              },
+              "expected_goal_involvements": {
+                "snapshot_absent": 580
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 580
+              },
+              "recoveries": {
+                "snapshot_absent": 580
+              },
+              "tackles": {
+                "snapshot_absent": 580
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 580
+              }
+            }
+          },
+          {
+            "gw": 3,
+            "rows": 589,
+            "fields": {
+              "starts": {
+                "snapshot_absent": 589
+              },
+              "expected_goals": {
+                "snapshot_absent": 589
+              },
+              "expected_assists": {
+                "snapshot_absent": 589
+              },
+              "expected_goals_conceded": {
+                "snapshot_absent": 589
+              },
+              "expected_goal_involvements": {
+                "snapshot_absent": 589
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 589
+              },
+              "recoveries": {
+                "snapshot_absent": 589
+              },
+              "tackles": {
+                "snapshot_absent": 589
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 589
+              }
+            }
+          },
+          {
+            "gw": 4,
+            "rows": 594,
+            "fields": {
+              "starts": {
+                "snapshot_absent": 594
+              },
+              "expected_goals": {
+                "snapshot_absent": 594
+              },
+              "expected_assists": {
+                "snapshot_absent": 594
+              },
+              "expected_goals_conceded": {
+                "snapshot_absent": 594
+              },
+              "expected_goal_involvements": {
+                "snapshot_absent": 594
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 594
+              },
+              "recoveries": {
+                "snapshot_absent": 594
+              },
+              "tackles": {
+                "snapshot_absent": 594
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 594
+              }
+            }
+          },
+          {
+            "gw": 5,
+            "rows": 603,
+            "fields": {
+              "starts": {
+                "snapshot_absent": 603
+              },
+              "expected_goals": {
+                "snapshot_absent": 603
+              },
+              "expected_assists": {
+                "snapshot_absent": 603
+              },
+              "expected_goals_conceded": {
+                "snapshot_absent": 603
+              },
+              "expected_goal_involvements": {
+                "snapshot_absent": 603
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 603
+              },
+              "recoveries": {
+                "snapshot_absent": 603
+              },
+              "tackles": {
+                "snapshot_absent": 603
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 603
+              }
+            }
+          },
+          {
+            "gw": 6,
+            "rows": 623,
+            "fields": {
+              "starts": {
+                "snapshot_absent": 623
+              },
+              "expected_goals": {
+                "snapshot_absent": 623
+              },
+              "expected_assists": {
+                "snapshot_absent": 623
+              },
+              "expected_goals_conceded": {
+                "snapshot_absent": 623
+              },
+              "expected_goal_involvements": {
+                "snapshot_absent": 623
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 623
+              },
+              "recoveries": {
+                "snapshot_absent": 623
+              },
+              "tackles": {
+                "snapshot_absent": 623
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 623
+              }
+            }
+          },
+          {
+            "gw": 7,
+            "rows": 624,
+            "fields": {
+              "starts": {
+                "snapshot_absent": 624
+              },
+              "expected_goals": {
+                "snapshot_absent": 624
+              },
+              "expected_assists": {
+                "snapshot_absent": 624
+              },
+              "expected_goals_conceded": {
+                "snapshot_absent": 624
+              },
+              "expected_goal_involvements": {
+                "snapshot_absent": 624
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 624
+              },
+              "recoveries": {
+                "snapshot_absent": 624
+              },
+              "tackles": {
+                "snapshot_absent": 624
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 624
+              }
+            }
+          },
+          {
+            "gw": 8,
+            "rows": 628,
+            "fields": {
+              "starts": {
+                "snapshot_absent": 628
+              },
+              "expected_goals": {
+                "snapshot_absent": 628
+              },
+              "expected_assists": {
+                "snapshot_absent": 628
+              },
+              "expected_goals_conceded": {
+                "snapshot_absent": 628
+              },
+              "expected_goal_involvements": {
+                "snapshot_absent": 628
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 628
+              },
+              "recoveries": {
+                "snapshot_absent": 628
+              },
+              "tackles": {
+                "snapshot_absent": 628
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 628
+              }
+            }
+          },
+          {
+            "gw": 9,
+            "rows": 631,
+            "fields": {
+              "starts": {
+                "snapshot_absent": 631
+              },
+              "expected_goals": {
+                "snapshot_absent": 631
+              },
+              "expected_assists": {
+                "snapshot_absent": 631
+              },
+              "expected_goals_conceded": {
+                "snapshot_absent": 631
+              },
+              "expected_goal_involvements": {
+                "snapshot_absent": 631
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 631
+              },
+              "recoveries": {
+                "snapshot_absent": 631
+              },
+              "tackles": {
+                "snapshot_absent": 631
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 631
+              }
+            }
+          },
+          {
+            "gw": 10,
+            "rows": 638,
+            "fields": {
+              "starts": {
+                "snapshot_absent": 638
+              },
+              "expected_goals": {
+                "snapshot_absent": 638
+              },
+              "expected_assists": {
+                "snapshot_absent": 638
+              },
+              "expected_goals_conceded": {
+                "snapshot_absent": 638
+              },
+              "expected_goal_involvements": {
+                "snapshot_absent": 638
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 638
+              },
+              "recoveries": {
+                "snapshot_absent": 638
+              },
+              "tackles": {
+                "snapshot_absent": 638
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 638
+              }
+            }
+          },
+          {
+            "gw": 11,
+            "rows": 641,
+            "fields": {
+              "starts": {
+                "snapshot_absent": 641
+              },
+              "expected_goals": {
+                "snapshot_absent": 641
+              },
+              "expected_assists": {
+                "snapshot_absent": 641
+              },
+              "expected_goals_conceded": {
+                "snapshot_absent": 641
+              },
+              "expected_goal_involvements": {
+                "snapshot_absent": 641
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 641
+              },
+              "recoveries": {
+                "snapshot_absent": 641
+              },
+              "tackles": {
+                "snapshot_absent": 641
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 641
+              }
+            }
+          },
+          {
+            "gw": 12,
+            "rows": 643,
+            "fields": {
+              "starts": {
+                "snapshot_absent": 643
+              },
+              "expected_goals": {
+                "snapshot_absent": 643
+              },
+              "expected_assists": {
+                "snapshot_absent": 643
+              },
+              "expected_goals_conceded": {
+                "snapshot_absent": 643
+              },
+              "expected_goal_involvements": {
+                "snapshot_absent": 643
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 643
+              },
+              "recoveries": {
+                "snapshot_absent": 643
+              },
+              "tackles": {
+                "snapshot_absent": 643
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 643
+              }
+            }
+          },
+          {
+            "gw": 13,
+            "rows": 645,
+            "fields": {
+              "starts": {
+                "snapshot_absent": 645
+              },
+              "expected_goals": {
+                "snapshot_absent": 645
+              },
+              "expected_assists": {
+                "snapshot_absent": 645
+              },
+              "expected_goals_conceded": {
+                "snapshot_absent": 645
+              },
+              "expected_goal_involvements": {
+                "snapshot_absent": 645
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 645
+              },
+              "recoveries": {
+                "snapshot_absent": 645
+              },
+              "tackles": {
+                "snapshot_absent": 645
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 645
+              }
+            }
+          },
+          {
+            "gw": 14,
+            "rows": 648,
+            "fields": {
+              "starts": {
+                "snapshot_absent": 648
+              },
+              "expected_goals": {
+                "snapshot_absent": 648
+              },
+              "expected_assists": {
+                "snapshot_absent": 648
+              },
+              "expected_goals_conceded": {
+                "snapshot_absent": 648
+              },
+              "expected_goal_involvements": {
+                "snapshot_absent": 648
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 648
+              },
+              "recoveries": {
+                "snapshot_absent": 648
+              },
+              "tackles": {
+                "snapshot_absent": 648
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 648
+              }
+            }
+          },
+          {
+            "gw": 15,
+            "rows": 656,
+            "fields": {
+              "starts": {
+                "snapshot_absent": 656
+              },
+              "expected_goals": {
+                "snapshot_absent": 656
+              },
+              "expected_assists": {
+                "snapshot_absent": 656
+              },
+              "expected_goals_conceded": {
+                "snapshot_absent": 656
+              },
+              "expected_goal_involvements": {
+                "snapshot_absent": 656
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 656
+              },
+              "recoveries": {
+                "snapshot_absent": 656
+              },
+              "tackles": {
+                "snapshot_absent": 656
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 656
+              }
+            }
+          },
+          {
+            "gw": 16,
+            "rows": 661,
+            "fields": {
+              "starts": {
+                "equal": 278,
+                "different": 383
+              },
+              "expected_goals": {
+                "equal": 310,
+                "outside_rounding_bound": 315,
+                "within_rounding_bound": 36
+              },
+              "expected_assists": {
+                "within_rounding_bound": 65,
+                "outside_rounding_bound": 319,
+                "equal": 277
+              },
+              "expected_goals_conceded": {
+                "within_rounding_bound": 6,
+                "outside_rounding_bound": 442,
+                "equal": 213
+              },
+              "expected_goal_involvements": {
+                "within_rounding_bound": 34,
+                "outside_rounding_bound": 362,
+                "equal": 265
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 661
+              },
+              "recoveries": {
+                "snapshot_absent": 661
+              },
+              "tackles": {
+                "snapshot_absent": 661
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 661
+              }
+            }
+          },
+          {
+            "gw": 17,
+            "rows": 667,
+            "fields": {
+              "starts": {
+                "equal": 667
+              },
+              "expected_goals": {
+                "equal": 311,
+                "within_rounding_bound": 3,
+                "different": 353
+              },
+              "expected_assists": {
+                "different": 454,
+                "equal": 213
+              },
+              "expected_goals_conceded": {
+                "different": 450,
+                "equal": 217
+              },
+              "expected_goal_involvements": {
+                "different": 456,
+                "equal": 211
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 667
+              },
+              "recoveries": {
+                "snapshot_absent": 667
+              },
+              "tackles": {
+                "snapshot_absent": 667
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 667
+              }
+            }
+          },
+          {
+            "gw": 18,
+            "rows": 675,
+            "fields": {
+              "starts": {
+                "equal": 675
+              },
+              "expected_goals": {
+                "equal": 312,
+                "different": 362,
+                "within_rounding_bound": 1
+              },
+              "expected_assists": {
+                "different": 465,
+                "equal": 210
+              },
+              "expected_goals_conceded": {
+                "different": 453,
+                "equal": 217,
+                "within_rounding_bound": 5
+              },
+              "expected_goal_involvements": {
+                "different": 467,
+                "equal": 208
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 675
+              },
+              "recoveries": {
+                "snapshot_absent": 675
+              },
+              "tackles": {
+                "snapshot_absent": 675
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 675
+              }
+            }
+          },
+          {
+            "gw": 19,
+            "rows": 683,
+            "fields": {
+              "starts": {
+                "equal": 678,
+                "no_reference_rows": 5
+              },
+              "expected_goals": {
+                "equal": 306,
+                "different": 372,
+                "no_reference_rows": 5
+              },
+              "expected_assists": {
+                "different": 467,
+                "equal": 211,
+                "no_reference_rows": 5
+              },
+              "expected_goals_conceded": {
+                "different": 463,
+                "equal": 214,
+                "no_reference_rows": 5,
+                "within_rounding_bound": 1
+              },
+              "expected_goal_involvements": {
+                "different": 469,
+                "equal": 209,
+                "no_reference_rows": 5
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 683
+              },
+              "recoveries": {
+                "snapshot_absent": 683
+              },
+              "tackles": {
+                "snapshot_absent": 683
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 683
+              }
+            }
+          },
+          {
+            "gw": 20,
+            "rows": 694,
+            "fields": {
+              "starts": {
+                "equal": 689,
+                "no_reference_rows": 5
+              },
+              "expected_goals": {
+                "equal": 307,
+                "different": 382,
+                "no_reference_rows": 5
+              },
+              "expected_assists": {
+                "different": 475,
+                "equal": 214,
+                "no_reference_rows": 5
+              },
+              "expected_goals_conceded": {
+                "different": 473,
+                "equal": 216,
+                "no_reference_rows": 5
+              },
+              "expected_goal_involvements": {
+                "different": 476,
+                "equal": 213,
+                "no_reference_rows": 5
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 694
+              },
+              "recoveries": {
+                "snapshot_absent": 694
+              },
+              "tackles": {
+                "snapshot_absent": 694
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 694
+              }
+            }
+          },
+          {
+            "gw": 21,
+            "rows": 705,
+            "fields": {
+              "starts": {
+                "equal": 699,
+                "no_reference_rows": 6
+              },
+              "expected_goals": {
+                "equal": 310,
+                "different": 389,
+                "no_reference_rows": 6
+              },
+              "expected_assists": {
+                "different": 484,
+                "equal": 215,
+                "no_reference_rows": 6
+              },
+              "expected_goals_conceded": {
+                "different": 482,
+                "equal": 217,
+                "no_reference_rows": 6
+              },
+              "expected_goal_involvements": {
+                "different": 485,
+                "equal": 214,
+                "no_reference_rows": 6
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 705
+              },
+              "recoveries": {
+                "snapshot_absent": 705
+              },
+              "tackles": {
+                "snapshot_absent": 705
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 705
+              }
+            }
+          },
+          {
+            "gw": 22,
+            "rows": 734,
+            "fields": {
+              "starts": {
+                "equal": 707,
+                "no_reference_rows": 27
+              },
+              "expected_goals": {
+                "within_rounding_bound": 173,
+                "equal": 534,
+                "no_reference_rows": 27
+              },
+              "expected_assists": {
+                "equal": 420,
+                "within_rounding_bound": 287,
+                "no_reference_rows": 27
+              },
+              "expected_goals_conceded": {
+                "within_rounding_bound": 267,
+                "equal": 440,
+                "no_reference_rows": 27
+              },
+              "expected_goal_involvements": {
+                "within_rounding_bound": 303,
+                "equal": 404,
+                "no_reference_rows": 27
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 734
+              },
+              "recoveries": {
+                "snapshot_absent": 734
+              },
+              "tackles": {
+                "snapshot_absent": 734
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 734
+              }
+            }
+          },
+          {
+            "gw": 23,
+            "rows": 740,
+            "fields": {
+              "starts": {
+                "equal": 740
+              },
+              "expected_goals": {
+                "equal": 740
+              },
+              "expected_assists": {
+                "equal": 740
+              },
+              "expected_goals_conceded": {
+                "equal": 740
+              },
+              "expected_goal_involvements": {
+                "equal": 514,
+                "within_rounding_bound": 226
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 740
+              },
+              "recoveries": {
+                "snapshot_absent": 740
+              },
+              "tackles": {
+                "snapshot_absent": 740
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 740
+              }
+            }
+          },
+          {
+            "gw": 24,
+            "rows": 745,
+            "fields": {
+              "starts": {
+                "equal": 745
+              },
+              "expected_goals": {
+                "equal": 745
+              },
+              "expected_assists": {
+                "equal": 745
+              },
+              "expected_goals_conceded": {
+                "equal": 745
+              },
+              "expected_goal_involvements": {
+                "equal": 510,
+                "within_rounding_bound": 235
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 745
+              },
+              "recoveries": {
+                "snapshot_absent": 745
+              },
+              "tackles": {
+                "snapshot_absent": 745
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 745
+              }
+            }
+          },
+          {
+            "gw": 25,
+            "rows": 746,
+            "fields": {
+              "starts": {
+                "equal": 746
+              },
+              "expected_goals": {
+                "equal": 746
+              },
+              "expected_assists": {
+                "equal": 746
+              },
+              "expected_goals_conceded": {
+                "equal": 746
+              },
+              "expected_goal_involvements": {
+                "equal": 504,
+                "within_rounding_bound": 242
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 746
+              },
+              "recoveries": {
+                "snapshot_absent": 746
+              },
+              "tackles": {
+                "snapshot_absent": 746
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 746
+              }
+            }
+          },
+          {
+            "gw": 26,
+            "rows": 746,
+            "fields": {
+              "starts": {
+                "equal": 746
+              },
+              "expected_goals": {
+                "equal": 746
+              },
+              "expected_assists": {
+                "equal": 746
+              },
+              "expected_goals_conceded": {
+                "equal": 746
+              },
+              "expected_goal_involvements": {
+                "equal": 504,
+                "within_rounding_bound": 242
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 746
+              },
+              "recoveries": {
+                "snapshot_absent": 746
+              },
+              "tackles": {
+                "snapshot_absent": 746
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 746
+              }
+            }
+          },
+          {
+            "gw": 27,
+            "rows": 747,
+            "fields": {
+              "starts": {
+                "equal": 747
+              },
+              "expected_goals": {
+                "equal": 747
+              },
+              "expected_assists": {
+                "equal": 747
+              },
+              "expected_goals_conceded": {
+                "equal": 747
+              },
+              "expected_goal_involvements": {
+                "equal": 495,
+                "within_rounding_bound": 252
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 747
+              },
+              "recoveries": {
+                "snapshot_absent": 747
+              },
+              "tackles": {
+                "snapshot_absent": 747
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 747
+              }
+            }
+          },
+          {
+            "gw": 28,
+            "rows": 750,
+            "fields": {
+              "starts": {
+                "equal": 750
+              },
+              "expected_goals": {
+                "equal": 750
+              },
+              "expected_assists": {
+                "equal": 750
+              },
+              "expected_goals_conceded": {
+                "equal": 750
+              },
+              "expected_goal_involvements": {
+                "equal": 485,
+                "within_rounding_bound": 265
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 750
+              },
+              "recoveries": {
+                "snapshot_absent": 750
+              },
+              "tackles": {
+                "snapshot_absent": 750
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 750
+              }
+            }
+          },
+          {
+            "gw": 29,
+            "rows": 751,
+            "fields": {
+              "starts": {
+                "equal": 751
+              },
+              "expected_goals": {
+                "equal": 751
+              },
+              "expected_assists": {
+                "equal": 751
+              },
+              "expected_goals_conceded": {
+                "equal": 751
+              },
+              "expected_goal_involvements": {
+                "equal": 751
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 751
+              },
+              "recoveries": {
+                "snapshot_absent": 751
+              },
+              "tackles": {
+                "snapshot_absent": 751
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 751
+              }
+            }
+          },
+          {
+            "gw": 30,
+            "rows": 754,
+            "fields": {
+              "starts": {
+                "equal": 754
+              },
+              "expected_goals": {
+                "equal": 754
+              },
+              "expected_assists": {
+                "equal": 754
+              },
+              "expected_goals_conceded": {
+                "equal": 754
+              },
+              "expected_goal_involvements": {
+                "outside_rounding_bound": 135,
+                "equal": 489,
+                "within_rounding_bound": 130
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 754
+              },
+              "recoveries": {
+                "snapshot_absent": 754
+              },
+              "tackles": {
+                "snapshot_absent": 754
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 754
+              }
+            }
+          },
+          {
+            "gw": 31,
+            "rows": 754,
+            "fields": {
+              "starts": {
+                "equal": 754
+              },
+              "expected_goals": {
+                "equal": 754
+              },
+              "expected_assists": {
+                "equal": 754
+              },
+              "expected_goals_conceded": {
+                "equal": 754
+              },
+              "expected_goal_involvements": {
+                "equal": 754
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 754
+              },
+              "recoveries": {
+                "snapshot_absent": 754
+              },
+              "tackles": {
+                "snapshot_absent": 754
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 754
+              }
+            }
+          },
+          {
+            "gw": 32,
+            "rows": 759,
+            "fields": {
+              "starts": {
+                "equal": 759
+              },
+              "expected_goals": {
+                "equal": 759
+              },
+              "expected_assists": {
+                "equal": 759
+              },
+              "expected_goals_conceded": {
+                "equal": 759
+              },
+              "expected_goal_involvements": {
+                "equal": 759
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 759
+              },
+              "recoveries": {
+                "snapshot_absent": 759
+              },
+              "tackles": {
+                "snapshot_absent": 759
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 759
+              }
+            }
+          },
+          {
+            "gw": 33,
+            "rows": 760,
+            "fields": {
+              "starts": {
+                "equal": 760
+              },
+              "expected_goals": {
+                "equal": 760
+              },
+              "expected_assists": {
+                "equal": 760
+              },
+              "expected_goals_conceded": {
+                "equal": 760
+              },
+              "expected_goal_involvements": {
+                "equal": 760
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 760
+              },
+              "recoveries": {
+                "snapshot_absent": 760
+              },
+              "tackles": {
+                "snapshot_absent": 760
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 760
+              }
+            }
+          },
+          {
+            "gw": 34,
+            "rows": 761,
+            "fields": {
+              "starts": {
+                "equal": 761
+              },
+              "expected_goals": {
+                "equal": 761
+              },
+              "expected_assists": {
+                "equal": 761
+              },
+              "expected_goals_conceded": {
+                "equal": 761
+              },
+              "expected_goal_involvements": {
+                "equal": 761
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 761
+              },
+              "recoveries": {
+                "snapshot_absent": 761
+              },
+              "tackles": {
+                "snapshot_absent": 761
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 761
+              }
+            }
+          },
+          {
+            "gw": 35,
+            "rows": 762,
+            "fields": {
+              "starts": {
+                "equal": 762
+              },
+              "expected_goals": {
+                "equal": 762
+              },
+              "expected_assists": {
+                "equal": 762
+              },
+              "expected_goals_conceded": {
+                "equal": 762
+              },
+              "expected_goal_involvements": {
+                "equal": 762
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 762
+              },
+              "recoveries": {
+                "snapshot_absent": 762
+              },
+              "tackles": {
+                "snapshot_absent": 762
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 762
+              }
+            }
+          },
+          {
+            "gw": 36,
+            "rows": 763,
+            "fields": {
+              "starts": {
+                "equal": 763
+              },
+              "expected_goals": {
+                "equal": 763
+              },
+              "expected_assists": {
+                "equal": 763
+              },
+              "expected_goals_conceded": {
+                "equal": 763
+              },
+              "expected_goal_involvements": {
+                "equal": 763
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 763
+              },
+              "recoveries": {
+                "snapshot_absent": 763
+              },
+              "tackles": {
+                "snapshot_absent": 763
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 763
+              }
+            }
+          },
+          {
+            "gw": 37,
+            "rows": 765,
+            "fields": {
+              "starts": {
+                "equal": 765
+              },
+              "expected_goals": {
+                "equal": 765
+              },
+              "expected_assists": {
+                "equal": 765
+              },
+              "expected_goals_conceded": {
+                "equal": 765
+              },
+              "expected_goal_involvements": {
+                "equal": 765
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 765
+              },
+              "recoveries": {
+                "snapshot_absent": 765
+              },
+              "tackles": {
+                "snapshot_absent": 765
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 765
+              }
+            }
+          },
+          {
+            "gw": 38,
+            "rows": 775,
+            "fields": {
+              "starts": {
+                "equal": 775
+              },
+              "expected_goals": {
+                "equal": 775
+              },
+              "expected_assists": {
+                "equal": 775
+              },
+              "expected_goals_conceded": {
+                "equal": 775
+              },
+              "expected_goal_involvements": {
+                "equal": 775
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 775
+              },
+              "recoveries": {
+                "snapshot_absent": 775
+              },
+              "tackles": {
+                "snapshot_absent": 775
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 775
+              }
+            }
+          }
+        ]
+      },
+      "2023-24": {
+        "status": "compared",
+        "windows": [
+          {
+            "gw": 2,
+            "rows": 666,
+            "fields": {
+              "starts": {
+                "equal": 658,
+                "no_reference_rows": 8
+              },
+              "expected_goals": {
+                "equal": 658,
+                "no_reference_rows": 8
+              },
+              "expected_assists": {
+                "equal": 658,
+                "no_reference_rows": 8
+              },
+              "expected_goals_conceded": {
+                "equal": 658,
+                "no_reference_rows": 8
+              },
+              "expected_goal_involvements": {
+                "equal": 658,
+                "no_reference_rows": 8
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 666
+              },
+              "recoveries": {
+                "snapshot_absent": 666
+              },
+              "tackles": {
+                "snapshot_absent": 666
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 666
+              }
+            }
+          },
+          {
+            "gw": 3,
+            "rows": 678,
+            "fields": {
+              "starts": {
+                "equal": 668,
+                "no_reference_rows": 10
+              },
+              "expected_goals": {
+                "equal": 668,
+                "no_reference_rows": 10
+              },
+              "expected_assists": {
+                "equal": 668,
+                "no_reference_rows": 10
+              },
+              "expected_goals_conceded": {
+                "equal": 668,
+                "no_reference_rows": 10
+              },
+              "expected_goal_involvements": {
+                "equal": 668,
+                "no_reference_rows": 10
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 678
+              },
+              "recoveries": {
+                "snapshot_absent": 678
+              },
+              "tackles": {
+                "snapshot_absent": 678
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 678
+              }
+            }
+          },
+          {
+            "gw": 4,
+            "rows": 697,
+            "fields": {
+              "starts": {
+                "equal": 685,
+                "no_reference_rows": 12
+              },
+              "expected_goals": {
+                "equal": 685,
+                "no_reference_rows": 12
+              },
+              "expected_assists": {
+                "equal": 685,
+                "no_reference_rows": 12
+              },
+              "expected_goals_conceded": {
+                "equal": 685,
+                "no_reference_rows": 12
+              },
+              "expected_goal_involvements": {
+                "equal": 685,
+                "no_reference_rows": 12
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 697
+              },
+              "recoveries": {
+                "snapshot_absent": 697
+              },
+              "tackles": {
+                "snapshot_absent": 697
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 697
+              }
+            }
+          },
+          {
+            "gw": 5,
+            "rows": 714,
+            "fields": {
+              "starts": {
+                "equal": 703,
+                "no_reference_rows": 11
+              },
+              "expected_goals": {
+                "equal": 703,
+                "no_reference_rows": 11
+              },
+              "expected_assists": {
+                "equal": 703,
+                "no_reference_rows": 11
+              },
+              "expected_goals_conceded": {
+                "equal": 703,
+                "no_reference_rows": 11
+              },
+              "expected_goal_involvements": {
+                "equal": 703,
+                "no_reference_rows": 11
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 714
+              },
+              "recoveries": {
+                "snapshot_absent": 714
+              },
+              "tackles": {
+                "snapshot_absent": 714
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 714
+              }
+            }
+          },
+          {
+            "gw": 6,
+            "rows": 717,
+            "fields": {
+              "starts": {
+                "equal": 717
+              },
+              "expected_goals": {
+                "equal": 717
+              },
+              "expected_assists": {
+                "equal": 717
+              },
+              "expected_goals_conceded": {
+                "equal": 717
+              },
+              "expected_goal_involvements": {
+                "equal": 717
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 717
+              },
+              "recoveries": {
+                "snapshot_absent": 717
+              },
+              "tackles": {
+                "snapshot_absent": 717
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 717
+              }
+            }
+          },
+          {
+            "gw": 7,
+            "rows": 718,
+            "fields": {
+              "starts": {
+                "equal": 718
+              },
+              "expected_goals": {
+                "equal": 718
+              },
+              "expected_assists": {
+                "equal": 718
+              },
+              "expected_goals_conceded": {
+                "equal": 718
+              },
+              "expected_goal_involvements": {
+                "equal": 718
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 718
+              },
+              "recoveries": {
+                "snapshot_absent": 718
+              },
+              "tackles": {
+                "snapshot_absent": 718
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 718
+              }
+            }
+          },
+          {
+            "gw": 8,
+            "rows": 722,
+            "fields": {
+              "starts": {
+                "equal": 722
+              },
+              "expected_goals": {
+                "equal": 722
+              },
+              "expected_assists": {
+                "equal": 722
+              },
+              "expected_goals_conceded": {
+                "equal": 722
+              },
+              "expected_goal_involvements": {
+                "equal": 722
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 722
+              },
+              "recoveries": {
+                "snapshot_absent": 722
+              },
+              "tackles": {
+                "snapshot_absent": 722
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 722
+              }
+            }
+          },
+          {
+            "gw": 9,
+            "rows": 726,
+            "fields": {
+              "starts": {
+                "equal": 725,
+                "no_reference_rows": 1
+              },
+              "expected_goals": {
+                "equal": 725,
+                "no_reference_rows": 1
+              },
+              "expected_assists": {
+                "equal": 725,
+                "no_reference_rows": 1
+              },
+              "expected_goals_conceded": {
+                "equal": 725,
+                "no_reference_rows": 1
+              },
+              "expected_goal_involvements": {
+                "equal": 725,
+                "no_reference_rows": 1
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 726
+              },
+              "recoveries": {
+                "snapshot_absent": 726
+              },
+              "tackles": {
+                "snapshot_absent": 726
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 726
+              }
+            }
+          },
+          {
+            "gw": 10,
+            "rows": 730,
+            "fields": {
+              "starts": {
+                "equal": 730
+              },
+              "expected_goals": {
+                "equal": 730
+              },
+              "expected_assists": {
+                "equal": 730
+              },
+              "expected_goals_conceded": {
+                "equal": 730
+              },
+              "expected_goal_involvements": {
+                "equal": 730
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 730
+              },
+              "recoveries": {
+                "snapshot_absent": 730
+              },
+              "tackles": {
+                "snapshot_absent": 730
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 730
+              }
+            }
+          },
+          {
+            "gw": 11,
+            "rows": 731,
+            "fields": {
+              "starts": {
+                "equal": 731
+              },
+              "expected_goals": {
+                "equal": 731
+              },
+              "expected_assists": {
+                "equal": 731
+              },
+              "expected_goals_conceded": {
+                "equal": 731
+              },
+              "expected_goal_involvements": {
+                "equal": 731
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 731
+              },
+              "recoveries": {
+                "snapshot_absent": 731
+              },
+              "tackles": {
+                "snapshot_absent": 731
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 731
+              }
+            }
+          },
+          {
+            "gw": 12,
+            "rows": 733,
+            "fields": {
+              "starts": {
+                "equal": 733
+              },
+              "expected_goals": {
+                "equal": 733
+              },
+              "expected_assists": {
+                "equal": 733
+              },
+              "expected_goals_conceded": {
+                "equal": 733
+              },
+              "expected_goal_involvements": {
+                "equal": 733
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 733
+              },
+              "recoveries": {
+                "snapshot_absent": 733
+              },
+              "tackles": {
+                "snapshot_absent": 733
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 733
+              }
+            }
+          },
+          {
+            "gw": 13,
+            "rows": 743,
+            "fields": {
+              "starts": {
+                "equal": 743
+              },
+              "expected_goals": {
+                "equal": 743
+              },
+              "expected_assists": {
+                "equal": 743
+              },
+              "expected_goals_conceded": {
+                "equal": 743
+              },
+              "expected_goal_involvements": {
+                "equal": 743
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 743
+              },
+              "recoveries": {
+                "snapshot_absent": 743
+              },
+              "tackles": {
+                "snapshot_absent": 743
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 743
+              }
+            }
+          },
+          {
+            "gw": 14,
+            "rows": 747,
+            "fields": {
+              "starts": {
+                "equal": 747
+              },
+              "expected_goals": {
+                "equal": 747
+              },
+              "expected_assists": {
+                "equal": 747
+              },
+              "expected_goals_conceded": {
+                "equal": 747
+              },
+              "expected_goal_involvements": {
+                "equal": 747
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 747
+              },
+              "recoveries": {
+                "snapshot_absent": 747
+              },
+              "tackles": {
+                "snapshot_absent": 747
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 747
+              }
+            }
+          },
+          {
+            "gw": 15,
+            "rows": 753,
+            "fields": {
+              "starts": {
+                "equal": 753
+              },
+              "expected_goals": {
+                "equal": 753
+              },
+              "expected_assists": {
+                "equal": 753
+              },
+              "expected_goals_conceded": {
+                "equal": 753
+              },
+              "expected_goal_involvements": {
+                "equal": 753
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 753
+              },
+              "recoveries": {
+                "snapshot_absent": 753
+              },
+              "tackles": {
+                "snapshot_absent": 753
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 753
+              }
+            }
+          },
+          {
+            "gw": 16,
+            "rows": 757,
+            "fields": {
+              "starts": {
+                "equal": 757
+              },
+              "expected_goals": {
+                "equal": 757
+              },
+              "expected_assists": {
+                "equal": 757
+              },
+              "expected_goals_conceded": {
+                "equal": 757
+              },
+              "expected_goal_involvements": {
+                "equal": 757
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 757
+              },
+              "recoveries": {
+                "snapshot_absent": 757
+              },
+              "tackles": {
+                "snapshot_absent": 757
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 757
+              }
+            }
+          },
+          {
+            "gw": 17,
+            "rows": 758,
+            "fields": {
+              "starts": {
+                "equal": 758
+              },
+              "expected_goals": {
+                "equal": 758
+              },
+              "expected_assists": {
+                "equal": 758
+              },
+              "expected_goals_conceded": {
+                "equal": 758
+              },
+              "expected_goal_involvements": {
+                "equal": 758
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 758
+              },
+              "recoveries": {
+                "snapshot_absent": 758
+              },
+              "tackles": {
+                "snapshot_absent": 758
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 758
+              }
+            }
+          },
+          {
+            "gw": 18,
+            "rows": 765,
+            "fields": {
+              "starts": {
+                "equal": 765
+              },
+              "expected_goals": {
+                "equal": 765
+              },
+              "expected_assists": {
+                "equal": 765
+              },
+              "expected_goals_conceded": {
+                "equal": 765
+              },
+              "expected_goal_involvements": {
+                "equal": 765
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 765
+              },
+              "recoveries": {
+                "snapshot_absent": 765
+              },
+              "tackles": {
+                "snapshot_absent": 765
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 765
+              }
+            }
+          },
+          {
+            "gw": 19,
+            "rows": 769,
+            "fields": {
+              "starts": {
+                "equal": 769
+              },
+              "expected_goals": {
+                "equal": 769
+              },
+              "expected_assists": {
+                "equal": 769
+              },
+              "expected_goals_conceded": {
+                "equal": 769
+              },
+              "expected_goal_involvements": {
+                "equal": 769
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 769
+              },
+              "recoveries": {
+                "snapshot_absent": 769
+              },
+              "tackles": {
+                "snapshot_absent": 769
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 769
+              }
+            }
+          },
+          {
+            "gw": 20,
+            "rows": 771,
+            "fields": {
+              "starts": {
+                "equal": 771
+              },
+              "expected_goals": {
+                "equal": 771
+              },
+              "expected_assists": {
+                "equal": 771
+              },
+              "expected_goals_conceded": {
+                "equal": 771
+              },
+              "expected_goal_involvements": {
+                "equal": 771
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 771
+              },
+              "recoveries": {
+                "snapshot_absent": 771
+              },
+              "tackles": {
+                "snapshot_absent": 771
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 771
+              }
+            }
+          },
+          {
+            "gw": 21,
+            "rows": 775,
+            "fields": {
+              "starts": {
+                "equal": 773,
+                "no_reference_rows": 2
+              },
+              "expected_goals": {
+                "equal": 773,
+                "no_reference_rows": 2
+              },
+              "expected_assists": {
+                "equal": 773,
+                "no_reference_rows": 2
+              },
+              "expected_goals_conceded": {
+                "equal": 773,
+                "no_reference_rows": 2
+              },
+              "expected_goal_involvements": {
+                "equal": 773,
+                "no_reference_rows": 2
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 775
+              },
+              "recoveries": {
+                "snapshot_absent": 775
+              },
+              "tackles": {
+                "snapshot_absent": 775
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 775
+              }
+            }
+          },
+          {
+            "gw": 22,
+            "rows": 790,
+            "fields": {
+              "starts": {
+                "equal": 787,
+                "no_reference_rows": 3
+              },
+              "expected_goals": {
+                "equal": 787,
+                "no_reference_rows": 3
+              },
+              "expected_assists": {
+                "equal": 787,
+                "no_reference_rows": 3
+              },
+              "expected_goals_conceded": {
+                "equal": 787,
+                "no_reference_rows": 3
+              },
+              "expected_goal_involvements": {
+                "equal": 787,
+                "no_reference_rows": 3
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 790
+              },
+              "recoveries": {
+                "snapshot_absent": 790
+              },
+              "tackles": {
+                "snapshot_absent": 790
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 790
+              }
+            }
+          },
+          {
+            "gw": 23,
+            "rows": 808,
+            "fields": {
+              "starts": {
+                "equal": 799,
+                "no_reference_rows": 9
+              },
+              "expected_goals": {
+                "equal": 799,
+                "no_reference_rows": 9
+              },
+              "expected_assists": {
+                "equal": 799,
+                "no_reference_rows": 9
+              },
+              "expected_goals_conceded": {
+                "equal": 799,
+                "no_reference_rows": 9
+              },
+              "expected_goal_involvements": {
+                "equal": 799,
+                "no_reference_rows": 9
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 808
+              },
+              "recoveries": {
+                "snapshot_absent": 808
+              },
+              "tackles": {
+                "snapshot_absent": 808
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 808
+              }
+            }
+          },
+          {
+            "gw": 24,
+            "rows": 809,
+            "fields": {
+              "starts": {
+                "equal": 809
+              },
+              "expected_goals": {
+                "equal": 809
+              },
+              "expected_assists": {
+                "equal": 809
+              },
+              "expected_goals_conceded": {
+                "equal": 809
+              },
+              "expected_goal_involvements": {
+                "equal": 809
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 809
+              },
+              "recoveries": {
+                "snapshot_absent": 809
+              },
+              "tackles": {
+                "snapshot_absent": 809
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 809
+              }
+            }
+          },
+          {
+            "gw": 25,
+            "rows": 815,
+            "fields": {
+              "starts": {
+                "equal": 814,
+                "no_reference_rows": 1
+              },
+              "expected_goals": {
+                "equal": 814,
+                "no_reference_rows": 1
+              },
+              "expected_assists": {
+                "equal": 814,
+                "no_reference_rows": 1
+              },
+              "expected_goals_conceded": {
+                "equal": 814,
+                "no_reference_rows": 1
+              },
+              "expected_goal_involvements": {
+                "equal": 814,
+                "no_reference_rows": 1
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 815
+              },
+              "recoveries": {
+                "snapshot_absent": 815
+              },
+              "tackles": {
+                "snapshot_absent": 815
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 815
+              }
+            }
+          },
+          {
+            "gw": 26,
+            "rows": 823,
+            "fields": {
+              "starts": {
+                "equal": 823
+              },
+              "expected_goals": {
+                "equal": 823
+              },
+              "expected_assists": {
+                "equal": 823
+              },
+              "expected_goals_conceded": {
+                "equal": 823
+              },
+              "expected_goal_involvements": {
+                "equal": 823
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 823
+              },
+              "recoveries": {
+                "snapshot_absent": 823
+              },
+              "tackles": {
+                "snapshot_absent": 823
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 823
+              }
+            }
+          },
+          {
+            "gw": 27,
+            "rows": 828,
+            "fields": {
+              "starts": {
+                "equal": 828
+              },
+              "expected_goals": {
+                "equal": 828
+              },
+              "expected_assists": {
+                "equal": 828
+              },
+              "expected_goals_conceded": {
+                "equal": 828
+              },
+              "expected_goal_involvements": {
+                "equal": 828
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 828
+              },
+              "recoveries": {
+                "snapshot_absent": 828
+              },
+              "tackles": {
+                "snapshot_absent": 828
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 828
+              }
+            }
+          },
+          {
+            "gw": 28,
+            "rows": 832,
+            "fields": {
+              "starts": {
+                "equal": 832
+              },
+              "expected_goals": {
+                "equal": 832
+              },
+              "expected_assists": {
+                "equal": 832
+              },
+              "expected_goals_conceded": {
+                "equal": 832
+              },
+              "expected_goal_involvements": {
+                "equal": 832
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 832
+              },
+              "recoveries": {
+                "snapshot_absent": 832
+              },
+              "tackles": {
+                "snapshot_absent": 832
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 832
+              }
+            }
+          },
+          {
+            "gw": 29,
+            "rows": 838,
+            "fields": {
+              "starts": {
+                "equal": 838
+              },
+              "expected_goals": {
+                "equal": 838
+              },
+              "expected_assists": {
+                "equal": 838
+              },
+              "expected_goals_conceded": {
+                "equal": 838
+              },
+              "expected_goal_involvements": {
+                "equal": 838
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 838
+              },
+              "recoveries": {
+                "snapshot_absent": 838
+              },
+              "tackles": {
+                "snapshot_absent": 838
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 838
+              }
+            }
+          },
+          {
+            "gw": 30,
+            "rows": 838,
+            "fields": {
+              "starts": {
+                "equal": 838
+              },
+              "expected_goals": {
+                "equal": 838
+              },
+              "expected_assists": {
+                "equal": 838
+              },
+              "expected_goals_conceded": {
+                "equal": 838
+              },
+              "expected_goal_involvements": {
+                "equal": 838
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 838
+              },
+              "recoveries": {
+                "snapshot_absent": 838
+              },
+              "tackles": {
+                "snapshot_absent": 838
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 838
+              }
+            }
+          },
+          {
+            "gw": 31,
+            "rows": 842,
+            "fields": {
+              "starts": {
+                "equal": 842
+              },
+              "expected_goals": {
+                "equal": 842
+              },
+              "expected_assists": {
+                "equal": 842
+              },
+              "expected_goals_conceded": {
+                "equal": 842
+              },
+              "expected_goal_involvements": {
+                "equal": 842
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 842
+              },
+              "recoveries": {
+                "snapshot_absent": 842
+              },
+              "tackles": {
+                "snapshot_absent": 842
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 842
+              }
+            }
+          },
+          {
+            "gw": 32,
+            "rows": 844,
+            "fields": {
+              "starts": {
+                "equal": 844
+              },
+              "expected_goals": {
+                "equal": 844
+              },
+              "expected_assists": {
+                "equal": 844
+              },
+              "expected_goals_conceded": {
+                "equal": 844
+              },
+              "expected_goal_involvements": {
+                "equal": 844
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 844
+              },
+              "recoveries": {
+                "snapshot_absent": 844
+              },
+              "tackles": {
+                "snapshot_absent": 844
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 844
+              }
+            }
+          },
+          {
+            "gw": 33,
+            "rows": 846,
+            "fields": {
+              "starts": {
+                "equal": 846
+              },
+              "expected_goals": {
+                "equal": 846
+              },
+              "expected_assists": {
+                "equal": 846
+              },
+              "expected_goals_conceded": {
+                "equal": 846
+              },
+              "expected_goal_involvements": {
+                "equal": 846
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 846
+              },
+              "recoveries": {
+                "snapshot_absent": 846
+              },
+              "tackles": {
+                "snapshot_absent": 846
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 846
+              }
+            }
+          },
+          {
+            "gw": 34,
+            "rows": 851,
+            "fields": {
+              "starts": {
+                "equal": 851
+              },
+              "expected_goals": {
+                "equal": 851
+              },
+              "expected_assists": {
+                "equal": 851
+              },
+              "expected_goals_conceded": {
+                "equal": 851
+              },
+              "expected_goal_involvements": {
+                "equal": 851
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 851
+              },
+              "recoveries": {
+                "snapshot_absent": 851
+              },
+              "tackles": {
+                "snapshot_absent": 851
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 851
+              }
+            }
+          },
+          {
+            "gw": 35,
+            "rows": 856,
+            "fields": {
+              "starts": {
+                "equal": 856
+              },
+              "expected_goals": {
+                "equal": 856
+              },
+              "expected_assists": {
+                "equal": 856
+              },
+              "expected_goals_conceded": {
+                "equal": 856
+              },
+              "expected_goal_involvements": {
+                "equal": 856
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 856
+              },
+              "recoveries": {
+                "snapshot_absent": 856
+              },
+              "tackles": {
+                "snapshot_absent": 856
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 856
+              }
+            }
+          },
+          {
+            "gw": 36,
+            "rows": 859,
+            "fields": {
+              "starts": {
+                "equal": 859
+              },
+              "expected_goals": {
+                "equal": 859
+              },
+              "expected_assists": {
+                "equal": 859
+              },
+              "expected_goals_conceded": {
+                "equal": 859
+              },
+              "expected_goal_involvements": {
+                "equal": 859
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 859
+              },
+              "recoveries": {
+                "snapshot_absent": 859
+              },
+              "tackles": {
+                "snapshot_absent": 859
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 859
+              }
+            }
+          },
+          {
+            "gw": 37,
+            "rows": 859,
+            "fields": {
+              "starts": {
+                "equal": 859
+              },
+              "expected_goals": {
+                "equal": 859
+              },
+              "expected_assists": {
+                "equal": 859
+              },
+              "expected_goals_conceded": {
+                "equal": 859
+              },
+              "expected_goal_involvements": {
+                "equal": 859
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 859
+              },
+              "recoveries": {
+                "snapshot_absent": 859
+              },
+              "tackles": {
+                "snapshot_absent": 859
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 859
+              }
+            }
+          },
+          {
+            "gw": 38,
+            "rows": 861,
+            "fields": {
+              "starts": {
+                "equal": 861
+              },
+              "expected_goals": {
+                "equal": 861
+              },
+              "expected_assists": {
+                "equal": 861
+              },
+              "expected_goals_conceded": {
+                "equal": 861
+              },
+              "expected_goal_involvements": {
+                "equal": 861
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 861
+              },
+              "recoveries": {
+                "snapshot_absent": 861
+              },
+              "tackles": {
+                "snapshot_absent": 861
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 861
+              }
+            }
+          }
+        ]
+      },
+      "2024-25": {
+        "status": "compared",
+        "windows": [
+          {
+            "gw": 2,
+            "rows": 625,
+            "fields": {
+              "starts": {
+                "equal": 616,
+                "no_reference_rows": 9
+              },
+              "expected_goals": {
+                "equal": 616,
+                "no_reference_rows": 9
+              },
+              "expected_assists": {
+                "equal": 616,
+                "no_reference_rows": 9
+              },
+              "expected_goals_conceded": {
+                "equal": 616,
+                "no_reference_rows": 9
+              },
+              "expected_goal_involvements": {
+                "equal": 616,
+                "no_reference_rows": 9
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 625
+              },
+              "recoveries": {
+                "snapshot_absent": 625
+              },
+              "tackles": {
+                "snapshot_absent": 625
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 625
+              }
+            }
+          },
+          {
+            "gw": 3,
+            "rows": 637,
+            "fields": {
+              "starts": {
+                "equal": 627,
+                "no_reference_rows": 10
+              },
+              "expected_goals": {
+                "equal": 627,
+                "no_reference_rows": 10
+              },
+              "expected_assists": {
+                "equal": 627,
+                "no_reference_rows": 10
+              },
+              "expected_goals_conceded": {
+                "equal": 627,
+                "no_reference_rows": 10
+              },
+              "expected_goal_involvements": {
+                "equal": 627,
+                "no_reference_rows": 10
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 637
+              },
+              "recoveries": {
+                "snapshot_absent": 637
+              },
+              "tackles": {
+                "snapshot_absent": 637
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 637
+              }
+            }
+          },
+          {
+            "gw": 4,
+            "rows": 655,
+            "fields": {
+              "starts": {
+                "equal": 648,
+                "no_reference_rows": 7
+              },
+              "expected_goals": {
+                "equal": 648,
+                "no_reference_rows": 7
+              },
+              "expected_assists": {
+                "equal": 648,
+                "no_reference_rows": 7
+              },
+              "expected_goals_conceded": {
+                "equal": 648,
+                "no_reference_rows": 7
+              },
+              "expected_goal_involvements": {
+                "equal": 648,
+                "no_reference_rows": 7
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 655
+              },
+              "recoveries": {
+                "snapshot_absent": 655
+              },
+              "tackles": {
+                "snapshot_absent": 655
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 655
+              }
+            }
+          },
+          {
+            "gw": 5,
+            "rows": 659,
+            "fields": {
+              "starts": {
+                "equal": 659
+              },
+              "expected_goals": {
+                "equal": 659
+              },
+              "expected_assists": {
+                "equal": 659
+              },
+              "expected_goals_conceded": {
+                "equal": 659
+              },
+              "expected_goal_involvements": {
+                "equal": 659
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 659
+              },
+              "recoveries": {
+                "snapshot_absent": 659
+              },
+              "tackles": {
+                "snapshot_absent": 659
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 659
+              }
+            }
+          },
+          {
+            "gw": 6,
+            "rows": 661,
+            "fields": {
+              "starts": {
+                "equal": 661
+              },
+              "expected_goals": {
+                "equal": 661
+              },
+              "expected_assists": {
+                "equal": 661
+              },
+              "expected_goals_conceded": {
+                "equal": 661
+              },
+              "expected_goal_involvements": {
+                "equal": 661
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 661
+              },
+              "recoveries": {
+                "snapshot_absent": 661
+              },
+              "tackles": {
+                "snapshot_absent": 661
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 661
+              }
+            }
+          },
+          {
+            "gw": 7,
+            "rows": 664,
+            "fields": {
+              "starts": {
+                "equal": 664
+              },
+              "expected_goals": {
+                "equal": 664
+              },
+              "expected_assists": {
+                "equal": 664
+              },
+              "expected_goals_conceded": {
+                "equal": 664
+              },
+              "expected_goal_involvements": {
+                "equal": 664
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 664
+              },
+              "recoveries": {
+                "snapshot_absent": 664
+              },
+              "tackles": {
+                "snapshot_absent": 664
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 664
+              }
+            }
+          },
+          {
+            "gw": 8,
+            "rows": 666,
+            "fields": {
+              "starts": {
+                "equal": 666
+              },
+              "expected_goals": {
+                "equal": 666
+              },
+              "expected_assists": {
+                "equal": 666
+              },
+              "expected_goals_conceded": {
+                "equal": 666
+              },
+              "expected_goal_involvements": {
+                "equal": 666
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 666
+              },
+              "recoveries": {
+                "snapshot_absent": 666
+              },
+              "tackles": {
+                "snapshot_absent": 666
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 666
+              }
+            }
+          },
+          {
+            "gw": 9,
+            "rows": 667,
+            "fields": {
+              "starts": {
+                "equal": 667
+              },
+              "expected_goals": {
+                "equal": 667
+              },
+              "expected_assists": {
+                "equal": 667
+              },
+              "expected_goals_conceded": {
+                "equal": 667
+              },
+              "expected_goal_involvements": {
+                "equal": 667
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 667
+              },
+              "recoveries": {
+                "snapshot_absent": 667
+              },
+              "tackles": {
+                "snapshot_absent": 667
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 667
+              }
+            }
+          },
+          {
+            "gw": 10,
+            "rows": 670,
+            "fields": {
+              "starts": {
+                "equal": 670
+              },
+              "expected_goals": {
+                "equal": 670
+              },
+              "expected_assists": {
+                "equal": 670
+              },
+              "expected_goals_conceded": {
+                "equal": 670
+              },
+              "expected_goal_involvements": {
+                "equal": 670
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 670
+              },
+              "recoveries": {
+                "snapshot_absent": 670
+              },
+              "tackles": {
+                "snapshot_absent": 670
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 670
+              }
+            }
+          },
+          {
+            "gw": 11,
+            "rows": 674,
+            "fields": {
+              "starts": {
+                "equal": 674
+              },
+              "expected_goals": {
+                "equal": 674
+              },
+              "expected_assists": {
+                "equal": 674
+              },
+              "expected_goals_conceded": {
+                "equal": 674
+              },
+              "expected_goal_involvements": {
+                "equal": 674
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 674
+              },
+              "recoveries": {
+                "snapshot_absent": 674
+              },
+              "tackles": {
+                "snapshot_absent": 674
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 674
+              }
+            }
+          },
+          {
+            "gw": 12,
+            "rows": 678,
+            "fields": {
+              "starts": {
+                "equal": 678
+              },
+              "expected_goals": {
+                "equal": 678
+              },
+              "expected_assists": {
+                "equal": 678
+              },
+              "expected_goals_conceded": {
+                "equal": 678
+              },
+              "expected_goal_involvements": {
+                "equal": 678
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 678
+              },
+              "recoveries": {
+                "snapshot_absent": 678
+              },
+              "tackles": {
+                "snapshot_absent": 678
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 678
+              }
+            }
+          },
+          {
+            "gw": 13,
+            "rows": 684,
+            "fields": {
+              "starts": {
+                "equal": 684
+              },
+              "expected_goals": {
+                "equal": 684
+              },
+              "expected_assists": {
+                "equal": 684
+              },
+              "expected_goals_conceded": {
+                "equal": 684
+              },
+              "expected_goal_involvements": {
+                "equal": 684
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 684
+              },
+              "recoveries": {
+                "snapshot_absent": 684
+              },
+              "tackles": {
+                "snapshot_absent": 684
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 684
+              }
+            }
+          },
+          {
+            "gw": 14,
+            "rows": 690,
+            "fields": {
+              "starts": {
+                "equal": 690
+              },
+              "expected_goals": {
+                "equal": 690
+              },
+              "expected_assists": {
+                "equal": 690
+              },
+              "expected_goals_conceded": {
+                "equal": 690
+              },
+              "expected_goal_involvements": {
+                "equal": 690
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 690
+              },
+              "recoveries": {
+                "snapshot_absent": 690
+              },
+              "tackles": {
+                "snapshot_absent": 690
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 690
+              }
+            }
+          },
+          {
+            "gw": 15,
+            "rows": 693,
+            "fields": {
+              "starts": {
+                "equal": 693
+              },
+              "expected_goals": {
+                "equal": 693
+              },
+              "expected_assists": {
+                "equal": 693
+              },
+              "expected_goals_conceded": {
+                "equal": 693
+              },
+              "expected_goal_involvements": {
+                "equal": 693
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 693
+              },
+              "recoveries": {
+                "snapshot_absent": 693
+              },
+              "tackles": {
+                "snapshot_absent": 693
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 693
+              }
+            }
+          },
+          {
+            "gw": 16,
+            "rows": 693,
+            "fields": {
+              "starts": {
+                "equal": 693
+              },
+              "expected_goals": {
+                "equal": 693
+              },
+              "expected_assists": {
+                "equal": 693
+              },
+              "expected_goals_conceded": {
+                "equal": 693
+              },
+              "expected_goal_involvements": {
+                "equal": 693
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 693
+              },
+              "recoveries": {
+                "snapshot_absent": 693
+              },
+              "tackles": {
+                "snapshot_absent": 693
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 693
+              }
+            }
+          },
+          {
+            "gw": 17,
+            "rows": 701,
+            "fields": {
+              "starts": {
+                "equal": 701
+              },
+              "expected_goals": {
+                "equal": 701
+              },
+              "expected_assists": {
+                "equal": 701
+              },
+              "expected_goals_conceded": {
+                "equal": 701
+              },
+              "expected_goal_involvements": {
+                "equal": 701
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 701
+              },
+              "recoveries": {
+                "snapshot_absent": 701
+              },
+              "tackles": {
+                "snapshot_absent": 701
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 701
+              }
+            }
+          },
+          {
+            "gw": 18,
+            "rows": 701,
+            "fields": {
+              "starts": {
+                "equal": 701
+              },
+              "expected_goals": {
+                "equal": 701
+              },
+              "expected_assists": {
+                "equal": 701
+              },
+              "expected_goals_conceded": {
+                "equal": 701
+              },
+              "expected_goal_involvements": {
+                "equal": 701
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 701
+              },
+              "recoveries": {
+                "snapshot_absent": 701
+              },
+              "tackles": {
+                "snapshot_absent": 701
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 701
+              }
+            }
+          },
+          {
+            "gw": 19,
+            "rows": 705,
+            "fields": {
+              "starts": {
+                "equal": 705
+              },
+              "expected_goals": {
+                "equal": 705
+              },
+              "expected_assists": {
+                "equal": 705
+              },
+              "expected_goals_conceded": {
+                "equal": 705
+              },
+              "expected_goal_involvements": {
+                "equal": 705
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 705
+              },
+              "recoveries": {
+                "snapshot_absent": 705
+              },
+              "tackles": {
+                "snapshot_absent": 705
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 705
+              }
+            }
+          },
+          {
+            "gw": 20,
+            "rows": 709,
+            "fields": {
+              "starts": {
+                "equal": 709
+              },
+              "expected_goals": {
+                "equal": 709
+              },
+              "expected_assists": {
+                "equal": 709
+              },
+              "expected_goals_conceded": {
+                "equal": 709
+              },
+              "expected_goal_involvements": {
+                "equal": 709
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 709
+              },
+              "recoveries": {
+                "snapshot_absent": 709
+              },
+              "tackles": {
+                "snapshot_absent": 709
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 709
+              }
+            }
+          },
+          {
+            "gw": 21,
+            "rows": 718,
+            "fields": {
+              "starts": {
+                "equal": 711,
+                "no_reference_rows": 7
+              },
+              "expected_goals": {
+                "equal": 711,
+                "no_reference_rows": 7
+              },
+              "expected_assists": {
+                "equal": 711,
+                "no_reference_rows": 7
+              },
+              "expected_goals_conceded": {
+                "equal": 711,
+                "no_reference_rows": 7
+              },
+              "expected_goal_involvements": {
+                "equal": 711,
+                "no_reference_rows": 7
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 718
+              },
+              "recoveries": {
+                "snapshot_absent": 718
+              },
+              "tackles": {
+                "snapshot_absent": 718
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 718
+              }
+            }
+          },
+          {
+            "gw": 22,
+            "rows": 726,
+            "fields": {
+              "starts": {
+                "equal": 724,
+                "no_reference_rows": 2
+              },
+              "expected_goals": {
+                "equal": 724,
+                "no_reference_rows": 2
+              },
+              "expected_assists": {
+                "equal": 724,
+                "no_reference_rows": 2
+              },
+              "expected_goals_conceded": {
+                "equal": 724,
+                "no_reference_rows": 2
+              },
+              "expected_goal_involvements": {
+                "equal": 724,
+                "no_reference_rows": 2
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 726
+              },
+              "recoveries": {
+                "snapshot_absent": 726
+              },
+              "tackles": {
+                "snapshot_absent": 726
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 726
+              }
+            }
+          },
+          {
+            "gw": 23,
+            "rows": 735,
+            "fields": {
+              "starts": {
+                "equal": 729,
+                "no_reference_rows": 6
+              },
+              "expected_goals": {
+                "equal": 729,
+                "no_reference_rows": 6
+              },
+              "expected_assists": {
+                "equal": 729,
+                "no_reference_rows": 6
+              },
+              "expected_goals_conceded": {
+                "equal": 729,
+                "no_reference_rows": 6
+              },
+              "expected_goal_involvements": {
+                "equal": 729,
+                "no_reference_rows": 6
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 735
+              },
+              "recoveries": {
+                "snapshot_absent": 735
+              },
+              "tackles": {
+                "snapshot_absent": 735
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 735
+              }
+            }
+          },
+          {
+            "gw": 24,
+            "rows": 737,
+            "fields": {
+              "starts": {
+                "equal": 736,
+                "no_reference_rows": 1
+              },
+              "expected_goals": {
+                "equal": 736,
+                "no_reference_rows": 1
+              },
+              "expected_assists": {
+                "equal": 736,
+                "no_reference_rows": 1
+              },
+              "expected_goals_conceded": {
+                "equal": 736,
+                "no_reference_rows": 1
+              },
+              "expected_goal_involvements": {
+                "equal": 736,
+                "no_reference_rows": 1
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 737
+              },
+              "recoveries": {
+                "snapshot_absent": 737
+              },
+              "tackles": {
+                "snapshot_absent": 737
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 737
+              }
+            }
+          },
+          {
+            "gw": 25,
+            "rows": 753,
+            "fields": {
+              "starts": {
+                "equal": 742,
+                "no_reference_rows": 11
+              },
+              "expected_goals": {
+                "equal": 742,
+                "no_reference_rows": 11
+              },
+              "expected_assists": {
+                "equal": 741,
+                "no_reference_rows": 11,
+                "within_rounding_bound": 1
+              },
+              "expected_goals_conceded": {
+                "equal": 741,
+                "no_reference_rows": 11,
+                "outside_rounding_bound": 1
+              },
+              "expected_goal_involvements": {
+                "equal": 741,
+                "no_reference_rows": 11,
+                "within_rounding_bound": 1
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 753
+              },
+              "recoveries": {
+                "snapshot_absent": 753
+              },
+              "tackles": {
+                "snapshot_absent": 753
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 753
+              }
+            }
+          },
+          {
+            "gw": 26,
+            "rows": 759,
+            "fields": {
+              "starts": {
+                "equal": 759
+              },
+              "expected_goals": {
+                "equal": 759
+              },
+              "expected_assists": {
+                "equal": 758,
+                "within_rounding_bound": 1
+              },
+              "expected_goals_conceded": {
+                "equal": 758,
+                "outside_rounding_bound": 1
+              },
+              "expected_goal_involvements": {
+                "equal": 758,
+                "within_rounding_bound": 1
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 759
+              },
+              "recoveries": {
+                "snapshot_absent": 759
+              },
+              "tackles": {
+                "snapshot_absent": 759
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 759
+              }
+            }
+          },
+          {
+            "gw": 27,
+            "rows": 763,
+            "fields": {
+              "starts": {
+                "equal": 763
+              },
+              "expected_goals": {
+                "equal": 763
+              },
+              "expected_assists": {
+                "equal": 762,
+                "within_rounding_bound": 1
+              },
+              "expected_goals_conceded": {
+                "equal": 762,
+                "outside_rounding_bound": 1
+              },
+              "expected_goal_involvements": {
+                "equal": 762,
+                "within_rounding_bound": 1
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 763
+              },
+              "recoveries": {
+                "snapshot_absent": 763
+              },
+              "tackles": {
+                "snapshot_absent": 763
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 763
+              }
+            }
+          },
+          {
+            "gw": 28,
+            "rows": 765,
+            "fields": {
+              "starts": {
+                "equal": 764,
+                "no_reference_rows": 1
+              },
+              "expected_goals": {
+                "equal": 764,
+                "no_reference_rows": 1
+              },
+              "expected_assists": {
+                "equal": 764,
+                "no_reference_rows": 1
+              },
+              "expected_goals_conceded": {
+                "equal": 764,
+                "no_reference_rows": 1
+              },
+              "expected_goal_involvements": {
+                "equal": 764,
+                "no_reference_rows": 1
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 765
+              },
+              "recoveries": {
+                "snapshot_absent": 765
+              },
+              "tackles": {
+                "snapshot_absent": 765
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 765
+              }
+            }
+          },
+          {
+            "gw": 29,
+            "rows": 769,
+            "fields": {
+              "starts": {
+                "equal": 769
+              },
+              "expected_goals": {
+                "equal": 769
+              },
+              "expected_assists": {
+                "equal": 769
+              },
+              "expected_goals_conceded": {
+                "equal": 769
+              },
+              "expected_goal_involvements": {
+                "equal": 769
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 769
+              },
+              "recoveries": {
+                "snapshot_absent": 769
+              },
+              "tackles": {
+                "snapshot_absent": 769
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 769
+              }
+            }
+          },
+          {
+            "gw": 30,
+            "rows": 769,
+            "fields": {
+              "starts": {
+                "equal": 769
+              },
+              "expected_goals": {
+                "equal": 769
+              },
+              "expected_assists": {
+                "equal": 769
+              },
+              "expected_goals_conceded": {
+                "equal": 769
+              },
+              "expected_goal_involvements": {
+                "equal": 769
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 769
+              },
+              "recoveries": {
+                "snapshot_absent": 769
+              },
+              "tackles": {
+                "snapshot_absent": 769
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 769
+              }
+            }
+          },
+          {
+            "gw": 31,
+            "rows": 771,
+            "fields": {
+              "starts": {
+                "equal": 771
+              },
+              "expected_goals": {
+                "equal": 771
+              },
+              "expected_assists": {
+                "equal": 771
+              },
+              "expected_goals_conceded": {
+                "equal": 771
+              },
+              "expected_goal_involvements": {
+                "equal": 771
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 771
+              },
+              "recoveries": {
+                "snapshot_absent": 771
+              },
+              "tackles": {
+                "snapshot_absent": 771
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 771
+              }
+            }
+          },
+          {
+            "gw": 32,
+            "rows": 772,
+            "fields": {
+              "starts": {
+                "equal": 772
+              },
+              "expected_goals": {
+                "equal": 772
+              },
+              "expected_assists": {
+                "equal": 772
+              },
+              "expected_goals_conceded": {
+                "equal": 772
+              },
+              "expected_goal_involvements": {
+                "equal": 772
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 772
+              },
+              "recoveries": {
+                "snapshot_absent": 772
+              },
+              "tackles": {
+                "snapshot_absent": 772
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 772
+              }
+            }
+          },
+          {
+            "gw": 33,
+            "rows": 778,
+            "fields": {
+              "starts": {
+                "equal": 778
+              },
+              "expected_goals": {
+                "equal": 778
+              },
+              "expected_assists": {
+                "equal": 778
+              },
+              "expected_goals_conceded": {
+                "equal": 778
+              },
+              "expected_goal_involvements": {
+                "equal": 778
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 778
+              },
+              "recoveries": {
+                "snapshot_absent": 778
+              },
+              "tackles": {
+                "snapshot_absent": 778
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 778
+              }
+            }
+          },
+          {
+            "gw": 34,
+            "rows": 779,
+            "fields": {
+              "starts": {
+                "equal": 779
+              },
+              "expected_goals": {
+                "equal": 779
+              },
+              "expected_assists": {
+                "equal": 779
+              },
+              "expected_goals_conceded": {
+                "equal": 779
+              },
+              "expected_goal_involvements": {
+                "equal": 779
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 779
+              },
+              "recoveries": {
+                "snapshot_absent": 779
+              },
+              "tackles": {
+                "snapshot_absent": 779
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 779
+              }
+            }
+          },
+          {
+            "gw": 35,
+            "rows": 780,
+            "fields": {
+              "starts": {
+                "equal": 780
+              },
+              "expected_goals": {
+                "equal": 780
+              },
+              "expected_assists": {
+                "equal": 780
+              },
+              "expected_goals_conceded": {
+                "equal": 780
+              },
+              "expected_goal_involvements": {
+                "equal": 780
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 780
+              },
+              "recoveries": {
+                "snapshot_absent": 780
+              },
+              "tackles": {
+                "snapshot_absent": 780
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 780
+              }
+            }
+          },
+          {
+            "gw": 36,
+            "rows": 781,
+            "fields": {
+              "starts": {
+                "equal": 781
+              },
+              "expected_goals": {
+                "equal": 781
+              },
+              "expected_assists": {
+                "equal": 781
+              },
+              "expected_goals_conceded": {
+                "equal": 781
+              },
+              "expected_goal_involvements": {
+                "equal": 781
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 781
+              },
+              "recoveries": {
+                "snapshot_absent": 781
+              },
+              "tackles": {
+                "snapshot_absent": 781
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 781
+              }
+            }
+          },
+          {
+            "gw": 37,
+            "rows": 781,
+            "fields": {
+              "starts": {
+                "equal": 781
+              },
+              "expected_goals": {
+                "equal": 781
+              },
+              "expected_assists": {
+                "equal": 781
+              },
+              "expected_goals_conceded": {
+                "equal": 781
+              },
+              "expected_goal_involvements": {
+                "equal": 781
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 781
+              },
+              "recoveries": {
+                "snapshot_absent": 781
+              },
+              "tackles": {
+                "snapshot_absent": 781
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 781
+              }
+            }
+          },
+          {
+            "gw": 38,
+            "rows": 781,
+            "fields": {
+              "starts": {
+                "equal": 781
+              },
+              "expected_goals": {
+                "equal": 781
+              },
+              "expected_assists": {
+                "equal": 781
+              },
+              "expected_goals_conceded": {
+                "equal": 781
+              },
+              "expected_goal_involvements": {
+                "equal": 781
+              },
+              "defensive_contribution": {
+                "snapshot_absent": 781
+              },
+              "recoveries": {
+                "snapshot_absent": 781
+              },
+              "tackles": {
+                "snapshot_absent": 781
+              },
+              "clearances_blocks_interceptions": {
+                "snapshot_absent": 781
+              }
+            }
+          }
+        ]
+      },
+      "2025-26": {
+        "status": "compared",
+        "windows": [
+          {
+            "gw": 2,
+            "rows": 698,
+            "fields": {
+              "starts": {
+                "equal": 690,
+                "no_reference_rows": 8
+              },
+              "expected_goals": {
+                "equal": 690,
+                "no_reference_rows": 8
+              },
+              "expected_assists": {
+                "equal": 690,
+                "no_reference_rows": 8
+              },
+              "expected_goals_conceded": {
+                "equal": 690,
+                "no_reference_rows": 8
+              },
+              "expected_goal_involvements": {
+                "equal": 690,
+                "no_reference_rows": 8
+              },
+              "defensive_contribution": {
+                "equal": 690,
+                "no_reference_rows": 8
+              },
+              "recoveries": {
+                "equal": 690,
+                "no_reference_rows": 8
+              },
+              "tackles": {
+                "equal": 690,
+                "no_reference_rows": 8
+              },
+              "clearances_blocks_interceptions": {
+                "equal": 690,
+                "no_reference_rows": 8
+              }
+            }
+          },
+          {
+            "gw": 3,
+            "rows": 709,
+            "fields": {
+              "starts": {
+                "equal": 705,
+                "no_reference_rows": 4
+              },
+              "expected_goals": {
+                "equal": 705,
+                "no_reference_rows": 4
+              },
+              "expected_assists": {
+                "equal": 705,
+                "no_reference_rows": 4
+              },
+              "expected_goals_conceded": {
+                "equal": 705,
+                "no_reference_rows": 4
+              },
+              "expected_goal_involvements": {
+                "equal": 705,
+                "no_reference_rows": 4
+              },
+              "defensive_contribution": {
+                "equal": 705,
+                "no_reference_rows": 4
+              },
+              "recoveries": {
+                "equal": 705,
+                "no_reference_rows": 4
+              },
+              "tackles": {
+                "equal": 705,
+                "no_reference_rows": 4
+              },
+              "clearances_blocks_interceptions": {
+                "equal": 705,
+                "no_reference_rows": 4
+              }
+            }
+          },
+          {
+            "gw": 4,
+            "rows": 738,
+            "fields": {
+              "starts": {
+                "equal": 712,
+                "no_reference_rows": 26
+              },
+              "expected_goals": {
+                "equal": 712,
+                "no_reference_rows": 26
+              },
+              "expected_assists": {
+                "equal": 712,
+                "no_reference_rows": 26
+              },
+              "expected_goals_conceded": {
+                "equal": 712,
+                "no_reference_rows": 26
+              },
+              "expected_goal_involvements": {
+                "equal": 712,
+                "no_reference_rows": 26
+              },
+              "defensive_contribution": {
+                "equal": 712,
+                "no_reference_rows": 26
+              },
+              "recoveries": {
+                "equal": 712,
+                "no_reference_rows": 26
+              },
+              "tackles": {
+                "equal": 712,
+                "no_reference_rows": 26
+              },
+              "clearances_blocks_interceptions": {
+                "equal": 712,
+                "no_reference_rows": 26
+              }
+            }
+          },
+          {
+            "gw": 5,
+            "rows": 740,
+            "fields": {
+              "starts": {
+                "equal": 740
+              },
+              "expected_goals": {
+                "equal": 740
+              },
+              "expected_assists": {
+                "equal": 740
+              },
+              "expected_goals_conceded": {
+                "equal": 740
+              },
+              "expected_goal_involvements": {
+                "equal": 740
+              },
+              "defensive_contribution": {
+                "equal": 740
+              },
+              "recoveries": {
+                "equal": 740
+              },
+              "tackles": {
+                "equal": 740
+              },
+              "clearances_blocks_interceptions": {
+                "equal": 740
+              }
+            }
+          },
+          {
+            "gw": 6,
+            "rows": 741,
+            "fields": {
+              "starts": {
+                "equal": 741
+              },
+              "expected_goals": {
+                "equal": 741
+              },
+              "expected_assists": {
+                "equal": 741
+              },
+              "expected_goals_conceded": {
+                "equal": 741
+              },
+              "expected_goal_involvements": {
+                "equal": 741
+              },
+              "defensive_contribution": {
+                "equal": 741
+              },
+              "recoveries": {
+                "equal": 741
+              },
+              "tackles": {
+                "equal": 741
+              },
+              "clearances_blocks_interceptions": {
+                "equal": 741
+              }
+            }
+          },
+          {
+            "gw": 7,
+            "rows": 742,
+            "fields": {
+              "starts": {
+                "equal": 742
+              },
+              "expected_goals": {
+                "equal": 742
+              },
+              "expected_assists": {
+                "equal": 742
+              },
+              "expected_goals_conceded": {
+                "equal": 742
+              },
+              "expected_goal_involvements": {
+                "equal": 742
+              },
+              "defensive_contribution": {
+                "equal": 742
+              },
+              "recoveries": {
+                "equal": 742
+              },
+              "tackles": {
+                "equal": 742
+              },
+              "clearances_blocks_interceptions": {
+                "equal": 742
+              }
+            }
+          },
+          {
+            "gw": 8,
+            "rows": 743,
+            "fields": {
+              "starts": {
+                "equal": 743
+              },
+              "expected_goals": {
+                "equal": 743
+              },
+              "expected_assists": {
+                "equal": 743
+              },
+              "expected_goals_conceded": {
+                "equal": 743
+              },
+              "expected_goal_involvements": {
+                "equal": 743
+              },
+              "defensive_contribution": {
+                "equal": 743
+              },
+              "recoveries": {
+                "equal": 743
+              },
+              "tackles": {
+                "equal": 743
+              },
+              "clearances_blocks_interceptions": {
+                "equal": 743
+              }
+            }
+          },
+          {
+            "gw": 9,
+            "rows": 745,
+            "fields": {
+              "starts": {
+                "equal": 745
+              },
+              "expected_goals": {
+                "equal": 745
+              },
+              "expected_assists": {
+                "equal": 745
+              },
+              "expected_goals_conceded": {
+                "equal": 745
+              },
+              "expected_goal_involvements": {
+                "equal": 745
+              },
+              "defensive_contribution": {
+                "equal": 745
+              },
+              "recoveries": {
+                "equal": 745
+              },
+              "tackles": {
+                "equal": 745
+              },
+              "clearances_blocks_interceptions": {
+                "equal": 745
+              }
+            }
+          },
+          {
+            "gw": 10,
+            "rows": 746,
+            "fields": {
+              "starts": {
+                "equal": 746
+              },
+              "expected_goals": {
+                "equal": 746
+              },
+              "expected_assists": {
+                "equal": 746
+              },
+              "expected_goals_conceded": {
+                "equal": 746
+              },
+              "expected_goal_involvements": {
+                "equal": 746
+              },
+              "defensive_contribution": {
+                "equal": 746
+              },
+              "recoveries": {
+                "equal": 746
+              },
+              "tackles": {
+                "equal": 746
+              },
+              "clearances_blocks_interceptions": {
+                "equal": 746
+              }
+            }
+          },
+          {
+            "gw": 11,
+            "rows": 748,
+            "fields": {
+              "starts": {
+                "equal": 747,
+                "no_reference_rows": 1
+              },
+              "expected_goals": {
+                "equal": 747,
+                "no_reference_rows": 1
+              },
+              "expected_assists": {
+                "equal": 747,
+                "no_reference_rows": 1
+              },
+              "expected_goals_conceded": {
+                "equal": 747,
+                "no_reference_rows": 1
+              },
+              "expected_goal_involvements": {
+                "equal": 747,
+                "no_reference_rows": 1
+              },
+              "defensive_contribution": {
+                "equal": 747,
+                "no_reference_rows": 1
+              },
+              "recoveries": {
+                "equal": 747,
+                "no_reference_rows": 1
+              },
+              "tackles": {
+                "equal": 747,
+                "no_reference_rows": 1
+              },
+              "clearances_blocks_interceptions": {
+                "equal": 747,
+                "no_reference_rows": 1
+              }
+            }
+          },
+          {
+            "gw": 12,
+            "rows": 752,
+            "fields": {
+              "starts": {
+                "equal": 752
+              },
+              "expected_goals": {
+                "equal": 752
+              },
+              "expected_assists": {
+                "equal": 752
+              },
+              "expected_goals_conceded": {
+                "equal": 752
+              },
+              "expected_goal_involvements": {
+                "equal": 752
+              },
+              "defensive_contribution": {
+                "equal": 752
+              },
+              "recoveries": {
+                "equal": 752
+              },
+              "tackles": {
+                "equal": 752
+              },
+              "clearances_blocks_interceptions": {
+                "equal": 752
+              }
+            }
+          },
+          {
+            "gw": 13,
+            "rows": 755,
+            "fields": {
+              "starts": {
+                "equal": 755
+              },
+              "expected_goals": {
+                "equal": 755
+              },
+              "expected_assists": {
+                "equal": 755
+              },
+              "expected_goals_conceded": {
+                "equal": 755
+              },
+              "expected_goal_involvements": {
+                "equal": 755
+              },
+              "defensive_contribution": {
+                "equal": 755
+              },
+              "recoveries": {
+                "equal": 755
+              },
+              "tackles": {
+                "equal": 755
+              },
+              "clearances_blocks_interceptions": {
+                "equal": 755
+              }
+            }
+          },
+          {
+            "gw": 14,
+            "rows": 755,
+            "fields": {
+              "starts": {
+                "equal": 755
+              },
+              "expected_goals": {
+                "equal": 755
+              },
+              "expected_assists": {
+                "equal": 755
+              },
+              "expected_goals_conceded": {
+                "equal": 755
+              },
+              "expected_goal_involvements": {
+                "equal": 755
+              },
+              "defensive_contribution": {
+                "equal": 755
+              },
+              "recoveries": {
+                "equal": 755
+              },
+              "tackles": {
+                "equal": 755
+              },
+              "clearances_blocks_interceptions": {
+                "equal": 755
+              }
+            }
+          },
+          {
+            "gw": 15,
+            "rows": 758,
+            "fields": {
+              "starts": {
+                "equal": 758
+              },
+              "expected_goals": {
+                "equal": 758
+              },
+              "expected_assists": {
+                "equal": 758
+              },
+              "expected_goals_conceded": {
+                "equal": 758
+              },
+              "expected_goal_involvements": {
+                "equal": 758
+              },
+              "defensive_contribution": {
+                "equal": 758
+              },
+              "recoveries": {
+                "equal": 758
+              },
+              "tackles": {
+                "equal": 758
+              },
+              "clearances_blocks_interceptions": {
+                "equal": 758
+              }
+            }
+          },
+          {
+            "gw": 16,
+            "rows": 759,
+            "fields": {
+              "starts": {
+                "equal": 759
+              },
+              "expected_goals": {
+                "equal": 759
+              },
+              "expected_assists": {
+                "equal": 759
+              },
+              "expected_goals_conceded": {
+                "equal": 759
+              },
+              "expected_goal_involvements": {
+                "equal": 759
+              },
+              "defensive_contribution": {
+                "equal": 759
+              },
+              "recoveries": {
+                "equal": 759
+              },
+              "tackles": {
+                "equal": 759
+              },
+              "clearances_blocks_interceptions": {
+                "equal": 759
+              }
+            }
+          },
+          {
+            "gw": 17,
+            "rows": 760,
+            "fields": {
+              "starts": {
+                "equal": 760
+              },
+              "expected_goals": {
+                "equal": 760
+              },
+              "expected_assists": {
+                "equal": 760
+              },
+              "expected_goals_conceded": {
+                "equal": 760
+              },
+              "expected_goal_involvements": {
+                "equal": 760
+              },
+              "defensive_contribution": {
+                "equal": 760
+              },
+              "recoveries": {
+                "equal": 760
+              },
+              "tackles": {
+                "equal": 760
+              },
+              "clearances_blocks_interceptions": {
+                "equal": 760
+              }
+            }
+          },
+          {
+            "gw": 18,
+            "rows": 770,
+            "fields": {
+              "starts": {
+                "equal": 770
+              },
+              "expected_goals": {
+                "equal": 770
+              },
+              "expected_assists": {
+                "equal": 770
+              },
+              "expected_goals_conceded": {
+                "equal": 770
+              },
+              "expected_goal_involvements": {
+                "equal": 770
+              },
+              "defensive_contribution": {
+                "equal": 770
+              },
+              "recoveries": {
+                "equal": 770
+              },
+              "tackles": {
+                "equal": 770
+              },
+              "clearances_blocks_interceptions": {
+                "equal": 770
+              }
+            }
+          },
+          {
+            "gw": 19,
+            "rows": 775,
+            "fields": {
+              "starts": {
+                "equal": 775
+              },
+              "expected_goals": {
+                "equal": 775
+              },
+              "expected_assists": {
+                "equal": 775
+              },
+              "expected_goals_conceded": {
+                "equal": 775
+              },
+              "expected_goal_involvements": {
+                "equal": 775
+              },
+              "defensive_contribution": {
+                "equal": 775
+              },
+              "recoveries": {
+                "equal": 775
+              },
+              "tackles": {
+                "equal": 775
+              },
+              "clearances_blocks_interceptions": {
+                "equal": 775
+              }
+            }
+          },
+          {
+            "gw": 20,
+            "rows": 780,
+            "fields": {
+              "starts": {
+                "equal": 780
+              },
+              "expected_goals": {
+                "equal": 780
+              },
+              "expected_assists": {
+                "equal": 780
+              },
+              "expected_goals_conceded": {
+                "equal": 780
+              },
+              "expected_goal_involvements": {
+                "equal": 780
+              },
+              "defensive_contribution": {
+                "equal": 780
+              },
+              "recoveries": {
+                "equal": 780
+              },
+              "tackles": {
+                "equal": 780
+              },
+              "clearances_blocks_interceptions": {
+                "equal": 780
+              }
+            }
+          },
+          {
+            "gw": 21,
+            "rows": 790,
+            "fields": {
+              "starts": {
+                "equal": 790
+              },
+              "expected_goals": {
+                "equal": 790
+              },
+              "expected_assists": {
+                "equal": 790
+              },
+              "expected_goals_conceded": {
+                "equal": 790
+              },
+              "expected_goal_involvements": {
+                "equal": 790
+              },
+              "defensive_contribution": {
+                "equal": 790
+              },
+              "recoveries": {
+                "equal": 790
+              },
+              "tackles": {
+                "equal": 790
+              },
+              "clearances_blocks_interceptions": {
+                "equal": 790
+              }
+            }
+          },
+          {
+            "gw": 22,
+            "rows": 796,
+            "fields": {
+              "starts": {
+                "equal": 795,
+                "no_reference_rows": 1
+              },
+              "expected_goals": {
+                "equal": 795,
+                "no_reference_rows": 1
+              },
+              "expected_assists": {
+                "equal": 795,
+                "no_reference_rows": 1
+              },
+              "expected_goals_conceded": {
+                "equal": 795,
+                "no_reference_rows": 1
+              },
+              "expected_goal_involvements": {
+                "equal": 795,
+                "no_reference_rows": 1
+              },
+              "defensive_contribution": {
+                "equal": 795,
+                "no_reference_rows": 1
+              },
+              "recoveries": {
+                "equal": 795,
+                "no_reference_rows": 1
+              },
+              "tackles": {
+                "equal": 795,
+                "no_reference_rows": 1
+              },
+              "clearances_blocks_interceptions": {
+                "equal": 795,
+                "no_reference_rows": 1
+              }
+            }
+          },
+          {
+            "gw": 23,
+            "rows": 802,
+            "fields": {
+              "starts": {
+                "equal": 799,
+                "no_reference_rows": 3
+              },
+              "expected_goals": {
+                "equal": 799,
+                "no_reference_rows": 3
+              },
+              "expected_assists": {
+                "equal": 799,
+                "no_reference_rows": 3
+              },
+              "expected_goals_conceded": {
+                "equal": 799,
+                "no_reference_rows": 3
+              },
+              "expected_goal_involvements": {
+                "equal": 799,
+                "no_reference_rows": 3
+              },
+              "defensive_contribution": {
+                "equal": 799,
+                "no_reference_rows": 3
+              },
+              "recoveries": {
+                "equal": 799,
+                "no_reference_rows": 3
+              },
+              "tackles": {
+                "equal": 799,
+                "no_reference_rows": 3
+              },
+              "clearances_blocks_interceptions": {
+                "equal": 799,
+                "no_reference_rows": 3
+              }
+            }
+          },
+          {
+            "gw": 24,
+            "rows": 808,
+            "fields": {
+              "starts": {
+                "equal": 803,
+                "no_reference_rows": 5
+              },
+              "expected_goals": {
+                "equal": 803,
+                "no_reference_rows": 5
+              },
+              "expected_assists": {
+                "equal": 803,
+                "no_reference_rows": 5
+              },
+              "expected_goals_conceded": {
+                "equal": 803,
+                "no_reference_rows": 5
+              },
+              "expected_goal_involvements": {
+                "equal": 803,
+                "no_reference_rows": 5
+              },
+              "defensive_contribution": {
+                "equal": 803,
+                "no_reference_rows": 5
+              },
+              "recoveries": {
+                "equal": 803,
+                "no_reference_rows": 5
+              },
+              "tackles": {
+                "equal": 803,
+                "no_reference_rows": 5
+              },
+              "clearances_blocks_interceptions": {
+                "equal": 803,
+                "no_reference_rows": 5
+              }
+            }
+          },
+          {
+            "gw": 25,
+            "rows": 817,
+            "fields": {
+              "starts": {
+                "equal": 811,
+                "no_reference_rows": 6
+              },
+              "expected_goals": {
+                "equal": 811,
+                "no_reference_rows": 6
+              },
+              "expected_assists": {
+                "equal": 811,
+                "no_reference_rows": 6
+              },
+              "expected_goals_conceded": {
+                "equal": 811,
+                "no_reference_rows": 6
+              },
+              "expected_goal_involvements": {
+                "equal": 811,
+                "no_reference_rows": 6
+              },
+              "defensive_contribution": {
+                "equal": 811,
+                "no_reference_rows": 6
+              },
+              "recoveries": {
+                "equal": 811,
+                "no_reference_rows": 6
+              },
+              "tackles": {
+                "equal": 811,
+                "no_reference_rows": 6
+              },
+              "clearances_blocks_interceptions": {
+                "equal": 811,
+                "no_reference_rows": 6
+              }
+            }
+          },
+          {
+            "gw": 26,
+            "rows": 817,
+            "fields": {
+              "starts": {
+                "equal": 817
+              },
+              "expected_goals": {
+                "equal": 817
+              },
+              "expected_assists": {
+                "equal": 817
+              },
+              "expected_goals_conceded": {
+                "equal": 817
+              },
+              "expected_goal_involvements": {
+                "equal": 817
+              },
+              "defensive_contribution": {
+                "equal": 817
+              },
+              "recoveries": {
+                "equal": 817
+              },
+              "tackles": {
+                "equal": 817
+              },
+              "clearances_blocks_interceptions": {
+                "equal": 817
+              }
+            }
+          },
+          {
+            "gw": 27,
+            "rows": 817,
+            "fields": {
+              "starts": {
+                "equal": 817
+              },
+              "expected_goals": {
+                "equal": 817
+              },
+              "expected_assists": {
+                "equal": 817
+              },
+              "expected_goals_conceded": {
+                "equal": 817
+              },
+              "expected_goal_involvements": {
+                "equal": 817
+              },
+              "defensive_contribution": {
+                "equal": 817
+              },
+              "recoveries": {
+                "equal": 817
+              },
+              "tackles": {
+                "equal": 817
+              },
+              "clearances_blocks_interceptions": {
+                "equal": 817
+              }
+            }
+          },
+          {
+            "gw": 28,
+            "rows": 818,
+            "fields": {
+              "starts": {
+                "equal": 818
+              },
+              "expected_goals": {
+                "equal": 818
+              },
+              "expected_assists": {
+                "equal": 818
+              },
+              "expected_goals_conceded": {
+                "equal": 818
+              },
+              "expected_goal_involvements": {
+                "equal": 818
+              },
+              "defensive_contribution": {
+                "equal": 818
+              },
+              "recoveries": {
+                "equal": 818
+              },
+              "tackles": {
+                "equal": 818
+              },
+              "clearances_blocks_interceptions": {
+                "equal": 818
+              }
+            }
+          },
+          {
+            "gw": 29,
+            "rows": 819,
+            "fields": {
+              "starts": {
+                "equal": 819
+              },
+              "expected_goals": {
+                "equal": 819
+              },
+              "expected_assists": {
+                "equal": 819
+              },
+              "expected_goals_conceded": {
+                "equal": 819
+              },
+              "expected_goal_involvements": {
+                "equal": 819
+              },
+              "defensive_contribution": {
+                "equal": 819
+              },
+              "recoveries": {
+                "equal": 819
+              },
+              "tackles": {
+                "equal": 819
+              },
+              "clearances_blocks_interceptions": {
+                "equal": 819
+              }
+            }
+          },
+          {
+            "gw": 30,
+            "rows": 820,
+            "fields": {
+              "starts": {
+                "equal": 820
+              },
+              "expected_goals": {
+                "equal": 820
+              },
+              "expected_assists": {
+                "equal": 820
+              },
+              "expected_goals_conceded": {
+                "equal": 820
+              },
+              "expected_goal_involvements": {
+                "equal": 820
+              },
+              "defensive_contribution": {
+                "equal": 820
+              },
+              "recoveries": {
+                "equal": 820
+              },
+              "tackles": {
+                "equal": 820
+              },
+              "clearances_blocks_interceptions": {
+                "equal": 820
+              }
+            }
+          },
+          {
+            "gw": 31,
+            "rows": 822,
+            "fields": {
+              "starts": {
+                "equal": 822
+              },
+              "expected_goals": {
+                "equal": 822
+              },
+              "expected_assists": {
+                "equal": 822
+              },
+              "expected_goals_conceded": {
+                "equal": 822
+              },
+              "expected_goal_involvements": {
+                "equal": 822
+              },
+              "defensive_contribution": {
+                "equal": 822
+              },
+              "recoveries": {
+                "equal": 822
+              },
+              "tackles": {
+                "equal": 822
+              },
+              "clearances_blocks_interceptions": {
+                "equal": 822
+              }
+            }
+          },
+          {
+            "gw": 32,
+            "rows": 825,
+            "fields": {
+              "starts": {
+                "equal": 825
+              },
+              "expected_goals": {
+                "equal": 825
+              },
+              "expected_assists": {
+                "equal": 825
+              },
+              "expected_goals_conceded": {
+                "equal": 825
+              },
+              "expected_goal_involvements": {
+                "equal": 825
+              },
+              "defensive_contribution": {
+                "equal": 825
+              },
+              "recoveries": {
+                "equal": 825
+              },
+              "tackles": {
+                "equal": 825
+              },
+              "clearances_blocks_interceptions": {
+                "equal": 825
+              }
+            }
+          },
+          {
+            "gw": 33,
+            "rows": 826,
+            "fields": {
+              "starts": {
+                "equal": 826
+              },
+              "expected_goals": {
+                "equal": 826
+              },
+              "expected_assists": {
+                "equal": 826
+              },
+              "expected_goals_conceded": {
+                "equal": 826
+              },
+              "expected_goal_involvements": {
+                "equal": 826
+              },
+              "defensive_contribution": {
+                "equal": 826
+              },
+              "recoveries": {
+                "equal": 826
+              },
+              "tackles": {
+                "equal": 826
+              },
+              "clearances_blocks_interceptions": {
+                "equal": 826
+              }
+            }
+          },
+          {
+            "gw": 34,
+            "rows": 829,
+            "fields": {
+              "starts": {
+                "equal": 829
+              },
+              "expected_goals": {
+                "equal": 829
+              },
+              "expected_assists": {
+                "equal": 829
+              },
+              "expected_goals_conceded": {
+                "equal": 829
+              },
+              "expected_goal_involvements": {
+                "equal": 829
+              },
+              "defensive_contribution": {
+                "equal": 829
+              },
+              "recoveries": {
+                "equal": 829
+              },
+              "tackles": {
+                "equal": 829
+              },
+              "clearances_blocks_interceptions": {
+                "equal": 829
+              }
+            }
+          },
+          {
+            "gw": 35,
+            "rows": 830,
+            "fields": {
+              "starts": {
+                "equal": 830
+              },
+              "expected_goals": {
+                "equal": 830
+              },
+              "expected_assists": {
+                "equal": 830
+              },
+              "expected_goals_conceded": {
+                "equal": 830
+              },
+              "expected_goal_involvements": {
+                "equal": 830
+              },
+              "defensive_contribution": {
+                "equal": 830
+              },
+              "recoveries": {
+                "equal": 830
+              },
+              "tackles": {
+                "equal": 830
+              },
+              "clearances_blocks_interceptions": {
+                "equal": 830
+              }
+            }
+          },
+          {
+            "gw": 36,
+            "rows": 832,
+            "fields": {
+              "starts": {
+                "equal": 832
+              },
+              "expected_goals": {
+                "equal": 832
+              },
+              "expected_assists": {
+                "equal": 832
+              },
+              "expected_goals_conceded": {
+                "equal": 832
+              },
+              "expected_goal_involvements": {
+                "equal": 832
+              },
+              "defensive_contribution": {
+                "equal": 832
+              },
+              "recoveries": {
+                "equal": 832
+              },
+              "tackles": {
+                "equal": 832
+              },
+              "clearances_blocks_interceptions": {
+                "equal": 832
+              }
+            }
+          },
+          {
+            "gw": 37,
+            "rows": 838,
+            "fields": {
+              "starts": {
+                "equal": 838
+              },
+              "expected_goals": {
+                "equal": 838
+              },
+              "expected_assists": {
+                "equal": 838
+              },
+              "expected_goals_conceded": {
+                "equal": 838
+              },
+              "expected_goal_involvements": {
+                "equal": 838
+              },
+              "defensive_contribution": {
+                "equal": 838
+              },
+              "recoveries": {
+                "equal": 838
+              },
+              "tackles": {
+                "equal": 838
+              },
+              "clearances_blocks_interceptions": {
+                "equal": 838
+              }
+            }
+          },
+          {
+            "gw": 38,
+            "rows": 840,
+            "fields": {
+              "starts": {
+                "equal": 840
+              },
+              "expected_goals": {
+                "equal": 840
+              },
+              "expected_assists": {
+                "equal": 840
+              },
+              "expected_goals_conceded": {
+                "equal": 840
+              },
+              "expected_goal_involvements": {
+                "equal": 840
+              },
+              "defensive_contribution": {
+                "equal": 840
+              },
+              "recoveries": {
+                "equal": 840
+              },
+              "tackles": {
+                "equal": 840
+              },
+              "clearances_blocks_interceptions": {
+                "equal": 840
+              }
+            }
+          }
+        ]
+      },
+      "2026-27": {
+        "status": "incomplete_reference_season"
+      }
+    },
+    "comparisons_sha256": "678837223ea7d01495551ff8a51ed15e3e1686e99d45d10da80c7dbe4955c2ad",
+    "training_admitted": false,
+    "production_changed": false,
+    "limitations": [
+      "final_match_values_not_historical_versions",
+      "within_rounding_bound_is_hypothesis_not_semantic_equality",
+      "rounding_bound_assumes_nearest_hundredth_for_each_match_and_cumulative_value",
+      "kickoff_before_deadline_not_settlement_or_publication_proof",
+      "source_code_and_element_match_not_independent_identity_proof",
+      "GW1_excluded_and_incomplete_reference_seasons_not_compared"
+    ]
+  },
+  "summary": {
+    "2022-23": {
+      "snapshot_absent": 146275,
+      "equal": 70664,
+      "different": 9260,
+      "outside_rounding_bound": 1573,
+      "within_rounding_bound": 2773,
+      "no_reference_rows": 215
+    },
+    "2023-24": {
+      "equal": 144060,
+      "no_reference_rows": 285,
+      "snapshot_absent": 115476
+    },
+    "2024-25": {
+      "equal": 132466,
+      "no_reference_rows": 270,
+      "snapshot_absent": 106196,
+      "within_rounding_bound": 6,
+      "outside_rounding_bound": 3
+    },
+    "2025-26": {
+      "equal": 260154,
+      "no_reference_rows": 486
+    }
+  },
+  "verification": {
+    "reproduced_byte_for_byte": true,
+    "tests_passed": 1553,
+    "tests_skipped": 1,
+    "tests_deselected": 79
+  },
+  "production_changed": false,
+  "training_admitted": false
+}
