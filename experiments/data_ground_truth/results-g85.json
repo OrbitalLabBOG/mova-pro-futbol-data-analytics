@@ -1,0 +1,58 @@
+{
+  "version": "historical-data-g85",
+  "audit_report_sha256": "8f9737656c0c9262bb42b297e787f07a0cb1f2efedf9be6d3ee1c6b5ce8ff2dd",
+  "audit": {
+    "version": "azure-gt-identity-v1",
+    "parent_coverage_sha256": "2fc0b13df5fa9064247b241bfdae3d950cd44de17c5564cf87b08c2497b5b408",
+    "gt_dataset_id": "d4baf849fb4a051be103f8c469e61a4753edb0b4004f980a000fe5c86ef573db",
+    "gt_pointer_sha256": "61585d54491185cf37e9a3b0f34f9ed000048cee4cae8bc5bc8c406e47ecc392",
+    "implementation_sha256": "9e158a6cdbbf67e5b0ca4d2a1d812786fb6704422c2745d66d088f61b18aef58",
+    "seasons": {
+      "2020-21": {
+        "window_variants": 39,
+        "state_window_rows": 24866,
+        "identity_status": {
+          "exact_season_id_and_code": 24865,
+          "code_absent_from_gt_with_id_conflict": 1
+        },
+        "gt_season_rows": 24365,
+        "unique_gt_rows_in_selected_gws": 23940,
+        "unique_gt_rows_with_exact_snapshot_identity": 23786,
+        "gt_row_window_comparisons_without_identity": 172,
+        "unique_gt_rows_missing_in_any_variant": 162,
+        "positive_minute_comparisons_without_identity": 22,
+        "unique_positive_minute_gt_rows_missing_in_any_variant": 22
+      },
+      "2021-22": {
+        "window_variants": 42,
+        "state_window_rows": 27774,
+        "identity_status": {
+          "exact_season_id_and_code": 27774
+        },
+        "gt_season_rows": 25447,
+        "unique_gt_rows_in_selected_gws": 25447,
+        "unique_gt_rows_with_exact_snapshot_identity": 25257,
+        "gt_row_window_comparisons_without_identity": 216,
+        "unique_gt_rows_missing_in_any_variant": 194,
+        "positive_minute_comparisons_without_identity": 13,
+        "unique_positive_minute_gt_rows_missing_in_any_variant": 13
+      }
+    },
+    "artifacts": {
+      "state_identity_links.csv": "03ddfb1364c7ab376221d95cdd9cf3fc8846b8a02d6a7a4a165ee0ce86b477bb",
+      "unmatched_gt_rows.csv": "5598a79f7257a4f1b788869b6a671ee677cc9636e856e5e0037aae2744e37ef7",
+      "windows.json": "36d92ffc427c5153b420c0495a583a87d1e09bfe99ea5ef9c7eed771eb21cabb"
+    },
+    "training_admitted": false,
+    "production_changed": false,
+    "limitations": [
+      "identity_audit_not_predeadline_availability_proof",
+      "both_season_id_and_official_code_required_no_name_fallback",
+      "missing_gt_row_in_state_not_imputed_as_zero",
+      "GT_GW_is_retrospective_not_schedule_forecast",
+      "window_variants_are_repeated_comparisons_not_independent_examples",
+      "missing_in_any_variant_may_be_covered_in_another_variant"
+    ]
+  },
+  "reproduction_identical": true
+}
