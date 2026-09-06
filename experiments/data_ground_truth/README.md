@@ -5281,3 +5281,53 @@ Alcance: corte local restaurable de fuentes y auditorías seleccionadas, sin acr
 backup externo ni reproducción de todos los experimentos del proyecto. GT v7 conserva
 303.126 filas y doce temporadas; las nueve apariciones pendientes de GW34 2013/14
 siguen sin resolverse. No hubo nuevas descargas, entrenamiento ni cambios productivos.
+
+
+## G93 — Restricciones anuales para puntos desconocidos de 2013/14
+
+Los 52 candidatos de recuperación observada G89 tienen `gw_pts=0` explícito en
+el JSON. G93 conserva esos valores en una serie auxiliar, sin modificar el total
+original Differential, y examina las nueve apariciones positivas aún pendientes.
+La identidad exige código y nombre completo coincidentes entre los perfiles de
+2013/14 y 2014/15, junto con nombre Differential compatible. La referencia anual
+se extrae únicamente de la fila `2013/14` del perfil posterior.
+
+| Estado de las nueve apariciones | Resultado |
+| --- | ---: |
+| Referencia anual corroborada y una sola fila de puntos desconocidos | 7 |
+| Minutos completos y suma igual a la referencia en esos siete casos | 7 |
+| Residuo de puntos anual menos puntos conocidos | 0 en los siete |
+| Sin referencia anual en la fuente examinada | 2 |
+| Etiquetas por partido recuperadas directamente en G93 | 0 |
+| Etiquetas originales que siguen desconocidas | 9 |
+
+Los siete casos son Mikel, Schürrle, Zabaleta, Wes Brown, Larsson, Adebayor y
+Chiriches. Kasami y Ridgewell no aparecen con historia anual en el perfil posterior
+examinado; además tienen una segunda fila con minutos y puntos desconocidos.
+No se deduce una asignación individual cuando hay varias filas desconocidas.
+
+`annual_residual_cases.json` conserva las nueve filas, sumas, número de incógnitas,
+referencias, comprobación de identidad y estado del cálculo. `raw_points` permanece
+NULL; `inferred_points=0` se publica sólo como evidencia condicional en siete casos.
+Las condiciones incluyen referencia anual correcta y completa y correspondencia
+válida entre fuentes. Una suma de minutos coincidente no demuestra el universo de
+jugadores elegibles, ni la referencia anual es necesariamente independiente del
+archivo por partido. No se introduce una regla general de convertir NULL en cero.
+
+```bash
+python -m experiments.data_ground_truth.annual_residual_evidence \
+  --base "$DATA_BASE" --out "$DATA_BASE/annual-residual-evidence-g93-new"
+```
+
+[Resultados G93](results-g93.json) fija el reporte G89, los dos JSON fuente, la
+implementación y el artefacto. Reporte y artefacto idénticos byte por byte en v1/v2.
+Las pruebas impiden deducciones con varias incógnitas, minutos desconocidos o
+incompatibles y nombres distintos; comprueban que el valor original no se altera.
+
+No hubo nuevas descargas ni etiquetas originales recuperadas. GT v7, sus doce
+temporadas completas, producción y el corte portable G92 permanecen intactos.
+El nuevo artefacto se conserva fuera del corte inmutable G92 y no se admite a
+entrenamiento. El próximo paso debe separar explícitamente etiquetas observadas,
+recuperaciones corroboradas e inferencias al consolidar el histórico parcial.
+
+Suite completa G93: **1.692 passed, 1 skipped, 79 deselected**, 35,14 s.

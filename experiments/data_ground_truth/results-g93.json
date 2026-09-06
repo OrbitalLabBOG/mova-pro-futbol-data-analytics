@@ -1,0 +1,31 @@
+{
+  "version": "historical-data-g93",
+  "audit_report_sha256": "6caf23093f8c97c20924a78631122ced84cc8e5f6f267559cf62158a7fa385b1",
+  "audit": {
+    "version": "annual-residual-evidence-v1",
+    "g89_report_sha256": "b2458964d2018685aa54b227cda302a9be0adaad7890002f3d82b3ab27dbf56d",
+    "early_source_sha256": "21c74e98562268738a7b520b0518e6a48068f0b3117dc0c2e33660016f4f515e",
+    "later_source_sha256": "4ba748103b6ba6abf3e8c1e8701cee3bb733f74e5570e2977f2b546670774e36",
+    "implementation_sha256": "5454be1be3091a4b71e3a8cbf01f4e6aee83b066ade25994799d2b33f761656e",
+    "pending_positive_appearances": 9,
+    "conditional_residual_cases": 7,
+    "conditional_zero_cases": 7,
+    "cases_without_annual_reference": 2,
+    "independently_recovered_match_labels": 0,
+    "remaining_unobserved_match_labels": 9,
+    "new_complete_seasons": 0,
+    "training_admitted": false,
+    "production_changed": false,
+    "limitations": [
+      "annual_residual_is_inferred_not_observed_match_points",
+      "requires_complete_and_correct_annual_reference",
+      "minute_sum_agreement_does_not_prove_complete_registered_player_universe",
+      "no_blanket_NULL_to_zero_rule",
+      "annual_reference_and_match_archive_may_share_upstream_source"
+    ],
+    "artifacts": {
+      "annual_residual_cases.json": "5a71bf62c794333636aa59d57c8e487547beec5e7fe883fd2302fdb0a3b140e6"
+    }
+  },
+  "reproduction_identical": true
+}
