@@ -47,7 +47,7 @@ def build(base,out):
             players=list(obj.values())
         groups.setdefault(key,[]).extend(players);sources.setdefault(key,[]).append(r['sha256'])
     fixtures=pd.read_csv(base/'raw-history-v2/objects'/FIXTURE_SHA);checked(base/'raw-history-v2/objects'/FIXTURE_SHA,FIXTURE_SHA)
-    pointer=json.loads(Path(__file__).with_name('current-labels.json').read_text());package=base/'training-datasets'/pointer['dataset_id']
+    pointer=dict(dataset_id='d4baf849fb4a051be103f8c469e61a4753edb0b4004f980a000fe5c86ef573db',manifest_sha256='dfedf1d67e1432149704f07f788df3fef1f6f68e752603404ebffe4769289ccf');package=base/'training-datasets'/pointer['dataset_id']
     checked(package/'manifest.json',pointer['manifest_sha256']);gt_manifest=verify(package)
     part=next(p for p in gt_manifest['partitions'] if p['season']=='2014-15');gt=pd.read_csv(package/part['file'])
     entries=[];candidates=[];out.mkdir(parents=True,exist_ok=True);names=[]

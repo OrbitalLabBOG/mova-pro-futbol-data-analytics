@@ -19,9 +19,9 @@ El cockpit read-only comparte un único contrato entre CLI y API. Su dashboard e
 sólo expone tres indicadores humanos; diagnóstico, métricas y JSON permanecen en loopback.
 Supabase sólo refleja seguimiento PM y nunca recibe estado operativo.
 
-G98: dos snapshots recuperados coinciden con las 24.876 filas de 2014/15 y
-aportan candidatos de identidad sin conflictos para los 24 jugadores pendientes
-(421 filas). Evidencia reproducida; promoción del GT aún pendiente.
+G99: GT experimental v8 incorpora las identidades verificadas de los 24 jugadores
+pendientes de 2014/15 (421 filas). Las 24.876 filas de esa temporada quedan
+enlazadas, conservando todas las etiquetas. Paquete reproducido; producción intacta.
 
 G97: la auditoría de procedencia encuentra pronósticos, pero ningún resultado en
 12 campos observados de los 408 registros incompletos de GW38 2013/14. No se
@@ -124,7 +124,7 @@ adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 
 | Capa | Cobertura verificada | Límite pendiente |
 | --- | --- | --- |
-| Etiquetas FPL, GT experimental v7 | 303.126 filas de jugadores, doce temporadas 2014/15–2025/26; 322 filas de managers separadas | Son resultados retrospectivos, no entradas disponibles antes del deadline |
+| Etiquetas FPL, GT experimental v8 | 303.126 filas de jugadores, doce temporadas 2014/15–2025/26; 322 filas de managers separadas | Son resultados retrospectivos, no entradas disponibles antes del deadline |
 | Bootstrap raw | 7.837 snapshots; estados, precios, clubes y posiciones | Disponibilidad y semántica varían por campo y temporada |
 | Estados con publicación histórica acreditada | 196/199 deadlines; 38/38 en cada temporada 2021/22–2025/26 | GW1–3 de 2026/27 sin testigo; selección desconocida no se convierte en elegibilidad |
 | Calendarios con publicación histórica acreditada, G35 | 193/199 deadlines; 38/38 en 2023/24, 2024/25 y 2025/26 | Seis ventanas pendientes y frescura desigual: 93 calendarios tienen commit de hasta 48 horas; en 2025/26 son 14/38 |
@@ -181,7 +181,7 @@ adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 | Calendarios PDF oficiales, G39 | 380 cruces de 2013/14 y 760 celdas FDR de 2025/26 | Versiones aisladas; sin disponibilidad histórica acreditada ni nuevas etiquetas FPL |
 | Conciliación FPL Discovery 2014/15, G40 | 24.876 filas; 665 códigos coinciden con GT v5 y 46 son candidatos | Cero filas nuevas; los candidatos cubren 674 filas sin minutos jugados y siguen sin admisión al GT |
 | Enriquecimiento de identidad, G41 | GT v6 enlaza 19 jugadores y 223 filas de 2014/15 mediante código y nombre completo | Quedan 27 jugadores y 451 filas con identidad limitada a la temporada; sin cambios deportivos |
-| Extensión de perfiles, G42 | GT v7 enlaza otros tres jugadores y 30 filas de 2014/15 | Quedan 24 jugadores y 421 filas con identidad limitada a la temporada; no añade resultados ni acredita disponibilidad histórica |
+| Extensión de perfiles, G42 | GT v7 enlaza otros tres jugadores y 30 filas de 2014/15 | En ese corte quedaron 24 jugadores y 421 filas pendientes, resueltos en G99; no añade resultados ni acredita disponibilidad histórica |
 | Fuentes antiguas complementarias | Material parcial desde 2010/11 y totales desde 2006/07 | No cuentan como nuevas temporadas completas; persisten huecos de población e identidad |
 
 G30 combina calendarios completos de dos fuentes, revalidando cada testigo contra
@@ -190,7 +190,7 @@ la antigüedad nominal máxima es 344,67 horas; la hora del commit no es la hora
 captura API. [Resultados G30](experiments/data_ground_truth/results-g30.json).
 
 Los datos permiten investigar más temporadas y estados, pero todavía no acreditan
-un replay causal completo ni mejoras del modelo. GT v7, evidencia temporal y
+un replay causal completo ni mejoras del modelo. GT v8, evidencia temporal y
 reglas se versionan por separado; este trabajo no habilita entrenamiento ni
 modifica el histórico productivo de 253.890 filas. El siguiente trabajo de datos
 es cerrar ventanas de publicación, mejorar frescura y conciliar el período de
@@ -274,7 +274,7 @@ se conservan separadas. [Resultados G93](experiments/data_ground_truth/results-g
 G94 consolida el histórico parcial 2013/14 en un paquete independiente:
 20.248 etiquetas observadas, 417 filas desconocidas e inferencias anuales
 separadas. [current-partial-labels.json](experiments/data_ground_truth/current-partial-labels.json)
-fija su versión; no sustituye el GT v7 de doce temporadas.
+fija su versión; no sustituye el GT v8 de doce temporadas.
 [Resultados G94](experiments/data_ground_truth/results-g94.json).
 
 G95 mide el cambio de cobertura en 2013/14: GW1–30 incluye positivos y ceros;
