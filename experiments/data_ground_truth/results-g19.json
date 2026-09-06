@@ -1,0 +1,520 @@
+{
+  "version": "historical-data-g19",
+  "alias_report": {
+    "version": "bootstrap-aliases-v1",
+    "source_manifest_sha256": "d9eed1e354d0a35443e480a0c4bfcbdebee97f28b73b04309e4bef0f8bcc243e",
+    "identity_report_sha256": "7ea9a597db4b709d2a732e8fc44780faa320a20da0a9376941c9f5ebb3796c59",
+    "reference_dataset_id": "1d111a458c9074fcd7ec2da516e82d9d1984600f6f057716112b92e855240df4",
+    "implementation_sha256": "53e88f0c78d5f35d68fb74cea71d48ac69e1cd8434f30d8373de9378bab336c4",
+    "sport_sha256": {
+      "2022-23": "8bccb7baade4212991c54b18b60a4eea8aa0677d9f7b4eb9833b9464252b3346",
+      "2023-24": "29be477b2988a38524b5a39124bb7265709364b8001a3f660e3f4502ff152ef2"
+    },
+    "aliases": 3,
+    "rejected": [
+      {
+        "season": "2024-25",
+        "element": 748,
+        "reason": "manager replacement excluded"
+      }
+    ],
+    "aliases_sha256": "d78e96b7f85432bba861d5817387bba228f6792f8e0ca43a7e7754693ab040a5",
+    "temporal_admission": false,
+    "rule": "same_season_element_boundary_identity_and_two_matching_positive_appearance_dates"
+  },
+  "aliases": [
+    {
+      "season": "2022-23",
+      "element": 546,
+      "source_code": 536122,
+      "canonical_code": 515024,
+      "first_source_claimed_at": "2022-08-03T12:50:00",
+      "last_source_claimed_at": "2022-08-06T18:27:00",
+      "before": {
+        "code": 536122,
+        "first_name": "Luke",
+        "second_name": "Harris",
+        "position": 3,
+        "observations": 14,
+        "distinct_snapshot_objects": 14,
+        "observed_team_ids": [
+          9
+        ],
+        "first": {
+          "source_claimed_at": "2022-08-03T12:50:00",
+          "path": "cache/2022/8/3/1250.json.xz",
+          "sha256": "d49ae4aa11198b14562c56c126aca6575a90b26019f5a87e849c9edc6e78d7c4"
+        },
+        "last": {
+          "source_claimed_at": "2022-08-06T18:27:00",
+          "path": "cache/2022/8/6/1827.json.xz",
+          "sha256": "11833c402c9852b322f76fb05615eb73526017e68107e621a7207e95359b2ba9"
+        }
+      },
+      "after": {
+        "code": 515024,
+        "first_name": "Luke",
+        "second_name": "Harris",
+        "position": 3,
+        "observations": 1329,
+        "distinct_snapshot_objects": 1218,
+        "observed_team_ids": [
+          9
+        ],
+        "first": {
+          "source_claimed_at": "2022-08-07T02:21:00",
+          "path": "cache/2022/8/7/0221.json.xz",
+          "sha256": "020e3ba21c8902ca342ae60cc709938b85d7f144b613477af047d338c1be61bc"
+        },
+        "last": {
+          "source_claimed_at": "2023-07-05T12:44:00",
+          "path": "cache/2023/7/5/1244.json.xz",
+          "sha256": "91a36ede9e07ef8ea18232df322d1d9a8ad7753b26544253144a7973f437097e"
+        }
+      },
+      "corroborated_appearance_dates": [
+        "2022-10-20",
+        "2022-11-05",
+        "2022-12-26"
+      ],
+      "scope": "same_season_fpl_element_only",
+      "evidence_status": "retrospective_source_continuity_and_appearance_corroboration",
+      "eligible_predeadline": false
+    },
+    {
+      "season": "2022-23",
+      "element": 558,
+      "source_code": 530332,
+      "canonical_code": 490721,
+      "first_source_claimed_at": "2022-08-03T12:50:00",
+      "last_source_claimed_at": "2022-08-06T12:38:00",
+      "before": {
+        "code": 530332,
+        "first_name": "Hugo",
+        "second_name": "Bueno L\u00f3pez",
+        "position": 2,
+        "observations": 13,
+        "distinct_snapshot_objects": 13,
+        "observed_team_ids": [
+          20
+        ],
+        "first": {
+          "source_claimed_at": "2022-08-03T12:50:00",
+          "path": "cache/2022/8/3/1250.json.xz",
+          "sha256": "d49ae4aa11198b14562c56c126aca6575a90b26019f5a87e849c9edc6e78d7c4"
+        },
+        "last": {
+          "source_claimed_at": "2022-08-06T12:38:00",
+          "path": "cache/2022/8/6/1238.json.xz",
+          "sha256": "6dc0df225ca17476f63fa7546800c18b9dfd0093d5e43973d06bb8a9ecf00f66"
+        }
+      },
+      "after": {
+        "code": 490721,
+        "first_name": "Hugo",
+        "second_name": "Bueno L\u00f3pez",
+        "position": 2,
+        "observations": 1330,
+        "distinct_snapshot_objects": 1219,
+        "observed_team_ids": [
+          20
+        ],
+        "first": {
+          "source_claimed_at": "2022-08-06T18:27:00",
+          "path": "cache/2022/8/6/1827.json.xz",
+          "sha256": "11833c402c9852b322f76fb05615eb73526017e68107e621a7207e95359b2ba9"
+        },
+        "last": {
+          "source_claimed_at": "2023-07-05T12:44:00",
+          "path": "cache/2023/7/5/1244.json.xz",
+          "sha256": "91a36ede9e07ef8ea18232df322d1d9a8ad7753b26544253144a7973f437097e"
+        }
+      },
+      "corroborated_appearance_dates": [
+        "2022-10-15",
+        "2022-10-18",
+        "2022-10-23",
+        "2022-10-29",
+        "2022-11-05",
+        "2022-11-12",
+        "2022-12-26",
+        "2022-12-31",
+        "2023-01-04",
+        "2023-01-14",
+        "2023-01-22",
+        "2023-02-11",
+        "2023-02-18",
+        "2023-02-24",
+        "2023-03-01",
+        "2023-04-01",
+        "2023-04-15",
+        "2023-04-25",
+        "2023-04-29",
+        "2023-05-13",
+        "2023-05-28"
+      ],
+      "scope": "same_season_fpl_element_only",
+      "evidence_status": "retrospective_source_continuity_and_appearance_corroboration",
+      "eligible_predeadline": false
+    },
+    {
+      "season": "2023-24",
+      "element": 120,
+      "source_code": 601975,
+      "canonical_code": 508395,
+      "first_source_claimed_at": "2023-07-05T18:26:00",
+      "last_source_claimed_at": "2023-07-11T12:41:00",
+      "before": {
+        "code": 601975,
+        "first_name": "Yegor",
+        "second_name": "Yarmolyuk",
+        "position": 3,
+        "observations": 24,
+        "distinct_snapshot_objects": 24,
+        "observed_team_ids": [
+          4
+        ],
+        "first": {
+          "source_claimed_at": "2023-07-05T18:26:00",
+          "path": "cache/2023/7/5/1826.json.xz",
+          "sha256": "723ed7c1208da6a89e780bd7ec6b0e41be9f1d3201f63aba2f5a947946c0a3b6"
+        },
+        "last": {
+          "source_claimed_at": "2023-07-11T12:41:00",
+          "path": "cache/2023/7/11/1241.json.xz",
+          "sha256": "7f31caf76b27e3972cf96f8cea0f251d11705e16ce4c9392dfa44a1203af0893"
+        }
+      },
+      "after": {
+        "code": 508395,
+        "first_name": "Yegor",
+        "second_name": "Yarmolyuk",
+        "position": 3,
+        "observations": 504,
+        "distinct_snapshot_objects": 504,
+        "observed_team_ids": [
+          4
+        ],
+        "first": {
+          "source_claimed_at": "2023-07-11T18:24:00",
+          "path": "cache/2023/7/11/1824.json.xz",
+          "sha256": "8428429eb711dc2a4401e5bb5c4ede5bbca67d332db672109f706a8b873553a4"
+        },
+        "last": {
+          "source_claimed_at": "2023-11-14T12:34:00",
+          "path": "cache/2023/11/14/1234.json.xz",
+          "sha256": "d9836af926fa9b762b02e063650e31fc02c7ddad767d939858270bc3e4080ea6"
+        }
+      },
+      "corroborated_appearance_dates": [
+        "2023-10-21",
+        "2023-10-28",
+        "2023-11-04",
+        "2023-11-12",
+        "2023-11-25",
+        "2023-12-02",
+        "2023-12-06",
+        "2023-12-09",
+        "2023-12-17",
+        "2023-12-27",
+        "2023-12-30",
+        "2024-01-20",
+        "2024-01-31",
+        "2024-02-05",
+        "2024-02-10",
+        "2024-03-02",
+        "2024-03-09",
+        "2024-03-16",
+        "2024-03-30",
+        "2024-04-03",
+        "2024-04-06",
+        "2024-04-13",
+        "2024-04-20",
+        "2024-04-27",
+        "2024-05-04",
+        "2024-05-11",
+        "2024-05-19"
+      ],
+      "scope": "same_season_fpl_element_only",
+      "evidence_status": "retrospective_source_continuity_and_appearance_corroboration",
+      "eligible_predeadline": false
+    }
+  ],
+  "state_report": {
+    "version": "bootstrap-state-v2",
+    "source_manifest_sha256": "d9eed1e354d0a35443e480a0c4bfcbdebee97f28b73b04309e4bef0f8bcc243e",
+    "candidate_sha256": "58dc58afef7aaea0dee8996a2141abc47dbf8c0a3734b3b837f261bf024521f4",
+    "reference_dataset_id": "1d111a458c9074fcd7ec2da516e82d9d1984600f6f057716112b92e855240df4",
+    "implementation_sha256": "f85296a1ccc856ed123b362ae12a7d08fa389f98d27d32310953fb6d99564ce9",
+    "candidates": 199,
+    "rows": 144040,
+    "rejected_rows": 0,
+    "seasons": {
+      "2020-21": {
+        "rows": 4191,
+        "player_rows": 4191,
+        "manager_rows": 0,
+        "deadlines": 6,
+        "identity_status": {
+          "matched": 4191
+        },
+        "flags": {
+          "can_select": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          },
+          "can_transact": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          },
+          "removed": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          },
+          "has_temporary_code": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          }
+        }
+      },
+      "2021-22": {
+        "rows": 25150,
+        "player_rows": 25150,
+        "manager_rows": 0,
+        "deadlines": 38,
+        "identity_status": {
+          "matched": 25150
+        },
+        "flags": {
+          "can_select": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          },
+          "can_transact": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          },
+          "removed": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          },
+          "has_temporary_code": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          }
+        }
+      },
+      "2022-23": {
+        "rows": 26198,
+        "player_rows": 26198,
+        "manager_rows": 0,
+        "deadlines": 38,
+        "identity_status": {
+          "matched": 26196,
+          "matched_via_audited_alias": 2
+        },
+        "flags": {
+          "can_select": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          },
+          "can_transact": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          },
+          "removed": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          },
+          "has_temporary_code": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          }
+        }
+      },
+      "2023-24": {
+        "rows": 29510,
+        "player_rows": 29510,
+        "manager_rows": 0,
+        "deadlines": 38,
+        "identity_status": {
+          "matched": 29510
+        },
+        "flags": {
+          "can_select": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          },
+          "can_transact": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          },
+          "removed": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          },
+          "has_temporary_code": {
+            "present": 0,
+            "nonnull": 0,
+            "true": 0,
+            "false": 0
+          }
+        }
+      },
+      "2024-25": {
+        "rows": 27479,
+        "player_rows": 27159,
+        "manager_rows": 320,
+        "deadlines": 38,
+        "identity_status": {
+          "matched": 27159
+        },
+        "flags": {
+          "can_select": {
+            "present": 17226,
+            "nonnull": 17226,
+            "true": 13841,
+            "false": 3385
+          },
+          "can_transact": {
+            "present": 17226,
+            "nonnull": 17226,
+            "true": 17226,
+            "false": 0
+          },
+          "removed": {
+            "present": 17226,
+            "nonnull": 17226,
+            "true": 0,
+            "false": 17226
+          },
+          "has_temporary_code": {
+            "present": 12273,
+            "nonnull": 12273,
+            "true": 0,
+            "false": 12273
+          }
+        }
+      },
+      "2025-26": {
+        "rows": 29645,
+        "player_rows": 29645,
+        "manager_rows": 0,
+        "deadlines": 38,
+        "identity_status": {
+          "matched": 29645
+        },
+        "flags": {
+          "can_select": {
+            "present": 29645,
+            "nonnull": 29645,
+            "true": 23203,
+            "false": 6442
+          },
+          "can_transact": {
+            "present": 29645,
+            "nonnull": 29645,
+            "true": 29645,
+            "false": 0
+          },
+          "removed": {
+            "present": 29645,
+            "nonnull": 29645,
+            "true": 0,
+            "false": 29645
+          },
+          "has_temporary_code": {
+            "present": 29645,
+            "nonnull": 29645,
+            "true": 0,
+            "false": 29645
+          }
+        }
+      },
+      "2026-27": {
+        "rows": 1867,
+        "player_rows": 1867,
+        "manager_rows": 0,
+        "deadlines": 3,
+        "identity_status": {
+          "reference_season_unavailable": 1867
+        },
+        "flags": {
+          "can_select": {
+            "present": 1867,
+            "nonnull": 1867,
+            "true": 1685,
+            "false": 182
+          },
+          "can_transact": {
+            "present": 1867,
+            "nonnull": 1867,
+            "true": 1867,
+            "false": 0
+          },
+          "removed": {
+            "present": 1867,
+            "nonnull": 1867,
+            "true": 0,
+            "false": 1867
+          },
+          "has_temporary_code": {
+            "present": 1867,
+            "nonnull": 1867,
+            "true": 0,
+            "false": 1867
+          }
+        }
+      }
+    },
+    "artifacts": {
+      "player_states.csv.gz": "f857f16008c70d7195c09447046e4fade702165d1fdac171ed72493b642b80ff",
+      "manager_states.csv.gz": "eec5b89ec6ee3de39ef278d69f111474c5a20174c350858676179aef434d79d1",
+      "rejected.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    "eligible_predeadline": false,
+    "eligible_training": false,
+    "semantics": "published_source_roster_is_not_proof_of_buy_or_lineup_eligibility",
+    "alias_report_sha256": "d61fab0e14e29985b3919b06ba662652f87e1ae9f0e80a34984fff13353684dd",
+    "aliases_applied_rows": 2
+  },
+  "verification": {
+    "previous_player_rows_unchanged": 143718,
+    "player_rows": 143720,
+    "restored_rows": 2,
+    "manager_rows": 320,
+    "unknown_can_select_rows": 94982
+  },
+  "production_changed": false,
+  "label_dataset_unchanged": "1d111a458c9074fcd7ec2da516e82d9d1984600f6f057716112b92e855240df4"
+}

@@ -893,3 +893,34 @@ def test_bootstrap_identity_rejects_a_snapshot_without_partial_witnesses():
     with pytest.raises(ValueError,match='identity integer'):
         observe(registry,snapshot,dict(path='cache/2024/8/16/1100.json.xz',sha256='a'*64))
     assert registry=={}
+
+
+def test_player_alias_requires_continuity_and_corroboration_and_excludes_managers():
+    import copy
+    from experiments.data_ground_truth.bootstrap_aliases import corroborate
+    def variant(code,first,last):
+        return dict(code=code,first_name='A',second_name='B',position=2,observed_team_ids=[1],
+                    distinct_snapshot_objects=3,first=dict(source_claimed_at=first),last=dict(source_claimed_at=last))
+    entry=dict(season='2022-23',element=1,variants=[variant(20,'2022-08-01','2022-08-05'),variant(21,'2022-08-06','2023-05-20')])
+    alias=corroborate(entry,21,['2022-09-01','2022-09-02'])
+    assert alias['source_code']==20 and alias['canonical_code']==21 and not alias['eligible_predeadline']
+    for key,value in [('position',5),('first_name','Different'),('distinct_snapshot_objects',1),('observed_team_ids',[2])]:
+        bad=copy.deepcopy(entry);bad['variants'][0][key]=value
+        with pytest.raises(ValueError):corroborate(bad,21,['2022-09-01','2022-09-02'])
+    with pytest.raises(ValueError,match='appearance'):corroborate(entry,21,['2022-09-01'])
+    with pytest.raises(ValueError,match='shared'):corroborate(entry,21,['2022-09-01','2022-09-02'],[20])
+    bad=copy.deepcopy(entry);bad['variants'][0]['last']['source_claimed_at']='2022-08-07'
+    with pytest.raises(ValueError,match='overlapping'):corroborate(bad,21,['2022-09-01','2022-09-02'])
+
+
+def test_bootstrap_alias_is_scoped_preserves_source_and_does_not_admit_time():
+    from experiments.data_ground_truth.bootstrap_state import apply_alias
+    e=dict(id=1,code=20,element_type=2)
+    alias=dict(canonical_code=21,scope='same_season_fpl_element_only',first_source_claimed_at='2022-08-01',last_source_claimed_at='2022-08-05')
+    aliases={('2022-23',1,20):alias};candidate=dict(season='2022-23',source_claimed_at='2022-08-03')
+    changed,applied=apply_alias(e,candidate,aliases)
+    assert changed['code']==21 and applied and e['code']==20
+    assert apply_alias(e,dict(candidate,season='2023-24'),aliases)==(e,False)
+    with pytest.raises(ValueError,match='range'):apply_alias(e,dict(candidate,source_claimed_at='2022-08-08'),aliases)
+    with pytest.raises(ValueError,match='entity'):apply_alias(dict(e,element_type=5),candidate,aliases)
+    with pytest.raises(ValueError,match='integer'):apply_alias(dict(e,code=True),candidate,aliases)

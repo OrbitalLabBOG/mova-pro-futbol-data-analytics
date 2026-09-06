@@ -87,7 +87,19 @@ def normalize(element, teams, reference):
     return result
 
 
-def build(root: Path, audit_root: Path, package: Path, out: Path):
+def apply_alias(element, candidate, aliases):
+    key = (candidate['season'], integer(element['id'], 'id'), integer(element['code'], 'code'))
+    alias = aliases.get(key)
+    if alias is None:
+        return element, False
+    if element['element_type'] not in (1, 2, 3, 4) or alias['scope'] != 'same_season_fpl_element_only':
+        raise ValueError('invalid alias entity or scope')
+    if not alias['first_source_claimed_at'] <= candidate['source_claimed_at'] <= alias['last_source_claimed_at']:
+        raise ValueError('alias outside observed source range')
+    return dict(element, code=alias['canonical_code']), True
+
+
+def build(root: Path, audit_root: Path, package: Path, out: Path, aliases_root: Path | None = None):
     source = (root/'manifest.json').read_bytes()
     manifest = json.loads(source)
     if manifest['errors'] or len(manifest['records']) != manifest['expected_files']:
@@ -102,6 +114,21 @@ def build(root: Path, audit_root: Path, package: Path, out: Path):
     if len(keys) != len(set(keys)):
         raise ValueError('duplicate candidate deadline')
     reference_manifest = verify(package)
+    aliases, alias_report_hash = {}, None
+    if aliases_root:
+        alias_report_bytes = (aliases_root/'report.json').read_bytes()
+        alias_report = json.loads(alias_report_bytes)
+        if alias_report['source_manifest_sha256'] != digest(source) or alias_report['reference_dataset_id'] != reference_manifest['dataset_id']:
+            raise ValueError('alias source or reference mismatch')
+        entries = json.loads(checked(aliases_root/'aliases.json', alias_report['aliases_sha256']))
+        for entry in entries:
+            key = (entry['season'], entry['element'], entry['source_code'])
+            if key in aliases:
+                raise ValueError('duplicate alias key')
+            aliases[key] = entry
+        if len(aliases) != alias_report['aliases']:
+            raise ValueError('alias count mismatch')
+        alias_report_hash = digest(alias_report_bytes)
     references = {}
     for partition in reference_manifest['partitions']:
         frame = pd.read_csv(package/partition['file'])[['element', 'official_player_code']].drop_duplicates()
@@ -133,7 +160,13 @@ def build(root: Path, audit_root: Path, package: Path, out: Path):
             season_scope='open' if candidate['season'] > '2025-26' else 'closed')
         for element in elements:
             try:
-                row = normalize(element, teams, references.get(candidate['season']))
+                normalized_element, applied = apply_alias(element, candidate, aliases)
+                row = normalize(normalized_element, teams, references.get(candidate['season']))
+                if aliases_root:
+                    row['source_code'] = element['code']
+                    row['identity_alias_applied'] = applied
+                    if applied:
+                        row['reference_identity_status'] = 'matched_via_audited_alias'
                 rows.append(dict(**context, **row))
             except (ValueError, KeyError, TypeError) as exc:
                 rejected.append(dict(**context, element=element.get('id'), source_code=element.get('code'),
@@ -156,12 +189,15 @@ def build(root: Path, audit_root: Path, package: Path, out: Path):
                            ('rejected.json', (json.dumps(rejected, indent=2)+'\n').encode())]:
         (out/name).write_bytes(payload)
         artifacts[name] = digest(payload)
-    report = dict(version='bootstrap-state-v1', source_manifest_sha256=digest(source),
+    report = dict(version='bootstrap-state-v2' if aliases_root else 'bootstrap-state-v1', source_manifest_sha256=digest(source),
         candidate_sha256=digest(candidate_bytes), reference_dataset_id=reference_manifest['dataset_id'],
         implementation_sha256=digest(Path(__file__).read_bytes()), candidates=len(candidates),
         rows=len(rows), rejected_rows=len(rejected), seasons=seasons, artifacts=artifacts,
         eligible_predeadline=False, eligible_training=False,
         semantics='published_source_roster_is_not_proof_of_buy_or_lineup_eligibility')
+    if aliases_root:
+        report['alias_report_sha256'] = alias_report_hash
+        report['aliases_applied_rows'] = int(frame.identity_alias_applied.sum())
     (out/'report.json').write_text(json.dumps(report, indent=2)+'\n')
     return report
 
@@ -170,8 +206,9 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     for arg in ('root', 'audit-root', 'package', 'out'):
         ap.add_argument('--'+arg, type=Path, required=True)
+    ap.add_argument('--aliases-root', type=Path)
     args = ap.parse_args()
-    print(json.dumps(build(args.root, args.audit_root, args.package, args.out), indent=2))
+    print(json.dumps(build(args.root, args.audit_root, args.package, args.out, args.aliases_root), indent=2))
 
 
 if __name__ == '__main__':
