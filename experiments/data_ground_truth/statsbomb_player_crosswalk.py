@@ -39,7 +39,16 @@ def resolve(witnesses):
     return {p:c for p,c in accepted.items() if len(reverse[c])==1}
 
 
-def build(statsbomb_root,fixture_root,archive_root,package,out):
+def name_evidence(player, archive_name, declared_aliases=False):
+    if compatible_names(player['player_name'], archive_name): return 'full_name'
+    alias = player.get('player_nickname')
+    if declared_aliases and alias and name_tokens(alias) and name_tokens(alias)==name_tokens(archive_name):
+        return 'declared_alias'
+    return None
+
+
+def build(statsbomb_root,fixture_root,archive_root,package,out,declared_aliases=False,baseline_root=None):
+    if declared_aliases and baseline_root is None: raise ValueError('alias comparison requires baseline')
     link_bytes=(fixture_root/'report.json').read_bytes();link_report=json.loads(link_bytes)
     links=json.loads(checked(fixture_root/'fixture-links.json',link_report['artifacts']['fixture-links.json']))
     if len(links)!=380 or not all(r['research_link_accepted'] for r in links):raise ValueError('incomplete fixture reference')
@@ -53,7 +62,7 @@ def build(statsbomb_root,fixture_root,archive_root,package,out):
             candidates[(int(row['matchId_events']),int(row['team_id']))].append(dict(code=code,name=row['playerName'],csv_row=number))
     manifest_bytes=(statsbomb_root/'manifest.json').read_bytes();manifest=json.loads(manifest_bytes)
     records={r['path']:r for r in manifest['records']}
-    club_map={c:a for a,b,c,d in CLUBS};roster={};names=defaultdict(set);witnesses=[];sources=[]
+    club_map={c:a for a,b,c,d in CLUBS};roster={};names=defaultdict(set);witnesses=[];sources=[];aliases=defaultdict(set)
     for link in sorted(links,key=lambda r:r['archive_fixture']):
         record=records[f"data/lineups/{link['statsbomb_match_id']}.json"]
         teams=json.loads(read_record(statsbomb_root,record));sources.append(dict(path=record['path'],sha256=record['sha256']))
@@ -63,13 +72,16 @@ def build(statsbomb_root,fixture_root,archive_root,package,out):
                 player_id=player['player_id'];fixture=link['archive_fixture'];key=(fixture,player_id)
                 if key in roster:raise ValueError('duplicate lineup identity')
                 names[player_id].add(player['player_name'])
+                if player.get('player_nickname'): aliases[player_id].add(player['player_nickname'])
                 roster[key]=dict(positions_present=bool(player['positions']),source_sha256=record['sha256'])
                 if not player['positions']:continue
                 for candidate in candidates[(fixture,club)]:
-                    if compatible_names(player['player_name'],candidate['name']):
+                    evidence = name_evidence(player,candidate['name'],declared_aliases)
+                    if evidence:
                         witnesses.append(dict(statsbomb_player_id=player_id,official_player_code=candidate['code'],fixture=fixture,
                             club_code=club,statsbomb_name=player['player_name'],archive_name=candidate['name'],
                             archive_csv_row=candidate['csv_row'],lineup_sha256=record['sha256']))
+                        if declared_aliases: witnesses[-1].update(name_evidence=evidence,declared_alias=player.get('player_nickname'))
     accepted=resolve(witnesses);reverse={c:p for p,c in accepted.items()};by_player=defaultdict(list)
     for row in witnesses:by_player[row['statsbomb_player_id']].append(row)
     player_links=[]
@@ -95,7 +107,7 @@ def build(statsbomb_root,fixture_root,archive_root,package,out):
     (out/'player-links.json').write_text(json.dumps(player_links,indent=2)+'\n')
     (out/'witnesses.jsonl.gz').write_bytes(gzip.compress(('\n'.join(json.dumps(r,sort_keys=True) for r in witnesses)+'\n').encode(),mtime=0))
     (out/'positive-appearance-issues.json').write_text(json.dumps(issues,indent=2)+'\n')
-    report=dict(version='statsbomb-player-crosswalk-v1',dataset_id=dataset['dataset_id'],fixture_report_sha256=digest(link_bytes),
+    report=dict(version='statsbomb-player-crosswalk-v2' if declared_aliases else 'statsbomb-player-crosswalk-v1',dataset_id=dataset['dataset_id'],fixture_report_sha256=digest(link_bytes),
         archive_crosswalk_report_sha256=digest(crosswalk_bytes),archive_observations_sha256=digest(observations_bytes),
         statsbomb_manifest_sha256=digest(manifest_bytes),implementation_sha256=digest(Path(__file__).read_bytes()),
         source_lineups=sources,statsbomb_players=len(names),identity_status=dict(Counter(r['status'] for r in player_links)),
@@ -109,13 +121,36 @@ def build(statsbomb_root,fixture_root,archive_root,package,out):
             'unresolved_and_single_appearance_players_not_forced',
             'research_only_StatsBomb_rights_and_temporal_limits_inherited'],
         artifacts={n:digest((out/n).read_bytes()) for n in ('player-links.json','witnesses.jsonl.gz','positive-appearance-issues.json')})
+    if declared_aliases:
+        baseline_bytes=(baseline_root/'report.json').read_bytes();baseline=json.loads(baseline_bytes)
+        if (baseline['dataset_id']!=dataset['dataset_id'] or baseline['fixture_report_sha256']!=digest(link_bytes)
+                or baseline['archive_observations_sha256']!=digest(observations_bytes)
+                or baseline['statsbomb_manifest_sha256']!=digest(manifest_bytes)):
+            raise ValueError('different identity baseline context')
+        previous=json.loads(checked(baseline_root/'player-links.json',baseline['artifacts']['player-links.json']))
+        old={r['statsbomb_player_id']:r['official_player_code'] for r in previous if r['status']=='accepted_research_identity'}
+        delta=[]
+        for player in sorted(set(old)|set(accepted)):
+            before=old.get(player);after=accepted.get(player)
+            status='retained' if before==after else 'new' if before is None else 'lost' if after is None else 'changed'
+            delta.append(dict(statsbomb_player_id=player,before=before,after=after,status=status))
+        (out/'identity-delta.json').write_text(json.dumps(delta,indent=2)+'\n')
+        report.update(baseline_report_sha256=digest(baseline_bytes),declared_alias_player_count=len(aliases),
+            witness_name_evidence=dict(Counter(r['name_evidence'] for r in witnesses)),
+            identity_delta=dict(Counter(r['status'] for r in delta)),
+            baseline_positive_covered=baseline['GT_positive_appearance_status'].get('positions_present',0),
+            additional_positive_covered=positive['positions_present']-baseline['GT_positive_appearance_status'].get('positions_present',0),
+            method='full_name_or_exact_declared_alias_two_distinct_played_fixture_club_witnesses_unique_reciprocal_code')
+        report['artifacts']['identity-delta.json']=digest((out/'identity-delta.json').read_bytes())
+        report['limitations'].append('single_token_alias_only_when_explicitly_declared_by_provider_not_inferred')
     (out/'report.json').write_text(json.dumps(report,indent=2)+'\n');return report
 
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     for name in ('statsbomb-root','fixture-root','archive-root','package','out'):p.add_argument('--'+name,type=Path,required=True)
-    a=p.parse_args();print(json.dumps(build(a.statsbomb_root,a.fixture_root,a.archive_root,a.package,a.out),indent=2))
+    p.add_argument('--declared-aliases',action='store_true');p.add_argument('--baseline-root',type=Path)
+    a=p.parse_args();print(json.dumps(build(a.statsbomb_root,a.fixture_root,a.archive_root,a.package,a.out,a.declared_aliases,a.baseline_root),indent=2))
 
 
 if __name__=='__main__':main()
