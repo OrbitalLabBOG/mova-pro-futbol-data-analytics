@@ -3715,3 +3715,59 @@ de 380 filas con un cruce duplicado y de una colección parcial con veinte clube
 Sin nuevas etiquetas FPL, entrenamiento o cambios productivos. El siguiente gate
 puede medir el enlace de fixtures 2015/16 y compatibilidad semántica para
 investigación, manteniendo separada la cuestión de derechos de uso comercial.
+
+## G68 — enlace de partidos StatsBomb con GT FPL 2015/16
+
+<img src="https://static.hudl.com/craft/productAssets/statsbomb_icon.svg" alt="Hudl StatsBomb" width="40" height="40">
+
+Fuente de eventos/calendario: **StatsBomb Open Data (Hudl)**, pin y condiciones
+archivados en G67. Esta auditoría hereda el alcance exclusivamente investigativo;
+no habilita explotación comercial, redistribución raw ni entrenamiento productivo.
+
+`statsbomb_fixture_crosswalk.py` enlaza el calendario StatsBomb 2015/16 con el
+archivo PL `pl_stats/_merged/events/2015-16_events_stats.csv` ya adquirido en G3/G4
+y con la partición de 24.741 filas de GT v7. Verifica hashes de archivos y paquete;
+no presupone igualdad de IDs entre StatsBomb, PL y FPL.
+
+La correspondencia de **veinte clubes** está declarada con ID y etiqueta exacta
+observada en ambas fuentes, incluida cada abreviatura. El código rechaza etiquetas
+cambiadas, un club no previsto, pares local–visitante duplicados o calendarios con
+pares distintos. Cada par dirigido debe ser único dentro de la temporada; el
+partido de vuelta conserva otra clave. La fecha local se contrasta después del
+enlace por clubes, sin inferir que los timestamps sin zona son UTC.
+
+| Verificación | Resultado |
+| --- | ---: |
+| Partidos enlazados por par local–visitante | 380/380 |
+| Fecha StatsBomb = fecha local PL | 380/380 |
+| Filas GT con namespace `pl_archive_events` y partido aceptado | 24.741/24.741 |
+| Fecha local de fila GT = fecha StatsBomb | 24.741/24.741 |
+| Partidos de fuente sin referencia GT | 0 |
+| Marcadores contrastables desde `goalsFor_h`/`goalsFor_a` de PL | 0/380 |
+
+Los dos campos de marcador PL están vacíos en todos los partidos. Su contraste
+queda **unknown**, sin imputar cero ni declarar concordancia con StatsBomb.
+La aceptación investigativa del enlace acredita clubes y fecha; no exige ni
+pretende acreditar ese contraste de marcador ausente.
+
+`fixture-links.json` conserva ambos IDs, clubes, fechas, campos fuente del marcador,
+valores, estados y hashes de los calendarios. `label-link-issues.json` queda vacío.
+Estos artefactos permanecen locales, fuera de Git; no redistribuyen los archivos
+originales. El reporte versiona la tabla explícita de correspondencias de clubes y
+la evidencia agregada.
+
+```bash
+python -m experiments.data_ground_truth.statsbomb_fixture_crosswalk \
+  --statsbomb-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/statsbomb-open-g67 \
+  --archive-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/raw-history-v2 \
+  --package /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/training-datasets/d4baf849fb4a051be103f8c469e61a4753edb0b4004f980a000fe5c86ef573db \
+  --out /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/statsbomb-fixture-crosswalk-v2
+```
+
+Reporte y dos artefactos reproducidos byte por byte en v3. Suite completa:
+**1.627 passed, 1 skipped, 79 deselected** (33,92 s).
+[Resultados G68](results-g68.json). Esto habilita un siguiente contraste
+**investigativo** de identidad de jugadores por club y partido, no una unión ya
+aceptada a nivel de jugador/evento. Las taxonomías de eventos, su publicación
+histórica y derechos de uso comercial siguen sin admisión. GT v7, G55 y producción
+no cambian; no hay nuevas etiquetas o temporadas FPL.
