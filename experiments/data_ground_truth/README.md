@@ -125,3 +125,48 @@ La métrica predeadline verificada de este lote es **0%**, intencionalmente expl
 No se reclama una búsqueda exhaustiva de proveedores ni una cobertura total de
 lesiones, cuotas o copas. La siguiente promoción depende de resolver esos contratos,
 no de descargar más copias del mismo resultado.
+
+## Gate G2: identidad y expansión verificadas
+
+Corte posterior del 5 de septiembre de 2026 Colombia. Resultado independiente en
+[results-g2.json](results-g2.json); G1 conserva `results.json` sin reescribirlo.
+
+- `pins-g2.json` amplía a cuatro repositorios: 1.161 archivos, 277.072.011 bytes,
+  cero fallos de adquisición. El nuevo root es `raw-history-v2`.
+- `decoding.py` admite Latin-1 únicamente para tres SHA-256 revisados. Esos bytes
+  no contienen el rango 0x80–0x9f: Latin-1 y Windows-1252 coinciden. No hay fallback
+  genérico ni reemplazos Unicode. El auditor detectó un CSV de la fuente adicional
+  con caracteres de sustitución ya incorporados; queda en cuarentena.
+- `labels.py` exportó 253.890 observaciones en diez CSV de etiquetas con código
+  oficial y tipo de posición: cero identidades sin resolver y cero discrepancias
+  en claves, puntos o minutos frente al canónico. Recupera la posición de las
+  90.496 filas antiguas mediante metadatos de temporada. Son etiquetas retrospectivas;
+  no un feed de features disponible antes del deadline.
+- El archivo deportivo adicional contiene 17 temporadas 2009/10–2025/26, cada una
+  con 380 IDs de fixtures distintos: 6.460 partidos y 241.241 filas jugador–partido
+  al excluir las copias agregadas. Añade siete temporadas deportivas anteriores
+  a nuestro histórico FPL, sin inventar puntaje Fantasy para ellas.
+- El archivo tiene 15 filas con minutos fuera de 0–90 en 2022/23. Sus `playerId`
+  son otro namespace que `pl_code`; los IDs de partido de las tablas de jugadores
+  tienen cero coincidencias con los IDs de las tablas de eventos. No se adopta la
+  unión directa sugerida por el README del proveedor. Todo ese detalle permanece
+  en cuarentena hasta reconciliar fixtures e identidad de forma verificable.
+- TopMarx aporta resúmenes y deadlines históricos de 2025/26. Que un archivo tenga
+  deadline no demuestra su publicación previa; `eligible_predeadline` sigue falso.
+
+```bash
+python -m experiments.data_ground_truth.raw \
+  --root "$RAW_HISTORY_ROOT" --pins experiments/data_ground_truth/pins-g2.json
+python -m experiments.data_ground_truth.labels \
+  --root "$RAW_HISTORY_ROOT" --canonical "$CANONICAL_DB"
+python -m experiments.data_ground_truth.archive_audit --root "$RAW_HISTORY_ROOT"
+```
+
+El subgate de etiquetas con identidad está verificado. El subgate de integración
+multifuente sigue abierto: resolver namespaces, minutos anómalos y disponibilidad
+temporal. La promoción de un nuevo modelo no forma parte de este gate.
+
+Fuentes nuevas: [Premier League Stats](https://github.com/imadeddine-belkat/Premier-League-Stats)
+y [TopMarx FPL mirror](https://github.com/TopMarxFPL/fpl-mirror). Sus README se archivan
+con los mismos commits que los datos. El README del primero afirma que las claves
+son intercambiables; los resultados de la auditoría contradicen esa afirmación.

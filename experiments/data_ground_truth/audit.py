@@ -10,6 +10,7 @@ import sqlite3
 import pandas as pd
 
 from experiments.data_ground_truth.raw import digest
+from experiments.data_ground_truth.decoding import read_csv_bytes
 from mova_fpl.data.schema import KEY
 
 
@@ -42,13 +43,14 @@ def audit(db: Path, root: Path) -> dict:
         if not record['path'].endswith('.csv'):
             continue
         try:
-            df = pd.read_csv(blob, low_memory=False)
-        except (UnicodeDecodeError, pd.errors.ParserError, pd.errors.EmptyDataError) as exc:
+            df, encoding = read_csv_bytes(blob.read_bytes())
+        except (ValueError, UnicodeDecodeError, pd.errors.ParserError, pd.errors.EmptyDataError) as exc:
             inventory.append(dict(repository=record['repository'], path=record['path'],
                                   sha256=record['sha256'], parse_error=type(exc).__name__))
             continue
-        tables[(record['repository'], record['path'])] = df
-        inventory.append(dict(repository=record['repository'], path=record['path'], rows=len(df),
+        if record['repository'].startswith('vaastav/') and record['path'].endswith(('/players_raw.csv', '/fixtures.csv')):
+            tables[(record['repository'], record['path'])] = df
+        inventory.append(dict(repository=record['repository'], path=record['path'], rows=len(df), encoding=encoding,
                               columns=list(df.columns), nulls={c: int(df[c].isna().sum()) for c in df.columns},
                               sha256=record['sha256']))
     seasons = {}

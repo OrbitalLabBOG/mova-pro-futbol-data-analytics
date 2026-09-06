@@ -14,7 +14,8 @@ from urllib.parse import quote
 
 from mova_fpl.data.sources import _get
 
-REPOS = ('vaastav/Fantasy-Premier-League', 'olbauday/FPL-Core-Insights')
+REPOS = ('vaastav/Fantasy-Premier-League', 'olbauday/FPL-Core-Insights',
+         'imadeddine-belkat/Premier-League-Stats', 'TopMarxFPL/fpl-mirror')
 
 
 def digest(data: bytes) -> str:
@@ -69,6 +70,10 @@ def select(repo: str, path: str) -> bool:
         return True
     if repo == REPOS[0]:
         return bool(re.fullmatch(r'data/20(?:1[6-9]|2[0-5])-\d{2}/(?:gws/merged_gw|players_raw|fixtures|teams)\.csv', path))
+    if repo == REPOS[2]:
+        return bool(re.fullmatch(r'(?:pl_stats/(?:_merged/events/[^/]+|[^/]+/(?:players_match_stats|squad)/[^/]+)|fpl_scraper/fpl_stats/_merged/players/[^/]+)\.csv', path))
+    if repo == REPOS[3]:
+        return bool(re.fullmatch(r'data/\d{4}/csv/(?:fixtures|gameweeks|players|teams)\.csv', path))
     if path.startswith('data/2024-2025/'):
         return bool(re.fullmatch(r'data/2024-2025/(?:(matches|playermatchstats)/GW\d+/[^/]+|(players|teams)/[^/]+)\.csv', path))
     return bool(re.fullmatch(r'data/202[56]-202[67]/(?:By Gameweek/GW\d+/(?:matches|playermatchstats|players|player_gameweek_stats)|gameweek_summaries|players|teams)\.csv', path))

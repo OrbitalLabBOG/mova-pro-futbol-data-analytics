@@ -100,3 +100,50 @@ def test_reconciliation_checks_official_identity_and_double_gameweeks(tmp_path):
     staging = pd.read_csv(root / 'staging' / '2025-2026' / 'player_match_observations.csv')
     assert staging.source_available_at.isna().all()
     assert not staging.eligible_predeadline.any()
+
+
+def test_decoding_only_accepts_reviewed_latin1_hash(monkeypatch):
+    from experiments.data_ground_truth import decoding
+    data = 'name,minutes\nDoucouré,90\n'.encode('latin1')
+    with pytest.raises(UnicodeDecodeError):
+        decoding.read_csv_bytes(data)
+    monkeypatch.setattr(decoding, 'LATIN1_HASHES', {raw.digest(data)})
+    frame, encoding = decoding.read_csv_bytes(data)
+    assert frame.name.tolist() == ['Doucouré']
+    assert encoding == 'iso-8859-1'
+    with pytest.raises(ValueError, match='replacement'):
+        decoding.read_csv_bytes('name\nDoucour�\n'.encode())
+
+
+def test_label_pack_resolves_identity_and_rejects_changed_ground_truth(tmp_path):
+    import sqlite3
+    from experiments.data_ground_truth.labels import build_labels
+    root = tmp_path / 'raw'
+    (root / 'objects').mkdir(parents=True)
+    frame = pd.DataFrame([dict(GW=1, element=1, fixture=1, name='Same Name', minutes=90, total_points=4)])
+    metadata = pd.DataFrame([dict(id=1, code=12345, element_type=2)])
+    records = []
+    for path, df in [('data/2025-26/gws/merged_gw.csv', frame), ('data/2025-26/players_raw.csv', metadata)]:
+        data = df.to_csv(index=False).encode(); sha = raw.digest(data)
+        (root / 'objects' / sha).write_bytes(data)
+        records.append(dict(repository=raw.REPOS[0], path=path, sha256=sha))
+    (root / 'manifest.json').write_text(json.dumps(dict(records=records)))
+    db = tmp_path / 'canonical.db'
+    with sqlite3.connect(db) as con:
+        frame.rename(columns={'GW':'gw'}).assign(season='2025-26').to_sql('player_gameweek', con, index=False)
+    result = build_labels(root, db)
+    assert result['seasons']['2025-26']['unresolved_identities'] == 0
+    labels = pd.read_csv(root / 'labels' / '2025-26.csv')
+    assert labels.official_player_code.tolist() == [12345]
+    assert labels.season_position_type.tolist() == [2]
+    assert labels.available_at.isna().all()
+    with sqlite3.connect(db) as con:
+        con.execute('UPDATE player_gameweek SET total_points=5')
+    with pytest.raises(ValueError, match='canonical label differences'):
+        build_labels(root, db)
+
+
+def test_extended_source_selection_keeps_match_and_season_granularity():
+    assert raw.select(raw.REPOS[2], 'pl_stats/Arsenal_3/players_match_stats/2009-10_players_match_stats.csv')
+    assert raw.select(raw.REPOS[3], 'data/2025/csv/gameweeks.csv')
+    assert not raw.select(raw.REPOS[2], 'fpl_scraper/fpl/client.py')
