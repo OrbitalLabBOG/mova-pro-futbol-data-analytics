@@ -4786,3 +4786,32 @@ Validación del capturador: **1.670 passed, 1 skipped, 79 deselected**, 33,71 s.
 Las pruebas cubren integridad del contenido, temporada distinta del nombre,
 truncación, claves duplicadas, rutas no admitidas y corrupción de caché. Esta suite
 no prueba que la adquisición completa haya finalizado.
+
+Avance intermedio del primer contenedor: se completaron sus **1.015 archivos** y
+se cotejó la lista exacta de receipts con el inventario. El contenido corresponde
+a 2020/21: 645.722 observaciones jugador–snapshot, entre 521 y 713 jugadores por
+captura, sin IDs duplicados o ausentes. Código, minutos acumulados, puntos
+acumulados, precio, status y news no son NULL en esas filas; news puede ser cadena
+vacía. `chance_of_playing_next_round` está presente y no NULL en 400.976 filas;
+los restantes NULL no se convierten en cero.
+
+`azure_coverage.py` compara reloj del nombre y `download_time` como campos de
+reloj, sin atribuir zona a un datetime naive. Descarta candidatas nominales con
+diferencia superior a 60 segundos o timestamp no interpretable. En el primer
+contenedor, 1.013 relojes concuerdan y dos no. El primer snapshot se nombra
+08:24:34Z, pero declara 10:24:34 sin zona: no acredita entrada antes de GW1.
+
+Para 2020/21 se observan candidatas nominales en GW2–GW38: **37/38 jornadas** a
+menos de 24 horas y **35/38** a menos de seis horas. Se conservan 39 variantes de
+deadline, sin resolver cambios con información posterior. En todas las variantes
+seleccionadas, Last-Modified del blob es posterior o igual al deadline. Estos
+resultados no amplían la cobertura de publicación acreditada del benchmark.
+Los resúmenes intermedios están en `azure-2020-interim-g84`; el reporte final
+versionado queda pendiente de terminar ambos contenedores y reproducir offline.
+
+```bash
+# Después del reporte completo del capturador:
+python -m experiments.data_ground_truth.azure_coverage \
+  --root "$DATA_BASE/azure-history-g84" \
+  --out "$DATA_BASE/azure-coverage-g84-v1"
+```
