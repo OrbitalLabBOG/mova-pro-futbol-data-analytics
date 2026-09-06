@@ -5774,3 +5774,59 @@ y la distinción entre marcador `0-0` explícito y desconocido.
 GT v8, paquete parcial G94, entrenamiento y producción permanecen intactos.
 No hay admisión de etiquetas finalizadas ni predeadline. Suite completa G102:
 **1.712 passed, 1 skipped, 79 deselected**, 37,39 s.
+
+## G103 — persistencia de las tres claves candidatas 0/0
+
+Se rastrean Aké, Borini y Evans en **1.446 snapshots válidos**, seleccionados por
+rango nominal julio–noviembre de 2015 (**6.699.330.505 bytes verificados**). La
+coincidencia exige ID y código, además de fecha, jornada, rival y localía de la fila.
+Perfil ausente, identidad incompatible y fila ausente son estados diferentes.
+Las fechas del nombre ordenan el archivo; no prueban cuándo fue publicado.
+
+| Candidata | Apariciones de la fila | Cambio de club observado al desaparecer |
+| --- | ---: | --- |
+| Aké, FPL84, fixture803174 | 30 | Chelsea → Watford |
+| Borini, FPL201, fixture803201 | 26 | Liverpool → Sunderland |
+| Evans, FPL231, fixture803196 | 26 | Man Utd → West Brom |
+
+Las **82 apariciones** conservan 0 minutos y 0 puntos. La fila de Aké aparece en
+snapshots nominales del 14 al 17 de agosto; en el del 17 de agosto a las 10:05:50
+UTC ya falta y el perfil muestra Watford. Las de Borini y Evans aparecen del 29 al
+31 de agosto; en el del 31 a las 16:05:49 UTC ya faltan y sus perfiles muestran
+Sunderland y West Brom. Son cambios concurrentes dentro del archivo: no se afirma
+la hora real del traspaso, causalidad ni elegibilidad en una jornada.
+
+La última captura seleccionada ya no contiene ninguna de las tres filas. En cada
+caso se registran además cuatro snapshots con identidad incompatible y uno con
+perfil ausente; no se convierten en evidencia de ausencia de la fila. Aké tiene
+1.411 estados `row_absent`; Borini y Evans, 1.415 cada uno. Son conteos repetidos
+de archivo, no observaciones de partidos independientes.
+
+Esta evidencia mantiene las tres claves fuera de promociones al GT: son filas
+que la fuente retiró mientras actualizaba perfiles, no faltantes finales demostrados.
+Su desaparición tampoco demuestra cero minutos, no inscripción o una regla de
+eligibilidad. La investigación de G101/G102 queda vinculada a trazas completas,
+sin borrar los candidatos ni sobrescribir originales.
+
+```bash
+python -m experiments.data_ground_truth.candidate_row_persistence \
+  --base "$DATA_BASE" --out "$DATA_BASE/candidate-persistence-g103-new"
+```
+
+`traces.json` conserva los 4.338 estados de los tres perfiles, fila candidata,
+filas de la misma jornada y referencia SHA256/path al snapshot. Reporte y trazas
+se reproducen byte por byte en dos recorridos completos. Las pruebas distinguen
+identidad, fixture y ausencia; ninguna transición autoriza etiquetas finales.
+GT v8, entrenamiento y producción permanecen intactos. Los cinco JSON inválidos
+de G100 quedan fuera de este recorrido; tampoco hay admisión predeadline.
+
+Suite completa G103: **1.714 passed, 1 skipped, 79 deselected**, 38,88 s.
+
+En esas mismas capturas, la jornada conserva una fila 0/0 referida a otro partido:
+Aké pasa a `15 Aug 15:00 / WBA(H) 0-0`, Borini a
+`29 Aug 15:00 / AVL(A) 2-2` y Evans a `29 Aug 15:00 / STK(A) 1-0`.
+Las trazas retienen tanto la referencia anterior como la fila posterior. Esto
+muestra que la asociación histórica de ciertos ceros con un fixture puede cambiar
+al actualizarse el perfil; no permite reconstruir por sí sola elegibilidad o club
+antes del deadline. No se declara cuál de las referencias representa inscripción
+real ni se modifica el GT a partir de esa inferencia.
