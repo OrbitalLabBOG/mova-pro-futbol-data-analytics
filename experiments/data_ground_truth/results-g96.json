@@ -1,0 +1,59 @@
+{
+  "version": "historical-data-g96",
+  "audit_report_sha256": "1b2965196f84f3e41472ad5ba22bf7987139a15347144d033fbd8b6c4f0ebce3",
+  "audit": {
+    "version": "gaffer-source-audit-v1",
+    "manifest_sha256": "e996e8640b9ec29a5fa6925fdfc8465f61fa90bed3a8650c73b1e88619798353",
+    "prior_manifest_sha256": "adac2f3a9bc6d1e660743167b6ad7f23b527284453e871ed730e8ff552436bcd",
+    "tree_response_sha256": "7e2705e3418f8f44f59a7f7be9220adf9c8436cb11a882cfe2ff36b54079d7e8",
+    "implementation_sha256": "d1ec9a5e7f8fc81727e608f220a7536febabaed6637e7a58b9ea45e039811be9",
+    "repository": "barryedmund/gaffer",
+    "revision": "bf7c46fe4399aa09d3e9cc5b3894d736a2f72e63",
+    "captured_files": 724,
+    "captured_bytes": 2842319,
+    "profiles": 723,
+    "identical_fixture_histories": 723,
+    "preserved_annual_prefixes": 723,
+    "appended_seasons": [
+      "2015_16"
+    ],
+    "appended_minutes_matching_snapshot": 723,
+    "appended_points_matching_snapshot": 723,
+    "changed_field_profiles": {
+      "chance_of_playing_next_round": 4,
+      "ep_this": 329,
+      "event_explain": 1,
+      "form": 357,
+      "news": 4,
+      "season_history": 723,
+      "status": 4,
+      "value_form": 287
+    },
+    "baseline_codes_without_source": 0,
+    "new_match_labels_vs_baseline": 0,
+    "training_admitted": false,
+    "production_changed": false,
+    "new_complete_seasons": 0,
+    "limitations": [
+      "matching_archives_do_not_prove_source_independence",
+      "appended_annual_rows_not_new_match_labels",
+      "mutable_state_differences_not_predeadline_publication_proof",
+      "does_not_recover_2013_14_GW34_or_GW38"
+    ],
+    "artifacts": {
+      "profile_comparisons.json": "1676a88ac754b0fc8ed67bd46b77e48f1d7f2e40f44e3ca8aa913036fa10e0cc"
+    }
+  },
+  "discovery_artifact_sha256": {
+    "barryedmund--gaffer.json": "7e2705e3418f8f44f59a7f7be9220adf9c8436cb11a882cfe2ff36b54079d7e8",
+    "code-search-0.json": "4af480b8ee5b87b369a76c49bd22c9a783908272ebffbe97898f8ab0f0772a5f",
+    "code-search-1.json": "8f951a0b2dba1126aa5059c1c30d3118396b1ea15e5c9954b60b6d4c93c8abdb",
+    "code-search-2.json": "91622615c94e7b165f57934537fbe8e24c05a2ce970a81f2fcbaaf881a9045a0",
+    "code-search-3.json": "3424e792a6f04e1295c7da4331e4138bceaddddb297f5596e8e57a38db90873b",
+    "code-search-4.json": "4af480b8ee5b87b369a76c49bd22c9a783908272ebffbe97898f8ab0f0772a5f",
+    "code-search-5.json": "78c0267e593ee72142e3ce3a435ee42971062b8d9d66ee23a8f988764b077d1a",
+    "grepJimmyGu--capstone.json": "12e3367584aefd16de510187495a0a704ad5d3a2560b591fc10ff963b8142323"
+  },
+  "reproduction_identical": true,
+  "discovery_scope": "six_GitHub_code_search_first_pages_and_two_pinned_trees_not_exhaustive"
+}

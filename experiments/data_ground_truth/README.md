@@ -5438,3 +5438,57 @@ para los 408 minutos desconocidos de GW38, además de los nueve puntos de GW34.
 Este reporte aún no forma parte del corte portable inmutable G92.
 
 Suite completa G95: **1.697 passed, 1 skipped, 79 deselected**, 36,16 s.
+
+
+## G96 — Fuente alternativa 2015/16 y control de duplicación semántica
+
+La búsqueda consultó seis primeras páginas de GitHub Code Search e inspeccionó dos
+árboles fijados por revisión. Las respuestas quedan en `historical-discovery-g96`,
+con hashes en [resultados G96](results-g96.json). Algunas consultas superaban 100
+resultados: no se presenta esta búsqueda como exhaustiva. El candidato
+`grepJimmyGu/capstone` contenía metadatos de publicaciones de Reddit, no resultados
+FPL, y se descartó como fuente de etiquetas.
+
+Se adquirieron 723 perfiles JSON de [barryedmund/gaffer](https://github.com/barryedmund/gaffer),
+revisión `bf7c46fe4399aa09d3e9cc5b3894d736a2f72e63`, junto con un archivo de código
+documental (`lib/tasks/get_player_data.rake`). Total: 724 archivos, 2.842.319 bytes.
+Los originales viven en `gaffer-source-g96`; no se ejecutó código archivado ni se
+adquirieron configuraciones. No se atribuye a ese código la generación histórica
+exacta de los archivos sin evidencia adicional.
+
+| Contraste con `raw-history-2015` | Perfiles |
+| --- | ---: |
+| Correspondencia exacta de ID y código de jugador | 723 |
+| Historial por partido idéntico | 723 |
+| Historia anual previa conservada íntegramente | 723 |
+| Fila anual adicional `2015_16` | 723 |
+| Minutos y puntos de esa fila iguales al total del propio snapshot | 723 |
+| Códigos de la fuente previa sin correspondencia | 0 |
+
+Por tanto, no hay etiquetas nuevas por partido frente a la fuente existente. Las
+723 filas anuales añadidas no se cuentan como datos independientes. Se conserva
+la notación de temporada original, sin reescribirla en el crudo.
+
+Los cambios adicionales afectan `form` (357 perfiles), `ep_this` (329), `value_form`
+(287), `status`, `news` y `chance_of_playing_next_round` (cuatro cada uno), y
+`event_explain` (uno). Son conteos por campo que se pueden solapar. Permanecen como
+estados de fuente con disponibilidad histórica desconocida; no se convierten en
+features predeadline ni se usa el pronóstico `ep_this` como resultado observado.
+
+```bash
+python -m experiments.data_ground_truth.gaffer_source_audit \
+  --base "$DATA_BASE" --out "$DATA_BASE/gaffer-source-audit-g96-new"
+```
+
+El reporte fija ambos manifiestos, árbol, implementación y evidencia por perfil con
+hashes de ambas versiones. Reporte y `profile_comparisons.json` idénticos byte por
+byte en v1/v2. Las pruebas separan cambios anuales de cambios de historial por
+partido y rechazan identidad incompatible; la selección excluye configuraciones y
+otras temporadas no revisadas.
+
+Esta adquisición no recupera los huecos GW34/GW38 de 2013/14 ni añade temporadas
+completas al GT. Aporta un archivo alternativo y diferencias de estado verificadas,
+sin contarlas como cobertura de etiquetas adicional. GT v7, paquete parcial G94 y
+producción permanecen intactos. Los nuevos originales quedan fuera del corte G92.
+
+Suite completa G96: **1.699 passed, 1 skipped, 79 deselected**, 35,36 s.
