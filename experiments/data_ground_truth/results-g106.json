@@ -1,0 +1,60 @@
+{
+  "version": "historical-data-g106",
+  "audit": {
+    "version": "footieviz-source-audit-v1",
+    "implementation_sha256": "40ea7ca18e4102236373a1208a261168f4466fa0480dfd08cd7ad47f0a84fc0f",
+    "source_manifest_sha256": {
+      "footieviz-source-g106": "461467853a6f1d134c38d4fe021cc8d855baa7f8273e26d6a83931e4d13eff7c",
+      "footieviz-history-g106": "12f79b1140fd0693e9f7f5cdef90fd2769bc0bb3ebd4e877ae2c903138755065"
+    },
+    "baseline_sha256": "21c74e98562268738a7b520b0518e6a48068f0b3117dc0c2e33660016f4f515e",
+    "captured_records": 17,
+    "unique_contents": 15,
+    "captured_bytes": 315322,
+    "kinds": {
+      "context_not_executed": 6,
+      "profiles": 4,
+      "sqlite": 6,
+      "invalid_json": 1
+    },
+    "sqlite_total_rows": 0,
+    "history_rows": 99,
+    "comparison_statuses": {
+      "paired": 99
+    },
+    "different_column_counts": {},
+    "minute_conflicts": 0,
+    "point_conflicts": 0,
+    "new_complete_seasons": 0,
+    "finalized_labels_admitted": 0,
+    "training_admitted": false,
+    "gt_changed": false,
+    "production_changed": false,
+    "limitations": [
+      "path_history_on_default_branch_only",
+      "one_removed_database_commit_retained_in_source_evidence",
+      "invalid_json_not_repaired",
+      "annual_totals_not_match_labels",
+      "source_file_date_not_publication_proof",
+      "raw_date_gw_opponent_join_not_new_fixture_normalization"
+    ],
+    "artifacts": {
+      "inventory.json": "156ab24e4496627142c4e503c098457a975100f3c8042174bdfe6577935d0a9c",
+      "comparisons.json": "aa4c136af766d8023e5b47679b25ce4fe2df263e3b1449cb05db331b0f813f35"
+    }
+  },
+  "report_sha256": "01c8071cfef29e70464ca6b99e68f29012872bf8c0ba988fea4dca1d5becdfe3",
+  "reproduction": {
+    "identical_files": [
+      "report.json",
+      "inventory.json",
+      "comparisons.json"
+    ]
+  },
+  "validation": {
+    "command": "python -m pytest -q",
+    "passed": 1719,
+    "skipped": 1,
+    "deselected": 79
+  }
+}

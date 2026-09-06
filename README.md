@@ -19,6 +19,10 @@ El cockpit read-only comparte un único contrato entre CLI y API. Su dashboard e
 sólo expone tres indicadores humanos; diagnóstico, métricas y JSON permanecen en loopback.
 Supabase sólo refleja seguimiento PM y nunca recibe estado operativo.
 
+G106: archivo Footieviz y versiones históricas preservados: 17 capturas,
+15 contenidos únicos. Sus 99 filas de 2013/14 coinciden con el archivo existente;
+las bases SQLite están vacías. No añade etiquetas ni temporadas.
+
 G105: seis perfiles con totales inconsistentes se contrastaron con sus capturas
 vecinas: todas concuerdan antes y después. Se conserva la discrepancia de un
 punto, sin corregir etiquetas; reproducción idéntica desde el archivo restaurado.
@@ -143,7 +147,7 @@ de modelos por hash y exportación revisable, sin promover modelos al runtime.
 
 La capa experimental conserva los datos crudos fuera de Git, con manifiestos,
 SHA-256, fuentes fijadas por commit y auditorías reproducibles. El
-[registro de gates G1–G105](experiments/data_ground_truth/README.md) contiene
+[registro de gates G1–G106](experiments/data_ground_truth/README.md) contiene
 adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 
 | Capa | Cobertura verificada | Límite pendiente |
