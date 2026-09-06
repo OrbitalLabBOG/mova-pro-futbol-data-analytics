@@ -1,0 +1,234 @@
+{
+  "version": "historical-data-g52",
+  "audit_report_sha256": "cd70f8991fd3c4037c9edc253fb26671fa2ef76f58c922b18dbd8848113a2076",
+  "audit": {
+    "version": "joint-data-coverage-v1",
+    "parent_report_sha256": {
+      "selection": "1ace4506377f6bf92ff79d71f7b1083070f273c58f802518754f96fccb87b6fc",
+      "calendar": "14e03997f32311d934dfccfd20dc4d5530d863e0ee22b798d5f31ba3585c1514",
+      "screen": "c12f627afed8af1d706bdd7a81cf5b635ba56a486cb5a198da838bf55f690d1b"
+    },
+    "gt_dataset_id": "d4baf849fb4a051be103f8c469e61a4753edb0b4004f980a000fe5c86ef573db",
+    "gt_pointer_sha256": "61585d54491185cf37e9a3b0f34f9ed000048cee4cae8bc5bc8c406e47ecc392",
+    "implementation_sha256": "039d33dbb8d7dce7e3b7dca0c040c14e4ab719445dd97aaf7490b8ae5f23ef67",
+    "windows_sha256": "bf7d6262a9a969c4a1bb6301f90e2413089ee536b8616dff023a82b9b1eabfeb",
+    "target_deadlines": 199,
+    "label_rows": 303126,
+    "seasons": [
+      {
+        "season": "2014-15",
+        "label_rows": 24876,
+        "observed_target_deadlines": 0,
+        "snapshot_publication_present": 0,
+        "calendar_evidence_present": 0,
+        "joint_evidence_present": 0,
+        "joint_basic_screen": 0,
+        "joint_expected_screen": 0,
+        "missing_joint_gws": [],
+        "target_universe_is_full_season": false
+      },
+      {
+        "season": "2015-16",
+        "label_rows": 24741,
+        "observed_target_deadlines": 0,
+        "snapshot_publication_present": 0,
+        "calendar_evidence_present": 0,
+        "joint_evidence_present": 0,
+        "joint_basic_screen": 0,
+        "joint_expected_screen": 0,
+        "missing_joint_gws": [],
+        "target_universe_is_full_season": false
+      },
+      {
+        "season": "2016-17",
+        "label_rows": 23679,
+        "observed_target_deadlines": 0,
+        "snapshot_publication_present": 0,
+        "calendar_evidence_present": 0,
+        "joint_evidence_present": 0,
+        "joint_basic_screen": 0,
+        "joint_expected_screen": 0,
+        "missing_joint_gws": [],
+        "target_universe_is_full_season": false
+      },
+      {
+        "season": "2017-18",
+        "label_rows": 22467,
+        "observed_target_deadlines": 0,
+        "snapshot_publication_present": 0,
+        "calendar_evidence_present": 0,
+        "joint_evidence_present": 0,
+        "joint_basic_screen": 0,
+        "joint_expected_screen": 0,
+        "missing_joint_gws": [],
+        "target_universe_is_full_season": false
+      },
+      {
+        "season": "2018-19",
+        "label_rows": 21790,
+        "observed_target_deadlines": 0,
+        "snapshot_publication_present": 0,
+        "calendar_evidence_present": 0,
+        "joint_evidence_present": 0,
+        "joint_basic_screen": 0,
+        "joint_expected_screen": 0,
+        "missing_joint_gws": [],
+        "target_universe_is_full_season": false
+      },
+      {
+        "season": "2019-20",
+        "label_rows": 22501,
+        "observed_target_deadlines": 0,
+        "snapshot_publication_present": 0,
+        "calendar_evidence_present": 0,
+        "joint_evidence_present": 0,
+        "joint_basic_screen": 0,
+        "joint_expected_screen": 0,
+        "missing_joint_gws": [],
+        "target_universe_is_full_season": false
+      },
+      {
+        "season": "2020-21",
+        "label_rows": 24365,
+        "observed_target_deadlines": 6,
+        "snapshot_publication_present": 6,
+        "calendar_evidence_present": 6,
+        "joint_evidence_present": 6,
+        "joint_basic_screen": 6,
+        "joint_expected_screen": 0,
+        "missing_joint_gws": [],
+        "target_universe_is_full_season": false
+      },
+      {
+        "season": "2021-22",
+        "label_rows": 25447,
+        "observed_target_deadlines": 38,
+        "snapshot_publication_present": 38,
+        "calendar_evidence_present": 36,
+        "joint_evidence_present": 36,
+        "joint_basic_screen": 35,
+        "joint_expected_screen": 0,
+        "missing_joint_gws": [
+          31,
+          32
+        ],
+        "target_universe_is_full_season": true
+      },
+      {
+        "season": "2022-23",
+        "label_rows": 26505,
+        "observed_target_deadlines": 38,
+        "snapshot_publication_present": 38,
+        "calendar_evidence_present": 37,
+        "joint_evidence_present": 37,
+        "joint_basic_screen": 36,
+        "joint_expected_screen": 21,
+        "missing_joint_gws": [
+          23
+        ],
+        "target_universe_is_full_season": true
+      },
+      {
+        "season": "2023-24",
+        "label_rows": 29725,
+        "observed_target_deadlines": 38,
+        "snapshot_publication_present": 38,
+        "calendar_evidence_present": 38,
+        "joint_evidence_present": 38,
+        "joint_basic_screen": 37,
+        "joint_expected_screen": 37,
+        "missing_joint_gws": [],
+        "target_universe_is_full_season": true
+      },
+      {
+        "season": "2024-25",
+        "label_rows": 27283,
+        "observed_target_deadlines": 38,
+        "snapshot_publication_present": 38,
+        "calendar_evidence_present": 38,
+        "joint_evidence_present": 38,
+        "joint_basic_screen": 37,
+        "joint_expected_screen": 37,
+        "missing_joint_gws": [],
+        "target_universe_is_full_season": true
+      },
+      {
+        "season": "2025-26",
+        "label_rows": 29747,
+        "observed_target_deadlines": 38,
+        "snapshot_publication_present": 38,
+        "calendar_evidence_present": 38,
+        "joint_evidence_present": 38,
+        "joint_basic_screen": 37,
+        "joint_expected_screen": 37,
+        "missing_joint_gws": [],
+        "target_universe_is_full_season": true
+      },
+      {
+        "season": "2026-27",
+        "label_rows": 0,
+        "observed_target_deadlines": 3,
+        "snapshot_publication_present": 0,
+        "calendar_evidence_present": 2,
+        "joint_evidence_present": 0,
+        "joint_basic_screen": 0,
+        "joint_expected_screen": 0,
+        "missing_joint_gws": [
+          1,
+          2,
+          3
+        ],
+        "target_universe_is_full_season": false
+      }
+    ],
+    "training_admitted": false,
+    "production_changed": false,
+    "limitations": [
+      "audit_composition_not_new_raw_acquisition",
+      "parent_artifact_hashes_verified_not_full_parent_reexecution",
+      "label_season_presence_is_not_player_state_label_join",
+      "target_universe_is_selected_bootstrap_deadlines_not_all_historical_deadlines",
+      "screen_pass_does_not_prove_semantics_identity_rules_or_replay_readiness",
+      "calendar_commit_age_is_not_API_capture_freshness",
+      "retrospective_label_agreement_never_filters_snapshot_population",
+      "own_collector_snapshot_evidence_not_substituted_for_selected_external_snapshot"
+    ]
+  },
+  "literature": {
+    "manifest_sha256": "776c2cc57a36b8a21aa6e8ca5db02ee602a932bcd6d729a26c4740d1dea17819",
+    "records": [
+      {
+        "url": "https://arxiv.org/pdf/1909.12938",
+        "sha256": "f45470546f238279c17b7edfd8e098b5f753e721b356149a0b2286da77930b55",
+        "bytes": 531337,
+        "fetched_at": "2026-09-06T12:13:46.449085+00:00",
+        "role": "research_document_not_fpl_dataset",
+        "available_at": null
+      },
+      {
+        "url": "https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/smart_crowds.pdf",
+        "sha256": "54f1e0d1c3895c5ee66dbc7ac264a91328df4ab38c64ddd0c63c96cdc7764c51",
+        "bytes": 1118894,
+        "fetched_at": "2026-09-06T12:13:50.370712+00:00",
+        "role": "research_document_not_fpl_dataset",
+        "available_at": null
+      },
+      {
+        "source": "orbix-research sota Fantasy Premier League historical data dataset",
+        "sha256": "2e2037d2a4a9b4205de4dbd0de0d06048ba4f5f667ca4cc5ab014c9688ef1a8c",
+        "bytes": 5364,
+        "role": "discovery_output_not_verified_literature"
+      }
+    ],
+    "new_label_rows": 0,
+    "new_complete_fpl_seasons": 0
+  },
+  "verification": {
+    "reproduced_byte_for_byte": true,
+    "tests_passed": 1567,
+    "tests_skipped": 1,
+    "tests_deselected": 79
+  },
+  "training_admitted": false,
+  "production_changed": false
+}
