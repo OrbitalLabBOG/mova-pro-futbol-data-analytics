@@ -4997,3 +4997,55 @@ incorporar aquí todos los payloads comprimidos originales de esas consultas.
 Los directorios de modelos y operaciones privadas siguen fuera del corte.
 No hubo nuevas descargas, etiquetas, entrenamiento o cambios productivos. GT v7
 mantiene 303.126 filas y doce temporadas; G55 continúa como bundle histórico.
+
+
+## G88 — Archivos JSON tempranos y versiones históricas
+
+Se preservaron seis archivos permitidos de `keithxm23/fplPlayer` (revisión
+`cf704543eff8e98a7ddc0aaa1ece746f0d7463f8`) y `keithxm23/fplassistant`
+(`58ab321f83cf7809153cef72df1f14587edf454c`), con contenido identificado por
+SHA-256. Los programas archivados se conservan como documentación de procedencia;
+no se ejecutaron. Las configuraciones y predicciones quedaron fuera de la selección.
+
+| Fuente parcial | Filas jugador–partido | Jugadores con historia | Partidos | Minutos positivos | Ceros explícitos |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 2013/14, GW1–30 | 17.805 | 665 | 291/380 | 7.998 | 9.807 |
+| 2014/15, GW1–3 | 1.756 | 592 | 30/380 | 831 | 925 |
+
+Todas las filas se enlazan a un partido por hora local, rival y condición local/visitante,
+sin duplicados jugador–partido. Los puntos suman el total del snapshot para los
+jugadores con historia; esto no acredita totales finales de temporada. En 2013/14,
+los 665 `team_code` repiten el código del jugador y 664 quedan fuera del universo
+de clubes: se conserva el valor original y no se usa para enlazar partidos.
+En 2014/15 se conservan también 12 perfiles sin historia, sin fabricar filas cero.
+
+Las 1.756 filas de 2014/15 ya están en GT v7 y coinciden en minutos, puntos y jornada.
+Hay tres diferencias en códigos de jugador que requieren investigación; no se
+sobrescriben identidades. La aportación única de 2013/14 frente a las bases
+Differential todavía no está medida. Los 291 partidos representan 76,6% del
+calendario; no equivalen a 76,6% de cobertura de la población de jugadores.
+
+Además se descargaron las 19 revisiones de `data.json` presentes en la historia
+consultada de fplassistant: 39.152.022 bytes, 19 contenidos diferentes y cinco
+versiones sin historia de partidos. Las fechas nominales de commit van del
+11 de agosto al 2 de septiembre de 2014. Son colecciones JSON por jugador;
+no se ha demostrado captura atómica ni publicación antes del deadline. La última
+versión coincide con el archivo ya capturado arriba y no se cuenta dos veces como
+contenido único. Los campos `available_at` permanecen desconocidos.
+
+```bash
+python -m experiments.data_ground_truth.early_json_archives \
+  --base "$DATA_BASE" --out "$DATA_BASE/early-json-audit-g88-new"
+```
+
+[Resultados G88](results-g88.json) fija entradas, implementación, reporte y cinco
+artefactos. Reporte y artefactos idénticos byte por byte en dos ejecuciones
+independientes (v5/v6). Suite completa: **1.682 passed, 1 skipped, 79 deselected**,
+34,63 s; cubre códigos de club inválidos, filas mal formadas, sumas inconsistentes,
+selección de archivos y perfiles sin historia.
+
+Los nuevos crudos viven en `early-fpl-json-g88` y `early-fpl-state-history-g88`,
+fuera de Git y del corte portable inmutable G87. No hay admisión a entrenamiento,
+nuevas temporadas completas ni cambio productivo. El próximo contraste debe medir
+filas nuevas, NULL recuperables y desacuerdos contra Differential antes de proponer
+una nueva versión del GT.
