@@ -1,0 +1,165 @@
+{
+  "version": "historical-data-g82",
+  "audit_report_sha256": "4cb4263a3011126a3c7684cf20068fe9ad6fcb932e186e4a104ec709e1fc09f5",
+  "audit": {
+    "version": "fixture-announcement-evidence-v1",
+    "manifest_sha256": "585f83b9d2142f349f03ce78b1775d78e158747e76977f3d9ae5949a2d39aab2",
+    "parent_report_sha256": "c2a314d8cb274b4b7544d984c2246057dae690d37d4467700db05fc3224af55b",
+    "implementation_sha256": "23c9bcc80357538ec16777e1613c4187b480ba584284c2ce724376ed398413de",
+    "team_metadata_sha256": {
+      "2021-22": "c1dd02ed25fe832ba7bf6ce846ac506a00a0f0babdacb6bf2a011dc9eaa8cfad",
+      "2022-23": "be6a1fe120a61f9c441a0751ca177c933bcbf234c1d28d49b3cd8827ca18066b"
+    },
+    "articles": [
+      {
+        "article_id": "2533700",
+        "displayed_date": "2022-03-15",
+        "source_sha256": "f509648ae36fef7bb090469ec29cb76ec4e222b003dfb0e242827a0c45df82cb",
+        "bytes": 87012,
+        "parsed_schedule_rows": 23,
+        "conditional_rows": 8,
+        "classification": "schedule_statement"
+      },
+      {
+        "article_id": "2562266",
+        "displayed_date": "2022-04-04",
+        "source_sha256": "f70d7945742faf7e60104a475f0c4fa923bea66145ad78764d12886147330b98",
+        "bytes": 86556,
+        "parsed_schedule_rows": 22,
+        "conditional_rows": 0,
+        "classification": "schedule_statement"
+      },
+      {
+        "article_id": "3053298",
+        "displayed_date": "2023-02-07",
+        "source_sha256": "660bacdc0966c3fb8da66f8c92bf6ecdbecad1eb57cb730c293100600d90a6b7",
+        "bytes": 85226,
+        "parsed_schedule_rows": 2,
+        "conditional_rows": 0,
+        "classification": "schedule_statement"
+      },
+      {
+        "article_id": "3053317",
+        "displayed_date": "2023-02-07",
+        "source_sha256": "b755c7901f7eb85170744f1bf25e96718326244e1277c9c2ae8b5885843da809",
+        "bytes": 100477,
+        "parsed_schedule_rows": 0,
+        "conditional_rows": 0,
+        "classification": "documentary_context_only"
+      },
+      {
+        "article_id": "3040501",
+        "displayed_date": "2023-02-02",
+        "source_sha256": "24e4ed66a226da1b362e08423699f9273405357c79990a89048ba3d977475532",
+        "bytes": 88039,
+        "parsed_schedule_rows": 0,
+        "conditional_rows": 0,
+        "classification": "documentary_context_only"
+      }
+    ],
+    "raw_bytes": 447310,
+    "schedule_claims": 47,
+    "comparisons": 70,
+    "comparison_status": {
+      "unconditional_same_as_both": 30,
+      "conditional_same_as_older": 6,
+      "conditional_same_as_both": 10,
+      "unconditional_same_as_later": 20,
+      "unconditional_differs_from_both": 4
+    },
+    "changed_kickoff_fields_matching_unconditional_statement": 20,
+    "training_admitted": false,
+    "production_changed": false,
+    "new_FPL_labels": 0,
+    "selected_calendar_coverage_unchanged": "195/199",
+    "limitations": [
+      "current_article_with_old_displayed_date_does_not_prove_historical_content",
+      "conditional_statements_remain_conditional_even_when_dates_match",
+      "nominal_date_filter_is_not_publication_admission",
+      "comparison_is_with_snapshot_versions_not_realized_outcomes",
+      "documentary_context_articles_not_parsed_as_fixture_assertions"
+    ],
+    "artifacts": {
+      "schedule_claims.json": "c79ba137a1b793e0bc9d2f29ee5223da902fd5964cdb6972d021995b14aec093",
+      "comparisons.json": "824e968af20d643528c3328b079a1c881e1d35fb0ccd8c63e362b01e025c8122"
+    }
+  },
+  "source_records": [
+    {
+      "article_id": "2533700",
+      "url": "https://www.premierleague.com/en/news/2533700",
+      "sha256": "f509648ae36fef7bb090469ec29cb76ec4e222b003dfb0e242827a0c45df82cb",
+      "bytes": 87012,
+      "fetched_at": "2026-09-06T17:43:26.974885+00:00",
+      "content_type": "text/html;charset=utf-8",
+      "last_modified": null,
+      "available_at": null,
+      "eligible_predeadline": false
+    },
+    {
+      "article_id": "2562266",
+      "url": "https://www.premierleague.com/en/news/2562266",
+      "sha256": "f70d7945742faf7e60104a475f0c4fa923bea66145ad78764d12886147330b98",
+      "bytes": 86556,
+      "fetched_at": "2026-09-06T17:44:04.405144+00:00",
+      "content_type": "text/html;charset=utf-8",
+      "last_modified": null,
+      "available_at": null,
+      "eligible_predeadline": false
+    },
+    {
+      "article_id": "3053298",
+      "url": "https://www.premierleague.com/en/news/3053298",
+      "sha256": "660bacdc0966c3fb8da66f8c92bf6ecdbecad1eb57cb730c293100600d90a6b7",
+      "bytes": 85226,
+      "fetched_at": "2026-09-06T17:44:05.735469+00:00",
+      "content_type": "text/html;charset=utf-8",
+      "last_modified": null,
+      "available_at": null,
+      "eligible_predeadline": false
+    },
+    {
+      "article_id": "3053317",
+      "url": "https://www.premierleague.com/en/news/3053317",
+      "sha256": "b755c7901f7eb85170744f1bf25e96718326244e1277c9c2ae8b5885843da809",
+      "bytes": 100477,
+      "fetched_at": "2026-09-06T17:44:07.153880+00:00",
+      "content_type": "text/html;charset=utf-8",
+      "last_modified": null,
+      "available_at": null,
+      "eligible_predeadline": false
+    },
+    {
+      "article_id": "3040501",
+      "url": "https://www.premierleague.com/en/news/3040501",
+      "sha256": "24e4ed66a226da1b362e08423699f9273405357c79990a89048ba3d977475532",
+      "bytes": 88039,
+      "fetched_at": "2026-09-06T17:44:08.033989+00:00",
+      "content_type": "text/html;charset=utf-8",
+      "last_modified": null,
+      "available_at": null,
+      "eligible_predeadline": false
+    }
+  ],
+  "archive_availability_probes": [
+    {
+      "url": "https://archive.org/wayback/available?url=https%3A%2F%2Fwww.premierleague.com%2Fnews%2F2562266&timestamp=20220408170000",
+      "sha256": "2f6d053ae3c547409755bdbf812804e85e186a8186e3f9940a2cf65be86b1090",
+      "bytes": 110,
+      "file": "2562266.json",
+      "requested_timestamp": "20220408170000",
+      "archived_snapshots": {},
+      "recorded_at": "2026-09-06T17:49:10.478533+00:00"
+    },
+    {
+      "url": "https://archive.org/wayback/available?url=https%3A%2F%2Fwww.premierleague.com%2Fnews%2F3053298&timestamp=20230211100000",
+      "sha256": "1244b8cfe27a313f3415698dffe05d93307277f33c3f279210a375c49e198bdd",
+      "bytes": 110,
+      "file": "3053298.json",
+      "requested_timestamp": "20230211100000",
+      "archived_snapshots": {},
+      "recorded_at": "2026-09-06T17:49:10.478637+00:00"
+    }
+  ],
+  "reproduction_identical": true
+}
