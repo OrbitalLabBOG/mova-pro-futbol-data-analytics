@@ -4310,3 +4310,93 @@ entrenamiento ni redistribución raw.
 Suite completa: **1.648 passed, 1 skipped, 79 deselected** (35,04 s).
 [Resultados G76](results-g76.json). GT v7 permanece en 303.126 filas y doce
 temporadas; G55 y producción intactos. No se añadieron etiquetas FPL.
+
+## G77 — Conjuntos completos de apariciones por temporada
+
+`season_identity_signatures.py` contrasta los conjuntos completos de
+`(fixture, club)` con aparición positiva del archivo PL y posición presente en
+los lineups StatsBomb. Requiere **igualdad exacta**, al menos dos partidos distintos
+y correspondencia única en ambas direcciones. Además, el conjunto de fixtures PL
+debe coincidir con todas las apariciones positivas FPL del mismo código.
+
+La unicidad se calcula antes de consultar nombres o excluir identidades ya
+resueltas. Los perfiles PL incompletos y los que carecen de código FPL **siguen
+compitiendo**: estos últimos se agrupan por su `playerId` original con una clave
+interna `missing_code:…`, que nunca se publica como código oficial ni repara raw.
+No pueden aceptarse sin referencia FPL completa, pero excluirlos previamente
+podría producir una falsa coincidencia única.
+
+Una coincidencia única debe pasar un control nominal adicional: mismo último
+componente de nombre, de al menos tres letras, y misma inicial del primer
+componente. Ese control por sí solo no autoriza ningún enlace ni declara
+Rob→Robert o Sam→Samuel como equivalencias generales. Se rechazan contradicciones
+con identidades del baseline antes de emitir una extensión.
+
+### Resultado del contraste
+
+| Estado del grupo de perfiles coincidentes | Grupos |
+| --- | ---: |
+| Coincide con una identidad del baseline | 399 |
+| No supera el control nominal | 83 |
+| Conjunto compartido por varios perfiles: ambiguo | 7 |
+| Referencia FPL ausente/incompleta | 4 |
+| Nueva identidad investigativa | 2 |
+
+Los perfiles PL se reparten en 499 con referencia completa y al menos dos
+partidos, cuatro sin referencia FPL completa y 47 con menos de dos partidos.
+Las 399 coincidencias son una **comprobación de consistencia condicionada por los
+filtros**, no una estimación independiente de precisión: el baseline ya usaba
+nombres, clubes y partidos. Los controles negativos cubren conjuntos parciales,
+clubes distintos, perfiles compartidos, competidores incompletos o sin código y
+una sola aparición.
+
+Se aceptan **Elliot, 21 apariciones, y Byram, cuatro**. Sus conjuntos completos son
+únicos entre todos los perfiles observados y concuerdan también con las
+apariciones FPL. No se usa igualdad de goles, puntos o rendimiento para elegirlos.
+
+| Métrica | G76 | G77 |
+| --- | ---: | ---: |
+| Identidades aceptadas para investigación | 501 | 503 |
+| Apariciones positivas cubiertas | 10.397/10.469 | 10.422/10.469 |
+| Apariciones pendientes | 72 | 47 |
+| Enlaces anteriores perdidos/cambiados | — | 0 |
+
+Cobertura positiva **99,55%**. De los 550 códigos FPL con alguna aparición,
+**503/503 con dos o más apariciones** tienen enlace; los otros 47 tienen una sola
+y siguen pendientes. Es cobertura de este subconjunto 2015/16, no de todo el
+histórico ni prueba de disponibilidad antes de cada deadline.
+
+### Reproducción e integración investigativa
+
+```bash
+python -m experiments.data_ground_truth.season_identity_signatures \
+  --root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/statsbomb-open-g67 \
+  --archive-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/raw-history-v2 \
+  --fixture-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/statsbomb-fixture-crosswalk-v2 \
+  --baseline-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/statsbomb-spelling-names-v1 \
+  --package /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/training-datasets/d4baf849fb4a051be103f8c469e61a4753edb0b4004f980a000fe5c86ef573db \
+  --out /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/statsbomb-season-signatures-v2
+```
+
+Reporte y cinco artefactos reproducidos byte por byte en v3. El archivo
+`signature-candidates.json` conserva conjuntos y candidatos; los 25 testigos
+nuevos conservan fila CSV y hash del lineup. Los testigos del baseline se
+mantienen. No hay descargas nuevas en este gate.
+
+El auditor posterior `statsbomb_goal_calibration.py`, usando el nuevo paquete,
+compara **13.127 filas** y conserva las mismas doce diferencias de goles y ocho
+de autogoles; casos no cero 869/881 y 30/38 concordantes, respectivamente. El
+marcador interno sigue concordando en 760/760 lados. No se repite la auditoría
+aritmética G76 porque no aparecen nuevas discrepancias ni se modifican etiquetas.
+
+Los conjuntos completos de temporada son evidencia de **identidad retrospectiva**;
+no son variables disponibles antes del deadline. Se conservan las restricciones
+de investigación de **StatsBomb Open Data (Hudl)**, sin entrenamiento, admisión
+comercial o redistribución del corpus. Artefactos individuales fuera de Git.
+
+<img src="https://static.hudl.com/craft/productAssets/statsbomb_icon.svg" alt="Hudl StatsBomb" width="40" height="40">
+
+Suite completa: **1.652 passed, 1 skipped, 79 deselected** (32,40 s).
+[Resultados G77](results-g77.json). GT v7 mantiene 303.126 etiquetas y doce
+temporadas; bundle G55 y producción intactos. Las 47 identidades restantes
+requieren otra evidencia independiente; no se reduce el mínimo de partidos.
