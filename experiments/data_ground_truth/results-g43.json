@@ -1,0 +1,292 @@
+{
+  "version": "historical-data-g43",
+  "audit_report_sha256": "7fa04e522dc55efbc67591d493514fe7cceec6a31db69f6fd7ef4b9d216c2549",
+  "audit": {
+    "version": "gw2-period-v1",
+    "performance_report_sha256": "45366aadfe7002e2369082a334a7c64d21bb6b7e0541baa5f27798040fee395b",
+    "dataset_id": "d4baf849fb4a051be103f8c469e61a4753edb0b4004f980a000fe5c86ef573db",
+    "implementation_sha256": "427a294507a5c3cde2303d4c81e15ccb774226bb86485ae37dfcbb240dd3f7d6",
+    "rows": 3744,
+    "coverage": {
+      "2021-22": {
+        "rows": 559,
+        "statuses": {
+          "all_compared_equal": 554,
+          "no_gw1_reference_code": 5
+        },
+        "fields": {
+          "minutes": {
+            "equal": 554
+          },
+          "total_points": {
+            "equal": 554
+          },
+          "goals_scored": {
+            "equal": 554
+          },
+          "assists": {
+            "equal": 554
+          },
+          "clean_sheets": {
+            "equal": 554
+          },
+          "goals_conceded": {
+            "equal": 554
+          },
+          "penalties_saved": {
+            "equal": 554
+          },
+          "penalties_missed": {
+            "equal": 554
+          },
+          "yellow_cards": {
+            "equal": 554
+          },
+          "red_cards": {
+            "equal": 554
+          },
+          "saves": {
+            "equal": 554
+          },
+          "bonus": {
+            "equal": 554
+          },
+          "bps": {
+            "equal": 554
+          }
+        }
+      },
+      "2022-23": {
+        "rows": 580,
+        "statuses": {
+          "all_compared_equal": 573,
+          "no_gw1_reference_code": 7
+        },
+        "fields": {
+          "minutes": {
+            "equal": 573
+          },
+          "total_points": {
+            "equal": 573
+          },
+          "goals_scored": {
+            "equal": 573
+          },
+          "assists": {
+            "equal": 573
+          },
+          "clean_sheets": {
+            "equal": 573
+          },
+          "goals_conceded": {
+            "equal": 573
+          },
+          "penalties_saved": {
+            "equal": 573
+          },
+          "penalties_missed": {
+            "equal": 573
+          },
+          "yellow_cards": {
+            "equal": 573
+          },
+          "red_cards": {
+            "equal": 573
+          },
+          "saves": {
+            "equal": 573
+          },
+          "bonus": {
+            "equal": 573
+          },
+          "bps": {
+            "equal": 573
+          }
+        }
+      },
+      "2023-24": {
+        "rows": 666,
+        "statuses": {
+          "all_compared_equal": 658,
+          "no_gw1_reference_code": 8
+        },
+        "fields": {
+          "minutes": {
+            "equal": 658
+          },
+          "total_points": {
+            "equal": 658
+          },
+          "goals_scored": {
+            "equal": 658
+          },
+          "assists": {
+            "equal": 658
+          },
+          "clean_sheets": {
+            "equal": 658
+          },
+          "goals_conceded": {
+            "equal": 658
+          },
+          "penalties_saved": {
+            "equal": 658
+          },
+          "penalties_missed": {
+            "equal": 658
+          },
+          "yellow_cards": {
+            "equal": 658
+          },
+          "red_cards": {
+            "equal": 658
+          },
+          "saves": {
+            "equal": 658
+          },
+          "bonus": {
+            "equal": 658
+          },
+          "bps": {
+            "equal": 658
+          }
+        }
+      },
+      "2024-25": {
+        "rows": 625,
+        "statuses": {
+          "all_compared_equal": 616,
+          "no_gw1_reference_code": 9
+        },
+        "fields": {
+          "minutes": {
+            "equal": 616
+          },
+          "total_points": {
+            "equal": 616
+          },
+          "goals_scored": {
+            "equal": 616
+          },
+          "assists": {
+            "equal": 616
+          },
+          "clean_sheets": {
+            "equal": 616
+          },
+          "goals_conceded": {
+            "equal": 616
+          },
+          "penalties_saved": {
+            "equal": 616
+          },
+          "penalties_missed": {
+            "equal": 616
+          },
+          "yellow_cards": {
+            "equal": 616
+          },
+          "red_cards": {
+            "equal": 616
+          },
+          "saves": {
+            "equal": 616
+          },
+          "bonus": {
+            "equal": 616
+          },
+          "bps": {
+            "equal": 616
+          }
+        }
+      },
+      "2025-26": {
+        "rows": 698,
+        "statuses": {
+          "all_compared_equal": 690,
+          "no_gw1_reference_code": 8
+        },
+        "fields": {
+          "minutes": {
+            "equal": 690
+          },
+          "total_points": {
+            "equal": 690
+          },
+          "goals_scored": {
+            "equal": 690
+          },
+          "assists": {
+            "equal": 690
+          },
+          "clean_sheets": {
+            "equal": 690
+          },
+          "goals_conceded": {
+            "equal": 690
+          },
+          "penalties_saved": {
+            "equal": 690
+          },
+          "penalties_missed": {
+            "equal": 690
+          },
+          "yellow_cards": {
+            "equal": 690
+          },
+          "red_cards": {
+            "equal": 690
+          },
+          "saves": {
+            "equal": 690
+          },
+          "bonus": {
+            "equal": 690
+          },
+          "bps": {
+            "equal": 690
+          }
+        }
+      },
+      "2026-27": {
+        "rows": 616,
+        "statuses": {
+          "no_gw1_reference_code": 616
+        },
+        "fields": {
+          "minutes": {},
+          "total_points": {},
+          "goals_scored": {},
+          "assists": {},
+          "clean_sheets": {},
+          "goals_conceded": {},
+          "penalties_saved": {},
+          "penalties_missed": {},
+          "yellow_cards": {},
+          "red_cards": {},
+          "saves": {},
+          "bonus": {},
+          "bps": {}
+        }
+      }
+    },
+    "comparisons_sha256": "a98a28b7bddaf8a3912bab57ffc1debe271873d7e23b4771d01933ec90929285",
+    "training_admitted": false,
+    "production_changed": false,
+    "limitations": [
+      "finalized_GW1_is_retrospective_reference_not_as_of_truth",
+      "agreement_does_not_admit_other_fields_or_other_gameweeks",
+      "missing_player_rows_not_imputed_to_zero",
+      "publication_witnesses_not_revalidated",
+      "source_code_match_not_independent_identity_proof"
+    ]
+  },
+  "verification": {
+    "reproduced_byte_for_byte": true,
+    "tests_passed": 1544,
+    "tests_skipped": 1,
+    "tests_deselected": 79
+  },
+  "production_changed": false,
+  "training_admitted": false
+}

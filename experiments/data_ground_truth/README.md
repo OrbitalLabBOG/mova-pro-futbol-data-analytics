@@ -2306,3 +2306,46 @@ tema, por lo que no se incorporan como evidencia científica. El siguiente foco
 con mayor utilidad para el benchmark es la cobertura y frescura anterior al
 deadline, y la semántica de los acumulados de GW1. Resolver identidades de filas
 sin minutos no demuestra una mejora predictiva ni cierra esas brechas.
+
+## Gate G43: período de los acumulados de GW2
+
+`gw2_period.py` contrasta el bootstrap seleccionado antes de GW2 con la suma de
+resultados finales de GW1 del GT v7. Verifica el paquete y el hash del artefacto
+G31; conserva códigos, fuentes y deadlines. No vuelve a acreditar testigos de
+publicación ni convierte las etiquetas finales en datos disponibles históricamente.
+
+| Temporada | Jugadores con 13 componentes iguales | Sin referencia GW1 |
+| --- | ---: | ---: |
+| 2021/22 | 554 | 5 |
+| 2022/23 | 573 | 7 |
+| 2023/24 | 658 | 8 |
+| 2024/25 | 616 | 9 |
+| 2025/26 | 690 | 8 |
+| 2026/27 | 0 | 616 |
+
+De 3.744 filas auditadas, **3.091 coinciden en las 40.183 celdas comparables**:
+minutos, puntos, goles, asistencias, porterías a cero, goles encajados, penaltis
+parados y fallados, tarjetas amarillas y rojas, paradas, bonus y BPS. No hay
+diferencias en este contraste. Los 37 códigos históricos sin fila GW1 permanecen
+desconocidos; los 616 actuales carecen de temporada de referencia en GT v7.
+No se crean filas de cero minutos ni ceros para componentes ausentes.
+
+Junto con G32, el resultado respalda el cambio de período de los acumulados
+entre GW1 y GW2 para los campos y jugadores comparados. **No prueba xG, starts,
+DefCon, autogoles, otras jornadas ni igualdad entre la versión final y todas las
+versiones intermedias de la API**. No autoriza calcular deltas GW1→GW2 sin una
+regla explícita de período. GT v7, producción y modelos permanecen intactos.
+
+```bash
+python -m experiments.data_ground_truth.gw2_period \
+  --performance-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/bootstrap-performance-v2 \
+  --package /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/training-datasets/d4baf849fb4a051be103f8c469e61a4753edb0b4004f980a000fe5c86ef573db \
+  --out /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/gw2-period-v1
+```
+
+Reporte y comparaciones reproducidos byte por byte en `gw2-period-v2`.
+Pruebas de exclusión de semanas futuras, ausencias, nulos y códigos ambiguos;
+suite completa: **1.544 passed, 1 skipped, 79 deselected**.
+[Resultados G43](results-g43.json). El siguiente contraste debe ampliar las
+jornadas respetando aplazamientos y tiempos de partido; sumar por número de GW
+sin esa precaución no constituye un estado causal.
