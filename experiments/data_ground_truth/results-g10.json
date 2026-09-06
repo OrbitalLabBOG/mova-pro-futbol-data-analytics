@@ -1,0 +1,59 @@
+{
+  "version": "historical-appearance-coverage-v1",
+  "season": "2010-11",
+  "fixtures": 380,
+  "fixture_date_disagreements": 0,
+  "fixture_team_sides": 760,
+  "matching_appearance_count_sides": 757,
+  "count_disagreements": [
+    {
+      "matchId_events": 321746,
+      "team_id": 30.0,
+      "fpl_rows": 14,
+      "fpl_minutes": 990,
+      "sport_rows": 13,
+      "sport_minutes": 990.0,
+      "appearance_count_agrees": false
+    },
+    {
+      "matchId_events": 321761,
+      "team_id": 30.0,
+      "fpl_rows": 14,
+      "fpl_minutes": 992,
+      "sport_rows": 13,
+      "sport_minutes": 991.0,
+      "appearance_count_agrees": false
+    },
+    {
+      "matchId_events": 322021,
+      "team_id": 4.0,
+      "fpl_rows": 13,
+      "fpl_minutes": 981,
+      "sport_rows": 14,
+      "sport_minutes": 990.0,
+      "appearance_count_agrees": false
+    }
+  ],
+  "fpl_appearance_rows": 10353,
+  "sport_positive_minute_rows": 10352,
+  "sport_unknown_minute_rows": 3303,
+  "unique_candidate_players": 524,
+  "candidate_appearance_rows": 9998,
+  "unresolved_candidate_players": 19,
+  "identity_status": "name_and_fixture_candidates_only_not_promoted",
+  "coverage_status": "independent_sources_can_both_omit_or_disagree",
+  "new_complete_seasons": 0,
+  "eligible_training": false,
+  "source_sha256": {
+    "player_match.csv": "a4f0d945220310a2094626e1614bb1e9cd6fdbff2e154781a55a471033806f78",
+    "fixture.csv": "09d3f222c0e4779c388ef54b87ba82dbdd7a7e1256f8d1fa4875c8a9aeb978bd",
+    "team.csv": "d72dfd2804171781ba9853696bfb5dbee4f0e0159577c9b81c74bf46fc29c9ad",
+    "player.csv": "5cbf922b79984957c8c7f32e1911339403a588dc70d4fe9bdf42f32f49172f62",
+    "player_match_observations.csv": "bb342117aa25be89c545777a89a6485c48b41c6d9f2a5e12ac7e9635c9cba197",
+    "fixtures.csv": "0a02aeb9ae4872593241adb40867dad1d0bd4c91355e9c4529df44afa090f98f"
+  },
+  "artifacts": {
+    "fixture_team_coverage": "a16db6f9638aea57d0c243fdbc6a3555e704ce1c8526c1ddabec8a7ac5ccd2fb",
+    "identity_candidates": "50589948b51a1403303b4f7dcba50d49bf284f3e8125286aaf0057aadc8c3a63"
+  }
+}

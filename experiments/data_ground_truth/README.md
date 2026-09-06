@@ -537,3 +537,36 @@ los archivos anteriores a 2014/15 contra partidos e identidades, completar el un
 de no apariciones y acreditar disponibilidad temporal de features. Este gate mejora
 la trazabilidad y detección de huecos; no acredita cierre de la brecha causal ni
 promoción del modelo.
+
+## Gate G10: cobertura de apariciones contrastada por partido
+
+[results-g10.json](results-g10.json) cruza el SQL 2010/11 con el archivo deportivo
+mediante equivalencias explícitas de nombres de clubes, par local/visitante único
+y fecha local. Resuelve **380/380 partidos, sin discrepancias de fecha** y verifica
+que cada aparición tenga el rival esperado. No equipara IDs numéricos entre fuentes.
+
+De 760 lados de partido, **757 coinciden en número de apariciones**. Los tres
+restantes quedan identificados por ID deportivo en el informe: Bolton en 321746
+y 321761, Newcastle en 322021. FPL contiene 10.353 apariciones; la fuente deportiva
+10.352 filas con minutos positivos y 3.303 con minutos desconocidos. Los NULL no
+se convierten en no apariciones: ambas fuentes tienen limitaciones y sus totales
+casi iguales no acreditan cobertura completa ni igualdad de jugadores.
+
+El cruce de nombre y presencia en todos los partidos genera candidatos únicos
+para 524 jugadores / 9.998 apariciones. Quedan 19 sin candidato único; hay nombres
+con iniciales o grafías distintas que no se resuelven mediante distancia difusa.
+Son **candidatos de ID nativo deportivo**, no códigos oficiales promovidos. El
+archivo deportivo incluye suplentes con minutos desconocidos; por eso este cruce
+no constituye por sí solo corroboración de una aparición ni habilita entrenamiento.
+
+```bash
+python -m experiments.data_ground_truth.appearance_coverage \
+  --sql-root "$DIFFERENTIAL_ROOT/sql-literals" \
+  --sport-root "$RAW_HISTORY_ROOT" --out "$APPEARANCE_COVERAGE_ROOT"
+```
+
+Las entradas se verifican contra sus hashes G4/G9. El informe conserva los hashes
+de `fixture_team_coverage.csv` e `identity_candidates.csv`, cuyos bytes permanecen
+fuera de Git. Se mantiene el paquete v3 sin incorporar estas filas. El próximo
+paso es corroborar identidad y apariciones concretas, incluyendo los casos de
+Bolton, antes de considerar la reconstrucción del universo de no apariciones.

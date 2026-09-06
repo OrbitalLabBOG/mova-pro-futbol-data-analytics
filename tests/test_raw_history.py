@@ -494,3 +494,28 @@ def test_bson_audit_quarantines_conflicts_without_repairing_identity():
     assert not report['eligible_training']
     unmatched=copy.deepcopy(player);unmatched['fixture_history'][0]['date']='02 Jan 15:00'
     assert 'unmatched_observations' in reconcile([unmatched],reference)['quarantined_player_records'][0]['reasons']
+
+
+def test_appearance_coverage_checks_namespaces_dates_and_preserves_unknowns():
+    from experiments.data_ground_truth.appearance_coverage import compare
+    matches=pd.DataFrame([dict(season=11,player_fpl_id=1,fixture_id=10,is_home=1,opp_team_id=2,minutes=1)])
+    fixtures=pd.DataFrame([dict(season=11,_id=10,team_home_id=1,team_away_id=2,datetime=1281783600)])
+    teams=pd.DataFrame([dict(_id=1,name='Arsenal'),dict(_id=2,name='Aston Villa')])
+    players=pd.DataFrame([dict(_id=1,name='Smith')])
+    obs=pd.DataFrame([dict(season='2010-11',matchId_events=999,team_id=3,team='Arsenal',playerId=20,playerName='John Smith',minutesPlayed=None),
+        dict(season='2010-11',matchId_events=999,team_id=7,team='Aston_Villa',playerId=30,playerName='Other Player',minutesPlayed=90)])
+    reference=pd.DataFrame([dict(home_team_id=3,away_team_id=7,matchId_events=999,kickoff='2010-08-14 15:00:00')])
+    coverage,candidates,report=compare(matches,fixtures,teams,players,obs,reference)
+    assert report['fixtures']==1
+    assert report['sport_unknown_minute_rows']==1
+    assert candidates.candidate_native_player_id.tolist()==[20]
+    assert not candidates.eligible_identity.any()
+    assert not coverage.appearance_count_agrees.any()
+    ambiguous=pd.concat([obs,obs.iloc[:1].assign(playerId=21,playerName='James Smith')])
+    assert compare(matches,fixtures,teams,players,ambiguous,reference)[2]['unique_candidate_players']==0
+    with pytest.raises(ValueError,match='fixture date disagreement'):
+        compare(matches,fixtures,teams,players,obs,reference.assign(kickoff='2010-08-15 15:00:00'))
+    with pytest.raises(ValueError,match='opponent disagreement'):
+        compare(matches.assign(opp_team_id=1),fixtures,teams,players,obs,reference)
+    with pytest.raises(ValueError,match='ambiguous fixture pair'):
+        compare(matches,fixtures,teams,players,obs,pd.concat([reference,reference]))
