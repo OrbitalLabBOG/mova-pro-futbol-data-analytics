@@ -1,0 +1,54 @@
+{
+  "version": "historical-data-g94",
+  "dataset": {
+    "artifacts": {
+      "inferred_candidates.json": {
+        "bytes": 5986,
+        "sha256": "5a71bf62c794333636aa59d57c8e487547beec5e7fe883fd2302fdb0a3b140e6"
+      },
+      "observed_labels.csv": {
+        "bytes": 2687371,
+        "sha256": "66483636cf73410822c49d0476ca61e996def5abebdcf05bc212dfb0ac4a196a"
+      },
+      "unknown_rows.csv": {
+        "bytes": 50519,
+        "sha256": "06fab9900295d7aa4c54a89a57c80ef8ecce21de47f3e0f30e4e0c3da1becab9"
+      }
+    },
+    "coverage": {
+      "explicit_zero_minute_rows": 9807,
+      "observed_fixtures": 380,
+      "observed_gameweeks": 38,
+      "observed_rows": 20248,
+      "positive_minute_observed_rows": 10441,
+      "union_rows": 20665,
+      "unknown_rows": 417
+    },
+    "dataset_id": "8bdcc426bb8c65a6b7281fb4013dbb77933844562dc7be05b5a0b54c9ebfc8ac",
+    "implementation_sha256": "0ac27665f125d3c4b6a9a3d8425b205a68f4f6ed612dbca211e0dec8ba419474",
+    "limitations": [
+      "partial_registered_population_not_full_season_replay",
+      "season_scoped_ids_not_global_player_identity",
+      "inferred_candidates_never_enter_observed_labels",
+      "retrospective_labels_not_predeadline_features",
+      "raw_source_values_preserved_in_parent_artifacts"
+    ],
+    "new_complete_seasons": 0,
+    "recovered_observed_points": 52,
+    "season": "2013-14",
+    "source_database_sha256": "e4f1e637702f69cfa513a5719b05f87bb0aab47ddd2cd4864b40d567c1ac9f80",
+    "source_json_sha256": "21c74e98562268738a7b520b0518e6a48068f0b3117dc0c2e33660016f4f515e",
+    "sources": {
+      "g89_observations_sha256": "dfdc1fe227f01dd4fd2de77bf295395cd3c24d9d3fafd5d936aa08a2a9328052",
+      "g89_report_sha256": "b2458964d2018685aa54b227cda302a9be0adaad7890002f3d82b3ab27dbf56d",
+      "g93_inference_sha256": "5a71bf62c794333636aa59d57c8e487547beec5e7fe883fd2302fdb0a3b140e6",
+      "g93_report_sha256": "6caf23093f8c97c20924a78631122ced84cc8e5f6f267559cf62158a7fa385b1"
+    },
+    "training_admitted": false,
+    "version": "partial-fpl-labels-v1"
+  },
+  "manifest_sha256": "3f4c06cabc568497368902eb4ab74deca031ca40ce07398e3810c32e615d16f1",
+  "reproduction_identical": true,
+  "production_changed": false,
+  "complete_GT_changed": false
+}
