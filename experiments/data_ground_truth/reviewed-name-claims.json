@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "scope": "reviewed_identity_names_only_not_predeadline_features",
   "claims": [
     {
@@ -34,6 +34,29 @@
       "source_sha256": "e3aff899fc2486bd96fe5d11d8c8e8c066dea36cc71de2bf8a85e8aa7245ed32",
       "source_url": "https://raw.githubusercontent.com/vaastav/Fantasy-Premier-League/9779cdbc0c07f6c900c2d0c181ddf6bb9c800f88/data/2020-21/players_raw.csv",
       "reviewed_fragments": []
+    },
+    {
+      "official_player_code": "76542",
+      "FPL_name": "Sung-yueng Ki",
+      "variant": "Sung-Yeung Ki",
+      "kind": "reviewed_same_event_page",
+      "source_sha256": "6e9fc68c2ff497c3a8f44799dbee13cce7b86b22f4810add0540ba800ceaff35",
+      "source_url": "https://www.premierleague.com/en/news/144194",
+      "reviewed_fragments": [
+        "without Ki Sung-yeung against Crystal Palace",
+        "Bradley will be unable to name Ki Sung-yueng"
+      ]
+    },
+    {
+      "official_player_code": "20480",
+      "FPL_name": "Tim Krul",
+      "variant": "Timothy Michael Krul",
+      "kind": "reviewed_pdf_table",
+      "source_sha256": "d4d77dded0c7d0b51ecfb705052e189ad26f216434526502423880659844fb44",
+      "source_url": "https://www.fifadata.com/document/fwc/2014/pdf/fwc_2014_squadlists.pdf",
+      "extracted_text_sha256": "73ff887bc0b1a1443d81ac4e814f80d12983aa327057bfbcfaf8d639eb7ebbe3",
+      "page": 25,
+      "reviewed_row": "23 Tim KRUL KRUL Timothy Michael KRUL 03.04.1988 GK Newcastle United FC (ENG) 193 6 0"
     }
   ]
 }

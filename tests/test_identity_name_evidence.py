@@ -33,3 +33,29 @@ def test_variant_cannot_cross_code_boundary_or_force_statsbomb_player_link():
     evidence,source=candidate_name_evidence(player,candidate,True,{'168765':meta})
     assert evidence=='fpl_metadata_variant_full_name' and source['source_sha256']=='evidence'
     assert candidate_name_evidence(dict(player_name='Other Onomah'),candidate,True,{'168765':meta})[0] is None
+
+
+def pdf_claim(text):
+    from experiments.data_ground_truth.raw import digest
+    return dict(official_player_code='20480',FPL_name='Tim Krul',variant='Timothy Michael Krul',
+                kind='reviewed_pdf_table',source_sha256='pdf-hash',source_url='https://example.org/roster.pdf',
+                extracted_text_sha256=digest(text),page=2,reviewed_row='23 Tim KRUL KRUL Timothy Michael KRUL')
+
+
+def test_pdf_claim_requires_the_reviewed_row_on_the_registered_page():
+    text=b'cover\n\f\n23 Tim KRUL KRUL Timothy Michael KRUL'
+    metadata={'20480':dict(full_name='Tim Krul')}
+    result=validate_claim(pdf_claim(text),b'%PDF-fixture',metadata,text)
+    assert result['page']==2 and result['full_name']=='Timothy Michael Krul'
+    wrong=b'23 Tim KRUL KRUL Timothy Michael KRUL\n\f\nother page'
+    with pytest.raises(ValueError):validate_claim(pdf_claim(wrong),b'%PDF-fixture',metadata,wrong)
+
+
+def test_pdf_evidence_rejects_changed_extraction_missing_pdf_or_ambiguous_row():
+    text=b'cover\n\f\n23 Tim KRUL KRUL Timothy Michael KRUL'
+    metadata={'20480':dict(full_name='Tim Krul')}
+    with pytest.raises(ValueError):validate_claim(pdf_claim(text),b'%PDF-fixture',metadata,text+b'changed')
+    with pytest.raises(ValueError):validate_claim(pdf_claim(text),b'HTML instead of PDF',metadata,text)
+    with pytest.raises(ValueError):validate_claim(pdf_claim(text),b'%PDF-fixture',metadata)
+    duplicate=text+b' 23 Tim KRUL KRUL Timothy Michael KRUL'
+    with pytest.raises(ValueError):validate_claim(pdf_claim(duplicate),b'%PDF-fixture',metadata,duplicate)
