@@ -111,7 +111,7 @@ de modelos por hash y exportación revisable, sin promover modelos al runtime.
 
 La capa experimental conserva los datos crudos fuera de Git, con manifiestos,
 SHA-256, fuentes fijadas por commit y auditorías reproducibles. El
-[registro de gates G1–G39](experiments/data_ground_truth/README.md) contiene
+[registro de gates G1–G40](experiments/data_ground_truth/README.md) contiene
 adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 
 | Capa | Cobertura verificada | Límite pendiente |
@@ -126,6 +126,7 @@ adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 | Reglas y chips de snapshots | Explícitos desde GW16 de 2024/25 y en toda 2025/26 | Faltan reglas históricas anteriores e interpretación de overrides |
 | Reglas documentales oficiales, G38 | 10 artículos archivados, 30 afirmaciones parciales en seis temporadas | Descargas actuales: la fecha del artículo no prueba disponibilidad histórica; no son un intérprete de reglas |
 | Calendarios PDF oficiales, G39 | 380 cruces de 2013/14 y 760 celdas FDR de 2025/26 | Versiones aisladas; sin disponibilidad histórica acreditada ni nuevas etiquetas FPL |
+| Conciliación FPL Discovery 2014/15, G40 | 24.876 filas; 665 códigos coinciden con GT v5 y 46 son candidatos | Cero filas nuevas; los candidatos cubren 674 filas sin minutos jugados y siguen sin admisión al GT |
 | Fuentes antiguas complementarias | Material parcial desde 2010/11 y totales desde 2006/07 | No cuentan como nuevas temporadas completas; persisten huecos de población e identidad |
 
 G30 combina calendarios completos de dos fuentes, revalidando cada testigo contra
@@ -176,6 +177,10 @@ G39 valida dos PDFs oficiales y extrae la dificultad mediante la leyenda de colo
 del documento. Los 380 cruces FDR coinciden con el archivo FPL 2025/26; se conservan
 10 diferencias de jornada y 304 de dificultad frente a la versión final como
 diagnóstico retrospectivo. [Resultados G39](experiments/data_ground_truth/results-g39.json).
+G40 contrasta otro CSV de 2014/15 con el histórico reconciliado: no hay diferencias
+de valores ni filas nuevas. La base original tenía 225 identidades pendientes;
+el contraste con GT v5 reduce los pendientes reales a 46 candidatos, todos sin minutos jugados.
+[Resultados G40](experiments/data_ground_truth/results-g40.json).
 
 ## Empezar
 
