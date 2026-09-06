@@ -111,7 +111,7 @@ de modelos por hash y exportación revisable, sin promover modelos al runtime.
 
 La capa experimental conserva los datos crudos fuera de Git, con manifiestos,
 SHA-256, fuentes fijadas por commit y auditorías reproducibles. El
-[registro de gates G1–G31](experiments/data_ground_truth/README.md) contiene
+[registro de gates G1–G32](experiments/data_ground_truth/README.md) contiene
 adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 
 | Capa | Cobertura verificada | Límite pendiente |
@@ -137,6 +137,11 @@ es cerrar ventanas de publicación, mejorar frescura y conciliar el período de
 las estadísticas raw, especialmente en GW1. La validación numérica G31 no
 acredita acumulados de la temporada corriente ni deltas por jornada.
 [Resultados G31](experiments/data_ground_truth/results-g31.json).
+G32 contrasta 3.622 filas previas a GW1: 2.739 coinciden con los componentes de la
+temporada anterior, 19 difieren y 864 carecen de código en la referencia. Esto
+respalda la hipótesis de estadísticas previas, pero no autoriza reasignación global de período
+ni rellenar snapshots con totales finales.
+[Resultados G32](experiments/data_ground_truth/results-g32.json).
 
 ## Empezar
 

@@ -1,0 +1,367 @@
+{
+  "version": "historical-data-g32",
+  "report_sha256": "2c55454ee94865a491abf3e4a60eb64404c719c3a585097566c089ef5f5fabb3",
+  "reconciliation": {
+    "version": "preseason-performance-v1",
+    "performance_report_sha256": "45366aadfe7002e2369082a334a7c64d21bb6b7e0541baa5f27798040fee395b",
+    "reference_dataset_id": "1d111a458c9074fcd7ec2da516e82d9d1984600f6f057716112b92e855240df4",
+    "implementation_sha256": "ed80ebb78a051e4620e2413c59899f12cd1d58ae1d3ab8c2ecb97444ef1e88b5",
+    "rows": 3622,
+    "coverage": {
+      "2021-22": {
+        "players": 529,
+        "prior_season": "2020-21",
+        "statuses": {
+          "all_compared_equal": 403,
+          "different": 3,
+          "no_prior_reference_code": 123
+        },
+        "fields": {
+          "minutes": {
+            "equal": 403,
+            "different": 3
+          },
+          "total_points": {
+            "equal": 403,
+            "different": 3
+          },
+          "goals_scored": {
+            "equal": 405,
+            "different": 1
+          },
+          "assists": {
+            "equal": 405,
+            "different": 1
+          },
+          "clean_sheets": {
+            "equal": 405,
+            "different": 1
+          },
+          "goals_conceded": {
+            "equal": 403,
+            "different": 3
+          },
+          "penalties_saved": {
+            "equal": 406
+          },
+          "penalties_missed": {
+            "equal": 406
+          },
+          "yellow_cards": {
+            "equal": 406
+          },
+          "red_cards": {
+            "equal": 406
+          },
+          "saves": {
+            "equal": 406
+          },
+          "bonus": {
+            "equal": 405,
+            "different": 1
+          },
+          "bps": {
+            "equal": 403,
+            "different": 3
+          }
+        }
+      },
+      "2022-23": {
+        "players": 558,
+        "prior_season": "2021-22",
+        "statuses": {
+          "all_compared_equal": 427,
+          "no_prior_reference_code": 131
+        },
+        "fields": {
+          "minutes": {
+            "equal": 427
+          },
+          "total_points": {
+            "equal": 427
+          },
+          "goals_scored": {
+            "equal": 427
+          },
+          "assists": {
+            "equal": 427
+          },
+          "clean_sheets": {
+            "equal": 427
+          },
+          "goals_conceded": {
+            "equal": 427
+          },
+          "penalties_saved": {
+            "equal": 427
+          },
+          "penalties_missed": {
+            "equal": 427
+          },
+          "yellow_cards": {
+            "equal": 427
+          },
+          "red_cards": {
+            "equal": 427
+          },
+          "saves": {
+            "equal": 427
+          },
+          "bonus": {
+            "equal": 427
+          },
+          "bps": {
+            "equal": 427
+          }
+        }
+      },
+      "2023-24": {
+        "players": 641,
+        "prior_season": "2022-23",
+        "statuses": {
+          "no_prior_reference_code": 165,
+          "all_compared_equal": 475,
+          "different": 1
+        },
+        "fields": {
+          "minutes": {
+            "equal": 475,
+            "different": 1
+          },
+          "total_points": {
+            "equal": 475,
+            "different": 1
+          },
+          "goals_scored": {
+            "equal": 476
+          },
+          "assists": {
+            "equal": 476
+          },
+          "clean_sheets": {
+            "equal": 476
+          },
+          "goals_conceded": {
+            "equal": 476
+          },
+          "penalties_saved": {
+            "equal": 476
+          },
+          "penalties_missed": {
+            "equal": 476
+          },
+          "yellow_cards": {
+            "equal": 476
+          },
+          "red_cards": {
+            "equal": 476
+          },
+          "saves": {
+            "equal": 476
+          },
+          "bonus": {
+            "equal": 476
+          },
+          "bps": {
+            "equal": 475,
+            "different": 1
+          }
+        }
+      },
+      "2024-25": {
+        "players": 610,
+        "prior_season": "2023-24",
+        "statuses": {
+          "all_compared_equal": 475,
+          "no_prior_reference_code": 133,
+          "different": 2
+        },
+        "fields": {
+          "minutes": {
+            "equal": 475,
+            "different": 2
+          },
+          "total_points": {
+            "equal": 475,
+            "different": 2
+          },
+          "goals_scored": {
+            "equal": 477
+          },
+          "assists": {
+            "equal": 477
+          },
+          "clean_sheets": {
+            "equal": 477
+          },
+          "goals_conceded": {
+            "equal": 476,
+            "different": 1
+          },
+          "penalties_saved": {
+            "equal": 477
+          },
+          "penalties_missed": {
+            "equal": 477
+          },
+          "yellow_cards": {
+            "equal": 477
+          },
+          "red_cards": {
+            "equal": 477
+          },
+          "saves": {
+            "equal": 477
+          },
+          "bonus": {
+            "equal": 477
+          },
+          "bps": {
+            "equal": 475,
+            "different": 2
+          }
+        }
+      },
+      "2025-26": {
+        "players": 685,
+        "prior_season": "2024-25",
+        "statuses": {
+          "all_compared_equal": 505,
+          "no_prior_reference_code": 174,
+          "different": 6
+        },
+        "fields": {
+          "minutes": {
+            "equal": 505,
+            "different": 6
+          },
+          "total_points": {
+            "equal": 505,
+            "different": 6
+          },
+          "goals_scored": {
+            "equal": 510,
+            "different": 1
+          },
+          "assists": {
+            "equal": 509,
+            "different": 2
+          },
+          "clean_sheets": {
+            "equal": 506,
+            "different": 5
+          },
+          "goals_conceded": {
+            "equal": 505,
+            "different": 6
+          },
+          "penalties_saved": {
+            "equal": 509,
+            "different": 2
+          },
+          "penalties_missed": {
+            "equal": 511
+          },
+          "yellow_cards": {
+            "equal": 505,
+            "different": 6
+          },
+          "red_cards": {
+            "equal": 511
+          },
+          "saves": {
+            "equal": 509,
+            "different": 2
+          },
+          "bonus": {
+            "equal": 507,
+            "different": 4
+          },
+          "bps": {
+            "equal": 505,
+            "different": 6
+          }
+        }
+      },
+      "2026-27": {
+        "players": 599,
+        "prior_season": "2025-26",
+        "statuses": {
+          "all_compared_equal": 454,
+          "different": 7,
+          "no_prior_reference_code": 138
+        },
+        "fields": {
+          "minutes": {
+            "equal": 455,
+            "different": 6
+          },
+          "total_points": {
+            "equal": 455,
+            "different": 6
+          },
+          "goals_scored": {
+            "equal": 457,
+            "different": 4
+          },
+          "assists": {
+            "equal": 456,
+            "different": 5
+          },
+          "clean_sheets": {
+            "equal": 456,
+            "different": 5
+          },
+          "goals_conceded": {
+            "equal": 455,
+            "different": 6
+          },
+          "penalties_saved": {
+            "equal": 461
+          },
+          "penalties_missed": {
+            "equal": 461
+          },
+          "yellow_cards": {
+            "equal": 455,
+            "different": 6
+          },
+          "red_cards": {
+            "equal": 461
+          },
+          "saves": {
+            "equal": 461
+          },
+          "bonus": {
+            "equal": 457,
+            "different": 4
+          },
+          "bps": {
+            "equal": 454,
+            "different": 7
+          }
+        }
+      }
+    },
+    "comparisons_sha256": "03f219463d0d7f6ef907855e5acd5e7e77b43977fc3467d9b5c8c9653fab6d9f",
+    "production_changed": false,
+    "training_admitted": false,
+    "limitations": [
+      "retrospective_diagnostic_not_predeadline_feature_join",
+      "source_code_equality_not_independent_person_identity_proof",
+      "equal_totals_do_not_authorize_period_relabeling_of_all_fields",
+      "unmatched_codes_and_incomplete_totals_remain_unknown"
+    ]
+  },
+  "verification": {
+    "reproduced_byte_for_byte": true,
+    "tests_passed": 1503,
+    "tests_skipped": 1,
+    "tests_deselected": 79
+  },
+  "accepted_artifact": "preseason-performance-v2",
+  "reproduced_artifact": "preseason-performance-v3",
+  "production_changed": false,
+  "gt_v5_changed": false,
+  "training_admitted": false
+}

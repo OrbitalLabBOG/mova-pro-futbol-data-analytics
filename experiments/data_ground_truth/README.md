@@ -1763,3 +1763,50 @@ y no se revalidan aquí. `available_at` permanece nulo y entrenamiento deshabili
 La siguiente conciliación debe determinar el período representado por cada campo,
 especialmente en pretemporada, antes de construir variables o deltas causales.
 GT v5 y producción permanecen intactos.
+
+## Gate G32: conciliación de estadísticas previas a GW1
+
+Se contrastan **3.622 filas anteriores a GW1**, de 2021/22–2026/27, con los totales
+GT v5 de la temporada inmediatamente anterior. La comparación utiliza el código
+de origen, trece componentes enteros y particiones verificadas por hash. Una
+coincidencia de código es una clave de contraste, no prueba independiente de
+identidad personal; no aplica alias ni rellena los códigos ausentes.
+
+| Temporada del snapshot | Todos los campos comparados iguales | Con diferencias | Sin código en referencia previa |
+| --- | ---: | ---: | ---: |
+| 2021/22 | 403 | 3 | 123 |
+| 2022/23 | 427 | 0 | 131 |
+| 2023/24 | 475 | 1 | 165 |
+| 2024/25 | 475 | 2 | 133 |
+| 2025/26 | 505 | 6 | 174 |
+| 2026/27 | 454 | 7 | 138 |
+
+En total, **2.739 de 2.758 filas con código coincidente** concuerdan en los
+componentes comparados. Esto respalda el uso de estadísticas de la temporada
+anterior como explicación de la discontinuidad GW1–GW2, sin autorizar un cambio
+global de período para todos los campos. Los 864 códigos sin referencia siguen
+sin conciliar: no se etiquetan automáticamente como jugadores nuevos.
+
+Hay **19 excepciones**: diecisiete tienen cero en los campos discrepantes frente
+a totales previos positivos; dos de 2026/27 presentan discrepancias no nulas.
+El índice conserva ambos valores, código, elemento, temporada previa y SHA raw.
+No se reescribe el snapshot ni GT v5, y no se asume que la referencia final sea
+la información publicada antes del deadline. Un total con alguna fila nula se
+conserva desconocido; códigos asociados a más de un elemento son ambiguos.
+
+```bash
+python -m experiments.data_ground_truth.preseason_performance \
+  --performance-root "$PERFORMANCE_AUDIT_ROOT" --package "$GT_V5_ROOT" \
+  --out "$PRESEASON_RECONCILIATION_ROOT"
+```
+
+Reporte e índice se reprodujeron byte por byte. Suite: **1.503 passed, 1 skipped,
+79 deselected**. Se verifican aislamiento de temporadas, ausencia frente a cero,
+códigos ambiguos, totales parciales y rechazo de truncamiento de decimales o
+infinitos. [Resultados G32](results-g32.json) fija hashes y cobertura. La primera
+corrida exploratoria tenía una selección cruzada entre temporadas y fue rechazada;
+los resultados aceptados son `preseason-performance-v2`, reproducidos en `v3`.
+
+El siguiente paso es conciliar las excepciones con snapshots y fuentes originales,
+y definir el período por campo. Este es un diagnóstico retrospectivo: no incorpora
+totales finales como variables predeadline ni habilita entrenamiento/producción.
