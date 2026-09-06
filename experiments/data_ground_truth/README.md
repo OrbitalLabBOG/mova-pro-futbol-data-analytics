@@ -4741,3 +4741,86 @@ Verificación: suite completa **1.667 passed, 1 skipped, 79 deselected** en 34,5
 Las pruebas nuevas cubren conservación de NULL, derivación de visitante, puntos
 negativos, conflictos de localía/clubes, claves duplicadas, cruce entre temporadas
 y etiquetas fraccionarias.
+
+## G84 — Archivo Azure adquirido y cobertura reproducida
+
+Se adquirieron los dos contenedores públicos identificados por
+[martgra/fpl-timeseries-data](https://github.com/martgra/fpl-timeseries-data),
+revisión `f5135c27cc75e56370d310bb359157dd84c29cee`. Los inventarios XML no tienen
+continuación pendiente: sus **2.524 blobs y 3.118.101.286 bytes** quedaron
+preservados y revalidados. Esta completitud corresponde a los inventarios
+consultados; no prueba que el archivo contenga todas las capturas históricas.
+
+| Contenedor / temporada interna | Snapshots | Bytes | Observaciones jugador–snapshot | Jugadores por captura |
+| --- | ---: | ---: | ---: | ---: |
+| 2020-fpl-data / 2020/21 | 1.015 | 1.569.954.563 | 645.722 | 521–713 |
+| 2021-fpl-data / 2021/22 | 1.509 | 1.548.146.723 | 974.501 | 446–737 |
+| Total | 2.524 | 3.118.101.286 | 1.620.223 | — |
+
+`azure_history.py` usa GET existente, cuatro workers e inventarios fijados.
+Rechaza enumeraciones truncadas, nombres inesperados, duplicados y archivos que
+no coinciden en tamaño/MD5. Conserva bytes por SHA-256, URL, ETag, Last-Modified y
+momento de adquisición; verifica contenido bootstrap y clasifica temporada por
+el deadline interno de GW1. Los receipts permiten reanudar y revalidar offline.
+
+No se encontraron IDs de jugador ausentes o duplicados dentro de las capturas.
+Código, minutos/puntos acumulados, precio, status y news son no NULL en las
+1.620.223 filas; news puede ser vacío. `chance_of_playing_next_round` es no NULL
+en 400.976 filas de 2020/21 y 588.043 de 2021/22. Los NULL restantes se preservan.
+Son observaciones repetidas de estados, no nuevas etiquetas jugador–partido.
+
+`azure_coverage.py` selecciona nominalmente la captura más cercana anterior a
+cada variante de deadline observada, hasta siete días. Exige acuerdo dentro de
+60 segundos entre los campos de reloj del nombre y `download_time`; ese acuerdo
+no acredita UTC ni autenticidad. Conserva variantes de deadline sin resolverlas
+con un snapshot futuro.
+
+| Temporada | GW con candidata ≤1 h | ≤6 h | ≤24 h | Variantes de deadline | Variantes con Last-Modified posterior/al deadline |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 2020/21 | 6 | 35 | 37 | 39 | 39 |
+| 2021/22 | 9 | 38 | 38 | 42 | 0 |
+
+2020/21 cubre nominalmente GW2–GW38; 2021/22, GW1–GW38. Los denominadores son
+38 jornadas de cada temporada, mientras las variantes pueden ser más de 38.
+La métrica usa el deadline declarado por cada snapshot, no un calendario final.
+De los 2.524 relojes, 2.522 concuerdan y dos discrepan unas dos horas: archivos
+`2020-09-12T08-24-34Z_data.json` y `2020-10-02T21-11-46Z_data.json`. GW1 de
+2020/21 sigue sin candidata que supere este control.
+
+Como evidencia auxiliar se archivaron dos archivos de
+[martgra/fplstats](https://github.com/martgra/fplstats/tree/7cab7fad68c8d3c71c77c4a22338ab586d50a525),
+revisión `7cab7fad68c8d3c71c77c4a22338ab586d50a525`: el recolector declara
+`datetime.now()` sin zona para `download_time`, y el binding usa
+`fplstats/{DateTime}_data.json` con ejecución cada seis horas. Es una explicación
+posible del desfase; no demuestra qué despliegue produjo estos contenedores.
+No se ajustan relojes ni se ejecuta código de esa fuente.
+
+En 2021/22, Last-Modified también es anterior al deadline en las 42 variantes
+seleccionadas. Esto añade evidencia de antigüedad del objeto, pero no prueba por
+sí solo acceso público histórico. Todas las filas siguen con disponibilidad
+desconocida y admisiones temporal/de entrenamiento desactivadas. G84 no sustituye
+los calendarios pendientes ni eleva la cobertura publicada 195/199.
+
+```bash
+python -m experiments.data_ground_truth.azure_history \
+  --root "$DATA_BASE/azure-history-g84"
+python -m experiments.data_ground_truth.azure_history \
+  --root "$DATA_BASE/azure-history-g84" --offline
+python -m experiments.data_ground_truth.azure_coverage \
+  --root "$DATA_BASE/azure-history-g84" \
+  --out "$DATA_BASE/azure-coverage-g84-v1"
+```
+
+La reproducción offline conserva manifiesto y reporte byte por byte. Reporte de
+cobertura y `nominal_windows.json` son idénticos en dos raíces independientes.
+Suite completa: **1.673 passed, 1 skipped, 79 deselected**, 33,86 s; incluye
+corrupción de caché, MD5/tamaño, enumeración truncada, relojes discordantes,
+fechas futuras, variantes de deadline y conservación de NULL.
+
+[Resultados G84](results-g84.json) fija fuentes, hashes y métricas. El registro
+[de descubrimiento](results-g84-discovery.json) conserva su corte inicial en
+curso, ya superado por este cierre. Bytes en `azure-history-g84`, documentos en
+`azure-history-source-g84` y `azure-clock-source-g84`; fuera de Git y del paquete
+portable G78 congelado. GT v7 permanece en 303.126 filas/doce temporadas, sin
+entrenamiento ni cambios productivos. Quedan pendientes el enlace con GT,
+la comparación con estados existentes y la admisión temporal de esta fuente.

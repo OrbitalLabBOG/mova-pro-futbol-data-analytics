@@ -1,0 +1,190 @@
+{
+  "version": "historical-data-g84",
+  "capture_report_sha256": "a3bb0bed28c6420785ebd358768c501d3e125be27e8edb95beacaf6a82a4671a",
+  "capture": {
+    "version": "azure-history-v1",
+    "listings": {
+      "2020-fpl-data": {
+        "sha256": "9d2e390b7e244801e15f40f48be670a3a9baddda8e4a1ac6215d00f0d0e263dd",
+        "blobs": 1015,
+        "bytes": 1569954563
+      },
+      "2021-fpl-data": {
+        "sha256": "0356bdc47a2a64a17d3d1fda67ed044557993a11f159a7e4f8c1444eca4068ca",
+        "blobs": 1509,
+        "bytes": 1548146723
+      }
+    },
+    "snapshots": 2524,
+    "seasons": {
+      "2020-21": 1015,
+      "2021-22": 1509
+    },
+    "manifest_sha256": "8b05db7e1ee6c8865edeb0e7258998ee6e6a4e1cc70d6e18edfa7f5d9a6a0566",
+    "implementation_sha256": "51d059b9c48bd86200456603c331d05436f670655aac5b4fd6cb4b82276da5b8",
+    "new_complete_label_seasons": 0,
+    "training_admitted": false,
+    "limitations": [
+      "bootstrap_states_not_player_fixture_labels",
+      "filenames_download_time_and_blob_metadata_not_publication_proof",
+      "listing_is_pinned_inventory_not_guaranteed_all_historical_captures"
+    ]
+  },
+  "coverage_report_sha256": "2fc0b13df5fa9064247b241bfdae3d950cd44de17c5564cf87b08c2497b5b408",
+  "coverage": {
+    "version": "azure-coverage-v1",
+    "parent_report_sha256": "a3bb0bed28c6420785ebd358768c501d3e125be27e8edb95beacaf6a82a4671a",
+    "implementation_sha256": "bad4b9dd5dbe0c4791e980edb77b0617c11f5a4863e041ad8b266d856520c187",
+    "seasons": {
+      "2020-21": {
+        "snapshots": 1015,
+        "players_min": 521,
+        "players_max": 713,
+        "player_rows": 645722,
+        "duplicate_or_missing_player_id_snapshots": 0,
+        "nonnull_player_fields": {
+          "code": 645722,
+          "minutes": 645722,
+          "total_points": 645722,
+          "now_cost": 645722,
+          "status": 645722,
+          "news": 645722,
+          "chance_of_playing_next_round": 400976
+        },
+        "unique_contents": 1015,
+        "deadline_variants": 39,
+        "gameweeks_with_nominal_candidate": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38
+        ],
+        "gameweek_coverage_by_max_age_hours": {
+          "1": 6,
+          "6": 35,
+          "24": 37,
+          "168": 37
+        },
+        "selected_variants_blob_modified_after_or_at_deadline": 39
+      },
+      "2021-22": {
+        "snapshots": 1509,
+        "players_min": 446,
+        "players_max": 737,
+        "player_rows": 974501,
+        "duplicate_or_missing_player_id_snapshots": 0,
+        "nonnull_player_fields": {
+          "code": 974501,
+          "minutes": 974501,
+          "total_points": 974501,
+          "now_cost": 974501,
+          "status": 974501,
+          "news": 974501,
+          "chance_of_playing_next_round": 588043
+        },
+        "unique_contents": 1509,
+        "deadline_variants": 42,
+        "gameweeks_with_nominal_candidate": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38
+        ],
+        "gameweek_coverage_by_max_age_hours": {
+          "1": 9,
+          "6": 38,
+          "24": 38,
+          "168": 38
+        },
+        "selected_variants_blob_modified_after_or_at_deadline": 0
+      }
+    },
+    "wall_clock_status": {
+      "missing_or_disagreeing_wall_clock": 2,
+      "within_60s_wall_clock": 2522
+    },
+    "artifacts": {
+      "nominal_windows.json": "30c51abb69195e6fd0ddcc5845220cc9a15aa858a71303bb1a89fa30c82790ef"
+    },
+    "training_admitted": false,
+    "predeadline_admitted": false,
+    "limitations": [
+      "nominal_timestamp_coverage_not_publication_proof",
+      "wall_clock_agreement_does_not_establish_timezone_or_authenticity",
+      "blob_last_modified_does_not_establish_public_access",
+      "deadline_variants_preserved_not_resolved_using_future_state",
+      "bootstrap_players_not_player_fixture_labels"
+    ]
+  },
+  "source_manifest_sha256": "e594d9ab410a3ddd592fb141fd5f5427c6133114e93a6d1dc18245bc336b39d9",
+  "clock_source_manifest_sha256": "e023aa475020afd359ae01d9e0add391ff4d374bab5a9bb30e17f5ae1b23cc09",
+  "offline_reproduction_identical": true,
+  "coverage_reproduction_identical": true
+}
