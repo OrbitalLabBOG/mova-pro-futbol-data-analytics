@@ -5049,3 +5049,57 @@ fuera de Git y del corte portable inmutable G87. No hay admisión a entrenamient
 nuevas temporadas completas ni cambio productivo. El próximo contraste debe medir
 filas nuevas, NULL recuperables y desacuerdos contra Differential antes de proponer
 una nueva versión del GT.
+
+
+## G89 — Aporte complementario de 2013/14 frente a Differential
+
+El contraste enlaza los 380 partidos por clubes con nombres explícitos y verifica
+la fecha local de cada encuentro. Enlaza jugadores por ID FPL de la misma temporada,
+y exige además nombre normalizado, jornada, club y rival coincidentes para marcar
+una recuperación candidata. No compara identificadores numéricos de distintos
+proveedores como si pertenecieran al mismo espacio.
+
+| Medida | Resultado |
+| --- | ---: |
+| Filas Differential 2013/14 | 10.858 |
+| Filas JSON G88 | 17.805 |
+| Claves jugador–partido comunes | 7.998 |
+| Diferencias de minutos o puntos conocidos | 0 |
+| Filas sólo en JSON, todas con cero minutos explícito | 9.807 |
+| Filas sólo en Differential | 2.860 |
+| Enlaces corroborados también por nombre y contexto | 7.908 |
+| Filas comunes con nombres distintos | 90 |
+| Puntos faltantes recuperables como candidatos | 52, en 44 jugadores |
+| Apariciones con puntos desconocidos aún sin recuperación | 9 de 61 |
+
+Las 90 diferencias de nombre corresponden a seis IDs: Sammy/Shola Ameobi,
+van Wolfswinkel, Steven/Kelvin Davis y Joe Cole. El código no resuelve esas
+abreviaturas automáticamente. No hubo desacuerdos de jornada, club o rival.
+La ausencia de conflictos en valores conocidos apoya el contraste, pero no prueba
+independencia de las fuentes ni exactitud universal de las etiquetas.
+
+`observations.csv` conserva minutos y puntos de ambas fuentes, presencia en cada
+archivo y flags separados de conflicto/candidato. Los 52 puntos faltantes
+permanecen NULL en la columna original Differential; el valor JSON está al lado.
+Las 9.807 filas adicionales son complementarias respecto a la base Differential
+seleccionada, no una afirmación de unicidad frente a todos los archivos públicos.
+No permiten asumir que todos los jugadores registrados estén cubiertos.
+
+```bash
+python -m experiments.data_ground_truth.early_history_overlap \
+  --base "$DATA_BASE" --out "$DATA_BASE/early-history-overlap-g89-new"
+```
+
+[Resultados G89](results-g89.json) fija el SHA de la base, los partidos, el reporte
+G88, la implementación y el artefacto. Dos ejecuciones (v2/v3) producen reporte y
+CSV idénticos byte por byte. Las pruebas rechazan fechas de partido incompatibles,
+identidades ausentes y claves duplicadas; un conflicto de minutos o nombres impide
+marcar recuperación. No se ejecuta código SQL del archivo ni se leen predicciones:
+las consultas adicionales seleccionan sólo ID y nombre de tablas físicas.
+
+GT v7 y sus doce temporadas permanecen intactos. Los resultados son staging de
+investigación, sin admisión a entrenamiento ni disponibilidad predeadline acreditada.
+El siguiente paso es resolver con evidencia independiente las nueve apariciones
+restantes y validar el universo de jugadores antes de consolidar una temporada.
+
+Verificación G89: **1.685 passed, 1 skipped, 79 deselected**, 34,22 s.
