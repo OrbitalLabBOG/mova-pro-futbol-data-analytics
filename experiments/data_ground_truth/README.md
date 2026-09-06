@@ -1810,3 +1810,45 @@ los resultados aceptados son `preseason-performance-v2`, reproducidos en `v3`.
 El siguiente paso es conciliar las excepciones con snapshots y fuentes originales,
 y definir el período por campo. Este es un diagnóstico retrospectivo: no incorpora
 totales finales como variables predeadline ni habilita entrenamiento/producción.
+
+## Gate G33: historia raw de las excepciones de pretemporada
+
+Se rastrean las diecinueve excepciones G32 en **694 snapshots anteriores a GW1**
+de sus respectivas temporadas. El proceso vuelve a verificar inventario, hashes,
+calendario e identidad de elemento/código; no une códigos distintos. Produce
+**2.433 observaciones jugador-snapshot**: 2.004 presentes y 429 ausentes.
+
+**Ninguna excepción tiene una captura anterior que concuerde con todos los totales
+previos comparados.** Ocho muestran una transición de ausencia a presencia;
+las otras once están presentes con valores constantes en todo el tramo observado.
+En las ocho altas tampoco cambian después los componentes examinados antes de GW1.
+Esto descarta reemplazarlas con una versión anterior equivalente dentro de este
+archivo, pero no explica por sí solo la causa ni prueba ausencia continua entre
+capturas.
+
+Ejemplos de primeras apariciones nominales de 2025/26: Ramsdale el 5 de agosto,
+Ugochukwu el 7 y Broja/Hermansen el 11. Son horas declaradas por el archivo,
+no prueba de publicación ni fecha exacta de incorporación al juego. La ausencia
+no se convierte en rendimiento cero, y un evento editorial de transferencia no
+certifica la semántica del campo FPL. Las diecinueve excepciones siguen preservadas,
+sin rellenarse con el GT final.
+
+```bash
+python -m experiments.data_ground_truth.preseason_exception_history \
+  --raw-root "$BOOTSTRAP_RAW_ROOT" --audit-root "$BOOTSTRAP_AUDIT_ROOT" \
+  --reconciliation-root "$PRESEASON_RECONCILIATION_ROOT" \
+  --out "$PRESEASON_EXCEPTION_HISTORY_ROOT"
+```
+
+Reporte y cronologías se reprodujeron byte por byte. Suite: **1.506 passed,
+1 skipped, 79 deselected**. Pruebas distinguen ausencia, identidad incompatible,
+ceros, nulos y coincidencias anteriores sin sobrescribir valores posteriores.
+[Resultados G33](results-g33.json) contiene hashes y resúmenes por excepción.
+No se habilita entrenamiento ni se modifica GT v5 o producción. Este gate cierra
+la búsqueda de una captura anterior correctiva en el archivo examinado; siguen
+pendientes fuentes independientes y los demás huecos de cobertura/frescura.
+
+Como contexto editorial se archivó el [anuncio oficial de Ramsdale en Newcastle](https://www.newcastleunited.com/en/news/aaron-ramsdale-signs-for-newcastle-united).
+La página de entrevista de Ugochukwu encontrada en búsqueda devolvió HTTP 404
+en adquisición directa; se registra el fallo, sin atribuirle evidencia descargada.
+Estas referencias no cambian los valores FPL ni acreditan publicación histórica.

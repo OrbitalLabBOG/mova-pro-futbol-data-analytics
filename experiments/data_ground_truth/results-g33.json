@@ -1,0 +1,362 @@
+{
+  "version": "historical-data-g33",
+  "report_sha256": "2dcb7719ff761b84216fe29cdd91ff0530aaf0f328f22dc8f485483b9eddacd6",
+  "history": {
+    "version": "preseason-exception-history-v1",
+    "source_manifest_sha256": "d9eed1e354d0a35443e480a0c4bfcbdebee97f28b73b04309e4bef0f8bcc243e",
+    "source_audit_sha256": "703fd327692e9d8c45bbbd0f7b8a91947fbfbb2df308a61ce71b0b7fe1c47f90",
+    "reconciliation_report_sha256": "2c55454ee94865a491abf3e4a60eb64404c719c3a585097566c089ef5f5fabb3",
+    "implementation_sha256": "271d50f4d9047247b5b3e47ae4e17938a12fc7d2879e67dce3dad2bb9a76a629",
+    "scanned_snapshots": 694,
+    "targets": 19,
+    "summaries": [
+      {
+        "season": "2021-22",
+        "element": 11,
+        "source_code": 111457,
+        "deadline": "2021-08-13T17:30:00Z",
+        "selected_source_sha256": "137f929662b384e1e3f6baef1684e578bf2d9578e8b652a0fb35d4a1a48e57bd",
+        "observations": 209,
+        "statuses": {
+          "present": 209
+        },
+        "first_present": "2021-06-22T12:36:00",
+        "last_present": "2021-08-13T12:32:00",
+        "matches_prior_totals": 0,
+        "first_match": null,
+        "state_transitions": 0
+      },
+      {
+        "season": "2021-22",
+        "element": 29,
+        "source_code": 85242,
+        "deadline": "2021-08-13T17:30:00Z",
+        "selected_source_sha256": "137f929662b384e1e3f6baef1684e578bf2d9578e8b652a0fb35d4a1a48e57bd",
+        "observations": 209,
+        "statuses": {
+          "present": 209
+        },
+        "first_present": "2021-06-22T12:36:00",
+        "last_present": "2021-08-13T12:32:00",
+        "matches_prior_totals": 0,
+        "first_match": null,
+        "state_transitions": 0
+      },
+      {
+        "season": "2021-22",
+        "element": 68,
+        "source_code": 209362,
+        "deadline": "2021-08-13T17:30:00Z",
+        "selected_source_sha256": "137f929662b384e1e3f6baef1684e578bf2d9578e8b652a0fb35d4a1a48e57bd",
+        "observations": 209,
+        "statuses": {
+          "present": 209
+        },
+        "first_present": "2021-06-22T12:36:00",
+        "last_present": "2021-08-13T12:32:00",
+        "matches_prior_totals": 0,
+        "first_match": null,
+        "state_transitions": 0
+      },
+      {
+        "season": "2023-24",
+        "element": 538,
+        "source_code": 487837,
+        "deadline": "2023-08-11T17:30:00Z",
+        "selected_source_sha256": "752847c04ca015595dc48c1ddebbdf1f9aecd76c872f56eb606bf5eba35208fd",
+        "observations": 148,
+        "statuses": {
+          "present": 148
+        },
+        "first_present": "2023-07-05T18:26:00",
+        "last_present": "2023-08-11T12:31:00",
+        "matches_prior_totals": 0,
+        "first_match": null,
+        "state_transitions": 0
+      },
+      {
+        "season": "2024-25",
+        "element": 569,
+        "source_code": 481624,
+        "deadline": "2024-08-16T17:30:00Z",
+        "selected_source_sha256": "039f3d6584e510aee89802dbf91ec0be0ccc69ee412a47e2104ec553d7037d51",
+        "observations": 120,
+        "statuses": {
+          "absent_element": 7,
+          "present": 113
+        },
+        "first_present": "2024-07-19T12:37:00",
+        "last_present": "2024-08-16T12:38:00",
+        "matches_prior_totals": 0,
+        "first_match": null,
+        "state_transitions": 1
+      },
+      {
+        "season": "2024-25",
+        "element": 286,
+        "source_code": 461416,
+        "deadline": "2024-08-16T17:30:00Z",
+        "selected_source_sha256": "039f3d6584e510aee89802dbf91ec0be0ccc69ee412a47e2104ec553d7037d51",
+        "observations": 120,
+        "statuses": {
+          "present": 120
+        },
+        "first_present": "2024-07-17T18:26:00",
+        "last_present": "2024-08-16T12:38:00",
+        "matches_prior_totals": 0,
+        "first_match": null,
+        "state_transitions": 0
+      },
+      {
+        "season": "2025-26",
+        "element": 676,
+        "source_code": 503714,
+        "deadline": "2025-08-15T17:30:00Z",
+        "selected_source_sha256": "eee31c9ece4864963bff4d88543ac5d440ca4d574ec89512e680d6e697f9a086",
+        "observations": 101,
+        "statuses": {
+          "absent_element": 69,
+          "present": 32
+        },
+        "first_present": "2025-08-07T18:41:00",
+        "last_present": "2025-08-15T12:52:00",
+        "matches_prior_totals": 0,
+        "first_match": null,
+        "state_transitions": 1
+      },
+      {
+        "season": "2025-26",
+        "element": 680,
+        "source_code": 440323,
+        "deadline": "2025-08-15T17:30:00Z",
+        "selected_source_sha256": "eee31c9ece4864963bff4d88543ac5d440ca4d574ec89512e680d6e697f9a086",
+        "observations": 101,
+        "statuses": {
+          "absent_element": 85,
+          "present": 16
+        },
+        "first_present": "2025-08-11T18:39:00",
+        "last_present": "2025-08-15T12:52:00",
+        "matches_prior_totals": 0,
+        "first_match": null,
+        "state_transitions": 1
+      },
+      {
+        "season": "2025-26",
+        "element": 674,
+        "source_code": 225321,
+        "deadline": "2025-08-15T17:30:00Z",
+        "selected_source_sha256": "eee31c9ece4864963bff4d88543ac5d440ca4d574ec89512e680d6e697f9a086",
+        "observations": 101,
+        "statuses": {
+          "absent_element": 61,
+          "present": 40
+        },
+        "first_present": "2025-08-05T18:42:00",
+        "last_present": "2025-08-15T12:52:00",
+        "matches_prior_totals": 0,
+        "first_match": null,
+        "state_transitions": 1
+      },
+      {
+        "season": "2025-26",
+        "element": 659,
+        "source_code": 158534,
+        "deadline": "2025-08-15T17:30:00Z",
+        "selected_source_sha256": "eee31c9ece4864963bff4d88543ac5d440ca4d574ec89512e680d6e697f9a086",
+        "observations": 101,
+        "statuses": {
+          "absent_element": 9,
+          "present": 92
+        },
+        "first_present": "2025-07-23T18:39:00",
+        "last_present": "2025-08-15T12:52:00",
+        "matches_prior_totals": 0,
+        "first_match": null,
+        "state_transitions": 1
+      },
+      {
+        "season": "2025-26",
+        "element": 671,
+        "source_code": 75115,
+        "deadline": "2025-08-15T17:30:00Z",
+        "selected_source_sha256": "eee31c9ece4864963bff4d88543ac5d440ca4d574ec89512e680d6e697f9a086",
+        "observations": 101,
+        "statuses": {
+          "absent_element": 57,
+          "present": 44
+        },
+        "first_present": "2025-08-04T18:41:00",
+        "last_present": "2025-08-15T12:52:00",
+        "matches_prior_totals": 0,
+        "first_match": null,
+        "state_transitions": 1
+      },
+      {
+        "season": "2025-26",
+        "element": 679,
+        "source_code": 467189,
+        "deadline": "2025-08-15T17:30:00Z",
+        "selected_source_sha256": "eee31c9ece4864963bff4d88543ac5d440ca4d574ec89512e680d6e697f9a086",
+        "observations": 101,
+        "statuses": {
+          "absent_element": 85,
+          "present": 16
+        },
+        "first_present": "2025-08-11T18:39:00",
+        "last_present": "2025-08-15T12:52:00",
+        "matches_prior_totals": 0,
+        "first_match": null,
+        "state_transitions": 1
+      },
+      {
+        "season": "2026-27",
+        "element": 3,
+        "source_code": 437495,
+        "deadline": "2026-08-21T17:30:00Z",
+        "selected_source_sha256": "746b833e3e2b9d3cb700ae2c74075896bd8df8fa0627f85512b06f9f7a9bffd2",
+        "observations": 116,
+        "statuses": {
+          "present": 116
+        },
+        "first_present": "2026-07-23T14:22:00",
+        "last_present": "2026-08-21T13:00:00",
+        "matches_prior_totals": 0,
+        "first_match": null,
+        "state_transitions": 0
+      },
+      {
+        "season": "2026-27",
+        "element": 54,
+        "source_code": 448089,
+        "deadline": "2026-08-21T17:30:00Z",
+        "selected_source_sha256": "746b833e3e2b9d3cb700ae2c74075896bd8df8fa0627f85512b06f9f7a9bffd2",
+        "observations": 116,
+        "statuses": {
+          "present": 116
+        },
+        "first_present": "2026-07-23T14:22:00",
+        "last_present": "2026-08-21T13:00:00",
+        "matches_prior_totals": 0,
+        "first_match": null,
+        "state_transitions": 0
+      },
+      {
+        "season": "2026-27",
+        "element": 105,
+        "source_code": 444180,
+        "deadline": "2026-08-21T17:30:00Z",
+        "selected_source_sha256": "746b833e3e2b9d3cb700ae2c74075896bd8df8fa0627f85512b06f9f7a9bffd2",
+        "observations": 116,
+        "statuses": {
+          "present": 116
+        },
+        "first_present": "2026-07-23T14:22:00",
+        "last_present": "2026-08-21T13:00:00",
+        "matches_prior_totals": 0,
+        "first_match": null,
+        "state_transitions": 0
+      },
+      {
+        "season": "2026-27",
+        "element": 108,
+        "source_code": 75115,
+        "deadline": "2026-08-21T17:30:00Z",
+        "selected_source_sha256": "746b833e3e2b9d3cb700ae2c74075896bd8df8fa0627f85512b06f9f7a9bffd2",
+        "observations": 116,
+        "statuses": {
+          "present": 116
+        },
+        "first_present": "2026-07-23T14:22:00",
+        "last_present": "2026-08-21T13:00:00",
+        "matches_prior_totals": 0,
+        "first_match": null,
+        "state_transitions": 0
+      },
+      {
+        "season": "2026-27",
+        "element": 153,
+        "source_code": 220362,
+        "deadline": "2026-08-21T17:30:00Z",
+        "selected_source_sha256": "746b833e3e2b9d3cb700ae2c74075896bd8df8fa0627f85512b06f9f7a9bffd2",
+        "observations": 116,
+        "statuses": {
+          "present": 116
+        },
+        "first_present": "2026-07-23T14:22:00",
+        "last_present": "2026-08-21T13:00:00",
+        "matches_prior_totals": 0,
+        "first_match": null,
+        "state_transitions": 0
+      },
+      {
+        "season": "2026-27",
+        "element": 190,
+        "source_code": 469272,
+        "deadline": "2026-08-21T17:30:00Z",
+        "selected_source_sha256": "746b833e3e2b9d3cb700ae2c74075896bd8df8fa0627f85512b06f9f7a9bffd2",
+        "observations": 116,
+        "statuses": {
+          "present": 116
+        },
+        "first_present": "2026-07-23T14:22:00",
+        "last_present": "2026-08-21T13:00:00",
+        "matches_prior_totals": 0,
+        "first_match": null,
+        "state_transitions": 0
+      },
+      {
+        "season": "2026-27",
+        "element": 571,
+        "source_code": 216055,
+        "deadline": "2026-08-21T17:30:00Z",
+        "selected_source_sha256": "746b833e3e2b9d3cb700ae2c74075896bd8df8fa0627f85512b06f9f7a9bffd2",
+        "observations": 116,
+        "statuses": {
+          "absent_element": 56,
+          "present": 60
+        },
+        "first_present": "2026-08-06T14:28:00",
+        "last_present": "2026-08-21T13:00:00",
+        "matches_prior_totals": 0,
+        "first_match": null,
+        "state_transitions": 1
+      }
+    ],
+    "timelines_sha256": "4dca9ded9930db54a7a18db9351288fcfb0fdf6a9482cc18ce4392eaf1c9c0a0",
+    "production_changed": false,
+    "training_admitted": false,
+    "limitations": [
+      "source_claimed_clock_not_publication_proof",
+      "absence_between_captures_not_continuous_absence",
+      "earlier_matches_do_not_authorize_replacing_selected_values"
+    ]
+  },
+  "editorial_reference": {
+    "records": [
+      {
+        "url": "https://www.newcastleunited.com/en/news/aaron-ramsdale-signs-for-newcastle-united",
+        "file": "0.html",
+        "sha256": "dba0dcc1d423a355bd9e899b3b99e76c9171d7508984828f258eff628b1561e2",
+        "bytes": 539526
+      }
+    ],
+    "errors": [
+      {
+        "url": "https://burnleyfootballclub.com/content/lesley-ugochukwu-first-interview",
+        "reason": "HTTP 404",
+        "attempts": 5
+      }
+    ],
+    "scope": "editorial_transfer_context_not_FPL_statistics_or_historical_publication_proof"
+  },
+  "verification": {
+    "reproduced_byte_for_byte": true,
+    "tests_passed": 1506,
+    "tests_skipped": 1,
+    "tests_deselected": 79
+  },
+  "production_changed": false,
+  "gt_v5_changed": false,
+  "training_admitted": false
+}
