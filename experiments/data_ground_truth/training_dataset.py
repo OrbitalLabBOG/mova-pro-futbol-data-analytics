@@ -12,7 +12,7 @@ import pandas as pd
 
 from experiments.data_ground_truth.raw import digest
 
-VERSION = 'fpl-labels-v2'
+VERSION = 'fpl-labels-v3'
 COMPONENTS = ['goals_scored','assists','clean_sheets','goals_conceded','own_goals',
               'penalties_saved','penalties_missed','yellow_cards','red_cards','saves','bonus','bps']
 
@@ -69,6 +69,7 @@ def normalize(frame: pd.DataFrame, season: str, historical: bool) -> pd.DataFram
     if (codes.dropna()<=0).any():
         raise ValueError('invalid official player code')
     result['official_player_code']=codes
+    result['source_official_player_code']=pd.to_numeric(source.get('source_official_player_code',codes),errors='raise').astype('Int64')
     result['identity_key']=[f'opta:{int(code)}' if pd.notna(code) else f'fpl:{season}:{int(element)}'
                             for code,element in zip(codes,result.element)]
     if result.duplicated(['element','fixture']).any():

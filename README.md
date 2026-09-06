@@ -121,9 +121,11 @@ y procedencia separadas del entrenamiento productivo.
 El gate G3 recupera además 2014/15: 24.876 filas, 38 jornadas y 380 partidos
 reconciliados. G5 empaqueta 278.707 etiquetas de once temporadas, verificadas por
 hash y separadas temporalmente: excluye 59 ceros de un partido aplazado en 2019/20.
-La identidad de 2014/15 alcanza 652 jugadores y el 99,80% de apariciones con minutos.
+G7 resuelve la identidad de las 10.428 apariciones con minutos de 2014/15 (100%);
+quedan 46 jugadores sin apariciones con ID de temporada. Conserva equivalencias
+verificadas cuando un código histórico cambió.
 G6 completa 2015/16 con 24.741 observaciones, 723 jugadores y 380/380 partidos.
-El paquete v2 suma **303.448 etiquetas de doce temporadas consecutivas**, 2014/15–2025/26;
+El paquete v3 suma **303.448 etiquetas de doce temporadas consecutivas**, 2014/15–2025/26;
 verifica puntos y trece componentes contra totales finales de 2015/16. El manifiesto
 permite fijar las entradas de cada experimento; no acredita replay predeadline.
 

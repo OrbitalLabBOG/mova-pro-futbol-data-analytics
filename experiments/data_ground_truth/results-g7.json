@@ -1,0 +1,832 @@
+{
+  "version": "historical-data-g7",
+  "registry": {
+    "version": "identity-registry-v1",
+    "seasons": {
+      "2009-10": {
+        "validated_existing_rows": 12400,
+        "added_identity_rows": 35,
+        "missing_identity_rows": 192,
+        "eligible_observed_minutes_rows": 10226,
+        "source_sha256": "36b00f892bec1fc1e9321034063e945e774c7ca9049f8973787cfb04de04edcc",
+        "squad_sha256": [
+          "0406599a58407236efc37fdd398436155eec94fece34c616d1002f9c1a556140",
+          "0458d73e5eb0ec41c538b551175d4082dc96dc757daa9c7ce606a58398397c79",
+          "1aa9c0e49cca78cbc246fc9aa6b96c1949043f934b093199b4a94e7569b34bdb",
+          "1d34d5be7858419600093df94b7011c9928aa29bfe6a2caa06a58cbc0e0eac94",
+          "330ea5c9398970121ebdb8eea0471ae15bb08bbc94afc3ee52500417403f4f28",
+          "60d9dd579384baf02205bdbafbb81bb46c48f17feb926e51a610b80772640e93",
+          "657bfd366907ecc58d782dfb3e53a01aaf89c2c595f0c3670fde2a43c0585b65",
+          "6de3d60f9de19d3c32dec6a22f82629b07251e4a45bbaeea26f72fe83b715c38",
+          "6feef1dd1bb4845bb8701dd0b385ee2cb191a7bfdf76e203f59877a1ba250400",
+          "88f8867aa93e2dce010adc6aed3e3fe7c7e9f67378cdd4c9a1f0b2b1b5ea0797",
+          "92aec4704aee04392a4ccb632a1e611e076bb7c68a25edb28a84b3e7ff3504f9",
+          "93ad6fa4e8732759c04ccf719263816e1283396214eed76fec676f12310faceb",
+          "bc85f196596f6daa013bee9a3d71429fe7b31ad46915c0fe54dd75e75ae7f0bb",
+          "be51bebe986c0728e1237898c33f260273d384912f1d62735ee69c5f9b9ec4c2",
+          "c372e545b5a1c7ee19c35a137b6ae1690f64cfeaf6999ae432786d49c7d69bc9",
+          "c5ffe593a2629990d4e597404aadb550f36445e8ed31934836619d828982077a",
+          "d0c85cb4d378cfc30cf572f8992f4164fb65433ceb6a5b93d0e9028ac043ce18",
+          "da6fb25e86dcbd58f95f1aa10e9fcd1fce0538d4b936b3ebe4afd2f99e2efc23",
+          "e376a0bef49d62e5f689a269862c0d74f240e5193e9f635280393f1780b7f5ca",
+          "eafb60f620e246bdc52d325501aa446bf49d51cc326fe116efd8655716dd6f17"
+        ],
+        "artifact_sha256": "e5b4beeecd3e7f2848a3bc118a42d9f8228883dc9df2e49c763883a318cc4cb1"
+      },
+      "2010-11": {
+        "validated_existing_rows": 12497,
+        "added_identity_rows": 0,
+        "missing_identity_rows": 147,
+        "eligible_observed_minutes_rows": 10238,
+        "source_sha256": "bb342117aa25be89c545777a89a6485c48b41c6d9f2a5e12ac7e9635c9cba197",
+        "squad_sha256": [
+          "1724c30228a5d255a2e9127c3b374f1746a2bb1f9a8a935e06bb354e20d708d9",
+          "1b3a0229dc7f5182b439dfa7f46eea3a246d504bce46560e5c04e955878e14f8",
+          "42e4e750c9ce96dd57fa63b5e64a4906017126b3028e12047b0295b67f2b27b6",
+          "5579fda97ef70fdbaed610ccf647aa3ea60f2afe1eb5c9122e1f9fba785c2f15",
+          "67aa9f51acb8e093ae31623a9348f4326cb232bd2b104015b64b47458321fd00",
+          "7366a231aa985b64551b9d111cb138d0cd6fd38d649c897b5ae561b8ad4acf0a",
+          "87749543bdb9971cadd94aa7fe7c86f072075845df1c81975d28ab9bad0fe7a1",
+          "8e0d911326b190036b550cee83fc7337a6d76f30388ab818403e50597af805de",
+          "92d61890f8aa7536cdf64f83be4735ac1605bfbb33b36379dd217cd06a178f44",
+          "c21293a0a2ac3aca7df1dab7f19822036421efc4bcc01a8c503971fa2fb9c19f",
+          "c54f00317bab767c333f37bb804cf4844b089670c19741f416cb1db22b5045c1",
+          "c9ff5015284a6bc2f5e26b1883d10402d13ae34644e08dc1d5c29adfc59cc40d",
+          "d2ec3d50ca5e27a5eb518dd0a04fba9aa043a1ef3af2e542e42a0f354c2485b3",
+          "d7235b4faec050fdee9892059d574b73fb6d63d6db17430036102cc37ab38803",
+          "d836674b135b2f542cdc941afecccaf452da553b7dc097debda0c9c198f9e9cb",
+          "df83bf4f21c30bcca106e95c8287fc24c336fa6c3b0e7a68f983388c7e48a35c",
+          "e588a78de06d54677ef9d06cc1a2992937942f5204254066d4b010f8e099ae0d",
+          "e714fe40607b8af7d258f6db8d537c74797bd5139616cbd9922ca518728df107",
+          "eed2c6b7ff351dacd7b71d72ac11f22d58ba4e39d3f3be4092e8bc3fdc8194c7",
+          "f2b6e4f02eb30428ca9d3090334e39bfc101e445aacdf2d0c541f7a7dba1afc5"
+        ],
+        "artifact_sha256": "e72ccd7486e66eb50c6d93495aea170019631cc777d14fe2e78fbcc6ec8fa8b1"
+      },
+      "2011-12": {
+        "validated_existing_rows": 12676,
+        "added_identity_rows": 14,
+        "missing_identity_rows": 126,
+        "eligible_observed_minutes_rows": 10277,
+        "source_sha256": "2ef972e5f00462250106d4f808944621b511646109ac3a69ddce8cb891ea5d92",
+        "squad_sha256": [
+          "02e879c627c889a67e54bb933c73fc0fa0ca05847b4510f2ae382e9a87a6aa11",
+          "1d73abd9eba18258377c8883754219ad9eb861056872256fd0011651a862da9b",
+          "35289bcec82fdbf39eca85d3c8dc0e70b629130a71c07aff731b9e03e570c097",
+          "37405559012bac921c9818ff90fd08591d97ec524e920ce48ebd14ac8d7ac25f",
+          "3d972f314f75f2070eebb39b5a301977e711fe69a25b322c5d1dad945dee18e7",
+          "41b9a694453b28d487af68123bc5d6ffe63e77bd8e927ed8f9b77ce45e0612f4",
+          "6c1f6d7d0e5155fd398cabf3e589758db0c5344bd29315c76cfbe5d9e7cd125b",
+          "7337a40d3c85a10d45fdeb584542bad8a8ef341b526cadf6d5151ce6f5ee3c53",
+          "78bf6aef3a81560fa1b2fbd2c8b21df7079c533d2a6edeccd31eba60c2f3a434",
+          "794531995b49cc676f99814a221f6c8f995e01d8655d28c2664fa68fea089b4a",
+          "a972a86443574f6ca589c1062654a2fb1ec3783f5ff741aa7086c922d23ee532",
+          "bc8a29f03006e5036a5cee9bb4b04cde7fc81ea11668f54fdc8cd3ac6f9f1ad6",
+          "c1911e9f1b797d4da5f861ebb721b90a045fb260f552aa39142f43bae7863741",
+          "c4618324f391b0bff177dab1132d645228ef14e5996854758792c0ae314ecc12",
+          "c931c875cc9aab539700eb3cccc10b6e0fd5fe490662bd65b75f905b07cdedbe",
+          "cc7b098870dbeb2d73e46621a34394afe841fa2f68dfa8cfe79c78b26c460375",
+          "e436cc11de736c526063263336ae4fdbb797b45582fed0ccfb67fdca251d691e",
+          "e448d39d7d961739b7ead9c15e50680d1b90ecf3839201291ccabdef8d1e6d25",
+          "e466b1751aa85c5de9f974fd486fb8370ea3fd32c360dbc9d8112d11cb4b316f",
+          "fc8fffc03f92e5231bed0a606e8fcc38eca6191a109592912de2744b50941f08"
+        ],
+        "artifact_sha256": "ee6063157cd29cc4a95e164a9e22f0b1e56eec800835b3e364741883c3927baa"
+      },
+      "2012-13": {
+        "validated_existing_rows": 12874,
+        "added_identity_rows": 35,
+        "missing_identity_rows": 102,
+        "eligible_observed_minutes_rows": 9538,
+        "source_sha256": "e6ab8f4f2bfc952621a84b455abae961a12bc86a31764b239bd02c3a0e388a76",
+        "squad_sha256": [
+          "18919d9ab55619e3f7cbd826203ce88a2c16c99cca3ac8bf6b6c67c2cfeb40c8",
+          "299f8d7ef8a29d884a8984637110edec0aa962532cdc808fff8aab6ee6884dc8",
+          "3be1e960a7a8f2406ddaeb47d008d29b1d0924eb8e4610be52044b642ac67b0d",
+          "52a44003acbcc70513749f85f2f89530c56cd4d3ae70955269632e482bc749b1",
+          "534a009060321736f0cef8b69a0f1022516b9d307b7e8721be3abace7a3e2deb",
+          "59bf0d0d3b2ee418180b343e876fa82faad88ea53ca4fc40be354cfdff8b78a8",
+          "5c8ca7070c9cc8253ac84dd539d65a15c13d1b783ebcf3397c4ccbab85334931",
+          "63d06195ca7fe6048e20526651e13b44f1ab3968117da1b36133427661f6661e",
+          "77b8336e42f5133efe851bf11899e2dd753d48e4a6ad7562134ae78ad1b80247",
+          "8698a2918ef996ee67f6c00f9e5666d7e7c7a4f84fcc9398d917244ab3cfe613",
+          "a1d92f4e57050bb668b9223ea443f8d86299e961e8c7a15b70024330b78a933a",
+          "ae05d84ed26b2d111cf37d6f148258a5ae9f916670a5c98adac21e43aea2fb93",
+          "cf9004f4e2a206726fc2a2af9d07ad2ba29c2e5c93e68581e8e1d6425107066b",
+          "d1d31f174ce584ce55f33084aa862c6779c98992316e490ca854287340c08715",
+          "e2ccaf5d14255de6d2de3247ebf2975a888f02f099414214da51fd88e70fdf37",
+          "e5394a1b1408dc5f9f7aa71f7dc20ad801c9209a71aba01373a583e4f08dd244",
+          "ed0ce67bccbc1adc1ebac3d82dbc0d720cd7a94e4643e8001feb92cc74e90d09",
+          "f67fb3e919ce9d95d47176d58016fbcb2f1587e2d0ac6f413c6f2da5ccd9c8ce",
+          "f8f6fe73298370fd5a2c5379bef71b36d224b66f0e2fa7a92f0daf6b2643cbfa",
+          "fc1185d9846e446abc14cc38b552bdfdf0eda48b7152446b5ce1dbb9e826edd5"
+        ],
+        "artifact_sha256": "5c33c08f531d2cf80e655fded89248713b7cc1ad27e9258d669946df9252c299"
+      },
+      "2013-14": {
+        "validated_existing_rows": 12822,
+        "added_identity_rows": 45,
+        "missing_identity_rows": 131,
+        "eligible_observed_minutes_rows": 10343,
+        "source_sha256": "bede257ad0af4b852b330481c3951f38fa3f2690a4864d4d14b5b4aa9be11ce1",
+        "squad_sha256": [
+          "0a09add4c939ffc7415fda96da1fd4a1e8b894c44bf68dc48668dba06b995c63",
+          "18c6a423122f946bf679a558e1a6d187844507dcb97badb829980c4a15e16bbc",
+          "1d002afe99f90e288a3347d23e7572960ef24a4aaaa2f7e38023c7b33a033a5d",
+          "200c45d755fb6868a4b12d604debb31f5f8a462db8cb25bcaa007aae951dae7c",
+          "4d5ea64672911a85c07bebd3fc85905c6358d0a662c9b2e8dbebbc35a32cba2d",
+          "508e22a22d25876552bb760edbbe1d3a2621ff84696787732e7700186af4eebe",
+          "57080bd7bb7465c433781d01d9875ba8dd69c6b31013ed719c19630ccfc4b24a",
+          "5b3982da5c5a90ec2a9744436b4ca65106d6a8278435034fc4a98cd67ab534ef",
+          "60542da42d07d5f9a8d46b0bf1ca805243b200f61206465331f8a47a50c1f9c6",
+          "6319cec6434c4889f0a7686183cf504b73e79a7be83bfa7ec30e022ea33bd160",
+          "8443c1dcc897b8da107e3d21ac785d093a78f4718a2e3fca1e1cc45a7d954015",
+          "9011ffe3321784692acc296d80a4832940ac56788f7b84bccc879315ac7756a9",
+          "999d0ce9240ed37e0b8b8a16a75ea3d813de42b125a0923c01f790a76e56c51f",
+          "afa7c26bdec9282cf4397cacab31c54d5e982ecca9fdc5363d7101796119f652",
+          "b38d02a6ae343d30bddc5355433f7faa47c11dd2ae0117f27fa0cafeb13ce81b",
+          "d864c8eebaf95878ae21626c7280a1512e407d075980148450c9ddf583297ece",
+          "f3deb13b152654582047d141c5d8aa847170487269b7fe3f8f5717f9f2d6f1ad",
+          "f6a30a13a5704f5e52829a0d4a10dceecf9ba75d2ddc02ba207e9ac6ad1ffcfd",
+          "f843aa16054619fc9e5c6ba70eb9d2d82b040fb939c4c387a14a16712606b36b",
+          "fe2715d667e6629b29e27cf59b11d0a2da79c4c3083d13d8aa3a3665db298ec6"
+        ],
+        "artifact_sha256": "49f06de258bee012baf4ae2bcc4cf80f1892184d06ad0b30d34f6f524dc24886"
+      },
+      "2014-15": {
+        "validated_existing_rows": 12959,
+        "added_identity_rows": 88,
+        "missing_identity_rows": 54,
+        "eligible_observed_minutes_rows": 10330,
+        "source_sha256": "28b91df6a23cd75ba3c07b1c90594e35870050f48ec741b3c607dfa63630822c",
+        "squad_sha256": [
+          "04ce18cb91a8342b564ec0976376757ad6230126f2a08e0ec354aa7680c4523b",
+          "0fda6881f6dc4326b98e1b7522d4c3c102f58096eadd3cdd7f22d75e58361928",
+          "1b8774b013b7e59f2ed14e7c3235acc64f7b6903ed90cc16454965abd6a03f74",
+          "231c4bdd8448b0eeb638f3e4f21fe52df052d81532fe41a6c29c23c094db928a",
+          "55f08e4813b97c51fad994acd437f77556060207351e9945b95d0eb19597ff62",
+          "6198f6b0fc4b745908fa0489487e5a269283b546c4ecc2d0983d87c8059bb6a5",
+          "77115fdac96f9a9e745b1e21408bb9d9ab429c7156bcfb39f1d7258754204007",
+          "84a13f3c7e11cc0986e9567c36f98ad0f54d2f67224d9371096b0da5ac00e906",
+          "852d03f34a9d9335531a31e74ef3266f39acd3bb2b9ffcf966f392fd687d0394",
+          "88f3640f13c0f2044dd0472d50495daa701f782f42ce03c389c11e510031fe97",
+          "94095baee85d07c7735c10360848054801d63ff056c20716a673df3c30438f51",
+          "95cf8b3f77ab56c00a16c4dd0311e7efe831d0e2408ff7de34266ab88b0b2554",
+          "a63e30ee6df82dac69f30d364cc9733c8f7721ad997fded4ee0412d777db72ab",
+          "c44832b80ca4939a3f9cc5b7c8cbf6a0338ff3574e61b19b2fa1741df5559193",
+          "c80fddbce9a715e90969bd96cbdb538666b7102111156a81f9c8b2e40aa3b358",
+          "cb1167fbc9409014233d5bce0a953db6f92e9ce0f889565d6d6a1d3efcfa8208",
+          "d515f10187ae149e38e294d5c3e368ee3a9873d1d0b16f15445ca35f4ad2f750",
+          "e5f02898a1f0945b7f280952b0a74abafe5359b2a9d4a6d304345c07dab0fd3b",
+          "ebf3e479a8c4e53012926cd407c9e3da703bae67686e710ddb96cb38f3ad671f",
+          "f1bae0bb2befd1432dee7522864d60aa6e913a6e76094959be675ae0607cc99f"
+        ],
+        "artifact_sha256": "a8fa6368a087a549714f32b51fa6f762ebad55398e103e644242cd4c8f54c5a3"
+      },
+      "2015-16": {
+        "validated_existing_rows": 12830,
+        "added_identity_rows": 0,
+        "missing_identity_rows": 76,
+        "eligible_observed_minutes_rows": 10437,
+        "source_sha256": "372cf81ada5d8fb8e2e41dcc324c9164402c422acd6453a55c2c40fc6018ebce",
+        "squad_sha256": [
+          "000512d618abb9910ad3c74c069c85d7a457595646330f6abcec840ca9950b99",
+          "25c94a747018aae72bd2a8474e92196cfcaddd5f51fae44384f9b8accefdf6f7",
+          "3b7487924eac56f40635a9f10a09a0ad168b093391ca4a924cdefb30f82e414f",
+          "3d06627219d3c9d4f8a93ea5fe9694eaa49c04b2f46f65dcbdeaa3676ef1f197",
+          "400f18fa3727f3e14ddab155e983b3bae36af319783eb9efbc112c8ae5174886",
+          "4c5da9a0096f12d27b71d2368fc695188b4524dafaccab858525433098397da3",
+          "4e603f81b232d3249cbd3d650bbdeef4ecc52b4da844a172beff56dc75f3f904",
+          "5870b3790118d29795d7c5953b24cedefe2c8e24126dff00f66be84a6990ce32",
+          "778c946c981a551d0132d090b08f961faa4c61a8184f1ae5c2e6f790163b3873",
+          "8918567faead29887cccfd191c07521d86e17670955ad7819bde8c843fe01eac",
+          "99eda9ee90f0153106fa79df73376ba135551dd970993107cb2060e75b3bf90a",
+          "9cc70f5c8128c5ce0b46a526242fb472963a2bba6549b6ed1136d214dd87f0c1",
+          "a2403c1fcb02f5431aeb8d5281fc11a2b9f5e7ac8f5abf629c04b7e9b2f58dd4",
+          "a5bc574084271f3c064c14a02c69f4065e5c3b04671a8ccaea5f42ed4e51fd2b",
+          "b0982ff4ea9756090393da633f41e5a3ba04a70213333352a9db18d9c28e5afe",
+          "b266fed03ab9c50af9933fa36253eb0859cec9b9b407464a4370b68c3ca3834f",
+          "e75ad2b193055b6f9e27afb8889f436be86e4367f18f765bf925dcc0434121e9",
+          "ebef37fea2adbd4d759dcb0897752497ac66020c5d7f0f3820420f8ad42022e3",
+          "fd25596d4cc38d3c8a7c232b7e408bbf68a7b870201d9dac4f5b5efc0532f412",
+          "fd387a6fe0e8289481ee5f3831f4f4f0e0c8028f93209dceb1e2597e6274ff95"
+        ],
+        "artifact_sha256": "c493376d19dd422e9353f0dd75df8092312ec8d71c6d93756257812ed191c84d"
+      },
+      "2016-17": {
+        "validated_existing_rows": 12860,
+        "added_identity_rows": 0,
+        "missing_identity_rows": 137,
+        "eligible_observed_minutes_rows": 10391,
+        "source_sha256": "c7f36ccc5a746095fcd35b9de51074713e1d269877186e968801e487f2732d5d",
+        "squad_sha256": [
+          "0d39dca9f7ea3e4c309ece272252d1e89a68d02ed445bf64275da09c13d67066",
+          "1377ff3306bd79a132e62dc29b9257fb2063981752a72b713bd2fe88a6232a5c",
+          "20d5cc7fc9c0a16bc64fe865bd12fdc7664a971926048c1df1e4b344d34910d1",
+          "221d0b24a795173a070ef1e74287ae3fbd3c574638223e65079818b9828f601b",
+          "24d0d95965d324c61f93fb108fdd59eac24a885e8d643a9c833cd63e2750889d",
+          "24ed1b5b2ab26dedd3721e4aeefff22d131bb74ef08c1a7725f26c349d5f6bfe",
+          "58ea6de37e336198425156b9a56c26a6ac429f33afb32a8733a027b410c92670",
+          "620db101290e139f4df2b161e1f2cd0e7c0429549747914f2ab5bfb0e3ea9099",
+          "68a3a660a7753e9fc798aead6f6ad6d714058abdcc6513fc36d204e58445e4a8",
+          "7a60eab7baf296b89ecf637971a43bc7eb41b2c1504181f7b0d0ecce924313ef",
+          "8827bbf7e8462a568a79f3c5ee4659638d01cefc714647b276c7b85da9cf7107",
+          "91be7162ede04673bad7979992ffe869beeed92ea84bea1731e88befd5cd3cdb",
+          "95aff90d78300e315c48be4bbd0ab9c944e17fccad5b96b995a9c30e9e4e809c",
+          "a67cc639eeb12f1050a300f4ac176b6a4676cd2032b54441f2791a07ad3374c1",
+          "a881f556c8fe83b08020249577c7f019b5faec866b78bdb8eaa3af81d3f36f59",
+          "aae8d8365d26b35b700a837f047045c40895e6ee9c14be3ef9c3a5c60da36034",
+          "ac6995295c2d725ce21a52b5efe6ce09d67de467fc97c3a6ddcbb0ace1778e44",
+          "bce90dbd8719100d920e7d7ca121467412d73544808fe1a25d5a2e9a9eef3b65",
+          "e31b4b2e9e395ed0b50ad2c0a56f7692500c749b161e267ecf7c76d7fd52b598",
+          "f9da896f2a33058f4a795fda1d3ac5db67f423f6c2406ac6f9d57023963ae92a"
+        ],
+        "artifact_sha256": "74579ec9d0a16d68e623ca53b327032ba4cf53de6843cbba83d3c835ecfeb2a4"
+      },
+      "2017-18": {
+        "validated_existing_rows": 12739,
+        "added_identity_rows": 0,
+        "missing_identity_rows": 92,
+        "eligible_observed_minutes_rows": 10397,
+        "source_sha256": "f777b782f27e4fb9e495876d09ce1ddfef76810148b54c290dda3a4b9dc08d57",
+        "squad_sha256": [
+          "01b181251ec2ed5374443c59d2126d04a34435e7f03d30c6b5d416df17a899b6",
+          "0f0a4f80218073e3c89c740fd3834cc743e9ebb5157fe45971ca708a7786f24a",
+          "2ec658fc7ff9957c5623320dd46293990f2a84da67872d92892c17b0c5db9cab",
+          "4163b2e7133099319db7c5be77943034370f7c226d760be1b247b725ba7faf21",
+          "5dbe3f81bab20acbaac20075830221e2a19055910a4fb4a97e1b92c7c8f5f1f8",
+          "665ae140f762a6a03ff9bee111e0d4378233abf4242a5ac3c7727c09bb44d7e1",
+          "66f6f2100016835e8c3c24ceced9882d5bfa4a305abac88561cb1f35cee5cde3",
+          "72a90a1e3e5c33bbd682b8c359731c862d3687ccb10956f9495bfd4cc4759df7",
+          "7753f98804471f4c7ac17fcd25a393c1a9dbc29fe3e5b3b5f39bc07823d247c3",
+          "88e0de56ea4af01384669b601377e2faf05f648b8540100a3f0057f9a0d56cb1",
+          "9f8f75bb4b9501947b78a7fbd23f07aa0d5d4af3ce1f47414dc69411a3918176",
+          "a4f3bd41f17d47c07e14e0a3eb80a0839fbaf39120656c52387bb62d374a3b8b",
+          "ae69defb7632c5829da3bcffda469810d730fe65912680b31fed5bdaa3adc987",
+          "be23570b765e10f5970908d650bd2447db473d7a0113177536282cc33d0a2523",
+          "bf53e27d9f581fdb156afef87348b0a76594062fa02a5c644272c3137184b580",
+          "d34a43e9c698bdeca2375f6c30a7ebe49d6c66fafdd13528ab9410b2c3018437",
+          "d43c49f75371f67c75a791c689ea82bccb974fc5db2e235e7db5a7e31a400513",
+          "d7a0e43d8f91acf998f4b704559e3305c802659e1d3f2efa10499edbeb91330b",
+          "f9ddac48b34af3711c054c3ab36c1382a3e06b919f7b28dec1da61cb1c6014f1",
+          "ffc202a231d245ee957018bcf8ffb4f089b6d62b3076441d12de0b8d06a1a8d5"
+        ],
+        "artifact_sha256": "c302309d326b39759ce58ca451c606511b53ea6f373b584dd214ded7dc26dafe"
+      },
+      "2018-19": {
+        "validated_existing_rows": 13177,
+        "added_identity_rows": 0,
+        "missing_identity_rows": 30,
+        "eligible_observed_minutes_rows": 10455,
+        "source_sha256": "b9c45ab20d94cf2fa932efe7b87cfdb1f4f6e24ae5354bbd13267d07fd3e64d7",
+        "squad_sha256": [
+          "09bc81ce4710b0ea810aa22db3d0ef56802f1ed4036088a1a5063bcb1354dd47",
+          "264f592876307e58b77e77df9031f32aa6f2f393f3d2e408c3345b5af5c92ad8",
+          "2e72842e11388b1a10cda03ce4fda5f4c8c8c1a1f61164747367a96ec37008c3",
+          "41a405a81e20b2b9dc48b58f52aedfa442e72df4c5e4215595c88595d8b85321",
+          "443af24f2688ceb92a128e895c981436db4d91d1870161c011aec547baff8785",
+          "45d9999029e9306840c93f32e0fb0db87793fb178db81246af0a714f7540ff25",
+          "686f681e9842b58367d2cffbbb72b3ed5fdd7738a40e7f86d886fea535be9a04",
+          "6d438a30f49e49f1dcabd9aa0efd437c07c1d9016b9b43b48be5c1de8bd0eff7",
+          "6dc6d1cf80bf0fac151b7acdfcf0db558f3042092ca287e627fa7efce7b4081c",
+          "72c0d6f32bd7707c1e64967fb0174c8421ebe13237e1444b473f0d05731139bf",
+          "84968910aa32c6d39aa89dcab26ebedf1c712590ae08a7502bca1504684bab12",
+          "b542a2bad67b088638bdcee8a91aab497cc7b660eb2a53c61eae61597b4387a2",
+          "c34f07614765fba9c636502e15d7f2dcebb17f3980d6d7139c454bd9860c14a9",
+          "cea36b0c1163c9e0fbf85fcede71449a5768d44b5d855c9a7b70857c84016291",
+          "cf4d6c61ae609c58a4547b68c84147b897eabdda44e2fa13a6199e01c3520cf9",
+          "cfa1b7bcdc0cc6f5c77c032c503a8fbcc0d0ed57bb63d3b9a43cbee0cb3f9e93",
+          "e19fae0e90abded76ae2ca461bc55f56cd9bbe319ce15a987401d45982b26b6b",
+          "e5a5330d363064a90456b24f1b0e8efd67fb62a9adce920105ed098995ac8e22",
+          "e888a1f0365d767c335b909c8ae4edd78d7cdc1d49ab3b5cfa90da655027aedb",
+          "f1f98b0413325fe2a5f7e54e5ff2e346216c415d942e3dd4dd38933cae7972ae"
+        ],
+        "artifact_sha256": "d9451cf9dcd90b6522e8544359def6f7d7669b2b0fb49b524f0c991041334d15"
+      },
+      "2019-20": {
+        "validated_existing_rows": 12964,
+        "added_identity_rows": 5,
+        "missing_identity_rows": 197,
+        "eligible_observed_minutes_rows": 10511,
+        "source_sha256": "9faff5d9ddb4e7bc0042a1eac6a80da2a150b47f71c5cf4bf2be1e253ef2f735",
+        "squad_sha256": [
+          "028061cbe887b265ccbbb5f311cfb27dba1b9f7a9ef2ca191972ab45f13f5953",
+          "0a4448ae6badcd9744959f2ebd0c5975f8ec59af8571853cb6d1db48f8a71d20",
+          "226eb892bcb5e41d20cd69411d58ed0928a5bc11b1879ecb95aaf8fabfa67ee4",
+          "3182d1e7a0dd56a1d51e4a202d34fedfdae9c59304d8decd68474fd030bfc7fa",
+          "3944b47ce7d1e4340058fd7f5ae5d6bbfbcd78f3e8e0e6d9a5c339e69f801c03",
+          "3ef83a839a5c08b209f0b9390e873bf9a406aac9027625be81ad85290582ee4a",
+          "42779415b321174eb73df4b1fd2f866111703fff6e225478abb27b8bb97c8602",
+          "480fe58b62cb66c13b538f31270f308a055e5b0c3651bc57d5e2bab7c76323a5",
+          "50a76ccd2e738e28fd9694207a2f526c40ef54533d897f43635282f7200e3acf",
+          "553a2d411ea773371d2a15c6f809bd578b9f0ab135da26a78298dbe7f3bb8e40",
+          "772347f1a388182dd3db0f0596f2cc1567bce23a9da5610eae475ffcb01c09d1",
+          "7ce30016e91904d203a9c8ffe25a27a8dd2e19a93c0f862a69e9236ef9717639",
+          "ac13585b65bc192d58e8891f43c589d9472aa8e5092ef0ceafb59508353e00ae",
+          "ac964bcf47f24a467e848541be6712614d816fd61478f9abf89d1a5c8eca37e8",
+          "b017b6cffa4ae292cf6a4990985e0f92da5647b7407e200f5f68a51b9c2ae6b1",
+          "c93484da61c897573b3dc00532ff8dcc0f1f79e147fc76ba97e18c0046262e9f",
+          "cdca67cb3c931b29756afe154af15d2000e4794f377a2f2ad3739cbb0cd35b2a",
+          "efc0523fd87235599683f0f91f6fe3068184155067c2259fc66ab9288a657178",
+          "f1863165326b58f19e3c3f18cf4e7ff555f5fe494622d5e3e21dc8c84fbb6653",
+          "f456aa8bd12b90cd200e1f3014d7fad272a898d5a60d4abc81e731fb9465097e"
+        ],
+        "artifact_sha256": "ca68af8426561453f14f35e448117e677390118d8872bb17760521d813961d35"
+      },
+      "2020-21": {
+        "validated_existing_rows": 13712,
+        "added_identity_rows": 18,
+        "missing_identity_rows": 98,
+        "eligible_observed_minutes_rows": 10353,
+        "source_sha256": "6a04b6874bc64ed28733bfcb77db95a8215659a69d55e94099a5b03dfd505eb5",
+        "squad_sha256": [
+          "2647c5071dcb13b973c8e5171718236f143846fe8da1c175e6967c843d47c4ef",
+          "52f84c5b818c845b525c3b287a922a11784f7b7ababdd5f6f3e21e1998397b2f",
+          "59442c889e48f5b466652b8d078a172da5ddd3dd19c2eb1df0cb23d62838f4e8",
+          "5b0ad2eff368d9ded777cc0572306c36819595514a5c09cf9dfaa56eb2138574",
+          "6bc7806c9732eb28aa864cf72fd6b5b664778e6538da61ebd516338a8bf41446",
+          "6cf681859a3893db313856bcc9ed11e2fbf8730c22473dd34f36a90cddf028a4",
+          "7956be11bc29cefffb5349ecef731f8b0b929209ae805510dffa2abffc49e84f",
+          "7a3635cd701bcb8ae8513389b8e1c18c0f59e424964a019857276b18b667b60f",
+          "7cf57a4bcca9b6568c4e64fe69be6b7ed8f0881eebf9567eb28748c3e195c26d",
+          "8b47bc352eedb14379c5c0e036a5ac5a5d7ee410d81a4b94e1fe93d97df298cf",
+          "8ea2008e0cf73ac98938fd656cbc205cc0315453873989f7d93c65ca6f57089a",
+          "9546e25ac52e81f1fb0b3197298c7a444222e5e4bd45caf187562e4eace704f6",
+          "9d8b68087b3b751b5770b2ec41d1d45bd59585222a4dda526810e928867a3a4d",
+          "a178948e72db040029c36402aadae66049ed154cb6cd6339b0554231b8b88fe3",
+          "b5e6f15d8ebd53794a73d278be3a86e7c0c2420755be981622f3b13e3fbfe51b",
+          "bf3951a02bc629e94d08f53e292bf64418612215b19e90e2b0bd165d54837457",
+          "d29ee9fc83f525352e3a3635cfc9849e4ac9333f9660a296eca2dc21d5782cf3",
+          "ddcabb2649e0d4a2cf400edeac6d8b953582e55954aefe4547207531a3c3321a",
+          "ebbe643828ca5186a87615fb28f87012941e5838bdc3c29a38f28d36f48b941a",
+          "fe1c294197b11d0aadc382c1c17060d1729548bd99f8f828ec182155cfb9d8bc"
+        ],
+        "artifact_sha256": "401714c5d0ea2486d424b89e147915efb59e060ecf770905722bc28c7edf080d"
+      },
+      "2021-22": {
+        "validated_existing_rows": 14588,
+        "added_identity_rows": 0,
+        "missing_identity_rows": 24,
+        "eligible_observed_minutes_rows": 10475,
+        "source_sha256": "a83ce14bd6a4667d60910229e0ffdbae2ee5c65f4dd2871536376a7f3ad3f8b9",
+        "squad_sha256": [
+          "010fa2ce4c967ff1113cd0f9ef8fc3f5651088cb795ab80a600e13d15f8213e5",
+          "03cc986e1c315fd83c5178ee74ded716152349d242ab90190c845767cd2533c4",
+          "27609933c016fb2d9c0576f552404a79b915485457abb516785e6e66b8f90d16",
+          "3c3fe9482c96f49bd49f0231a4283a8c855ea4d72a122399515028d89afa5383",
+          "43ff74092b3fbe1234715fa217513bf19b56f9641080abfd6e56f7d101f17755",
+          "554ef4f8921120ed4a4636b2d9d7a1f1eff36f37f4d6e9336df6b57b5cdaed06",
+          "5faf8315b0c28cfa6c738cd20f15f3493bdd12dc2faa3fe07fcce38316addf57",
+          "6df804220472e38e5fd0ce28643b247745dcedc1c01f093d1d68ae52a723570e",
+          "8ed07f3ad7beec65db2ccf1e804ca7f6c1d1761db627cf22e98a745e605aa008",
+          "8f79e1099fe4100383e758fcebbfd5ea1f8be2793d6d03f4ffefa1ffbc65ce54",
+          "a08c429b23141c5bbc348af0bc89b8207741b7647e6b56c72357cb90902e470e",
+          "a3032d9432b0f5813d3351b074b169d7001e02367d6db67d75afa935c040bcb9",
+          "a570bc25015e951f60f8e6eb719ce844648a85b4c9dcf5de17c2201100ce2441",
+          "be0589c5609467d53beadd378497104ded518db66d789d90667494ae990a4ff5",
+          "c4ad84c80f3d25b547dbabb405c192e0f3d86232c89e331f0f333a21ee98a9a2",
+          "d510c3b9fbb1ec47f90b8faae18a6461ae947f9bf4c3fdee03652007d8ba0204",
+          "d7163d5255f970c80231a50b9d6658ee0d1721eeef30e52aeb470090666f9462",
+          "d9e992ae30b707aaaab017313883dab36c0ee76ddb1b5c3b1c5723b86378ad63",
+          "e9ec073408da6831ecd915a0061874a002ebd7a193eb6ad6fc7fb61fc2311aa9",
+          "eeec88280c41ac6935c0fbe3728ab1865fedc99619147a24058823471f203088"
+        ],
+        "artifact_sha256": "6c85bc6f105b4d57ccdd37a2db33cc1b91e8cec74237f285473ebdcf7d1e8b79"
+      },
+      "2022-23": {
+        "validated_existing_rows": 14456,
+        "added_identity_rows": 0,
+        "missing_identity_rows": 30,
+        "eligible_observed_minutes_rows": 11325,
+        "source_sha256": "eb874c12396a69031c24c6b096c47989e24286f521c7ad04e8eaa77e76a5d854",
+        "squad_sha256": [
+          "00ac87d5f086d988ffdd3fb4065bfe7ca40466f2f7bc4569d0bec092eec0132a",
+          "1c7bc0b0b8ff50cc6a4a8fa5924ed334dcc0c9a69e79f5ba52a3fcbcacfcc22e",
+          "2246504878afae9af9526129e7bdb2a1b552a086a07802577529899dec45fa42",
+          "32dd8ceda1b178baf22f3cfc6abcfd96fe86ed77584b7f1e9f1c92f621c7c0c9",
+          "392b4cdca25010844c6a443dfd50f90d33d8321776daf134fcf56785a3fcbe75",
+          "429859970aa90efb2a628ccbfda80750d8df002396beece90c5d6f7d879225ff",
+          "5a5a82498916fe1d4b9ad1783eb5294ba222978327af6195e82a576be43ce686",
+          "763d1cfaa68eb898248d7e22254c2a851daa82e1c3abd01db45b6352d3f5efba",
+          "7f21f3ec006478f80394d2e1e99f6c8fbea64ebd7783d12d25cdcf9b62ff48ed",
+          "8ac77f310238b17fb8f98e808b78ff39aa1d73b16c7e5089d56d9edc9eb21eaa",
+          "917046d4fa929b2d402135ca3db36bbbf9a420b750a9f73ef54b36bda8b1a346",
+          "9937964119a6cae57ff2658ee24618742e9165e2377d6eca62e63efe1cf3f0b9",
+          "9fe224be5e30eaebf5fac3e198b89704b19a986898300ccf7dd871341ac8a22d",
+          "b15c04e2f2d302d39a7dddab3a969ce0f8249ebdf05d769bad5e889637924ce1",
+          "b1a5c50708eb6067b256cb720b782fa7c440b02beb743201d1409f0d00dafff0",
+          "c415db65bde8cbbf4711c012b55c415929dcfd38b9855655bf6dc0a19a1080e7",
+          "d926aa70c5260829c7b3ba9fdcc9f0a821be8cfb4861665db483a52810544360",
+          "df149052946e72bd7a989b65aac54d77ad2565feaa9442de3d034fe60873b2a4",
+          "e14b86d80cf48b6f8d6398ad2567464bc3bfa6b99dea5e3d376a1d0163bd0d07",
+          "ffe39a87448d72555abbd17bcc65bb35748fef89d923dd74ba5d278a5e70f408"
+        ],
+        "artifact_sha256": "8bccb7baade4212991c54b18b60a4eea8aa0677d9f7b4eb9833b9464252b3346"
+      },
+      "2023-24": {
+        "validated_existing_rows": 14561,
+        "added_identity_rows": 0,
+        "missing_identity_rows": 17,
+        "eligible_observed_minutes_rows": 11384,
+        "source_sha256": "9e75fc625b1ae90c76275ee21b2cf36f9fe082be183e3807e60ea2cd2e3ea2fa",
+        "squad_sha256": [
+          "000f727d778bac17c86a85cd779d3d3166dc421311ef973f333d074be844f6cd",
+          "16882ad9db5ad0283084695963bf5d83b55c53120fb8afd10e399dbd9e5014fb",
+          "1e465859d87eace4c3e56e0ddff21c176179ad4930345e58b7f3d050851fe53f",
+          "2686a009269640606fb3275a65f5b47ddb03aaef840886b2673b82afb3e0f0c4",
+          "2f1045425f7d0a277ae68d89d958f1b1ccc1cc4ac5fc5ecab4bae908dceee5ce",
+          "38da6b36cf0c2116c20596a6d6688b120bb09c4733a275e3ffa694f0e2d44697",
+          "3db8c6e9abe3cf5b622395787dda24f9e097e6af91dedd716b84ea79452bb8c2",
+          "45687aad74d897f23c67dd60df78013a57be3be1ca488d6f0a15261ab0a15d55",
+          "4d1b54830ecbe8df147c846341f36735205e9643dec0058fcd71a0377ce6557c",
+          "4f1f74c52b157fb2fcf67715e68b64746dcb7bbaedaf16b82d79b9005dadad1d",
+          "51ce670c48b980a9f29d4406a85883d1201c50939cf430aadf309a449490aac8",
+          "526d9c996f3cde19dc7d75a55f9b86ea4c9918529ee8cffc5d5af5bf3a225980",
+          "686da246976da3eddc27d28eda3a7b6c697371af2e9599f6507ba5baf719c371",
+          "995e78fe5453723a9280ffec7fb3641d9bd2ff9d72b368fbaede1545fd9980a9",
+          "9bd6824ff184af4b4631a5dc14a5c56ff0eab8ef0df74efe8077ffd15081a71a",
+          "9e8221f738d2388595f009fd9fe46660f502a00770211c8f174619ac07f37cbf",
+          "b07f9286f1b4f7ac9b4569c302e756f698612435db30343896199503991b3c3c",
+          "bf587120bda092e79834b67313d724fa05e3cf714056d7b99b56251288b935c2",
+          "c70b7627d486b9ee349284ac0cfac7a5179958664bc3773523af452960bc4cca",
+          "e51d13d2d3bd32269a3692d8729a9d36c08367c8a44151eb7e37debf240a63c9"
+        ],
+        "artifact_sha256": "29be477b2988a38524b5a39124bb7265709364b8001a3f660e3f4502ff152ef2"
+      },
+      "2024-25": {
+        "validated_existing_rows": 13978,
+        "added_identity_rows": 0,
+        "missing_identity_rows": 151,
+        "eligible_observed_minutes_rows": 11528,
+        "source_sha256": "fecfda6cf719bd0b79a4b7183ba59fc5438674ddf1917485bf4940ad33f66e7a",
+        "squad_sha256": [
+          "025733ac226820d0b51bfd85d28f604a10d418385c2c8fbc2935de57f1d36f5c",
+          "093d74c2b2517b8d7ea0d939e78128813076fc3202301e2649058ec282e8afe8",
+          "0d2c0a4e27e6c469d0311bf963e03f71f523624040ffedc8a8366297d6e26df2",
+          "138b5a2d2160f25f9bf60987f599addbee3d08dccd10af8cc5354ffafd4a7ed4",
+          "31c213ca5a062aa62324224065cfe629ea3c762a20d066af4ab75c459f0fd855",
+          "3efd40b35574f1bc69ca3c2857fd263c91695e33624f319a159c8dbb84195611",
+          "3f606252cb193c9c9f195f0dacafcb1c44dbb1abff68a5701af742715260007e",
+          "5f8fbf18606e73d28e97b0c707576a3b4cfbf2b17b40f85d8651aea5e09b7ea5",
+          "5fbfea6f74cac54cfa503e382f5397c8de5d2ecb47955191f34698d12e1a589c",
+          "6ed5d4900e0a54c7e2f242bba1b5f5682f4d693d6056bdf36c2ce882a9ac0149",
+          "79562dd723113b4d32ead77bb554b9c35d137c0aac97180fe82cbfbc0536a196",
+          "9045f54935339bb1102b946ebc348e84aa06f3134ebb16f5775da3e418e13a69",
+          "9ec9fc155849e9132fe6bd5fc41afe36cd103fa3ea4804c8226c18004c4aa73b",
+          "a1c6fd8d75e1372baf38ac77d76cbdb0dbb38cf2e84b55173dd99a377564276d",
+          "b68e02f6c77ab3ea129e732d7161d234aee9d2f26b9a6aaacd94019f2a747846",
+          "b6db4dc65aed64a98d2739ad2a853751409b403ae55f186ea841688e4c97f329",
+          "b8570ed471053136d3665eead65e40445cdcea572719343056696fae1a091843",
+          "ca1d8c76e421000623592fcb98f6b521b902261dde780d4b80118f5315ad3e00",
+          "cd15c87b6d43fb236fede533fb67865393c3e45036069d16347874200596a873",
+          "fe7ceeaa49fec02ce99ce538286b261e00fe89d077821b7c0539767b3e3c202b"
+        ],
+        "artifact_sha256": "edf57790272574a3eeef551406a88b447fa55ac5db160fb56c18e0d65442cd5d"
+      },
+      "2025-26": {
+        "validated_existing_rows": 13938,
+        "added_identity_rows": 0,
+        "missing_identity_rows": 166,
+        "eligible_observed_minutes_rows": 11428,
+        "source_sha256": "01bd89a345963ba0943f8982e4a4bf724e639c8f5793c6bbdce00c045e82b96f",
+        "squad_sha256": [
+          "1e613ab5e29c28017635161f6e28afefbfba8bb5221ac131f2f57607eff4c118",
+          "20f4e39c2e042a105625375c38b3f0c1392325f30896d203218d54600bbd8123",
+          "26ae7a17173db7fe085c31b4a50dd6fceb561f61e686271524d4b9929468ab18",
+          "30df8b9f6fd88b1fcf6148a1cad018263da4a17fdbca43fc26661a195117c017",
+          "5a132d701caf0b358f05b98e894ef76f25612d65c74910db5c655d0dcdc4f3a6",
+          "614d14d7701bf3cd2ccb16fc4cdeeee91053c55f7dec6b96cd023bc19e23f764",
+          "692466106a2c22c48053035267a97ce294e7d8bb0fa63a9ec39d15a090888975",
+          "8b518442458d7ec64231df4f443dbf9c7196ef5a21156404bd8887a9e2bf2202",
+          "8d01a5094346195d380e8f9833be1100552aad5c0f099deef8e0cdc7e9574bdd",
+          "92bd7947eec83ce0f767e61905b487d1d8bac2632ee63b762a6bdb9994520433",
+          "995ef6a1eec170bbb5e4ccc48f81715e59422e768f50c48e670006736d72a9f6",
+          "99b82050319ca5adc7628dbe4649309ae51cf96c6f21a4413c3dabbdb4363044",
+          "befe62c13c2203bcbde011fac3dd7457a123d90da233748292db7c7d145fdbfd",
+          "c5505e53026f7c3fe06a036e00f7a02f782e2a30e387160aad9b461ffeb80d4e",
+          "ce461fa6f58d16fad6ea0abaf231c494cb4abd38fb13b22e7c65bcbc8f0b3d9a",
+          "cfc393fd0e2a132d6b4ef6a49a9f954ce68088002bc42d72a9c9f5778f70d8c4",
+          "d9b62c9669006734ba8575ec7dbcb18eb8e269f0661e0032af4c82b769a132f0",
+          "de51d8b96f08a7b08a51041cd9e5a1e1be437bab93458cd42cc8ea1279f75567",
+          "eef88c00ef52e0eb468fceebf8fe08ff91e276dcefcb5544d8ca1a3d1d9481c0",
+          "fe9039f5263b08b50d0ed32c517ce98aa35169679e6004c79becafce6690ec53"
+        ],
+        "artifact_sha256": "e2c72d3bfa8f13c7532f0b47b290d6e8d426954c3732d378aa52a9316f41a255"
+      }
+    },
+    "identity_2014": {
+      "validated_existing_players": 434,
+      "added_players": 13,
+      "added_identity_rows": 190,
+      "aliases": [
+        {
+          "element": 93,
+          "source_code": 81132,
+          "canonical_code": 112516,
+          "evidence": "two_fpl_fullnames_same_club_prior_totals_and_played_fixture"
+        }
+      ],
+      "evidence": [
+        {
+          "element": 634,
+          "official_player_code": 160901,
+          "played_fixture_witnesses": 1,
+          "corroboration": "prior_fpl_totals"
+        },
+        {
+          "element": 640,
+          "official_player_code": 154043,
+          "played_fixture_witnesses": 1,
+          "corroboration": "full_name_club_registry"
+        },
+        {
+          "element": 642,
+          "official_player_code": 59304,
+          "played_fixture_witnesses": 1,
+          "corroboration": "full_name_club_registry"
+        },
+        {
+          "element": 648,
+          "official_player_code": 133639,
+          "played_fixture_witnesses": 1,
+          "corroboration": "full_name_club_registry"
+        },
+        {
+          "element": 649,
+          "official_player_code": 158545,
+          "played_fixture_witnesses": 1,
+          "corroboration": "prior_fpl_totals"
+        },
+        {
+          "element": 660,
+          "official_player_code": 151119,
+          "played_fixture_witnesses": 1,
+          "corroboration": "full_name_club_registry"
+        },
+        {
+          "element": 669,
+          "official_player_code": 135363,
+          "played_fixture_witnesses": 1,
+          "corroboration": "prior_fpl_totals"
+        },
+        {
+          "element": 674,
+          "official_player_code": 66228,
+          "played_fixture_witnesses": 9,
+          "corroboration": "prior_fpl_totals"
+        },
+        {
+          "element": 685,
+          "official_player_code": 176426,
+          "played_fixture_witnesses": 1,
+          "corroboration": "full_name_club_registry"
+        },
+        {
+          "element": 689,
+          "official_player_code": 175944,
+          "played_fixture_witnesses": 1,
+          "corroboration": "prior_fpl_totals"
+        },
+        {
+          "element": 704,
+          "official_player_code": 79852,
+          "played_fixture_witnesses": 1,
+          "corroboration": "full_name_club_registry"
+        },
+        {
+          "element": 708,
+          "official_player_code": 166365,
+          "played_fixture_witnesses": 1,
+          "corroboration": "prior_fpl_totals"
+        },
+        {
+          "element": 710,
+          "official_player_code": 176424,
+          "played_fixture_witnesses": 1,
+          "corroboration": "full_name_club_registry"
+        }
+      ],
+      "resolved_players": 665,
+      "unresolved_players": 46,
+      "resolved_rows": 24202,
+      "played_rows": 10428,
+      "resolved_played_rows": 10428,
+      "labels_sha256": "af9b553f33ef3ce3d21d863a325900276a5a9ce1b1fcd80a4033a347b6801668",
+      "prior_labels_sha256": "01c7ad1636d7f8ce39a7152217a0d73fa5f7f990fe22a03d9a3720b3fb38ca04",
+      "old_snapshot_sha256": "55fa6f4417c2921ef1592644f108a54135d136d4325e11417b892a2c2ee35eaf",
+      "newer_manifest_sha256": "adac2f3a9bc6d1e660743167b6ad7f23b527284453e871ed730e8ff552436bcd",
+      "observation_sha256": "a8fa6368a087a549714f32b51fa6f762ebad55398e103e644242cd4c8f54c5a3"
+    },
+    "added_archive_identity_rows": 240,
+    "missing_archive_identity_rows": 1770,
+    "validated_archive_rows": 226031,
+    "eligible_archive_minutes_rows": 179636
+  },
+  "training_dataset": {
+    "schema_version": 1,
+    "version": "fpl-labels-v3",
+    "implementation_sha256": "5dea6d8285d076ccef4548e8394db21618233d5e09c5162165146aab124d5976",
+    "pandas_version": "2.3.2",
+    "inputs": [
+      {
+        "season": "2014-15",
+        "sha256": "af9b553f33ef3ce3d21d863a325900276a5a9ce1b1fcd80a4033a347b6801668",
+        "role": "reconciled_historical_fpl_labels"
+      },
+      {
+        "season": "2015-16",
+        "sha256": "1e22a87c1600fe326133d38dd1ca3e3c8d9a280b72e6694559a510ee89e0c871",
+        "role": "complete_historical_fpl_labels"
+      },
+      {
+        "season": "2016-17",
+        "sha256": "9ed2df5bcbb385e0e01ef55fab72bccb71d57c30e96ad7ca5f5dad32cc4b599f",
+        "role": "official_fpl_observed_labels"
+      },
+      {
+        "season": "2017-18",
+        "sha256": "60cee6c8dfb47eb833847a9b71c8cd3603e9cdea83901f7ee4abe3549a6bc690",
+        "role": "official_fpl_observed_labels"
+      },
+      {
+        "season": "2018-19",
+        "sha256": "3ef7acfdf91d23efab056639ea2f145cf6ad4cae66d61780e1154d264031fba7",
+        "role": "official_fpl_observed_labels"
+      },
+      {
+        "season": "2019-20",
+        "sha256": "8ccb52155294aff11192b71d86fd9e52369658014ff5b1da2f507a10b3bb7489",
+        "role": "official_fpl_observed_labels"
+      },
+      {
+        "season": "2019-20",
+        "sha256": "81851c3c55373c443aa6b7062be85d5710d61ab784239e9810655b343728e0ed",
+        "role": "finished_fixture_postponement_evidence"
+      },
+      {
+        "season": "2020-21",
+        "sha256": "38aad14d031e7f5b720b2aab68481f2e2f7c4d375b08660cfe620f496f25c322",
+        "role": "official_fpl_observed_labels"
+      },
+      {
+        "season": "2021-22",
+        "sha256": "7fcc5cd767c4a896481a7b5282156d0babcc8aa8a5e43c4b473e043df5280472",
+        "role": "official_fpl_observed_labels"
+      },
+      {
+        "season": "2022-23",
+        "sha256": "9df7eda77107e98e544de7bdf76a14216eaca5feff85dcaf686aea98e1067457",
+        "role": "official_fpl_observed_labels"
+      },
+      {
+        "season": "2023-24",
+        "sha256": "4661bc195d69f50713dd8837cfe765a12cf087719ebc6db0f89688d12ebc813e",
+        "role": "official_fpl_observed_labels"
+      },
+      {
+        "season": "2024-25",
+        "sha256": "547e148c2db8c27bb0165047d8f72c2052377f843752c4f56e15dd9599ffe204",
+        "role": "official_fpl_observed_labels"
+      },
+      {
+        "season": "2025-26",
+        "sha256": "f942b5271d0db12879d9c07b55c4a42ef73be34c7e84514af90a62fd33e46df7",
+        "role": "official_fpl_observed_labels"
+      }
+    ],
+    "quarantines": [
+      {
+        "season": "2019-20",
+        "file": "2019-20-quarantine.csv.gz",
+        "rows": 59,
+        "sha256": "d3ee707d09e77f6aa8e9c4c37229e1db8fcc750c4206fbab84bda00e857a5114",
+        "reason": "superseded_zero_postponement_placeholder"
+      }
+    ],
+    "partitions": [
+      {
+        "season": "2014-15",
+        "split": "train",
+        "file": "2014-15.csv.gz",
+        "rows": 24876,
+        "sha256": "cf30c5c622b9eeb6bf0f0f2af450a05e012cc38354bd0258b1d6e5adfe51935c",
+        "official_identity_rows": 24202,
+        "season_scoped_identity_rows": 674
+      },
+      {
+        "season": "2015-16",
+        "split": "train",
+        "file": "2015-16.csv.gz",
+        "rows": 24741,
+        "sha256": "d9aa0e6c31e778f1d9579c9d3e16c0c54a3d21fb393481a1f56980f8e252e097",
+        "official_identity_rows": 24741,
+        "season_scoped_identity_rows": 0
+      },
+      {
+        "season": "2016-17",
+        "split": "train",
+        "file": "2016-17.csv.gz",
+        "rows": 23679,
+        "sha256": "983f07618af9dd6eeadaa4c15966c482fb038ec0de668dbeeeff44ab4e677643",
+        "official_identity_rows": 23679,
+        "season_scoped_identity_rows": 0
+      },
+      {
+        "season": "2017-18",
+        "split": "train",
+        "file": "2017-18.csv.gz",
+        "rows": 22467,
+        "sha256": "c45ef62d992bace24f7559f496b6e1cf20a9dd31a9285dace92a3994e944cd1a",
+        "official_identity_rows": 22467,
+        "season_scoped_identity_rows": 0
+      },
+      {
+        "season": "2018-19",
+        "split": "train",
+        "file": "2018-19.csv.gz",
+        "rows": 21790,
+        "sha256": "176a75e12e26b9585d29e5d6ba308a4f753b890b5c594d032a4e1a9a67e8b98a",
+        "official_identity_rows": 21790,
+        "season_scoped_identity_rows": 0
+      },
+      {
+        "season": "2019-20",
+        "split": "train",
+        "file": "2019-20.csv.gz",
+        "rows": 22501,
+        "sha256": "8be07be45c6a6c7979ec5bbcd4a6e6b54c29ffc2b91cd115d300879f77379995",
+        "official_identity_rows": 22501,
+        "season_scoped_identity_rows": 0
+      },
+      {
+        "season": "2020-21",
+        "split": "train",
+        "file": "2020-21.csv.gz",
+        "rows": 24365,
+        "sha256": "56269abd9ac700ae5146e14a6b55fe3b39dd64cb9edc3a959bbb70aa073ddc85",
+        "official_identity_rows": 24365,
+        "season_scoped_identity_rows": 0
+      },
+      {
+        "season": "2021-22",
+        "split": "train",
+        "file": "2021-22.csv.gz",
+        "rows": 25447,
+        "sha256": "3ef6f5c66f0806e93c9d384a5247161e27d822618346273c8a695607f18ec0c9",
+        "official_identity_rows": 25447,
+        "season_scoped_identity_rows": 0
+      },
+      {
+        "season": "2022-23",
+        "split": "train",
+        "file": "2022-23.csv.gz",
+        "rows": 26505,
+        "sha256": "728f31efa7a9aac8da4c87c2eb79cf98532a08571ee343561b3f07c26499b3eb",
+        "official_identity_rows": 26505,
+        "season_scoped_identity_rows": 0
+      },
+      {
+        "season": "2023-24",
+        "split": "train",
+        "file": "2023-24.csv.gz",
+        "rows": 29725,
+        "sha256": "68701db57139f6a10a6a3fcfdc3263a50f8ab4f71a6a66716c1ecab685d22148",
+        "official_identity_rows": 29725,
+        "season_scoped_identity_rows": 0
+      },
+      {
+        "season": "2024-25",
+        "split": "validation",
+        "file": "2024-25.csv.gz",
+        "rows": 27605,
+        "sha256": "99e3b0f1947195b33d2ec6832a38e230e75c4db9c96a8e177fedb9259cd3ede1",
+        "official_identity_rows": 27605,
+        "season_scoped_identity_rows": 0
+      },
+      {
+        "season": "2025-26",
+        "split": "evaluation",
+        "file": "2025-26.csv.gz",
+        "rows": 29747,
+        "sha256": "fd6244ae95a43c6e9a8aaf74b0e56d37a9c54737e7db8d80b4e6309bb8c54aa1",
+        "official_identity_rows": 29747,
+        "season_scoped_identity_rows": 0
+      }
+    ],
+    "rows": 303448,
+    "purpose": "retrospective_label_training_not_predeadline_replay",
+    "evaluation_status": "historical_previously_used_not_unseen",
+    "missing_complete_seasons": [],
+    "partial_seasons_excluded": [],
+    "unknown_available_at": true,
+    "excluded": [
+      "final_season_snapshots",
+      "prices",
+      "ownership",
+      "official_xp",
+      "pl_minutes_substitution"
+    ],
+    "dataset_id": "a81868dedb2dd70598f145d95871d352476570e316568cbfd841371b7fcc7f50"
+  },
+  "production_changed": false
+}

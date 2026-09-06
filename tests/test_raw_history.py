@@ -342,3 +342,59 @@ def test_complete_2015_requires_all_fixtures_and_reconciled_components():
     players[0]['minutes']+=1
     with pytest.raises(ValueError,match='component total disagreement'):
         reconcile(players,pd.DataFrame(fixtures))
+
+
+def test_registry_uses_full_names_and_preserves_missing_minutes():
+    from experiments.data_ground_truth.identity_registry import link_archive
+    observations=pd.DataFrame([
+        dict(team_id=1,playerId=10,playerName='Filip Đuričić',official_player_code=None,minutesPlayed=9),
+        dict(team_id=1,playerId=10,playerName='Filip Đuričić',official_player_code=None,minutesPlayed=None),
+        dict(team_id=1,playerId=11,playerName='Luke Daniels',official_player_code=20,minutesPlayed=0),
+    ])
+    squads=pd.DataFrame([dict(team_id=1,playerId=30,displayName='Filip Djuricic'),
+        dict(team_id=1,playerId=40,displayName='Donervon Daniels')])
+    linked,report=link_archive(observations,squads)
+    assert report['added_identity_rows']==2
+    assert linked.official_player_code.tolist()==[30,30,20]
+    assert linked.minutesPlayed.isna().sum()==1
+    assert not linked.iloc[1].eligible_observed_minutes_label
+    with pytest.raises(ValueError,match='registry code conflict'):
+        link_archive(observations.fillna({'official_player_code':99}),squads)
+
+
+def test_identity_requires_every_played_fixture_and_corroboration():
+    from experiments.data_ground_truth.identity_registry import reconcile_labels
+    labels=pd.DataFrame([dict(id=1,name='Example',matchId=m,match_team_code=3,mins=1,gw_pts=1,official_player_code=None) for m in [100,101]])
+    obs=pd.DataFrame([dict(matchId_events=m,team_id=3,playerName='Full Example',minutesPlayed=1,official_player_code=123,registry_code=123) for m in [100,101]])
+    old=pd.DataFrame(columns=['id'])
+    linked,report=reconcile_labels(labels,obs,old,[])
+    assert report['added_players']==1
+    assert linked.official_player_code.tolist()==[123,123]
+    assert reconcile_labels(labels,obs.iloc[:1],old,[])[1]['added_players']==0
+    assert reconcile_labels(labels,obs.assign(registry_code=None),old,[])[1]['added_players']==0
+    assert reconcile_labels(labels.assign(mins=0),obs,old,[])[1]['added_players']==0
+    ambiguous=pd.concat([obs,obs.assign(official_player_code=124,registry_code=124)])
+    assert reconcile_labels(labels,ambiguous,old,[])[1]['added_players']==0
+
+
+def test_historical_code_alias_requires_direct_fullname_and_prior_totals():
+    from experiments.data_ground_truth.identity_registry import reconcile_labels
+    from experiments.data_ground_truth.training_dataset import normalize
+    labels=pd.DataFrame([dict(id=1,name='Brown',matchId=100,match_team_code=3,gw=1,mins=12,gw_pts=1,
+        official_player_code=10,match_local_time='2014-08-16 15:00:00')])
+    obs=pd.DataFrame([dict(matchId_events=100,team_id=3,playerName='Isaiah Brown',minutesPlayed=11,official_player_code=20,registry_code=20)])
+    old=pd.DataFrame([dict(id=1,first_name='Isaiah',second_name='Brown',code=10)])
+    player=dict(code=20,first_name='Isaiah',second_name='Brown',web_name='Brown',team_code=3,season_history=[['2014/15',12,1]])
+    linked,report=reconcile_labels(labels,obs,old,[player])
+    assert report['aliases'][0]['source_code']==10
+    normalized=normalize(linked,'2014-15',True)
+    assert normalized.identity_key.tolist()==['opta:20']
+    assert normalized.source_official_player_code.tolist()==[10]
+    assert normalized.minutes.tolist()==[12]
+    for bad in [player|{'first_name':'Other'},player|{'season_history':[['2014/15',11,1]]},player|{'team_code':4}]:
+        with pytest.raises(ValueError,match='unverified historical code alias'):
+            reconcile_labels(labels,obs,old,[bad])
+    with pytest.raises(ValueError,match='without old metadata'):
+        reconcile_labels(labels,obs,old.iloc[:0],[player])
+    no_registry=obs.assign(registry_code=None)
+    assert reconcile_labels(labels, no_registry, old, [player])[1]['aliases']
