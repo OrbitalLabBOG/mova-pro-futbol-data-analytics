@@ -2437,3 +2437,50 @@ valor observado, ausencia, identidad incorrecta, fecha desconocida, campo ausent
 y reloj con zona no esperado. [Resultados G45](results-g45.json).
 GT v7, features y producción no cambian. Acreditar publicación de las fronteras
 sigue siendo un paso separado; la trayectoria nominal no concede admisión causal.
+
+## Gate G46: componentes adicionales por partido
+
+`supplemental_components.py` verifica los 7.365 CSV individuales archivados y GT
+v7. Conserva nueve campos adicionales en un artefacto separado, con hash y fuente
+por fila, unión exacta por temporada/elemento/fixture y concordancia de GW y
+kickoff con zona horaria. No incorpora estos campos a las etiquetas ni a las
+features del runtime. Valores CSV vacíos, columnas ausentes, ceros y dominios
+inválidos tienen estados diferentes; `starts` por partido sólo admite 0 o 1.
+Los testigos contradictorios quedan en cuarentena, sin escoger uno en silencio.
+
+**253.417 filas enlazadas**, 415 claves en cuarentena: 78 discrepancias de kickoff
+en 2021/22 y 337 sin referencia de jugador (322 en 2024/25 y quince en temporadas
+anteriores). Hay además catorce filas del GT 2019/20–2020/21 sin fuente individual
+correspondiente. Las dos temporadas iniciales del GT no tienen CSV de esta fuente;
+no se declara cobertura suplementaria para ellas.
+
+| Campos | Temporadas con columna y valores numéricos válidos | Filas por campo |
+| --- | --- | ---: |
+| Starts, xG, xA, xG encajado, xG involvement | 2022/23–2025/26 | 113.260 |
+| Defensive contribution | 2025/26 | 29.747 |
+| Recuperaciones, entradas, despejes/bloqueos/intercepciones | 2016/17–2018/19 y 2025/26 | 97.683 |
+
+Los campos defensivos antiguos no son columnas de ceros: recuperaciones tiene
+9.367, 9.348 y 9.425 valores positivos en 2016/17, 2017/18 y 2018/19,
+respectivamente. Eso acredita contenido numérico, **no equivalencia de definición
+entre épocas**. La contribución defensiva nueva sigue separada. Para starts,
+cada una de las cuatro temporadas recientes contiene 8.360 filas con valor 1.
+El reporte conserva conteos de valores positivos y ceros de los nueve campos
+por temporada. No hay valores inválidos entre las filas enlazadas de esta corrida.
+
+```bash
+python -m experiments.data_ground_truth.supplemental_components \
+  --raw-root /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/raw-player-gameweeks \
+  --package /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/training-datasets/d4baf849fb4a051be103f8c469e61a4753edb0b4004f980a000fe5c86ef573db \
+  --out /home/jzuluaga/code/orbital-lab/mova-fpl-experiments/supplemental-components-v3
+```
+
+Reporte, componentes comprimidos y cuarentena reproducidos byte por byte en
+`supplemental-components-v4`. Las corridas v1/v2 anteriores no incluían el conteo
+de actividad de valores y se conservan como auditoría parcial. **1.551 passed,
+1 skipped, 79 deselected**. [Resultados G46](results-g46.json).
+
+El siguiente contraste debe evaluar estos componentes contra los snapshots y
+medir revisiones/precisión decimal, sin suponer disponibilidad anterior al deadline
+ni convertir automáticamente métricas antiguas en puntos de reglas modernas.
+GT v7 y producción permanecen intactos; no se añade una temporada completa nueva.
