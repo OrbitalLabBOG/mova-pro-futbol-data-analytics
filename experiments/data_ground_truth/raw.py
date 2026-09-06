@@ -18,7 +18,7 @@ REPOS = ('vaastav/Fantasy-Premier-League', 'olbauday/FPL-Core-Insights',
          'imadeddine-belkat/Premier-League-Stats', 'TopMarxFPL/fpl-mirror', 'durtal/fantasysocceR',
          'prathmesh/Fantasy-Premier-League-Points-Predictor', 'clwatkins/fantasy_premier_league',
          'mvbfontes/premierleaguedatasets', 'sjp4/differentialfpl',
-         'darrenvong/fpl-data-visualiser', 'Randdalf/fplcache', 'Schwetche/fpl_project', 'hudl/open-data')
+         'darrenvong/fpl-data-visualiser', 'Randdalf/fplcache', 'Schwetche/fpl_project', 'hudl/open-data', 'lifebeyondfife/FantasyFootball')
 
 
 def digest(data: bytes) -> str:
@@ -71,6 +71,12 @@ def capture(root: Path, repo: str, revision: str, path: str) -> dict:
 def select(repo: str, path: str) -> bool:
     if path in ('README.md', 'LICENSE', 'DATA_INTEGRATION_REVIEW.md'):
         return True
+    if repo == 'lifebeyondfife/FantasyFootball':
+        return path == 'LICENCE.txt' or path in {
+            'Fantasy Football Team Selector 13-14.xlsm',
+            'Fantasy Football Team Selector 14-15.xlsm',
+            'Fantasy Football Team Selector Official 2012-13/Fantasy Football Team Selector 12-13.xlsm',
+        }
     if repo == REPOS[9]:
         return bool(re.fullmatch(r'dump/players/(?:current_gw|gw[0-9]+)\.(?:bson|metadata\.json)',path))
     if repo == REPOS[8]:

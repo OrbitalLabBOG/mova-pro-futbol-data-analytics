@@ -4468,3 +4468,57 @@ con las fuentes y el GT de esa copia; su reporte y sus cinco artefactos son
 10.422/10.469 apariciones positivas cubiertas. Suite completa: **1.655 passed,
 1 skipped, 79 deselected**, en 34,07 s. Evidencia agregada y hashes:
 [Resultados G78](results-g78.json). No se verificó salud productiva en este gate.
+
+## G79 — Libros históricos de selección y alcance real de sus datos
+
+La búsqueda adicional mediante Orbix Research/OpenAlex y repositorios GitHub
+anteriores a agosto de 2014 encontró una fuente aún no adquirida:
+[lifebeyondfife/FantasyFootball](https://github.com/lifebeyondfife/FantasyFootball/tree/b3a43a31d688b4ca62ecea0077a21ae36b52cbc6).
+El commit fijado es `b3a43a31d688b4ca62ecea0077a21ae36b52cbc6`.
+Se conservaron **cinco archivos, 250.468 bytes**: README, licencia y los libros
+oficiales denominados 2012–13, 13–14 y 14–15. El selector excluye el libro Yahoo,
+que corresponde a otro juego. La licencia del repositorio se conserva con el
+corpus; su presencia no certifica derechos sobre los datos deportivos subyacentes.
+
+`historical_workbooks.py` lee el XML interno del ZIP sin ejecutar macros,
+calcular fórmulas ni seguir vínculos externos. Resuelve cada hoja mediante su
+relación XML: el orden de las hojas cambia entre libros. Preserva dirección de
+celda, texto literal, valor cacheado y fórmula cuando existe. Los valores de la
+columna C se clasifican por hoja, sin convertir popularidad o valor en puntos.
+
+| Nombre del libro | Filas de puntos agregados | Filas de valor | Filas de popularidad |
+| --- | ---: | ---: | ---: |
+| 2012–13 | 268 | 268 | 228 |
+| 13–14 | 262 | 270 | 270 |
+| 14–15 | 250 | 250 | 200 |
+
+Son **2.266 filas de hoja**, todas con cinco campos literales completos y sin
+fórmulas en esos campos; no son jugadores distintos entre hojas. Las hojas de
+popularidad incluyen veinte nombres de clubes; las restantes, entre 18 y 19.
+Esto describe lo observado, no cobertura del universo FPL. Ninguna hoja contiene
+claves oficiales de jugador, partido o jornada para recuperar etiquetas por GW.
+Los nombres de los archivos tampoco establecen el período de los puntos ni el
+instante histórico de los precios. Se preserva la incertidumbre temporal.
+
+El contraste de filas literales entre libros no encontró hojas equivalentes.
+No se deducen correcciones ni temporadas completas a partir de los acumulados.
+El resultado científico útil de esta adquisición es una referencia suplementaria
+con límites medidos, no una ampliación artificial del GT. La búsqueda académica
+no aportó en este intento una fuente descargable de nuevas temporadas completas.
+No demuestra que no exista otra fuente.
+
+```bash
+python -m experiments.data_ground_truth.historical_workbooks \
+  --root "$DATA_BASE/historical-workbooks-g79" \
+  --out "$DATA_BASE/historical-workbook-audit-v1"
+```
+
+`report.json` y `tables.json` se reprodujeron byte por byte en una segunda raíz.
+[Resultados G79](results-g79.json) fija hashes, fuentes y métricas. GT v7 mantiene
+303.126 etiquetas y doce temporadas; no hay nuevos puntos por GW ni admisión a
+entrenamiento. Los bytes G79 se conservan aparte del corte portable G78 congelado.
+Producción no se modificó ni se volvió a comprobar en este gate.
+
+Suite completa: **1.658 passed, 1 skipped, 79 deselected**, en 33,93 s.
+Las pruebas cubren relaciones de hoja, preservación del cache de fórmulas,
+rechazo de destinos externos y separación del juego Yahoo.
