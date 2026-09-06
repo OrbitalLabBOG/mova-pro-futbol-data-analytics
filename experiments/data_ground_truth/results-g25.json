@@ -1,0 +1,163 @@
+{
+  "version": "historical-data-g25",
+  "cutoff_date_colombia": "2026-09-06",
+  "audit": {
+    "version": "core-clock-evidence-v2",
+    "export_log_sha256": "136ee58e5591f7ec89cfab9ae7cc6886e25f5f14126f9452e161bb516bb59022",
+    "source_tree_report_sha256": "b4f8d81df3c449498c7ad8ce29ec1042c0124f5bfa9ea53acc738a1f05ccd332",
+    "fixture_reference_report_sha256": "448a774a7a32815a64655999542af121e188a6fbcd58cd1847430c1a0ba47c24",
+    "fixture_reference_revision": "a8337d50698de908f92e8d1905142d968384a2ca",
+    "teams_manifest_sha256": "93cbcfa531157c317ec925b3b49a681051bf90cc4dcea7c2eaf8549e8758bd77",
+    "teams_sha256": "b29df099cb0ad25413e284e53116099b0e0496874f99743dbc0870d8241b46c5",
+    "implementation_sha256": "534476ee39bef0c17d2431c0a187a75c1e4cda8f06b7260499b725904338c52d",
+    "exporter_versions": 81,
+    "unparseable_exporter_versions": 5,
+    "deleted_exporter_versions": 1,
+    "first_utc_inference_commit": {
+      "revision": "2c00c3886c421d488ff017d83e96631474b80847",
+      "committer_at": "2026-02-09T06:37:19+00:00",
+      "git_blob": "6c0ab4ab85b1d25fe212ebbed4efce5afde879e9",
+      "source_sha256": "7783d28fb1a7554c1ff51250b97246c55101e944c6c420fb7442a7262e62d22c",
+      "parseable": true,
+      "infer_gameweek_uses_utc": true,
+      "kickoff_literal_references": 2,
+      "matches_table_read": true
+    },
+    "audited_deadlines": 38,
+    "deadlines_with_exporter": 38,
+    "past_naive_comparisons": 6552,
+    "exact_utc_hypothesis_matches": 6233,
+    "delta_seconds": {
+      "0": 6233,
+      "2091600": 9,
+      "2090700": 8,
+      "2785500": 12,
+      "6321600": 9,
+      "4601700": 9,
+      "5032800": 8,
+      "11151000": 4,
+      "11169000": 4,
+      "11260800": 4,
+      "11245500": 4,
+      "11248200": 4,
+      "11254500": 4,
+      "11084400": 4,
+      "11251800": 12,
+      "11080800": 3,
+      "10908000": 3,
+      "10872000": 3,
+      "10807200": 3,
+      "10890000": 6,
+      "10981800": 3,
+      "10789200": 3,
+      "10972800": 3,
+      "10881000": 3,
+      "14005800": 2,
+      "13914000": 14,
+      "13991400": 3,
+      "13905000": 6,
+      "13996800": 1,
+      "14104800": 1,
+      "13831200": 1,
+      "14014800": 1,
+      "13741200": 1,
+      "-600": 12,
+      "73800": 8,
+      "-82800": 34,
+      "-27000": 8,
+      "-900": 7,
+      "9000": 6,
+      "-91800": 6,
+      "-9000": 6,
+      "-190800": 6,
+      "68400": 6,
+      "-18057600": 10,
+      "-17776800": 15,
+      "-17685000": 5,
+      "-17971200": 5,
+      "-17712000": 5,
+      "-17884800": 5,
+      "-17694000": 10,
+      "-17785800": 5,
+      "-17703000": 5
+    },
+    "reference_uk_offsets": {
+      "3600": 2563,
+      "0": 3989
+    },
+    "artifacts": {
+      "exporters.json": "fd0af5ef9587360e3aaf3046f85728cb2d577e467d1f5c67ee8caa56b1931a5b",
+      "deadlines.json": "c1e9146204cbc21a70601f00dae1c19d2793ac393f88736dd551a3fe7684b3d4",
+      "past_comparisons.json": "21972e3c5d05eb9c5b079473cb78fb6dbefc347cbfb6c1008c20e7cd0d53dbfb"
+    },
+    "normalization_promoted": false,
+    "publication_proven": false,
+    "production_changed": false,
+    "limitations": [
+      "team_pair_matching_is_not_fixture_identity_proof_and_may_cross_competitions",
+      "exporter_consumer_assumption_is_not_producer_clock_proof",
+      "final_fixture_reference_used_only_for_retrospective_past_match_diagnostic",
+      "comparisons_repeat_matches_across_snapshots",
+      "no_future_date_or_training_admission_changed"
+    ]
+  },
+  "competition_examples": [
+    {
+      "gw": 5,
+      "provider_match_id": "25-26-prem-brentford-vs-aston-villa",
+      "reference_fixture": 13,
+      "source_raw_time": "2025-09-16T19:00:00",
+      "reference_time": "2025-08-23T14:00:00+00:00",
+      "source_revision": "1ce2a10d2ebe677fda8b6f3d1e7de9b22c38d04b",
+      "delta_seconds": 2091600,
+      "reference_uk_offset_seconds": 3600
+    },
+    {
+      "gw": 6,
+      "provider_match_id": "25-26-prem-wolverhampton-wanderers-vs-everton",
+      "reference_fixture": 30,
+      "source_raw_time": "2025-09-23T18:45:00",
+      "reference_time": "2025-08-30T14:00:00+00:00",
+      "source_revision": "bba77fbc647d07ed29b1437f0afdfecab86a364e",
+      "delta_seconds": 2090700,
+      "reference_uk_offset_seconds": 3600
+    }
+  ],
+  "editorial_references": [
+    {
+      "url": "https://www.brentfordfc.com/en/news/article/first-team-carabao-cup-round-three-brentford-v-aston-villa",
+      "sha256": "cb73481252adfaeecb62c52a91d40ef8665c98bee230ad0f7322f5a427d6a44a",
+      "bytes": 169448,
+      "fetched_at": "2026-09-06T06:40:48.155832+00:00",
+      "historical_publication_proven": false
+    },
+    {
+      "url": "https://www.wolves.co.uk/news/mens-first-team/20250903-new-september-fixture-dates/",
+      "sha256": "e1ca79ae5178315de4e1b76921729ca0396d94657439dfadee152e7825aafa04",
+      "bytes": 81932,
+      "fetched_at": "2026-09-06T06:40:49.559844+00:00",
+      "historical_publication_proven": false
+    }
+  ],
+  "interpretation": {
+    "mismatching_observations": 319,
+    "mismatching_provider_ids": 71,
+    "competition_examples": "Source Premier League dates coincide with officially documented Carabao Cup fixtures; team-pair linkage does not establish fixture identity.",
+    "global_utc_normalization_authorized": false
+  },
+  "verification": {
+    "audit_reproduced_byte_for_byte": true,
+    "local_tests_passed": 1466,
+    "local_tests_skipped": 1,
+    "local_tests_deselected": 79
+  },
+  "pending": [
+    "producer clock provenance",
+    "competition and event identity",
+    "external publication witnesses for fixture calendars",
+    "early/mid 2025-26 future schedules",
+    "78 GT kickoff discrepancies"
+  ],
+  "production_changed": false,
+  "gt_v5_changed": false
+}

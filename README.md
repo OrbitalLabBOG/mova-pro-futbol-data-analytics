@@ -210,11 +210,11 @@ coherentes por commit, pero encuentra fechas sin zona, tres calendarios Core de
 370 partidos y conflictos de jornada. Hay 749 fechas futuras raw pendientes de
 reloj; el mirror aporta 209 observaciones futuras con zona en GW33–38. La brecha
 no se declara cerrada. [Resultados G24](experiments/data_ground_truth/results-g24.json).
-
-
-
-
-
+G25 audita 81 versiones del exportador Core y 6.552 comparaciones retrospectivas:
+319 discrepan. Dos fechas bajo Premier League coinciden con partidos de Carabao
+Cup documentados por los clubes. La hipótesis UTC no acredita identidad ni reloj
+de origen; continúa sin admitirse ese calendario al GT.
+[Resultados G25](experiments/data_ground_truth/results-g25.json).
 
 ## Empezar
 
