@@ -6033,3 +6033,38 @@ python -m experiments.data_ground_truth.geek_history_audit \
   --base "$RAW_HISTORY_ROOT" \
   --out "$RAW_HISTORY_ROOT/geek-audit-g108-v1"
 ```
+
+
+## G109 — Contexto de clubes e identidad de los estados G108
+
+Se contrastan las 183 versiones decodificadas contra los conjuntos completos de
+clubes de los calendarios 2014/15 y 2015/16 y los pares ID/código del GT v8.
+La selección es candidata y acotada a esas dos referencias; no utiliza fechas
+Git para asignar temporada ni acredita publicación anterior al deadline.
+
+| Contexto candidato | Snapshots | Estados | ID/código coincidente | Discrepancias |
+| --- | ---: | ---: | ---: | ---: |
+| 2014/15 | 85 | 53.471 | 53.386 | 85 |
+| 2015/16 | 98 | 65.163 | 65.163 | 0 |
+
+Todos los IDs tienen referencia en el GT de su contexto candidato. Las
+85 discrepancias se limitan a dos pares de origen: Isaiah Brown (ID 93,
+`81132` frente a `112516`) y Niko Kranjcar (ID 600, `238474` frente a `28097`).
+Se conservan cada commit, SHA de origen y ambos códigos. No se introducen alias,
+se reasignan IDs ni se modifica el raw o el GT.
+
+La coincidencia de clubes y códigos aporta coherencia de contexto entre archivos,
+pero no es una declaración independiente de temporada de la fuente. Los estados
+continúan sin admisión a entrenamiento y no añaden etiquetas por partido.
+El campo `season_verified_from_source` permanece falso en la auditoría.
+
+[Resultados G109](results-g109.json) fija GT, calendarios, reporte padre y
+artefactos. Dos corridas producen reporte, `snapshots.json` y
+`discrepancies.csv` idénticos. Resultados fuera de Git en
+`geek-context-g109-v1` y `-v2`, todavía fuera del corte G104. Producción intacta.
+
+```bash
+python -m experiments.data_ground_truth.geek_season_context \
+  --base "$RAW_HISTORY_ROOT" \
+  --out "$RAW_HISTORY_ROOT/geek-context-g109-v1"
+```

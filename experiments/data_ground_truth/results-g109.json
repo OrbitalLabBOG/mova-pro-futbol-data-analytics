@@ -1,0 +1,76 @@
+{
+  "version": "historical-data-g109",
+  "audit": {
+    "version": "geek-season-context-v1",
+    "implementation_sha256": "6e6c8c31f567599d05253c4f8e22d87425808654802d2499b279bbc5b8bb6a9c",
+    "parent_report_sha256": "b29f1b994a216f5f37ca8a6503fd5256e64e62430a122bf7028a35b983b27caf",
+    "gt_dataset_id": "e0b5ab38c46df8eae793742421965cf80665764cbbf23dfcb99e3c8b50247998",
+    "gt_manifest_sha256": "9a71bb11bf6ed5351b2084e104b7b4e8e279995d2f3d25cd8a095989af50798e",
+    "fixture_sha256": {
+      "2014": "4f6c42e636040f1910a914e4c7c4d43aa4a81a00af5549daefe62b28345ed51f",
+      "2015": "7b1c5b8cc70e551413b981a58988fee9205fc7987ec2ba5745c93d8aa69d3a66"
+    },
+    "snapshots": 183,
+    "candidate_snapshot_counts": {
+      "2015-16": 98,
+      "2014-15": 85
+    },
+    "identity_counts": {
+      "code_pair_matches_reference": 118549,
+      "code_mismatch": 85
+    },
+    "candidate_seasons": {
+      "2015-16": {
+        "code_pair_matches_reference": 65163
+      },
+      "2014-15": {
+        "code_pair_matches_reference": 53386,
+        "code_mismatch": 85
+      }
+    },
+    "discrepancy_states": 85,
+    "discrepancy_pairs": [
+      {
+        "candidate_season": "2014-15",
+        "id": 93,
+        "code": 81132,
+        "official_player_code": 112516
+      },
+      {
+        "candidate_season": "2014-15",
+        "id": 600,
+        "code": 238474,
+        "official_player_code": 28097
+      }
+    ],
+    "finalized_labels_admitted": 0,
+    "training_admitted": false,
+    "gt_changed": false,
+    "production_changed": false,
+    "limitations": [
+      "roster_match_scoped_to_two_reference_seasons",
+      "not_independent_source_season_proof",
+      "matching_id_and_code_not_publication_evidence",
+      "author_date_not_snapshot_availability",
+      "source_code_conflicts_preserved_without_alias_or_repair"
+    ],
+    "artifacts": {
+      "snapshots.json": "966d85547e43c88c5305aade9cdff25f7fbbb078deb5540c5ed84bbc4960e10a",
+      "discrepancies.csv": "5d74f7c91682d3989999b609816c04775651f32b978d405da53c8946da8cda0d"
+    }
+  },
+  "report_sha256": "d27be69bcd0cc056cef2f3ce447ea66105a7afb3d8b7da7cbb04697b847b6bfa",
+  "reproduction": {
+    "identical_files": [
+      "report.json",
+      "snapshots.json",
+      "discrepancies.csv"
+    ]
+  },
+  "validation": {
+    "command": "python -m pytest -q",
+    "passed": 1725,
+    "skipped": 1,
+    "deselected": 79
+  }
+}
