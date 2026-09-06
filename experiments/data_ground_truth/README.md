@@ -1019,3 +1019,51 @@ detallado, colisiones e incidencias permanecen fuera de Git. La corrida final co
 validación previa de todo el snapshot reprodujo exactamente los hashes de los
 artefactos de la primera corrida; ambas tuvieron cero errores. Queda pendiente corroborar los alias de jugadores por
 una regla explícita y trazable, distinguiéndolos de sustituciones de personas.
+
+## Gate G19: alias de jugadores corroborados y estados recuperados
+
+[results-g19.json](results-g19.json) incorpora una regla explícita para normalizar
+cambios de código dentro del mismo elemento FPL y temporada. Exige exactamente
+dos códigos, un código final único en GT v5, ausencia de colisiones observadas,
+secuencia temporal sin solapamiento, mismo nombre y posición en el límite del
+cambio, clubes observados compatibles y al menos dos objetos distintos a cada
+lado. Además exige dos fechas de aparición positiva coincidentes entre las
+etiquetas FPL y el archivo de partidos, usando fecha local británica para FPL.
+No iguala IDs de fixture de proveedores distintos ni sustituye minutos FPL por
+minutos deportivos. La corroboración es retrospectiva y no una feature futura.
+
+Se corroboraron tres alias acotados: Harris (3 fechas de aparición coincidentes),
+Bueno (21) y Yarmolyuk/Yarmoliuk (27). El cambio Juric→Rusk se excluye como
+sustitución de manager. Los testigos completos y hashes quedan en `aliases.json`
+y su reporte. No se crea un diccionario universal código-antiguo→persona: cada
+aplicación exige temporada, elemento, código fuente y una observación dentro del
+rango documentado. Ese rango limita el uso; no prueba continuidad entre capturas.
+
+Con `--aliases-root`, el generador produce el contrato `bootstrap-state-v2` y
+conserva `source_code` e `identity_alias_applied` en cada fila. Recupera las dos
+filas de GW1 2022/23 de G17: Harris mantiene precio 45 décimas de GBP y Bueno 40;
+sus códigos de origen quedan junto a los normalizados. El alias de Yarmoliuk no
+se aplica a los 199 candidatos porque cambió antes de GW1.
+
+Resultado: **143.720 estados de jugadores**, **320 managers separados**, dos filas
+recuperadas y cero filas rechazadas en estos 199 candidatos. Se comprobó que todos
+los campos anteriores de las 143.718 filas previas son idénticos. Hay ahora 94.982
+valores de `can_select` desconocidos, porque las dos filas recuperadas tampoco
+contenían esa señal. La equivalencia de identidad no resuelve elegibilidad.
+
+```bash
+python -m experiments.data_ground_truth.bootstrap_aliases \
+  --identity-root "$BOOTSTRAP_IDENTITY_ROOT" --sport-root "$IDENTITY_REGISTRY_ROOT" \
+  --package "$LABELS_V5_PACKAGE" --out "$BOOTSTRAP_ALIASES_ROOT"
+python -m experiments.data_ground_truth.bootstrap_state \
+  --root "$BOOTSTRAP_RAW_ROOT" --audit-root "$BOOTSTRAP_AUDIT_ROOT" \
+  --package "$LABELS_V5_PACKAGE" --aliases-root "$BOOTSTRAP_ALIASES_ROOT" \
+  --out "$BOOTSTRAP_STATE_V2_ROOT"
+```
+
+El consumidor CSV debe leer los booleanos opcionales como nullable boolean,
+conservando los vacíos; no confiar en inferencia automática de pandas ni convertir
+NULL a true/false. G19 conserva el modo sin alias, los paquetes anteriores y los
+raw originales. Todos los estados siguen con admisión temporal y entrenamiento
+desactivados. GT v5 y producción no cambian. Siguen pendientes el contrato temporal,
+los 78 kickoffs discrepantes de G15 y el universo histórico antiguo incompleto.

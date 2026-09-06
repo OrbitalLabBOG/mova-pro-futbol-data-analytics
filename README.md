@@ -177,6 +177,11 @@ cuatro cambios de código, trece de nombre y cero colisiones de código entre
 elementos dentro de temporada. Distingue tres casos de jugadores de una
 sustitución de entrenador; no aplica alias automáticamente.
 [Resultados G18](experiments/data_ground_truth/results-g18.json).
+G19 corrobora tres alias de jugadores mediante continuidad del snapshot y fechas
+de aparición; excluye el reemplazo de entrenador. Recupera dos estados de GW1
+con códigos originales preservados: 143.720 estados de jugadores, 320 managers
+y cero rechazos en los 199 candidatos. No habilita entrenamiento ni cambia GT v5.
+[Resultados G19](experiments/data_ground_truth/results-g19.json).
 
 ## Empezar
 
