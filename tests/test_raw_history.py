@@ -784,3 +784,65 @@ def test_individual_acquisition_selects_gw_files_only(tmp_path,monkeypatch):
     assert report['expected_files']==1 and report['records'][0]['path'].endswith('/Example/gw.csv')
     with pytest.raises(ValueError,match='unsupported player artifact'):
         acquire(tmp_path/'raw',inventory,revision,artifact='../something')
+
+
+def test_bootstrap_archive_preserves_naive_clock_and_validates_inventory(tmp_path,monkeypatch):
+    from experiments.data_ground_truth.bootstrap_archive import acquire,claimed_time,PROVENANCE
+    path='cache/2024/8/16/1100.json.xz';revision='b'*40
+    assert claimed_time(path)=='2024-08-16T11:00:00'
+    with pytest.raises(ValueError):claimed_time('cache/2024/2/30/1100.json.xz')
+    with pytest.raises(ValueError):claimed_time('../2024/8/16/1100.json.xz')
+    inventory=tmp_path/'inventory.json'
+    tree=dict(sha=revision,truncated=False,tree=[dict(type='blob',path=p,size=3) for p in sorted(PROVENANCE|{path})])
+    inventory.write_text(json.dumps(tree));monkeypatch.setattr(raw,'_get',lambda url:b'raw')
+    result=acquire(tmp_path/'raw',inventory,revision)
+    assert result['expected_snapshots']==1 and result['errors']==[]
+    record=next(r for r in result['records'] if r['path']==path)
+    assert record['source_timezone'] is None and record['available_at'] is None
+    assert not record['eligible_predeadline']
+    tree['truncated']=True;inventory.write_text(json.dumps(tree))
+    with pytest.raises(ValueError,match='inventory'):acquire(tmp_path/'raw',inventory,revision)
+
+
+def test_bootstrap_decoder_rejects_oversize_trailing_and_truncated_data():
+    import lzma
+    from experiments.data_ground_truth.bootstrap_audit import decode
+    data=lzma.compress(b'{"test": true}')
+    assert decode(data)=={'test':True}
+    for payload,limit in [(data,3),(data+b'extra',100),(data[:-4],100)]:
+        with pytest.raises(ValueError):decode(payload,limit)
+
+
+def test_bootstrap_audit_keeps_nominal_deadlines_ineligible_and_nulls_unknown():
+    import copy
+    from experiments.data_ground_truth.bootstrap_audit import inspect
+    snapshot=dict(elements=[dict(id=1,element_type=2,code=100,now_cost=45,news='',status='a'),
+                            dict(id=2,element_type=5,now_cost=10)],
+                  events=[dict(id=1,deadline_time='2024-08-16T17:30:00Z',finished=False)])
+    row,candidates=inspect(snapshot,'cache/2024/8/16/1100.json.xz')
+    assert row['season']=='2024-25' and row['players']==row['managers']==1
+    assert row['fields']['now_cost']==dict(present=1,nonnull=1)
+    assert row['fields']['chance_of_playing_next_round']==dict(present=0,nonnull=0)
+    assert candidates[0]['nominal_hours_before']==6.5 and not candidates[0]['eligible_predeadline']
+    assert inspect(snapshot,'cache/2024/8/16/1800.json.xz')[1]==[]
+    duplicate=copy.deepcopy(snapshot);duplicate['elements'].append(duplicate['elements'][0])
+    with pytest.raises(ValueError,match='duplicate'):inspect(duplicate,'cache/2024/8/16/1100.json.xz')
+
+
+def test_bootstrap_report_retains_corrupt_snapshot_in_coverage_denominator(tmp_path):
+    import lzma
+    from experiments.data_ground_truth.bootstrap_audit import build
+    source=tmp_path/'raw';(source/'objects').mkdir(parents=True)
+    snapshot=dict(elements=[dict(id=1,element_type=2)],events=[dict(id=1,deadline_time='2024-08-16T17:30:00Z',finished=False)])
+    data=lzma.compress(json.dumps(snapshot).encode());sha=raw.digest(data)
+    (source/'objects'/sha).write_bytes(data)
+    corrupt_sha='a'*64;(source/'objects'/corrupt_sha).write_bytes(b'corrupt')
+    records=[dict(path='cache/2024/8/16/1100.json.xz',sha256=sha),
+             dict(path='cache/2024/8/16/1200.json.xz',sha256=corrupt_sha)]
+    (source/'manifest.json').write_text(json.dumps(dict(records=records,errors=[],expected_files=2,expected_snapshots=2)))
+    out=tmp_path/'audit';report=build(source,out)
+    assert report['snapshots']==2 and report['parsed_snapshots']==report['errors']==1
+    assert report['verified_predeadline_snapshots']==0 and not report['eligible_predeadline']
+    assert report['seasons']['2024-25']['nominal_deadlines_with_snapshot_within_48h']==[1]
+    assert json.loads((out/'errors.json').read_text())[0]['sha256']==corrupt_sha
+    assert all(raw.digest((out/name).read_bytes())==sha for name,sha in report['artifacts'].items())

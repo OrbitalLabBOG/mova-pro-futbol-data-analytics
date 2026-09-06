@@ -845,3 +845,81 @@ anteriores a 2014/15 y disponibilidad histórica predeadline de las features.
 El siguiente gate debe reconciliar claves y fechas con evidencia temporal,
 sin convertir ceros ambiguos en no apariciones observadas. Después podrá medirse
 cobertura de estados de decisión para precios, lesiones, traspasos y chips.
+
+## Gate G16: snapshots históricos de bootstrap
+
+La fuente adicional [Randdalf/fplcache](https://github.com/Randdalf/fplcache),
+revisión `dda55fefed3104e428a32e4a1f278d42f3c03407`, contiene **7.837 capturas
+comprimidas / 867.734.672 bytes**, con fechas declaradas entre 2021-04-18 16:41
+y 2026-09-05 20:12. La adquisición y auditoría completaron los 7.837 snapshots sin errores. Se
+adquirieron también README, licencia, script de captura y workflow como evidencia
+de procedencia; los scripts externos no se ejecutan. Hay 6.907 objetos de snapshot
+distintos por hash: rutas distintas pueden repetir bytes.
+
+`bootstrap_archive` guarda todos los bytes por hash, verifica tamaños contra el
+inventario y reutiliza objetos verificados para reanudar. Mantiene la fecha del
+nombre en `source_claimed_at`, sin zona: el código fuente usa `datetime.today()`.
+`available_at` sigue desconocido. El workflow programado y una fecha de archivo
+no certifican por sí solos disponibilidad histórica anterior al deadline.
+
+`bootstrap_audit` descomprime con límites, comprueba población y calendario,
+separa jugadores de managers y mide presencia/no nulidad de precios, club,
+posición, estado, noticias, probabilidad de jugar y métricas retrospectivas.
+Los NULL de disponibilidad no se convierten en disponibilidad segura. Mide también
+intervalos entre capturas y candidatos dentro de 48 horas de un deadline bajo una
+**hipótesis explícita de reloj UTC**, únicamente para explorar cobertura. Ningún
+candidato recibe `eligible_predeadline=true`. La temporada se deriva del deadline
+de GW1 del contenido, no del año del directorio; la temporada abierta se conserva
+separada por su identificador y no cuenta como nuevas etiquetas completas.
+
+```bash
+python -m experiments.data_ground_truth.bootstrap_archive \
+  --root "$BOOTSTRAP_RAW_ROOT" --inventory "$BOOTSTRAP_PINNED_INVENTORY" \
+  --revision dda55fefed3104e428a32e4a1f278d42f3c03407
+python -m experiments.data_ground_truth.bootstrap_audit \
+  --root "$BOOTSTRAP_RAW_ROOT" --out "$BOOTSTRAP_AUDIT_ROOT"
+```
+
+[results-g16.json](results-g16.json) conserva la cobertura medida, hashes y pruebas
+de procedencia. La adquisición contiene 7.841 archivos, incluidos cuatro de
+procedencia, sin errores; el auditor leyó las 7.837 capturas, sin errores.
+
+| Temporada del contenido | Snapshots | Filas jugador-snapshot | Deadlines con candidato nominal ≤48h |
+| --- | ---: | ---: | --- |
+| 2020/21 | 257 | 181.040 | 6: GW33–38 |
+| 2021/22 | 1.511 | 975.944 | 38: GW1–38 |
+| 2022/23 | 1.458 | 999.028 | 38: GW1–38 |
+| 2023/24 | 1.510 | 1.165.413 | 38: GW1–38 |
+| 2024/25 | 1.471 | 1.051.944 | 38: GW1–38 |
+| 2025/26 | 1.459 | 1.143.248 | 38: GW1–38 |
+| 2026/27 abierta | 171 | 100.857 | 3: GW1–3 |
+
+Son **5.617.474 filas jugador-snapshot**, no resultados de partido independientes.
+Hay además **14.240 filas de manager**, todas de 2024/25. Código, precio, club,
+posición y estado están presentes y no nulos en todas las filas de jugadores.
+La probabilidad de jugar la siguiente jornada está presente pero solo es no nula
+en 3.404.562 filas; el auditor conserva esa diferencia sin imputar 100%.
+xG/xA no aparecen en las capturas 2020/21–2021/22 y tienen cobertura parcial en
+2022/23. No se rellenan con cero para aparentar un esquema homogéneo.
+
+Hay 199 candidatos nominales en total, incluidos seis de la temporada inicial
+parcial y tres de la abierta. La selección usa exclusivamente el calendario que
+contiene cada snapshot, bajo hipótesis UTC; no sustituye el calendario conocido
+en esa fecha por la programación final. Sigue habiendo **cero snapshots con
+admisión predeadline verificada**. No se transfieren automáticamente a Store.
+
+La comprobación de una captura de 2024-08-16 12:38 encontró un único commit con
+fecha 12:38:36 UTC y mensaje consistente, sin firma verificada. La consulta de
+GitHub Actions para ese día devolvió cero ejecuciones. Esa coherencia no acredita
+por sí sola publicación histórica ni resuelve todo el archivo. Se guardan ambas
+respuestas en el directorio externo de descubrimiento.
+
+También se inspeccionó la página histórica 2013/14 de fplanalytics.com: enlaza un
+JSON en S3 que respondió HTTP 403 tras cinco intentos. No se adquirieron sus datos
+ni se cuentan como una nueva temporada disponible.
+
+El siguiente gate debe validar tipos/unidades e identidades por snapshot y
+establecer el contrato temporal de admisión para los candidatos nominales,
+incluyendo revisiones de calendario y las limitaciones de procedencia. El GT v5
+sigue vigente; G16 no modifica sus filas ni el runtime. Los historiales anteriores
+a 2014/15 y el universo elegible pendiente siguen dentro del alcance de investigación.

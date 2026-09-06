@@ -1,0 +1,713 @@
+{
+  "version": "historical-data-g16",
+  "status": "acquisition_and_coverage_audited_temporal_admission_pending",
+  "repository": "Randdalf/fplcache",
+  "revision": "dda55fefed3104e428a32e4a1f278d42f3c03407",
+  "acquisition": {
+    "files": 7841,
+    "snapshots": 7837,
+    "snapshot_bytes": 867734672,
+    "distinct_snapshot_objects": 6907,
+    "errors": []
+  },
+  "audit": {
+    "version": "bootstrap-audit-v1",
+    "manifest_sha256": "d9eed1e354d0a35443e480a0c4bfcbdebee97f28b73b04309e4bef0f8bcc243e",
+    "snapshots": 7837,
+    "parsed_snapshots": 7837,
+    "errors": 0,
+    "seasons": {
+      "2020-21": {
+        "snapshots": 257,
+        "first_claimed_at": "2021-04-18T16:41:00",
+        "last_claimed_at": "2021-06-22T06:30:00",
+        "player_snapshot_rows": 181040,
+        "manager_snapshot_rows": 0,
+        "unknown_entity_rows": 0,
+        "max_gap_hours": 17.266666666666666,
+        "nominal_deadlines_with_snapshot_within_48h": [
+          33,
+          34,
+          35,
+          36,
+          37,
+          38
+        ],
+        "fields": {
+          "code": {
+            "present": 181040,
+            "nonnull": 181040
+          },
+          "now_cost": {
+            "present": 181040,
+            "nonnull": 181040
+          },
+          "team": {
+            "present": 181040,
+            "nonnull": 181040
+          },
+          "element_type": {
+            "present": 181040,
+            "nonnull": 181040
+          },
+          "status": {
+            "present": 181040,
+            "nonnull": 181040
+          },
+          "news": {
+            "present": 181040,
+            "nonnull": 181040
+          },
+          "news_added": {
+            "present": 181040,
+            "nonnull": 135164
+          },
+          "chance_of_playing_next_round": {
+            "present": 181040,
+            "nonnull": 135164
+          },
+          "selected_by_percent": {
+            "present": 181040,
+            "nonnull": 181040
+          },
+          "total_points": {
+            "present": 181040,
+            "nonnull": 181040
+          },
+          "minutes": {
+            "present": 181040,
+            "nonnull": 181040
+          },
+          "expected_goals": {
+            "present": 0,
+            "nonnull": 0
+          },
+          "expected_assists": {
+            "present": 0,
+            "nonnull": 0
+          }
+        }
+      },
+      "2021-22": {
+        "snapshots": 1511,
+        "first_claimed_at": "2021-06-22T12:36:00",
+        "last_claimed_at": "2022-07-05T12:48:00",
+        "player_snapshot_rows": 975944,
+        "manager_snapshot_rows": 0,
+        "unknown_entity_rows": 0,
+        "max_gap_hours": 12.483333333333333,
+        "nominal_deadlines_with_snapshot_within_48h": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38
+        ],
+        "fields": {
+          "code": {
+            "present": 975944,
+            "nonnull": 975944
+          },
+          "now_cost": {
+            "present": 975944,
+            "nonnull": 975944
+          },
+          "team": {
+            "present": 975944,
+            "nonnull": 975944
+          },
+          "element_type": {
+            "present": 975944,
+            "nonnull": 975944
+          },
+          "status": {
+            "present": 975944,
+            "nonnull": 975944
+          },
+          "news": {
+            "present": 975944,
+            "nonnull": 975944
+          },
+          "news_added": {
+            "present": 975944,
+            "nonnull": 589154
+          },
+          "chance_of_playing_next_round": {
+            "present": 975944,
+            "nonnull": 589154
+          },
+          "selected_by_percent": {
+            "present": 975944,
+            "nonnull": 975944
+          },
+          "total_points": {
+            "present": 975944,
+            "nonnull": 975944
+          },
+          "minutes": {
+            "present": 975944,
+            "nonnull": 975944
+          },
+          "expected_goals": {
+            "present": 0,
+            "nonnull": 0
+          },
+          "expected_assists": {
+            "present": 0,
+            "nonnull": 0
+          }
+        }
+      },
+      "2022-23": {
+        "snapshots": 1458,
+        "first_claimed_at": "2022-07-05T18:28:00",
+        "last_claimed_at": "2023-07-05T12:44:00",
+        "player_snapshot_rows": 999028,
+        "manager_snapshot_rows": 0,
+        "unknown_entity_rows": 0,
+        "max_gap_hours": 12.983333333333333,
+        "nominal_deadlines_with_snapshot_within_48h": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38
+        ],
+        "fields": {
+          "code": {
+            "present": 999028,
+            "nonnull": 999028
+          },
+          "now_cost": {
+            "present": 999028,
+            "nonnull": 999028
+          },
+          "team": {
+            "present": 999028,
+            "nonnull": 999028
+          },
+          "element_type": {
+            "present": 999028,
+            "nonnull": 999028
+          },
+          "status": {
+            "present": 999028,
+            "nonnull": 999028
+          },
+          "news": {
+            "present": 999028,
+            "nonnull": 999028
+          },
+          "news_added": {
+            "present": 999028,
+            "nonnull": 594364
+          },
+          "chance_of_playing_next_round": {
+            "present": 999028,
+            "nonnull": 594364
+          },
+          "selected_by_percent": {
+            "present": 999028,
+            "nonnull": 999028
+          },
+          "total_points": {
+            "present": 999028,
+            "nonnull": 999028
+          },
+          "minutes": {
+            "present": 999028,
+            "nonnull": 999028
+          },
+          "expected_goals": {
+            "present": 694540,
+            "nonnull": 694540
+          },
+          "expected_assists": {
+            "present": 694540,
+            "nonnull": 694540
+          }
+        }
+      },
+      "2023-24": {
+        "snapshots": 1510,
+        "first_claimed_at": "2023-07-05T18:26:00",
+        "last_claimed_at": "2024-07-17T06:27:00",
+        "player_snapshot_rows": 1165413,
+        "manager_snapshot_rows": 0,
+        "unknown_entity_rows": 0,
+        "max_gap_hours": 11.3,
+        "nominal_deadlines_with_snapshot_within_48h": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38
+        ],
+        "fields": {
+          "code": {
+            "present": 1165413,
+            "nonnull": 1165413
+          },
+          "now_cost": {
+            "present": 1165413,
+            "nonnull": 1165413
+          },
+          "team": {
+            "present": 1165413,
+            "nonnull": 1165413
+          },
+          "element_type": {
+            "present": 1165413,
+            "nonnull": 1165413
+          },
+          "status": {
+            "present": 1165413,
+            "nonnull": 1165413
+          },
+          "news": {
+            "present": 1165413,
+            "nonnull": 1165413
+          },
+          "news_added": {
+            "present": 1165413,
+            "nonnull": 736333
+          },
+          "chance_of_playing_next_round": {
+            "present": 1165413,
+            "nonnull": 736333
+          },
+          "selected_by_percent": {
+            "present": 1165413,
+            "nonnull": 1165413
+          },
+          "total_points": {
+            "present": 1165413,
+            "nonnull": 1165413
+          },
+          "minutes": {
+            "present": 1165413,
+            "nonnull": 1165413
+          },
+          "expected_goals": {
+            "present": 1165413,
+            "nonnull": 1165413
+          },
+          "expected_assists": {
+            "present": 1165413,
+            "nonnull": 1165413
+          }
+        }
+      },
+      "2024-25": {
+        "snapshots": 1471,
+        "first_claimed_at": "2024-07-17T18:26:00",
+        "last_claimed_at": "2025-07-20T18:35:00",
+        "player_snapshot_rows": 1051944,
+        "manager_snapshot_rows": 14240,
+        "unknown_entity_rows": 0,
+        "max_gap_hours": 13.166666666666666,
+        "nominal_deadlines_with_snapshot_within_48h": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38
+        ],
+        "fields": {
+          "code": {
+            "present": 1051944,
+            "nonnull": 1051944
+          },
+          "now_cost": {
+            "present": 1051944,
+            "nonnull": 1051944
+          },
+          "team": {
+            "present": 1051944,
+            "nonnull": 1051944
+          },
+          "element_type": {
+            "present": 1051944,
+            "nonnull": 1051944
+          },
+          "status": {
+            "present": 1051944,
+            "nonnull": 1051944
+          },
+          "news": {
+            "present": 1051944,
+            "nonnull": 1051944
+          },
+          "news_added": {
+            "present": 1051944,
+            "nonnull": 642542
+          },
+          "chance_of_playing_next_round": {
+            "present": 1051944,
+            "nonnull": 642663
+          },
+          "selected_by_percent": {
+            "present": 1051944,
+            "nonnull": 1051944
+          },
+          "total_points": {
+            "present": 1051944,
+            "nonnull": 1051944
+          },
+          "minutes": {
+            "present": 1051944,
+            "nonnull": 1051944
+          },
+          "expected_goals": {
+            "present": 1051944,
+            "nonnull": 1051944
+          },
+          "expected_assists": {
+            "present": 1051944,
+            "nonnull": 1051944
+          }
+        }
+      },
+      "2025-26": {
+        "snapshots": 1459,
+        "first_claimed_at": "2025-07-21T12:58:00",
+        "last_claimed_at": "2026-07-23T03:31:00",
+        "player_snapshot_rows": 1143248,
+        "manager_snapshot_rows": 0,
+        "unknown_entity_rows": 0,
+        "max_gap_hours": 13.5,
+        "nominal_deadlines_with_snapshot_within_48h": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38
+        ],
+        "fields": {
+          "code": {
+            "present": 1143248,
+            "nonnull": 1143248
+          },
+          "now_cost": {
+            "present": 1143248,
+            "nonnull": 1143248
+          },
+          "team": {
+            "present": 1143248,
+            "nonnull": 1143248
+          },
+          "element_type": {
+            "present": 1143248,
+            "nonnull": 1143248
+          },
+          "status": {
+            "present": 1143248,
+            "nonnull": 1143248
+          },
+          "news": {
+            "present": 1143248,
+            "nonnull": 1143248
+          },
+          "news_added": {
+            "present": 1143248,
+            "nonnull": 688475
+          },
+          "chance_of_playing_next_round": {
+            "present": 1143248,
+            "nonnull": 688475
+          },
+          "selected_by_percent": {
+            "present": 1143248,
+            "nonnull": 1143248
+          },
+          "total_points": {
+            "present": 1143248,
+            "nonnull": 1143248
+          },
+          "minutes": {
+            "present": 1143248,
+            "nonnull": 1143248
+          },
+          "expected_goals": {
+            "present": 1143248,
+            "nonnull": 1143248
+          },
+          "expected_assists": {
+            "present": 1143248,
+            "nonnull": 1143248
+          }
+        }
+      },
+      "2026-27": {
+        "snapshots": 171,
+        "first_claimed_at": "2026-07-23T14:22:00",
+        "last_claimed_at": "2026-09-05T20:12:00",
+        "player_snapshot_rows": 100857,
+        "manager_snapshot_rows": 0,
+        "unknown_entity_rows": 0,
+        "max_gap_hours": 13.316666666666666,
+        "nominal_deadlines_with_snapshot_within_48h": [
+          1,
+          2,
+          3
+        ],
+        "fields": {
+          "code": {
+            "present": 100857,
+            "nonnull": 100857
+          },
+          "now_cost": {
+            "present": 100857,
+            "nonnull": 100857
+          },
+          "team": {
+            "present": 100857,
+            "nonnull": 100857
+          },
+          "element_type": {
+            "present": 100857,
+            "nonnull": 100857
+          },
+          "status": {
+            "present": 100857,
+            "nonnull": 100857
+          },
+          "news": {
+            "present": 100857,
+            "nonnull": 100857
+          },
+          "news_added": {
+            "present": 100857,
+            "nonnull": 18409
+          },
+          "chance_of_playing_next_round": {
+            "present": 100857,
+            "nonnull": 18409
+          },
+          "selected_by_percent": {
+            "present": 100857,
+            "nonnull": 100857
+          },
+          "total_points": {
+            "present": 100857,
+            "nonnull": 100857
+          },
+          "minutes": {
+            "present": 100857,
+            "nonnull": 100857
+          },
+          "expected_goals": {
+            "present": 100857,
+            "nonnull": 100857
+          },
+          "expected_assists": {
+            "present": 100857,
+            "nonnull": 100857
+          }
+        }
+      }
+    },
+    "artifacts": {
+      "snapshot_audit.json": "2a70661338266b4d6e834fd56541368eb529fad55ec7d9e64d08818280449a7c",
+      "errors.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "nominal_deadline_candidates.json": "58dc58afef7aaea0dee8996a2141abc47dbf8c0a3734b3b837f261bf024521f4"
+    },
+    "clock_assumption": "UTC_for_nominal_coverage_only_source_clock_has_no_timezone",
+    "verified_predeadline_snapshots": 0,
+    "eligible_predeadline": false,
+    "complete_label_seasons_added": 0
+  },
+  "totals": {
+    "player_snapshot_rows": 5617474,
+    "manager_snapshot_rows": 14240,
+    "nominal_deadline_candidates": 199,
+    "nominal_max_hours_before": 6.45,
+    "nominal_median_hours_before": 4.333333333333333
+  },
+  "provenance_checks": {
+    "source": "Randdalf/fplcache",
+    "clock_evidence": {
+      "path": "cache/2024/8/16/1238.json.xz",
+      "source_claimed_at": "2024-08-16T12:38:00",
+      "commit_sha": "2ae22a16ee2280311de07b8b5ee3b8393377a178",
+      "git_author_and_committer_date": "2024-08-16T12:38:36Z",
+      "signature_verified": false,
+      "github_actions_query_date": "2024-08-16",
+      "github_actions_runs_returned": 0,
+      "interpretation": "consistent_UTC_claim_not_independent_publication_proof"
+    },
+    "additional_old_source": {
+      "page": "https://www.fplanalytics.com/history1314.html",
+      "discovered_data_url": "https://s3.eu-central-1.amazonaws.com/fpl.data/db/history201314.json",
+      "retrieval": "HTTP_403_after_five_attempts",
+      "data_acquired": false
+    }
+  },
+  "production_changed": false,
+  "label_dataset_unchanged": "1d111a458c9074fcd7ec2da516e82d9d1984600f6f057716112b92e855240df4"
+}

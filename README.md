@@ -160,6 +160,13 @@ incompletos, 15 filas adicionales con cero minutos/puntos y 78 fechas discrepant
 Son doce temporadas de etiquetas retrospectivas, sin disponibilidad predeadline
 acreditada; [G15](experiments/data_ground_truth/results-g15.json) no acredita
 un replay causal completo ni una mejora del modelo.
+G16 adquirió y auditó **7.837 snapshots bootstrap** (2021–2026), sin errores:
+5.617.474 filas jugador-snapshot y 14.240 de managers separadas. Bajo la hipótesis
+de reloj UTC, hay capturas dentro de 48 horas anteriores a los 38 deadlines de
+cada temporada 2021/22–2025/26. Precio, club, posición y estado están presentes
+en todas las filas de jugadores. Esto amplía estados históricos; no añade
+etiquetas completas ni certifica disponibilidad predeadline. El detalle y hashes
+están en [G16](experiments/data_ground_truth/results-g16.json).
 
 ## Empezar
 
