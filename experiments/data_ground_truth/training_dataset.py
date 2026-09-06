@@ -12,7 +12,7 @@ import pandas as pd
 
 from experiments.data_ground_truth.raw import digest
 
-VERSION = 'fpl-labels-v1'
+VERSION = 'fpl-labels-v2'
 COMPONENTS = ['goals_scored','assists','clean_sheets','goals_conceded','own_goals',
               'penalties_saved','penalties_missed','yellow_cards','red_cards','saves','bonus','bps']
 
@@ -122,7 +122,7 @@ def load_partition(package: Path, split: str) -> pd.DataFrame:
     return pd.concat(parts,ignore_index=True) if parts else pd.DataFrame()
 
 
-def build(recent_root: Path, old_root: Path, output: Path, identity_root: Path | None = None) -> Path:
+def build(recent_root: Path, old_root: Path, output: Path, identity_root: Path | None = None, season_2015_root: Path | None = None) -> Path:
     recent_manifest=json.loads((recent_root/'labels-manifest.json').read_text())
     identity_root=identity_root or old_root/'identity'
     old_manifest=json.loads((identity_root/'report.json').read_text())
@@ -145,6 +145,17 @@ def build(recent_root: Path, old_root: Path, output: Path, identity_root: Path |
     data=checked(identity_root/'labels.csv',old_manifest['labels_sha256'])
     inputs.append(dict(season='2014-15',sha256=old_manifest['labels_sha256'],role='reconciled_historical_fpl_labels'))
     frames.append(('2014-15',normalize(pd.read_csv(io.BytesIO(data)),'2014-15',True)))
+    if season_2015_root is not None:
+        history=json.loads((season_2015_root/'report.json').read_text())
+        if history['fixtures']!=380 or history['missing_fixture_ids'] or history['season_points_disagreements']:
+            raise ValueError('2015 closed season gate not satisfied')
+        data=checked(season_2015_root/'labels.csv',history['labels_sha256'])
+        normalized=normalize(pd.read_csv(io.BytesIO(data)),'2015-16',True)
+        if normalized.fixture.nunique()!=380 or set(normalized.gw)!=set(range(1,39)) or len(normalized)!=history['rows']:
+            raise ValueError('2015 labels contradict coverage report')
+        normalized['source']='mvbfontes_fpl_archive'
+        inputs.append(dict(season='2015-16',sha256=history['labels_sha256'],role='complete_historical_fpl_labels'))
+        frames.append(('2015-16',normalized))
     # No claim of unseen test data: 2025/26 has already been used in earlier research.
     partitions=[];payloads={}
     for season,frame in sorted(frames):
@@ -168,7 +179,8 @@ def build(recent_root: Path, old_root: Path, output: Path, identity_root: Path |
         quarantines=exclusions,partitions=partitions,rows=sum(p['rows'] for p in partitions),
         purpose='retrospective_label_training_not_predeadline_replay',
         evaluation_status='historical_previously_used_not_unseen',
-        missing_complete_seasons=['2015-16'],partial_seasons_excluded=['2015-16'],unknown_available_at=True,
+        missing_complete_seasons=[] if season_2015_root else ['2015-16'],
+        partial_seasons_excluded=[] if season_2015_root else ['2015-16'],unknown_available_at=True,
         excluded=['final_season_snapshots','prices','ownership','official_xp','pl_minutes_substitution'])
     manifest['dataset_id']=digest(json.dumps(manifest,sort_keys=True,separators=(',',':')).encode())
     target=output/manifest['dataset_id'];output.mkdir(parents=True,exist_ok=True)
@@ -190,7 +202,8 @@ def main():
     ap.add_argument('--recent-root',type=Path,required=True);ap.add_argument('--old-root',type=Path,required=True)
     ap.add_argument('--output',type=Path,required=True)
     ap.add_argument('--identity-root',type=Path)
-    args=ap.parse_args();path=build(args.recent_root,args.old_root,args.output,args.identity_root)
+    ap.add_argument('--season-2015-root',type=Path)
+    args=ap.parse_args();path=build(args.recent_root,args.old_root,args.output,args.identity_root,args.season_2015_root)
     manifest=verify(path)
     print(json.dumps(dict(path=str(path),dataset_id=manifest['dataset_id'],rows=manifest['rows'],
         partitions=[{k:p[k] for k in ['season','split','rows']} for p in manifest['partitions']]),indent=2))

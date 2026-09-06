@@ -1,0 +1,302 @@
+{
+  "version": "historical-data-g6",
+  "acquisition": {
+    "pins": {
+      "mvbfontes/premierleaguedatasets": "a4b374892858053bc02bd0c6e79e1b1a6590bc78"
+    },
+    "files": 724,
+    "bytes": 2795465,
+    "errors": []
+  },
+  "season_2015": {
+    "rows": 24741,
+    "players": 723,
+    "gameweeks": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38
+    ],
+    "fixtures": 380,
+    "source_fixture_count": 380,
+    "missing_fixture_ids": [],
+    "season_points_disagreements": 0,
+    "duplicate_player_fixture_keys": 0,
+    "double_gameweek_extra_rows": 750,
+    "temporal_status": "local_wall_clock_reconciled_publication_unknown",
+    "cross_season_identity_status": "official_code_per_player_archive",
+    "component_total_disagreements": {
+      "mins": 0,
+      "goals": 0,
+      "assists": 0,
+      "cs": 0,
+      "ga": 0,
+      "og": 0,
+      "pens_svd": 0,
+      "pens_msd": 0,
+      "yel": 0,
+      "red": 0,
+      "saves": 0,
+      "bonus": 0,
+      "bps": 0
+    },
+    "official_identity_rows": 24741,
+    "coverage_status": "all_380_fixtures_38_gameweeks",
+    "version": "fpl-2015-labels-v1",
+    "raw_manifest_sha256": "adac2f3a9bc6d1e660743167b6ad7f23b527284453e871ed730e8ff552436bcd",
+    "fixture_source_sha256": "7b1c5b8cc70e551413b981a58988fee9205fc7987ec2ba5745c93d8aa69d3a66",
+    "partial_source_sha256": "9cbb4a672a204a3a28161627594dcc7842359e008534ef6fbeefecf4d3d74958",
+    "verified_partial_rows": 17373,
+    "partial_disagreements": {
+      "mins": 0,
+      "gw_pts": 0,
+      "gw": 0,
+      "official_player_code": 0
+    },
+    "additional_rows_vs_partial": 7368,
+    "additional_players_vs_partial": 103,
+    "additional_fixtures_vs_partial": 88,
+    "labels_sha256": "1e22a87c1600fe326133d38dd1ca3e3c8d9a280b72e6694559a510ee89e0c871"
+  },
+  "training_dataset": {
+    "schema_version": 1,
+    "version": "fpl-labels-v2",
+    "implementation_sha256": "87b72063aed6c9405e95149dde09663a9222710aa0537ef2ddc713d1a0111ca0",
+    "pandas_version": "2.3.2",
+    "inputs": [
+      {
+        "season": "2014-15",
+        "sha256": "01c7ad1636d7f8ce39a7152217a0d73fa5f7f990fe22a03d9a3720b3fb38ca04",
+        "role": "reconciled_historical_fpl_labels"
+      },
+      {
+        "season": "2015-16",
+        "sha256": "1e22a87c1600fe326133d38dd1ca3e3c8d9a280b72e6694559a510ee89e0c871",
+        "role": "complete_historical_fpl_labels"
+      },
+      {
+        "season": "2016-17",
+        "sha256": "9ed2df5bcbb385e0e01ef55fab72bccb71d57c30e96ad7ca5f5dad32cc4b599f",
+        "role": "official_fpl_observed_labels"
+      },
+      {
+        "season": "2017-18",
+        "sha256": "60cee6c8dfb47eb833847a9b71c8cd3603e9cdea83901f7ee4abe3549a6bc690",
+        "role": "official_fpl_observed_labels"
+      },
+      {
+        "season": "2018-19",
+        "sha256": "3ef7acfdf91d23efab056639ea2f145cf6ad4cae66d61780e1154d264031fba7",
+        "role": "official_fpl_observed_labels"
+      },
+      {
+        "season": "2019-20",
+        "sha256": "8ccb52155294aff11192b71d86fd9e52369658014ff5b1da2f507a10b3bb7489",
+        "role": "official_fpl_observed_labels"
+      },
+      {
+        "season": "2019-20",
+        "sha256": "81851c3c55373c443aa6b7062be85d5710d61ab784239e9810655b343728e0ed",
+        "role": "finished_fixture_postponement_evidence"
+      },
+      {
+        "season": "2020-21",
+        "sha256": "38aad14d031e7f5b720b2aab68481f2e2f7c4d375b08660cfe620f496f25c322",
+        "role": "official_fpl_observed_labels"
+      },
+      {
+        "season": "2021-22",
+        "sha256": "7fcc5cd767c4a896481a7b5282156d0babcc8aa8a5e43c4b473e043df5280472",
+        "role": "official_fpl_observed_labels"
+      },
+      {
+        "season": "2022-23",
+        "sha256": "9df7eda77107e98e544de7bdf76a14216eaca5feff85dcaf686aea98e1067457",
+        "role": "official_fpl_observed_labels"
+      },
+      {
+        "season": "2023-24",
+        "sha256": "4661bc195d69f50713dd8837cfe765a12cf087719ebc6db0f89688d12ebc813e",
+        "role": "official_fpl_observed_labels"
+      },
+      {
+        "season": "2024-25",
+        "sha256": "547e148c2db8c27bb0165047d8f72c2052377f843752c4f56e15dd9599ffe204",
+        "role": "official_fpl_observed_labels"
+      },
+      {
+        "season": "2025-26",
+        "sha256": "f942b5271d0db12879d9c07b55c4a42ef73be34c7e84514af90a62fd33e46df7",
+        "role": "official_fpl_observed_labels"
+      }
+    ],
+    "quarantines": [
+      {
+        "season": "2019-20",
+        "file": "2019-20-quarantine.csv.gz",
+        "rows": 59,
+        "sha256": "d3ee707d09e77f6aa8e9c4c37229e1db8fcc750c4206fbab84bda00e857a5114",
+        "reason": "superseded_zero_postponement_placeholder"
+      }
+    ],
+    "partitions": [
+      {
+        "season": "2014-15",
+        "split": "train",
+        "file": "2014-15.csv.gz",
+        "rows": 24876,
+        "sha256": "3ac5a1d61dd429e2701a2f4826bc9dd51a627c0d0b584148d5bc0562254e489b",
+        "official_identity_rows": 24012,
+        "season_scoped_identity_rows": 864
+      },
+      {
+        "season": "2015-16",
+        "split": "train",
+        "file": "2015-16.csv.gz",
+        "rows": 24741,
+        "sha256": "b5d8fc377f14fcd643b502908c546f9e7d1a9db01cf18eae0fa9ea5493d6a2e0",
+        "official_identity_rows": 24741,
+        "season_scoped_identity_rows": 0
+      },
+      {
+        "season": "2016-17",
+        "split": "train",
+        "file": "2016-17.csv.gz",
+        "rows": 23679,
+        "sha256": "ac9eaa6f9d7cf93bf154fa313c480bdd3c5ae221075ed09e09ef4b54dc6d6fdb",
+        "official_identity_rows": 23679,
+        "season_scoped_identity_rows": 0
+      },
+      {
+        "season": "2017-18",
+        "split": "train",
+        "file": "2017-18.csv.gz",
+        "rows": 22467,
+        "sha256": "6000af5de8ae72ab55cc537cc30a5cbbae4b8b686f38646564f5c48f812ddd06",
+        "official_identity_rows": 22467,
+        "season_scoped_identity_rows": 0
+      },
+      {
+        "season": "2018-19",
+        "split": "train",
+        "file": "2018-19.csv.gz",
+        "rows": 21790,
+        "sha256": "c2f8913538d605b266ee6af722879b97b9416573808e2e4fd9496ad5edc67af0",
+        "official_identity_rows": 21790,
+        "season_scoped_identity_rows": 0
+      },
+      {
+        "season": "2019-20",
+        "split": "train",
+        "file": "2019-20.csv.gz",
+        "rows": 22501,
+        "sha256": "486b4b829fccb8a816d392b8377d231c1875f7d616f699c447caccd18b1249e8",
+        "official_identity_rows": 22501,
+        "season_scoped_identity_rows": 0
+      },
+      {
+        "season": "2020-21",
+        "split": "train",
+        "file": "2020-21.csv.gz",
+        "rows": 24365,
+        "sha256": "16d387f2ed57131a5f7158e1c601b993da6301283cef354f748bdb5dbeca77a1",
+        "official_identity_rows": 24365,
+        "season_scoped_identity_rows": 0
+      },
+      {
+        "season": "2021-22",
+        "split": "train",
+        "file": "2021-22.csv.gz",
+        "rows": 25447,
+        "sha256": "f506997733cfb446aa258527fb66c8956e124fcdda622ca8f4371604b62d5bd8",
+        "official_identity_rows": 25447,
+        "season_scoped_identity_rows": 0
+      },
+      {
+        "season": "2022-23",
+        "split": "train",
+        "file": "2022-23.csv.gz",
+        "rows": 26505,
+        "sha256": "b1439ae1f6956f2c8c081533b54fe1212b51b7b05793fa4797a5423d689cedee",
+        "official_identity_rows": 26505,
+        "season_scoped_identity_rows": 0
+      },
+      {
+        "season": "2023-24",
+        "split": "train",
+        "file": "2023-24.csv.gz",
+        "rows": 29725,
+        "sha256": "b714b0ce7d817f53e89d9f9453f6429ad85e3df9e671e47ad3e6b4c6142add80",
+        "official_identity_rows": 29725,
+        "season_scoped_identity_rows": 0
+      },
+      {
+        "season": "2024-25",
+        "split": "validation",
+        "file": "2024-25.csv.gz",
+        "rows": 27605,
+        "sha256": "2d58e83acf42425021928742ac0fcbcc9198056aac6b5efdf67e9302f966f6ca",
+        "official_identity_rows": 27605,
+        "season_scoped_identity_rows": 0
+      },
+      {
+        "season": "2025-26",
+        "split": "evaluation",
+        "file": "2025-26.csv.gz",
+        "rows": 29747,
+        "sha256": "0ad57885ca389f80002e04d1ef6c6835931485adc1c3f668bfb0589294844655",
+        "official_identity_rows": 29747,
+        "season_scoped_identity_rows": 0
+      }
+    ],
+    "rows": 303448,
+    "purpose": "retrospective_label_training_not_predeadline_replay",
+    "evaluation_status": "historical_previously_used_not_unseen",
+    "missing_complete_seasons": [],
+    "partial_seasons_excluded": [],
+    "unknown_available_at": true,
+    "excluded": [
+      "final_season_snapshots",
+      "prices",
+      "ownership",
+      "official_xp",
+      "pl_minutes_substitution"
+    ],
+    "dataset_id": "77a877c3c79faa1d7e8090c55ca6d95edf38e19e936e7259191f2f6b08cd8366"
+  },
+  "production_changed": false
+}

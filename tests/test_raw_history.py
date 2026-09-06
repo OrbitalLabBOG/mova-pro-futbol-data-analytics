@@ -255,6 +255,18 @@ def test_training_package_reproducibility_splits_and_integrity(tmp_path):
     assert 'final_season_value' not in train
     assert train.available_at.isna().all()
     assert not train.eligible_predeadline.any()
+    history=tmp_path/'2015';history.mkdir()
+    data=pd.DataFrame([dict(id=1,matchId=i+1,gw=i//10+1,mins=0,gw_pts=0,
+        official_player_code=123,match_local_time='2015-08-08 15:00:00') for i in range(380)]).to_csv(index=False).encode()
+    (history/'labels.csv').write_bytes(data)
+    quality=dict(fixtures=380,rows=380,missing_fixture_ids=[],season_points_disagreements=0,labels_sha256=raw.digest(data))
+    (history/'report.json').write_text(json.dumps(quality))
+    expanded=build(recent,old,out,season_2015_root=history)
+    assert '2015-16' in set(load_partition(expanded,'train').season)
+    assert verify(expanded)['missing_complete_seasons']==[]
+    (history/'report.json').write_text(json.dumps(quality|{'rows':381}))
+    with pytest.raises(ValueError,match='contradict coverage report'):
+        build(recent,old,out,season_2015_root=history)
     artifact=package/'2025-26.csv.gz';original=artifact.read_bytes();artifact.write_bytes(original+b'changed')
     with pytest.raises(ValueError,match='hash mismatch'):
         load_partition(package,'train')
@@ -296,3 +308,37 @@ def test_partial_snapshot_reconciliation_preserves_season_and_missing_fixtures()
     assert labels.season.tolist()==['2015-16']
     assert labels.match_team_code.tolist()==[31]
     assert report['missing_fixture_ids']==[101]
+
+
+def test_complete_2015_requires_all_fixtures_and_reconciled_components():
+    from datetime import datetime, timedelta
+    from experiments.data_ground_truth.historical_2014 import OPPONENT_CODES
+    from experiments.data_ground_truth.historical_2015 import reconcile
+    codes=OPPONENT_CODES.copy()
+    for code in ['BUR','HUL','QPR']:
+        del codes[code]
+    codes.update(BOU=91,NOR=45,WAT=57)
+    fixtures=[];players=[];fixture_id=0
+    for home,home_id in codes.items():
+        history=[]
+        for away,away_id in codes.items():
+            if home==away:
+                continue
+            gw=fixture_id//10+1
+            kickoff=datetime(2015,8,8,15)+timedelta(weeks=gw-1,hours=fixture_id%10)
+            fixture_id+=1
+            fixtures.append(dict(matchId=fixture_id,kickoff=kickoff.isoformat(),home_team_id=home_id,away_team_id=away_id))
+            history.append([kickoff.strftime('%d %b %H:%M'),gw,f'{away}(H) 0-0',90]+[0]*15+[2])
+        player=dict(id=home_id,code=home_id+1000,web_name=home,fixture_history={'all':history},total_points=38,minutes=1710)
+        for column in ['goals_scored','assists','clean_sheets','goals_conceded','own_goals','penalties_saved','penalties_missed','yellow_cards','red_cards','saves','bonus','bps']:
+            player[column]=0
+        players.append(player)
+    frame,report=reconcile(players,pd.DataFrame(fixtures))
+    assert len(frame)==380
+    assert not any(report['component_total_disagreements'].values())
+    assert report['missing_fixture_ids']==[]
+    with pytest.raises(ValueError,match='unresolved fixtures'):
+        reconcile(players,pd.DataFrame(fixtures).iloc[:-1])
+    players[0]['minutes']+=1
+    with pytest.raises(ValueError,match='component total disagreement'):
+        reconcile(players,pd.DataFrame(fixtures))

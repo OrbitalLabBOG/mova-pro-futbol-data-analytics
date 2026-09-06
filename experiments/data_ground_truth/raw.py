@@ -16,7 +16,8 @@ from mova_fpl.data.sources import _get
 
 REPOS = ('vaastav/Fantasy-Premier-League', 'olbauday/FPL-Core-Insights',
          'imadeddine-belkat/Premier-League-Stats', 'TopMarxFPL/fpl-mirror', 'durtal/fantasysocceR',
-         'prathmesh/Fantasy-Premier-League-Points-Predictor', 'clwatkins/fantasy_premier_league')
+         'prathmesh/Fantasy-Premier-League-Points-Predictor', 'clwatkins/fantasy_premier_league',
+         'mvbfontes/premierleaguedatasets')
 
 
 def digest(data: bytes) -> str:
@@ -69,6 +70,8 @@ def capture(root: Path, repo: str, revision: str, path: str) -> dict:
 def select(repo: str, path: str) -> bool:
     if path in ('README.md', 'LICENSE', 'DATA_INTEGRATION_REVIEW.md'):
         return True
+    if repo == REPOS[7]:
+        return bool(re.fullmatch(r'PlayersInfo/[0-9]+\.json', path))
     if repo == REPOS[5]:
         return path == 'Data/dec15_players.csv'
     if repo == REPOS[6]:

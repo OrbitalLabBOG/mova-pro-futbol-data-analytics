@@ -314,3 +314,49 @@ La siguiente brecha es recuperar los 88 partidos ausentes de 2015/16, completar
 identidades y reconstruir evidencia de disponibilidad anterior al deadline. Los
 resultados observados por sí solos no acreditan noticias, lesiones, precios,
 calendario conocido, reglas de chips ni acciones legales en cada momento histórico.
+
+
+## Gate G6: 2015/16 completa y doce temporadas consecutivas
+
+La búsqueda ampliada encontró [mvbfontes/premierleaguedatasets](https://github.com/mvbfontes/premierleaguedatasets),
+un archivo de respuestas de la API FPL por ID de jugador. `pins-g6.json` fija el
+commit; se adquirieron 724 archivos / 2.795.465 bytes sin errores. Cada JSON debe
+coincidir con el ID de su nombre de archivo, y los códigos oficiales deben ser únicos.
+No se ejecuta código del repositorio fuente.
+
+[results-g6.json](results-g6.json) verifica **24.741 observaciones, 723 jugadores,
+38 jornadas y 380/380 partidos**. Incluye 750 observaciones adicionales de dobles
+jornadas. Los puntos y trece componentes (minutos, goles, asistencias, porterías a
+cero, goles concedidos, autogoles, penaltis, tarjetas, saves, bonus y BPS) suman
+exactamente sus totales de temporada para cada jugador. No hay claves duplicadas
+ni identidad oficial ausente.
+
+Las 17.373 observaciones del snapshot parcial G5 coinciden en fixture, jugador,
+jornada, minutos, puntos y código. G6 agrega los 88 partidos restantes, 7.368 filas
+y 103 jugadores. El snapshot parcial se conserva como evidencia de reconciliación;
+no se concatena al completo. Queda cerrado el hueco de resultados de 2015/16.
+
+```bash
+python -m experiments.data_ground_truth.raw \
+  --root "$FPL_2015_ROOT" --pins experiments/data_ground_truth/pins-g6.json
+python -m experiments.data_ground_truth.historical_2015 \
+  --root "$FPL_2015_ROOT" --archive-root "$RAW_HISTORY_ROOT" \
+  --snapshot-root "$SNAPSHOT_ROOT"
+python -m experiments.data_ground_truth.training_dataset \
+  --recent-root "$RAW_HISTORY_ROOT" --old-root "$FPL_2014_ROOT" \
+  --identity-root "$SNAPSHOT_ROOT/identity" --season-2015-root "$FPL_2015_ROOT" \
+  --output "$DATASET_ROOT"
+```
+
+El paquete `fpl-labels-v2` contiene **303.448 etiquetas** de doce temporadas
+consecutivas (2014/15–2025/26): 246.096 para entrenamiento, 27.605 de validación y
+29.747 de evaluación histórica ya utilizada. Mantiene las cuarentenas anteriores,
+los IDs por temporada y la disponibilidad predeadline desconocida. El loader
+contrasta la cobertura declarada de 2015/16 con las filas reales antes de incluirla.
+Los paquetes G5 existentes permanecen verificables y no se sobrescriben.
+
+Todavía quedan identidades 2014/15 sin resolver y fuentes predeadline por reconstruir.
+La búsqueda anterior a 2014/15 sigue abierta. El paper primario
+[The Wisdom of Smaller, Smarter Crowds](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/smart_crowds.pdf)
+describe observaciones FPL 2012/13, pero el PDF no proporciona una descarga del
+archivo de jugadores; esa referencia no se cuenta como cobertura recuperada.
