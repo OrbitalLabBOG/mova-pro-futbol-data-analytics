@@ -360,3 +360,57 @@ La búsqueda anterior a 2014/15 sigue abierta. El paper primario
 [The Wisdom of Smaller, Smarter Crowds](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/smart_crowds.pdf)
 describe observaciones FPL 2012/13, pero el PDF no proporciona una descarga del
 archivo de jugadores; esa referencia no se cuenta como cobertura recuperada.
+
+
+## Gate G7: evidencia de identidad y códigos históricos
+
+[results-g7.json](results-g7.json) documenta el cruce con los registros de plantillas
+ya archivados. Para enlazar PL se exige nombre completo normalizado y club, candidato
+único y ausencia de contradicción con códigos existentes. Se admite la transliteración
+explícita Đ/đ → D/d o Dj/dj, sin distancia de edición. El campo `playerId` de squad se
+contrasta contra `official_player_code` de observaciones; no se confunde con el
+`playerId` nativo del archivo de partidos. Hay **226.031 filas conocidas corroboradas,
+240 códigos recuperados y cero contradicciones** en ese cruce.
+
+Quedan 1.770 filas PL sin código; 179.636 observaciones tienen identidad y minutos
+dentro de rango (197 más que G4). Los minutos ausentes siguen ausentes y los valores
+fuera de rango no se corrigen. Estas fuentes no constituyen evidencia estadística
+independiente: son archivos complementarios con semántica explícita.
+
+Para resolver FPL 2014/15 se exige un único código compatible con **todas las
+apariciones con minutos**, coincidiendo fixture, club y nombre. Cada candidato
+además debe estar corroborado por el registro de nombre completo/club o por otro
+snapshot FPL con el mismo nombre, club y totales de minutos/puntos de 2014/15.
+Un candidato ausente en cualquiera de las apariciones, ambiguo, o sin corroboración
+no se asigna. No se relaja ni sobrescribe el procedimiento G4; G7 conserva su propia
+evidencia y añade fuentes. La igualdad de minutos PL/FPL no es requisito de identidad,
+y las diferencias observadas no se sobrescriben.
+
+Se corroboran 434 identidades existentes y se añaden 13 jugadores / 190 filas.
+El resultado alcanza **665 jugadores, 24.202 filas y las 10.428/10.428 apariciones
+con minutos**. Quedan 46 jugadores sin código, 674 filas, todos sin apariciones.
+Se mantienen IDs FPL acotados por temporada para esas filas.
+
+También se encontró un cambio de código de Isaiah Brown: 81132 en la API archivada
+2014/15 y 112516 en 2015/16. La equivalencia requiere nombres completos coincidentes
+en ambos archivos FPL, mismo club, totales históricos y el código nuevo en el fixture
+realizado. Se conserva `source_official_player_code=81132` y el código reconciliado
+112516. No se permite actualizar una identidad conocida solo por apellido/club:
+Luke y Donervon Daniels demuestran ese fallo. Tampoco basta el nombre completo:
+los Adam Smith de distintos clubes no se fusionan.
+
+```bash
+python -m experiments.data_ground_truth.identity_registry \
+  --archive-root "$RAW_HISTORY_ROOT" --snapshot-root "$SNAPSHOT_ROOT" \
+  --season-2015-root "$FPL_2015_ROOT" --output "$IDENTITY_REGISTRY_ROOT"
+python -m experiments.data_ground_truth.training_dataset \
+  --recent-root "$RAW_HISTORY_ROOT" --old-root "$FPL_2014_ROOT" \
+  --identity-root "$IDENTITY_REGISTRY_ROOT/identity" \
+  --season-2015-root "$FPL_2015_ROOT" --output "$DATASET_ROOT"
+```
+
+El paquete `fpl-labels-v3` conserva las 303.448 etiquetas y las mismas particiones,
+con identidad actualizada y código original explícito. G5/G6 y el histórico canónico
+permanecen intactos. Estos enlaces retrospectivos no acreditan disponibilidad
+predeadline. Queda por ampliar la reconciliación de códigos PL entre temporadas,
+las identidades sin apariciones y las fuentes anteriores a 2014/15.
