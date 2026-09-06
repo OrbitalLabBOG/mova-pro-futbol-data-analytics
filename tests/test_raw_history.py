@@ -846,3 +846,23 @@ def test_bootstrap_report_retains_corrupt_snapshot_in_coverage_denominator(tmp_p
     assert report['seasons']['2024-25']['nominal_deadlines_with_snapshot_within_48h']==[1]
     assert json.loads((out/'errors.json').read_text())[0]['sha256']==corrupt_sha
     assert all(raw.digest((out/name).read_bytes())==sha for name,sha in report['artifacts'].items())
+
+
+def test_bootstrap_state_units_unknown_flags_and_identity_conflicts():
+    from experiments.data_ground_truth.bootstrap_state import normalize
+    e=dict(id=1,code=20,element_type=2,team=3,now_cost=45,status='a',selected_by_percent='12.3',
+           chance_of_playing_next_round=None)
+    row=normalize(e,{3:99},{1:20})
+    assert row['price_tenths_gbp']==45 and row['price_gbp']=='4.5'
+    assert row['ownership_percent']=='12.3' and row['snapshot_team_code']==99
+    assert row['can_select'] is None and not row['can_select_present']
+    assert row['chance_of_playing_next_round'] is None and row['chance_of_playing_next_round_present']
+    explicit=normalize(dict(e,can_select=False,can_transact=True),{3:99},{1:20})
+    assert explicit['can_select'] is False and explicit['can_select_present']
+    assert not explicit['eligible_training'] and not explicit['eligible_predeadline']
+    for bad in [dict(e,now_cost=True),dict(e,now_cost=4.5),dict(e,selected_by_percent='NaN'),
+                dict(e,selected_by_percent='101'),dict(e,can_select='false'),dict(e,team=4)]:
+        with pytest.raises(ValueError):normalize(bad,{3:99},{1:20})
+    with pytest.raises(ValueError,match='code conflict'):normalize(e,{3:99},{1:21})
+    assert normalize(e,{3:99},None)['reference_identity_status']=='reference_season_unavailable'
+    assert normalize(dict(e,element_type=5),{3:99},{1:21})['reference_identity_status']=='manager_slot_not_player_identity'

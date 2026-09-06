@@ -923,3 +923,55 @@ establecer el contrato temporal de admisión para los candidatos nominales,
 incluyendo revisiones de calendario y las limitaciones de procedencia. El GT v5
 sigue vigente; G16 no modifica sus filas ni el runtime. Los historiales anteriores
 a 2014/15 y el universo elegible pendiente siguen dentro del alcance de investigación.
+
+## Gate G17: contrato de estados e identidad de los candidatos nominales
+
+[results-g17.json](results-g17.json) valida y normaliza los **199 snapshots
+seleccionados por G16**, no todo el archivo de 7.837 capturas. Se comprueban hashes,
+calendario del snapshot, IDs, código de jugador, club presente en el mismo
+snapshot, posición, precio entero en décimas de GBP y porcentajes finitos en
+0–100. Los booleanos opcionales rechazan strings y conservan por separado presencia
+y valor nulo. No se convierten noticias ausentes ni probabilidades nulas en
+certeza de disponibilidad. El estado `a` no equivale automáticamente a elegibilidad.
+
+Los artefactos contienen **143.718 filas de jugadores** y **320 de managers** en
+archivos separados (`player_states.csv.gz` y `manager_states.csv.gz`). Las 141.851
+filas de jugadores de temporadas cerradas admitidas coinciden por elemento/código
+con GT v5. Las 1.867 de 2026/27 llevan scope abierto y referencia no disponible;
+no se validan contra una temporada cerrada de otro año. Los managers conservan
+`source_element_code`, sin atribuirles un código de identidad de jugador.
+
+Dos filas se conservan en `rejected.json` por conflicto de código en GW1 2022/23:
+
+| Elemento | Nombre observado | Código del snapshot | Código GT final |
+| --- | --- | ---: | ---: |
+| 546 | Luke Harris | 536122 | 515024 |
+| 558 | Hugo Bueno | 530332 | 490721 |
+
+No se reemplazan códigos por coincidencia de nombre. La cuarentena conserva
+ambos códigos, deadline y hash del snapshot; los bytes originales permanecen
+archivados. Esto describe una discrepancia entre fuentes, no prueba que el estado
+histórico original fuera inválido. Queda pendiente corroborar su continuidad.
+
+`can_select`, `can_transact` y `removed` faltan en todos los candidatos de
+2020/21–2023/24 y tienen presencia parcial en 2024/25. `has_temporary_code` aparece
+aún más tarde dentro de esa temporada. En total, **94.980 filas de jugadores**
+carecen de valor conocido de `can_select`; no se les asigna true ni false.
+La presencia en el roster publicado, selección, posibilidad de transacción y
+estado de lesión son hechos distintos. El paquete conserva sus flags originales
+para investigar el universo elegible, sin reconstruirlo por una regla inventada.
+
+```bash
+python -m experiments.data_ground_truth.bootstrap_state \
+  --root "$BOOTSTRAP_RAW_ROOT" --audit-root "$BOOTSTRAP_AUDIT_ROOT" \
+  --package "$LABELS_V5_PACKAGE" --out "$BOOTSTRAP_STATE_ROOT"
+```
+
+El reporte registra hashes del manifiesto raw, candidatos, GT de referencia,
+implementación y artefactos. Cada fila conserva hash de snapshot, temporada,
+jornada, deadline y fecha declarada. `available_at` permanece desconocido;
+`eligible_predeadline` y `eligible_training` permanecen false. No se convierte
+este staging en un benchmark causal ni se modifica el GT v5 o producción.
+Los siguientes pasos son corroborar las dos transiciones de código y definir
+admisión temporal explícita, conservando la distinción entre evidencia de fuente
+y disponibilidad verificada. Los históricos antiguos incompletos siguen pendientes.

@@ -167,6 +167,11 @@ cada temporada 2021/22–2025/26. Precio, club, posición y estado están presen
 en todas las filas de jugadores. Esto amplía estados históricos; no añade
 etiquetas completas ni certifica disponibilidad predeadline. El detalle y hashes
 están en [G16](experiments/data_ground_truth/results-g16.json).
+G17 normaliza los 199 candidatos: 143.718 estados de jugadores y 320 de managers
+separados. Las identidades admitidas de temporadas cerradas coinciden con v5;
+dos cambios de código quedan en cuarentena. Se conservan 94.980 valores
+desconocidos de selección y se mantienen deshabilitados entrenamiento y admisión
+predeadline. [Resultados G17](experiments/data_ground_truth/results-g17.json).
 
 ## Empezar
 
