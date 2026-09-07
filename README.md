@@ -19,58 +19,16 @@ El cockpit read-only comparte un único contrato entre CLI y API. Su dashboard e
 sólo expone tres indicadores humanos; diagnóstico, métricas y JSON permanecen en loopback.
 Supabase sólo refleja seguimiento PM y nunca recibe estado operativo.
 
-G108: recuperadas 185 versiones históricas de EPL Fantasy Geek (39,22 MB
-con contexto). Se decodificaron 118.634 estados de jugador en 183 versiones;
-precios y acumulados conservados sin asignar disponibilidad predeadline. G109
-contrasta su contexto de clubes con 2014/15 y 2015/16: 118.549 pares ID/código
-coinciden con GT y 85 discrepancias permanecen identificadas. G110 acredita
-publicación externa para 94 snapshots (62.398 estados), sin asignar deadlines
-ni habilitar entrenamiento. G111 añade cuatro testigos posteriores verificados
-y eleva la cobertura de publicación a 98 snapshots y 65.163 estados.
-
-G107: dos CSV de un taller recuperados: uno tiene estructura inválida; el otro,
-567 perfiles acumulados sin ID, jornada ni fecha de captura. Comparación por
-nombre preservada como candidata; no se añaden etiquetas al GT.
-
-G106: archivo Footieviz y versiones históricas preservados: 17 capturas,
-15 contenidos únicos. Sus 99 filas de 2013/14 coinciden con el archivo existente;
-las bases SQLite están vacías. No añade etiquetas ni temporadas.
-
-G105: seis perfiles con totales inconsistentes se contrastaron con sus capturas
-vecinas: todas concuerdan antes y después. Se conserva la discrepancia de un
-punto, sin corregir etiquetas; reproducción idéntica desde el archivo restaurado.
-
-G104: corte activo restaurado y verificado: 43.741 archivos, 23,56 GB de
-contenidos únicos, con GT v8 explícito. Las auditorías recientes se reprodujeron
-desde la copia restaurada; no equivale a un backup offsite.
-
-G103: seguimiento de 1.446 snapshots muestra que las tres filas candidatas 0/0
-dejan de aparecer cuando los perfiles muestran otro club. Se conservan las trazas
-y no se promueven como etiquetas finales faltantes.
-
-G102: 173 de las 177 variantes antes rechazadas se enlazan sin inventar
-marcadores. Se detectan 16.928 ceros sin marcador que corresponden a minutos
-positivos en el GT final; quedan excluidos como etiquetas de no participación.
-
-G101: de 253 variantes de historial, 62 se reconcilian con fixtures y totales.
-La comparación con GT v8 conserva 599 discrepancias de estado y dos claves
-candidatas ausentes (ambas 0/0); no se incorporan automáticamente al GT.
-
-G100: colección cruda de 2.579 snapshots adquirida (17,06 GB), con hashes
-verificados. Auditoría distingue 2.572 estructuras válidas, dos vacíos y cinco
-JSON inválidos; no implica nuevas etiquetas ni disponibilidad predeadline.
-
-G99: GT experimental v8 incorpora las identidades verificadas de los 24 jugadores
-pendientes de 2014/15 (421 filas). Las 24.876 filas de esa temporada quedan
-enlazadas, conservando todas las etiquetas. Paquete reproducido; producción intacta.
-
-G97: la auditoría de procedencia encuentra pronósticos, pero ningún resultado en
-12 campos observados de los 408 registros incompletos de GW38 2013/14. No se
-imputan ceros ni aumenta la cobertura; ver el [registro de datos](experiments/data_ground_truth/README.md).
+La adquisición histórica queda congelada en el **cierre G112**. El dataset oficial
+interno de investigación es **`fpl-labels-v8`**, con **303.126 filas jugador–partido,
+12 temporadas y 322 filas de managers separadas**. El canónico productivo mantiene
+253.890 filas. Ser oficial para investigación no acredita disponibilidad predeadline
+ni promueve un modelo. Empezar por el [contrato del dataset](experiments/data_ground_truth/official-dataset.json)
+y la [guía de cierre, tamaños y límites](experiments/data_ground_truth/README.md#cierre-del-gate-de-datos-g112).
 
 ## Versiones y última comprobación
 
-Verificado el **5 de septiembre de 2026, 17:13 Colombia**: doctor FPL con
+Verificado el **6 de septiembre de 2026, 19:35 Colombia**: doctor FPL con
 **24 PASS, 0 WARN, 0 FAIL**; cockpit saludable, sin incidentes críticos ni
 violaciones del workflow. Continúan ocho incidentes abiertos, GW4 preliminar,
 A0/shadow y preparación autónoma pendiente. El corte detallado anterior se
@@ -79,7 +37,7 @@ conserva abajo con su fecha; no representa un monitor en vivo.
 | Componente | Versión / revisión | Alcance |
 | --- | --- | --- |
 | Motor FPL desplegado | v0.7.0 · `dea98e2` | Predictores 1.1.0; `season_value` 1.0.0 como challenger shadow |
-| Código integrado en GitHub al corte | `19e066b` · PR #40–43 fusionadas | Motor, acta, benchmark y tracking |
+| Corte de datos en GitHub | `data-g112-v1.0.0` | Dataset oficial interno, archivo restaurado, cifras e inventario |
 | MLflow desplegado | `mlops-v1.0.0` · `19e066b` | Servicio independiente con MLflow 3.16.0 |
 
 Los commits posteriores al motor añaden documentación, benchmark y el servicio
@@ -160,7 +118,7 @@ de modelos por hash y exportación revisable, sin promover modelos al runtime.
 
 La capa experimental conserva los datos crudos fuera de Git, con manifiestos,
 SHA-256, fuentes fijadas por commit y auditorías reproducibles. El
-[registro de gates G1–G111](experiments/data_ground_truth/README.md) contiene
+[registro de gates G1–G112](experiments/data_ground_truth/README.md) contiene
 adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 
 | Capa | Cobertura verificada | Límite pendiente |
@@ -215,7 +173,7 @@ adquisiciones, conciliaciones, cuarentenas y comandos. El estado vigente es:
 | Archivo Azure, G84 | 2.524 snapshots / 3,12 GB adquiridos y reproducidos; cobertura nominal 37/38 GW en 2020/21 y 38/38 en 2021/22 | 1.620.223 observaciones de estado; relojes y publicación separados; sin nuevas etiquetas jugador–partido ni admisión temporal |
 | Enlace Azure–GT, G85 | 52.639/52.640 observaciones jugador–ventana enlazan por ID estacional y código oficial; un conflicto en cuarentena | 35 apariciones positivas sin identidad en alguna captura; no se imputa ausencia ni se admite replay temporal |
 | Observación de jugadores, G86 | 309 identidades trazadas en 2.524 snapshots; 35 huecos positivos distinguidos en 29 ausencias posteriores, cuatro intervalos y dos cambios de variante | Primeras observaciones nominales, no fechas de alta; sin imputación, alias automático o admisión temporal |
-| Archivo portable vigente, G104 | 43.741 rutas y 40.850 contenidos únicos (23,56 GB); GT activo v8, paquete parcial G94 y evidencia hasta G103, con reproducciones desde la restauración | Corte interno; G92 conservado, sin acreditar backup externo o admisión temporal |
+| Archivo portable vigente, G112 | 44.628 rutas y 41.724 contenidos únicos (25,02 GB); GT v8, parcial G94 y evidencia hasta G111 | Corte interno restaurado; padres conservados, sin acreditar backup externo o admisión temporal |
 | Collector propio, G36 | 55 bundles públicos; 34.512 estados de jugadores y 20.900 observaciones de fixtures | Dos candidatos anteriores a GW2/GW3 2026/27 vinculados al cierre de ingesta; evidencia interna identificada en el índice común G37 |
 | Reglas y chips de snapshots | Explícitos desde GW16 de 2024/25 y en toda 2025/26 | Faltan reglas históricas anteriores e interpretación de overrides |
 | Reglas documentales oficiales, G38 | 10 artículos archivados, 30 afirmaciones parciales en seis temporadas | Descargas actuales: la fecha del artículo no prueba disponibilidad histórica; no son un intérprete de reglas |
@@ -233,9 +191,9 @@ captura API. [Resultados G30](experiments/data_ground_truth/results-g30.json).
 Los datos permiten investigar más temporadas y estados, pero todavía no acreditan
 un replay causal completo ni mejoras del modelo. GT v8, evidencia temporal y
 reglas se versionan por separado; este trabajo no habilita entrenamiento ni
-modifica el histórico productivo de 253.890 filas. El siguiente trabajo de datos
-es cerrar ventanas de publicación, mejorar frescura y conciliar el período de
-las estadísticas raw, especialmente en GW1. La validación numérica G31 no
+modifica el histórico productivo de 253.890 filas. La adquisición se cierra en G112. El siguiente experimento debe fijar ventanas
+causales y contratos de campos, especialmente GW1, con métrica, presupuesto y
+criterio de parada explícitos; no requiere seguir buscando fuentes indefinidamente. La validación numérica G31 no
 acredita acumulados de la temporada corriente ni deltas por jornada.
 [Resultados G31](experiments/data_ground_truth/results-g31.json).
 G32 contrasta 3.622 filas previas a GW1: 2.739 coinciden con los componentes de la
@@ -488,7 +446,7 @@ Documentos principales:
 - [Servicio autónomo de datos](docs/operations/data-service.md)
 - [Servicio analítico y operaciones del modelo](docs/operations/analytics-service.md)
 - [Operar el VPS](docs/operations/vps.md)
-- [PostgreSQL shadow](docs/operations/postgres-shadow.md)
+- [Entender la base actual, autoridad, tamaños y PostgreSQL shadow](docs/operations/postgres-shadow.md)
 - [Plan y research verificable](docs/operations/strategic-research.md)
 - [Lifecycle de decisión](docs/operations/decision-lifecycle.md)
 - [Arquitectura del motor](docs/architecture/decision-engine.md)

@@ -8,9 +8,117 @@ status: experimental
 # Histórico crudo y ground truth: raw-history-v1
 
 Corte acumulado al 6 de septiembre de 2026 (Colombia). Este experimento adquiere y audita
-histórico público sin escribir en el canónico, entrenar modelos ni modificar el VPS.
+histórico público sin sustituir el canónico ni entrenar modelos. El cierre G112
+incluye diagnóstico y mantenimiento conservador del VPS, documentados por separado.
 Los resultados medidos están en [results.json](results.json); los bytes y tablas
 intermedias permanecen fuera de Git. No es una publicación de un dataset.
+
+## Cierre del gate de datos G112
+
+**Decisión:** se congela la adquisición de esta iteración. El dataset oficial
+interno de investigación es `fpl-labels-v8`, fijado por SHA-256 en
+[official-dataset.json](official-dataset.json). «Oficial» describe la referencia
+interna de MOVA, no una certificación de FPL ni una publicación de los datos.
+No se entrenó ni promovió un predictor durante este cierre.
+
+### Qué usar
+
+| Uso | Referencia oficial | Alcance |
+| --- | --- | --- |
+| Etiquetas retrospectivas | `current-labels.json`, GT v8, ID `e0b5ab38…47998` | 303.126 filas, 12 temporadas 2014/15–2025/26; clave `(season, element, fixture)` |
+| Managers | Partición separada del mismo GT | 322 filas; excluidas del entrenamiento de jugadores |
+| Histórico parcial | `current-partial-labels.json`, ID `8bdcc426…fc8ac` | 2013/14: 20.248 observadas y 417 desconocidas; no es una temporada completa admisible |
+| Raw y procedencia | `current-data-archive.json`, corte G112 `2de3f85c…0ca35` | 44.628 rutas, 41.724 contenidos únicos; 25.016.147.453 bytes deduplicados |
+| Runtime | `fpl_canonical.db` y espejo `analytics.player_gameweek` | 253.890 filas; no sustituido por GT v8 |
+
+El recuento [closure-recount-g112.json](closure-recount-g112.json) vuelve a leer
+cada partición, verifica manifest y hashes, suma filas, busca claves duplicadas,
+valores ausentes y minutos fuera de rango. Cada una de las doce temporadas contiene
+380 IDs de partido; esto no demuestra una población completa de todos los jugadores
+registrados en cada deadline. El GT ocupa **15 archivos / 5.346.584 bytes** comprimidos;
+el parcial, **4 archivos / 2.745.550 bytes**. Los resultados y los raw no son el mismo
+volumen ni el mismo objeto de evaluación.
+
+Splits conservados: train **246.096**, validation **27.283** (2024/25), evaluation
+**29.747** (2025/26). Esta última temporada ya fue examinada: no presentarla como
+holdout virgen. Un benchmark nuevo debe registrar dataset ID, selección temporal,
+versión de features/reglas, seed, baseline y presupuesto antes de comparar modelos.
+
+### Archivo, tamaños y legacy
+
+G112 se restauró en una raíz independiente; los siete diagnósticos G105–G111 se
+reprodujeron desde esa copia, incluyendo el grafo Git portable de G111. Ver
+[results-g112.json](results-g112.json). El inventario explícito de entradas está en
+[archive-cut-g112.json](archive-cut-g112.json); los manifests de cada bundle listan
+ruta, bytes, rol y SHA-256. El cierre no descarga fuentes nuevas.
+
+| Grupo de archivo | Rutas | Bytes lógicos por ruta | Bytes únicos dentro del grupo |
+| --- | ---: | ---: | ---: |
+| Padre G55 / lineage | 27.399 | 1.666.499.116 | 1.453.758.727 |
+| Extensiones y auditorías | 15.461 | 22.392.286.403 | 22.309.273.637 |
+| StatsBomb research | 1.768 | 1.261.641.201 | 1.260.106.535 |
+
+Los tamaños únicos por grupo no se suman como total deduplicado global: puede
+haber contenidos iguales entre grupos. La restauración materializa
+**25.320.426.720 bytes lógicos**. El tamaño asignado en disco añade bloques y
+metadatos; no confundirlo con los bytes de contenido.
+
+El inventario WSL previo a terminar la restauración registró **138.050.516.514
+bytes lógicos** en 424 entradas de primer nivel. Incluye paquetes históricos,
+fuentes y copias de restauración: no son 138 GB de datos independientes ni están
+en el VPS. G112 en staging estaba excluido de esa medición. Los mayores bloques:
+`data-archives/` 64,61 GB, restauración G104 23,86 GB, fuentes G100 17,06 GB,
+restauraciones G92 6,71 GB, G87 6,55 GB y G78 3,41 GB.
+
+G104/G92/G87 y GT v7 permanecen como padres y rollback de investigación; se
+clasifican como superseded, no se mezclan con la referencia activa. El código
+legacy con leakage es otro concepto: no es un baseline válido. No se borraron
+copias locales ni archivos productivos para aparentar ahorro. El inventario y
+la decisión de retención están en [closure-operations-g112.json](closure-operations-g112.json);
+el inventario completo y probes sanitizados se conservan fuera de Git en
+`$DATA_ROOT/closure-g112/`. Ese directorio operativo posterior no forma parte
+del archivo histórico G112.
+
+StatsBomb Open Data (Hudl) permanece separado para investigación, con sus
+condiciones de origen; este cierre no autoriza redistribución del corpus agregado.
+<img src="https://static.hudl.com/craft/productAssets/statsbomb_icon.svg" alt="Hudl StatsBomb" width="40" height="40">
+
+### Reproducir y entender los límites
+
+`DATA_ROOT` apunta al directorio WSL `mova-fpl-experiments`; ejecutar desde la raíz
+del checkout publicado con el entorno Python del proyecto. Los destinos de
+restauración y replay deben ser nuevos. Reservar al menos 30 GB libres para la
+restauración, además del paquete fuente.
+
+```bash
+python -m experiments.data_ground_truth.close_gate \
+  --base "$DATA_ROOT" --out /tmp/gt-recount.json
+python -m experiments.data_ground_truth.replay_g112 \
+  --package "$DATA_ROOT/data-archives/2de3f85ca7175161c5828998efc0049fb0cf6229fe65dab02d7723ddd5c0ca35" \
+  --restored "$DATA_ROOT/restored-data-g112-new" \
+  --replays "$DATA_ROOT/archive-replays-g112-new" \
+  --out /tmp/g112-restoration.json
+python -m experiments.data_ground_truth.close_gate \
+  --base "$DATA_ROOT/restored-data-g112-new" --out /tmp/gt-restored-recount.json
+cmp /tmp/gt-recount.json /tmp/gt-restored-recount.json
+pytest -q
+```
+
+El gate cerrado es **adquisición, integridad, identificación y reproducción interna**.
+Quedan explícitamente fuera: backup offsite, derechos de publicación conjunta,
+semántica completa de GW1, elegibilidad histórica, intérprete de chips de todas
+las épocas y replay causal completo. Tener el resultado final no prueba que las
+features existieran antes del deadline. Los 98 snapshots antiguos con publicación
+acreditada tampoco implican 98 ventanas admitidas a entrenamiento.
+
+La siguiente fase será un experimento acotado con ventanas y campos admisibles,
+baseline, métrica y regla de parada explícitos. No se reabre adquisición sin una
+brecha concreta que bloquee ese experimento.
+
+Para la persistencia real y la limpieza del VPS consultar
+[entender la base actual](../../docs/operations/postgres-shadow.md#cómo-entender-la-base-actual-cierre-g112).
+La salud observada fue 24 PASS / 0 WARN / 0 FAIL, con A0/shadow intacto y ocho
+incidentes abiertos no críticos; salud técnica no equivale a autonomía lista.
 
 ## Reproducción
 

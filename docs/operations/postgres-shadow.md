@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — PostgreSQL shadow"
 created: 2026-08-23
-updated: 2026-08-30
+updated: 2026-09-06
 tags: [mova, fpl, postgres, migration, backup, restore]
 status: active-shadow
 ---
@@ -10,8 +10,9 @@ status: active-shadow
 # PostgreSQL shadow
 
 HV1-02 instala PostgreSQL como candidato durable sin cambiar todavía la autoridad del runtime.
-SQLite continúa siendo el único writer; PostgreSQL recibe imports programados, verificables e
-idempotentes. El adapter dual-read ya compara contenido normalizado. El cutover del writer y el
+SQLite continúa siendo el writer del ledger del harness; PostgreSQL recibe sus imports
+programados, verificables e idempotentes. PostgreSQL sí es writer del data service y del
+servicio analítico, con tablas propias que no pertenecen al import shadow. El adapter dual-read ya compara contenido normalizado. El cutover del writer y el
 retiro de SQLite siguen fuera de esta fase.
 
 ## Contrato de seguridad
@@ -28,6 +29,39 @@ retiro de SQLite siguen fuera de esta fase.
 - la fuente son snapshots consistentes creados con SQLite Online Backup API, no copias de
   archivos vivos con WAL;
 - los artefactos fuente conservan SHA-256, manifest y `quick_check`.
+
+## Cómo entender la base actual (cierre G112)
+
+Hay tres capas distintas; no interpretar «shadow» como que toda la base es una copia:
+
+| Capa | Autoridad y acceso | Retención |
+| --- | --- | --- |
+| Harness: decisiones, controles, jobs, estado y traza | SQLite `ops.db`, `trace.db`; consultar `sudo mova status --json` y cockpit. PostgreSQL recibe snapshots sellados | Conservar SQLite y `artifacts/postgres-imports/`; el verificador depende de esos archivos |
+| Datos y analítica vivos | PostgreSQL: observaciones FPL/odds/WhoScored y proyecciones/evaluaciones; `sudo mova data status`, `sudo mova analytics status` | Conservar también los raw referenciados por manifests: la fila SQL no contiene necesariamente todos los bytes fuente |
+| Corpus oficial de investigación | GT `fpl-labels-v8` y archivo G112 fuera del VPS, en WSL; [contrato oficial](../../experiments/data_ground_truth/official-dataset.json) | Paquetes inmutables, padres y cuarentenas; no se cargaron en PostgreSQL ni sustituyeron el canónico |
+
+Al corte del 6 de septiembre, 19:30 Colombia: PostgreSQL 17.11, 24 migraciones,
+80 tablas en siete schemas y 578.270.899 bytes de base (incluye índices y overhead).
+`analytics.player_gameweek` mantiene 253.890 filas. Los 57 contratos de paridad
+pasan (56 exactos y uno agregado), contra el import sellado; **no son las 80 tablas
+vivas ni una prueba de igualdad con el ledger que continúa recibiendo eventos**.
+
+Tamaños por schema medidos mediante `pg_total_relation_size` (tablas + índices + TOAST):
+`analytics` 529.031.168 B / 19 tablas; `ops` 23.470.080 B / 8;
+`agent` 9.248.768 B / 35; `mova_meta` 1.810.432 B / 3;
+`raw` 1.753.088 B / 5; `game` 1.277.952 B / 6;
+`research` 294.912 B / 4. Son tamaños observados, no límites de capacidad.
+
+Las tablas `agent.legacy_*` y `analytics.legacy_model_versions` conservan traza
+histórica; su presencia no autoriza reutilizar resultados del motor antiguo.
+No usar un `DROP` por el nombre legacy: pertenecen a contratos de import y auditoría.
+Los paquetes GT padres también son lineage válido, distinto del código legacy con leakage.
+
+El mantenimiento oficial `sudo mova maintenance cleanup` sólo considera `.tmp`,
+`.partial` y `.tmp-*` vencidos. El apply del cierre G112 encontró y eliminó **cero**
+archivos. Se conservan respaldos dentro de sus 35 días de retención, modelos,
+perfil browser, imports y raw. «Está fuera de Postgres» no es criterio de borrado.
+La evidencia y el inventario están en [cierre G112](../../experiments/data_ground_truth/closure-operations-g112.json).
 
 ## Modelo de datos
 
