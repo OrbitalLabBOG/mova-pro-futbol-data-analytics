@@ -1,0 +1,531 @@
+{
+  "schema": "mova-data-gate-operations-v1",
+  "generated_at": "2026-09-07T00:35:47+00:00",
+  "runtime_git_sha": "dea98e20db44b05da7b426d0b4476f1cd5fca928",
+  "doctor": {
+    "summary": {
+      "fail": 0,
+      "pass": 24,
+      "required_failures": 0,
+      "warn": 0
+    },
+    "overall_status": "healthy",
+    "schema": "mova-fpl-operator-v1",
+    "schema_version": "1.0"
+  },
+  "authority": {
+    "browser_writes": false,
+    "current_action_level": "A0",
+    "kill_switch": true,
+    "mode": "shadow",
+    "promotion_is_automatic": false,
+    "technical_eligible_level": "A0",
+    "writes_enabled": false
+  },
+  "cockpit": {
+    "verdict": "attention_required",
+    "critical_open": 0,
+    "open_incidents": 8,
+    "workflow": {
+      "stages": [
+        {
+          "name": "observe",
+          "next_action": null,
+          "outcome": "valid",
+          "owner": "collector",
+          "status": "complete",
+          "subject_id": "snapshot_fa798fc272374f809cc0396ec59873e1"
+        },
+        {
+          "name": "contextualize",
+          "next_action": null,
+          "outcome": "sealed",
+          "owner": "deterministic_coordinator",
+          "status": "complete",
+          "subject_id": "manifest_5e41ad6226434f93b27cc6424c8509d7"
+        },
+        {
+          "name": "research",
+          "next_action": "ejecutar o importar research cuando la cadencia lo requiera",
+          "outcome": null,
+          "owner": "researcher",
+          "status": "pending",
+          "subject_id": null
+        },
+        {
+          "name": "propose_validate",
+          "next_action": null,
+          "outcome": "blocked",
+          "owner": "optimizer_validator",
+          "status": "complete",
+          "subject_id": "envelope_fb1aff43bb383cc605cda6d8"
+        },
+        {
+          "name": "deliberate",
+          "next_action": "completar Strategist + Critic sobre el envelope vigente",
+          "outcome": null,
+          "owner": "strategist_critic",
+          "status": "pending",
+          "subject_id": null
+        },
+        {
+          "name": "preflight",
+          "next_action": null,
+          "outcome": "blocked",
+          "owner": "policy_validator",
+          "status": "complete",
+          "subject_id": "execplan_2778c274939ecc858cb4ad12"
+        },
+        {
+          "name": "execute_verify",
+          "next_action": null,
+          "outcome": "blocked",
+          "owner": "executor_verifier",
+          "status": "skipped_policy",
+          "subject_id": "execplan_2778c274939ecc858cb4ad12"
+        },
+        {
+          "name": "settle",
+          "next_action": null,
+          "outcome": "predeadline",
+          "owner": "official_settlement",
+          "status": "not_due",
+          "subject_id": null
+        },
+        {
+          "name": "review_learn",
+          "next_action": null,
+          "outcome": "awaiting_settlement",
+          "owner": "reviewer",
+          "status": "not_due",
+          "subject_id": null
+        }
+      ],
+      "verdict": "attention_required",
+      "violations": []
+    }
+  },
+  "postgres": {
+    "database": {
+      "database": "mova",
+      "database_bytes": 578270899,
+      "schemas": [
+        {
+          "schemaname": "agent",
+          "tables": 35,
+          "relation_bytes": 9248768
+        },
+        {
+          "schemaname": "analytics",
+          "tables": 19,
+          "relation_bytes": 529031168
+        },
+        {
+          "schemaname": "game",
+          "tables": 6,
+          "relation_bytes": 1277952
+        },
+        {
+          "schemaname": "mova_meta",
+          "tables": 3,
+          "relation_bytes": 1810432
+        },
+        {
+          "schemaname": "ops",
+          "tables": 8,
+          "relation_bytes": 23470080
+        },
+        {
+          "schemaname": "raw",
+          "tables": 5,
+          "relation_bytes": 1753088
+        },
+        {
+          "schemaname": "research",
+          "tables": 4,
+          "relation_bytes": 294912
+        }
+      ]
+    },
+    "largest_tables": [
+      {
+        "schemaname": "analytics",
+        "tablename": "player_projections",
+        "relation_bytes": 121307136
+      },
+      {
+        "schemaname": "analytics",
+        "tablename": "player_gameweek",
+        "relation_bytes": 110436352
+      },
+      {
+        "schemaname": "analytics",
+        "tablename": "fpl_player_observations",
+        "relation_bytes": 80281600
+      },
+      {
+        "schemaname": "analytics",
+        "tablename": "whoscored_events",
+        "relation_bytes": 76455936
+      },
+      {
+        "schemaname": "analytics",
+        "tablename": "fpl_event_live_observations",
+        "relation_bytes": 69083136
+      },
+      {
+        "schemaname": "analytics",
+        "tablename": "market_odds_observations",
+        "relation_bytes": 39591936
+      },
+      {
+        "schemaname": "analytics",
+        "tablename": "fpl_fixture_observations",
+        "relation_bytes": 17997824
+      },
+      {
+        "schemaname": "analytics",
+        "tablename": "whoscored_schedule_observations",
+        "relation_bytes": 8978432
+      },
+      {
+        "schemaname": "ops",
+        "tablename": "audit_events",
+        "relation_bytes": 8716288
+      },
+      {
+        "schemaname": "ops",
+        "tablename": "job_runs",
+        "relation_bytes": 7471104
+      },
+      {
+        "schemaname": "ops",
+        "tablename": "job_steps",
+        "relation_bytes": 5267456
+      },
+      {
+        "schemaname": "agent",
+        "tablename": "cycle_manifests",
+        "relation_bytes": 2719744
+      },
+      {
+        "schemaname": "analytics",
+        "tablename": "fpl_event_observations",
+        "relation_bytes": 2654208
+      },
+      {
+        "schemaname": "ops",
+        "tablename": "health_samples",
+        "relation_bytes": 1785856
+      },
+      {
+        "schemaname": "mova_meta",
+        "tablename": "import_table_checks",
+        "relation_bytes": 1662976
+      }
+    ],
+    "parity": {
+      "status": "pass",
+      "checked_tables": 57,
+      "exact_tables": 56,
+      "aggregate_tables": 1,
+      "failed_tables": 0
+    },
+    "writer": "sqlite",
+    "role": "shadow",
+    "import_run_id": "pgimport_d7eb2838d07248fd8e336300a4a1fae6",
+    "canonical_rows": 253890
+  },
+  "resources": {
+    "disk_free_bytes": 64350793728,
+    "disk_required_bytes": 21474836480,
+    "memory_available_bytes": 5135925248,
+    "memory_required_bytes": 2684354560
+  },
+  "vps_disk_allocated_bytes": {
+    "mova_root": 5695590400,
+    "artifacts": 4336721920,
+    "postgres": 736636928,
+    "sqlite_directory": 92213248,
+    "postgres_imports": 3602190336,
+    "backups": 9875513344
+  },
+  "cleanup": {
+    "candidate_bytes": 0,
+    "candidate_count": 0,
+    "candidates": [],
+    "job_id": "job_e12d9551018742899f65fcda2a399406",
+    "mode": "apply",
+    "older_than_seconds": 86400,
+    "removed_bytes": 0,
+    "removed_count": 0,
+    "root": "/var/lib/mova-fpl/artifacts",
+    "schema": "mova-maintenance-cleanup-v1"
+  },
+  "retention": {
+    "retained": [
+      "sqlite_writer",
+      "source_artifacts",
+      "postgres_import_evidence",
+      "model_artifacts",
+      "browser_profile",
+      "backups_within_35_days",
+      "legacy_trace_contracts"
+    ],
+    "reason": "PostgreSQL contains references and shadow snapshots, not replacements for all source bytes and live writers",
+    "offsite_backup_verified": false
+  },
+  "local_inventory": {
+    "measured_at": "2026-09-07T00:34:03Z",
+    "scope": "top-level regular files and directories; no symlinks or hidden staging; file allocated bytes may double-count hardlinks",
+    "top_level_entries": 424,
+    "regular_file_paths": 509463,
+    "logical_bytes": 138050516514,
+    "largest_entries": [
+      {
+        "path": "data-archives",
+        "files": 175560,
+        "logical_bytes": 64611209353,
+        "allocated_file_bytes": 65055526912
+      },
+      {
+        "path": "restored-data-g104-v1",
+        "files": 43741,
+        "logical_bytes": 23861396544,
+        "allocated_file_bytes": 23972708352
+      },
+      {
+        "path": "profile-snapshots-g100",
+        "files": 5158,
+        "logical_bytes": 17064490705,
+        "allocated_file_bytes": 17078026240
+      },
+      {
+        "path": "restored-data-g92-v1",
+        "files": 35636,
+        "logical_bytes": 6706159868,
+        "allocated_file_bytes": 6795956224
+      },
+      {
+        "path": "restored-data-g87-v1",
+        "files": 35446,
+        "logical_bytes": 6554264349,
+        "allocated_file_bytes": 6643552256
+      },
+      {
+        "path": "restored-data-g78-v1",
+        "files": 30295,
+        "logical_bytes": 3409149063,
+        "allocated_file_bytes": 3485405184
+      },
+      {
+        "path": "azure-history-g84",
+        "files": 5054,
+        "logical_bytes": 3124468192,
+        "allocated_file_bytes": 3137241088
+      },
+      {
+        "path": "corpus-bundles",
+        "files": 49254,
+        "logical_bytes": 2918976534,
+        "allocated_file_bytes": 3041255424
+      },
+      {
+        "path": "restored-corpus-g55-v1",
+        "files": 27399,
+        "logical_bytes": 1666499116,
+        "allocated_file_bytes": 1734729728
+      },
+      {
+        "path": "restored-corpus-g55-v2",
+        "files": 27399,
+        "logical_bytes": 1666499116,
+        "allocated_file_bytes": 1734733824
+      },
+      {
+        "path": "geek-publication-g110",
+        "files": 203,
+        "logical_bytes": 1380624489,
+        "allocated_file_bytes": 1381228544
+      },
+      {
+        "path": "statsbomb-open-g67",
+        "files": 1683,
+        "logical_bytes": 1248368377,
+        "allocated_file_bytes": 1253126144
+      },
+      {
+        "path": "raw-bootstrap-snapshots",
+        "files": 14754,
+        "logical_bytes": 760066894,
+        "allocated_file_bytes": 802054144
+      },
+      {
+        "path": "publication-hour-source-g78",
+        "files": 25,
+        "logical_bytes": 448918653,
+        "allocated_file_bytes": 449024000
+      },
+      {
+        "path": "raw-history-v2",
+        "files": 2257,
+        "logical_bytes": 371697648,
+        "allocated_file_bytes": 378056704
+      },
+      {
+        "path": "raw-history-v1",
+        "files": 763,
+        "logical_bytes": 139642725,
+        "allocated_file_bytes": 141819904
+      },
+      {
+        "path": "early-fpl-successor-g90",
+        "files": 90,
+        "logical_bytes": 97184977,
+        "allocated_file_bytes": 97435648
+      },
+      {
+        "path": "raw-collector-public-v2",
+        "files": 133,
+        "logical_bytes": 95158480,
+        "allocated_file_bytes": 95473664
+      },
+      {
+        "path": "raw-collector-public-v1",
+        "files": 78,
+        "logical_bytes": 95087849,
+        "allocated_file_bytes": 95248384
+      },
+      {
+        "path": "raw-fixture-history-v1",
+        "files": 509,
+        "logical_bytes": 86372139,
+        "allocated_file_bytes": 87789568
+      }
+    ],
+    "legacy_restore_entries": [
+      {
+        "path": "archive-replays-g104",
+        "files": 49,
+        "logical_bytes": 37145458,
+        "allocated_file_bytes": 37240832
+      },
+      {
+        "path": "restored-corpus-g55-v1",
+        "files": 27399,
+        "logical_bytes": 1666499116,
+        "allocated_file_bytes": 1734729728
+      },
+      {
+        "path": "restored-corpus-g55-v2",
+        "files": 27399,
+        "logical_bytes": 1666499116,
+        "allocated_file_bytes": 1734733824
+      },
+      {
+        "path": "restored-corpus-inventory-g55",
+        "files": 4,
+        "logical_bytes": 1911474,
+        "allocated_file_bytes": 1916928
+      },
+      {
+        "path": "restored-data-g104-v1",
+        "files": 43741,
+        "logical_bytes": 23861396544,
+        "allocated_file_bytes": 23972708352
+      },
+      {
+        "path": "restored-data-g78-v1",
+        "files": 30295,
+        "logical_bytes": 3409149063,
+        "allocated_file_bytes": 3485405184
+      },
+      {
+        "path": "restored-data-g87-v1",
+        "files": 35446,
+        "logical_bytes": 6554264349,
+        "allocated_file_bytes": 6643552256
+      },
+      {
+        "path": "restored-data-g92-v1",
+        "files": 35636,
+        "logical_bytes": 6706159868,
+        "allocated_file_bytes": 6795956224
+      }
+    ],
+    "full_inventory_sha256": "e4a14f5602d7fbcff333b22be6bcabfdbf6c8a5708a39aff578e1d122d8681f0",
+    "pending_at_inventory": "G112 restore was hidden staging and excluded; final restored size is recorded in results-g112 and archive group logical bytes",
+    "g112_restored_logical_bytes": 25320426720,
+    "g112_restored_file_paths": 44628
+  },
+  "archive_groups": [
+    {
+      "group": "legacy_g55",
+      "bundle_id": "4830e5a2347de3eaaab16ffef028ef1de354a19d0d08db72f84c8eec0424ee52",
+      "files": 27399,
+      "logical_bytes": 1666499116,
+      "unique_objects": 24626,
+      "unique_bytes": 1453758727
+    },
+    {
+      "group": "source_extension",
+      "bundle_id": "e1cab7befc9003646fe6eaf435b60c16a9ad5102144b0f7c20b8973ecfa33310",
+      "files": 15461,
+      "logical_bytes": 22392286403,
+      "unique_objects": 15379,
+      "unique_bytes": 22309273637
+    },
+    {
+      "group": "statsbomb_research",
+      "bundle_id": "f391f32cc28a19461d98844d21fa9f1604f8de13a712145ff87c0c470048f7c0",
+      "files": 1768,
+      "logical_bytes": 1261641201,
+      "unique_objects": 1759,
+      "unique_bytes": 1260106535
+    }
+  ],
+  "evidence_sha256": {
+    "doctor-after": "57702fe3dc51b7b066fdbe083d763b893b02b888a792569eda483401a92cdad3",
+    "cockpit": "f5af6da64bc5e934fc723d505c161f31537b4f87d1af1fe4db02f4c822fb727f",
+    "postgres-verify": "e8c331914c86676a4ef1edf77babbc0000397b7769563a7588c13c55ff980bf9",
+    "cleanup-apply": "158b219af3e61dc08f59b7595652b1ff20edbe3b49d1afc7ff085fc8504ec906",
+    "status": "b8786f2263686e92b44e9585fa0866847b70ae5757cdd6f05fa9f4682b43afe1"
+  },
+  "limitations": [
+    "filesystem allocation differs from PostgreSQL relation size and unique archive content",
+    "resource values are a dated observation, not a monitor",
+    "no deployment, training, FPL writes or offsite backup promotion"
+  ],
+  "archive_versions": [
+    {
+      "cut_id": "2de3f85ca7175161c5828998efc0049fb0cf6229fe65dab02d7723ddd5c0ca35",
+      "restoration_paths": 44628,
+      "unique_content_bytes": 25016147453,
+      "role": "active"
+    },
+    {
+      "cut_id": "70a3b2e9cea8fbc6f90f8b5ce731bffc91785076b57f9f15ac36cac668458eb8",
+      "restoration_paths": 43741,
+      "unique_content_bytes": 23557461772,
+      "role": "superseded_retained"
+    },
+    {
+      "cut_id": "93bc739476110695e383a326c81e0c057837c4b8248ebfc2a47bfe39f486d737",
+      "restoration_paths": 35446,
+      "unique_content_bytes": 6333636927,
+      "role": "superseded_retained"
+    },
+    {
+      "cut_id": "9a119e7b37d42607cb0fc2a91dd31103146ef786f1927459c3d56620751ec542",
+      "restoration_paths": 30295,
+      "unique_content_bytes": 3189886957,
+      "role": "superseded_retained"
+    },
+    {
+      "cut_id": "f1db933fd0d7e883fe78aeb66477b809c88a032b7a810e5bfabb597eedef2a03",
+      "restoration_paths": 35636,
+      "unique_content_bytes": 6453936277,
+      "role": "superseded_retained"
+    }
+  ]
+}

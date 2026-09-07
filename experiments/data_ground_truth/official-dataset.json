@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "release": "mova-research-data-v1.0.0",
+  "git_tag": "data-g112-v1.0.0",
+  "gate": "G112",
+  "status": "frozen_internal_research_reference",
+  "date": "2026-09-06",
+  "timezone": "America/Bogota",
+  "labels": {
+    "schema_version": 1,
+    "version": "fpl-labels-v8",
+    "dataset_id": "e0b5ab38c46df8eae793742421965cf80665764cbbf23dfcb99e3c8b50247998",
+    "manifest_sha256": "9a71bb11bf6ed5351b2084e104b7b4e8e279995d2f3d25cd8a095989af50798e",
+    "parent_dataset_id": "d4baf849fb4a051be103f8c469e61a4753edb0b4004f980a000fe5c86ef573db",
+    "rows": 303126,
+    "manager_rows": 322,
+    "evidence": "results-g99.json",
+    "scope": "experimental_retrospective_labels",
+    "production_promoted": false,
+    "predeadline_replay_admitted": false
+  },
+  "raw_archive": {
+    "schema_version": 1,
+    "cut_id": "2de3f85ca7175161c5828998efc0049fb0cf6229fe65dab02d7723ddd5c0ca35",
+    "cut_sha256": "07fd02a6d404d7a683456594d2b6a69c38e0348d51e889070ec2b541f86b90f3",
+    "gt_dataset_id": "e0b5ab38c46df8eae793742421965cf80665764cbbf23dfcb99e3c8b50247998",
+    "restoration_paths": 44628,
+    "unique_content_objects": 41724,
+    "unique_content_bytes": 25016147453,
+    "evidence": "results-g112.json",
+    "registry": "archive-cut-g112.json",
+    "scope": "internal_source_and_research_archive",
+    "publicly_published": false,
+    "offsite_backup_verified": false,
+    "predeadline_training_admitted": false,
+    "legacy_gt_dataset_id": "d4baf849fb4a051be103f8c469e61a4753edb0b4004f980a000fe5c86ef573db"
+  },
+  "partial_labels": {
+    "schema_version": 1,
+    "dataset_id": "8bdcc426bb8c65a6b7281fb4013dbb77933844562dc7be05b5a0b54c9ebfc8ac",
+    "manifest_sha256": "3f4c06cabc568497368902eb4ab74deca031ca40ce07398e3810c32e615d16f1",
+    "season": "2013-14",
+    "coverage_status": "partial_observed_population",
+    "evidence": "results-g94.json",
+    "training_admitted": false,
+    "complete_season_admitted": false
+  },
+  "production_canonical": {
+    "rows": 253890,
+    "storage": "VPS SQLite fpl_canonical.db and PostgreSQL analytics.player_gameweek",
+    "changed": false
+  },
+  "policy": {
+    "acquisition_frozen": true,
+    "labels_are_retrospective": true,
+    "predeadline_replay_admitted": false,
+    "production_promoted": false,
+    "offsite_backup_verified": false,
+    "public_data_release": false,
+    "managers_separate": true,
+    "unknowns_never_imputed": true,
+    "evaluation_season_already_inspected": true
+  },
+  "evidence": {
+    "results-g112.json": "05eb89d1c5d755a664bc2a602eac012d235e98917a167acc14cf1df98186278b",
+    "closure-recount-g112.json": "9e322d557706788d48a906fbeda9d5da21d66c000adb85086be12b337303b3f6",
+    "closure-operations-g112.json": "b8224be26d69621ebc7a56fa059632f420b9fbe0f03bc80b4d46af0ac46a9fb6"
+  },
+  "next_stage": "bounded experiment with preregistered temporal inputs, baseline, metric, budget and stopping rule"
+}
