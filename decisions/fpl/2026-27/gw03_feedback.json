@@ -1,0 +1,288 @@
+{
+  "selected_score": {
+    "points": 45,
+    "points_before_hits": 45,
+    "captain_points": 9,
+    "effective_captain": 411,
+    "auto_subs": [],
+    "players_played": 11,
+    "expected_total_recomputed": 51.05,
+    "base_player_mae_15": 2.435,
+    "p60_brier_15": 0.0818
+  },
+  "comparator_score": {
+    "points": 57,
+    "points_before_hits": 57,
+    "captain_points": 9,
+    "effective_captain": 411,
+    "auto_subs": [],
+    "players_played": 11,
+    "expected_total_recomputed": 60.02,
+    "base_player_mae_15": 2.36,
+    "p60_brier_15": 0.0671
+  },
+  "oracle_fixed": 57,
+  "oracle_free": 57,
+  "without_two_transfers": {
+    "points": 42,
+    "points_before_hits": 42,
+    "captain_points": 9,
+    "effective_captain": 411,
+    "auto_subs": [
+      [
+        329,
+        418
+      ],
+      [
+        11,
+        173
+      ]
+    ],
+    "players_played": 11,
+    "expected_total_recomputed": 43.96,
+    "base_player_mae_15": 2.395,
+    "p60_brier_15": 0.0969
+  },
+  "transfer_net_delta": 3,
+  "players": [
+    {
+      "element": 109,
+      "player_name": "Verbruggen",
+      "role": "starter",
+      "is_captain": false,
+      "expected_points": 3.3060744898158014,
+      "p60": 0.9278619904905109,
+      "actual_points": 3,
+      "minutes": 90,
+      "effective_points": 3
+    },
+    {
+      "element": 8,
+      "player_name": "Calafiori",
+      "role": "starter",
+      "is_captain": false,
+      "expected_points": 3.5944896315580372,
+      "p60": 0.8088132912510951,
+      "actual_points": 2,
+      "minutes": 66,
+      "effective_points": 2
+    },
+    {
+      "element": 277,
+      "player_name": "Egan",
+      "role": "starter",
+      "is_captain": false,
+      "expected_points": 4.752665534203491,
+      "p60": 0.8356575354474644,
+      "actual_points": 6,
+      "minutes": 90,
+      "effective_points": 6
+    },
+    {
+      "element": 229,
+      "player_name": "Tarkowski",
+      "role": "starter",
+      "is_captain": false,
+      "expected_points": 4.349670841832094,
+      "p60": 0.922785760045184,
+      "actual_points": 3,
+      "minutes": 90,
+      "effective_points": 3
+    },
+    {
+      "element": 124,
+      "player_name": "Groß",
+      "role": "starter",
+      "is_captain": false,
+      "expected_points": 3.802055697255467,
+      "p60": 0.9341570312632671,
+      "actual_points": 1,
+      "minutes": 90,
+      "effective_points": 1
+    },
+    {
+      "element": 426,
+      "player_name": "B.Fernandes",
+      "role": "starter",
+      "is_captain": false,
+      "expected_points": 4.621365459152219,
+      "p60": 0.8713943182747619,
+      "actual_points": 2,
+      "minutes": 90,
+      "effective_points": 2
+    },
+    {
+      "element": 427,
+      "player_name": "Mbeumo",
+      "role": "starter",
+      "is_captain": false,
+      "expected_points": 3.6121534376346407,
+      "p60": 0.8577079130256618,
+      "actual_points": 8,
+      "minutes": 90,
+      "effective_points": 8
+    },
+    {
+      "element": 565,
+      "player_name": "M.Sangaré",
+      "role": "starter",
+      "is_captain": false,
+      "expected_points": 3.861393918673676,
+      "p60": 0.7810274360824092,
+      "actual_points": 0,
+      "minutes": 45,
+      "effective_points": 0
+    },
+    {
+      "element": 346,
+      "player_name": "Calvert-Lewin",
+      "role": "starter",
+      "is_captain": false,
+      "expected_points": 4.097407430068097,
+      "p60": 0.9517381830672745,
+      "actual_points": 1,
+      "minutes": 72,
+      "effective_points": 1
+    },
+    {
+      "element": 165,
+      "player_name": "João Pedro",
+      "role": "starter",
+      "is_captain": false,
+      "expected_points": 3.6349948163955226,
+      "p60": 0.8577079130256618,
+      "actual_points": 1,
+      "minutes": 90,
+      "effective_points": 1
+    },
+    {
+      "element": 411,
+      "player_name": "Haaland",
+      "role": "starter",
+      "is_captain": true,
+      "expected_points": 5.709879178799577,
+      "p60": 0.7773207272654956,
+      "actual_points": 9,
+      "minutes": 90,
+      "effective_points": 18
+    },
+    {
+      "element": 496,
+      "player_name": "Kinsky",
+      "role": "bench",
+      "is_captain": false,
+      "expected_points": 1.9953972757987715,
+      "p60": 0.8792634156825375,
+      "actual_points": 6,
+      "minutes": 90,
+      "effective_points": 0
+    },
+    {
+      "element": 557,
+      "player_name": "Tzolis",
+      "role": "bench",
+      "is_captain": false,
+      "expected_points": 2.1725250788495534,
+      "p60": 0.4179760170346296,
+      "actual_points": 5,
+      "minutes": 90,
+      "effective_points": 0
+    },
+    {
+      "element": 418,
+      "player_name": "Maguire",
+      "role": "bench",
+      "is_captain": false,
+      "expected_points": 2.3125566419149166,
+      "p60": 0.8623126740795546,
+      "actual_points": 2,
+      "minutes": 90,
+      "effective_points": 0
+    },
+    {
+      "element": 173,
+      "player_name": "Thomas",
+      "role": "bench",
+      "is_captain": false,
+      "expected_points": 1.819668333039829,
+      "p60": 0.7605208621944175,
+      "actual_points": 4,
+      "minutes": 90,
+      "effective_points": 0
+    }
+  ],
+  "schema": "mova-gw03-paired-feedback-v1",
+  "source_hashes": {
+    "candidates.json": "421846ce6e77e1d48a89913646d895bd159220fedf2a8e84ea5b1b541895d0d8",
+    "projection.json": "a7b29027e8fc41de7b51c9f75dd4ad1b5458bd4054e7a319129b855aa9f683ff",
+    "official-bootstrap.json": "d7c87ab93b599579df7e2fb3eb87bed0f6113b69d7eed9bbfc17873457027e01",
+    "official-live.json": "c33c2af4674b0a9d4276b412a441ebae8b87e01a3d093cd113446e7ef6a02482",
+    "official-picks.json": "266cfda4e6a9ca2d12a6ffd109a6d2f6a02029240a41271ed628f4e9a4a4924e",
+    "official-history.json": "8f214259f4820e4c764fa9f7cf2f9eed74f4ef267d011eae6faebddcb7f1e753"
+  },
+  "scope": "Transfers reversed in the observed XI, same bench order and captain; legal autosubs applied. Single-GW paired outcome, excludes saved transfers and future utility.",
+  "runtime_review_id": "review_43b4f36993342f7015e0e1f9",
+  "runtime_review_sha256": "8de166f40c5e5419d6429ddaf20b99d82adc72bc76ca46260f6b91d58d7611d4",
+  "causal_review_id": "causalreview_1e359386258a0c528f4ee1d4",
+  "final_operations": {
+    "doctor_generated_at": "2026-09-08T18:52:32+00:00",
+    "doctor_summary": {
+      "fail": 0,
+      "pass": 24,
+      "required_failures": 0,
+      "warn": 0
+    },
+    "runtime_sha": "dea98e20db44b05da7b426d0b4476f1cd5fca928",
+    "systemd_template_commit": "96352c5",
+    "systemd_rollback": "/var/lib/mova-fpl/artifacts/host-config/20260908-gw03/postgres-sync.service.before",
+    "postgres_import_id": "pgimport_16285642570e43e0849598dab3ee44ad",
+    "postgres_parity": "57 tables passed",
+    "gw4_memory_sha256": "d2821edb42838827b240f279066c8b0e87c87444a12cefa7eef4f2b129fdb9f6",
+    "gw3_review_ids": [
+      "causalreview_1e359386258a0c528f4ee1d4",
+      "review_43b4f36993342f7015e0e1f9"
+    ],
+    "historical_incident_causes": [
+      {
+        "incident_id": "incident_a4a76c0e7d0f49ef8974180e65676a5f",
+        "cycle_id": "2026-27-gw04",
+        "error": "raise OSError(f\"fallo GET tras {retries} intentos: {safe_url or url} ({last})\")\nOSError: fallo GET tras 5 intentos: https://fantasy.premierleague.com/api/entry/3609854/history/ (HTTP 503)"
+      },
+      {
+        "incident_id": "incident_a0a18240fd4645c6ac0a58eb6fd4fda6",
+        "cycle_id": "2026-27-gw03",
+        "error": "raise OSError(f\"fallo GET tras {retries} intentos: {safe_url or url} ({last})\")\nOSError: fallo GET tras 5 intentos: https://fantasy.premierleague.com/api/entry/3609854/history/ (HTTP 503)"
+      },
+      {
+        "incident_id": "incident_498a09a8ce8a403a9df41db107b7afc9",
+        "cycle_id": "2026-27-gw03",
+        "error": "raise OSError(f\"fallo GET tras {retries} intentos: {safe_url or url} ({last})\")\nOSError: fallo GET tras 5 intentos: https://fantasy.premierleague.com/api/entry/3609854/history/ (HTTP 503)"
+      },
+      {
+        "incident_id": "incident_bfafab2c93ec432fa28dc9ac674aa649",
+        "cycle_id": "2026-27-gw03",
+        "error": "raise OSError(f\"fallo GET tras {retries} intentos: {safe_url or url} ({last})\")\nOSError: fallo GET tras 5 intentos: https://fantasy.premierleague.com/api/entry/3609854/history/ (HTTP 503)"
+      },
+      {
+        "incident_id": "incident_77a43d3106904275b05d118684605efb",
+        "cycle_id": "2026-27-gw03",
+        "error": "raise OSError(f\"fallo GET tras {retries} intentos: {safe_url or url} ({last})\")\nOSError: fallo GET tras 5 intentos: https://fantasy.premierleague.com/api/entry/3609854/history/ (HTTP 503)"
+      },
+      {
+        "incident_id": "incident_aa54272d9f0046868d8819b480bc3249",
+        "cycle_id": "2026-27-gw03",
+        "error": "raise OSError(f\"fallo GET tras {retries} intentos: {safe_url or url} ({last})\")\nOSError: fallo GET tras 5 intentos: https://fantasy.premierleague.com/api/entry/3609854/history/ (HTTP 503)"
+      },
+      {
+        "incident_id": "incident_296f610a704c4cd29f37c098e154bfdc",
+        "cycle_id": "2026-27-gw03",
+        "error": "raise OSError(f\"fallo GET tras {retries} intentos: {safe_url or url} ({last})\")\nOSError: fallo GET tras 5 intentos: https://fantasy.premierleague.com/api/entry/3609854/history/ (HTTP 503)"
+      },
+      {
+        "incident_id": "incident_b0c2f8e0901444a1b843e5d9b6e4b347",
+        "cycle_id": "2026-27-gw03",
+        "error": "raise OSError(f\"fallo GET tras {retries} intentos: {safe_url or url} ({last})\")\nOSError: fallo GET tras 5 intentos: https://fantasy.premierleague.com/api/entry/3609854/history/ (HTTP 503)"
+      }
+    ]
+  }
+}

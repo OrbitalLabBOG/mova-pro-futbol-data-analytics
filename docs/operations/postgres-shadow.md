@@ -118,6 +118,13 @@ SQLite vivas sigan iguales: el import representa deliberadamente un punto en el 
 lo invoca diariamente, pero solo crea un import por ciclo y semana; las repeticiones devuelven
 `reused`. El service comparte el lock de workers y deja un resumen compacto en journald.
 
+El service espera hasta 60 segundos por ese lock. El 8 de septiembre de 2026,
+`flock -n` salió con código 1 al coincidir con el tick de las 10:10:15 UTC,
+antes de iniciar el wrapper; el reintento auditado por systemd reutilizó el import
+verificado. La espera acotada evita ese fallo por contención breve. Si transcurren
+60 segundos, el servicio sigue fallando y debe investigarse; no se ocultan errores
+del import ni se cambia su idempotencia.
+
 ## Drill de cutover/rollback de lectura
 
 `postgres drill` no cambia configuración ni writer. Parte del snapshot SQLite inmutable del

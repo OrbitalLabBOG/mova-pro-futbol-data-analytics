@@ -1,0 +1,582 @@
+{
+  "schema": "mova-fpl-manual-closeout-v1",
+  "season": "2026-27",
+  "gw": 3,
+  "entry_id": 3609854,
+  "deadline_at": "2026-09-04T17:30:00Z",
+  "reviewed_at": "2026-09-08T18:45:34.109135+00:00",
+  "mounted_at": "2026-09-04T15:30:24.909593Z",
+  "trace_run_id": "2026-27-gw03-manual-closeout-v1",
+  "decision_acta_path": "/var/lib/mova-fpl/artifacts/decisions/2026-27/gw03_20260904T154518Z_envelope.json",
+  "mount_evidence_path": "/var/lib/mova-fpl/artifacts/browser-actions/2026-27-gw03/gw03-final-mounted.png",
+  "mount_evidence_sha256": "804bd7cf1fe1d8e79096abc1edd1bc472a415fe04bf204d5bf6c5eb521314de9",
+  "chip_inventory": [
+    {
+      "name": "wildcard",
+      "window": "H1",
+      "status": "available"
+    },
+    {
+      "name": "free_hit",
+      "window": "H1",
+      "status": "available"
+    },
+    {
+      "name": "bench_boost",
+      "window": "H1",
+      "status": "available"
+    },
+    {
+      "name": "triple_captain",
+      "window": "H1",
+      "status": "available"
+    }
+  ],
+  "selected": {
+    "label": "do_nothing",
+    "policy_version": "observed-manual-gw03",
+    "expected_points": 51.05,
+    "total_cost": 100.0,
+    "bank_after": 0.0,
+    "captain": 411,
+    "vice_captain": 426,
+    "bench_order": [
+      496,
+      557,
+      418,
+      173
+    ],
+    "players": [
+      {
+        "element": 109,
+        "name": "Verbruggen",
+        "team": "Brighton",
+        "position": "GKP",
+        "price": 4.5,
+        "role": "starter",
+        "expected_points": 3.3060744898158014,
+        "p60": 0.9278619904905109
+      },
+      {
+        "element": 8,
+        "name": "Calafiori",
+        "team": "Arsenal",
+        "position": "DEF",
+        "price": 5.5,
+        "role": "starter",
+        "expected_points": 3.5944896315580372,
+        "p60": 0.8088132912510951
+      },
+      {
+        "element": 277,
+        "name": "Egan",
+        "team": "Hull City",
+        "position": "DEF",
+        "price": 4.0,
+        "role": "starter",
+        "expected_points": 4.752665534203491,
+        "p60": 0.8356575354474644
+      },
+      {
+        "element": 229,
+        "name": "Tarkowski",
+        "team": "Everton",
+        "position": "DEF",
+        "price": 6.0,
+        "role": "starter",
+        "expected_points": 4.349670841832094,
+        "p60": 0.922785760045184
+      },
+      {
+        "element": 124,
+        "name": "Groß",
+        "team": "Brighton",
+        "position": "MID",
+        "price": 5.5,
+        "role": "starter",
+        "expected_points": 3.802055697255467,
+        "p60": 0.9341570312632671
+      },
+      {
+        "element": 426,
+        "name": "B.Fernandes",
+        "team": "Man Utd",
+        "position": "MID",
+        "price": 12.0,
+        "role": "starter",
+        "expected_points": 4.621365459152219,
+        "p60": 0.8713943182747619
+      },
+      {
+        "element": 427,
+        "name": "Mbeumo",
+        "team": "Man Utd",
+        "position": "MID",
+        "price": 8.0,
+        "role": "starter",
+        "expected_points": 3.6121534376346407,
+        "p60": 0.8577079130256618
+      },
+      {
+        "element": 565,
+        "name": "M.Sangaré",
+        "team": "Brentford",
+        "position": "MID",
+        "price": 5.5,
+        "role": "starter",
+        "expected_points": 3.861393918673676,
+        "p60": 0.7810274360824092
+      },
+      {
+        "element": 346,
+        "name": "Calvert-Lewin",
+        "team": "Leeds",
+        "position": "FWD",
+        "price": 6.0,
+        "role": "starter",
+        "expected_points": 4.097407430068097,
+        "p60": 0.9517381830672745
+      },
+      {
+        "element": 165,
+        "name": "João Pedro",
+        "team": "Chelsea",
+        "position": "FWD",
+        "price": 7.5,
+        "role": "starter",
+        "expected_points": 3.6349948163955226,
+        "p60": 0.8577079130256618
+      },
+      {
+        "element": 411,
+        "name": "Haaland",
+        "team": "Man City",
+        "position": "FWD",
+        "price": 15.5,
+        "role": "starter",
+        "expected_points": 5.709879178799577,
+        "p60": 0.7773207272654956
+      },
+      {
+        "element": 496,
+        "name": "Kinsky",
+        "team": "Spurs",
+        "position": "GKP",
+        "price": 4.5,
+        "role": "bench",
+        "expected_points": 1.9953972757987715,
+        "p60": 0.8792634156825375
+      },
+      {
+        "element": 557,
+        "name": "Tzolis",
+        "team": "Arsenal",
+        "position": "MID",
+        "price": 6.5,
+        "role": "bench",
+        "expected_points": 2.1725250788495534,
+        "p60": 0.4179760170346296
+      },
+      {
+        "element": 418,
+        "name": "Maguire",
+        "team": "Man Utd",
+        "position": "DEF",
+        "price": 5.0,
+        "role": "bench",
+        "expected_points": 2.3125566419149166,
+        "p60": 0.8623126740795546
+      },
+      {
+        "element": 173,
+        "name": "Thomas",
+        "team": "Coventry City",
+        "position": "DEF",
+        "price": 4.0,
+        "role": "bench",
+        "expected_points": 1.819668333039829,
+        "p60": 0.7605208621944175
+      }
+    ],
+    "source_decision": {
+      "bank_after": 0.0,
+      "bench_order": [
+        496,
+        557,
+        418,
+        173
+      ],
+      "captain": 411,
+      "chip": null,
+      "expected_points": 51.05,
+      "fingerprint": "d98a2ccdf7c2fbc5",
+      "gw": 3,
+      "hits": 0,
+      "notes": [
+        "estado exacto observado; cero cambios"
+      ],
+      "policy": "do_nothing",
+      "season": "2026-27",
+      "squad_15": [
+        109,
+        8,
+        277,
+        229,
+        124,
+        426,
+        427,
+        565,
+        346,
+        165,
+        411,
+        496,
+        557,
+        418,
+        173
+      ],
+      "starters": [
+        109,
+        8,
+        277,
+        229,
+        124,
+        426,
+        427,
+        565,
+        346,
+        165,
+        411
+      ],
+      "total_cost": 100.6,
+      "transfers_in": [],
+      "transfers_out": [],
+      "vice_captain": 426
+    },
+    "price_basis": "authenticated purchase prices; market value is separately preserved in source_decision"
+  },
+  "comparator": {
+    "label": "milp_baseline",
+    "policy_version": "predeadline-milp-points-1.1.0-h3",
+    "expected_points": 60.02,
+    "total_cost": 100.1,
+    "bank_after": 0.2,
+    "captain": 411,
+    "vice_captain": 12,
+    "bench_order": [
+      82,
+      279,
+      640,
+      593
+    ],
+    "players": [
+      {
+        "element": 12,
+        "name": "Saka",
+        "team": "Arsenal",
+        "position": "MID",
+        "price": 9.5,
+        "role": "starter",
+        "expected_points": 5.3013249751134275,
+        "p60": 0.7742544170339242
+      },
+      {
+        "element": 13,
+        "name": "Rice",
+        "team": "Arsenal",
+        "position": "MID",
+        "price": 7.5,
+        "role": "starter",
+        "expected_points": 4.604018513248529,
+        "p60": 0.8611785307164196
+      },
+      {
+        "element": 82,
+        "name": "Kelleher",
+        "team": "Brentford",
+        "position": "GKP",
+        "price": 5.0,
+        "role": "bench",
+        "expected_points": 4.300349950122091,
+        "p60": 0.9397103392607712
+      },
+      {
+        "element": 236,
+        "name": "Dewsbury-Hall",
+        "team": "Everton",
+        "position": "MID",
+        "price": 6.5,
+        "role": "starter",
+        "expected_points": 4.519287974482403,
+        "p60": 0.9145695733799851
+      },
+      {
+        "element": 277,
+        "name": "Egan",
+        "team": "Hull City",
+        "position": "DEF",
+        "price": 4.0,
+        "role": "starter",
+        "expected_points": 4.752665534203491,
+        "p60": 0.8356575354474644
+      },
+      {
+        "element": 279,
+        "name": "Ajayi",
+        "team": "Hull City",
+        "position": "DEF",
+        "price": 4.1,
+        "role": "bench",
+        "expected_points": 4.274122687177388,
+        "p60": 0.7230354551648455
+      },
+      {
+        "element": 388,
+        "name": "Guéhi",
+        "team": "Man City",
+        "position": "DEF",
+        "price": 6.0,
+        "role": "starter",
+        "expected_points": 5.066350676079354,
+        "p60": 0.9225748869460628
+      },
+      {
+        "element": 397,
+        "name": "Semenyo",
+        "team": "Man City",
+        "position": "MID",
+        "price": 8.5,
+        "role": "starter",
+        "expected_points": 4.939831471130484,
+        "p60": 0.9110224851561378
+      },
+      {
+        "element": 411,
+        "name": "Haaland",
+        "team": "Man City",
+        "position": "FWD",
+        "price": 15.5,
+        "role": "starter",
+        "expected_points": 5.709879178799577,
+        "p60": 0.7773207272654956
+      },
+      {
+        "element": 445,
+        "name": "Thiaw",
+        "team": "Newcastle",
+        "position": "DEF",
+        "price": 5.0,
+        "role": "starter",
+        "expected_points": 4.381297847310469,
+        "p60": 0.8832045761533278
+      },
+      {
+        "element": 480,
+        "name": "Gibbs-White",
+        "team": "Nott'm Forest",
+        "position": "MID",
+        "price": 7.9,
+        "role": "starter",
+        "expected_points": 5.090499356026273,
+        "p60": 0.8847733079611325
+      },
+      {
+        "element": 569,
+        "name": "Gonzalo",
+        "team": "Fulham",
+        "position": "FWD",
+        "price": 6.0,
+        "role": "starter",
+        "expected_points": 5.049370809528148,
+        "p60": 0.9538747761031559
+      },
+      {
+        "element": 572,
+        "name": "Tzolakis",
+        "team": "Hull City",
+        "position": "GKP",
+        "price": 4.6,
+        "role": "starter",
+        "expected_points": 4.897532716101092,
+        "p60": 0.941357763552577
+      },
+      {
+        "element": 593,
+        "name": "Dedić",
+        "team": "Newcastle",
+        "position": "DEF",
+        "price": 4.5,
+        "role": "bench",
+        "expected_points": 3.8993429934656785,
+        "p60": 0.9039100263447941
+      },
+      {
+        "element": 640,
+        "name": "Flemming",
+        "team": "Ipswich Town",
+        "position": "FWD",
+        "price": 5.5,
+        "role": "bench",
+        "expected_points": 4.100842021180366,
+        "p60": 0.8468221920472878
+      }
+    ],
+    "source_decision": {
+      "bank_after": 0.2,
+      "bench_order": [
+        82,
+        279,
+        640,
+        593
+      ],
+      "captain": 411,
+      "chip": "wildcard",
+      "expected_points": 60.02,
+      "fingerprint": "ab83d0f3d58d2a00",
+      "gw": 3,
+      "hits": 0,
+      "notes": [
+        "shortlist 652/652 (100%) [DEF:214, FWD:78, GKP:71, MID:289] forzados=0",
+        "horizonte [3, 4, 5] xp_total={3: 853.2, 4: 716.7, 5: 602.0}",
+        "chip jugado: wildcard"
+      ],
+      "policy": "milp",
+      "season": "2026-27",
+      "squad_15": [
+        12,
+        13,
+        82,
+        236,
+        277,
+        279,
+        388,
+        397,
+        411,
+        445,
+        480,
+        569,
+        572,
+        593,
+        640
+      ],
+      "starters": [
+        411,
+        12,
+        480,
+        388,
+        569,
+        397,
+        572,
+        277,
+        13,
+        236,
+        445
+      ],
+      "total_cost": 100.1,
+      "transfers_in": [
+        12,
+        13,
+        82,
+        236,
+        279,
+        388,
+        397,
+        445,
+        480,
+        569,
+        572,
+        593,
+        640
+      ],
+      "transfers_out": [
+        8,
+        109,
+        124,
+        165,
+        173,
+        229,
+        346,
+        418,
+        426,
+        427,
+        496,
+        557,
+        565
+      ],
+      "vice_captain": 12
+    }
+  },
+  "intervention": {
+    "schema": "mova-manual-decision-intervention-v1",
+    "author": "julian+orbix",
+    "rationale": "Decisión humana observada predeadline: Rodon → Egan y Mosquera → Tarkowski, sin hits ni chip; se conservó el XI montado con Haaland capitán. El comparador es la propuesta MILP Wildcard emitida después del montaje, aún predeadline. Este delta NO aísla el valor de las dos transferencias ni el valor multi-GW de conservar Wildcard."
+  },
+  "mount_verification": {
+    "squad": [
+      109,
+      8,
+      277,
+      229,
+      124,
+      426,
+      427,
+      565,
+      346,
+      165,
+      411,
+      496,
+      557,
+      418,
+      173
+    ],
+    "xi": [
+      109,
+      8,
+      277,
+      229,
+      124,
+      426,
+      427,
+      565,
+      346,
+      165,
+      411
+    ],
+    "captain": 411,
+    "vice_captain": 426,
+    "bench_order": [
+      496,
+      557,
+      418,
+      173
+    ],
+    "budget": {
+      "total_cost": 100.0,
+      "bank": 0.0
+    },
+    "no_chip": true
+  },
+  "research_signals": [],
+  "proposals": [],
+  "provenance": {
+    "assembled_at": "2026-09-08T18:45:34.109135+00:00",
+    "reviewed_at_semantics": "post-settlement operator review; not backdated human approval",
+    "mounted_at_semantics": "official picks_last_updated from sanitized predeadline snapshot",
+    "mount_observed_at": "2026-09-04T17:12:34.995Z",
+    "selected_candidate_key": "do_nothing",
+    "envelope_selected_candidate_key": "milp_baseline",
+    "projection_sha256": "a7b29027e8fc41de7b51c9f75dd4ad1b5458bd4054e7a319129b855aa9f683ff",
+    "projection_generated_at": "2026-09-04T15:31:02.191325+00:00",
+    "candidate_sha256": "421846ce6e77e1d48a89913646d895bd159220fedf2a8e84ea5b1b541895d0d8",
+    "transfers_in": [
+      277,
+      229
+    ],
+    "transfers_out": [
+      329,
+      11
+    ],
+    "hit_cost": 0,
+    "comparator_chip": "wildcard",
+    "scope": "retrospective scoring of predeadline evidence; no execution authority promotion"
+  }
+}
