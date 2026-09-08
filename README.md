@@ -1,7 +1,7 @@
 ---
 type: docs
 name: MOVA Fantasy Fútbol Data Analytics
-updated: 2026-09-06
+updated: 2026-09-08
 status: active
 tags: [mova, fpl, runtime, operations]
 ---
@@ -27,6 +27,14 @@ ni promueve un modelo. Empezar por el [contrato del dataset](experiments/data_gr
 y la [guía de cierre, tamaños y límites](experiments/data_ground_truth/README.md#cierre-del-gate-de-datos-g112).
 
 ## Versiones y última comprobación
+
+**Cierre GW3, 8 de septiembre de 2026:** settlement oficial y review registrados:
+45 puntos frente a 51 de promedio; 208 acumulados. Transferencias: +3 netos
+con autosubs frente a revertir sólo los dos cambios; comparador MILP Wildcard:
+57 puntos con consumo hipotético del chip. `season_fixture_h3`: 45 frente a
+50 de su control, una jornada de evidencia. GW4 tiene inputs listos y deadline
+12 de septiembre, 07:30 Colombia. [Feedback y límites](docs/decisions/2026-27/gw03-closeout.md).
+
 
 Verificado el **6 de septiembre de 2026, 19:35 Colombia**: doctor FPL con
 **24 PASS, 0 WARN, 0 FAIL**; cockpit saludable, sin incidentes críticos ni
