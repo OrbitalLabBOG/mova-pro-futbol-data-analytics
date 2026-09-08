@@ -88,3 +88,21 @@ revisar minutos y titularidad de Tzolis/Sangaré, comparar alternativas sin chip
 con oportunidad futura de chips y completar research/deliberación dentro del
 presupuesto. Mantener A0/shadow. Quedan ocho P2 históricos, alertas externas,
 backup off-host y evidencia multi-GW; no se cierran por pasar el doctor.
+
+
+Verificación posterior a la reparación, 13:52:32 Colombia: **doctor 24 PASS,
+0 WARN, 0 FAIL**. Unidad instalada desde el cambio `96352c5`, validada con
+`systemd-analyze verify` y ejecución idempotente aprobada. Rollback:
+`/var/lib/mova-fpl/artifacts/host-config/20260908-gw03/postgres-sync.service.before`.
+El checkout y la imagen del motor conservan `dea98e2`; sólo cambió la unidad host.
+
+La fotografía post-closeout `pgimport_16285642570e43e0849598dab3ee44ad`
+pasó 57 tablas. La memoria GW4 con SHA-256
+`d2821edb42838827b240f279066c8b0e87c87444a12cefa7eef4f2b129fdb9f6`
+incluye ambos reviews de GW3. Los ocho P2 se revisaron individualmente: todos
+terminan en HTTP 503 del historial público FPL tras cinco intentos el 4 de
+septiembre. Se conserva su estado abierto para el tratamiento de incidentes;
+no son fallos actuales de integridad ni afectan los 45 puntos conciliados.
+
+Seguimiento PM actualizado con autorización del usuario: tarea GW3 cerrada,
+24/35 tareas done. El paquete está en PR draft #156; merge pendiente.

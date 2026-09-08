@@ -223,5 +223,66 @@
   "scope": "Transfers reversed in the observed XI, same bench order and captain; legal autosubs applied. Single-GW paired outcome, excludes saved transfers and future utility.",
   "runtime_review_id": "review_43b4f36993342f7015e0e1f9",
   "runtime_review_sha256": "8de166f40c5e5419d6429ddaf20b99d82adc72bc76ca46260f6b91d58d7611d4",
-  "causal_review_id": "causalreview_1e359386258a0c528f4ee1d4"
+  "causal_review_id": "causalreview_1e359386258a0c528f4ee1d4",
+  "final_operations": {
+    "doctor_generated_at": "2026-09-08T18:52:32+00:00",
+    "doctor_summary": {
+      "fail": 0,
+      "pass": 24,
+      "required_failures": 0,
+      "warn": 0
+    },
+    "runtime_sha": "dea98e20db44b05da7b426d0b4476f1cd5fca928",
+    "systemd_template_commit": "96352c5",
+    "systemd_rollback": "/var/lib/mova-fpl/artifacts/host-config/20260908-gw03/postgres-sync.service.before",
+    "postgres_import_id": "pgimport_16285642570e43e0849598dab3ee44ad",
+    "postgres_parity": "57 tables passed",
+    "gw4_memory_sha256": "d2821edb42838827b240f279066c8b0e87c87444a12cefa7eef4f2b129fdb9f6",
+    "gw3_review_ids": [
+      "causalreview_1e359386258a0c528f4ee1d4",
+      "review_43b4f36993342f7015e0e1f9"
+    ],
+    "historical_incident_causes": [
+      {
+        "incident_id": "incident_a4a76c0e7d0f49ef8974180e65676a5f",
+        "cycle_id": "2026-27-gw04",
+        "error": "raise OSError(f\"fallo GET tras {retries} intentos: {safe_url or url} ({last})\")\nOSError: fallo GET tras 5 intentos: https://fantasy.premierleague.com/api/entry/3609854/history/ (HTTP 503)"
+      },
+      {
+        "incident_id": "incident_a0a18240fd4645c6ac0a58eb6fd4fda6",
+        "cycle_id": "2026-27-gw03",
+        "error": "raise OSError(f\"fallo GET tras {retries} intentos: {safe_url or url} ({last})\")\nOSError: fallo GET tras 5 intentos: https://fantasy.premierleague.com/api/entry/3609854/history/ (HTTP 503)"
+      },
+      {
+        "incident_id": "incident_498a09a8ce8a403a9df41db107b7afc9",
+        "cycle_id": "2026-27-gw03",
+        "error": "raise OSError(f\"fallo GET tras {retries} intentos: {safe_url or url} ({last})\")\nOSError: fallo GET tras 5 intentos: https://fantasy.premierleague.com/api/entry/3609854/history/ (HTTP 503)"
+      },
+      {
+        "incident_id": "incident_bfafab2c93ec432fa28dc9ac674aa649",
+        "cycle_id": "2026-27-gw03",
+        "error": "raise OSError(f\"fallo GET tras {retries} intentos: {safe_url or url} ({last})\")\nOSError: fallo GET tras 5 intentos: https://fantasy.premierleague.com/api/entry/3609854/history/ (HTTP 503)"
+      },
+      {
+        "incident_id": "incident_77a43d3106904275b05d118684605efb",
+        "cycle_id": "2026-27-gw03",
+        "error": "raise OSError(f\"fallo GET tras {retries} intentos: {safe_url or url} ({last})\")\nOSError: fallo GET tras 5 intentos: https://fantasy.premierleague.com/api/entry/3609854/history/ (HTTP 503)"
+      },
+      {
+        "incident_id": "incident_aa54272d9f0046868d8819b480bc3249",
+        "cycle_id": "2026-27-gw03",
+        "error": "raise OSError(f\"fallo GET tras {retries} intentos: {safe_url or url} ({last})\")\nOSError: fallo GET tras 5 intentos: https://fantasy.premierleague.com/api/entry/3609854/history/ (HTTP 503)"
+      },
+      {
+        "incident_id": "incident_296f610a704c4cd29f37c098e154bfdc",
+        "cycle_id": "2026-27-gw03",
+        "error": "raise OSError(f\"fallo GET tras {retries} intentos: {safe_url or url} ({last})\")\nOSError: fallo GET tras 5 intentos: https://fantasy.premierleague.com/api/entry/3609854/history/ (HTTP 503)"
+      },
+      {
+        "incident_id": "incident_b0c2f8e0901444a1b843e5d9b6e4b347",
+        "cycle_id": "2026-27-gw03",
+        "error": "raise OSError(f\"fallo GET tras {retries} intentos: {safe_url or url} ({last})\")\nOSError: fallo GET tras 5 intentos: https://fantasy.premierleague.com/api/entry/3609854/history/ (HTTP 503)"
+      }
+    ]
+  }
 }
