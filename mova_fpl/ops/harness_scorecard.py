@@ -151,6 +151,7 @@ def evaluate_scorecard(*, readiness: dict, cost_report: dict,
     proposals = improvement.get("proposal_counts") or {}
     lessons = improvement.get("lessons") or []
     evaluations = improvement.get("evaluations") or []
+    cost_totals = ((improvement.get("costs") or {}).get("totals") or {})
     reviews_observed = sum(int(value or 0) for value in proposals.values())
     learning_pass = reviews_observed > 0 and len(lessons) > 0
     dimensions.append({
@@ -196,12 +197,28 @@ def evaluate_scorecard(*, readiness: dict, cost_report: dict,
             "gates": {**gate_counts, "total": len(gates)},
             "technical_eligible_level": activation.get("technical_eligible_level"),
         },
+        "telemetry": {
+            "learning": {
+                "proposals": reviews_observed,
+                "evaluations": len(evaluations),
+                "lessons": len(lessons),
+            },
+            "economics": {key: cost_totals.get(key) for key in (
+                "uses", "input_tokens", "output_tokens", "subscription_uses",
+                "estimated_cost_usd", "unknown_cost_uses",
+            )},
+            "model_releases": len(improvement.get("model_bundle_releases") or []),
+        },
         "authority": {
             "current_action_level": activation.get("current_action_level"),
             "promotion_is_automatic": False,
             "writes_enabled": activation.get("writes_enabled"),
             "activation_blockers": activation.get("activation_blockers") or [],
         },
+        "readiness_gates": [
+            {"code": gate.get("code"), "status": gate.get("status")}
+            for gate in gates
+        ],
         "dimensions": dimensions,
         "next_actions": next_actions,
     }
@@ -224,6 +241,9 @@ def build_scorecard(config: RuntimeConfig, db: OpsDB, *,
 def prometheus(report: dict) -> str:
     status = report.get("overall_status", "blocked")
     quality = report.get("quality") or {}
+    telemetry = report.get("telemetry") or {}
+    learning = telemetry.get("learning") or {}
+    economics = telemetry.get("economics") or {}
     lines = [
         "# HELP mova_harness_scorecard_up Harness scorecard contract availability.",
         "# TYPE mova_harness_scorecard_up gauge",
@@ -235,6 +255,29 @@ def prometheus(report: dict) -> str:
         "# HELP mova_harness_readiness_pass_ratio Fraction of readiness gates passing.",
         "# TYPE mova_harness_readiness_pass_ratio gauge",
         f'mova_harness_readiness_pass_ratio {float(quality.get("readiness_pass_ratio") or 0):.4f}',
+        "# HELP mova_harness_learning_items Continuous-learning evidence by kind.",
+        "# TYPE mova_harness_learning_items gauge",
+        *[f'mova_harness_learning_items{{kind="{kind}"}} {int(learning.get(kind) or 0)}'
+          for kind in ("proposals", "evaluations", "lessons")],
+        "# HELP mova_harness_agent_usage_tokens Recorded agent token usage by direction.",
+        "# TYPE mova_harness_agent_usage_tokens gauge",
+        f'mova_harness_agent_usage_tokens{{direction="input"}} {int(economics.get("input_tokens") or 0)}',
+        f'mova_harness_agent_usage_tokens{{direction="output"}} {int(economics.get("output_tokens") or 0)}',
+        "# HELP mova_harness_agent_cost_known Whether every recorded use has a USD estimate.",
+        "# TYPE mova_harness_agent_cost_known gauge",
+        ("mova_harness_agent_cost_known "
+         f'{1 if economics.get("estimated_cost_usd") is not None and int(economics.get("unknown_cost_uses") or 0) == 0 else 0}'),
+        "# HELP mova_harness_model_releases Registered model bundle releases.",
+        "# TYPE mova_harness_model_releases gauge",
+        f'mova_harness_model_releases {int(telemetry.get("model_releases") or 0)}',
+        "# HELP mova_harness_readiness_gate Readiness gate state by code.",
+        "# TYPE mova_harness_readiness_gate gauge",
+        *[
+            f'mova_harness_readiness_gate{{code="{gate.get("code")}",status="{state}"}} '
+            f'{1 if gate.get("status") == state else 0}'
+            for gate in report.get("readiness_gates") or []
+            for state in ("pass", "pending", "blocked")
+        ],
         "# HELP mova_harness_dimension_status Harness dimensions by state.",
         "# TYPE mova_harness_dimension_status gauge",
     ]

@@ -94,6 +94,7 @@ PM de construcción del proyecto.
 | [58-hv1-08c-agent-cadence-rollout.md](58-hv1-08c-agent-cadence-rollout.md) | Tres slots agentic y una deliberación por research importado |
 | [59-hv1-13-operations-cockpit-rollout.md](59-hv1-13-operations-cockpit-rollout.md) | Cockpit, triage, acceso web privado y sentinel deadline-aware |
 | [60-hv1-13b-owner-dashboard.md](60-hv1-13b-owner-dashboard.md) | Dashboard ejecutivo público, semántica verde/rojo y diagnóstico loopback-only |
+| [61-hv1-13c-control-room-feedback-contract.md](61-hv1-13c-control-room-feedback-contract.md) | Modelos, costo, DR, feedback y salida de shadow en cockpit/doctor/Prometheus |
 | [contracts/](contracts/) | JSON Schemas máquina para request, result y signal |
 | [decisions/](decisions/) | decisiones arquitectónicas propuestas |
 | [workpacks/](workpacks/) | unidades de implementación y criterios todavía pendientes |

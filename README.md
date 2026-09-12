@@ -1,7 +1,7 @@
 ---
 type: docs
 name: MOVA Fantasy Fútbol Data Analytics
-updated: 2026-09-06
+updated: 2026-09-12
 status: active
 tags: [mova, fpl, runtime, operations]
 ---
@@ -28,11 +28,18 @@ y la [guía de cierre, tamaños y límites](experiments/data_ground_truth/README
 
 ## Versiones y última comprobación
 
-Verificado el **6 de septiembre de 2026, 19:35 Colombia**: doctor FPL con
-**24 PASS, 0 WARN, 0 FAIL**; cockpit saludable, sin incidentes críticos ni
-violaciones del workflow. Continúan ocho incidentes abiertos, GW4 preliminar,
-A0/shadow y preparación autónoma pendiente. El corte detallado anterior se
-conserva abajo con su fecha; no representa un monitor en vivo.
+Verificado el **11 de septiembre de 2026, 14:34 Colombia**: GW4 montada desde el
+browser del VPS bajo aprobación humana explícita y ventana temporal `guarded/A2`.
+Confirmación visual y GET privado coinciden en los 15 puestos, capitán y vice;
+sin transferencias ni chips. Doctor: **24 PASS, 0 WARN, 0 FAIL**. Se restauró
+`shadow/A0`, kill switch activo, escrituras apagadas, compliance pendiente y
+browser detenido. No hubo despliegue ni promoción autónoma.
+
+La [acta GW4](docs/decisions/2026-27/gw04-research-and-decision.md) conserva la
+decisión, evidencia y pendientes: research con conflicto temporal y cobertura
+parcial; importador supervisado legado limitado a A1, sin cierre normalizado A2.
+El montaje manual no acredita rehearsals del driver. El corte detallado anterior
+se conserva abajo con su fecha; no representa un monitor en vivo.
 
 | Componente | Versión / revisión | Alcance |
 | --- | --- | --- |
@@ -394,9 +401,11 @@ CycleManifest + memoria estratégica durable → modelos causales → matriz xP 
   tombstone abren un P1 deduplicado; la API `/api/v1/agent-queue`, `doctor` y las métricas
   `mova_agent_queue_*` exponen el estado sin publicar prompts. También expira permisos no usados
   de forma idempotente y detecta permisos ausentes/alterados/huérfanos o starts sin cierre.
-- `mova cockpit` compone funciones, autoridad, workflow, costos, readiness y alertas para humanos
-  y agentes. `mova triage` enlaza incidentes con jobs/correlations sin ejecutar reparaciones. El
-  dashboard ejecutivo resume ese contrato sin exponer endpoints técnicos ni controles mutables.
+- `mova cockpit` compone funciones, autoridad, workflow, modelos, consumo/costo, feedback,
+  readiness, DR y alertas para humanos y agentes. `mova doctor --json` adjunta el mismo control
+  room bajo `observability`; `mova triage` enlaza incidentes con jobs/correlations sin ejecutar
+  reparaciones. El dashboard ejecutivo resume ese contrato sin exponer endpoints técnicos ni
+  controles mutables.
 - El sentinel deadline-aware sólo abre incidentes cuando faltan hitos dentro de T−6h/T−3h o una
   ejecución entra en estado terminal inseguro; las esperas normales siguen observables sin ruido.
 - `HOST_RECOVERY_DRILLS_PROVEN` exige cinco escenarios: API, PostgreSQL, browser, outage

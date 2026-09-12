@@ -53,6 +53,10 @@ class RuntimeConfig:
     strategic_root: Path = Path("/var/lib/mova-fpl/artifacts/strategic-context")
     research_root: Path = Path("/var/lib/mova-fpl/artifacts/research")
     research_provider: str = "codex_subscription"
+    research_model: str = "gpt-5.6-luna"
+    research_reasoning_effort: str = "medium"
+    deliberation_model: str = "gpt-5.6-terra"
+    deliberation_reasoning_effort: str = "high"
     research_min_interval_seconds: int = 6 * 3600
     research_deadline_window_seconds: int = 30 * 3600
     research_final_window_seconds: int = 2 * 3600
@@ -158,6 +162,16 @@ class RuntimeConfig:
             )),
             research_provider=os.environ.get(
                 "MOVA_RESEARCH_PROVIDER", "codex_subscription"
+            ),
+            research_model=os.environ.get("MOVA_RESEARCH_MODEL", "gpt-5.6-luna"),
+            research_reasoning_effort=os.environ.get(
+                "MOVA_RESEARCH_REASONING_EFFORT", "medium"
+            ),
+            deliberation_model=os.environ.get(
+                "MOVA_DELIBERATION_MODEL", "gpt-5.6-terra"
+            ),
+            deliberation_reasoning_effort=os.environ.get(
+                "MOVA_DELIBERATION_REASONING_EFFORT", "high"
             ),
             research_min_interval_seconds=int(os.environ.get(
                 "MOVA_RESEARCH_MIN_INTERVAL_SECONDS", str(6 * 3600)
@@ -279,6 +293,13 @@ class RuntimeConfig:
             raise ValueError("MOVA_ANALYTICS_REFERENCE_GAMEWEEKS debe estar entre 3 y 20")
         if self.research_provider not in {"codex_subscription", "fixture"}:
             raise ValueError("MOVA_RESEARCH_PROVIDER inválido")
+        if not self.research_model.strip() or not self.deliberation_model.strip():
+            raise ValueError("los modelos agentic deben tener nombre explícito")
+        allowed_efforts = {"none", "low", "medium", "high", "xhigh", "max"}
+        if self.research_reasoning_effort not in allowed_efforts:
+            raise ValueError("MOVA_RESEARCH_REASONING_EFFORT inválido")
+        if self.deliberation_reasoning_effort not in allowed_efforts:
+            raise ValueError("MOVA_DELIBERATION_REASONING_EFFORT inválido")
         if self.research_min_interval_seconds <= 0:
             raise ValueError("MOVA_RESEARCH_MIN_INTERVAL_SECONDS debe ser positivo")
         if not 3600 <= self.research_deadline_window_seconds <= 7 * 86400:
