@@ -4,7 +4,7 @@ name: "HV1-13C — control room, costo y feedback observable"
 created: 2026-09-12
 updated: 2026-09-12
 tags: [mova, fpl, harness, observability, dr, costs, models, feedback]
-status: implemented_pending_runtime_verification
+status: deployed_verified
 ---
 
 # HV1-13C — control room, costo y feedback observable
@@ -75,3 +75,25 @@ room muestra esos faltantes; no los da por cumplidos.
 Volver a la imagen anterior restaura la forma previa del cockpit. Los campos añadidos son
 read-only y no requieren migración de datos. Los consumidores de v1 deben tolerar campos
 adicionales y no inferir autoridad por su presencia.
+
+## Evidencia de despliegue
+
+Verificado el **12 de septiembre de 2026 a las 17:25 UTC** sobre
+`191d809fd3745c0fb8bb24a4e35e3b2f45902413`:
+
+- CI de los PR [#157](https://github.com/OrbitalLabBOG/mova-pro-futbol-data-analytics/pull/157),
+  [#158](https://github.com/OrbitalLabBOG/mova-pro-futbol-data-analytics/pull/158) y
+  [#159](https://github.com/OrbitalLabBOG/mova-pro-futbol-data-analytics/pull/159) pasó;
+- suite local: 1.731 pruebas pasaron y 79 quedaron excluidas por markers;
+- API `/api/v1/cockpit`: HTTP 200, `schema=mova-cockpit-v1`;
+- doctor: 24 PASS, 0 WARN, 0 FAIL; checkout e imagen coinciden;
+- dashboard público: HTTP 200; `/api/v1/cockpit` público: HTTP 404;
+- Prometheus expone gates, learning, tokens, releases y `agent_cost_known`;
+- baseline GW5 `projection_2457f5d8bb44450e8123fd8b0cf9115c` aprobado, bundle
+  minutes/points 1.1.0 y cero alertas de drift;
+- controles posteriores: `shadow/A0`, kill switch activo, browser writes apagado y promoción
+  automática deshabilitada.
+
+El rollback operativo conserva la imagen anterior y el backup
+`/etc/mova-fpl/deploy.env.pre-control-room`; restaurarlos requiere actualizar checkout e imagen
+como una pareja y volver a ejecutar doctor. No fue necesario usar rollback.

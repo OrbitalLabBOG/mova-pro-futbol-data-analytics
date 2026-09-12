@@ -28,10 +28,17 @@ y la [guía de cierre, tamaños y límites](experiments/data_ground_truth/README
 
 ## Versiones y última comprobación
 
-Verificado el **11 de septiembre de 2026, 14:34 Colombia**: GW4 montada desde el
+Verificado el **12 de septiembre de 2026, 12:25 Colombia**: control room desplegado en
+`191d809fd3745c0fb8bb24a4e35e3b2f45902413`; doctor **24 PASS, 0 WARN, 0 FAIL**,
+API loopback y métricas nuevas operativas, dashboard público 200 y API técnica pública 404.
+El runtime conserva `shadow/A0`, kill switch activo y browser writes apagado. La
+[evidencia del rollout](docs/specs/fpl-autonomous-operator/61-hv1-13c-control-room-feedback-contract.md)
+registra modelos, costo, DR, feedback y límites pendientes.
+
+El **11 de septiembre de 2026, 14:34 Colombia**, GW4 quedó montada desde el
 browser del VPS bajo aprobación humana explícita y ventana temporal `guarded/A2`.
 Confirmación visual y GET privado coinciden en los 15 puestos, capitán y vice;
-sin transferencias ni chips. Doctor: **24 PASS, 0 WARN, 0 FAIL**. Se restauró
+sin transferencias ni chips. Se restauró
 `shadow/A0`, kill switch activo, escrituras apagadas, compliance pendiente y
 browser detenido. No hubo despliegue ni promoción autónoma.
 
@@ -43,7 +50,7 @@ se conserva abajo con su fecha; no representa un monitor en vivo.
 
 | Componente | Versión / revisión | Alcance |
 | --- | --- | --- |
-| Motor FPL desplegado | v0.7.0 · `dea98e2` | Predictores 1.1.0; `season_value` 1.0.0 como challenger shadow |
+| Motor FPL desplegado | v0.7.0 · `191d809` | Predictores 1.1.0; control room y `season_value` challenger shadow |
 | Corte de datos en GitHub | `data-g112-v1.0.0` | Dataset oficial interno, archivo restaurado, cifras e inventario |
 | MLflow desplegado | `mlops-v1.0.0` · `19e066b` | Servicio independiente con MLflow 3.16.0 |
 
