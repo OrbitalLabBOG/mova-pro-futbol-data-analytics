@@ -35,6 +35,9 @@ y podía ocultar la diferencia entre una plataforma sana y una promoción técni
 `mova doctor --json` adjunta el mismo resumen en `observability`. El doctor no duplica datos ni
 autoridad y sigue funcionando cuando el control room no puede construirse.
 
+El API reutiliza el snapshot analítico ya publicado por el worker y resuelve el bundle desde los
+controles/artefactos locales. No recibe el secreto owner de PostgreSQL para construir esta vista.
+
 Prometheus publica gates de readiness por código, evidencia del loop de aprendizaje, tokens,
 conocimiento del costo USD y número de releases. Las etiquetas son finitas y no incluyen GW,
 IDs, paths, prompts o secretos.

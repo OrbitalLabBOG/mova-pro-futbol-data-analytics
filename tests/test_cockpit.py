@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 from mova_fpl.ops.api import _dashboard, _human_deadline
 from mova_fpl.ops.cli import parser
@@ -163,6 +164,15 @@ class TestCockpitControlRoomContract:
         assert payload["resilience"]["offsite_restore"]["status"] == "pending"
         assert payload["exit_shadow"]["status"] == "evidence_pending"
         assert payload["runtime_mutated"] is False
+
+    def test_api_control_room_reuses_published_analytics_without_owner_secret(self):
+        source = Path("mova_fpl/ops/cockpit.py").read_text(encoding="utf-8")
+        compose = Path("compose.yaml").read_text(encoding="utf-8")
+
+        assert "ModelOpsService" not in source
+        assert '"analytics": operator_status.get("analytics") or {}' in source
+        api_section = compose.split("  api:", 1)[1].split("  worker:", 1)[0]
+        assert "postgres_password" not in api_section
 
 
 def test_cockpit_surfaces_critical_incident_and_budget_without_enabling_writes():

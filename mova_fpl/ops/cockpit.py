@@ -362,11 +362,12 @@ def evaluate_cockpit(*, operator_status: dict, safety: dict, readiness: dict,
 def build_cockpit(config: RuntimeConfig, db: OpsDB, *,
                   now: datetime | None = None) -> dict:
     current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
-    from mova_fpl.ops.model_service import ModelOpsService
+    from mova_fpl.ops.model_release import resolve_active_model_bundle
 
+    operator_status = build_status(config, db, now=current)
     improvement = db.improvement_status(season=config.season)
     return evaluate_cockpit(
-        operator_status=build_status(config, db, now=current),
+        operator_status=operator_status,
         safety=build_safety(config, db, now=current),
         readiness=build_readiness(config, db, now=current),
         scorecard=build_scorecard(config, db, now=current),
@@ -374,7 +375,12 @@ def build_cockpit(config: RuntimeConfig, db: OpsDB, *,
         costs=db.cost_report(config.agent_budget_policy(), season=config.season),
         alert_channel=channel_report(config, db),
         alert_status=db.outbox_status(),
-        model_status=ModelOpsService(config, db).status(),
+        model_status={
+            "active_bundle": resolve_active_model_bundle(config, db),
+            # build_status usa el snapshot analítico publicado y no concede al
+            # API read-only credenciales owner de PostgreSQL.
+            "analytics": operator_status.get("analytics") or {},
+        },
         improvement=improvement,
         agent_routing={
             "provider": config.research_provider,
