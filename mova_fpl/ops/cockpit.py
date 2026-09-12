@@ -36,9 +36,27 @@ def _stage_map(workflow: dict) -> dict[str, dict]:
     return {str(row.get("name")): row for row in workflow.get("stages") or []}
 
 
+def _gate_map(readiness: dict) -> dict[str, dict]:
+    return {str(row.get("code")): row for row in readiness.get("gates") or []}
+
+
+def _model_bundle(bundle: dict | None) -> dict:
+    bundle = bundle or {}
+    models = bundle.get("models") or {}
+    return {
+        "source": bundle.get("source"),
+        "release_id": bundle.get("release_id"),
+        "minutes": (models.get("minutes") or {}).get("version"),
+        "points": (models.get("points") or {}).get("version"),
+    }
+
+
 def evaluate_cockpit(*, operator_status: dict, safety: dict, readiness: dict,
                      scorecard: dict, workflow: dict, costs: dict,
                      alert_channel: dict, alert_status: dict,
+                     model_status: dict | None = None,
+                     improvement: dict | None = None,
+                     agent_routing: dict | None = None,
                      generated_at: str | None = None) -> dict:
     """Compone snapshots precomputados sin IO ni mutaciones."""
     gameweek = operator_status.get("gameweek") or {}
@@ -56,6 +74,31 @@ def evaluate_cockpit(*, operator_status: dict, safety: dict, readiness: dict,
     critical = [row for row in open_incidents if row.get("severity") in {"P0", "P1"}]
     gw_cost = costs.get("gameweek") or {}
     month_cost = costs.get("month") or {}
+    model_status = model_status or {}
+    improvement = improvement or {}
+    agent_routing = agent_routing or {}
+    gates = _gate_map(readiness)
+    improvement_costs = improvement.get("costs") or {}
+    all_time_cost = improvement_costs.get("totals") or {}
+    analytics_contract = model_status.get("analytics") or analytics
+    scorecards = analytics_contract.get("latest_scorecards") or []
+    projection_batches = analytics_contract.get("latest_projection_batches") or []
+    proposal_counts = improvement.get("proposal_counts") or {}
+    feedback_observed = {
+        "model_scorecards": int((analytics_contract.get("counts") or {}).get("evaluations") or 0),
+        "change_proposals": sum(int(value or 0) for value in proposal_counts.values()),
+        "evaluations": len(improvement.get("evaluations") or []),
+        "lessons": len(improvement.get("lessons") or []),
+    }
+
+    def gate_contract(code: str) -> dict:
+        gate = gates.get(code) or {}
+        return {
+            "status": gate.get("status", "missing"),
+            "observed": gate.get("observed"),
+            "required": gate.get("required"),
+            "next_action": gate.get("next_action"),
+        }
 
     alerts: list[dict] = []
     for incident in critical[:5]:
@@ -203,6 +246,20 @@ def evaluate_cockpit(*, operator_status: dict, safety: dict, readiness: dict,
         },
         "economics": {
             "status": costs.get("status"),
+            "billing_mode": (
+                "subscription" if int(all_time_cost.get("subscription_uses") or 0) > 0
+                else "metered_or_unknown"
+            ),
+            "cost_known": (
+                all_time_cost.get("estimated_cost_usd") is not None
+                and int(all_time_cost.get("unknown_cost_uses") or 0) == 0
+            ),
+            "all_time": {key: all_time_cost.get(key) for key in (
+                "uses", "input_tokens", "output_tokens", "subscription_uses",
+                "estimated_cost_usd", "unknown_cost_uses",
+            )},
+            "by_provider_model": improvement_costs.get("by_provider_model") or [],
+            "by_month": improvement_costs.get("by_month") or [],
             "gameweek": {key: gw_cost.get(key) for key in (
                 "committed_tokens", "token_limit", "remaining_tokens",
                 "committed_uses", "use_limit", "remaining_uses", "status",
@@ -212,6 +269,70 @@ def evaluate_cockpit(*, operator_status: dict, safety: dict, readiness: dict,
                 "committed_uses", "use_limit", "remaining_uses", "status",
             )},
             "semantic_reuse": costs.get("semantic_reuse") or {},
+        },
+        "models": {
+            "forecasting": {
+                "active_bundle": _model_bundle(model_status.get("active_bundle")),
+                "projection_batches": int(
+                    (analytics_contract.get("counts") or {}).get("projections") or 0
+                ),
+                "evaluations": int(
+                    (analytics_contract.get("counts") or {}).get("evaluations") or 0
+                ),
+                "drift_alerts": int(
+                    (analytics_contract.get("counts") or {}).get("drift_alerts") or 0
+                ),
+                "latest_scorecard": ({key: scorecards[0].get(key) for key in (
+                    "season", "gw", "variant", "drift_status", "evaluated_at",
+                )} if scorecards else None),
+                "latest_projection": ({key: projection_batches[0].get(key) for key in (
+                    "batch_id", "season", "target_gw", "variant", "model_versions",
+                    "cutoff_at", "generated_at", "status",
+                )} if projection_batches else None),
+            },
+            "agents": {
+                "provider": agent_routing.get("provider"),
+                "researcher": agent_routing.get("researcher") or {},
+                "strategist_critic": agent_routing.get("strategist_critic") or {},
+            },
+            "release": {
+                "active": _model_bundle(model_status.get("active_bundle")),
+                "registered": len(improvement.get("model_bundle_releases") or []),
+                "promotion_is_automatic": False,
+            },
+        },
+        "feedback": {
+            "status": "observed" if feedback_observed["model_scorecards"] else "pending",
+            "observed": feedback_observed,
+            "proposal_counts": proposal_counts,
+            "contracts": {
+                "model_reconciliation": "automatic_after_fpl_data_checked",
+                "causal_review": "automatic_after_verified_gameweek_closeout",
+                "model_promotion": "explicit_release_gate",
+            },
+            "next_action": (
+                None if feedback_observed["lessons"] > 0
+                else "cerrar una GW con evidencia verificada y evaluar una propuesta causal"
+            ),
+        },
+        "resilience": {
+            "host_recovery": gate_contract("HOST_RECOVERY_DRILLS_PROVEN"),
+            "snapshot_rejection": gate_contract("SNAPSHOT_REJECTION_PROVEN"),
+            "browser_failure": gate_contract("BROWSER_FAILURE_DRILL_PROVEN"),
+            "postgres_cycles": gate_contract("POSTGRES_THREE_GAMEWEEK_CYCLES"),
+            "offsite_backup": gate_contract("OFF_HOST_BACKUP_CONFIGURED"),
+            "offsite_restore": gate_contract("OFF_HOST_RESTORE_PROVEN"),
+            "external_alerts": gate_contract("EXTERNAL_ALERT_CHANNEL_LIVE_PROVEN"),
+        },
+        "exit_shadow": {
+            "status": "eligible" if (
+                activation.get("technical_eligible_level") != "A0"
+            ) else "evidence_pending",
+            "current_level": activation.get("current_action_level"),
+            "technical_eligible_level": activation.get("technical_eligible_level"),
+            "promotion_is_automatic": False,
+            "activation_blockers": activation.get("activation_blockers") or [],
+            "next_actions": scorecard.get("next_actions") or [],
         },
         "quality": {
             "operator": operator_status.get("overall_status"),
@@ -241,6 +362,9 @@ def evaluate_cockpit(*, operator_status: dict, safety: dict, readiness: dict,
 def build_cockpit(config: RuntimeConfig, db: OpsDB, *,
                   now: datetime | None = None) -> dict:
     current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+    from mova_fpl.ops.model_service import ModelOpsService
+
+    improvement = db.improvement_status(season=config.season)
     return evaluate_cockpit(
         operator_status=build_status(config, db, now=current),
         safety=build_safety(config, db, now=current),
@@ -250,6 +374,19 @@ def build_cockpit(config: RuntimeConfig, db: OpsDB, *,
         costs=db.cost_report(config.agent_budget_policy(), season=config.season),
         alert_channel=channel_report(config, db),
         alert_status=db.outbox_status(),
+        model_status=ModelOpsService(config, db).status(),
+        improvement=improvement,
+        agent_routing={
+            "provider": config.research_provider,
+            "researcher": {
+                "model": config.research_model,
+                "reasoning_effort": config.research_reasoning_effort,
+            },
+            "strategist_critic": {
+                "model": config.deliberation_model,
+                "reasoning_effort": config.deliberation_reasoning_effort,
+            },
+        },
         generated_at=current.isoformat(timespec="seconds"),
     )
 
@@ -302,6 +439,10 @@ def render_cockpit(payload: dict) -> str:
     authority = payload.get("authority") or {}
     economics = payload.get("economics") or {}
     gw_cost = economics.get("gameweek") or {}
+    models = ((payload.get("models") or {}).get("forecasting") or {})
+    active = models.get("active_bundle") or {}
+    feedback = payload.get("feedback") or {}
+    resilience = payload.get("resilience") or {}
     lines = [
         f"MOVA COCKPIT · {str(payload.get('verdict') or 'unknown').upper()}",
         str(payload.get("headline") or ""),
@@ -311,6 +452,14 @@ def render_cockpit(payload: dict) -> str:
          f"writes={authority.get('writes_enabled')} · kill_switch={authority.get('kill_switch')}"),
         (f"Agente GW: {gw_cost.get('committed_uses', 0)}/{gw_cost.get('use_limit', 0)} usos · "
          f"{gw_cost.get('remaining_tokens', 0)} tokens restantes"),
+        (f"Modelos: points={active.get('points', '—')} · minutes={active.get('minutes', '—')} · "
+         f"scorecards={models.get('evaluations', 0)}"),
+        (f"Costo USD conocido={economics.get('cost_known')} · "
+         f"billing={economics.get('billing_mode')}"),
+        (f"Feedback: {feedback.get('status')} · "
+         f"lessons={(feedback.get('observed') or {}).get('lessons', 0)}"),
+        (f"DR host={(resilience.get('host_recovery') or {}).get('status')} · "
+         f"offsite={(resilience.get('offsite_restore') or {}).get('status')}"),
         "",
         "FUNCIONES",
     ]

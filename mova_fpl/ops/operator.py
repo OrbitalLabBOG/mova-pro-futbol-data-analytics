@@ -892,6 +892,28 @@ def build_doctor(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
         checks.append(_check("fpl_public_api", "WARN", "network check was skipped",
                              required=False))
 
+    observability: dict
+    try:
+        from mova_fpl.ops.cockpit import build_cockpit
+
+        cockpit = build_cockpit(config, db, now=current)
+        observability = {
+            "available": True,
+            "verdict": cockpit.get("verdict"),
+            "authority": cockpit.get("authority"),
+            "models": cockpit.get("models"),
+            "economics": cockpit.get("economics"),
+            "feedback": cockpit.get("feedback"),
+            "resilience": cockpit.get("resilience"),
+            "exit_shadow": cockpit.get("exit_shadow"),
+        }
+    except Exception as exc:  # el doctor base conserva utilidad sin PostgreSQL/cockpit
+        observability = {
+            "available": False,
+            "error_code": type(exc).__name__,
+            "message": str(exc)[:300],
+        }
+
     required_failures = [item for item in checks if item["status"] == "FAIL" and item["required"]]
     warnings = [item for item in checks if item["status"] == "WARN"]
     overall = "failed" if required_failures else "degraded" if warnings else "healthy"
@@ -908,6 +930,7 @@ def build_doctor(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
             "required_failures": len(required_failures),
         },
         "checks": checks,
+        "observability": observability,
     }
 
 
@@ -937,4 +960,17 @@ def render_doctor(payload: dict) -> str:
                  for item in payload["checks"])
     summary = payload["summary"]
     lines.append(f"Resultado: {summary['pass']} PASS · {summary['warn']} WARN · {summary['fail']} FAIL")
+    observability = payload.get("observability") or {}
+    if observability.get("available"):
+        exit_shadow = observability.get("exit_shadow") or {}
+        economics = observability.get("economics") or {}
+        lines.append(
+            "Control room: "
+            f"{observability.get('verdict')} · salida shadow={exit_shadow.get('status')} · "
+            f"costo USD conocido={economics.get('cost_known')}"
+        )
+    else:
+        lines.append(
+            f"Control room: no disponible ({observability.get('error_code', 'unknown')})"
+        )
     return "\n".join(lines)

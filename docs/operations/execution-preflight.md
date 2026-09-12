@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — policy de autonomía y preflight"
 created: 2026-08-30
-updated: 2026-08-30
+updated: 2026-09-11
 tags: [mova, fpl, execution, preflight, autonomy, guardrails]
 status: active
 ---
@@ -15,6 +15,23 @@ capitanía con fail-closed estricto. HV1-07D.4 añade el instruction stream tipa
 todavía detrás de un gate físico de rehearsal. HV1-07F hace ese gate durable y resistente a
 reintentos. Los controles A0 y el contenedor browser conservan
 las escrituras apagadas; instalar el driver no concede autoridad.
+
+## Ejecución supervisada observada y límite del registro
+
+El montaje humano desde el browser del VPS tiene antecedentes verificables en
+[GW2](../decisions/2026-27/gw02-research-and-decision.md) y
+[GW4](../decisions/2026-27/gw04-research-and-decision.md). En GW4 hubo aprobación
+explícita de una alineación exacta, ventana temporal `guarded/A2` registrada por
+`mova control`, confirmación `Team Saved`, recarga y GET privado independiente.
+Después se restauraron todos los controles y se detuvo el browser.
+
+Ese antecedente no concede autorización para otra jornada ni habilita el executor
+autónomo. La taxonomía histórica A1 no debe reutilizarse para etiquetar una acción
+actual R2/A2. El importador de `mova_fpl/ops/supervised.py` sigue limitado a A1:
+la evidencia GW4 está conservada en artifacts, pero no importada como cierre
+normalizado `manual_verified`/`executed_verified` del ciclo. No editar SQLite
+directamente ni declarar ensayos del driver a partir de un montaje humano.
+La adaptación del contrato y su cierre de ciclo siguen pendientes de ingeniería.
 
 ## Contrato
 

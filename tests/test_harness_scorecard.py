@@ -46,6 +46,12 @@ def _improvement(with_learning: bool = True) -> dict:
                             "testing": 0, "accepted": 0, "rejected": 0},
         "lessons": [{"lesson_id": "lesson_1"}] if with_learning else [],
         "evaluations": [],
+        "model_bundle_releases": [{"release_id": "release_1"}],
+        "costs": {"totals": {
+            "uses": 2, "input_tokens": 1000, "output_tokens": 100,
+            "subscription_uses": 2, "estimated_cost_usd": None,
+            "unknown_cost_uses": 2,
+        }},
     }
 
 
@@ -147,6 +153,10 @@ def test_scorecard_prometheus_has_bounded_labels():
     assert "mova_harness_scorecard_up 1" in metrics
     assert 'mova_harness_scorecard_status{status="pass"} 1' in metrics
     assert "mova_harness_readiness_pass_ratio 1.0000" in metrics
+    assert 'mova_harness_readiness_gate{code="RUNTIME_HEALTHY",status="pass"} 1' in metrics
+    assert 'mova_harness_agent_usage_tokens{direction="input"} 1000' in metrics
+    assert "mova_harness_agent_cost_known 0" in metrics
+    assert "mova_harness_model_releases 1" in metrics
     assert "cycle_gw3" not in metrics
 
 

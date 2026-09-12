@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — cockpit, triage y acceso web"
 created: 2026-09-01
-updated: 2026-09-01
+updated: 2026-09-12
 tags: [mova, fpl, cockpit, cli, dashboard, incidents, observability]
 status: active
 ---
@@ -50,12 +50,26 @@ público para resolver una necesidad de diagnóstico.
 | `functions` | ¿collector, analytics, research, browser, alertas y backups están habilitados? |
 | `workflow` | ¿en qué stage está el ciclo y qué outcome produjo? |
 | `economics` | ¿cuántos tokens/usos están comprometidos y quedan disponibles? |
+| `models` | ¿qué bundle predictivo y qué modelos/effort agentic están activos? |
+| `feedback` | ¿qué scorecards, propuestas, evaluaciones y lecciones cerró el loop? |
+| `resilience` | ¿qué DR, integridad, PostgreSQL, backup off-host y alertas están probados? |
+| `exit_shadow` | ¿qué evidencia impide promover el siguiente nivel técnico? |
 | `quality` | ¿cómo están runtime, safety, readiness, datos, modelos y PostgreSQL? |
 | `alerts` | ¿qué incidente o condición debe diagnosticar el operador? |
 | `runtime` | ¿qué SHA y tick respaldan el snapshot? |
 
 `technical_eligible_level` es evidencia, no permiso. `writes_enabled=false`, A0, kill switch o
 browser writes apagado siguen dominando aunque todas las tarjetas se vean verdes.
+
+`economics.cost_known=false` significa que el ledger conoce consumo y modelo, pero no una tarifa
+USD aplicable. Es el caso de ejecuciones `codex_subscription`: se reportan usos y tokens, y
+`estimated_cost_usd` permanece `null` en vez de inventar un precio equivalente de API.
+`models.agents` lee el mismo routing provisionado al worker; `models.forecasting` lee el bundle y
+los scorecards vigentes. Ninguno de estos campos activa o promueve modelos.
+
+El doctor incluye un resumen de estos bloques bajo `observability`. Si PostgreSQL o el cockpit no
+están disponibles, `observability.available=false` conserva el doctor base y explica el error; no
+convierte la falta de telemetría en un falso PASS.
 
 ## Triage estándar para ORBIX
 

@@ -74,6 +74,42 @@ def _inputs() -> dict:
         "alert_channel": {"status": "configured", "configured": True,
                           "external_delivery": True, "channel": "ops"},
         "alert_status": {"due": 0},
+        "model_status": {
+            "active_bundle": {"source": "packaged_default", "models": {
+                "minutes": {"version": "1.1.0"}, "points": {"version": "1.1.0"},
+            }},
+            "analytics": {
+                "counts": {"projections": 8, "evaluations": 4, "drift_alerts": 0},
+                "latest_scorecards": [{
+                    "season": "2026-27", "gw": 3, "variant": "baseline",
+                    "drift_status": "insufficient", "evaluated_at": "2026-09-06T00:00:00Z",
+                }],
+                "latest_projection_batches": [{
+                    "batch_id": "projection_fixture", "season": "2026-27",
+                    "target_gw": 4, "variant": "baseline",
+                    "model_versions": {"minutes": "1.1.0", "points": "1.1.0"},
+                    "status": "approved",
+                }],
+            },
+        },
+        "improvement": {
+            "proposal_counts": {"proposed": 2, "testing": 0, "accepted": 1,
+                                "rejected": 0},
+            "evaluations": [], "lessons": [], "model_bundle_releases": [],
+            "costs": {
+                "totals": {"uses": 4, "input_tokens": 650000,
+                           "output_tokens": 15000, "subscription_uses": 4,
+                           "estimated_cost_usd": None, "unknown_cost_uses": 4},
+                "by_provider_model": [{"provider": "codex_subscription",
+                                       "model": "gpt-5.6-luna", "uses": 2}],
+                "by_month": [{"month": "2026-09", "uses": 4}],
+            },
+        },
+        "agent_routing": {
+            "provider": "codex_subscription",
+            "researcher": {"model": "gpt-5.6-luna", "reasoning_effort": "medium"},
+            "strategist_critic": {"model": "gpt-5.6-terra", "reasoning_effort": "high"},
+        },
         "generated_at": "2026-09-01T20:00:00+00:00",
     }
 
@@ -93,6 +129,40 @@ def test_cockpit_contract_is_shared_sanitized_and_read_only():
     assert payload["economics"]["gameweek"]["remaining_uses"] == 18
     assert "url" not in json.dumps(payload).lower()
     assert "MOVA COCKPIT · HEALTHY" in render_cockpit(payload)
+
+
+class TestCockpitControlRoomContract:
+    def test_exposes_models_cost_dr_feedback_and_shadow_exit_without_mutation(self):
+        values = _inputs()
+        values["readiness"]["gates"] = [
+            {"code": "HOST_RECOVERY_DRILLS_PROVEN", "status": "pass",
+             "observed": {"completed": 5, "required": 5}},
+            {"code": "OFF_HOST_RESTORE_PROVEN", "status": "pending",
+             "observed": {"checks": 0}, "required": {"checks": ">=8"},
+             "next_action": "restore off-host"},
+        ]
+        values["scorecard"]["next_actions"] = [{
+            "code": "OFF_HOST_RESTORE_PROVEN", "dimension": "durability",
+            "status": "pending", "next_action": "restore off-host",
+        }]
+
+        payload = evaluate_cockpit(**values)
+
+        assert payload["models"]["forecasting"]["active_bundle"] == {
+            "source": "packaged_default", "release_id": None,
+            "minutes": "1.1.0", "points": "1.1.0",
+        }
+        assert payload["models"]["agents"]["researcher"]["model"] == "gpt-5.6-luna"
+        assert payload["economics"]["billing_mode"] == "subscription"
+        assert payload["economics"]["cost_known"] is False
+        assert payload["economics"]["all_time"]["estimated_cost_usd"] is None
+        assert payload["feedback"]["contracts"]["model_reconciliation"] == (
+            "automatic_after_fpl_data_checked"
+        )
+        assert payload["resilience"]["host_recovery"]["status"] == "pass"
+        assert payload["resilience"]["offsite_restore"]["status"] == "pending"
+        assert payload["exit_shadow"]["status"] == "evidence_pending"
+        assert payload["runtime_mutated"] is False
 
 
 def test_cockpit_surfaces_critical_incident_and_budget_without_enabling_writes():
