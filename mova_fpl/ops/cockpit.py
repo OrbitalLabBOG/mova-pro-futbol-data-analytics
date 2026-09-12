@@ -83,6 +83,15 @@ def evaluate_cockpit(*, operator_status: dict, safety: dict, readiness: dict,
     analytics_contract = model_status.get("analytics") or analytics
     scorecards = analytics_contract.get("latest_scorecards") or []
     projection_batches = analytics_contract.get("latest_projection_batches") or []
+    baseline_scorecard = next(
+        (row for row in scorecards if row.get("variant") == "baseline"),
+        scorecards[0] if scorecards else None,
+    )
+    baseline_projection = next(
+        (row for row in projection_batches
+         if row.get("variant") == "baseline" and row.get("status") == "approved"),
+        projection_batches[0] if projection_batches else None,
+    )
     proposal_counts = improvement.get("proposal_counts") or {}
     feedback_observed = {
         "model_scorecards": int((analytics_contract.get("counts") or {}).get("evaluations") or 0),
@@ -282,13 +291,13 @@ def evaluate_cockpit(*, operator_status: dict, safety: dict, readiness: dict,
                 "drift_alerts": int(
                     (analytics_contract.get("counts") or {}).get("drift_alerts") or 0
                 ),
-                "latest_scorecard": ({key: scorecards[0].get(key) for key in (
+                "latest_scorecard": ({key: baseline_scorecard.get(key) for key in (
                     "season", "gw", "variant", "drift_status", "evaluated_at",
-                )} if scorecards else None),
-                "latest_projection": ({key: projection_batches[0].get(key) for key in (
+                )} if baseline_scorecard else None),
+                "latest_projection": ({key: baseline_projection.get(key) for key in (
                     "batch_id", "season", "target_gw", "variant", "model_versions",
                     "cutoff_at", "generated_at", "status",
-                )} if projection_batches else None),
+                )} if baseline_projection else None),
             },
             "agents": {
                 "provider": agent_routing.get("provider"),

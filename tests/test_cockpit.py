@@ -84,8 +84,12 @@ def _inputs() -> dict:
                 "latest_scorecards": [{
                     "season": "2026-27", "gw": 3, "variant": "baseline",
                     "drift_status": "insufficient", "evaluated_at": "2026-09-06T00:00:00Z",
-                }],
+                }, {"season": "2026-27", "gw": 3, "variant": "odds_cs_shadow",
+                    "drift_status": "healthy", "evaluated_at": "2026-09-06T00:01:00Z"}],
                 "latest_projection_batches": [{
+                    "batch_id": "projection_shadow", "season": "2026-27",
+                    "target_gw": 4, "variant": "odds_cs_shadow", "status": "shadow",
+                }, {
                     "batch_id": "projection_fixture", "season": "2026-27",
                     "target_gw": 4, "variant": "baseline",
                     "model_versions": {"minutes": "1.1.0", "points": "1.1.0"},
@@ -153,6 +157,8 @@ class TestCockpitControlRoomContract:
             "source": "packaged_default", "release_id": None,
             "minutes": "1.1.0", "points": "1.1.0",
         }
+        assert payload["models"]["forecasting"]["latest_scorecard"]["variant"] == "baseline"
+        assert payload["models"]["forecasting"]["latest_projection"]["status"] == "approved"
         assert payload["models"]["agents"]["researcher"]["model"] == "gpt-5.6-luna"
         assert payload["economics"]["billing_mode"] == "subscription"
         assert payload["economics"]["cost_known"] is False
