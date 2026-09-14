@@ -216,6 +216,13 @@ def parser() -> argparse.ArgumentParser:
     capability_probe.add_argument("--actor", required=True)
     capability_probe.add_argument("--reason", required=True)
     capability_probe.add_argument("--idempotency-key", required=True)
+    manual_verified = execute_commands.add_parser(
+        "record-manual", help="registra una ejecución humana R2/A2 o R3/A3 ya verificada"
+    )
+    manual_verified.add_argument("--package", required=True)
+    manual_verified.add_argument("--actor", required=True)
+    manual_verified.add_argument("--reason", required=True)
+    manual_verified.add_argument("--idempotency-key", required=True)
     preflight = execute_commands.add_parser(
         "preflight", help="sella el diff y evalúa autorización sin operar el browser"
     )
@@ -715,6 +722,13 @@ def main(argv: list[str] | None = None) -> int:
             payload = service.record_capability_probe(
                 source_file=Path(args.source), cycle_id=args.cycle_id,
                 capability=args.capability, actor=args.actor, reason=args.reason,
+                idempotency_key=args.idempotency_key,
+            )
+        elif args.execute_command == "record-manual":
+            from mova_fpl.ops.supervised import record
+
+            payload = record(
+                Path(args.package), actor=args.actor, reason=args.reason,
                 idempotency_key=args.idempotency_key,
             )
         elif args.execute_command == "preflight":

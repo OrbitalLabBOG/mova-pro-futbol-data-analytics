@@ -2,12 +2,115 @@
 type: project
 name: "MOVA FPL Autonomous Operator 2026/27 — Readiness and Rollout"
 created: 2026-08-21
-updated: 2026-08-31
+updated: 2026-09-14
 tags: [mova, fpl, readiness, rollout]
 status: active-shadow
 ---
 
 # Readiness y rollout
+
+## Guía vigente de cierre autónomo — 14 de septiembre de 2026
+
+Esta sección sustituye como guía de ejecución los checkpoints y gates narrativos históricos
+inferiores. La spec [Autonomous Harness v1](10-autonomous-harness-v1.md) conserva la arquitectura;
+este documento concentra el cierre operativo. El código de readiness y su `required_for`
+determinan elegibilidad. Este plan documental no modifica controles ni constituye promoción.
+La autorización de Julián en esta sesión cubre documentación y actualización PM antes de ajustes.
+
+### Resultado y definición de terminado
+
+Operar la temporada con el bundle predictivo aprobado, sin intervención humana rutinaria:
+captura → research → decisión/validación → ejecución única → verificación → settlement oficial
+→ review → memoria del siguiente ciclo. El operador escala excepciones con contexto accionable.
+La investigación de modelos continúa en candidatos separados; entrenamiento, aceptación de una
+propuesta y activación de un modelo son estados distintos. No se exige fabricar una lección o
+mejora positiva cuando la evidencia concluye «sin cambio».
+
+El cierre integral exige: requisitos técnicos aplicables A3 satisfechos, autoridad registrada,
+ejecutor productivo R2/R3 verificado, alertas externas y recuperación off-host comprobadas,
+y una GW completa posterior a la promoción sin comandos de rescate ni empuje desde el chat.
+Conservar las tres GWs independientes exigidas por los gates. Una GW de aceptación sin
+transferencia/chip no acredita por sí sola esas capacidades: adjuntar su evidencia específica.
+Una prueba DOM read-only tampoco demuestra que el guardado real funciona.
+
+### Baseline observado y faltantes
+
+Corte VPS 2026-09-14 23:12 UTC / 18:12 Colombia, runtime
+`191d809fd3745c0fb8bb24a4e35e3b2f45902413`, v0.7.0.
+Consultas: `mova readiness`, `mova execute status`, `mova harness scorecard` y `mova status --json`.
+Readiness: 16 pass, 9 pending, 0 blocked; elegibilidad A0. Estado healthy y controles shadow/A0,
+kill switch activo, writes apagado, compliance pendiente. No es una nueva corrida de doctor.
+
+| Frente | Evidencia al corte | Faltante para cierre |
+| --- | --- | --- |
+| Salud/recuperación host | operations 7/7; cinco escenarios host aprobados históricamente | Revalidar revisión, doctor y rollback tras cada despliegue |
+| GW4/GW5 | GW4 aún sin finished+data_checked en consulta 23:10 UTC; GW5 preliminary; review GW4 not_found | Esperar flags oficiales, refrescar y conciliar; investigar desfase si persiste tras cadencia |
+| Research | 2 GWs medidas, 0 passing | Corregir cobertura/evidencia; tres GWs válidas según gate, sin rebajar umbrales |
+| Costos agentic | Overrun histórico 355066/160000, reviewed/reduce_scope; mes dentro de presupuesto | Follow-up equivalente dentro de límite y cierre auditado del overrun |
+| R2 capitanía / XI-banca | 0/3 cada uno con contrato actual; entrypoint sólo capitanía | Ensayos por GW/capacidad/versión, integración y verificación del guardado |
+| R3 transfers/hits/chips | Contrato implementado, 1/3, entrypoint off | Ensayos restantes, ejecución productiva verificada y promoción separada |
+| Cierre de ciclo | manual_verified/latch pendiente; feedback 3 propuestas, 0 evaluaciones, 0 lecciones | Registro supervisado normalizado y continuidad automática hasta memoria |
+| Alertas | journald/local_only, sin destino/owner ni live ping | Destino autorizado, entrega probada, acuse y escalamiento |
+| PostgreSQL | Paridad/roles pass; 3/3 GWs | Cutover de writer conserva su tarea independiente; no bloquea A2/A3 según required_for actual |
+| Off-host | Sin configurar, sin restore | Destino/owner, copia cifrada, timer y restore de ocho checks |
+| Autoridad | A0; compliance y promoción pendientes | Resolver decisión documentada y activar por capacidad sólo tras evidencia |
+
+Off-host no aparece como requisito técnico A2/A3 (`required_for=[]`), pero sí es criterio de
+entrega integral de este plan. Mantener esa distinción visible; no cambiar el gate por editar PM.
+Los ensayos R2 de GW3 pertenecen a una versión anterior y no se cuentan para la actual.
+
+### Hoja de ruta y tareas canónicas
+
+Responsables de implementación: por asignar; no se infiere una asignación humana desde este plan.
+Las dependencias múltiples se conservan en esta tabla y en las descripciones PM.
+
+| Etapa | Trabajo / work_key existente | Dependencias | Criterio de salida |
+| --- | --- | --- | --- |
+| C1 — Cierre verificable | `mova-fpl-v0.6.4-manual-verified` | Contrato de autoridad vigente | Implementado localmente en `manual-verified-execution-v2`: importa pre/post-state, autorización y hashes; latch impide nuevas acciones; falta desplegar y comprobar con evidencia real elegible |
+| C1 — Continuidad del ejecutor | `FPL-HV1-07` | Cierre anterior, R2/R3 | Scheduler conecta plan autorizado, claim, driver, verifier y cierre; replay/restart/estado ambiguo no duplican acciones; settlement y review no requieren package escrito a mano por GW |
+| C2 — Agentes fiables | `FPL-AUTO-RESEARCH-PIPELINE` | Datos frescos y contrato de evidence | Fetch/locator/TTL/cobertura válidos, 3 GWs passing; Strategist/Critic terminan dentro de cadencia; follow-up de costo validado; intervención conserva autoridad acotada |
+| C3 — Alertas | `FPL-AUTO-ALERTING` | Destino y owner autorizados | Configuración + live ping para fingerprint vigente, recepción/acuse y prueba de retry/dedup |
+| C3 — Respaldo | `FPL-AUTO-OFFSITE-BACKUP` | Destino y owner autorizados | Copia cifrada fuera del VPS, retención/timer y restore aislado 8/8; excluir perfil browser y CODEX_HOME |
+| C4 — R2 | `FPL-HV1-07D` | C1; contrato estable | Capitanía 3/3 y lineup 3/3 por GWs distintas; guardado supervisado y reload correctos; entrypoint lineup verificado |
+| C4 — R3 | `FPL-HV1-07E` | C1, verificación R2, política R3 | 3/3 por contrato; reconciliar FT, precios, hits e inventario chips; guardado y resultados ambiguos probados; habilitación sólo con autorización A3 |
+| C4 — Evidencia longitudinal | `FPL-AUTO-SHADOW-DRILLS` | C1/C2 y ensayos C4; C3 para entrega | Matriz por GW, versión, capacidad y SHA; cero duplicados/huérfanos; aceptación real hasta review y memoria |
+| C5 — Promoción y aceptación | `FPL-HARNESS-V1` | C1–C4, compliance | Preparar expediente A2 y luego A3, registrar límites y aprobación; una GW completa sin intervención rutinaria; aceptación integral documentada |
+| Paralelo — Persistencia | `FPL-HV1-02` | Paridad/roles/3 ciclos ya pass; backup/restore para cutover | Ensayar y aprobar cambio de writer/rollback por su contrato, sin bloquear artificialmente el camino operativo |
+
+Orden de implementación: C1 primero; C2 y C3 pueden avanzar en paralelo. Iniciar ensayos C4
+en la primera GW elegible tras fijar contratos. C5 comienza sólo con los gates aplicables.
+GW5–GW7 son una ventana candidata de tres jornadas, no un compromiso ni evidencia anticipada:
+si una jornada no pasa, se extiende la ventana. No reetiquetar pruebas de una versión previa.
+El deadline PM histórico del epic (15 de octubre) sigue siendo una fecha objetivo, no una
+certificación de autonomía ni permiso para omitir pruebas. No se inventan horas o fechas de subtareas.
+
+### Evidencia mínima por entrega y por jornada
+
+- Por cambio de código: requisito, diff, pruebas cercanas y suite exigida por AGENTS; compileall
+  y Compose cuando corresponda; SHA desplegado/imagen, doctor, controles y rollback.
+- Por GW: flags oficiales, corte de datos, manifest/bundle, research y costo, envelope/validator,
+  clase de riesgo y autorización, pre/post-state sanitizado, intento único y resultado tras reload.
+- Después de finished+data_checked: scorecard causal sólo si existió batch predeadline,
+  settlement conciliado, review y memoria de la siguiente GW. «Sin hipótesis suficiente» es válido;
+  no introducir resultados retrospectivos como entrenamiento o evidencia predeadline.
+- Excepciones: auth expirada, datos stale, research incompleto, presupuesto agotado o save ambiguo
+  deben producir estado terminal explícito, alerta y reanudación segura; nunca retry ciego.
+- Promoción: fijar límites de hits/chips, ventanas, fallback y tratamiento de conflictos en policy
+  versionada; resolver compliance con evidencia vigente. Ningún umbral deportivo se inventa aquí.
+
+### Seguimiento y límites del plan
+
+Supabase refleja trabajo y evidencia, no autoridad. Reutilizar IDs/work_keys abiertos, conservar
+las tareas de implementación terminadas y no tocar snapshots `spec_v1` del motor histórico.
+Actualizar descripciones, criterios y dependencias; no cerrar una tarea por escribir este plan.
+La tarea padre asume C5; el ejecutor asume continuidad post-GW y la tarea longitudinal su aceptación.
+Las mejoras de modelado, nuevos datasets y auto-modificación quedan fuera de este cierre operativo.
+
+## Archivo histórico — no usar como política ejecutable vigente
+
+Los apartados siguientes preservan decisiones y evidencia con su fecha original. Las referencias
+a A1 para alineación, equivalencias de rehearsals y contadores de agosto están superadas por la
+taxonomía R2→A2 / R3→A3 y los gates por versión descritos arriba. No rebajan requisitos actuales.
 
 ## Veredicto
 

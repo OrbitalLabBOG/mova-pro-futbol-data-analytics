@@ -2,12 +2,23 @@
 type: project
 name: "MOVA FPL — Autonomous Harness v1"
 created: 2026-08-23
-updated: 2026-09-01
+updated: 2026-09-14
 tags: [mova, fpl, autonomy, postgres, agents, observability, continuous-improvement]
 status: active-shadow
 ---
 
 # Autonomous Harness v1
+
+## Guía de cierre vigente
+
+La [hoja de ruta de cierre autónomo](04-readiness-and-rollout.md#guía-vigente-de-cierre-autónomo--14-de-septiembre-de-2026)
+concentra el baseline del 14 de septiembre, faltantes, tareas PM, dependencias y aceptación C1–C5.
+Readiness observado: 16/25 pass; PostgreSQL 3/3 GWs, research 0 passing/2 medidas,
+capitanía y lineup 0/3 con contrato actual, R3 1/3. Runtime `191d809`, shadow/A0.
+Manual_verified, continuidad hasta review/memoria, alertas y backup off-host siguen pendientes.
+Los cortes inferiores son históricos; implementar un componente no demuestra autonomía integral.
+La entrega exige una GW completa posterior a promoción A3 sin intervención rutinaria y evidencia
+de las capacidades no ejercidas en esa GW. El modelado avanza como candidatos fuera del bundle activo.
 
 ## 1. Resultado buscado
 
@@ -382,7 +393,7 @@ no borra evidencia previa y nunca amplía autonomía.
 | --- | --- | ---: | --- |
 | HV1-00 ✅ | reset del repo, archivo de legado, packaging y CI hermético | completado | baseline actual |
 | HV1-01 ✅ | contrato `mova`, status/doctor y skill del operador | completado | HV1-00 |
-| HV1-02 🟡 | shadow + dual-read + roles + cutover/rollback; off-host ya es operable pero falta destino, restore, 3 ciclos y aprobación de writer | ciclos + Q-04 | HV1-01 |
+| HV1-02 🟡 | shadow + dual-read + roles; 3/3 ciclos cumplidos al 14 sep; faltan destino off-host, restore y cutover/rollback aprobado del writer | Q-04 / entrega independiente de A2-A3 | HV1-01 |
 | HV1-03a ✅ | collector/data quality autónomo | completado | HV1-02 |
 | HV1-03b ✅ | facade uniforme train/predict/explain/evaluate, scorecard, drift y candidato fail-closed | completado | HV1-03a |
 | HV1-04 ✅ | team state, season plan y memoria estratégica longitudinal sellada | completado | HV1-02 |
