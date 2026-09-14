@@ -273,7 +273,7 @@ class TickRunner:
                     ),
                 )
         elif self.config.enable_shadow_decision:
-            self.db.open_incident(
+            self.db.open_incident_once(
                 "P2", "Shadow decision omitida por memoria", correlation_id=correlation_id,
                 cycle_id=cycle_id, job_id=job_id, detail=resource_state,
             )
@@ -377,7 +377,7 @@ class TickRunner:
             result.stdout + "\n--- stderr ---\n" + result.stderr, encoding="utf-8",
         )
         if result.returncode != 0:
-            self.db.open_incident(
+            self.db.open_incident_once(
                 "P2", "Shadow decision falló", correlation_id=correlation_id,
                 cycle_id=cycle_id, job_id=job_id,
                 detail={"returncode": result.returncode, "log_path": str(log_path)},
@@ -406,6 +406,16 @@ class TickRunner:
         recorded = self.db.record_decision_envelope(
             job_id=job_id, envelope=envelope, artifact_path=str(envelope_path),
             artifact_sha256=artifact_sha,
+        )
+        self.db.resolve_incidents(
+            "Shadow decision falló",
+            resolution=f"decisión shadow recuperada en {recorded['decision_id']} / {job_id}",
+            actor="mova-worker",
+        )
+        self.db.resolve_incidents(
+            "Shadow decision omitida por memoria",
+            resolution=f"decisión shadow recuperada en {recorded['decision_id']} / {job_id}",
+            actor="mova-worker",
         )
         selected = next(
             row["decision"] for row in envelope["candidates"]
