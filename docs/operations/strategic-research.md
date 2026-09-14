@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — contexto estratégico e investigación"
 created: 2026-08-27
-updated: 2026-09-03
+updated: 2026-09-14
 tags: [mova, fpl, strategy, research, codex, evidence]
 status: active
 ---
@@ -36,6 +36,15 @@ El servicio tiene dos capas complementarias. El collector FPL conserva cada seis
 campo oficial `news`, `status` y `chance_of_playing_next_round`; el worker Codex hace
 investigación web profunda únicamente en ventanas de decisión. No existe un scraper de prensa
 residente ni una llamada LLM por tick.
+
+Desde el corte del 14 de septiembre el prompt opera `coverage-first`: agrupa el foco por club,
+busca primero partes, convocatorias o alineaciones oficiales que nombren a varios sujetos y sólo
+después extrae deltas materiales. El objetivo sigue siendo cobertura ≥ 90 % y evidencia verificada
+≥ 80 %; no se redujo el gate. Una misma URL puede acreditar varios jugadores únicamente cuando el
+fragmento literal los contiene de forma inequívoca. El worker mantiene diez búsquedas y doce
+documentos como máximos, evita búsquedas individuales de jugadores sin alerta y conserva
+`not_checked` cuando el presupuesto no alcanza. La efectividad se valida en corridas posteriores;
+el cambio de prompt por sí solo no cuenta como una GW passing ni resuelve el overrun histórico.
 
 El routing del worker separa costo y juicio: Researcher usa `gpt-5.6-luna` con
 `reasoning_effort=medium`; la deliberación conjunta Strategist/Critic usa `gpt-5.6-terra` con
