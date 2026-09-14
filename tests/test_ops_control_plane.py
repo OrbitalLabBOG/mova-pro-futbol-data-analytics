@@ -6,6 +6,7 @@ import json
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from types import SimpleNamespace
 
 from mova_fpl.ops.backup import create_backup
 from mova_fpl.ops.config import RuntimeConfig
@@ -211,6 +212,77 @@ def test_verified_execution_sella_propuestas_shadow_tardias(tmp_path):
         assert con.execute(
             "SELECT status FROM decision_runs WHERE decision_id=?", (shadow,)
         ).fetchone()[0] == "superseded"
+
+
+def test_shadow_incident_is_deduplicated_and_resolved_after_recovery(tmp_path, monkeypatch):
+    config = _config(tmp_path, shadow=True)
+    db = _db(config)
+    db.migrate()
+    cycle = db.upsert_cycle(
+        "2026-27", 1, "2026-08-21T17:30:00Z", phase="baseline"
+    )
+    job, _ = db.start_job("tick", "tick:shadow-recovery", "corr_shadow", cycle_id=cycle)
+    runner = TickRunner(config, db)
+    model_bundle = {
+        "release_id": None, "source": "fixture",
+        "models": {"points": {"version": "1.1.0"}, "minutes": {"version": "1.1.0"}},
+    }
+    monkeypatch.setattr(
+        "mova_fpl.ops.model_release.resolve_active_model_bundle",
+        lambda *_args, **_kwargs: model_bundle,
+    )
+    prepared = {
+        "manifest_id": "manifest_test", "content_sha256": "a" * 64,
+        "revision": 1, "manifest": {"as_of_at": "2026-08-20T21:30:00Z"},
+    }
+
+    class FailedHarness:
+        def command(self, *_args, **_kwargs):
+            return SimpleNamespace(returncode=2, stdout="", stderr="fixture failure")
+
+    for _ in range(2):
+        assert runner._shadow_decision(
+            FailedHarness(), job, cycle, 1, "2026-08-21T17:30:00Z",
+            datetime(2026, 8, 20, 21, 30, tzinfo=timezone.utc),
+            tmp_path / "snapshot", "corr_shadow", prepared,
+        )["status"] == "failed"
+    with db.connect(readonly=True) as con:
+        assert con.execute(
+            "SELECT COUNT(*) FROM incidents WHERE title='Shadow decision falló'"
+        ).fetchone()[0] == 1
+
+    decision = {
+        "expected_points": 50.0, "fingerprint": "f" * 16, "chip": None,
+    }
+    envelope = {
+        "status": "staged", "selected_candidate_key": "milp_baseline",
+        "validation": {"blocking_codes": []},
+        "candidates": [{"candidate_key": "milp_baseline", "decision": decision}],
+    }
+
+    class RecoveredHarness:
+        def command(self, _name, argv, **_kwargs):
+            bundle_path = Path(argv[argv.index("--json-out") + 1])
+            bundle_path.write_text("{}\n", encoding="utf-8")
+            return SimpleNamespace(returncode=0, stdout="ok", stderr="")
+
+    monkeypatch.setattr("mova_fpl.ops.tick.build_envelope", lambda **_kwargs: envelope)
+    monkeypatch.setattr(
+        db, "record_decision_envelope",
+        lambda **_kwargs: {"decision_id": "decision_recovered", "envelope_id": "envelope_test"},
+    )
+    recovered = runner._shadow_decision(
+        RecoveredHarness(), job, cycle, 1, "2026-08-21T17:30:00Z",
+        datetime(2026, 8, 20, 21, 35, tzinfo=timezone.utc),
+        tmp_path / "snapshot", "corr_shadow_recovered", prepared,
+    )
+    assert recovered["status"] == "completed"
+    with db.connect(readonly=True) as con:
+        incident = con.execute(
+            "SELECT status,resolution FROM incidents WHERE title='Shadow decision falló'"
+        ).fetchone()
+    assert incident["status"] == "resolved"
+    assert "decision_recovered" in incident["resolution"]
 
 
 def test_tick_sella_fuentes_y_es_idempotente(tmp_path, monkeypatch):
