@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — policy de autonomía y preflight"
 created: 2026-08-30
-updated: 2026-09-11
+updated: 2026-09-14
 tags: [mova, fpl, execution, preflight, autonomy, guardrails]
 status: active
 ---
@@ -16,7 +16,7 @@ todavía detrás de un gate físico de rehearsal. HV1-07F hace ese gate durable 
 reintentos. Los controles A0 y el contenedor browser conservan
 las escrituras apagadas; instalar el driver no concede autoridad.
 
-## Ejecución supervisada observada y límite del registro
+## Ejecución supervisada observada y registro verificable
 
 El montaje humano desde el browser del VPS tiene antecedentes verificables en
 [GW2](../decisions/2026-27/gw02-research-and-decision.md) y
@@ -27,11 +27,30 @@ Después se restauraron todos los controles y se detuvo el browser.
 
 Ese antecedente no concede autorización para otra jornada ni habilita el executor
 autónomo. La taxonomía histórica A1 no debe reutilizarse para etiquetar una acción
-actual R2/A2. El importador de `mova_fpl/ops/supervised.py` sigue limitado a A1:
-la evidencia GW4 está conservada en artifacts, pero no importada como cierre
-normalizado `manual_verified`/`executed_verified` del ciclo. No editar SQLite
-directamente ni declarar ensayos del driver a partir de un montaje humano.
-La adaptación del contrato y su cierre de ciclo siguen pendientes de ingeniería.
+actual R2/A2. El importador acepta el contrato vigente
+[`manual-verified-execution-v2`](../specs/fpl-autonomous-operator/contracts/manual-verified-execution-v2.schema.json)
+y conserva compatibilidad de lectura con el paquete A1 antiguo. La vía v2 exige autoridad
+R2/A2 o R3/A3, ventana anterior al deadline, política idéntica, pre/post-state privados,
+diff exacto, hashes físicos y cuatro verificaciones aprobadas. Al persistirla sella el ciclo
+como `executed_verified`; una segunda ejecución distinta para la misma GW falla cerrada.
+
+El paquete registra una acción humana que ya ocurrió y fue comprobada. No hace clicks, no
+promueve capacidades, no cuenta como rehearsal del driver y no convierte evidencia histórica
+incompleta en un cierre actual. El estado posterior debe haberse tomado tras el reload. Los
+artifacts referenciados permanecen privados y fuera de Git.
+
+```bash
+mova execute record-manual \
+  --package /var/lib/mova-fpl/artifacts/manual/gw05-execution-v2.json \
+  --actor mova-operator \
+  --reason "registrar ejecución humana verificada de GW5" \
+  --idempotency-key "manual-verified:2026-27:gw05:v2"
+```
+
+Usar exactamente la misma clave sólo para reproducir el mismo paquete. Un cambio del package
+requiere otra clave y será rechazado si el ciclo ya tiene ejecución verificada. No editar SQLite
+directamente. Después del cierre, el tick puede reutilizar esa ejecución para settlement/review
+cuando la API publique `finished + data_checked`; este comando no anticipa esos flags.
 
 ## Contrato
 

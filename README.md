@@ -1,7 +1,7 @@
 ---
 type: docs
 name: MOVA Fantasy Fútbol Data Analytics
-updated: 2026-09-12
+updated: 2026-09-14
 status: active
 tags: [mova, fpl, runtime, operations]
 ---
@@ -27,6 +27,12 @@ ni promueve un modelo. Empezar por el [contrato del dataset](experiments/data_gr
 y la [guía de cierre, tamaños y límites](experiments/data_ground_truth/README.md#cierre-del-gate-de-datos-g112).
 
 ## Versiones y última comprobación
+
+La [guía de cierre autónomo](docs/specs/fpl-autonomous-operator/04-readiness-and-rollout.md)
+define desde el 14 de septiembre las etapas C1–C5, tareas, dependencias y evidencia de aceptación.
+El corte de readiness de las 18:12 Colombia fue 16 pass / 9 pending; PostgreSQL ya suma 3/3 GWs.
+Continúan pendientes cierre normalizado, calidad research, validación de ejecutores, integraciones
+externas y promoción. Esta actualización documental no despliega código ni habilita acciones.
 
 Verificado el **12 de septiembre de 2026, 12:25 Colombia**: control room desplegado en
 `191d809fd3745c0fb8bb24a4e35e3b2f45902413`; doctor **24 PASS, 0 WARN, 0 FAIL**,
@@ -383,6 +389,9 @@ CycleManifest + memoria estratégica durable → modelos causales → matriz xP 
   prueba aprobada por GW/capacidad/versión y rechaza fuentes alteradas o intentos de escritura.
 - `mova execute rehearsal-capability-probe` deriva evidencia de lineup/R3 exclusivamente desde
   probes DOM allowlisted y conciliados; observar controles nunca habilita entrypoints ni commits.
+- `mova execute record-manual` importa una operación humana ya verificada bajo R2/A2 o R3/A3,
+  comprueba autoridad, pre/post-state y diff exacto, y sella el ciclo contra una segunda ejecución;
+  no opera el browser ni acredita el driver autónomo.
 - `mova postgres drill` ensaya el read-path PostgreSQL y su rollback a SQLite con hashes, artifact,
   idempotencia y métricas, sin cambiar el writer productivo.
 - `mova postgres roles` rota y prueba identidades separadas para aplicación y sólo lectura;
