@@ -239,7 +239,8 @@ def test_autonomous_closeout_package_uses_sealed_execution_and_causal_batch(
         ],
     }
     envelope_sha = sha256_json(envelope_body)
-    envelope = {**envelope_body, "content_sha256": envelope_sha}
+    envelope = {**envelope_body, "envelope_id": "envelope_auto",
+                "content_sha256": envelope_sha}
     envelope_path = config.artifact_root / "decisions" / "envelope.json"
     envelope_path.parent.mkdir(parents=True)
     envelope_path.write_bytes(canonical_bytes(envelope))

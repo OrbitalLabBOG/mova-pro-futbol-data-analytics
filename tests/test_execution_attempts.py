@@ -5,7 +5,9 @@ from pathlib import Path
 
 import pytest
 
+from mova_fpl.data.private_state import seal as seal_private_state
 from mova_fpl.data.private_state import validate as validate_private_state
+from mova_fpl.analytics.gameweek_review import load_closeout_package
 from mova_fpl.ops.browser_contract import (
     assess_pick_team_snapshot,
     assess_transfers_snapshot,
@@ -18,6 +20,8 @@ from mova_fpl.ops.cli import parser
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB, sha256_json
 from mova_fpl.ops.execution import ExecutionService
+from mova_fpl.ops.decision_envelope import decision_fingerprint
+from mova_fpl.ops.review import GameweekReviewService
 
 
 NOW = datetime(2026, 9, 4, 16, 0, tzinfo=timezone.utc)
@@ -88,13 +92,17 @@ def _seed_authorized_service(tmp_path: Path) -> tuple[ExecutionService, dict, di
     })
     current = {
         "season": "2026-27", "gw": 3, "squad_15": list(range(1, 16)),
-        "starters": list(range(1, 12)), "captain": 1, "vice_captain": 2,
-        "bench_order": list(range(12, 16)), "transfers_in": [], "transfers_out": [],
+        "starters": [1, 2, 3, 4, 5, 7, 8, 9, 10, 12, 13],
+        "captain": 1, "vice_captain": 2,
+        "bench_order": [15, 6, 11, 14], "transfers_in": [], "transfers_out": [],
         "hits": 0, "chip": None, "expected_points": 50.0,
+        "total_cost": 99.0, "bank_after": 1.0, "policy": "fixture",
     }
+    current["fingerprint"] = decision_fingerprint(current)
     selected = {**current, "starters": list(range(1, 11)) + [12],
                 "bench_order": [15, 11, 13, 14], "captain": 7, "vice_captain": 8,
                 "expected_points": 53.0}
+    selected["fingerprint"] = decision_fingerprint(selected)
     envelope = {
         "schema": "mova-decision-envelope-v1", "policy_version": "test-policy",
         "cycle_id": cycle, "season": "2026-27", "gw": 3, "mode": "autonomous",
@@ -454,7 +462,118 @@ def test_apply_once_lifecycle_is_idempotent_and_verifies_post_reload(tmp_path: P
     assert [event["to_status"] for event in persisted["events"]] == [
         "prepared", "claimed", "applying", "verified",
     ]
+    with service.db.connect(readonly=True) as con:
+        decision = con.execute(
+            "SELECT status FROM decision_runs WHERE decision_id=(SELECT decision_id "
+            "FROM execution_plans WHERE plan_id=?)", (plan["plan_id"],),
+        ).fetchone()
+        cycle = con.execute(
+            "SELECT phase,status FROM gameweek_cycles WHERE cycle_id='2026-27-gw03'"
+        ).fetchone()
+    assert decision["status"] == "executed_verified"
+    assert dict(cycle) == {"phase": "executed_verified", "status": "executed_verified"}
+    assert service.db.pending_autonomous_closeout_gws("2026-27") == [3]
+    sealed = service.db.seal_verified_decision_cycle(
+        "2026-27-gw03", correlation_id="corr_test", job_id=persisted["job_id"]
+    )
+    assert sealed["execution_id"] == prepared["execution_id"]
     assert service.db.quick_check() == "ok"
+
+
+def test_native_verified_attempt_builds_autonomous_closeout_input(
+    tmp_path: Path, monkeypatch,
+):
+    service, plan, pre = _seed_authorized_service(tmp_path)
+    prepared = service.prepare(
+        plan_id=plan["plan_id"], adapter="fixture", actor="test", reason="native",
+        idempotency_key="execute:native-closeout", now=NOW,
+    )
+    claim = service.claim(execution_id=prepared["execution_id"], actor="fixture",
+                          reason="claim", now=NOW)
+    service.begin(execution_id=prepared["execution_id"], claim_token=claim["claim_token"],
+                  pre_state=pre, actor="fixture", reason="pre", now=NOW + timedelta(seconds=1))
+    order = list(range(1, 11)) + [12, 15, 11, 13, 14]
+    post = _private_state(order, captain=7, vice=8,
+                          observed_at=NOW + timedelta(seconds=10))
+    service.finalize(
+        execution_id=prepared["execution_id"], claim_token=claim["claim_token"],
+        post_state=post, actor="fixture", reason="post", now=NOW + timedelta(seconds=11),
+    )
+    durable = {**post, "observed_at": (NOW + timedelta(seconds=12)).isoformat()}
+    path, manifest, normalized = seal_private_state(
+        durable, service.config.season, service.config.artifact_root / "team_state",
+        expected_team_id=service.config.team_id,
+    )
+    service.db.add_team_state(
+        job_id=service.db.execution_attempt(prepared["execution_id"])["job_id"],
+        cycle_id="2026-27-gw03", observed_at=normalized["observed_at"],
+        source_name="fpl_authenticated_api", squad=normalized["picks"],
+        free_transfers=1, bank_tenths=10, chips=normalized["chips"],
+        fingerprint=manifest["quality"]["fingerprint"], artifact_path=str(path),
+        manifest_sha256=hashlib.sha256((path / "manifest.json").read_bytes()).hexdigest(),
+    )
+
+    class FakeConnection:
+        def __enter__(self): return self
+        def __exit__(self, *_): return False
+        def execute(self, query, params):
+            if "model_projection_batches" in query:
+                self.rows = [{"batch_id": "projection_native",
+                              "input_artifact_id": "artifact_pre"}]
+            else:
+                positions = {1: "GKP", 15: "GKP", **{n: "DEF" for n in range(2, 7)},
+                             **{n: "MID" for n in range(7, 12)},
+                             **{n: "FWD" for n in range(12, 15)}}
+                self.rows = [{"element": n, "player_name": f"Player {n}",
+                              "team": f"Team {(n - 1) % 5}", "position": positions[n],
+                              "xp": 3.0, "p_60": .8, "now_cost": 50}
+                             for n in range(1, 16)]
+            return self
+        def fetchall(self): return self.rows
+
+    monkeypatch.setattr("mova_fpl.ops.review.connect", lambda *a, **k: FakeConnection())
+    package_path = GameweekReviewService(
+        service.config, service.db
+    )._autonomous_package(gw=3)
+    package = load_closeout_package(package_path)
+    assert package["verified_execution_source"] == "execution_attempt"
+    assert package["trace_run_id"] == prepared["execution_id"]
+    assert package["selected"]["captain"] == 7
+    selected = package["selected"]
+    players = [{
+        "element": int(row["element"]), "web_name": row["name"],
+        "team_id": 1, "element_type": {"GKP": 1, "DEF": 2, "MID": 3, "FWD": 4}[row["position"]],
+        "now_cost": int(float(row["price"]) * 10),
+    } for row in selected["players"]]
+    picks = [{
+        "element": int(row["element"]), "position": index,
+        "multiplier": (2 if int(row["element"]) == selected["captain"] else
+                       1 if row["role"] == "starter" else 0),
+    } for index, row in enumerate(selected["players"], start=1)]
+    official = {
+        "event": {"payload": {"average_entry_score": 24}, "finished": True,
+                  "data_checked": True},
+        "entry": {"event_points": 24, "event_rank": 1},
+        "picks": picks,
+        "live": [{"element": row["element"], "total_points": 2, "minutes": 90,
+                  "stats": {"total_points": 2, "minutes": 90}} for row in players],
+        "players": players,
+        "source": {"artifact_id": "official_native", "observed_at": NOW.isoformat(),
+                   "artifact_path": str(tmp_path / "official-native"),
+                   "manifest_sha256": "a" * 64, "payload_sha256": "b" * 64},
+        "projection_count": 1,
+    }
+    result = GameweekReviewService(service.config, service.db)._build(
+        package, official, package_path,
+        service.db.execution_attempt(prepared["execution_id"])["job_id"],
+        "2026-27-gw03", "corr_native", "test", "native closeout",
+        "native-closeout:gw03:v1",
+    )
+    persisted = service.db.record_gameweek_closeout(result["ledger"])
+    assert persisted["execution_id"] == prepared["execution_id"]
+    assert persisted["reused_verified_execution"] is True
+    with service.db.connect(readonly=True) as con:
+        assert con.execute("SELECT COUNT(*) FROM web_executions").fetchone()[0] == 0
 
 
 def test_post_reload_mismatch_is_ambiguous_and_opens_p0(tmp_path: Path):
