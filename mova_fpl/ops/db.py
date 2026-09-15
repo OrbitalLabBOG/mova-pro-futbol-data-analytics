@@ -835,8 +835,24 @@ class OpsDB:
                 occurred_at=finished_at,
             )
             plan = con.execute(
-                "SELECT cycle_id FROM execution_plans WHERE plan_id=?", (row["plan_id"],)
+                "SELECT cycle_id,decision_id FROM execution_plans WHERE plan_id=?",
+                (row["plan_id"],)
             ).fetchone()
+            if status == "verified":
+                con.execute(
+                    "UPDATE decision_runs SET status='executed_verified' WHERE decision_id=?",
+                    (plan["decision_id"],),
+                )
+                con.execute(
+                    "UPDATE decision_runs SET status='superseded' WHERE cycle_id=? "
+                    "AND decision_id<>? AND status='staged'",
+                    (plan["cycle_id"], plan["decision_id"]),
+                )
+                con.execute(
+                    """UPDATE gameweek_cycles SET phase='executed_verified',
+                    status='executed_verified',last_observed_at=?,revision=revision+1
+                    WHERE cycle_id=?""", (finished_at, plan["cycle_id"]),
+                )
             self.append_audit(
                 f"execution_attempt_{status}", actor=actor,
                 correlation_id=con.execute(
@@ -909,12 +925,17 @@ class OpsDB:
         """Cierra propuestas tardías cuando el ciclo ya fue ejecutado y verificado."""
         with self.transaction() as con:
             verified = con.execute(
-                """SELECT e.execution_id,d.decision_id,e.finished_at
-                FROM web_executions e
-                JOIN decision_runs d ON d.decision_id=e.decision_id
-                WHERE d.cycle_id=? AND d.status='executed_verified' AND e.status='verified'
-                ORDER BY e.finished_at DESC,e.rowid DESC LIMIT 1""",
-                (cycle_id,),
+                """SELECT execution_id,decision_id,finished_at FROM (
+                  SELECT e.execution_id,d.decision_id,e.finished_at
+                  FROM web_executions e JOIN decision_runs d ON d.decision_id=e.decision_id
+                  WHERE d.cycle_id=? AND d.status='executed_verified' AND e.status='verified'
+                  UNION ALL
+                  SELECT a.execution_id,p.decision_id,a.finished_at
+                  FROM execution_attempts a JOIN execution_plans p ON p.plan_id=a.plan_id
+                  JOIN decision_runs d ON d.decision_id=p.decision_id
+                  WHERE p.cycle_id=? AND d.status='executed_verified' AND a.status='verified'
+                ) ORDER BY finished_at DESC LIMIT 1""",
+                (cycle_id, cycle_id),
             ).fetchone()
             if not verified:
                 return None
@@ -974,13 +995,25 @@ class OpsDB:
                 ORDER BY e.finished_at DESC,e.rowid DESC LIMIT 1""",
                 (cycle["cycle_id"], payload["execution"]["evidence_sha256"]),
             ).fetchone()
+            native_execution = None
+            if (not existing_execution
+                    and payload["execution"].get("source_type") == "execution_attempt"):
+                native_execution = con.execute(
+                    """SELECT a.execution_id,p.decision_id FROM execution_attempts a
+                    JOIN execution_plans p ON p.plan_id=a.plan_id
+                    WHERE p.cycle_id=? AND a.status='verified'
+                      AND a.execution_id=? AND a.evidence_sha256=?""",
+                    (cycle["cycle_id"], payload["execution"].get("source_execution_id"),
+                     payload["execution"]["evidence_sha256"]),
+                ).fetchone()
+            existing_verified = existing_execution or native_execution
             effective_decision_id = (
-                str(existing_execution["decision_id"])
-                if existing_execution else decision["decision_id"]
+                str(existing_verified["decision_id"])
+                if existing_verified else decision["decision_id"]
             )
             effective_execution_id = (
-                str(existing_execution["execution_id"])
-                if existing_execution else payload["execution"]["execution_id"]
+                str(existing_verified["execution_id"])
+                if existing_verified else payload["execution"]["execution_id"]
             )
             source = payload["source_snapshot"]
             con.execute(
@@ -1027,7 +1060,7 @@ class OpsDB:
                  hashlib.sha256(intervention["rationale"].encode("utf-8")).hexdigest(),
                  intervention["created_at"]),
             )
-            if not existing_execution:
+            if not existing_verified:
                 revision = int(con.execute(
                     "SELECT COALESCE(MAX(revision),0)+1 FROM decision_runs WHERE cycle_id=?",
                     (cycle["cycle_id"],),
@@ -1065,7 +1098,7 @@ class OpsDB:
                  strategy["manifest_sha256"], strategy["created_at"]),
             )
             execution = payload["execution"]
-            if not existing_execution:
+            if not existing_verified:
                 con.execute(
                     """INSERT INTO web_executions(
                     execution_id,decision_id,action_level,envelope_sha256,status,started_at,
@@ -1075,7 +1108,7 @@ class OpsDB:
                      execution["finished_at"], execution["evidence_path"],
                      execution["evidence_sha256"]),
                 )
-            for check in execution["checks"]:
+            for check in execution["checks"] if not native_execution else []:
                 con.execute(
                     """INSERT OR IGNORE INTO verification_checks(
                     check_id,execution_id,check_name,expected_json,observed_json,passed,checked_at)
@@ -1147,7 +1180,7 @@ class OpsDB:
         return {
             "cycle_id": cycle["cycle_id"], "decision_id": effective_decision_id,
             "execution_id": effective_execution_id,
-            "reused_verified_execution": bool(existing_execution),
+            "reused_verified_execution": bool(existing_verified),
             "settlement_id": settlement["settlement_id"], "review_id": review["review_id"],
             "player_outcomes": len(review["player_outcomes"]),
             "proposals": len(review["proposals"]),
@@ -1160,11 +1193,16 @@ class OpsDB:
         with self.connect(readonly=True) as con:
             rows = con.execute(
                 """SELECT DISTINCT c.gw FROM gameweek_cycles c
-                JOIN decision_runs d ON d.cycle_id=c.cycle_id
-                JOIN web_executions e ON e.decision_id=d.decision_id
                 LEFT JOIN gameweek_settlements s ON s.cycle_id=c.cycle_id
-                WHERE c.season=? AND d.status='executed_verified'
-                  AND e.status='verified' AND s.settlement_id IS NULL
+                WHERE c.season=? AND s.settlement_id IS NULL AND (
+                  EXISTS(SELECT 1 FROM decision_runs d JOIN web_executions e
+                    ON e.decision_id=d.decision_id WHERE d.cycle_id=c.cycle_id
+                    AND d.status='executed_verified' AND e.status='verified')
+                  OR EXISTS(SELECT 1 FROM execution_attempts a JOIN execution_plans p
+                    ON p.plan_id=a.plan_id JOIN decision_runs d ON d.decision_id=p.decision_id
+                    WHERE p.cycle_id=c.cycle_id AND d.status='executed_verified'
+                    AND a.status='verified')
+                )
                 ORDER BY c.gw""", (season,),
             ).fetchall()
         return [int(row["gw"]) for row in rows]

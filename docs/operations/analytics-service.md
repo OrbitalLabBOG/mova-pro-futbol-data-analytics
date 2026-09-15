@@ -54,7 +54,9 @@ requiere una nueva clave.
 3. `mova analytics reconcile` evalúa únicamente el batch vigente contra un artifact oficial
    cerrado. La clave `batch + actual artifact + final` vuelve la operación idempotente.
 4. `mova analytics run` ejecuta ambos pasos. Después de observar datos finales, intenta el closeout
-   de cada GW que tenga una ejecución verificada y aún no tenga settlement. Sólo lo construye si la
+   de cada GW que tenga una ejecución verificada y aún no tenga settlement. La ejecución puede
+   provenir del ledger supervisado `web_executions` o del ledger nativo `execution_attempts`; en
+   ambos casos debe estar sellada como `verified` y conservar evidencia física reproducible. Sólo lo construye si la
    ejecución reproduce un candidato único de un `DecisionEnvelope` físico intacto y existe un batch
    `approved` anterior al deadline que cubra selección y comparador. Exige además una captura
    privada durable posterior a la ejecución con el mismo fingerprint. Una desviación humana que no
@@ -137,8 +139,9 @@ Secuencia de diagnóstico:
 5. Nunca usar `reconcile` como feature del mismo batch evaluado ni editar una evaluación pasada.
 6. Ante un entrenamiento fallido, revisar el `model_train` job y su audit. Los temporales y
    artifacts incompletos se limpian; no reutilizar la clave fallida ni activar archivos a mano.
-7. Si falla `Closeout automático GW<N>`, comprobar ejecución `verified`, hashes del envelope y de
-   su evidencia, coincidencia exacta del fingerprint y cobertura del batch causal. El package
+7. Si falla `Closeout automático GW<N>`, comprobar ejecución `verified` en `web_executions` o
+   `execution_attempts`, hashes del envelope y de su evidencia, coincidencia exacta del fingerprint
+   y cobertura del batch causal. El package
    manual histórico sigue disponible para jornadas antiguas, no como bypass del gate autónomo.
 
 ### Jornada histórica sin batch predeadline

@@ -66,8 +66,8 @@ Las dependencias múltiples se conservan en esta tabla y en las descripciones PM
 
 | Etapa | Trabajo / work_key existente | Dependencias | Criterio de salida |
 | --- | --- | --- | --- |
-| C1 — Cierre verificable | `mova-fpl-v0.6.4-manual-verified` | Contrato de autoridad vigente | Implementado localmente en `manual-verified-execution-v2`: importa pre/post-state, autorización y hashes; latch impide nuevas acciones; falta desplegar y comprobar con evidencia real elegible |
-| C1 — Continuidad del ejecutor | `FPL-HV1-07` | Cierre anterior, R2/R3 | Ruta de closeout automático implementada: el timer analítico construye package sólo desde ejecución verificada, candidato único del envelope y batch causal; falta desplegarla y ejercerla en una GW elegible. Scheduler conecta además plan autorizado, claim, driver y verifier; replay/restart/estado ambiguo no duplican acciones |
+| C1 — Cierre verificable | `mova-fpl-v0.6.4-manual-verified` | Contrato de autoridad vigente | Desplegado: `manual-verified-execution-v2` importa pre/post-state, autorización y hashes; el latch impide nuevas acciones. Falta ejercerlo con evidencia real elegible |
+| C1 — Continuidad del ejecutor | `FPL-HV1-07` | Cierre anterior, R2/R3 | Desplegados scheduler y closeout automático: plan autorizado, claim, driver y verifier son idempotentes; el timer construye el cierre desde el ledger supervisado o nativo, candidato único y batch causal. Falta una GW elegible que pruebe la cadena productiva completa |
 | C2 — Agentes fiables | `FPL-AUTO-RESEARCH-PIPELINE` | Datos frescos y contrato de evidence | Fetch/locator/TTL/cobertura válidos, 3 GWs passing; Strategist/Critic terminan dentro de cadencia; follow-up de costo validado; intervención conserva autoridad acotada |
 | C3 — Alertas | `FPL-AUTO-ALERTING` | Destino y owner autorizados | Configuración + live ping para fingerprint vigente, recepción/acuse y prueba de retry/dedup |
 | C3 — Respaldo | `FPL-AUTO-OFFSITE-BACKUP` | Destino y owner autorizados | Copia cifrada fuera del VPS, retención/timer y restore aislado 8/8; excluir perfil browser y CODEX_HOME |
@@ -101,8 +101,9 @@ certificación de autonomía ni permiso para omitir pruebas. No se inventan hora
 ### Contrato del closeout automático
 
 El cierre `mova-fpl-autonomous-closeout-v1` elimina la redacción manual rutinaria sin rebajar
-trazabilidad. Es elegible únicamente cuando existen `decision_runs.executed_verified` y
-`web_executions.verified`, todos sus checks pasan, los artefactos están dentro del root privado y
+trazabilidad. Es elegible únicamente cuando existe `decision_runs.executed_verified` y una fuente
+de ejecución verificada: `web_executions.verified` para el registro supervisado o
+`execution_attempts.verified` para el ejecutor nativo. Todos sus checks deben pasar, los artefactos están dentro del root privado y
 reproducen sus hashes, y el fingerprint ejecutado identifica un solo candidato en el envelope
 sellado más reciente. También exige un `team_state_snapshot` válido, posterior a la ejecución y
 con el mismo fingerprint, para no sintetizar banco, transferencias libres ni chips. El comparador

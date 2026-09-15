@@ -249,7 +249,20 @@ class GameweekReviewService:
                 WHERE d.cycle_id=? AND d.status='executed_verified' AND e.status='verified'
                 ORDER BY e.finished_at DESC,e.rowid DESC LIMIT 1""", (cycle_id,),
             ).fetchone()
-            checks = [] if not executed else con.execute(
+            source_type = "web_execution"
+            if not executed:
+                executed = con.execute(
+                    """SELECT d.*,a.execution_id,p.required_action_level AS action_level,
+                    de.content_sha256 AS envelope_sha256,a.started_at,a.finished_at,
+                    a.evidence_path,a.evidence_sha256,a.observed_post_fingerprint
+                    FROM execution_attempts a JOIN execution_plans p ON p.plan_id=a.plan_id
+                    JOIN decision_runs d ON d.decision_id=p.decision_id
+                    JOIN decision_envelopes de ON de.envelope_id=p.envelope_id
+                    WHERE p.cycle_id=? AND d.status='executed_verified' AND a.status='verified'
+                    ORDER BY a.finished_at DESC,a.rowid DESC LIMIT 1""", (cycle_id,),
+                ).fetchone()
+                source_type = "execution_attempt"
+            checks = [] if not executed or source_type != "web_execution" else con.execute(
                 "SELECT * FROM verification_checks WHERE execution_id=? ORDER BY checked_at,check_id",
                 (executed["execution_id"],),
             ).fetchall()
@@ -261,7 +274,7 @@ class GameweekReviewService:
                 "SELECT * FROM decision_players WHERE decision_id=? ORDER BY squad_position",
                 (executed["decision_id"],),
             ).fetchall()
-            execution_audit = None if not executed else con.execute(
+            execution_audit = None if not executed or source_type != "web_execution" else con.execute(
                 """SELECT payload_json,payload_sha256 FROM audit_events
                 WHERE event_type='manual_verified_execution_recorded'
                   AND subject_type='web_execution' AND subject_id=?
@@ -271,42 +284,63 @@ class GameweekReviewService:
             raise RuntimeError(f"ciclo {cycle_id} inexistente")
         if not executed:
             raise RuntimeError(f"GW{gw} sin ejecución verificada")
+        evidence_path = Path(str(executed["evidence_path"]))
+        if (not evidence_path.is_file()
+                or not evidence_path.resolve().is_relative_to(self.config.artifact_root.resolve())
+                or hashlib.sha256(evidence_path.read_bytes()).hexdigest()
+                != str(executed["evidence_sha256"])):
+            raise RuntimeError("evidencia de ejecución ausente, externa o alterada")
+        evidence_payload = json.loads(evidence_path.read_text(encoding="utf-8"))
         required_checks = {"authorization", "pre_state", "post_reload_state", "exact_diff"}
-        passed_checks = {str(row["check_name"]) for row in checks if bool(row["passed"])}
-        if (str(executed["action_level"]) not in {"A2", "A3"}
-                or not required_checks <= passed_checks
-                or any(not bool(row["passed"]) for row in checks)):
-            raise RuntimeError("ejecución sin set completo de verificaciones aprobadas")
-        if len(executed_players) != 15 or not execution_audit:
-            raise RuntimeError("ejecución sin decisión posicional o audit v2 completos")
-        audit_payload = json.loads(str(execution_audit["payload_json"]))
-        if sha256_json(audit_payload) != str(execution_audit["payload_sha256"]):
-            raise RuntimeError("audit de ejecución no reproduce su hash")
-        hit_cost = int(audit_payload.get("hits", 0))
-        if hit_cost < 0 or hit_cost % 4:
-            raise RuntimeError("audit de ejecución contiene hit_cost inválido")
-        executed_decision = {
-            "season": self.config.season, "gw": int(gw),
-            "squad_15": [int(row["element"]) for row in executed_players],
-            "starters": [int(row["element"]) for row in executed_players
-                         if row["role"] == "starter"],
-            "bench_order": [int(row["element"]) for row in executed_players
-                            if row["role"] == "bench"],
-            "captain": next(int(row["element"]) for row in executed_players
-                            if bool(row["is_captain"])),
-            "vice_captain": next(int(row["element"]) for row in executed_players
-                                 if bool(row["is_vice_captain"])),
-            "transfers_in": audit_payload.get("transfers_in") or [],
-            "transfers_out": audit_payload.get("transfers_out") or [],
-            "hits": hit_cost // 4, "chip": audit_payload.get("chip"),
-        }
-        executed_decision_fingerprint = decision_fingerprint(executed_decision)
+        if source_type == "web_execution":
+            passed_checks = {str(row["check_name"]) for row in checks if bool(row["passed"])}
+            if (not required_checks <= passed_checks
+                    or any(not bool(row["passed"]) for row in checks)):
+                raise RuntimeError("ejecución sin set completo de verificaciones aprobadas")
+            if len(executed_players) != 15 or not execution_audit:
+                raise RuntimeError("ejecución sin decisión posicional o audit v2 completos")
+            audit_payload = json.loads(str(execution_audit["payload_json"]))
+            if sha256_json(audit_payload) != str(execution_audit["payload_sha256"]):
+                raise RuntimeError("audit de ejecución no reproduce su hash")
+            hit_cost = int(audit_payload.get("hits", 0))
+            if hit_cost < 0 or hit_cost % 4:
+                raise RuntimeError("audit de ejecución contiene hit_cost inválido")
+            executed_decision = {
+                "season": self.config.season, "gw": int(gw),
+                "squad_15": [int(row["element"]) for row in executed_players],
+                "starters": [int(row["element"]) for row in executed_players
+                             if row["role"] == "starter"],
+                "bench_order": [int(row["element"]) for row in executed_players
+                                if row["role"] == "bench"],
+                "captain": next(int(row["element"]) for row in executed_players
+                                if bool(row["is_captain"])),
+                "vice_captain": next(int(row["element"]) for row in executed_players
+                                     if bool(row["is_vice_captain"])),
+                "transfers_in": audit_payload.get("transfers_in") or [],
+                "transfers_out": audit_payload.get("transfers_out") or [],
+                "hits": hit_cost // 4, "chip": audit_payload.get("chip"),
+            }
+            executed_decision_fingerprint = decision_fingerprint(executed_decision)
+            team_fingerprint = str(executed["fingerprint"])
+        else:
+            native_checks = list(evidence_payload.get("verification_checks") or [])
+            if (evidence_payload.get("schema") != "mova-execution-evidence-v1"
+                    or len(native_checks) < 4
+                    or not all(check.get("passed") is True for check in native_checks)
+                    or str(executed["observed_post_fingerprint"])
+                    != str(executed["fingerprint"])):
+                raise RuntimeError("evidencia nativa no acredita post-reload exacto")
+            executed_decision_fingerprint = str(executed["observed_post_fingerprint"])
+            team_fingerprint = str(evidence_payload.get("private_state_fingerprint") or "")
+            checks = native_checks
+        if str(executed["action_level"]) not in {"A2", "A3"}:
+            raise RuntimeError("ejecución verificada fuera de A2/A3")
         with self.db.connect(readonly=True) as con:
             verified_team_state = con.execute(
                 """SELECT * FROM team_state_snapshots WHERE cycle_id=?
                 AND fingerprint=? AND quality_status='valid' AND observed_at>=?
                 ORDER BY observed_at DESC LIMIT 1""",
-                (cycle_id, executed["fingerprint"], executed["finished_at"]),
+                (cycle_id, team_fingerprint, executed["finished_at"]),
             ).fetchone()
         if not verified_team_state:
             raise RuntimeError("sin team-state durable posterior que reproduzca la ejecución")
@@ -321,7 +355,7 @@ class GameweekReviewService:
             team_state_path, expected_team_id=self.config.team_id,
         )
         private_quality = dict(private_manifest.get("quality") or {})
-        if (private_quality.get("fingerprint") != executed["fingerprint"]
+        if (private_quality.get("fingerprint") != team_fingerprint
                 or [int(row["element"]) for row in normalized_team_state["picks"]]
                 != [int(row["element"]) for row in executed_players]
                 or int(private_quality.get("bank_tenths", -1))
@@ -329,13 +363,6 @@ class GameweekReviewService:
                 or int(private_quality.get("free_transfers", -1))
                 != int(verified_team_state["free_transfers"])):
             raise RuntimeError("team-state posterior no reproduce su ledger durable")
-
-        evidence_path = Path(str(executed["evidence_path"]))
-        if (not evidence_path.is_file()
-                or not evidence_path.resolve().is_relative_to(self.config.artifact_root.resolve())
-                or hashlib.sha256(evidence_path.read_bytes()).hexdigest()
-                != str(executed["evidence_sha256"])):
-            raise RuntimeError("evidencia de ejecución ausente, externa o alterada")
 
         with self.db.connect(readonly=True) as con:
             candidates = con.execute(
@@ -364,7 +391,10 @@ class GameweekReviewService:
         envelope = json.loads(envelope_path.read_text(encoding="utf-8"))
         body = dict(envelope)
         content_sha = str(body.pop("content_sha256", ""))
-        if content_sha != str(matched["content_sha256"]) or sha256_json(body) != content_sha:
+        envelope_id = str(body.pop("envelope_id", ""))
+        if (envelope_id != str(matched["envelope_id"])
+                or content_sha != str(matched["content_sha256"])
+                or sha256_json(body) != content_sha):
             raise RuntimeError("contenido del DecisionEnvelope no reproduce su hash")
         by_key = {str(row["candidate_key"]): row for row in envelope["candidates"]}
         selected_row = by_key.get(str(matched["candidate_key"]))
@@ -444,6 +474,10 @@ class GameweekReviewService:
                 "expected": json.loads(row["expected_json"]),
                 "observed": json.loads(row["observed_json"]),
             } for row in checks
+        } if source_type == "web_execution" else {
+            str(row["code"]): {"expected": row.get("expected"),
+                               "observed": row.get("observed")}
+            for row in checks
         }
         selected_spec = scenario(selected, label=str(selected_row["label"]))
         comparator_spec = scenario(comparator, label=str(comparator_row["label"]))
@@ -456,6 +490,7 @@ class GameweekReviewService:
             "decision_acta_path": str(envelope_path),
             "mount_evidence_path": str(evidence_path),
             "mount_evidence_sha256": str(executed["evidence_sha256"]),
+            "verified_execution_source": source_type,
             "chip_inventory": json.loads(strategy["inventory_json"]) if strategy else [],
             "verified_team_state": dict(verified_team_state),
             "selected": selected_spec, "comparator": comparator_spec,
@@ -777,6 +812,8 @@ class GameweekReviewService:
             },
             "execution": {
                 "execution_id": ids["execution"], "envelope_sha256": sha256_json(package["selected"]),
+                "source_type": package.get("verified_execution_source", "web_execution"),
+                "source_execution_id": package.get("trace_run_id"),
                 "started_at": package["mounted_at"], "finished_at": package["mounted_at"],
                 "evidence_path": package["mount_evidence_path"],
                 "evidence_sha256": package["mount_evidence_sha256"], "checks": checks,
