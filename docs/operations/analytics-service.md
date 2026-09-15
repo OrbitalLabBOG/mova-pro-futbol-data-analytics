@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — servicio analítico y drift por gameweek"
 created: 2026-08-24
-updated: 2026-09-04
+updated: 2026-09-14
 tags: [mova, fpl, analytics, model, drift, observability]
 status: active
 ---
@@ -53,8 +53,14 @@ requiere una nueva clave.
    última por posibles correcciones oficiales.
 3. `mova analytics reconcile` evalúa únicamente el batch vigente contra un artifact oficial
    cerrado. La clave `batch + actual artifact + final` vuelve la operación idempotente.
-4. `mova analytics run` ejecuta ambos pasos. El timer lo invoca cada 30 minutos; si no hay trabajo
-   nuevo termina sin duplicar proyecciones ni evaluaciones.
+4. `mova analytics run` ejecuta ambos pasos. Después de observar datos finales, intenta el closeout
+   de cada GW que tenga una ejecución verificada y aún no tenga settlement. Sólo lo construye si la
+   ejecución reproduce un candidato único de un `DecisionEnvelope` físico intacto y existe un batch
+   `approved` anterior al deadline que cubra selección y comparador. Exige además una captura
+   privada durable posterior a la ejecución con el mismo fingerprint. Una desviación humana que no
+   coincide con el envelope falla cerrada y abre un incidente; nunca se inventa el contrafactual.
+5. Con el settlement durable, el mismo ciclo invoca el reviewer causal existente. El timer corre
+   cada 30 minutos; las claves deterministas evitan duplicar packages, settlements o reviews.
 
 El estado objetivo de jugadores de 2026/27 viene del bootstrap vigente. Desde el contrato
 `model-analytics-v2`, el estado de inferencia concatena la última temporada cerrada (`2025-26`)
@@ -108,6 +114,9 @@ mova analytics status
 mova analytics project
 mova analytics reconcile
 mova analytics run
+mova review settle-auto --gw 5 --actor codex \
+  --reason 'replay operativo del closeout sellado' \
+  --idempotency-key 'autonomous-closeout:2026-27:gw5:v1'
 
 curl -s http://127.0.0.1:8787/api/v1/analytics | python -m json.tool
 curl -s http://127.0.0.1:8787/api/v1/analytics/scorecards?limit=10 | python -m json.tool
@@ -128,6 +137,9 @@ Secuencia de diagnóstico:
 5. Nunca usar `reconcile` como feature del mismo batch evaluado ni editar una evaluación pasada.
 6. Ante un entrenamiento fallido, revisar el `model_train` job y su audit. Los temporales y
    artifacts incompletos se limpian; no reutilizar la clave fallida ni activar archivos a mano.
+7. Si falla `Closeout automático GW<N>`, comprobar ejecución `verified`, hashes del envelope y de
+   su evidencia, coincidencia exacta del fingerprint y cobertura del batch causal. El package
+   manual histórico sigue disponible para jornadas antiguas, no como bypass del gate autónomo.
 
 ### Jornada histórica sin batch predeadline
 

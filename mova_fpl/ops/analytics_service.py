@@ -91,6 +91,40 @@ class AnalyticsService:
                 state["last_run"] = result
                 publish_status(self.config, state)
                 if action in {"run", "reconcile"}:
+                    from mova_fpl.ops.review import GameweekReviewService
+
+                    settlement_service = GameweekReviewService(self.config, self.db)
+                    result["autonomous_closeouts"] = []
+                    for gw in self.db.pending_autonomous_closeout_gws(self.config.season):
+                        actual, _, checked = self.store.actual_frame(self.config.season, gw)
+                        if actual.empty or not checked:
+                            continue
+                        try:
+                            closeout = settlement_service.run_autonomous(
+                                gw=gw, actor="mova-analytics",
+                                reason="closeout automático posterior a settlement oficial",
+                                idempotency_key=(
+                                    f"autonomous-closeout:{self.config.season}:gw{gw}:v1"
+                                ),
+                            )
+                            self.db.resolve_incidents(
+                                f"Closeout automático GW{gw} falló",
+                                resolution=(
+                                    f"closeout recuperado por {closeout.get('job_id', 'replay')}"
+                                ),
+                                actor="mova-analytics",
+                            )
+                        except Exception as exc:  # no invalida scorecards ya sellados
+                            self.db.open_incident_once(
+                                "P2", f"Closeout automático GW{gw} falló",
+                                correlation_id=correlation_id,
+                                detail={"error_code": type(exc).__name__,
+                                        "error": str(exc)[:1000]},
+                            )
+                            closeout = {"status": "failed", "gw": gw,
+                                        "error_code": type(exc).__name__}
+                        result["autonomous_closeouts"].append(closeout)
+
                     from mova_fpl.ops.causal_review import CausalReviewerService
 
                     reviewer = CausalReviewerService(self.config, self.db)

@@ -93,6 +93,13 @@ def parser() -> argparse.ArgumentParser:
     review_auto.add_argument("--actor", required=True)
     review_auto.add_argument("--reason", required=True)
     review_auto.add_argument("--idempotency-key", required=True)
+    review_settle_auto = review_commands.add_parser(
+        "settle-auto", help="cierra una GW desde decisión y ejecución selladas"
+    )
+    review_settle_auto.add_argument("--gw", type=int, required=True)
+    review_settle_auto.add_argument("--actor", required=True)
+    review_settle_auto.add_argument("--reason", required=True)
+    review_settle_auto.add_argument("--idempotency-key", required=True)
     improve = commands.add_parser(
         "improve", help="memoria, costos y gate de mejora continua"
     )
@@ -552,6 +559,14 @@ def main(argv: list[str] | None = None) -> int:
 
             config.validate_postgres()
             payload = CausalReviewerService(config, db).run(
+                gw=args.gw, actor=args.actor, reason=args.reason,
+                idempotency_key=args.idempotency_key,
+            )
+        elif args.review_command == "settle-auto":
+            from mova_fpl.ops.review import GameweekReviewService
+
+            config.validate_postgres()
+            payload = GameweekReviewService(config, db).run_autonomous(
                 gw=args.gw, actor=args.actor, reason=args.reason,
                 idempotency_key=args.idempotency_key,
             )

@@ -14,6 +14,8 @@ from mova_fpl.analytics.gameweek_review import (
 from mova_fpl.analytics.strategy_shadow import (
     aggregate_strategy_shadow, settle_strategy_shadow,
 )
+from mova_fpl.data.private_state import load as load_private_state
+from mova_fpl.ops.decision_envelope import decision_fingerprint
 from mova_fpl.ops.collector.contracts import canonical_bytes, write_atomic
 from mova_fpl.ops.db import OpsDB, sha256_json, utcnow
 from mova_fpl.ops.harness import Harness
@@ -221,6 +223,266 @@ class GameweekReviewService:
             )
             return output
 
+    def run_autonomous(self, *, gw: int, actor: str, reason: str,
+                       idempotency_key: str) -> dict:
+        """Construye y consume un closeout sólo desde evidencia sellada compatible.
+
+        La ruta falla cerrada si la ejecución verificada no reproduce exactamente un
+        candidato del DecisionEnvelope o si falta el batch causal predeadline.
+        """
+        package_path = self._autonomous_package(gw=gw)
+        return self.run(
+            package_path=package_path, actor=actor, reason=reason,
+            idempotency_key=idempotency_key,
+        )
+
+    def _autonomous_package(self, *, gw: int) -> Path:
+        cycle_id = f"{self.config.season}-gw{int(gw):02d}"
+        with self.db.connect(readonly=True) as con:
+            cycle = con.execute(
+                "SELECT * FROM gameweek_cycles WHERE cycle_id=?", (cycle_id,),
+            ).fetchone()
+            executed = con.execute(
+                """SELECT d.*,e.execution_id,e.action_level,e.envelope_sha256,e.started_at,
+                e.finished_at,e.evidence_path,e.evidence_sha256
+                FROM decision_runs d JOIN web_executions e ON e.decision_id=d.decision_id
+                WHERE d.cycle_id=? AND d.status='executed_verified' AND e.status='verified'
+                ORDER BY e.finished_at DESC,e.rowid DESC LIMIT 1""", (cycle_id,),
+            ).fetchone()
+            checks = [] if not executed else con.execute(
+                "SELECT * FROM verification_checks WHERE execution_id=? ORDER BY checked_at,check_id",
+                (executed["execution_id"],),
+            ).fetchall()
+            strategy = con.execute(
+                "SELECT inventory_json FROM chip_strategy_runs WHERE cycle_id=? "
+                "ORDER BY created_at DESC LIMIT 1", (cycle_id,),
+            ).fetchone()
+            executed_players = [] if not executed else con.execute(
+                "SELECT * FROM decision_players WHERE decision_id=? ORDER BY squad_position",
+                (executed["decision_id"],),
+            ).fetchall()
+            execution_audit = None if not executed else con.execute(
+                """SELECT payload_json,payload_sha256 FROM audit_events
+                WHERE event_type='manual_verified_execution_recorded'
+                  AND subject_type='web_execution' AND subject_id=?
+                ORDER BY occurred_at DESC LIMIT 1""", (executed["execution_id"],),
+            ).fetchone()
+        if not cycle:
+            raise RuntimeError(f"ciclo {cycle_id} inexistente")
+        if not executed:
+            raise RuntimeError(f"GW{gw} sin ejecución verificada")
+        required_checks = {"authorization", "pre_state", "post_reload_state", "exact_diff"}
+        passed_checks = {str(row["check_name"]) for row in checks if bool(row["passed"])}
+        if (str(executed["action_level"]) not in {"A2", "A3"}
+                or not required_checks <= passed_checks
+                or any(not bool(row["passed"]) for row in checks)):
+            raise RuntimeError("ejecución sin set completo de verificaciones aprobadas")
+        if len(executed_players) != 15 or not execution_audit:
+            raise RuntimeError("ejecución sin decisión posicional o audit v2 completos")
+        audit_payload = json.loads(str(execution_audit["payload_json"]))
+        if sha256_json(audit_payload) != str(execution_audit["payload_sha256"]):
+            raise RuntimeError("audit de ejecución no reproduce su hash")
+        hit_cost = int(audit_payload.get("hits", 0))
+        if hit_cost < 0 or hit_cost % 4:
+            raise RuntimeError("audit de ejecución contiene hit_cost inválido")
+        executed_decision = {
+            "season": self.config.season, "gw": int(gw),
+            "squad_15": [int(row["element"]) for row in executed_players],
+            "starters": [int(row["element"]) for row in executed_players
+                         if row["role"] == "starter"],
+            "bench_order": [int(row["element"]) for row in executed_players
+                            if row["role"] == "bench"],
+            "captain": next(int(row["element"]) for row in executed_players
+                            if bool(row["is_captain"])),
+            "vice_captain": next(int(row["element"]) for row in executed_players
+                                 if bool(row["is_vice_captain"])),
+            "transfers_in": audit_payload.get("transfers_in") or [],
+            "transfers_out": audit_payload.get("transfers_out") or [],
+            "hits": hit_cost // 4, "chip": audit_payload.get("chip"),
+        }
+        executed_decision_fingerprint = decision_fingerprint(executed_decision)
+        with self.db.connect(readonly=True) as con:
+            verified_team_state = con.execute(
+                """SELECT * FROM team_state_snapshots WHERE cycle_id=?
+                AND fingerprint=? AND quality_status='valid' AND observed_at>=?
+                ORDER BY observed_at DESC LIMIT 1""",
+                (cycle_id, executed["fingerprint"], executed["finished_at"]),
+            ).fetchone()
+        if not verified_team_state:
+            raise RuntimeError("sin team-state durable posterior que reproduzca la ejecución")
+        team_state_path = Path(str(verified_team_state["artifact_path"]))
+        manifest_path = team_state_path / "manifest.json"
+        if (not team_state_path.resolve().is_relative_to(self.config.artifact_root.resolve())
+                or not manifest_path.is_file()
+                or hashlib.sha256(manifest_path.read_bytes()).hexdigest()
+                != str(verified_team_state["manifest_sha256"])):
+            raise RuntimeError("manifest del team-state posterior ausente, externo o alterado")
+        normalized_team_state, private_manifest = load_private_state(
+            team_state_path, expected_team_id=self.config.team_id,
+        )
+        private_quality = dict(private_manifest.get("quality") or {})
+        if (private_quality.get("fingerprint") != executed["fingerprint"]
+                or [int(row["element"]) for row in normalized_team_state["picks"]]
+                != [int(row["element"]) for row in executed_players]
+                or int(private_quality.get("bank_tenths", -1))
+                != int(verified_team_state["bank_tenths"])
+                or int(private_quality.get("free_transfers", -1))
+                != int(verified_team_state["free_transfers"])):
+            raise RuntimeError("team-state posterior no reproduce su ledger durable")
+
+        evidence_path = Path(str(executed["evidence_path"]))
+        if (not evidence_path.is_file()
+                or not evidence_path.resolve().is_relative_to(self.config.artifact_root.resolve())
+                or hashlib.sha256(evidence_path.read_bytes()).hexdigest()
+                != str(executed["evidence_sha256"])):
+            raise RuntimeError("evidencia de ejecución ausente, externa o alterada")
+
+        with self.db.connect(readonly=True) as con:
+            candidates = con.execute(
+                """SELECT de.*,dc.candidate_key,dc.label,dc.decision_json,dc.fingerprint
+                FROM decision_envelopes de JOIN decision_candidates dc
+                  ON dc.envelope_id=de.envelope_id
+                WHERE de.cycle_id=? ORDER BY de.created_at DESC""", (cycle_id,),
+            ).fetchall()
+        matches = [row for row in candidates
+                   if str(row["fingerprint"]) == executed_decision_fingerprint]
+        if not matches:
+            raise RuntimeError(
+                "la ejecución verificada no corresponde inequívocamente a un candidato sellado"
+            )
+        matched = matches[0]
+        latest_matches = [row for row in matches
+                          if row["envelope_id"] == matched["envelope_id"]]
+        if len(latest_matches) != 1:
+            raise RuntimeError("fingerprint ambiguo dentro del DecisionEnvelope más reciente")
+        envelope_path = Path(str(matched["artifact_path"]))
+        if (not envelope_path.is_file()
+                or not envelope_path.resolve().is_relative_to(self.config.artifact_root.resolve())
+                or hashlib.sha256(envelope_path.read_bytes()).hexdigest()
+                != str(matched["artifact_sha256"])):
+            raise RuntimeError("DecisionEnvelope ausente, externo o alterado")
+        envelope = json.loads(envelope_path.read_text(encoding="utf-8"))
+        body = dict(envelope)
+        content_sha = str(body.pop("content_sha256", ""))
+        if content_sha != str(matched["content_sha256"]) or sha256_json(body) != content_sha:
+            raise RuntimeError("contenido del DecisionEnvelope no reproduce su hash")
+        by_key = {str(row["candidate_key"]): row for row in envelope["candidates"]}
+        selected_row = by_key.get(str(matched["candidate_key"]))
+        if not selected_row:
+            raise RuntimeError("candidato ejecutado ausente del DecisionEnvelope físico")
+        selected = dict(selected_row["decision"])
+        stored_selected = json.loads(str(matched["decision_json"]))
+        if sha256_json(selected) != sha256_json(stored_selected):
+            raise RuntimeError("candidato persistido difiere del DecisionEnvelope físico")
+        comparator_row = by_key.get("do_nothing")
+        if not comparator_row:
+            raise RuntimeError("DecisionEnvelope sin comparador do_nothing")
+        comparator = dict(comparator_row["decision"])
+        if (decision_fingerprint(selected) != executed_decision_fingerprint
+                or decision_fingerprint(comparator) != str(comparator.get("fingerprint"))):
+            raise RuntimeError("fingerprint de candidato no reproduce el envelope")
+
+        deadline = str(cycle["deadline_at"])
+        required = sorted({int(value) for value in selected["squad_15"]}
+                          | {int(value) for value in comparator["squad_15"]})
+        with connect(self.config, autocommit=True) as con:
+            batches = con.execute(
+                """select * from analytics.model_projection_batches
+                where season=%s and target_gw=%s and status='approved' and cutoff_at<=%s
+                order by generated_at desc""", (self.config.season, int(gw), deadline),
+            ).fetchall()
+            projection_rows = None
+            batch = None
+            for candidate_batch in batches:
+                rows = con.execute(
+                    """select p.*,o.now_cost from analytics.player_projections p
+                    left join analytics.fpl_player_observations o
+                      on o.artifact_id=%s and o.element=p.element
+                    where p.batch_id=%s and p.element=any(%s) order by p.element""",
+                    (candidate_batch["input_artifact_id"], candidate_batch["batch_id"], required),
+                ).fetchall()
+                if {int(row["element"]) for row in rows} == set(required) and all(
+                    row["now_cost"] is not None for row in rows
+                ):
+                    batch, projection_rows = candidate_batch, rows
+                    break
+        if not batch or projection_rows is None:
+            raise RuntimeError("sin batch approved predeadline que cubra ambos escenarios")
+        projections = {int(row["element"]): row for row in projection_rows}
+
+        def scenario(decision: dict, *, label: str) -> dict:
+            starters = {int(value) for value in decision["starters"]}
+            order = [int(value) for value in decision["starters"]] + [
+                int(value) for value in decision["bench_order"]
+            ]
+            players = []
+            for element in order:
+                row = projections[element]
+                players.append({
+                    "element": element, "name": row["player_name"], "team": row["team"],
+                    "position": row["position"], "price": float(row["now_cost"]) / 10,
+                    "role": "starter" if element in starters else "bench",
+                    "expected_points": float(row["xp"]),
+                    "p60": float(row["p_60"]) if row["p_60"] is not None else None,
+                })
+            return {
+                "label": label, "policy_version": str(decision.get("policy") or "unknown"),
+                "expected_points": float(decision["expected_points"]),
+                "total_cost": float(decision["total_cost"]),
+                "bank_after": float(decision.get("bank_after", 0)),
+                "captain": int(decision["captain"]),
+                "vice_captain": int(decision["vice_captain"]),
+                "bench_order": [int(value) for value in decision["bench_order"]],
+                "transfers_in": [int(value) for value in decision.get("transfers_in", ())],
+                "transfers_out": [int(value) for value in decision.get("transfers_out", ())],
+                "hits": int(decision.get("hits", 0)), "chip": decision.get("chip"),
+                "players": players,
+            }
+
+        verification = {
+            str(row["check_name"]): {
+                "expected": json.loads(row["expected_json"]),
+                "observed": json.loads(row["observed_json"]),
+            } for row in checks
+        }
+        selected_spec = scenario(selected, label=str(selected_row["label"]))
+        comparator_spec = scenario(comparator, label=str(comparator_row["label"]))
+        package = {
+            "schema": "mova-fpl-autonomous-closeout-v1",
+            "season": self.config.season, "gw": int(gw), "entry_id": self.config.team_id,
+            "deadline_at": deadline, "reviewed_at": utcnow(),
+            "mounted_at": str(executed["finished_at"]),
+            "trace_run_id": str(executed["execution_id"]),
+            "decision_acta_path": str(envelope_path),
+            "mount_evidence_path": str(evidence_path),
+            "mount_evidence_sha256": str(executed["evidence_sha256"]),
+            "chip_inventory": json.loads(strategy["inventory_json"]) if strategy else [],
+            "verified_team_state": dict(verified_team_state),
+            "selected": selected_spec, "comparator": comparator_spec,
+            "intervention": {
+                "policy_version": "autonomous-closeout-1.0.0",
+                "selected_fingerprint": decision_fingerprint(selected),
+                "base_fingerprint": decision_fingerprint(comparator),
+                "payload": {"envelope_id": matched["envelope_id"],
+                            "execution_id": executed["execution_id"],
+                            "projection_batch_id": batch["batch_id"]},
+                "rationale": "atribución pareada desde decisión y ejecución selladas",
+            },
+            "mount_verification": {
+                "squad": verification, "xi": verification,
+                "captain": verification, "vice_captain": verification,
+                "bench_order": verification, "budget": verification,
+                "no_chip": {"expected": selected.get("chip"), "observed": selected.get("chip")},
+            },
+            "proposals": [],
+        }
+        package_bytes = canonical_bytes(package)
+        package_sha = hashlib.sha256(package_bytes).hexdigest()
+        target = (self.config.artifact_root / "reviews" / self.config.season
+                  / f"gw{int(gw):02d}" / "inputs" / f"{package_sha}.json")
+        write_atomic(target, package_bytes)
+        return target
+
     def _build(self, package: dict, official: dict, package_path: Path, job_id: str,
                cycle_id: str, correlation_id: str, actor: str, reason: str,
                idempotency_key: str, strategy_shadow_source: dict | None = None) -> dict:
@@ -270,13 +532,16 @@ class GameweekReviewService:
         selected_ids = {int(row["element"]) for row in package["selected"]["players"]}
         if selected_ids != set(official_picks):
             raise RuntimeError("la decisión seleccionada no coincide con los 15 picks oficiales")
-        official_points = sum(
+        official_points_before_hits = sum(
             int(row["total_points"]) * official_picks[int(row["element"])]
             for row in official["live"] if int(row["element"]) in official_picks
         )
+        hit_cost = int(selected.hits) * 4
+        official_points = official_points_before_hits - hit_cost
         if official_points != int(official["entry"]["event_points"]) or official_points != selected_score["points"]:
             raise RuntimeError(
-                f"accounting oficial no cuadra: picks={official_points} "
+                f"accounting oficial no cuadra: picks={official_points_before_hits} "
+                f"hits={hit_cost} net={official_points} "
                 f"entry={official['entry']['event_points']} engine={selected_score['points']}"
             )
         bench_points = sum(row["actual_points"] for row in selected_rows if row["role"] == "bench")
@@ -450,12 +715,33 @@ class GameweekReviewService:
                             "artifact_id": source["artifact_id"]},
             },
             "team_state": {
-                "team_state_id": ids["team_state"], "observed_at": package["mounted_at"],
-                "source_name": "manual_verified_mount", "squad": package["selected"]["players"],
-                "free_transfers": 0, "bank_tenths": 0, "chips": package["chip_inventory"],
+                "team_state_id": (
+                    package.get("verified_team_state", {}).get("team_state_id")
+                    or ids["team_state"]
+                ),
+                "observed_at": package.get("verified_team_state", {}).get(
+                    "observed_at", package["mounted_at"]
+                ),
+                "source_name": package.get("verified_team_state", {}).get(
+                    "source_name", "manual_verified_mount"
+                ),
+                "squad": json.loads(package["verified_team_state"]["squad_json"])
+                if package.get("verified_team_state") else package["selected"]["players"],
+                "free_transfers": int(package.get("verified_team_state", {}).get(
+                    "free_transfers", 0
+                )),
+                "bank_tenths": int(package.get("verified_team_state", {}).get(
+                    "bank_tenths", 0
+                )),
+                "chips": json.loads(package["verified_team_state"]["chips_json"])
+                if package.get("verified_team_state") else package["chip_inventory"],
                 "fingerprint": selected.fingerprint(),
-                "artifact_path": package["mount_evidence_path"],
-                "manifest_sha256": package["mount_evidence_sha256"],
+                "artifact_path": package.get("verified_team_state", {}).get(
+                    "artifact_path", package["mount_evidence_path"]
+                ),
+                "manifest_sha256": package.get("verified_team_state", {}).get(
+                    "manifest_sha256", package["mount_evidence_sha256"]
+                ),
             },
             "research_signals": [{
                 **signal,
@@ -465,14 +751,17 @@ class GameweekReviewService:
                                                 "url": signal["source_url"]}),
             } for index, signal in enumerate(package.get("research_signals") or [])],
             "intervention": {
-                "intervention_id": ids["intervention"], "policy_version": "manual-reviewed-v1",
+                "intervention_id": ids["intervention"],
+                "policy_version": package["intervention"].get(
+                    "policy_version", "manual-reviewed-v1"
+                ),
                 "payload": package["intervention"], "rationale": package["intervention"]["rationale"],
                 "created_at": package["reviewed_at"],
             },
             "decision": {
                 "decision_id": ids["decision"], "revision": 1, "mode": "manual",
                 "policy_version": package["selected"]["policy_version"],
-                "expected_points": selected.expected_points, "chip": None,
+                "expected_points": selected.expected_points, "chip": selected.chip,
                 "fingerprint": selected.fingerprint(), "manifest_sha256": sha256_json(package),
                 "artifact_path": package["decision_acta_path"], "created_at": package["reviewed_at"],
                 "players": decision_players,
@@ -480,8 +769,10 @@ class GameweekReviewService:
             "chip_strategy": {
                 "strategy_id": ids["strategy"], "window_name": "H1_GW01_19",
                 "policy_version": "manual-hold-v1", "inventory": package["chip_inventory"],
+                "recommended_chip": selected.chip,
+                "status": "played_verified" if selected.chip else "hold_verified",
                 "manifest_sha256": sha256_json({"inventory": package["chip_inventory"],
-                                                 "recommended_chip": None}),
+                                                 "recommended_chip": selected.chip}),
                 "created_at": package["reviewed_at"],
             },
             "execution": {
@@ -495,7 +786,8 @@ class GameweekReviewService:
                 "source_artifact_id": source["artifact_id"], "settled_at": created_at,
                 "entry_points": official_points, "entry_rank": official["entry"]["event_rank"],
                 "average_points": metrics["entry"]["average_points"], "bench_points": bench_points,
-                "hit_cost": 0, "captain_points": selected_score["captain_points"],
+                "hit_cost": hit_cost,
+                "captain_points": selected_score["captain_points"],
                 "auto_subs": selected_score["auto_subs"],
                 "official": {"finished": True, "data_checked": True,
                              "entry_points": official_points, "picks": len(official["picks"])},

@@ -17,8 +17,12 @@ from mova_fpl.rules.squad import is_valid_formation, validate_squad
 
 def load_closeout_package(path: Path) -> dict:
     payload = json.loads(path.read_text(encoding="utf-8"))
-    if payload.get("schema") != "mova-fpl-manual-closeout-v1":
-        raise ValueError("package de cierre no cumple mova-fpl-manual-closeout-v1")
+    accepted = {
+        "mova-fpl-manual-closeout-v1",
+        "mova-fpl-autonomous-closeout-v1",
+    }
+    if payload.get("schema") not in accepted:
+        raise ValueError("package de cierre no cumple un contrato soportado")
     for key in (
         "season", "gw", "deadline_at", "entry_id", "reviewed_at", "mounted_at",
         "trace_run_id", "decision_acta_path", "mount_evidence_path",
@@ -46,6 +50,9 @@ def build_decision(spec: dict, season: str, gw: int) -> Decision:
         bench_order=tuple(int(value) for value in spec["bench_order"]),
         expected_points=float(spec["expected_points"]), total_cost=float(spec["total_cost"]),
         bank_after=float(spec.get("bank_after", 0)), policy=str(spec["policy_version"]),
+        transfers_in=tuple(int(value) for value in spec.get("transfers_in", ())),
+        transfers_out=tuple(int(value) for value in spec.get("transfers_out", ())),
+        hits=int(spec.get("hits", 0)), chip=spec.get("chip"),
         notes=tuple(spec.get("notes") or ()),
     )
 
