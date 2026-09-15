@@ -13,6 +13,9 @@ from mova_fpl.cli.settle_trace import export as export_trace
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.causal_review import CausalReviewerService
 from mova_fpl.ops.db import OpsDB
+from mova_fpl.ops.collector.contracts import canonical_bytes
+from mova_fpl.ops.decision_envelope import sha256_json
+from mova_fpl.data.private_state import seal as seal_private_state
 from mova_fpl.ops.improvement import (
     ContinuousImprovementService, validate_transition_evidence,
 )
@@ -178,6 +181,206 @@ def test_closeout_package_reproduces_documented_fingerprints():
     comparator = build_decision(package["comparator"], package["season"], package["gw"])
     assert selected.fingerprint() == package["intervention"]["selected_fingerprint"]
     assert comparator.fingerprint() == package["intervention"]["base_fingerprint"]
+
+
+def test_decision_builder_preserves_r3_effects_and_hit_cost(tmp_path: Path):
+    path, package = _package()
+    package = json.loads(json.dumps(package))
+    package["selected"].update({
+        "transfers_in": [109], "transfers_out": [226], "hits": 1,
+        "chip": None,
+    })
+    decision = build_decision(package["selected"], package["season"], package["gw"])
+    assert decision.transfers_in == (109,)
+    assert decision.transfers_out == (226,)
+    assert decision.hits == 1
+    official = _official(package)
+    official["entry"]["event_points"] = 46
+    config = RuntimeConfig(artifact_root=tmp_path / "artifacts")
+    result = GameweekReviewService(
+        config, OpsDB(tmp_path / "ops.db", enforce_version=False)
+    )._build(
+        package, official, path, "job_test", "2026-27-gw01", "corr_test",
+        "test", "r3 accounting", "gw1:r3-accounting:v1",
+    )
+    assert result["ledger"]["settlement"]["hit_cost"] == 4
+
+
+def test_autonomous_closeout_package_uses_sealed_execution_and_causal_batch(
+    tmp_path: Path, monkeypatch,
+):
+    _, documented = _package()
+    config = RuntimeConfig(
+        ops_db=tmp_path / "ops.db", artifact_root=tmp_path / "artifacts",
+        lock_path=tmp_path / "worker.lock",
+    )
+    db = OpsDB(config.ops_db, enforce_version=False)
+    db.migrate()
+    cycle_id = db.upsert_cycle(
+        documented["season"], documented["gw"], documented["deadline_at"],
+        phase="executed_verified", status="executed_verified",
+    )
+    job_id, _ = db.start_job("fixture", "fixture:auto-closeout", "corr_fixture",
+                             cycle_id=cycle_id)
+    selected = build_decision(
+        documented["selected"], documented["season"], documented["gw"]
+    ).to_dict()
+    comparator = build_decision(
+        documented["comparator"], documented["season"], documented["gw"]
+    ).to_dict()
+    envelope_body = {
+        "schema": "mova-decision-envelope-v1", "cycle_id": cycle_id,
+        "selected_candidate_key": "milp_baseline",
+        "candidates": [
+            {"candidate_key": "do_nothing", "label": "Sin cambios",
+             "decision": comparator},
+            {"candidate_key": "milp_baseline", "label": "Seleccionada",
+             "decision": selected},
+        ],
+    }
+    envelope_sha = sha256_json(envelope_body)
+    envelope = {**envelope_body, "content_sha256": envelope_sha}
+    envelope_path = config.artifact_root / "decisions" / "envelope.json"
+    envelope_path.parent.mkdir(parents=True)
+    envelope_path.write_bytes(canonical_bytes(envelope))
+    physical_sha = hashlib.sha256(envelope_path.read_bytes()).hexdigest()
+    evidence_path = config.artifact_root / "execution-evidence" / "verified.json"
+    evidence_path.parent.mkdir(parents=True)
+    evidence_path.write_text('{"status":"verified"}\n', encoding="utf-8")
+    evidence_sha = hashlib.sha256(evidence_path.read_bytes()).hexdigest()
+    now = "2026-08-21T17:00:00+00:00"
+    selected_rows = {int(row["element"]): row for row in documented["selected"]["players"]}
+    position_ids = {"GKP": 1, "DEF": 2, "MID": 3, "FWD": 4}
+    ordered_elements = list(selected["starters"]) + list(selected["bench_order"])
+    private_payload = {
+        "schema": "mova-fpl-private-team-state-v1", "observed_at": now,
+        "team_id": documented["entry_id"],
+        "event": {"id": 1, "deadline_time": documented["deadline_at"]},
+        "picks_last_updated": now,
+        "picks": [{
+            "element": element,
+            "element_type": position_ids[selected_rows[element]["position"]],
+            "position": position,
+            "multiplier": (2 if element == selected["captain"] else
+                           1 if position <= 11 else 0),
+            "is_captain": element == selected["captain"],
+            "is_vice_captain": element == selected["vice_captain"],
+            "purchase_price": int(selected_rows[element]["price"] * 10),
+            "selling_price": int(selected_rows[element]["price"] * 10),
+        } for position, element in enumerate(ordered_elements, start=1)],
+        "transfers": {"bank": 5, "value": 1000, "limit": 1, "made": 0,
+                      "cost": 0, "status": "cost"},
+        "chips": [],
+    }
+    team_state_path, team_manifest, _ = seal_private_state(
+        private_payload, documented["season"], config.artifact_root / "team_state",
+        expected_team_id=documented["entry_id"],
+    )
+    team_fingerprint = team_manifest["quality"]["fingerprint"]
+    team_manifest_sha = hashlib.sha256(
+        (team_state_path / "manifest.json").read_bytes()
+    ).hexdigest()
+    with db.transaction() as con:
+        con.execute(
+            """INSERT INTO cycle_manifests(manifest_id,cycle_id,revision,as_of_at,
+            deadline_at,phase,source_manifest_json,analytics_manifest_json,
+            research_summary_json,artifact_path,content_sha256,created_at)
+            VALUES('manifest_auto',?,1,?,?,'preflight','[]','{}','{}',?,?,?)""",
+            (cycle_id, now, documented["deadline_at"], str(envelope_path), "m" * 64, now),
+        )
+        con.execute(
+            """INSERT INTO decision_runs(decision_id,job_id,cycle_id,revision,mode,
+            policy_version,status,expected_points,fingerprint,artifact_path,created_at)
+            VALUES('decision_auto',?,?,1,'supervised','policy','executed_verified',?,?,?,?)""",
+            (job_id, cycle_id, selected["expected_points"], team_fingerprint,
+             str(envelope_path), now),
+        )
+        con.execute(
+            """INSERT INTO decision_envelopes(envelope_id,job_id,cycle_id,decision_id,
+            manifest_id,schema_version,policy_version,status,selected_candidate_key,
+            content_sha256,artifact_path,artifact_sha256,created_at)
+            VALUES('envelope_auto',?,?,'decision_auto','manifest_auto',
+            'mova-decision-envelope-v1','policy','staged','milp_baseline',?,?,?,?)""",
+            (job_id, cycle_id, envelope_sha, str(envelope_path), physical_sha, now),
+        )
+        for key, label, decision, chosen in (
+            ("do_nothing", "Sin cambios", comparator, 0),
+            ("milp_baseline", "Seleccionada", selected, 1),
+        ):
+            con.execute(
+                """INSERT INTO decision_candidates(envelope_id,candidate_key,label,selected,
+                decision_json,fingerprint,expected_points) VALUES('envelope_auto',?,?,?,?,?,?)""",
+                (key, label, chosen, json.dumps(decision), decision["fingerprint"],
+                 decision["expected_points"]),
+            )
+        con.execute(
+            """INSERT INTO web_executions(execution_id,decision_id,action_level,
+            envelope_sha256,status,started_at,finished_at,evidence_path,evidence_sha256)
+            VALUES('execution_auto','decision_auto','A2',?,'verified',?,?,?,?)""",
+            (envelope_sha, now, now, str(evidence_path), evidence_sha),
+        )
+        for index, name in enumerate(("authorization", "pre_state", "post_reload_state", "exact_diff")):
+            con.execute(
+                """INSERT INTO verification_checks(check_id,execution_id,check_name,
+                expected_json,observed_json,passed,checked_at)
+                VALUES(?,'execution_auto',?,'{}','{}',1,?)""",
+                (f"check_{index}", name, now),
+            )
+        for position, element in enumerate(
+            list(selected["starters"]) + list(selected["bench_order"]), start=1
+        ):
+            con.execute(
+                """INSERT INTO decision_players(decision_id,element,squad_position,role,
+                is_captain,is_vice_captain,transfer_direction,expected_points)
+                VALUES('decision_auto',?,?,?,?,?,?,NULL)""",
+                (element, position, "starter" if position <= 11 else "bench",
+                 int(element == selected["captain"]),
+                 int(element == selected["vice_captain"]), None),
+            )
+        db.append_audit(
+            "manual_verified_execution_recorded", actor="test", cycle_id=cycle_id,
+            job_id=job_id, subject_type="web_execution", subject_id="execution_auto",
+            payload={"transfers_in": [], "transfers_out": [], "hits": 0, "chip": None},
+            con=con,
+        )
+    db.add_team_state(
+        job_id=job_id, cycle_id=cycle_id, observed_at=now,
+        source_name="fpl_authenticated_api", squad=[], free_transfers=1,
+        bank_tenths=5, chips=[], fingerprint=team_fingerprint,
+        artifact_path=str(team_state_path), manifest_sha256=team_manifest_sha,
+    )
+
+    players = {}
+    for scenario in (documented["selected"], documented["comparator"]):
+        for row in scenario["players"]:
+            players[int(row["element"])] = {
+                "element": int(row["element"]), "player_name": row["name"],
+                "team": row["team"], "position": row["position"],
+                "xp": float(row["expected_points"]), "p_60": row["p60"],
+                "now_cost": int(float(row["price"]) * 10),
+            }
+
+    class FakeConnection:
+        def __enter__(self): return self
+        def __exit__(self, *_): return False
+        def execute(self, query, params):
+            if "model_projection_batches" in query:
+                self.rows = [{"batch_id": "projection_auto",
+                              "input_artifact_id": "artifact_pre"}]
+            else:
+                self.rows = list(players.values())
+            return self
+        def fetchall(self): return self.rows
+
+    monkeypatch.setattr("mova_fpl.ops.review.connect", lambda *a, **k: FakeConnection())
+    path = GameweekReviewService(config, db)._autonomous_package(gw=1)
+    package = load_closeout_package(path)
+    assert package["schema"] == "mova-fpl-autonomous-closeout-v1"
+    assert package["intervention"]["payload"]["projection_batch_id"] == "projection_auto"
+    assert package["selected"]["captain"] == documented["selected"]["captain"]
+    assert package["comparator"]["captain"] == documented["comparator"]["captain"]
+    assert package["verified_team_state"]["bank_tenths"] == 5
+    assert db.pending_autonomous_closeout_gws(documented["season"]) == [1]
 
 
 def test_closeout_package_rejects_missing_mount_verification(tmp_path: Path):

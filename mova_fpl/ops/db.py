@@ -1060,7 +1060,8 @@ class OpsDB:
                 VALUES(?,?,?,?,?,?,?,?,?,?)""",
                 (strategy["strategy_id"], payload["job_id"], cycle["cycle_id"],
                  strategy["window_name"], strategy["policy_version"],
-                 canonical_json(strategy["inventory"]), None, "hold_verified",
+                 canonical_json(strategy["inventory"]), strategy.get("recommended_chip"),
+                 strategy.get("status", "hold_verified"),
                  strategy["manifest_sha256"], strategy["created_at"]),
             )
             execution = payload["execution"]
@@ -1153,6 +1154,20 @@ class OpsDB:
             "research_signals": len(payload.get("research_signals", [])),
             "verification_checks": len(execution["checks"]),
         }
+
+    def pending_autonomous_closeout_gws(self, season: str) -> list[int]:
+        """GWs con ejecución verificada y todavía sin settlement durable."""
+        with self.connect(readonly=True) as con:
+            rows = con.execute(
+                """SELECT DISTINCT c.gw FROM gameweek_cycles c
+                JOIN decision_runs d ON d.cycle_id=c.cycle_id
+                JOIN web_executions e ON e.decision_id=d.decision_id
+                LEFT JOIN gameweek_settlements s ON s.cycle_id=c.cycle_id
+                WHERE c.season=? AND d.status='executed_verified'
+                  AND e.status='verified' AND s.settlement_id IS NULL
+                ORDER BY c.gw""", (season,),
+            ).fetchall()
+        return [int(row["gw"]) for row in rows]
 
     def record_health(self, service: str, status: str, *, memory_available_bytes: int | None,
                       disk_free_bytes: int | None, load_1m: float | None,
