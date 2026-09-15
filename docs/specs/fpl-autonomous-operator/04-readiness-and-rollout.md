@@ -117,6 +117,11 @@ sin settlement; exige evidencia explícita, no reconstrucción retrospectiva. Tr
 y número de transferencias pagadas se propagan al motor, y `hit_cost = hits × 4` se concilia contra
 los puntos netos oficiales.
 
+Readiness publica dos gates separados: `AUTONOMOUS_CLOSEOUT_INSTALLED` es requisito técnico A2/A3
+y verifica contrato + scheduler; `AUTONOMOUS_CLOSEOUT_LIVE_PROVEN` exige al menos una GW completa,
+pero es evidencia de aceptación integral (`required_for=[]`) para no crear un requisito circular de
+promoción. Que el primero pase nunca sustituye al segundo ni concede autoridad.
+
 ### Seguimiento y límites del plan
 
 Supabase refleja trabajo y evidencia, no autoridad. Reutilizar IDs/work_keys abiertos, conservar

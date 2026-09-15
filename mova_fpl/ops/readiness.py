@@ -60,6 +60,7 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
     captaincy = driver.get("captaincy") or {}
     lineup = driver.get("lineup") or {}
     r3 = driver.get("r3") or {}
+    closeout = execution_status.get("autonomous_closeout") or {}
     projections = analytics.get("latest_projection_batches") or []
     target_gw = gameweek.get("gw")
     approved_projection = next(
@@ -389,6 +390,28 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
                       "rehearsals": int(r3.get("required_rehearsals") or 3)},
             source="browser driver capability ledger",
             next_action="completar tres rehearsals R3 y habilitar el entrypoint de forma explícita",
+        ),
+        _gate(
+            "AUTONOMOUS_CLOSEOUT_INSTALLED",
+            "pass" if closeout.get("status") == "implemented"
+            and closeout.get("scheduler") == "mova-fpl-analytics.timer" else "blocked",
+            "closeout post-GW fail-closed conectado al timer analítico",
+            levels=("A2", "A3"),
+            observed={key: closeout.get(key) for key in ("contract", "status", "scheduler")},
+            required={"contract": "mova-fpl-autonomous-closeout-v1",
+                      "status": "implemented", "scheduler": "mova-fpl-analytics.timer"},
+            source="mova execute status",
+            next_action="desplegar el contrato de closeout y conectarlo al timer analítico",
+        ),
+        _gate(
+            "AUTONOMOUS_CLOSEOUT_LIVE_PROVEN",
+            "pass" if int(closeout.get("observed_closeouts") or 0) >= 1 else "pending",
+            "al menos una GW completó settlement y review sin package manual",
+            levels=(),
+            observed={"completed": int(closeout.get("observed_closeouts") or 0),
+                      "latest": closeout.get("latest")},
+            required={"completed": 1}, source="job_runs.gameweek_review",
+            next_action="ejercer una ejecución A2/A3 elegible hasta settlement y review oficiales",
         ),
         _gate(
             "POSTGRES_SHADOW_PARITY",
