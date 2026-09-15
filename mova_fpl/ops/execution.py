@@ -343,6 +343,9 @@ class ExecutionService:
             "schema": "mova-execution-status-v1",
             "policy_version": POLICY_VERSION,
             "browser_driver": driver_capabilities(rehearsals),
+            "autonomous_closeout": self.db.autonomous_closeout_summary(
+                self.config.season
+            ),
             "plans": self.db.recent("execution_plans", limit),
             "attempts": self.db.recent("execution_attempts", limit),
             "rehearsals": self.db.recent("browser_rehearsals", limit),

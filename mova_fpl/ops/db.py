@@ -1169,6 +1169,32 @@ class OpsDB:
             ).fetchall()
         return [int(row["gw"]) for row in rows]
 
+    def autonomous_closeout_summary(self, season: str) -> dict:
+        """Observabilidad del cierre automático; no implica autoridad de ejecución."""
+        pending = self.pending_autonomous_closeout_gws(season)
+        with self.connect(readonly=True) as con:
+            completed = con.execute(
+                """SELECT COUNT(DISTINCT cycle_id) FROM job_runs
+                WHERE job_type='gameweek_review' AND status='completed'
+                  AND idempotency_key LIKE ?""",
+                (f"autonomous-closeout:{season}:gw%",),
+            ).fetchone()[0]
+            latest = con.execute(
+                """SELECT job_id,cycle_id,finished_at,output_sha256 FROM job_runs
+                WHERE job_type='gameweek_review' AND status='completed'
+                  AND idempotency_key LIKE ? ORDER BY finished_at DESC LIMIT 1""",
+                (f"autonomous-closeout:{season}:gw%",),
+            ).fetchone()
+        return {
+            "contract": "mova-fpl-autonomous-closeout-v1",
+            "status": "implemented",
+            "scheduler": "mova-fpl-analytics.timer",
+            "observed_closeouts": int(completed),
+            "pending_gameweeks": pending,
+            "latest": dict(latest) if latest else None,
+            "autonomy_promoted": False,
+        }
+
     def record_health(self, service: str, status: str, *, memory_available_bytes: int | None,
                       disk_free_bytes: int | None, load_1m: float | None,
                       detail: dict | None = None) -> str:

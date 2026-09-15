@@ -57,9 +57,16 @@ def _execution() -> dict:
         "autonomy_promoted": False, "observed_rehearsals": 3,
         "required_rehearsals": 3,
     }
-    return {"browser_driver": {
-        "captaincy": dict(proven), "lineup": dict(proven), "r3": dict(proven),
-    }}
+    return {
+        "browser_driver": {
+            "captaincy": dict(proven), "lineup": dict(proven), "r3": dict(proven),
+        },
+        "autonomous_closeout": {
+            "contract": "mova-fpl-autonomous-closeout-v1", "status": "implemented",
+            "scheduler": "mova-fpl-analytics.timer", "observed_closeouts": 1,
+            "latest": {"job_id": "job_closeout"},
+        },
+    }
 
 
 def _resilience() -> dict:
@@ -153,7 +160,7 @@ def test_readiness_separates_technical_eligibility_from_authority() -> None:
     assert report["activation"]["current_action_level"] == "A0"
     assert report["activation"]["promotion_is_automatic"] is False
     assert "EXPLICIT_PROMOTION_REQUIRED" in report["activation"]["activation_blockers"]
-    assert report["summary"] == {"pass": 25, "pending": 0, "blocked": 0, "total": 25}
+    assert report["summary"] == {"pass": 27, "pending": 0, "blocked": 0, "total": 27}
 
 
 def test_readiness_fails_closed_and_reports_specific_evidence_gaps() -> None:
@@ -175,6 +182,8 @@ def test_readiness_fails_closed_and_reports_specific_evidence_gaps() -> None:
     execution["browser_driver"]["r3"].update(
         contract="missing", host_entrypoint_enabled=False, observed_rehearsals=0
     )
+    execution["autonomous_closeout"]["observed_closeouts"] = 0
+    execution["autonomous_closeout"]["latest"] = None
 
     report = evaluate_readiness(
         operator_status=operator, research_coverage=research,
@@ -208,6 +217,8 @@ def test_readiness_fails_closed_and_reports_specific_evidence_gaps() -> None:
     assert by_code["OFF_HOST_RESTORE_PROVEN"]["status"] == "pending"
     assert by_code["SNAPSHOT_REJECTION_PROVEN"]["status"] == "pending"
     assert by_code["BROWSER_FAILURE_DRILL_PROVEN"]["status"] == "pending"
+    assert by_code["AUTONOMOUS_CLOSEOUT_INSTALLED"]["status"] == "pass"
+    assert by_code["AUTONOMOUS_CLOSEOUT_LIVE_PROVEN"]["status"] == "pending"
     assert all(item["next_action"] for item in report["next_actions"])
 
 
@@ -228,4 +239,4 @@ def test_readiness_cli_can_be_used_as_a_level_gate_and_metrics_are_bounded() -> 
     )
     metrics = prometheus(report)
     assert 'mova_autonomy_technical_eligible_level{level="A3"} 1' in metrics
-    assert 'mova_autonomy_readiness_gates{status="pass"} 25' in metrics
+    assert 'mova_autonomy_readiness_gates{status="pass"} 27' in metrics
