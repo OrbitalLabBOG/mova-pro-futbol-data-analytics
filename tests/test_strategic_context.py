@@ -9,7 +9,7 @@ from pathlib import Path
 
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB
-from mova_fpl.ops.strategy import StrategicContextService
+from mova_fpl.ops.strategy import StrategicContextService, research_scope_policy
 
 
 def _runtime(tmp_path: Path) -> tuple[RuntimeConfig, OpsDB, StrategicContextService, str]:
@@ -65,6 +65,36 @@ def _plan() -> dict:
         "guardrails": {"max_hit": 0, "preserve_free_transfer_when_marginal": True},
         "rationale": "Plan inicial revisable con evidencia y scorecards semanales.",
     }
+
+
+def test_research_scope_decrece_hacia_deadline_y_falla_cerrado():
+    broad = research_scope_policy("broad")
+    refresh = research_scope_policy("refresh")
+    final = research_scope_policy("final")
+
+    assert broad["max_web_queries"] > refresh["max_web_queries"] > final["max_web_queries"]
+    assert broad["max_documents"] > refresh["max_documents"] > final["max_documents"]
+    assert broad["freshness_mode"] == "current_state"
+    assert refresh["freshness_mode"] == final["freshness_mode"] == "delta_only"
+    assert final["on_budget_exhaustion"] == "mark_remaining_not_checked"
+
+
+def test_research_request_sella_scope_del_checkpoint(tmp_path):
+    config, db, service, cycle_id = _runtime(tmp_path)
+    service.activate_plan(_plan(), actor="test", reason="plan fixture")
+    current = datetime.now(timezone.utc).replace(microsecond=0)
+    with db.transaction() as con:
+        con.execute(
+            "UPDATE gameweek_cycles SET deadline_at=? WHERE cycle_id=?",
+            ((current + timedelta(hours=20)).isoformat(), cycle_id),
+        )
+
+    queued = service.enqueue()
+    request = json.loads(Path(queued["request_path"]).read_text(encoding="utf-8"))
+
+    assert request["run_kind"] == "broad"
+    assert request["scope_policy"] == research_scope_policy("broad")
+    assert request["guardrails"]["agent_budget"]["job_tokens"] == 160_000
 
 
 def test_plan_y_manifest_son_versionados_e_idempotentes(tmp_path):

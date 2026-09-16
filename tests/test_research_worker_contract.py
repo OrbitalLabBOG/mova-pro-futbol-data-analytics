@@ -35,7 +35,12 @@ def test_worker_deshabilita_herramientas_que_podrian_leer_auth_o_actuar():
     assert "previous_active_signals" in worker
     assert "fetch independiente" in worker
     assert "coverage.subjects" in worker
-    assert "máximo 10 consultas web distintas y 12 documents finales" in worker
+    assert "Cumple literalmente request.scope_policy" in worker
+    assert "scopePolicy.max_web_queries" in worker
+    assert "scopePolicy.max_documents" in worker
+    assert "scopePolicy.max_material_signals" in worker
+    assert "const scopePolicy = request.scope_policy ||" in worker
+    assert "freshness_mode=delta_only" in worker
     assert "coverage-first en dos fases" in worker
     assert "agrupa todos los sujetos de focus por" in worker
     assert "No abras una búsqueda por jugador sano" in worker
@@ -43,7 +48,7 @@ def test_worker_deshabilita_herramientas_que_podrian_leer_auth_o_actuar():
     assert "evidence_verified potencial" in worker
     assert "cuenta sujetos" in worker
     assert "sin impacto de decisión" in worker
-    assert "nunca excedas el budget" in worker
+    assert "nunca excedas scope_policy" in worker
     assert '"mova-research-brief-v2"' in worker
     assert "duration_ms: durationMs" in worker
     assert "search_requests: null" in worker

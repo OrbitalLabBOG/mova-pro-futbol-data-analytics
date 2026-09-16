@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — mejora continua controlada"
 created: 2026-08-30
-updated: 2026-08-30
+updated: 2026-09-16
 tags: [mova, fpl, learning, review, costs, promotion]
 status: active-shadow
 ---
@@ -41,6 +41,9 @@ mova review auto --gw 2 --actor codex \
 Clasifica `data/freshness`, `model/calibration`, `optimizer`, `research/context`, `strategy`,
 `execution` y `variance`. Una observación aislada nunca crea propuesta: una causa accionable debe
 aparecer al menos tres veces antes de abrir experimento. `not_ready` no muta jobs ni memoria.
+Para `optimizer`, el reviewer cuenta códigos fallidos distintos únicamente en el envelope vigente.
+Los checks de envelopes `superseded` permanecen como diagnóstico histórico separado y no inflan
+la recurrencia causal ni abren una propuesta falsa.
 
 Las tablas `change_proposal_evaluations` y `lessons` son append-only salvo el estado visible de
 la propuesta. Cada transición conserva actor, razón, clave idempotente, hash y evidencia. El

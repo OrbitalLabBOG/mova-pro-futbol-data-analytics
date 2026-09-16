@@ -118,8 +118,10 @@ class CausalReviewerService:
             add("research/context", "UNRESOLVED_RESEARCH_CONFLICTS",
                 f"Persistieron {context['unresolved_research_conflicts']} conflictos.", True)
         if context["failed_validation_checks"]:
+            codes = ", ".join(context.get("failed_validation_check_codes") or [])
             add("optimizer", "DECISION_VALIDATION_FAILURES",
-                f"Hubo {context['failed_validation_checks']} checks deterministas fallidos.", True)
+                f"El envelope vigente tuvo {context['failed_validation_checks']} checks "
+                f"deterministas fallidos ({codes}).", True)
         if context["execution_failures"]:
             add("execution", "EXECUTION_FAILURES",
                 f"Hubo {context['execution_failures']} fallos/ambigüedades de ejecución.", True)

@@ -58,7 +58,7 @@ class RuntimeConfig:
     deliberation_model: str = "gpt-5.6-terra"
     deliberation_reasoning_effort: str = "high"
     research_min_interval_seconds: int = 6 * 3600
-    research_deadline_window_seconds: int = 30 * 3600
+    research_deadline_window_seconds: int = 24 * 3600
     research_final_window_seconds: int = 2 * 3600
     research_final_cutoff_seconds: int = 70 * 60
     agent_budget_reservation_tokens: int = 120_000
@@ -177,7 +177,7 @@ class RuntimeConfig:
                 "MOVA_RESEARCH_MIN_INTERVAL_SECONDS", str(6 * 3600)
             )),
             research_deadline_window_seconds=int(os.environ.get(
-                "MOVA_RESEARCH_DEADLINE_WINDOW_SECONDS", str(30 * 3600)
+                "MOVA_RESEARCH_DEADLINE_WINDOW_SECONDS", str(24 * 3600)
             )),
             research_final_window_seconds=int(os.environ.get(
                 "MOVA_RESEARCH_FINAL_WINDOW_SECONDS", str(2 * 3600)

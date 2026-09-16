@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — contexto estratégico e investigación"
 created: 2026-08-27
-updated: 2026-09-14
+updated: 2026-09-16
 tags: [mova, fpl, strategy, research, codex, evidence]
 status: active
 ---
@@ -41,9 +41,11 @@ Desde el corte del 14 de septiembre el prompt opera `coverage-first`: agrupa el 
 busca primero partes, convocatorias o alineaciones oficiales que nombren a varios sujetos y sólo
 después extrae deltas materiales. El objetivo sigue siendo cobertura ≥ 90 % y evidencia verificada
 ≥ 80 %; no se redujo el gate. Una misma URL puede acreditar varios jugadores únicamente cuando el
-fragmento literal los contiene de forma inequívoca. El worker mantiene diez búsquedas y doce
-documentos como máximos, evita búsquedas individuales de jugadores sin alerta y conserva
-`not_checked` cuando el presupuesto no alcanza. La efectividad se valida en corridas posteriores;
+fragmento literal los contiene de forma inequívoca. El request sella un `scope_policy`
+decreciente: la corrida amplia admite 8 búsquedas/10 documentos, el refresco 5/8 y la final
+4/6. Refresh y final son `delta_only`; no vuelven a investigar narrativa sin un cambio material.
+El worker evita búsquedas individuales de jugadores sin alerta y conserva `not_checked` cuando
+el presupuesto no alcanza. La efectividad se valida en corridas posteriores;
 el cambio de prompt por sí solo no cuenta como una GW passing ni resuelve el overrun histórico.
 
 El routing del worker separa costo y juicio: Researcher usa `gpt-5.6-luna` con
@@ -104,7 +106,7 @@ mova strategy research enqueue --force --actor julian \
 ~~~
 
 due y un slot ya consumido devuelven código 75. El timer evalúa cada 15 minutos, pero Codex sólo
-puede abrir una corrida en cada uno de tres slots: investigación amplia entre T-30h y T-6h,
+puede abrir una corrida en cada uno de tres slots: investigación amplia entre T-24h y T-6h,
 refresco dirigido entre T-6h y T-2h, y corrida final entre T-120 y T-70 minutos. Baseline no
 consume agente y después de T-70 no inicia research nuevo. Un fallo terminal consume el slot;
 no se crean IDs nuevos para ocultarlo ni se eleva el presupuesto. Un tick sin request pendiente

@@ -32,6 +32,46 @@ MEMORY_REVIEW_LIMIT = 8
 MEMORY_LESSON_LIMIT = 20
 MEMORY_PLAN_LIMIT = 4
 
+RESEARCH_SCOPE_BY_KIND = {
+    "broad": {
+        "max_web_queries": 8,
+        "max_documents": 10,
+        "max_material_signals": 8,
+        "freshness_mode": "current_state",
+    },
+    "refresh": {
+        "max_web_queries": 5,
+        "max_documents": 8,
+        "max_material_signals": 6,
+        "freshness_mode": "delta_only",
+    },
+    "final": {
+        "max_web_queries": 4,
+        "max_documents": 6,
+        "max_material_signals": 5,
+        "freshness_mode": "delta_only",
+    },
+    "forced": {
+        "max_web_queries": 8,
+        "max_documents": 10,
+        "max_material_signals": 8,
+        "freshness_mode": "material_exception_only",
+    },
+}
+
+
+def research_scope_policy(run_kind: str) -> dict:
+    """Return the sealed, bounded discovery policy for one cadence slot."""
+    selected = RESEARCH_SCOPE_BY_KIND.get(run_kind, RESEARCH_SCOPE_BY_KIND["forced"])
+    return {
+        "schema": "mova-research-scope-v1",
+        "run_kind": run_kind,
+        **selected,
+        "coverage_subjects": "exact_manifest_focus",
+        "healthy_player_searches": "forbidden",
+        "on_budget_exhaustion": "mark_remaining_not_checked",
+    }
+
 
 def _atomic_json(path: Path, payload: dict) -> str:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -480,6 +520,7 @@ class StrategicContextService:
         prepared = self.prepare()
         manifest = prepared["manifest"]
         run_id = deterministic_id or new_id("research")
+        run_kind = assessment.get("run_kind", "forced" if force else "routine")
         request = {
             "schema": "mova-research-request-v1",
             "research_run_id": run_id,
@@ -488,7 +529,8 @@ class StrategicContextService:
             "manifest_sha256": prepared["content_sha256"],
             "requested_at": utcnow(),
             "provider": self.config.research_provider,
-            "run_kind": assessment.get("run_kind", "forced" if force else "routine"),
+            "run_kind": run_kind,
+            "scope_policy": research_scope_policy(run_kind),
             "objective": (
                 "Verificar noticias y contexto pre-deadline que puedan cambiar "
                 "disponibilidad, minutos, rol o decisión estratégica FPL. Priorizar "

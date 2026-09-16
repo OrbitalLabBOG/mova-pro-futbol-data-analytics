@@ -174,6 +174,10 @@ try {
     const outputSchema = schemas[request.schema];
     if (!outputSchema) throw new Error("invalid_request_schema");
     const isResearch = request.schema === "mova-research-request-v1";
+    const scopePolicy = request.scope_policy || {
+      max_web_queries: 4, max_documents: 6, max_material_signals: 5,
+      freshness_mode: "delta_only", on_budget_exhaustion: "mark_remaining_not_checked",
+    };
     const model = isResearch ? researchModel : deliberationModel;
     const reasoningEffort = isResearch
       ? researchReasoningEffort : deliberationReasoningEffort;
@@ -209,11 +213,17 @@ try {
       "no páginas. Si no es alcanzable dentro del budget, conserva not_checked sin inventar.",
       "En la segunda fase extrae únicamente deltas materiales de disponibilidad, minutos, rol",
       "o suspensión. No gastes consultas en narrativa de rendimiento sin impacto de decisión.",
-      "Budget de discovery: máximo 10 consultas web distintas y 12 documents finales.",
+      "Cumple literalmente request.scope_policy. Sus máximos son hard limits de discovery,",
+      "documents y señales materiales; no son objetivos que debas agotar.",
+      `Budget de discovery: máximo ${scopePolicy.max_web_queries} consultas web distintas,`,
+      `${scopePolicy.max_documents} documents y ${scopePolicy.max_material_signals} señales materiales.`,
+      "Si freshness_mode=delta_only, investiga únicamente cambios posteriores al brief previo;",
+      "si no hay delta material, conserva la cobertura con fuentes reutilizables vigentes y",
+      "reporta no_material_update sin reabrir búsquedas narrativas.",
       "Reutiliza una fuente oficial cuando cubra varios sujetos; no reformules la misma",
       "consulta ni abras agregadores después de hallar evidencia oficial/tier1 suficiente.",
       "Si el límite no alcanza, marca sujetos restantes not_checked y explica la limitación;",
-      "nunca excedas el budget intentando aparentar cobertura completa.",
+      "nunca excedas scope_policy intentando aparentar cobertura completa.",
       "Compara con manifest.research_summary.previous_active_signals y evita repetir claims",
       "sin cambios. En una corrida final busca deltas posteriores a la corrida anterior.",
       "coverage.subjects debe contener exactamente una fila por cada player_element único de",
