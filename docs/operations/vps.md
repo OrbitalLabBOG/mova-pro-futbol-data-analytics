@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — operación del stack VPS"
 created: 2026-08-22
-updated: 2026-09-03
+updated: 2026-09-16
 tags: [mova, fpl, vps, docker, systemd, observability]
 status: active
 ---
@@ -191,7 +191,7 @@ Cada ejecución queda como job `model_analytics`, con pasos, duración, hashes e
 [servicio analítico](analytics-service.md).
 
 `mova-fpl-research.timer` evalúa cada 15 minutos, pero sólo abre una corrida en cada slot:
-amplia T-30h…T-6h, refresh T-6h…T-2h y final T-120…T-70 minutos. Fuera de esas ventanas no
+amplia T-24h…T-6h, refresh T-6h…T-2h y final T-120…T-70 minutos. Fuera de esas ventanas no
 consume Codex. Strategist/Critic corre una vez por research importado y espera un envelope que
 ya lo incorpore. El contenedor one-shot no recibe DB, runtime env, navegador ni secretos de
 collector. La preparación, auth, validación y recuperación están en
