@@ -288,3 +288,58 @@ def test_envelope_persists_candidates_checks_and_real_manifest_hash(tmp_path: Pa
         assert con.execute("select count(*) from decision_candidates").fetchone()[0] == 3
         assert con.execute("select count(*) from decision_players").fetchone()[0] == 15
         assert con.execute("select count(*) from decision_validation_checks").fetchone()[0] == 11
+
+
+def test_causal_context_excludes_superseded_validation_failures(tmp_path: Path):
+    db = OpsDB(tmp_path / "ops.db", enforce_version=False)
+    db.migrate()
+    cycle_id = db.upsert_cycle(
+        "2026-27", 3, "2026-09-04T17:30:00+00:00", phase="preflight"
+    )
+    job_id, _ = db.start_job("tick", "tick:causal-context", "corr_context",
+                             cycle_id=cycle_id)
+    db.add_team_state(
+        job_id=job_id, cycle_id=cycle_id, observed_at="2026-09-04T15:25:00+00:00",
+        source_name="fpl_authenticated_api", squad=[{"element": i} for i in range(1, 16)],
+        free_transfers=2, bank_tenths=0, chips=[], fingerprint="f" * 64,
+        artifact_path="team-state", manifest_sha256="c" * 64,
+    )
+    plan = db.activate_season_plan("2026-27", {
+        "horizon_start_gw": 3, "horizon_end_gw": 8, "assumptions": [],
+        "chip_windows": [], "guardrails": {}, "rationale": "fixture",
+    }, actor="test", reason="fixture")
+    manifest = _manifest(plan_id=plan["plan_id"])
+    manifest["team_state_id"] = db.latest_team_state(cycle_id)["team_state_id"]
+    recorded = db.add_cycle_manifest({**manifest, "artifact_path": "manifest.json"})
+    manifest["revision"] = recorded["revision"]
+    envelope = build_envelope(
+        bundle=_bundle(), manifest=manifest, manifest_id=recorded["manifest_id"],
+        manifest_sha256=recorded["content_sha256"], controls=CONTROLS,
+    )
+    persisted = db.record_decision_envelope(
+        job_id=job_id, envelope=envelope, artifact_path="envelope.json",
+        artifact_sha256="d" * 64,
+    )
+    with db.transaction() as con:
+        con.execute(
+            "UPDATE decision_validation_checks SET passed=0 WHERE envelope_id=? "
+            "AND code IN ('TEAM_STATE_FRESH','ANALYTICS_APPROVED_CAUSAL')",
+            (persisted["envelope_id"],),
+        )
+
+    active = db.causal_review_context(cycle_id)
+    assert active["failed_validation_checks"] == 2
+    assert active["failed_validation_check_codes"] == [
+        "ANALYTICS_APPROVED_CAUSAL", "TEAM_STATE_FRESH",
+    ]
+    assert active["historical_failed_validation_checks"] == 2
+    assert active["superseded_failed_validation_checks"] == 0
+
+    with db.transaction() as con:
+        con.execute("UPDATE decision_envelopes SET status='superseded' WHERE envelope_id=?",
+                    (persisted["envelope_id"],))
+    superseded = db.causal_review_context(cycle_id)
+    assert superseded["failed_validation_checks"] == 0
+    assert superseded["failed_validation_check_codes"] == []
+    assert superseded["historical_failed_validation_checks"] == 2
+    assert superseded["superseded_failed_validation_checks"] == 2

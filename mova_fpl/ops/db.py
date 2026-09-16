@@ -3403,10 +3403,21 @@ class OpsDB:
                 "SELECT COUNT(*) FROM research_conflicts WHERE cycle_id=? AND status='unresolved'",
                 (cycle_id,),
             ).fetchone()[0]
-            checks = con.execute(
+            active_check_rows = con.execute(
+                """SELECT DISTINCT v.code FROM decision_validation_checks v
+                JOIN decision_envelopes e ON e.envelope_id=v.envelope_id
+                WHERE e.cycle_id=? AND e.status<>'superseded' AND v.passed=0
+                ORDER BY v.code""", (cycle_id,),
+            ).fetchall()
+            historical_checks = con.execute(
                 """SELECT COUNT(*) FROM decision_validation_checks v
                 JOIN decision_envelopes e ON e.envelope_id=v.envelope_id
-                WHERE e.cycle_id=? AND v.passed=0""",
+                WHERE e.cycle_id=? AND v.passed=0""", (cycle_id,),
+            ).fetchone()[0]
+            superseded_checks = con.execute(
+                """SELECT COUNT(*) FROM decision_validation_checks v
+                JOIN decision_envelopes e ON e.envelope_id=v.envelope_id
+                WHERE e.cycle_id=? AND e.status='superseded' AND v.passed=0""",
                 (cycle_id,),
             ).fetchone()[0]
             executions = con.execute(
@@ -3430,8 +3441,12 @@ class OpsDB:
         occurrences = {
             category: len(gameweeks) for category, gameweeks in gameweeks_by_category.items()
         }
+        active_check_codes = [str(row["code"]) for row in active_check_rows]
         return {"unresolved_research_conflicts": int(conflicts),
-                "failed_validation_checks": int(checks),
+                "failed_validation_checks": len(active_check_codes),
+                "failed_validation_check_codes": active_check_codes,
+                "historical_failed_validation_checks": int(historical_checks),
+                "superseded_failed_validation_checks": int(superseded_checks),
                 "execution_failures": int(executions),
                 "category_occurrences": occurrences}
 
