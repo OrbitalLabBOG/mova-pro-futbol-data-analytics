@@ -54,10 +54,13 @@ def _inputs() -> dict:
     return {
         "operator_status": operator,
         "safety": {"verdict": "safe_to_wait"},
-        "readiness": {"activation": {
-            "current_action_level": "A0", "technical_eligible_level": "A0",
-            "writes_enabled": False,
-        }},
+        "readiness": {
+            "summary": {"pass": 18, "pending": 9, "blocked": 0, "total": 27},
+            "activation": {
+                "current_action_level": "A0", "technical_eligible_level": "A0",
+                "writes_enabled": False,
+            },
+        },
         "scorecard": {"overall_status": "pending", "quality": {
             "readiness_pass_ratio": 0.64,
         }},
@@ -126,6 +129,9 @@ def test_cockpit_contract_is_shared_sanitized_and_read_only():
     assert payload["verdict"] == "healthy"
     assert payload["authority"]["current_action_level"] == "A0"
     assert payload["authority"]["writes_enabled"] is False
+    assert payload["quality"]["readiness_summary"] == {
+        "pass": 18, "pending": 9, "blocked": 0, "total": 27,
+    }
     assert payload["runtime_mutated"] is False
     assert len(payload["functions"]) == 8
     functions = {row["code"]: row for row in payload["functions"]}
@@ -201,13 +207,17 @@ def test_dashboard_renders_owner_summary_in_colombia_time():
     page = _dashboard(evaluate_cockpit(**_inputs())).decode()
 
     assert "MOVA Fantasy Fútbol" in page
-    assert "Todo está funcionando" in page
+    assert "Sistema operativo · ciclo GW3 listo · autonomía A0" in page
+    assert "Salud técnica" in page
+    assert "Ciclo · GW 3" in page
+    assert "Autonomía" in page
+    assert "A0 · Solo lectura" in page
+    assert "18/27 controles listos · 9 pendientes" in page
     assert "Tu acción" in page
-    assert "Ninguna" in page
+    assert "No intervenir todavía" in page
     assert "Viernes 4 de septiembre · 12:30 p. m." in page
     assert "Ver información técnica" in page
     assert "/api/v1/cockpit" not in page
-    assert "Ciclo agentic" not in page
 
 
 def test_dashboard_only_asks_owner_for_help_on_actionable_problem():
@@ -218,20 +228,45 @@ def test_dashboard_only_asks_owner_for_help_on_actionable_problem():
     }]
     page = _dashboard(evaluate_cockpit(**values)).decode()
 
-    assert "Necesito que avises a ORBIX" in page
-    assert "Avísame ahora" in page
+    assert "Intervención requerida" in page
+    assert "Avisar a ORBIX ahora" in page
     assert "El colector dejó de responder" in page
 
 
-def test_noncritical_internal_pending_does_not_alarm_owner():
+def test_noncritical_internal_pending_is_amber_without_alarming_owner():
     values = _inputs()
     values["alert_channel"] = {"configured": False, "status": "local_only"}
     values["costs"]["gameweek"]["remaining_uses"] = 1
+    values["workflow"]["verdict"] = "attention_required"
+    values["workflow"]["stages"][2]["status"] = "pending"
     page = _dashboard(evaluate_cockpit(**values)).decode()
 
-    assert "Todo está funcionando" in page
-    assert "2 pendientes internos bajo control" in page
-    assert "Necesito que avises a ORBIX" not in page
+    assert 'class="status attention"' in page
+    assert "Sistema operativo · ciclo GW3 pendiente · autonomía A0" in page
+    assert "3 señales operativas visibles" in page
+    assert "Las alertas externas siguen locales" in page
+    assert "Intervención requerida" not in page
+
+
+def test_dashboard_is_green_only_when_runtime_cycle_and_controls_are_ready():
+    values = _inputs()
+    values["scorecard"]["overall_status"] = "pass"
+    values["readiness"]["summary"] = {
+        "pass": 27, "pending": 0, "blocked": 0, "total": 27,
+    }
+    values["readiness"]["activation"].update({
+        "current_action_level": "A3",
+        "technical_eligible_level": "A3",
+        "writes_enabled": True,
+    })
+
+    page = _dashboard(evaluate_cockpit(**values)).decode()
+
+    assert 'class="status ok"' in page
+    assert "Sistema operativo · ciclo GW3 listo" in page
+    assert "A3 · Escrituras habilitadas" in page
+    assert "27/27 controles listos · 0 pendientes" in page
+    assert "Ninguna" in page
 
 
 def test_cockpit_surfaces_failed_research_service_without_enabling_writes():
@@ -261,6 +296,10 @@ def test_human_deadline_handles_relative_time_and_invalid_input():
     label, relative = _human_deadline("2026-09-04T17:30:00Z", 183660)
     assert label == "Viernes 4 de septiembre · 12:30 p. m."
     assert relative == "Faltan 2 días y 3 horas"
+    assert _human_deadline("2026-09-04T17:30:00Z", 176400)[1] == (
+        "Faltan 2 días y 1 hora"
+    )
+    assert _human_deadline("2026-09-04T17:30:00Z", 3600)[1] == "Faltan 1 hora"
     assert _human_deadline(None, -1) == ("Por confirmar", "El plazo ya venció")
 
 
