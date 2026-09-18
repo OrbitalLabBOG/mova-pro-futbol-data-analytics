@@ -183,6 +183,26 @@ utilidad. La promoción continúa bloqueada hasta observar al menos tres GWs med
 
 ## Diagnóstico
 
+### Adjudicar un falso conflicto temporal
+
+`mova strategy research resolve-conflict --conflict-id ID --cycle-id CICLO
+--document-id DOCUMENTO --actor OPERADOR --reason MOTIVO --idempotency-key CLAVE`
+registra una revisión supervisada `not_contradictory`. Repetir `--document-id`
+para cubrir **exactamente todas** las URLs originales del conflicto. Sólo admite
+documentos del mismo run con fetch verificado, excerpt y artefacto cuyos hashes
+siguen intactos. El operador debe explicar por qué los claims pueden coexistir;
+por ejemplo, rendimiento en un partido anterior no contradice una duda médica
+para el siguiente. La verificación de hashes no demuestra esa interpretación.
+
+La transacción conserva el conflicto original en auditoría, registra actor,
+motivo, fuentes y clave, y cambia únicamente su estado. Replay exacto reutiliza
+el evento; una clave con contenido distinto o una segunda resolución falla.
+No sirve para declarar una lesión resuelta, sustituir fuentes con otras nuevas,
+aceptar riesgo sin evidencia ni resolver contradicciones reales pendientes.
+No promueve señales, borra historia, altera modelos, controles o envelopes.
+Después requiere una decisión nueva con los gates normales; no habilita FPL.
+El CLI no se expone como endpoint HTTP ni se entrega al worker de research.
+
 ~~~bash
 mova strategy status
 mova doctor --json
