@@ -60,6 +60,18 @@ dio `healthy`, 24 PASS, 0 WARN y 0 FAIL, con checkout/imagen `1accdc4`.
 El tick posterior terminó `success`; reutilizó idempotentemente el job completado
 del slot, sin abrir trabajo duplicado. API `/readyz` respondió `ready`, Caddy validó,
 la página pública devolvió 200 y `/api/v1/cockpit` externo devolvió 404.
+`mova strategy prepare` selló un manifiesto GW6 con 25 sujetos y cero pistas heredadas
+(no existe todavía un brief de ese ciclo); `research due` confirmó
+`outside_research_window`, sin iniciar agente. El timer privado ejecutó dos
+veces más con `snapshot_fresh` y sin relanzar Chromium.
+
+El corte de las 21:50:51 UTC repitió doctor `healthy`, 24 PASS, 0 WARN, 0 FAIL;
+la cola agentic informó cero anomalías y cero requests huérfanos. Los ticks
+programados de las 21:45 y 21:50 terminaron con exit 0 y jobs completos; ambos
+omitieron refresh por cadencia, lo cual prueba continuidad del scheduler, no una
+nueva captura pública. A las 21:50, API usaba ~154 MiB/512 MiB y browser
+~624 MiB/1.22 GiB; ambos contenedores estaban healthy. Esta observación de
+~13 minutos no sustituye la ventana prolongada de AC-01.2.
 
 ## Observación pendiente
 
