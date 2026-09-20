@@ -363,7 +363,7 @@ def build_status(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
     if any(item["severity"] in {"P0", "P1"} for item in state["incidents"]):
         severity, reasons = "critical", ["open_p0_or_p1_incident"]
     else:
-        if not tick or tick.get("status") not in {"completed", "degraded"}:
+        if not tick or tick.get("status") not in {"completed", "degraded", "running"}:
             reasons.append("latest_tick_not_successful")
         elif tick_age is None or tick_age > TICK_MAX_AGE_SECONDS:
             reasons.append("latest_tick_stale")
@@ -614,7 +614,7 @@ def build_doctor(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
                              detail={"applied": versions, "expected_latest": expected}))
         tick = status["operations"]["latest_tick"] or {}
         tick_age = status["operations"]["latest_tick_age_seconds"]
-        tick_ok = tick.get("status") in {"completed", "degraded"} \
+        tick_ok = tick.get("status") in {"completed", "degraded", "running"} \
             and tick_age is not None and tick_age <= TICK_MAX_AGE_SECONDS
         checks.append(_check("scheduler_heartbeat", "PASS" if tick_ok else "FAIL",
                              "worker heartbeat is fresh" if tick_ok else "worker heartbeat is stale",
