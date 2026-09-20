@@ -2,12 +2,19 @@
 type: project
 name: "MOVA FPL Autonomous Operator 2026/27 — Research Coordinator"
 created: 2026-08-22
-updated: 2026-08-22
+updated: 2026-09-20
 tags: [mova, fpl, agentic, research, news, codex, openrouter, pydantic-ai]
-status: proposed
+status: reference-deferred
 ---
 
 # Coordinador de investigación y noticias
+
+## Disposición del 20 de septiembre de 2026
+
+Referencia de diseño y hardening diferido, al igual que la spec 09. No abre por sí misma
+trabajo para añadir proveedores o roles. La investigación pendiente se concentra en AC-02
+de la [hoja de ruta vigente](04-readiness-and-rollout.md); los contratos implementados
+prevalecen sobre las propuestas históricas siguientes.
 
 ## Decisión ejecutiva propuesta
 

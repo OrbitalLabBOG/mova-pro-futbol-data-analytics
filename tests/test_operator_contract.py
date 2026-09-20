@@ -149,6 +149,21 @@ def test_status_degrades_when_heartbeat_is_stale(tmp_path):
     assert "latest_tick_stale" in payload["status_reasons"]
 
 
+def test_running_tick_is_healthy_until_heartbeat_limit(tmp_path):
+    config, db, now = _seed(tmp_path)
+    db.start_job("tick", "tick:running-contract", "corr_running_contract")
+
+    status = build_status(config, db, now=now + timedelta(seconds=10))
+    doctor = build_doctor(config, db, now=now + timedelta(seconds=10), network=False)
+    heartbeat = next(check for check in doctor["checks"]
+                     if check["name"] == "scheduler_heartbeat")
+    assert "latest_tick_not_successful" not in status["status_reasons"]
+    assert heartbeat["status"] == "PASS"
+
+    stalled = build_status(config, db, now=now + timedelta(minutes=21))
+    assert "latest_tick_stale" in stalled["status_reasons"]
+
+
 def test_status_and_doctor_surface_failed_scheduled_service(tmp_path):
     config, db, now = _seed(tmp_path)
     _host_probe(config, now)

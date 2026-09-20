@@ -179,7 +179,10 @@ def parser() -> argparse.ArgumentParser:
     plan.add_argument("--actor", required=True)
     plan.add_argument("--reason", required=True)
     research = strategy_commands.add_parser("research", help="opera la cola de investigación")
-    research.add_argument("operation", choices=("due", "coverage", "enqueue", "import"))
+    research.add_argument("operation", choices=("due", "coverage", "enqueue", "import", "resolve-conflict"))
+    research.add_argument("--conflict-id")
+    research.add_argument("--cycle-id")
+    research.add_argument("--document-id", action="append")
     research.add_argument("--force", action="store_true")
     research.add_argument("--actor")
     research.add_argument("--reason")
@@ -698,6 +701,12 @@ def main(argv: list[str] | None = None) -> int:
             return 0 if payload["due"] else 75
         elif args.operation == "coverage":
             payload = db.research_coverage()
+        elif args.operation == "resolve-conflict":
+            payload = db.resolve_research_conflict(
+                args.conflict_id, cycle_id=args.cycle_id,
+                document_ids=args.document_id, actor=args.actor, reason=args.reason,
+                idempotency_key=args.idempotency_key,
+            )
         elif args.operation == "enqueue":
             if args.force and not all((args.actor, args.reason, args.idempotency_key)):
                 raise SystemExit(

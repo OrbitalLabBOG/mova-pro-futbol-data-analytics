@@ -77,6 +77,15 @@ chat. Su propio SHA-256 permite demostrar exactamente qué memoria recibió Stra
 batch baseline aprobado, resueltos contra el último snapshot público. Cada sujeto lleva notas
 oficiales, p_play/p60 y razón de inclusión cuando están disponibles. La corrida siguiente recibe
 las señales activas anteriores y debe producir deltas, no repetir claims sin cambios.
+También recibe hasta ocho `reusable_evidence_hints` de la última corrida v2 importada del
+mismo ciclo, con antigüedad máxima de 36 horas. Sólo se incluyen documentos con fetch
+verificado que respaldaron sujetos todavía presentes en el foco. URL y
+elementos cubiertos son pistas de descubrimiento, nunca evidencia transferida: el worker debe
+volver a leer la página y el importador debe verificar de nuevo el fragmento y locator en el
+brief actual. Una pista obsoleta o inaccesible no aumenta cobertura ni habilita señales.
+La cobertura v2 incluye `teams` con sujetos requeridos, revisados y con evidencia verificada
+por club. El total y el gate 90/80 siguen calculándose sobre los sujetos individuales; este
+desglose diagnostica dónde se agota discovery y no concede cobertura adicional.
 
 ## Operación
 
@@ -182,6 +191,26 @@ utilidad. La promoción continúa bloqueada hasta observar al menos tres GWs med
 ≥ 90 %, evidencia ≥ 80 % y cero conflictos no resueltos en la última corrida de cada ciclo.
 
 ## Diagnóstico
+
+### Adjudicar un falso conflicto temporal
+
+`mova strategy research resolve-conflict --conflict-id ID --cycle-id CICLO
+--document-id DOCUMENTO --actor OPERADOR --reason MOTIVO --idempotency-key CLAVE`
+registra una revisión supervisada `not_contradictory`. Repetir `--document-id`
+para cubrir **exactamente todas** las URLs originales del conflicto. Sólo admite
+documentos del mismo run con fetch verificado, excerpt y artefacto cuyos hashes
+siguen intactos. El operador debe explicar por qué los claims pueden coexistir;
+por ejemplo, rendimiento en un partido anterior no contradice una duda médica
+para el siguiente. La verificación de hashes no demuestra esa interpretación.
+
+La transacción conserva el conflicto original en auditoría, registra actor,
+motivo, fuentes y clave, y cambia únicamente su estado. Replay exacto reutiliza
+el evento; una clave con contenido distinto o una segunda resolución falla.
+No sirve para declarar una lesión resuelta, sustituir fuentes con otras nuevas,
+aceptar riesgo sin evidencia ni resolver contradicciones reales pendientes.
+No promueve señales, borra historia, altera modelos, controles o envelopes.
+Después requiere una decisión nueva con los gates normales; no habilita FPL.
+El CLI no se expone como endpoint HTTP ni se entrega al worker de research.
 
 ~~~bash
 mova strategy status

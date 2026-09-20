@@ -1,7 +1,7 @@
 ---
 type: docs
 name: MOVA Fantasy Fútbol Data Analytics
-updated: 2026-09-14
+updated: 2026-09-20
 status: active
 tags: [mova, fpl, runtime, operations]
 ---
@@ -27,6 +27,36 @@ ni promueve un modelo. Empezar por el [contrato del dataset](experiments/data_gr
 y la [guía de cierre, tamaños y límites](experiments/data_ground_truth/README.md#cierre-del-gate-de-datos-g112).
 
 ## Versiones y última comprobación
+
+El **20 de septiembre de 2026, 15:20 Colombia**, el VPS ejecutaba checkout e
+imagen API `a8cfa7d`, con los hotfixes host de captura privada conservados.
+El doctor terminó **24 PASS, 0 WARN, 0 FAIL** tras un tick programado con
+exit 0; API, PostgreSQL y browser estaban `healthy`, sin reinicios ni workers
+MOVA huérfanos. Los ocho timers quedaron activos. Analytics generó
+proyecciones GW6 y dejó GW5 en `waiting_for_data_checked`, sin cierre
+prematuro. La captura privada autenticada validó 15 jugadores; Chromium
+permanece activo entre capturas sobre el perfil persistente. El tick volvió
+a cada 5 minutos, con lock de capacidad, para mantener fresco el heartbeat.
+Se corrigió el falso P0 que trataba un tick `running` como caída. La
+[recuperación y auditoría del VPS](docs/decisions/2026-27/runtime-recovery-20260920.md)
+conserva jobs, mediciones, pruebas y rollback.
+
+La autoridad sigue en `shadow/A0`, con `kill_switch=true`,
+`browser_writes=false` y compliance pendiente. El backup cifrado off-host y
+las alertas externas continúan sin configurar; el cierre de GW5 requiere el
+`data_checked` oficial. Los cambios de recuperación están en la
+[rama de revisión](https://github.com/OrbitalLabBOG/mova-pro-futbol-data-analytics/tree/codex/mova-runtime-recovery-20260920);
+el SHA del checkout del VPS no debe confundirse con la punta de `main`.
+
+Los cortes siguientes son históricos y no sustituyen esa comprobación.
+
+El **18 de septiembre de 2026**, GW5 quedó registrada antes del deadline mediante
+una operación supervisada en el Chrome personal de Julián: Van Hecke y Thiago
+entraron por Calafiori y João Pedro usando dos transferencias libres, sin hit ni
+chip; Haaland quedó capitán y Calvert-Lewin vice. La confirmación visual y una
+recarga posterior coincidieron. La [traza GW5](docs/decisions/2026-27/gw05-preparation.md)
+conserva el detalle. Esta operación no usó el executor del VPS, no suma rehearsals
+R2/R3 y no promueve la autoridad autónoma, que continúa en `shadow/A0`.
 
 La [guía de cierre autónomo](docs/specs/fpl-autonomous-operator/04-readiness-and-rollout.md)
 define desde el 14 de septiembre las etapas C1–C5, tareas, dependencias y evidencia de aceptación.
@@ -444,6 +474,10 @@ CycleManifest + memoria estratégica durable → modelos causales → matriz xP 
 - El worker enruta Researcher a `gpt-5.6-luna` con razonamiento `medium` y Strategist/Critic a
   `gpt-5.6-terra` con razonamiento `high`; ambos usan la suscripción Codex, sin fallback a API.
 - `mova_fpl` solo hace HTTP `GET`; no escribe en FPL.
+- `mova strategy research resolve-conflict` permite adjudicar claims no
+  contradictorios con evidencia original verificada, hashes y auditoría
+  idempotente. No declara disponibilidad médica ni promueve señales, decisiones
+  o permisos; exige regenerar la propuesta. Ver el runbook de research.
 - El browser autenticado vive aislado y sus mutaciones están gobernadas por controles.
 - Supabase no forma parte del runtime; se usa únicamente para seguimiento PM.
 - SQLite sigue siendo el writer del ledger operativo del harness. PostgreSQL es writer del

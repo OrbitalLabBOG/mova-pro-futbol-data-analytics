@@ -172,6 +172,58 @@ def test_v2_import_seals_evidence_coverage_and_metrics(tmp_path: Path):
     assert "mova_research_evidence_ratio 1.000000" in metrics
 
 
+def test_next_manifest_reuses_only_recent_verified_evidence_as_hints(tmp_path: Path):
+    config, db, _service, cycle_id = _runtime(tmp_path)
+    service = StrategicContextService(
+        config, db, evidence_fetcher=_fetcher(config.research_root),
+    )
+    service.activate_plan(_plan(), actor="test", reason="fixture")
+    queued = service.enqueue(
+        force=True, actor="test", reason="first research",
+        idempotency_key="research:v2:reuse-hint",
+    )
+    run = db.research_run(queued["research_run_id"])
+    request = json.loads(Path(run["request_path"]).read_text(encoding="utf-8"))
+    assert request["manifest"]["research_summary"]["reusable_evidence_hints"] == []
+    result = _v2_result(run, cycle_id, request["manifest"]["research_summary"]["focus"])
+    out = config.research_root / "outbox" / f"{run['research_run_id']}.result.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(result), encoding="utf-8")
+    assert service.import_ready()["results"][0]["status"] == "imported"
+
+    now = datetime.now(timezone.utc) + timedelta(minutes=1)
+    hints = service.prepare(now=now)["manifest"]["research_summary"]["reusable_evidence_hints"]
+    assert len(hints) == 1
+    assert hints[0]["source_url"] == CANONICAL_SOURCE
+    assert "evidence_text" not in hints[0]
+    assert hints[0]["player_elements"] == list(range(1, 16))
+    assert service.prepare(now=now + timedelta(hours=37))["manifest"][
+        "research_summary"
+    ]["reusable_evidence_hints"] == []
+
+
+def test_coverage_reports_verified_subjects_by_team():
+    focus = [
+        {"element": 1, "team": "Club A", "focus_reason": ["current_squad"]},
+        {"element": 2, "team": "Club A", "focus_reason": ["current_squad"]},
+        {"element": 3, "team": "Club B", "focus_reason": ["top_projection_candidate"]},
+    ]
+    coverage = StrategicContextService._validate_coverage(
+        {"subjects": [
+            {"player_element": 1, "status": "no_material_update",
+             "source_urls": [CANONICAL_SOURCE], "note": "Fuente revisada."},
+            {"player_element": 2, "status": "not_checked",
+             "source_urls": [], "note": "Sin fuente."},
+            {"player_element": 3, "status": "no_material_update",
+             "source_urls": [CANONICAL_SOURCE], "note": "Fuente revisada."},
+        ]}, focus, {CANONICAL_SOURCE: {"fetch_status": "verified"}}, [], legacy=False,
+    )
+    assert coverage["teams"] == [
+        {"team": "Club A", "required": 2, "checked": 1, "evidence_verified": 1},
+        {"team": "Club B", "required": 1, "checked": 1, "evidence_verified": 1},
+    ]
+
+
 def test_v2_unverified_fetch_cannot_create_accepted_signal(tmp_path: Path):
     config, db, _service, cycle_id = _runtime(tmp_path)
     service = StrategicContextService(

@@ -2,7 +2,7 @@
 type: project
 name: "MOVA FPL — Autonomous Harness v1"
 created: 2026-08-23
-updated: 2026-09-14
+updated: 2026-09-20
 tags: [mova, fpl, autonomy, postgres, agents, observability, continuous-improvement]
 status: active-shadow
 ---
@@ -11,14 +11,10 @@ status: active-shadow
 
 ## Guía de cierre vigente
 
-La [hoja de ruta de cierre autónomo](04-readiness-and-rollout.md#guía-vigente-de-cierre-autónomo--14-de-septiembre-de-2026)
-concentra el baseline del 14 de septiembre, faltantes, tareas PM, dependencias y aceptación C1–C5.
-Readiness observado: 16/25 pass; PostgreSQL 3/3 GWs, research 0 passing/2 medidas,
-capitanía y lineup 0/3 con contrato actual, R3 1/3. Runtime `191d809`, shadow/A0.
-Manual_verified, continuidad hasta review/memoria, alertas y backup off-host siguen pendientes.
-Los cortes inferiores son históricos; implementar un componente no demuestra autonomía integral.
-La entrega exige una GW completa posterior a promoción A3 sin intervención rutinaria y evidencia
-de las capacidades no ejercidas en esa GW. El modelado avanza como candidatos fuera del bundle activo.
+La única hoja de ruta de cierre es [Cierre de autonomía operativa — 20/09/2026](04-readiness-and-rollout.md#cierre-de-autonomía-operativa--20-de-septiembre-de-2026).
+Este documento conserva la arquitectura y la evidencia histórica de construcción. El programa
+vigente reutiliza las tareas existentes y concentra nueve entregables verificables; los cortes
+inferiores no acreditan salud actual, habilitación ni aceptación integral.
 
 ## 1. Resultado buscado
 
@@ -38,7 +34,7 @@ La autonomía operativa puede llegar a `A3`. La auto-modificación irrestricta n
 objetivo: los cambios de código, schema, modelos y guardrails pasan por experimentos y
 gates de promoción.
 
-Este documento es la hoja de ruta ejecutable. Las specs 08 y 09 quedan como referencias de
+Este documento es la referencia de arquitectura; 04-readiness-and-rollout.md es la hoja de ruta ejecutable. Las specs 08 y 09 quedan como referencias de
 hardening para cuando un riesgo real exija mayor aislamiento; no son el backlog del MVP.
 
 ## 2. Baseline confirmado — 23 de agosto de 2026
@@ -520,7 +516,7 @@ prefirió la alternativa sin chip y quedó bloqueada por los dos gates determini
 validación detectó y corrigió una falsa alerta histórica de presupuesto causada por valorar una
 plantilla apreciada contra las £100M iniciales. El envelope nuevo concilió precios de venta,
 compras y banco; los tres candidatos quedaron sin violaciones financieras. La evidencia completa
-está en [HV1-06B](17-hv1-06b-deliberation-evidence.md).
+está en HV1-06B (referencia histórica: archivo ausente en este checkout).
 
 ### Corte idempotencia agentic — 30 de agosto de 2026
 
@@ -576,7 +572,7 @@ provenance de job; el import shadow los reconcilia por conteo. El CLI
 El rollout continúa en `shadow/A0`: este corte no inicia el browser ni amplía autoridad. El corte
 HV1-07C posterior consume exclusivamente un plan autorizado y conserva apply-once/verifier;
 HV1-07D debe completar el driver host y tres rehearsals antes de elevar autonomía.
-Evidencia del rollout: [HV1-07A/B](18-hv1-07ab-preflight-rollout.md).
+Evidencia del rollout: HV1-07A/B (referencia histórica: archivo ausente en este checkout).
 
 ### Corte apply-once + verifier — 30 de agosto de 2026
 
@@ -651,7 +647,7 @@ El reviewer causal automático corre después de reconcile solo con settlement f
 scorecard. Clasifica siete familias de causa y exige tres ocurrencias antes de crear experimento;
 una sola GW queda explícitamente como evidencia insuficiente. HV1-08 permanece parcial por el
 workflow que aplica un cambio aprobado mediante release, shadow y rollback verificable.
-Evidencia: [HV1-08 mejora continua](21-hv1-08-improvement-rollout.md).
+Evidencia: HV1-08 mejora continua (referencia histórica: archivo ausente en este checkout).
 
 El hardening HV1-08B separa consumo real, reserva activa y cargo estimado terminal. `committed`
 continúa sumando los tres, pero ya no presenta rechazos como si fueran jobs en vuelo. El uso real
