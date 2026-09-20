@@ -48,16 +48,21 @@ En el VPS se creó la rama `codex/mova-runtime-recovery-20260920` desde
 `6a32ce6`. El commit `4a8c5e0` modifica `watchdog.assess()` para considerar
 sano un tick `running` dentro del umbral de 20 minutos y abrir la alerta si
 permanece ejecutándose más tiempo. Una prueba nueva cubre ejecución, atasco y
-recuperación. Las 35 pruebas cercanas pasaron en el checkout local.
+recuperación. El commit `a8cfa7d` aplica la misma semántica a `status` y
+`doctor`, para que una ejecución normal no parezca un heartbeat fallido.
+Las 36 pruebas cercanas pasaron en el checkout local.
 
 ## Verificación final
 
-- Suite completa local: `1764 passed, 79 deselected` en 24,56 s. La suite
-  cercana del watchdog, contrato del operador y cockpit: `35 passed`.
+- Suite completa local tras ambas correcciones: `1765 passed, 79 deselected`
+  en 25,71 s. La suite cercana del watchdog, contrato del operador y cockpit:
+  `36 passed`.
 - Imágenes engine, browser y research `4a8c5e0` construidas; API y browser
   recreados. `/readyz` devolvió
   `{"status":"ready"}`; `docker inspect` confirmó imagen y revisión
-  `4a8c5e0`, con health `healthy`. Se conservó la imagen anterior y una copia
+  `4a8c5e0`, con health `healthy`. Después se construyeron las tres imágenes
+  `a8cfa7d` y se recreó el API en esa revisión. Se conservaron las imágenes
+  anteriores y una copia
   root-only de `deploy.env` en
   `/opt/orbital/backups/mova-fpl/runtime-recovery-20260920/`.
 - Analytics manual terminó `Result=success`, exit 0, job
@@ -76,6 +81,13 @@ recuperación. Las 35 pruebas cercanas pasaron en el checkout local.
   fallo privado previo), antes de renovar la sesión.
 - La comprobación HTTP devolvió 200 para `/readyz` y el dashboard público,
   mientras `/api/v1/cockpit` externo siguió en 404.
+- Un tick forzado y auditado en modo shadow (`job_da45ea4651404cbd94c35206488b8712`)
+  corrió de 19:45:53 a 19:49:17 UTC y terminó `completed`, sin error.
+  Durante esa ejecución, el watchdog respondió `status=ok`,
+  `latest_tick_status=running`, `tick_age_seconds=36` y no abrió incidente.
+  Tras el despliegue `a8cfa7d`, cockpit mostró cero incidentes, revisión
+  coincidente y API healthy. Doctor: 22 PASS, 1 WARN, 1 FAIL; ambos pendientes
+  se deben al acceso privado aún sin autenticar.
 
 ## Acceso privado pendiente
 
