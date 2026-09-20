@@ -2,12 +2,18 @@
 type: workpack
 name: "WP-006 — Executor browser y verificación"
 created: 2026-08-21
-updated: 2026-08-31
+updated: 2026-09-20
 tags: [mova, fpl, workpack, agent-browser, verification]
-status: in_progress
+status: superseded
 ---
 
 # WP-006 — Executor browser y verificación
+
+## Disposición del 20 de septiembre de 2026
+
+Planificación sustituida, no aceptación técnica. Los requisitos y cortes inferiores son históricos;
+el trabajo pendiente se conserva en AC-04/05 de la [hoja de ruta vigente](../04-readiness-and-rollout.md).
+No ejecutar calendarios, taxonomías de autoridad ni pendientes antiguos desde este documento.
 
 ## Objetivo
 

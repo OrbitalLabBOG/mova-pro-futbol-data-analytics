@@ -28,9 +28,10 @@ tags: [mova, fpl, documentation]
 | Operar tracking y registro MLOps | [MLflow privado](operations/mlflow.md) |
 | Comparar progreso entre experimentos | [Benchmark interno](../experiments/benchmark/README.md) |
 | Consultar el nuevo laboratorio de decisiones | [Participación y valor de temporada](../experiments/season_value/README.md) |
-| Implementar el harness | [Autonomous Harness v1](specs/fpl-autonomous-operator/10-autonomous-harness-v1.md) |
+| Cerrar autonomía y consultar entregables vigentes | [Cierre de autonomía operativa](specs/fpl-autonomous-operator/04-readiness-and-rollout.md) |
+| Entender la arquitectura del harness | [Autonomous Harness v1](specs/fpl-autonomous-operator/10-autonomous-harness-v1.md) |
 | Auditar el motor v1 cerrado | [Spec del decision engine](specs/fpl-decision-engine/README.md) |
 | Recuperar el capítulo histórico | [Historia](history.md) |
 
-`10-autonomous-harness-v1.md` es la hoja de ruta ejecutable. Las specs 08 y 09 son
+`04-readiness-and-rollout.md` es la única hoja de ruta ejecutable de cierre; `10-autonomous-harness-v1.md` conserva la arquitectura. Las specs 08 y 09 son
 referencias de hardening, no backlog automático.
