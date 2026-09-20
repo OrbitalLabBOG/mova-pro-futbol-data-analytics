@@ -150,3 +150,46 @@ Para volver al modo on-demand, retirar únicamente
 `MOVA_BROWSER_KEEP_RUNNING=1` de `deploy.env` y detener el browser mediante
 `sudo deploy/bin/browser-session.sh stop`; después comprobar el timer privado
 y `mova doctor`. El perfil autenticado no debe borrarse en ese rollback.
+
+## Auditoría de estabilidad del VPS
+
+Entre 20:10 y 20:16 UTC se comprobó un host con 2 vCPU, load de 0,86–1,02,
+7,8 GiB de RAM total, aproximadamente 4,4 GiB disponibles y 42 GiB libres
+en disco (57 % usado). El swap conservaba 1,2 GiB ocupados, pero la muestra
+`vmstat 1 5` no mostró entradas de swap ni espera de I/O; el tiempo ocioso de
+CPU estuvo entre 67 % y 93 %. El PSI `cpu.some` del host fue elevado
+(aproximadamente 30–52 %), mientras `cpu.full` fue 0; las métricas de los
+contenedores MOVA no mostraron saturación sostenida. Se deja como señal a
+vigilar, no como prueba de falta de capacidad actual.
+
+No había unidades systemd fallidas ni errores OOM/I/O recientes en el kernel.
+API, PostgreSQL y browser estaban `healthy`; el browser consumía cerca de
+635 MiB y mantenía sus límites de Compose. El único worker MOVA observado era
+la ejecución de analytics de las 20:10 UTC; salió con código 0 a las 20:10:51
+y no dejó contenedor worker activo. El private-state timer de las 20:12 UTC
+salió con código 0 y `snapshot_fresh`, sin captura repetida. Cuatro
+contenedores experimentales de voz estaban detenidos desde el 17 de
+septiembre; uno de ellos registra `OOMKilled=true` histórico. Ninguno usaba
+recursos en esta auditoría. Se observaron rechazos SSH transitorios al abrir
+varias conexiones paralelas, pero el servicio siguió activo, el dashboard
+respondió HTTP 200 y el acceso SSH se recuperó; el journal de las últimas
+24 horas no mostró autenticaciones fallidas. No hay evidencia de una caída
+del VPS durante esta revisión.
+
+El doctor sí detectó una ventana de `scheduler_heartbeat FAIL`: el último
+tick completo superó 1.200 segundos porque el timer de capacidad corría cada
+15 minutos y la ejecución de las 20:00 UTC se omitió por lock. El tick de las
+20:15 UTC terminó `status=0`. Se conservó el lock de admisión y sólo se cambió
+el calendario en
+`/etc/systemd/system/mova-fpl-tick.timer.d/90-capacity.conf` de cada 15 a
+cada 5 minutos, con `Persistent=false`. El timer quedó `active` y el doctor
+posterior volvió a `healthy`, 24 PASS, 0 WARN y 0 FAIL, con heartbeat de 70
+segundos. Hay copia root-only del drop-in anterior en
+`/opt/orbital/backups/mova-fpl/runtime-recovery-20260920/tick-90-capacity.conf.before-heartbeat-fix`.
+El intervalo corto da oportunidades de heartbeat aun cuando una corrida
+coincida con otro job; el lock mantiene el límite de una tarea intensiva a
+la vez. El primer disparo programado tras el cambio corrió de 20:20:12 a
+20:20:19 UTC con `ExecMainStatus=0`; el siguiente quedó programado para
+20:25:08 UTC. No dejó worker activo. El doctor posterior informó 24 PASS,
+0 WARN y 0 FAIL, con heartbeat de 29 segundos; browser, API y PostgreSQL
+seguían `healthy`, todos con `RestartCount=0`.
