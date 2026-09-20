@@ -84,12 +84,14 @@ GWs passing. El foco abarca hasta 25 jugadores de 12–14 clubes mientras la pol
 una hipótesis de insuficiencia que requiere medir cobertura por club, no una razón para reducir
 el gate de 90/80 o inventar sujetos revisados.
 
-Primera entrega implementada en código local: el manifiesto puede adjuntar hasta ocho pistas
+Primera entrega desplegada en la release `1accdc4`: el manifiesto puede adjuntar hasta ocho pistas
 de documentos verificados de la última corrida del mismo ciclo, de máximo 36 horas. El worker
 revalida cada página y el importador conserva el fetch independiente; una pista sola jamás
-cuenta como cobertura. Las pruebas de contrato y de importación ejercen la reutilización y su
-expiración. Falta medir una pareja real broad→refresh/final; no se atribuye aún ahorro ni mejora
-del gate.
+cuenta como cobertura. La cobertura por club queda registrada en nuevos briefs v2 para
+diagnosticar discovery. Las pruebas ejercen reutilización, expiración y agregación por club.
+Falta medir una pareja real broad→refresh/final; no se atribuye aún ahorro ni mejora del gate.
+La [release y sus límites](../../decisions/2026-27/release-20260920-1accdc4.md) son
+evidencia de AC-01.1/01.3, pero AC-01.2 y el rollback efectivo siguen pendientes.
 
 Routing: mantener Codex Researcher Luna y Strategist/Critic Terra mientras se mide una línea
 base real. La suscripción registra tokens, pero `estimated_cost_usd=null`, por lo que no equivale

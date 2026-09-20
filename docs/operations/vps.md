@@ -304,6 +304,10 @@ es `a8cfa7d` y conserva esas modificaciones host sin versionar; la imagen de
 browser sí corresponde a `a8cfa7d`. Esto aún no es una release completa de
 los scripts de captura. Rollback de ambos scripts:
 `/opt/orbital/backups/mova-fpl/session-recovery-20260918T1450Z/deploy/bin/`.
+Ese estado es histórico: la [release `1accdc4`](../decisions/2026-27/release-20260920-1accdc4.md)
+integró y versionó esos hotfixes, alineó checkout e imágenes y conservó un
+backup root-only. El acta distingue las comprobaciones hechas de la ventana de
+estabilidad y el rollback disruptivo todavía pendientes.
 La captura ya no depende de botones de la cancha: un GET privado válido puede
 funcionar mientras la SPA muestra `Loading`. El control plane valida el equipo
 esperado y sus 15 picks. Esto no implementa login Google desatendido ni avisos push.
