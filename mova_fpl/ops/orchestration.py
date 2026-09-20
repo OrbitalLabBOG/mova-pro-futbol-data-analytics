@@ -118,6 +118,9 @@ def evaluate_workflow(observed: dict, *, now: datetime | None = None) -> dict:
     ))
 
     attempt_status = attempt.get("status")
+    attempt_matches_plan = bool(
+        plan.get("plan_id") and attempt.get("plan_id") == plan.get("plan_id")
+    ) if attempt else False
     if plan_status in {"blocked", "noop"}:
         execution_stage = _stage(
             "execute_verify", "executor_verifier", "skipped_policy",
@@ -126,10 +129,13 @@ def evaluate_workflow(observed: dict, *, now: datetime | None = None) -> dict:
     elif plan_status == "authorized":
         execution_stage = _stage(
             "execute_verify", "executor_verifier",
-            "complete" if attempt_status == "verified" else
+            "complete" if attempt_matches_plan and attempt_status == "verified" else
+            "blocked" if attempt and not attempt_matches_plan else
             "blocked" if attempt_status in TERMINAL_BAD | {"blocked"} else "pending",
             outcome=attempt_status, subject_id=attempt.get("execution_id"),
             next_action=(
+                "verificar el linaje del intento antes de otra escritura"
+                if attempt and not attempt_matches_plan else
                 "detener retries y resolver el intento terminal antes de otra escritura"
                 if attempt_status in TERMINAL_BAD | {"blocked"} else
                 "preparar, ejecutar apply-once y verificar el estado posterior"
@@ -196,6 +202,11 @@ def evaluate_workflow(observed: dict, *, now: datetime | None = None) -> dict:
         if plan_status != "authorized":
             violations.append({
                 "code": "EXECUTION_WITHOUT_AUTHORIZED_PLAN",
+                "stage": "execute_verify", "dependency": "preflight",
+            })
+        elif not attempt_matches_plan:
+            violations.append({
+                "code": "EXECUTION_PLAN_MISMATCH",
                 "stage": "execute_verify", "dependency": "preflight",
             })
     if review and not settlement:
@@ -275,10 +286,6 @@ def build_workflow(config: RuntimeConfig, db: OpsDB, *,
             "preflight": _row(con,
                 "SELECT plan_id,status,risk_class,created_at FROM execution_plans "
                 "WHERE cycle_id=? ORDER BY created_at DESC LIMIT 1", (cycle_id,)),
-            "execution": _row(con,
-                "SELECT a.execution_id,a.status,a.created_at FROM execution_attempts a "
-                "JOIN execution_plans p ON p.plan_id=a.plan_id WHERE p.cycle_id=? "
-                "ORDER BY a.created_at DESC LIMIT 1", (cycle_id,)),
             "settlement": _row(con,
                 "SELECT settlement_id,settled_at FROM gameweek_settlements "
                 "WHERE cycle_id=? ORDER BY settled_at DESC LIMIT 1", (cycle_id,)),
@@ -287,6 +294,13 @@ def build_workflow(config: RuntimeConfig, db: OpsDB, *,
                 "JOIN gameweek_settlements s ON s.settlement_id=r.settlement_id "
                 "WHERE s.cycle_id=? ORDER BY r.created_at DESC LIMIT 1", (cycle_id,)),
         }
+        # The latest attempt in a cycle may belong to a superseded plan. Only
+        # evidence for the plan displayed above can complete its execution stage.
+        plan_id = observed["preflight"].get("plan_id")
+        observed["execution"] = (_row(con,
+            "SELECT execution_id,plan_id,status,created_at FROM execution_attempts "
+            "WHERE plan_id=? ORDER BY created_at DESC LIMIT 1", (plan_id,)
+        ) if plan_id else {})
         review_id = observed["review"].get("review_id")
         observed["learning"] = ({"lesson_count": int(con.execute(
             "SELECT COUNT(*) FROM lessons WHERE review_id=? AND status='validated'",
@@ -335,11 +349,17 @@ def orchestration_drill() -> dict:
     verified = evaluate_workflow({
         **base,
         "preflight": {"plan_id": "plan_authorized", "status": "authorized"},
-        "execution": {"execution_id": "execution_fixture", "status": "verified"},
+        "execution": {"execution_id": "execution_fixture", "plan_id": "plan_authorized",
+                      "status": "verified"},
     }, now=current)
     orphan_execution = evaluate_workflow({
         **base, "preflight": {},
         "execution": {"execution_id": "execution_orphan", "status": "verified"},
+    }, now=current)
+    mismatched_execution = evaluate_workflow({
+        **base, "preflight": {"plan_id": "plan_authorized", "status": "authorized"},
+        "execution": {"execution_id": "execution_old", "plan_id": "plan_old",
+                      "status": "verified"},
     }, now=current)
     review_without_settlement = evaluate_workflow({
         **base, "review": {"review_id": "review_orphan"},
@@ -367,6 +387,12 @@ def orchestration_drill() -> dict:
         "execution_without_authority_is_rejected": any(
             row["code"] == "EXECUTION_WITHOUT_AUTHORIZED_PLAN"
             for row in orphan_execution["violations"]
+        ),
+        "execution_from_other_plan_cannot_complete_stage": (
+            next(row for row in mismatched_execution["stages"]
+                 if row["name"] == "execute_verify")["status"] == "blocked"
+            and any(row["code"] == "EXECUTION_PLAN_MISMATCH"
+                    for row in mismatched_execution["violations"])
         ),
         "review_without_settlement_is_rejected": any(
             row["code"] == "REVIEW_WITHOUT_SETTLEMENT"
