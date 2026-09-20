@@ -70,8 +70,8 @@ native search no expone al host un contador exigible. El límite del prompt orie
 agente; el enforcement real es timeout, autorización previa del presupuesto y límites
 de salida. Codex CLI reporta tokens solo al terminar: el límite por job **no** corta
 una llamada física al llegar a ese número. Un overrun se liquida con tokens reales y
-exige revisión durable. El worker desactiva plugins y búsqueda de skills del host para
-evitar contexto ajeno al request.
+exige revisión durable. El worker desactiva plugins del host para reducir contexto
+ajeno al request; el ahorro real sigue pendiente de medición.
 No interpretar `search_requests=null` como cero consultas. El gate 90/80 vigente no
 cambia y los runs v1/v2 anteriores no se reetiquetan.
 

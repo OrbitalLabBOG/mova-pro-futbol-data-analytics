@@ -19,7 +19,7 @@ receipts físicos quedan enlazados por hashes. El worker puede explorar fuera de
 foco, pero el importador solo acepta un claim si su identidad, tema, fuente y
 fecha verificable satisfacen la política sellada. `2026.09.2` añade vigencia por
 tipo de claim y evita que una alineación histórica se presente como rol actual.
-Los plugins y la búsqueda de skills del host se desactivan en el Codex aislado.
+Los plugins del host se desactivan en el Codex aislado.
 
 No se modificaron permisos FPL, modelo, decisiones, controles A0/shadow ni el
 gate 90/80. La cadencia normal sigue automática por timer; una ejecución fuera
@@ -42,7 +42,7 @@ La llamada reportó 246.505 tokens de entrada y 7.074 de salida en 162,3 segundo
 solo publica el conteo al final: preautorización, timeout y prompt **no** son un
 freno físico exacto de tokens. El overrun permanece abierto hasta una revisión
 durable y una corrida posterior comparable dentro del límite; no se cambia el
-límite para ocultarlo. La desactivación de plugins/skills es una mitigación de
+límite para ocultarlo. La desactivación de plugins es una mitigación de
 contexto, aún sin ahorro cuantificado en vivo.
 
 ## Despliegue y retorno
