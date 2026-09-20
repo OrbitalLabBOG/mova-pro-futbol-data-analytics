@@ -74,13 +74,19 @@ recuperación. Las 35 pruebas cercanas pasaron en el checkout local.
   controles FPL intactos en A0. Doctor posterior: 22 PASS, 1 WARN
   (`private_team_state` stale) y 1 FAIL (`systemd_service_results` debido al
   fallo privado previo), antes de renovar la sesión.
+- La comprobación HTTP devolvió 200 para `/readyz` y el dashboard público,
+  mientras `/api/v1/cockpit` externo siguió en 404.
 
 ## Acceso privado pendiente
 
 La captura forzada confirmó `FPL_AUTH_REQUIRED`; no se copió ni alteró el
 perfil. El navegador aislado `mova-fpl-browser:4a8c5e0` está saludable y
 se habilitó un túnel local `127.0.0.1:6080` para que Julián complete el login.
-El timer privado se detuvo **temporalmente** durante el login para evitar que un
-intento automático cierre Chromium. Tras autenticación: ejecutar captura privada
+El timer privado se detuvo **temporalmente** durante la preparación del login
+para evitar que un intento automático cerrara Chromium. Se volvió a activar a
+las 19:43 UTC: los ocho timers quedaron activos. El servicio privado conservó
+`Result=exit-code` porque el cooldown impide reintentos sin autenticación;
+Chromium permaneció saludable. Tras autenticación: ejecutar captura privada
 forzada, verificar 15 picks y fingerprint, resetear el estado fallido del
-servicio y reactivar el timer privado. El doctor debe correrse de nuevo.
+servicio y repetir el doctor. Sin ese paso, no declarar el runtime plenamente
+restaurado.
