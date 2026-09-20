@@ -9,6 +9,14 @@ status: implementation-in-progress
 
 # Researcher: descubrir cambios antes de seleccionar jugadores
 
+La primera corrida viva del refactor y su límite de promoción se documentan en
+[researcher-refactor-release-20260920.md](../../decisions/2026-27/researcher-refactor-release-20260920.md).
+GW6 alcanzó 3/25 sujetos verificados, ningún descubrimiento fuera del foco y un
+overrun de 93.579 tokens; esto demuestra que el contrato y la degradación
+conservadora funcionan, pero no que AC-02 ni el costo estén resueltos. La siguiente
+iteración debe medir una corrida bajo `research-claim-2026.09.2` y aislar mejor
+discovery de verificación si la cobertura continúa baja.
+
 ## Estado y pregunta
 
 Esta es la propuesta y bitácora de implementación de AC-02, no una nueva hoja de ruta.

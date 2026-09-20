@@ -57,9 +57,22 @@ root-only `/opt/orbital/backups/mova-fpl/research-release-20260920-d8416fe/`.
 El punto de código anterior era `1accdc4`. Revertir código no justifica restaurar
 el writer de datos.
 
-La segunda revisión aplica vigencia por claim y elimina contexto de plugins.
-Su SHA, pruebas y salud viva se registran en la bitácora de release al verificar
-el despliegue. No se ejecuta otra corrida forzada solo para consumir tokens:
+La segunda revisión instalada es `a732a46` (imagen engine/research y checkout),
+con `/readyz` 200, timer research habilitado/activo y cero requests pendientes.
+El Codex `0.144.6` de la imagen aceptó `--disable plugins`; se retiró una opción
+de `skill_search` no soportada antes de permitir un nuevo intento. La suite local
+pasó con 1773 tests, uno omitido y 79 fuera de selección; también pasaron
+`compileall`, `node --check` y `docker compose config`. El doctor vivo dio
+23 PASS, 1 WARN y 0 FAIL; el WARN era `whoscored_events` stale. PostgreSQL
+shadow verificó 57 tablas sin fallos antes del refuerzo de frescura.
+
+El overrun pasó de `open` a `reviewed` mediante
+`budgetoverrun_769b41f075078a6bd77d4cc1`, con acción `optimize_prompt`,
+evidencia `7ea2499a68b23f17f14de948dd1422dd07ecbdafa54b69f177b31d6de6617866`
+y sin mutar límites. Métricas vivas:
+`catalog_size=667`, `global_alerts=80`, `semantic_rejections=6` y
+`accepted_outside_focus=0`. No se ejecuta otra corrida forzada solo para
+consumir tokens:
 GW6 aún está fuera de la ventana ordinaria y GW5 no tiene cierre oficial
 `finished/data_checked` en el corte observado. La próxima corrida comparable
 debe medir cobertura, señales globales y tokens bajo `2026.09.2`.
