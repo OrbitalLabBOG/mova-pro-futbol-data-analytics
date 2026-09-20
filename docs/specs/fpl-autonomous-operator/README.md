@@ -95,6 +95,7 @@ PM de construcción del proyecto.
 | [59-hv1-13-operations-cockpit-rollout.md](59-hv1-13-operations-cockpit-rollout.md) | Cockpit, triage, acceso web privado y sentinel deadline-aware |
 | [60-hv1-13b-owner-dashboard.md](60-hv1-13b-owner-dashboard.md) | Dashboard ejecutivo público, semántica verde/rojo y diagnóstico loopback-only |
 | [61-hv1-13c-control-room-feedback-contract.md](61-hv1-13c-control-room-feedback-contract.md) | Modelos, costo, DR, feedback y salida de shadow en cockpit/doctor/Prometheus |
+| [62-researcher-global-discovery-proposal.md](62-researcher-global-discovery-proposal.md) | Corrida GW3–GW5, diagnóstico vivo y refactor AC-02 de contexto, radar global y evidencia por claim; implementación A0 en progreso |
 | [contracts/](contracts/) | JSON Schemas máquina para request, result y signal |
 | [decisions/](decisions/) | decisiones arquitectónicas propuestas |
 | [workpacks/](workpacks/) | paquetes de construcción históricos; pendientes transferidos a la hoja de ruta de cierre |

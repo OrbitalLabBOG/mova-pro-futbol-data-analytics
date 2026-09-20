@@ -139,13 +139,16 @@ class AnalyticsStore:
         return dict(row) if row else None
 
     def research_focus(self, *, squad: list[dict], batch_id: str | None,
-                       candidate_limit: int = 10) -> list[dict]:
+                       candidate_limit: int = 10,
+                       as_of: datetime | None = None) -> list[dict]:
         """Contexto público mínimo para orientar noticias hacia sujetos relevantes."""
         owned = {int(item["element"]): item for item in squad if item.get("element")}
         with connect(self.config, autocommit=True) as con:
             artifact = con.execute(
                 "select artifact_id from raw.source_artifacts "
-                "where source_name='fpl_official' order by observed_at desc limit 1"
+                "where source_name='fpl_official' and observed_at<=%s "
+                "order by observed_at desc limit 1",
+                (as_of or datetime.now(timezone.utc),),
             ).fetchone()
             if not artifact:
                 return []
@@ -160,7 +163,19 @@ class AnalyticsStore:
             candidates = [row for row in projected if int(row["element"]) not in owned][
                 :candidate_limit
             ]
-            projected_by_element = {int(row["element"]): row for row in projected}
+            # The top-N query selects candidates, but must not erase projections
+            # for owned players ranked below that cutoff.
+            owned_projections = []
+            if batch_id and owned:
+                owned_projections = con.execute(
+                    "select element,player_name,team,position,xp,p_play,p_60 "
+                    "from analytics.player_projections where batch_id=%s "
+                    "and element=any(%s)",
+                    (batch_id, sorted(owned)),
+                ).fetchall()
+            projected_by_element = {
+                int(row["element"]): row for row in [*projected, *owned_projections]
+            }
             elements = sorted({*owned, *(int(row["element"]) for row in candidates)})
             if not elements:
                 return []
@@ -216,6 +231,75 @@ class AnalyticsStore:
                 -(item["xp"] or 0.0),
             ),
         )
+
+    def research_world(self, *, as_of: datetime, target_gw: int) -> dict:
+        """Compact official player catalog and changed public flags at one cutoff."""
+        with connect(self.config, autocommit=True) as con:
+            artifacts = con.execute(
+                "select artifact_id,observed_at from raw.source_artifacts "
+                "where source_name='fpl_official' and observed_at<=%s "
+                "order by observed_at desc limit 2", (as_of,),
+            ).fetchall()
+            if not artifacts:
+                return {"status": "missing", "catalog": [], "alerts": []}
+            current = con.execute(
+                "select p.element,p.web_name,p.team_id,t.short_name team,"
+                "p.status,p.chance_next,p.news "
+                "from analytics.fpl_player_observations p "
+                "join analytics.fpl_team_observations t "
+                "on t.artifact_id=p.artifact_id and t.team_id=p.team_id "
+                "where p.artifact_id=%s order by p.element",
+                (artifacts[0]["artifact_id"],),
+            ).fetchall()
+            fixtures = con.execute(
+                "select f.event,f.kickoff_time,h.short_name home,a.short_name away "
+                "from analytics.fpl_fixture_observations f "
+                "join analytics.fpl_team_observations h "
+                "on h.artifact_id=f.artifact_id and h.team_id=f.team_h "
+                "join analytics.fpl_team_observations a "
+                "on a.artifact_id=f.artifact_id and a.team_id=f.team_a "
+                "where f.artifact_id=%s and f.event between %s and %s "
+                "order by f.event,f.kickoff_time,f.fixture_id",
+                (artifacts[0]["artifact_id"], target_gw, min(38, target_gw + 4)),
+            ).fetchall()
+            previous = {}
+            if len(artifacts) > 1:
+                previous = {int(row["element"]): row for row in con.execute(
+                    "select element,status,chance_next,news "
+                    "from analytics.fpl_player_observations where artifact_id=%s",
+                    (artifacts[1]["artifact_id"],),
+                ).fetchall()}
+        alerts = []
+        for row in current:
+            old = previous.get(int(row["element"]))
+            changed = bool(old and any(
+                (row.get(key) or None) != (old.get(key) or None)
+                for key in ("status", "chance_next", "news")
+            ))
+            if changed or (row.get("status") not in (None, "a") and row.get("news")):
+                alerts.append({
+                    "element": int(row["element"]), "name": row["web_name"],
+                    "team": row["team"], "status": row.get("status"),
+                    "chance_next": row.get("chance_next"),
+                    "news": str(row.get("news") or "")[:180],
+                    "changed": changed,
+                })
+        alerts.sort(key=lambda item: (
+            not item["changed"],
+            item["chance_next"] if item["chance_next"] is not None else 100,
+            item["element"],
+        ))
+        return {
+            "status": "ready", "artifact_id": artifacts[0]["artifact_id"],
+            "observed_at": artifacts[0]["observed_at"].isoformat(),
+            "catalog": [[int(row["element"]), row["web_name"], row["team"]]
+                        for row in current],
+            "fixtures": [[int(row["event"]), row["home"], row["away"],
+                          row["kickoff_time"].isoformat() if row["kickoff_time"] else None]
+                         for row in fixtures],
+            "alerts": alerts[:80], "alerts_total": len(alerts),
+            "alerts_truncated": len(alerts) > 80,
+        }
 
     def actual_frame(self, season: str, gw: int) -> tuple[pd.DataFrame, str | None, bool]:
         with connect(self.config, autocommit=True) as con:

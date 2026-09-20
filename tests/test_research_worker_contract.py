@@ -36,6 +36,10 @@ def test_worker_deshabilita_herramientas_que_podrian_leer_auth_o_actuar():
     assert "fetch independiente" in worker
     assert "coverage.subjects" in worker
     assert "Cumple literalmente request.scope_policy" in worker
+    assert "world.catalog" in worker
+    assert "radar global acotado" in worker
+    assert "prior_gameweek_signals" in worker
+    assert "no constituye un hard limit verificable" in worker
     assert "scopePolicy.max_web_queries" in worker
     assert "scopePolicy.max_documents" in worker
     assert "scopePolicy.max_material_signals" in worker

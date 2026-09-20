@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — contexto estratégico e investigación"
 created: 2026-08-27
-updated: 2026-09-16
+updated: 2026-09-20
 tags: [mova, fpl, strategy, research, codex, evidence]
 status: active
 ---
@@ -36,6 +36,36 @@ El servicio tiene dos capas complementarias. El collector FPL conserva cada seis
 campo oficial `news`, `status` y `chance_of_playing_next_round`; el worker Codex hace
 investigación web profunda únicamente en ventanas de decisión. No existe un scraper de prensa
 residente ni una llamada LLM por tick.
+
+### Refactor de contexto y calidad, pendiente de promoción viva
+
+El checkout actual prepara `research_summary.plan` con horizonte, supuestos, ventanas de chips y
+guardrails del plan activo. `research_summary.world` añade el catálogo oficial de IDs,
+fixtures de las cinco próximas GWs y hasta 80 alertas de cambios en status/chance/news
+entre snapshots FPL; declara `alerts_total` y `alerts_truncated`. La consulta se limita
+al `as_of_at` sellado. Las proyecciones de los 15 propios se resuelven por ID del batch,
+aunque no aparezcan en su top-N. Las señales aceptadas de las tres GWs anteriores son
+pistas históricas, no evidencia heredada. Si PostgreSQL no está disponible, `world.status`
+es `missing` o `degraded` y no se inventa catálogo global.
+
+El mismo worker dedica una exploración acotada a lesiones y cambios de rol en toda la liga;
+el resto sigue priorizando plantilla y candidatos. El importador aplica la política
+`research-claim-2026.09.1` solo a requests nuevos con catálogo: exige ID conocido, nombre
+explícito en el excerpt, vocabulario del tema, fecha declarada que aparece en la página y fetch anterior al
+deadline para `accepted`; dos fuentes no oficiales deben pertenecer a hosts distintos.
+Si no puede demostrarlo, conserva la señal como `candidate`
+y registra la razón; una página genérica deja `not_checked` en cobertura. Esta es una
+comprobación conservadora de identidad/tema, **no** una prueba completa de que cada matiz
+del claim sea verdadero. El replay etiquetado y la revisión de casos difíciles siguen
+siendo necesarios antes de afirmar calidad causal.
+
+La telemetría nueva está en `coverage.quality` y
+`mova_research_quality{measure=...}`: tamaño de catálogo, alertas, señales dentro/fuera
+del foco y señales degradadas por calidad. `search_requests` permanece `null`: Codex
+native search no expone al host un contador exigible. El límite del prompt orienta al
+agente, pero el enforcement real es timeout, presupuesto por intento y límites de salida.
+No interpretar `search_requests=null` como cero consultas. El gate 90/80 vigente no
+cambia y los runs v1/v2 anteriores no se reetiquetan.
 
 Desde el corte del 14 de septiembre el prompt opera `coverage-first`: agrupa el foco por club,
 busca primero partes, convocatorias o alineaciones oficiales que nombren a varios sujetos y sólo

@@ -11,6 +11,7 @@ import socket
 import urllib.error
 import urllib.parse
 import urllib.request
+from datetime import datetime
 from html.parser import HTMLParser
 from pathlib import Path
 
@@ -119,7 +120,8 @@ class SafeEvidenceFetcher:
         self.transport = transport
 
     def seal(self, *, research_run_id: str, document_id: str,
-             source_url: str, evidence_text: str) -> dict:
+             source_url: str, evidence_text: str,
+             published_at: str | None = None) -> dict:
         url = canonical_public_url(source_url)
         temporary: Path | None = None
         try:
@@ -138,6 +140,23 @@ class SafeEvidenceFetcher:
             if start < 0:
                 raise ValueError("evidence_locator_not_verified")
             end = start + len(needle)
+            publication_date_verified = False
+            if published_at:
+                try:
+                    day = datetime.fromisoformat(
+                        str(published_at).replace("Z", "+00:00")
+                    ).date()
+                    haystack = (normalized + " " + payload.decode("utf-8", "ignore")).casefold()
+                    candidates = (
+                        day.isoformat(), day.strftime("%d %b %Y").casefold(),
+                        day.strftime("%-d %b %Y").casefold(),
+                        day.strftime("%d %B %Y").casefold(),
+                        day.strftime("%-d %B %Y").casefold(),
+                        day.strftime("%d %b %y").casefold(),
+                    )
+                    publication_date_verified = any(value in haystack for value in candidates)
+                except ValueError:
+                    pass
             record = {
                 "schema": "mova-source-document-v1",
                 "document_id": document_id,
@@ -155,6 +174,7 @@ class SafeEvidenceFetcher:
                 "locator": f"{start}:{end}",
                 "excerpt": needle,
                 "excerpt_sha256": sha256_bytes(needle.encode("utf-8")),
+                "publication_date_verified": publication_date_verified,
                 "error_code": None,
             }
             target = self.root / "evidence" / research_run_id / f"{document_id}.json"
@@ -180,6 +200,7 @@ class SafeEvidenceFetcher:
                 "normalized_sha256": None, "storage_mode": "none",
                 "locator_type": None, "locator": None, "excerpt": None,
                 "excerpt_sha256": None, "artifact_path": None,
+                "publication_date_verified": False,
                 "artifact_sha256": None, "error_code": _safe_error_code(exc),
             }
 

@@ -2717,10 +2717,11 @@ class OpsDB:
                      signal.get("published_at"), signal["expires_at"], signal["confidence"],
                      signal["conflict_status"], sha256_json(signal_body), research_run_id,
                      signal["subject_name"], signal["direction"], validation,
-                     canonical_json({"source_urls": evidence_urls,
+                    canonical_json({"source_urls": evidence_urls,
                                      "document_ids": [document_ids.get(url)
                                                       for url in evidence_urls],
-                                     "evidence_refs": evidence_refs})),
+                                     "evidence_refs": evidence_refs,
+                                     "quality": signal.get("quality", {})})),
                 )
                 accepted += validation == "accepted"
             for conflict in payload["conflicts"]:
@@ -4692,6 +4693,10 @@ class OpsDB:
         research_coverage_ratio = 0.0
         research_evidence_ratio = 0.0
         research_measured_gameweeks = 0
+        research_quality = {"catalog_size": 0, "global_alerts": 0,
+                            "accepted_outside_focus": 0,
+                            "candidate_outside_focus": 0,
+                            "semantic_rejections": 0}
         decision_envelope_status = "missing"
         execution_plan_status = "missing"
         execution_plan_blockers = 0
@@ -4765,13 +4770,20 @@ class OpsDB:
                 except ValueError:
                     pass
             latest_coverage = con.execute(
-                "SELECT coverage_ratio,evidence_ratio FROM research_runs "
+                "SELECT coverage_ratio,evidence_ratio,coverage_json FROM research_runs "
                 "WHERE status='imported' AND coverage_status IN ('complete','partial','failed') "
                 "ORDER BY imported_at DESC LIMIT 1"
             ).fetchone()
             if latest_coverage:
                 research_coverage_ratio = float(latest_coverage["coverage_ratio"] or 0)
                 research_evidence_ratio = float(latest_coverage["evidence_ratio"] or 0)
+                try:
+                    measured_quality = json.loads(latest_coverage["coverage_json"]).get(
+                        "quality", {})
+                    research_quality = {key: int(measured_quality.get(key) or 0)
+                                        for key in research_quality}
+                except (TypeError, ValueError, json.JSONDecodeError):
+                    pass
             research_measured_gameweeks = int(con.execute(
                 "SELECT COUNT(DISTINCT cycle_id) FROM research_runs "
                 "WHERE status='imported' AND coverage_status IN ('complete','partial','failed')"
@@ -4906,6 +4918,10 @@ class OpsDB:
             "# HELP mova_research_measured_gameweeks Gameweeks with explicit coverage v2.",
             "# TYPE mova_research_measured_gameweeks gauge",
             f"mova_research_measured_gameweeks {research_measured_gameweeks}",
+            "# HELP mova_research_quality Latest import's global discovery and claim checks.",
+            "# TYPE mova_research_quality gauge",
+            *[f'mova_research_quality{{measure="{key}"}} {value}'
+              for key, value in sorted(research_quality.items())],
             "# HELP mova_strategic_memory_status Latest sealed memory lifecycle status.",
             "# TYPE mova_strategic_memory_status gauge",
             *[f'mova_strategic_memory_status{{status="{name}"}} '
