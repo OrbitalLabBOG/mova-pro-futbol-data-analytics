@@ -772,9 +772,7 @@ class StrategicContextService:
         if generated > deadline or generated > observed + timedelta(minutes=10):
             raise ValueError("resultado de research cruza el cutoff")
         scope = request.get("scope_policy") or {}
-        if (len(payload.get("documents") or []) > int(scope.get("max_documents", 80))
-                or len(payload.get("signals") or []) >
-                int(scope.get("max_material_signals", 120))):
+        if len(payload.get("documents") or []) > int(scope.get("max_documents", 80)):
             raise ValueError("brief excede scope_policy sellada")
         documents = self._validate_documents(
             payload.get("documents"), observed, research_run_id=run_id,

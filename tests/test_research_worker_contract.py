@@ -129,6 +129,28 @@ process.stdout.write(JSON.stringify(normalizeResearchBrief(brief,request)));
     assert "example.com" not in json.dumps(report)
 
 
+def test_normalizer_enforces_document_cap_and_drops_orphan_signal():
+    script = r'''
+import {normalizeResearchBrief} from "./deploy/research/research-normalize.mjs";
+const a="https://example.com/a", b="https://example.com/b";
+const brief={documents:[{source_url:a},{source_url:b}],
+signals:[{player_element:2,source_urls:[b]}], conflicts:[],
+coverage:{subjects:[{player_element:2,status:"material_signal",source_urls:[b],note:"old"}]}};
+const request={scope_policy:{max_documents:1},
+manifest:{research_summary:{focus:[{element:2}]}}};
+process.stdout.write(JSON.stringify(normalizeResearchBrief(brief,request)));
+'''
+    result = subprocess.run(
+        ["node", "--input-type=module", "-e", script], cwd=ROOT,
+        text=True, capture_output=True, check=True,
+    )
+    value = json.loads(result.stdout)
+    assert len(value["brief"]["documents"]) == 1
+    assert value["brief"]["signals"] == []
+    assert value["brief"]["coverage"]["subjects"][0]["status"] == "not_checked"
+    assert value["report"]["documents_dropped_budget"] == 1
+
+
 def test_compose_no_monta_db_browser_repo_ni_secretos_en_research():
     compose = (ROOT / "compose.yaml").read_text(encoding="utf-8")
     section = compose.split("\n  research:\n", 1)[1].split("\nnetworks:\n", 1)[0]
