@@ -50,7 +50,7 @@ La iniciativa futura solo converge cuando:
 7. compliance y action levels tienen aprobación registrada;
 8. el deploy exacto se reconstruye desde Git y artifacts;
 9. el agente LLM sigue en shadow salvo promoción basada en atribución pareada;
-10. Julián y Buitra aprueban el nivel de autonomía que se activa.
+10. Julián, como owner, decide el nivel de autonomía a activar con los gates y la evidencia registrados.
 
 ## Evidencia que no cuenta
 

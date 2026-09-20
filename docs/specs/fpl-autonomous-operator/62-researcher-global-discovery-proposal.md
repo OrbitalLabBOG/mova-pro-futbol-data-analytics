@@ -125,7 +125,7 @@ añadir verificación semántica/temporal por claim y tests de fixtures para los
 etiquetados. Solo entonces cambiar el contrato de request/brief y el gate de calidad
 por versión. **No rebajar ni sustituir silenciosamente** el 90/80 vigente: publicar
 junto a él cobertura del radar global, precisión de señales y coste; proponer un
-gate nuevo en AC-02 con Nicolás antes de cualquier promoción. Exigir tres GWs
+gate nuevo en AC-02 basado en resultados medibles antes de cualquier promoción. Exigir tres GWs
 independientes settled, costo dentro de presupuesto y deliberación terminal sobre
 envelope vigente. Hasta ese punto, todo corre A0 shadow sin escrituras FPL.
 
@@ -303,7 +303,7 @@ factible con y sin señal bajo el mismo cutoff.
    y tokens por lead. Cero evidencia posterior al cutoff e identidad errónea.
 5. **Shadow longitudinal.** Activar v3 por feature flag en A0, conservar brief
    v2 y gate 90/80 visible. Tras tres GWs settled independientes, fijar un
-   gate v3 con umbrales pre-registrados y revisión técnica de Nicolás. Solo un
+   gate v3 con umbrales pre-registrados y revisión de la evidencia técnica. Solo un
    proceso distinto podría promover autoridad FPL; research nunca la obtiene.
 
 La primera entrega implementable es **integridad del contexto + validador de

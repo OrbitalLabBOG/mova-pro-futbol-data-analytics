@@ -51,7 +51,7 @@ se ajusta el mismo candidato mirando el resultado sellado.
 
 1. socialización de resultados con Julián;
 2. aprobación explícita;
-3. revisión técnica de Buitra si cambia arquitectura;
+3. revisión de contratos, riesgos y pruebas si cambia arquitectura, sin gate de aprobación de otro rol;
 4. bundle y rollback verificables;
 5. shadow en la jornada viva antes de tráfico operativo.
 

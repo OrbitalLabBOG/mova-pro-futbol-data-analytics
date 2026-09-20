@@ -81,6 +81,7 @@ debe medir cobertura, señales globales y tokens bajo `2026.09.2`.
 
 AC-02 no pasa con 12 % de cobertura y un overrun. Hacen falta tres GWs
 independientes con los umbrales vigentes, evidencia causal y costo controlado.
-La promoción de autoridad A1 y escrituras FPL además requiere la aprobación
-técnica de Nicolás y el gate de cumplimiento. Hasta entonces la release es
+La promoción de autoridad A1 y escrituras FPL además requiere la decisión
+registrada de cumplimiento y los gates de ejecución. Julián decide la promoción
+del proyecto. Hasta entonces la release es
 operativa en A0/shadow, no autónoma para ejecutar cambios de equipo.
