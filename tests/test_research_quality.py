@@ -63,6 +63,53 @@ def test_import_gate_downgrades_wrong_topic_identity_and_undated_source():
         assert result["quality"]["reason"] == reason
 
 
+def test_signal_requires_same_relevant_source_to_be_recent():
+    observed = datetime.now(timezone.utc)
+    old = (observed - timedelta(days=15)).isoformat()
+    signal = _signal(claim_type="starting_role")
+    sources = _source("Haaland started in the official XI.", old)
+    result = StrategicContextService._validate_signals(
+        [signal], sources, set(), observed, require_verified=True,
+        catalog={411: "Haaland"}, require_freshness=True,
+    )[0]
+    assert result["validation_status"] == "candidate"
+    assert result["quality"]["reason"] == "stale_for_claim"
+
+    sources["https://example.com/unrelated"] = {
+        "fetch_status": "verified", "source_tier": "official",
+        "excerpt": "Foden starts today.", "published_at": observed.isoformat(),
+        "publication_date_verified": True,
+    }
+    signal["source_urls"].append("https://example.com/unrelated")
+    result = StrategicContextService._validate_signals(
+        [signal], sources, set(), observed, require_verified=True,
+        catalog={411: "Haaland"}, require_freshness=True,
+    )[0]
+    assert result["quality"]["reason"] == "stale_for_claim"
+
+    sources[URL]["published_at"] = observed.isoformat()
+    sources[URL]["source_tier"] = "tier2"
+    result = StrategicContextService._validate_signals(
+        [signal], sources, set(), observed, require_verified=True,
+        catalog={411: "Haaland"}, require_freshness=True,
+    )[0]
+    assert result["validation_status"] == "candidate"
+
+
+def test_stale_document_cannot_count_as_current_coverage():
+    observed = datetime.now(timezone.utc)
+    rows = StrategicContextService._validate_coverage(
+        {"subjects": [{"player_element": 411, "status": "no_material_update",
+                       "source_urls": [URL], "note": "Old lineup."}]},
+        [{"element": 411, "focus_reason": ["current_squad"], "team": "Man City"}],
+        _source("Haaland started in the XI.",
+                (observed - timedelta(days=15)).isoformat()), [],
+        legacy=False, catalog={411: "Haaland"}, fetched_at=observed,
+        require_freshness=True,
+    )
+    assert rows["checked_subjects"] == 0
+
+
 def test_coverage_does_not_count_generic_article_as_player_evidence():
     observed = datetime.now(timezone.utc)
     rows = StrategicContextService._validate_coverage(

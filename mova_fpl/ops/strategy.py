@@ -19,7 +19,7 @@ from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB, canonical_json, new_id, sha256_json, utcnow
 from mova_fpl.ops.schedule import phase_for
 from mova_fpl.ops.research_evidence import SafeEvidenceFetcher, canonical_public_url
-from mova_fpl.ops.research_quality import claim_supported, subject_in_excerpt
+from mova_fpl.ops.research_quality import claim_fresh, claim_supported, subject_in_excerpt
 
 MAX_RESULT_BYTES = 1_048_576
 CLAIM_TYPES = {
@@ -632,7 +632,7 @@ class StrategicContextService:
             "provider": self.config.research_provider,
             "run_kind": run_kind,
             "scope_policy": research_scope_policy(run_kind),
-            "quality_policy": "research-claim-2026.09.1",
+            "quality_policy": "research-claim-2026.09.2",
             "objective": (
                 "Verificar noticias y contexto pre-deadline que puedan cambiar "
                 "disponibilidad, minutos, rol o decisión estratégica FPL. Priorizar "
@@ -788,8 +788,10 @@ class StrategicContextService:
         for name in catalog.values():
             key = name.casefold()
             catalog_name_counts[key] = catalog_name_counts.get(key, 0) + 1
-        strict_quality = bool(catalog) and request.get("quality_policy") == (
-            "research-claim-2026.09.1")
+        quality_policy = request.get("quality_policy")
+        strict_quality = bool(catalog) and quality_policy in {
+            "research-claim-2026.09.1", "research-claim-2026.09.2",
+        }
         conflicts = self._validate_conflicts(payload.get("conflicts", []), by_url)
         conflict_keys = {(item["subject"].casefold(), item["claim_type"]) for item in conflicts
                          if item["status"] == "unresolved"}
@@ -798,6 +800,7 @@ class StrategicContextService:
             require_verified=result_schema == "mova-research-brief-v2",
             catalog=catalog if strict_quality else None, cutoff=deadline,
             catalog_name_counts=catalog_name_counts,
+            require_freshness=quality_policy == "research-claim-2026.09.2",
         )
         coverage = self._validate_coverage(
             payload.get("coverage"),
@@ -805,12 +808,13 @@ class StrategicContextService:
             by_url, signals, legacy=result_schema == "mova-research-brief-v1",
             catalog=catalog if strict_quality else None,
             fetched_at=observed, cutoff=deadline,
+            require_freshness=quality_policy == "research-claim-2026.09.2",
         )
         if strict_quality:
             focus_ids = {int(row["element"]) for row in request["manifest"][
                 "research_summary"]["focus"]}
             coverage["quality"] = {
-                "policy_version": "research-claim-2026.09.1",
+                "policy_version": quality_policy,
                 "catalog_size": len(catalog),
                 "global_alerts": len(request["manifest"]["research_summary"]
                                      ["world"].get("alerts", [])),
@@ -956,7 +960,8 @@ class StrategicContextService:
                           observed: datetime, *, require_verified: bool = False,
                           catalog: dict[int, str] | None = None,
                           cutoff: datetime | None = None,
-                          catalog_name_counts: dict[str, int] | None = None) -> list[dict]:
+                          catalog_name_counts: dict[str, int] | None = None,
+                          require_freshness: bool = False) -> list[dict]:
         if not isinstance(value, list) or len(value) > 120:
             raise ValueError("signals inválido")
         signals = []
@@ -1006,19 +1011,37 @@ class StrategicContextService:
                 }
                 if not any(doc["source_tier"] == "official" for doc in relevant):
                     has_strong_evidence = len(independent_hosts) >= 2
+                matching = [doc for doc in relevant if catalog_name and
+                            claim_supported(name=catalog_name, claim_type=claim_type,
+                                            excerpt=str(doc.get("excerpt") or ""))]
                 supported = bool(catalog_name and
-                                 subject_in_excerpt(catalog_name, subject) and
-                                 any(claim_supported(
-                                     name=catalog_name, claim_type=claim_type,
-                                     excerpt=str(doc.get("excerpt") or ""),
-                                 ) for doc in relevant))
-                dated = any(doc.get("publication_date_verified") for doc in relevant)
+                                 subject_in_excerpt(catalog_name, subject) and matching)
+                dated = any(doc.get("publication_date_verified") for doc in matching)
+                fresh = any(doc.get("publication_date_verified") and claim_fresh(
+                    claim_type=claim_type, published_at=str(doc.get("published_at") or ""),
+                    observed=observed,
+                ) for doc in matching)
+                if require_freshness:
+                    strong_matching = [(url, by_url[url]) for url in verified_urls
+                                       if by_url[url] in matching and
+                                       by_url[url].get("publication_date_verified") and
+                                       claim_fresh(
+                                           claim_type=claim_type,
+                                           published_at=str(by_url[url].get("published_at") or ""),
+                                           observed=observed,
+                                       )]
+                    has_strong_evidence = (
+                        any(doc["source_tier"] == "official" for _, doc in strong_matching)
+                        or len({urllib.parse.urlsplit(url).hostname
+                                for url, _ in strong_matching}) >= 2
+                    )
                 as_of_safe = cutoff is None or observed <= cutoff
                 reason = ("unknown_element" if not catalog_name else
                           "ambiguous_identity" if (
                               catalog_name_counts or {}).get(catalog_name.casefold(), 1) > 1 else
                           "identity_or_claim_unsupported" if not supported else
                           "publication_unknown" if not dated else
+                          "stale_for_claim" if require_freshness and not fresh else
                           "fetch_after_cutoff" if not as_of_safe else None)
                 quality = {"status": "supported" if reason is None else "unresolved",
                            "reason": reason, "claimed_element": claimed_element}
@@ -1049,7 +1072,8 @@ class StrategicContextService:
                            signals: list[dict], *, legacy: bool,
                            catalog: dict[int, str] | None = None,
                            fetched_at: datetime | None = None,
-                           cutoff: datetime | None = None) -> dict:
+                           cutoff: datetime | None = None,
+                           require_freshness: bool = False) -> dict:
         if legacy:
             return {
                 "schema": "mova-research-coverage-v1", "status": "legacy_unmeasured",
@@ -1096,7 +1120,12 @@ class StrategicContextService:
                         (fetched_at is None or cutoff is None or fetched_at <= cutoff) and
                         by_url[url].get("fetch_status") == "verified" and
                         subject_in_excerpt(name, str(by_url[url].get("excerpt") or "")) and
-                        by_url[url].get("publication_date_verified")]
+                        by_url[url].get("publication_date_verified") and
+                        (not require_freshness or fetched_at is None or claim_fresh(
+                            claim_type="fixture_context",
+                            published_at=str(by_url[url].get("published_at") or ""),
+                            observed=fetched_at,
+                        ))]
                 if not urls:
                     status = "not_checked"
             if status == "not_checked" and urls:

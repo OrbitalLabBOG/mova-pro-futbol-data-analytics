@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 import unicodedata
+from datetime import datetime, timedelta
 
 
 TOPIC_WORDS = {
@@ -43,3 +44,18 @@ def claim_supported(*, name: str, claim_type: str, excerpt: str) -> bool:
         return False
     text = _normal(excerpt)
     return any(term in text for term in terms)
+
+
+def claim_fresh(*, claim_type: str, published_at: str, observed: datetime) -> bool:
+    """A dated historical match is not automatically a current role or fitness signal."""
+    try:
+        published = datetime.fromisoformat(published_at.replace("Z", "+00:00"))
+    except (AttributeError, ValueError):
+        return False
+    if published.tzinfo is None:
+        return False
+    max_age = timedelta(days=3 if claim_type in {
+        "availability", "injury", "suspension", "expected_minutes",
+    } else 7 if claim_type in {"starting_role", "set_pieces", "manager_comment"}
+        else 30 if claim_type == "transfer" else 7)
+    return observed - max_age <= published <= observed

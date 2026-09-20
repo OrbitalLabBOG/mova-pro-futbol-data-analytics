@@ -283,6 +283,7 @@ try {
       "--skip-git-repo-check", "--sandbox", "read-only",
       "--disable", "shell_tool", "--disable", "computer_use",
       "--disable", "browser_use", "--disable", "apps", "--disable", "multi_agent",
+      "--disable", "plugins", "--disable", "skill_search",
       "--model", model, "--config", `model_reasoning_effort="${reasoningEffort}"`,
       "--output-schema", outputSchema, "--json",
       "--output-last-message", finalTmp, "-",

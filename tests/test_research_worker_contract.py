@@ -23,7 +23,8 @@ def test_imagen_codex_esta_versionada_y_no_contiene_app():
 
 def test_worker_deshabilita_herramientas_que_podrian_leer_auth_o_actuar():
     worker = (ROOT / "deploy/research/codex-worker.mjs").read_text(encoding="utf-8")
-    for feature in ("shell_tool", "computer_use", "browser_use", "apps", "multi_agent"):
+    for feature in ("shell_tool", "computer_use", "browser_use", "apps", "multi_agent",
+                    "plugins", "skill_search"):
         assert f'"{feature}"' in worker
     assert '...(isResearch ? ["--search"] : [])' in worker
     assert "const prompt = isResearch ? researchPrompt : deliberationPrompt" in worker
