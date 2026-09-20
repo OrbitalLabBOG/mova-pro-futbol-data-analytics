@@ -3,7 +3,7 @@ type: operations-record
 name: MOVA FPL — recuperación del runtime del 20 de septiembre de 2026
 created: 2026-09-20
 updated: 2026-09-20
-status: in_progress
+status: complete
 tags: [mova, fpl, runtime, recovery]
 ---
 
@@ -88,17 +88,30 @@ Las 36 pruebas cercanas pasaron en el checkout local.
   Tras el despliegue `a8cfa7d`, cockpit mostró cero incidentes, revisión
   coincidente y API healthy. Doctor: 22 PASS, 1 WARN, 1 FAIL; ambos pendientes
   se deben al acceso privado aún sin autenticar.
+- Tras completar Julián el login humano, la primera captura forzada encontró
+  `FPL_AUTH_INTERACTION_REQUIRED` durante el retorno SSO. Se esperó a que
+  Chromium regresara a `fantasy.premierleague.com` y se hizo un único
+  reintento supervisado. El job `job_c3015a11070f4b9ba0aa488cfaadedd3`
+  terminó `completed` a las 19:59 UTC, con 15 jugadores, GW6, un traspaso
+  libre y fingerprint
+  `4e124b6efd6c983e8df7480407a5776c4813fe2374b336b6de05cd78f0865452`.
+  El ingestor aceptó el estado y borró el marcador de cooldown.
+- Se limpió el resultado fallido anterior de `mova-fpl-private-state.service`.
+  El doctor de 20:01 UTC informó `overall_status=healthy`: **24 PASS,
+  0 WARN, 0 FAIL**. El timer privado y los timers analytics, research y
+  watchdog siguieron `active`; la API siguió `healthy`.
 
-## Acceso privado pendiente
+## Resolución del acceso privado
 
-La captura forzada confirmó `FPL_AUTH_REQUIRED`; no se copió ni alteró el
-perfil. El navegador aislado `mova-fpl-browser:4a8c5e0` está saludable y
-se habilitó un túnel local `127.0.0.1:6080` para que Julián complete el login.
+La captura inicial confirmó `FPL_AUTH_REQUIRED`; no se copió ni alteró el
+perfil. Se habilitó un túnel local `127.0.0.1:6080` para el login humano.
 El timer privado se detuvo **temporalmente** durante la preparación del login
 para evitar que un intento automático cerrara Chromium. Se volvió a activar a
-las 19:43 UTC: los ocho timers quedaron activos. El servicio privado conservó
-`Result=exit-code` porque el cooldown impide reintentos sin autenticación;
-Chromium permaneció saludable. Tras autenticación: ejecutar captura privada
-forzada, verificar 15 picks y fingerprint, resetear el estado fallido del
-servicio y repetir el doctor. Sin ese paso, no declarar el runtime plenamente
-restaurado.
+las 19:43 UTC: los ocho timers quedaron activos. Julián completó la
+autenticación y la captura posterior verificó los 15 picks y el fingerprint.
+El doctor final quedó sano. El navegador se detuvo al terminar la captura,
+conforme al wrapper; el perfil persistente se conservó.
+
+Los controles de autonomía siguen en `shadow/A0` con writes deshabilitados.
+Esta recuperación operativa no equivale a promoción A2/A3 ni a cierre oficial
+de GW5, que depende de `data_checked` de FPL.
