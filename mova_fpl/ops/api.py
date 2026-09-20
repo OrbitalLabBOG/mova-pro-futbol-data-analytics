@@ -43,48 +43,141 @@ def _human_deadline(value: str | None, seconds: int | None) -> tuple[str, str]:
     elif remaining >= 86400:
         whole_days, remainder = divmod(remaining, 86400)
         hours = remainder // 3600
-        relative = f"Faltan {whole_days} días" + (f" y {hours} horas" if hours else "")
+        day_unit = "día" if whole_days == 1 else "días"
+        hour_unit = "hora" if hours == 1 else "horas"
+        relative = f"Faltan {whole_days} {day_unit}" + (
+            f" y {hours} {hour_unit}" if hours else ""
+        )
     elif remaining >= 3600:
         hours, remainder = divmod(remaining, 3600)
         minutes = remainder // 60
-        relative = f"Faltan {hours} horas" + (f" y {minutes} min" if minutes else "")
+        hour_unit = "hora" if hours == 1 else "horas"
+        relative = f"Faltan {hours} {hour_unit}" + (
+            f" y {minutes} min" if minutes else ""
+        )
     else:
         relative = f"Faltan {max(1, remaining // 60)} minutos"
     return label, relative
+
+
+def _dashboard_state(cockpit: dict) -> dict:
+    """Traduce el contrato técnico a estados públicos sin elevar autoridad."""
+    gameweek = cockpit.get("gameweek") or {}
+    authority = cockpit.get("authority") or {}
+    quality = cockpit.get("quality") or {}
+    workflow = cockpit.get("workflow") or {}
+    alerts_contract = cockpit.get("alerts") or {}
+    alerts = alerts_contract.get("items") or []
+    critical = [row for row in alerts if row.get("severity") in {"P0", "P1"}]
+    core_states = [quality.get(key) for key in ("operator", "data", "analytics", "postgres")]
+    core_unhealthy = any(value not in {"healthy", "pass"} for value in core_states)
+    safety = quality.get("safety")
+    readiness = quality.get("readiness_summary") or {}
+    pending_gates = int(readiness.get("pending") or 0) + int(readiness.get("blocked") or 0)
+    stages = workflow.get("stages") or []
+    cycle_pending = workflow.get("verdict") == "attention_required" or any(
+        row.get("status") in {"pending", "blocked", "degraded"} for row in stages
+    )
+    action_level = str(authority.get("current_action_level") or "A0")
+    writes_enabled = authority.get("writes_enabled") is True
+    alert_channel = alerts_contract.get("channel") or {}
+
+    danger = bool(critical or core_unhealthy or safety == "unsafe")
+    attention = not danger and bool(
+        cockpit.get("verdict") == "attention_required"
+        or quality.get("scorecard") not in {"healthy", "pass", "ready"}
+        or pending_gates
+        or cycle_pending
+        or action_level != "A3"
+        or not writes_enabled
+        or alert_channel.get("configured") is not True
+    )
+    tone = "danger" if danger else "attention" if attention else "ok"
+
+    if danger:
+        headline = "Intervención requerida"
+        summary = "El runtime reporta un problema que necesita revisión de ORBIX."
+        action_value = "Avisar a ORBIX ahora"
+        action_copy = "Comparte una captura de esta pantalla para iniciar el diagnóstico."
+    elif attention:
+        cycle_label = "pendiente" if cycle_pending else "listo"
+        headline = (
+            f"Sistema operativo · ciclo GW{gameweek.get('gw') or '—'} {cycle_label} · "
+            f"autonomía {action_level}"
+        )
+        summary = "La infraestructura responde, pero el ciclo y la autonomía aún no están cerrados."
+        action_value = "No intervenir todavía"
+        if alert_channel.get("configured") is not True:
+            action_copy = (
+                "Las alertas externas siguen locales; revisa esta pantalla antes del cierre."
+            )
+        else:
+            action_copy = "El sistema permanece fail-closed mientras completa sus controles."
+    else:
+        headline = f"Sistema operativo · ciclo GW{gameweek.get('gw') or '—'} listo"
+        summary = "Runtime, ciclo y controles observados están listos."
+        action_value = "Ninguna"
+        action_copy = "La pantalla seguirá actualizando el estado cada 30 segundos."
+
+    health_value = "Requiere revisión" if danger else "En línea"
+    health_copy = (
+        "Hay un fallo o riesgo operativo activo."
+        if danger else "Servicios, datos y modelos responden en el corte observado."
+    )
+    cycle_value = "Pendiente" if cycle_pending else "Listo"
+    cycle_copy = (
+        "Research, validación o preflight aún no han cerrado."
+        if cycle_pending else "El flujo observado no reporta etapas pendientes."
+    )
+    autonomy_value = (
+        f"{action_level} · Escrituras habilitadas"
+        if writes_enabled else f"{action_level} · Solo lectura"
+    )
+    total_gates = int(readiness.get("total") or 0)
+    pass_gates = int(readiness.get("pass") or 0)
+    autonomy_copy = (
+        f"{pass_gates}/{total_gates} controles listos · {pending_gates} "
+        f"{'pendiente' if pending_gates == 1 else 'pendientes'}."
+        if total_gates else "La promoción requiere evidencia y aprobación explícitas."
+    )
+    return {
+        "tone": tone,
+        "icon": "!" if danger else "·" if attention else "✓",
+        "headline": headline,
+        "summary": summary,
+        "health_value": health_value,
+        "health_copy": health_copy,
+        "cycle_value": cycle_value,
+        "cycle_copy": cycle_copy,
+        "autonomy_value": autonomy_value,
+        "autonomy_copy": autonomy_copy,
+        "action_value": action_value,
+        "action_copy": action_copy,
+        "alerts": alerts,
+    }
 
 
 def _dashboard(cockpit: dict) -> bytes:
     esc = lambda value: html.escape(str(value if value is not None else "—"))
     gameweek = cockpit.get("gameweek") or {}
     authority = cockpit.get("authority") or {}
-    quality = cockpit.get("quality") or {}
     economics = cockpit.get("economics") or {}
     gw_cost = economics.get("gameweek") or {}
-    alerts = (cockpit.get("alerts") or {}).get("items") or []
-    critical = [row for row in alerts if row.get("severity") in {"P0", "P1"}]
-    core_states = [quality.get(key) for key in ("operator", "data", "analytics", "postgres")]
-    core_unhealthy = any(value not in {"healthy", "pass"} for value in core_states)
-    needs_help = bool(critical or core_unhealthy or quality.get("safety") != "safe_to_wait")
-    tone = "danger" if needs_help else "ok"
-    status_title = "Necesito que avises a ORBIX" if needs_help else "Todo está funcionando"
-    status_copy = (
-        "Hay un problema que requiere revisión. Envíame una captura de esta pantalla."
-        if needs_help else "No necesitas hacer nada ahora. Yo sigo vigilando el sistema."
-    )
-    action_value = "Avísame ahora" if needs_help else "Ninguna"
-    action_copy = "Envíame esta pantalla" if needs_help else "Sólo vuelve si esta pantalla cambia a rojo"
+    view = _dashboard_state(cockpit)
+    alerts = view["alerts"]
     deadline, deadline_relative = _human_deadline(
         gameweek.get("deadline_at"), gameweek.get("seconds_to_deadline"),
     )
     internal_summary = (
-        f"{len(alerts)} pendientes internos bajo control"
-        if alerts else "Sin pendientes internos"
+        f"{len(alerts)} {'señal operativa visible' if len(alerts) == 1 else 'señales operativas visibles'}"
+        if alerts else "Sin alertas activas"
     )
     problem_rows = "".join(
-        f"<li>{esc(row.get('title'))}</li>" for row in critical[:3]
+        f"<li><strong>{esc(row.get('severity'))}</strong> · {esc(row.get('title'))}</li>"
+        for row in alerts[:5]
     )
     if not problem_rows:
-        problem_rows = "<li>No hay fallos que requieran tu intervención.</li>"
+        problem_rows = "<li>No hay alertas activas en el corte observado.</li>"
     body = f"""<!doctype html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
 <meta http-equiv="refresh" content="30"><title>MOVA · Estado</title>
@@ -96,32 +189,39 @@ header {{ display:flex;align-items:center;justify-content:space-between;gap:20px
 .brand {{ font-family:Georgia,serif;font-size:1.45rem;font-weight:700;letter-spacing:-.02em }}
 .refresh {{ color:#87a0b8;font-size:.84rem }}
 .status {{ display:grid;grid-template-columns:84px 1fr;gap:24px;align-items:center;border:1px solid #28594b;background:#0b211c;border-radius:28px;padding:34px;margin-bottom:22px }}
+.status.attention {{ border-color:#81631f;background:#241d0c }}
 .status.danger {{ border-color:#8f3540;background:#2a1015 }}
 .beacon {{ width:76px;height:76px;border-radius:50%;display:grid;place-items:center;background:#36d39a;color:#052319;font:700 2.4rem Georgia,serif;box-shadow:0 0 0 12px rgba(54,211,154,.09) }}
+.attention .beacon {{ background:#f4bd4f;color:#2b1a00;box-shadow:0 0 0 12px rgba(244,189,79,.09) }}
 .danger .beacon {{ background:#ff7182;color:#2a0710;box-shadow:0 0 0 12px rgba(255,113,130,.09) }}
 h1 {{ font:700 clamp(2rem,5vw,3.7rem)/1.02 Georgia,serif;letter-spacing:-.045em;margin:0 0 10px }}
-.status p {{ color:#b7c9c2;font-size:1.12rem;line-height:1.5;margin:0 }} .danger p {{ color:#f1bcc2 }}
+.status p {{ color:#b7c9c2;font-size:1.12rem;line-height:1.5;margin:0 }} .attention p {{ color:#decfa8 }} .danger p {{ color:#f1bcc2 }}
 .cards {{ display:grid;grid-template-columns:repeat(3,1fr);gap:14px }}
 .card {{ min-height:172px;padding:24px;border:1px solid #23384a;background:#0d1925;border-radius:20px;display:flex;flex-direction:column;justify-content:space-between }}
 .label {{ color:#88a2bb;font-size:.76rem;letter-spacing:.12em;text-transform:uppercase }}
 .value {{ font:700 clamp(1.55rem,3vw,2.2rem)/1.08 Georgia,serif;margin:14px 0 8px;letter-spacing:-.025em }}
-.card p {{ color:#afc1d1;line-height:1.45;margin:0 }} .card.action {{ border-color:#28594b }} .danger + .cards .card.action {{ border-color:#8f3540 }}
+.card p {{ color:#afc1d1;line-height:1.45;margin:0 }}
+.deadline {{ color:#718aa1;font-size:.84rem;margin-top:14px }}
+.action-strip {{ margin-top:14px;padding:21px 24px;border:1px solid #33485b;background:#0b1620;border-radius:18px;display:grid;grid-template-columns:minmax(160px,.55fr) 1fr;gap:20px;align-items:center }}
+.attention ~ .cards + .action-strip {{ border-color:#81631f }} .danger ~ .cards + .action-strip {{ border-color:#8f3540 }}
+.action-strip .value {{ margin:7px 0 0;font-size:1.45rem }} .action-strip p {{ color:#afc1d1;line-height:1.45;margin:0 }}
 .under-control {{ text-align:center;color:#7890a6;font-size:.86rem;margin:20px 0 0 }}
 details {{ margin-top:34px;border-top:1px solid #1d3041;padding-top:18px;color:#8fa5b9 }}
 summary {{ cursor:pointer;width:max-content;min-height:44px;display:flex;align-items:center;color:#9bb2c7;font-weight:700 }}
+summary:focus-visible {{ outline:2px solid #f4bd4f;outline-offset:4px;border-radius:3px }}
 details p,details li {{ font-size:.9rem;line-height:1.55 }}
 footer {{ color:#60778d;font-size:.75rem;margin-top:26px }}
-@media(max-width:720px) {{ .shell {{ width:min(100% - 22px,980px);padding-top:22px }} header {{ display:block }} .refresh {{ margin-top:7px;text-align:left }} .status {{ grid-template-columns:1fr;padding:26px }} .beacon {{ width:58px;height:58px;font-size:1.8rem }} .cards {{ grid-template-columns:1fr }} .card {{ min-height:132px }} }}
+@media(max-width:720px) {{ .shell {{ width:min(100% - 22px,980px);padding-top:22px }} header {{ display:block }} .refresh {{ margin-top:7px;text-align:left }} .status {{ grid-template-columns:1fr;padding:26px }} .beacon {{ width:58px;height:58px;font-size:1.8rem }} .cards {{ grid-template-columns:1fr }} .card {{ min-height:132px }} .action-strip {{ grid-template-columns:1fr }} }}
 @media(prefers-reduced-motion:reduce) {{ * {{ scroll-behavior:auto!important }} }}
 </style></head><body>
 <div class="shell"><header><div class="brand">MOVA Fantasy Fútbol</div><div class="refresh">Estado en vivo · se actualiza solo</div></header>
-<main><section class="status {tone}" aria-labelledby="main-status"><div class="beacon" aria-hidden="true">{"!" if needs_help else "✓"}</div><div><h1 id="main-status">{status_title}</h1><p>{status_copy}</p></div></section>
+<main><section class="status {view['tone']}" aria-labelledby="main-status"><div class="beacon" aria-hidden="true">{view['icon']}</div><div><h1 id="main-status">{esc(view['headline'])}</h1><p>{esc(view['summary'])}</p></div></section>
 <section class="cards" aria-label="Resumen principal">
-<article class="card"><div><div class="label">Sistema</div><div class="value">{"Requiere revisión" if needs_help else "En línea"}</div></div><p>{"Detecté un problema importante" if needs_help else "Datos, modelos y automatización responden bien"}</p></article>
-<article class="card"><div><div class="label">Próximo cierre · GW {esc(gameweek.get('gw'))}</div><div class="value">{esc(deadline)}</div></div><p>{esc(deadline_relative)}</p></article>
-<article class="card action"><div><div class="label">Tu acción</div><div class="value">{action_value}</div></div><p>{action_copy}</p></article>
-</section><p class="under-control">{esc(internal_summary)}</p>
-<details><summary>Ver información técnica</summary><p>Autoridad {esc(authority.get('current_action_level'))} · escrituras desactivadas · revisión {esc((cockpit.get('runtime') or {}).get('git_sha'))}</p><p>Presupuesto interno: {esc(gw_cost.get('committed_uses'))}/{esc(gw_cost.get('use_limit'))} ejecuciones en esta jornada.</p><ul>{problem_rows}</ul></details>
+<article class="card"><div><div class="label">Salud técnica</div><div class="value">{esc(view['health_value'])}</div></div><p>{esc(view['health_copy'])}</p></article>
+<article class="card"><div><div class="label">Ciclo · GW {esc(gameweek.get('gw'))}</div><div class="value">{esc(view['cycle_value'])}</div></div><p>{esc(view['cycle_copy'])}</p><div class="deadline">{esc(deadline)} · {esc(deadline_relative)}</div></article>
+<article class="card"><div><div class="label">Autonomía</div><div class="value">{esc(view['autonomy_value'])}</div></div><p>{esc(view['autonomy_copy'])}</p></article>
+</section><section class="action-strip" aria-labelledby="owner-action"><div><div class="label">Tu acción</div><div class="value" id="owner-action">{esc(view['action_value'])}</div></div><p>{esc(view['action_copy'])}</p></section><p class="under-control">{esc(internal_summary)}</p>
+<details><summary>Ver información técnica</summary><p>Autoridad {esc(authority.get('current_action_level'))} · escrituras {"habilitadas" if authority.get('writes_enabled') else "desactivadas"} · revisión {esc((cockpit.get('runtime') or {}).get('git_sha'))}</p><p>Presupuesto interno: {esc(gw_cost.get('committed_uses'))}/{esc(gw_cost.get('use_limit'))} ejecuciones en esta jornada.</p><ul>{problem_rows}</ul></details>
 </main><footer>Lectura segura · se actualiza automáticamente cada 30 segundos</footer></div>
 </body></html>"""
     return body.encode("utf-8")

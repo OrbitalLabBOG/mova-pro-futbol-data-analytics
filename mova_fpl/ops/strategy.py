@@ -1003,6 +1003,16 @@ class StrategicContextService:
                 "checked": sum(row["status"] != "not_checked" for row in rows),
                 "evidence_verified": sum(row["evidence_verified"] for row in rows),
             }
+        teams: dict[str, dict] = {}
+        for row in subjects:
+            team = str(focus_by_element[row["player_element"]].get("team") or "unknown")
+            group = teams.setdefault(team, {
+                "team": team, "required": 0, "checked": 0,
+                "evidence_verified": 0,
+            })
+            group["required"] += 1
+            group["checked"] += row["status"] != "not_checked"
+            group["evidence_verified"] += row["evidence_verified"]
         status = "complete" if total and checked == total and verified == total else (
             "partial" if checked else "failed"
         )
@@ -1012,7 +1022,9 @@ class StrategicContextService:
             "evidence_verified_subjects": verified,
             "material_subjects": material, "unresolved_subjects": unresolved,
             "coverage_ratio": coverage_ratio, "evidence_ratio": evidence_ratio,
-            "groups": groups, "subjects": sorted(subjects, key=lambda row: row["player_element"]),
+            "groups": groups,
+            "teams": sorted(teams.values(), key=lambda row: (-row["required"], row["team"])),
+            "subjects": sorted(subjects, key=lambda row: row["player_element"]),
             "utility": {
                 "status": "material_context_found" if material else "no_material_delta",
                 "signal_yield_ratio": material / checked if checked else 0.0,

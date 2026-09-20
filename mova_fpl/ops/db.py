@@ -2782,6 +2782,83 @@ class OpsDB:
                 "budget_settlement": budget_settlement,
                 "reused": False}
 
+    def resolve_research_conflict(self, conflict_id: str, *, cycle_id: str,
+                                  document_ids: list[str], actor: str, reason: str,
+                                  idempotency_key: str) -> dict:
+        """Adjudicación supervisada de claims no contradictorios, nunca alta médica.
+
+        Requiere revisar todas las fuentes originales selladas. No acepta evidencia
+        inventada por el operador ni promueve señales, envelopes o permisos.
+        """
+        if not all(isinstance(v, str) and v.strip() for v in
+                   (conflict_id, cycle_id, actor, reason, idempotency_key)):
+            raise ValueError("resolución exige identidad, actor, razón y clave")
+        if not document_ids or any(not isinstance(v, str) or not v.strip()
+                                   for v in document_ids):
+            raise ValueError("resolución exige document_ids")
+        request = {"conflict_id": conflict_id, "cycle_id": cycle_id,
+                   "document_ids": sorted(set(document_ids)), "actor": actor,
+                   "reason": reason, "idempotency_key": idempotency_key,
+                   "resolution": "not_contradictory"}
+        with self.transaction() as con:
+            existing = con.execute(
+                "SELECT * FROM audit_events WHERE event_type='research_conflict_resolved' "
+                "AND json_extract(payload_json,'$.request.idempotency_key')=?",
+                (idempotency_key,),
+            ).fetchone()
+            if existing:
+                if json.loads(existing["payload_json"])["request"] != request:
+                    raise ValueError("idempotency_key ya usada con otro contenido")
+                return {"status": "reused", "event_id": existing["event_id"],
+                        "conflict_id": conflict_id, "runtime_mutated": False,
+                        "fpl_state_mutated": False}
+            conflict = con.execute(
+                "SELECT * FROM research_conflicts WHERE conflict_id=?", (conflict_id,),
+            ).fetchone()
+            if not conflict or conflict["cycle_id"] != cycle_id:
+                raise ValueError("conflicto desconocido o ciclo distinto")
+            if conflict["status"] != "unresolved":
+                raise ValueError("conflicto ya resuelto; usar clave original")
+            evidence = []
+            for document_id in request["document_ids"]:
+                doc = con.execute(
+                    "SELECT * FROM research_documents WHERE document_id=? "
+                    "AND research_run_id=?", (document_id, conflict["research_run_id"]),
+                ).fetchone()
+                if not doc or doc["fetch_status"] != "verified":
+                    raise ValueError("evidencia no verificada del run original")
+                if not doc["excerpt"] or hashlib.sha256(
+                    doc["excerpt"].encode("utf-8")
+                ).hexdigest() != doc["excerpt_sha256"]:
+                    raise ValueError("excerpt alterado o ausente")
+                artifact = Path(doc["artifact_path"] or "")
+                if (not artifact.is_file() or artifact.stat().st_size > 1_048_576
+                        or hashlib.sha256(artifact.read_bytes()).hexdigest()
+                        != doc["artifact_sha256"]):
+                    raise ValueError("artefacto de evidencia alterado o ausente")
+                evidence.append({"document_id": document_id,
+                                 "source_url": doc["source_url"],
+                                 "excerpt_sha256": doc["excerpt_sha256"],
+                                 "artifact_sha256": doc["artifact_sha256"]})
+            if set(json.loads(conflict["source_urls_json"])) != {
+                row["source_url"] for row in evidence
+            }:
+                raise ValueError("evidencia debe cubrir exactamente las fuentes del conflicto")
+            payload = {"schema": "mova-research-conflict-resolution-v1",
+                       "request": request, "before": dict(conflict),
+                       "evidence": evidence, "after_status": "resolved",
+                       "signals_promoted": False, "fpl_state_mutated": False}
+            event_id = self.append_audit(
+                "research_conflict_resolved", actor=actor, cycle_id=cycle_id,
+                subject_type="research_conflict", subject_id=conflict_id,
+                payload=payload, con=con,
+            )
+            con.execute("UPDATE research_conflicts SET status='resolved' WHERE conflict_id=?",
+                        (conflict_id,))
+        return {"status": "resolved", "event_id": event_id,
+                "conflict_id": conflict_id, "runtime_mutated": True,
+                "fpl_state_mutated": False, "requires_new_decision": True}
+
     def deliberation_source(self) -> dict | None:
         """Último envelope vigente con los enlaces necesarios para deliberar."""
         with self.connect(readonly=True) as con:

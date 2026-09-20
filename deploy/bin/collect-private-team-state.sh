@@ -29,11 +29,34 @@ for env_file in "$runtime_env" "$deploy_env"; do
 done
 
 lock_file=${MOVA_PRIVATE_STATE_LOCK_FILE:-$lock_file}
+keep_browser=${MOVA_BROWSER_KEEP_RUNNING:-0}
 mkdir -p "$(dirname "$lock_file")"
 exec 9>"$lock_file"
 if ! flock -n 9; then
   printf '%s\n' '{"status":"skipped","reason":"private_state_lock_busy"}'
   exit 0
+fi
+
+# Serialize browser work with the CPU-intensive jobs. A failed capture must not
+# launch Chromium again on every five-minute timer tick. Store only a timestamp,
+# never browser output or authentication material. --force is the human retry.
+capacity_lock=${MOVA_CAPACITY_LOCK_FILE:-/run/lock/mova-fpl-capacity.lock}
+exec 8>"$capacity_lock"
+if ! flock -n 8; then
+  printf '%s\n' '{"status":"skipped","reason":"capacity_lock_busy"}'
+  exit 0
+fi
+retry_marker=${MOVA_PRIVATE_RETRY_MARKER:-/var/lib/mova-fpl/runtime/private-state-retry-after}
+if [[ "$force" != "1" && -f "$retry_marker" ]]; then
+  read -r retry_after <"$retry_marker" || retry_after=invalid
+  if [[ ! "$retry_after" =~ ^[0-9]{1,12}$ ]]; then
+    echo 'private_state_retry_marker_invalid: operator intervention required' >&2
+    exit 1
+  fi
+  if (( $(date +%s) < 10#$retry_after )); then
+    printf '%s\n' '{"status":"blocked","reason":"private_state_recovery_cooldown"}'
+    exit 1
+  fi
 fi
 
 cd "$repo_dir"
@@ -62,10 +85,14 @@ cleanup() {
   fi
 }
 trap cleanup EXIT
+# Arm before capture so timeout/termination also imposes a cooldown. Success
+# clears it only after the engine accepted the sanitized private state.
+mkdir -p "$(dirname "$retry_marker")"
+(umask 077; printf '%s\n' "$(( $(date +%s) + 1800 ))" >"$retry_marker")
 
 collected=0
-for attempt in 1 2 3; do
-  if "$repo_dir/deploy/bin/browser-session.sh" collect >"$private_input" \
+for attempt in 1; do
+  if timeout --kill-after=5s 120s "$repo_dir/deploy/bin/browser-session.sh" collect >"$private_input" \
     && python3 - "$private_input" <<'PY'
 import json
 import sys
@@ -81,13 +108,13 @@ PY
     collected=1
     break
   fi
-  printf 'private team-state capture attempt %s/3 failed\n' "$attempt" >&2
-  sleep 2
+  printf 'private team-state capture failed; retry deferred for 30 minutes\n' >&2
 done
 if [[ "$collected" != "1" ]]; then
-  echo "private team-state capture failed after 3 attempts" >&2
+  echo "private team-state recovery requires review; no credentials were requested" >&2
   exit 1
 fi
 docker compose --profile jobs run --rm --no-deps -T worker \
   python -m mova_fpl.ops.cli ingest-team-state --file - \
   --trigger "$trigger" <"$private_input"
+rm -f "$retry_marker"

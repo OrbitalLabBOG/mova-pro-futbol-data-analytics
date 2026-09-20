@@ -348,6 +348,8 @@ def evaluate_cockpit(*, operator_status: dict, safety: dict, readiness: dict,
             "safety": safety.get("verdict"),
             "scorecard": scorecard.get("overall_status"),
             "readiness": (scorecard.get("quality") or {}).get("readiness_pass_ratio"),
+            "readiness_summary": {key: (readiness.get("summary") or {}).get(key)
+                                  for key in ("pass", "pending", "blocked", "total")},
             "data": (data.get("service") or {}).get("status"),
             "analytics": analytics.get("status"),
             "postgres": (storage.get("postgres") or {}).get("status"),

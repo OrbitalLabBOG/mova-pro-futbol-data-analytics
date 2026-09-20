@@ -44,7 +44,7 @@ case "$action" in
       agent-browser --session mova-fpl --cdp "$cdp_port" batch --bail \
       'open https://fantasy.premierleague.com/' \
       'get url' 'get title'
-    echo "Open a tunnel: ssh -N -L ${MOVA_NOVNC_PORT:-6080}:127.0.0.1:${MOVA_NOVNC_PORT:-6080} root@72.60.245.2"
+    echo "Open a tunnel: ssh -N -L ${MOVA_NOVNC_PORT:-6080}:127.0.0.1:${MOVA_NOVNC_PORT:-6080} ubuntu@72.60.245.2"
     echo "Then visit http://127.0.0.1:${MOVA_NOVNC_PORT:-6080}/vnc.html and complete login/MFA manually."
     ;;
   read)
@@ -60,16 +60,22 @@ case "$action" in
       exit 2
     fi
     start_browser
-    "${compose[@]}" exec -T browser \
-      agent-browser --session mova-fpl --cdp "$cdp_port" \
-      open https://fantasy.premierleague.com/en/my-team >/dev/null
-    # FPL keeps ad resources open after the functional UI is ready. Waiting on
-    # a global load event can hang, so gate on the exact surface we consume.
+    # API-first: the private endpoint can work while the pitch SPA is still
+    # loading. Its authenticated GET, not visual pitch buttons, proves access.
+    # Chromium starts on FPL. Reuse that tab: `open` waits for navigation and
+    # can time out on ad resources even when the private endpoint works.
     "${compose[@]}" exec -T browser \
       agent-browser --session mova-fpl --cdp "$cdp_port" \
       wait --fn \
-      "location.pathname === '/en/my-team' && document.querySelectorAll('button[aria-label=\"Switch player\"]').length === 15" \
+      "location.origin === 'https://account.premierleague.com' || location.origin === 'https://accounts.google.com' || location.origin === 'https://fantasy.premierleague.com'" \
       >/dev/null
+    auth_pending=$("${compose[@]}" exec -T browser \
+      agent-browser --session mova-fpl --cdp "$cdp_port" eval \
+      "location.origin === 'https://account.premierleague.com' || location.origin === 'https://accounts.google.com'")
+    if [[ "$auth_pending" == "true" ]]; then
+      echo "FPL_AUTH_INTERACTION_REQUIRED: inspect login; do not retry credentials" >&2
+      exit 78
+    fi
     "${compose[@]}" exec -T browser \
       agent-browser --session mova-fpl --cdp "$cdp_port" \
       wait --fn "location.origin === 'https://fantasy.premierleague.com'" >/dev/null
