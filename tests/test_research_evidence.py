@@ -172,6 +172,36 @@ def test_v2_import_seals_evidence_coverage_and_metrics(tmp_path: Path):
     assert "mova_research_evidence_ratio 1.000000" in metrics
 
 
+def test_next_manifest_reuses_only_recent_verified_evidence_as_hints(tmp_path: Path):
+    config, db, _service, cycle_id = _runtime(tmp_path)
+    service = StrategicContextService(
+        config, db, evidence_fetcher=_fetcher(config.research_root),
+    )
+    service.activate_plan(_plan(), actor="test", reason="fixture")
+    queued = service.enqueue(
+        force=True, actor="test", reason="first research",
+        idempotency_key="research:v2:reuse-hint",
+    )
+    run = db.research_run(queued["research_run_id"])
+    request = json.loads(Path(run["request_path"]).read_text(encoding="utf-8"))
+    assert request["manifest"]["research_summary"]["reusable_evidence_hints"] == []
+    result = _v2_result(run, cycle_id, request["manifest"]["research_summary"]["focus"])
+    out = config.research_root / "outbox" / f"{run['research_run_id']}.result.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(result), encoding="utf-8")
+    assert service.import_ready()["results"][0]["status"] == "imported"
+
+    now = datetime.now(timezone.utc) + timedelta(minutes=1)
+    hints = service.prepare(now=now)["manifest"]["research_summary"]["reusable_evidence_hints"]
+    assert len(hints) == 1
+    assert hints[0]["source_url"] == CANONICAL_SOURCE
+    assert "evidence_text" not in hints[0]
+    assert hints[0]["player_elements"] == list(range(1, 16))
+    assert service.prepare(now=now + timedelta(hours=37))["manifest"][
+        "research_summary"
+    ]["reusable_evidence_hints"] == []
+
+
 def test_v2_unverified_fetch_cannot_create_accepted_signal(tmp_path: Path):
     config, db, _service, cycle_id = _runtime(tmp_path)
     service = StrategicContextService(

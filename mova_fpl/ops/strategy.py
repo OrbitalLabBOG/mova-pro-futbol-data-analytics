@@ -27,6 +27,8 @@ CLAIM_TYPES = {
 SOURCE_TIERS = {"official", "tier1", "tier2", "other"}
 DIRECTIONS = {"positive", "negative", "neutral", "uncertain"}
 RESEARCH_CANDIDATE_LIMIT = 10
+RESEARCH_REUSE_MAX_DOCUMENTS = 8
+RESEARCH_REUSE_MAX_AGE = timedelta(hours=36)
 MEMORY_DECISION_LIMIT = 8
 MEMORY_REVIEW_LIMIT = 8
 MEMORY_LESSON_LIMIT = 20
@@ -192,6 +194,63 @@ class StrategicContextService:
         except Exception:  # el manifest declara foco parcial sin bloquear research
             return fallback
         return resolved or fallback
+
+    def _recent_research_evidence(self, *, cycle_id: str, focus: list[dict],
+                                  now: datetime) -> list[dict]:
+        """Bounded discovery hints; prior evidence never satisfies current coverage."""
+        focus_elements = {int(row["element"]) for row in focus if row.get("element")}
+        if not focus_elements:
+            return []
+        cutoff = (now - RESEARCH_REUSE_MAX_AGE).isoformat()
+        with self.db.connect(readonly=True) as con:
+            run = con.execute(
+                "SELECT research_run_id,coverage_json FROM research_runs WHERE cycle_id=? "
+                "AND status='imported' AND result_schema='mova-research-brief-v2' "
+                "AND imported_at>=? AND imported_at<=? "
+                "ORDER BY imported_at DESC,rowid DESC LIMIT 1",
+                (cycle_id, cutoff, now.isoformat()),
+            ).fetchone()
+            if not run:
+                return []
+            documents = [dict(row) for row in con.execute(
+                "SELECT source_url,title,publisher,published_at,source_tier "
+                "FROM research_documents WHERE research_run_id=? "
+                "AND fetch_status='verified' AND excerpt IS NOT NULL",
+                (run["research_run_id"],),
+            ).fetchall()]
+        try:
+            coverage = json.loads(run["coverage_json"])
+            subjects = coverage["subjects"]
+        except (TypeError, ValueError, KeyError):
+            return []
+        by_url: dict[str, set[int]] = {}
+        for subject in subjects:
+            if not isinstance(subject, dict) or not subject.get("evidence_verified"):
+                continue
+            try:
+                element = int(subject.get("player_element") or 0)
+            except (TypeError, ValueError):
+                continue
+            if element not in focus_elements:
+                continue
+            for url in subject.get("source_urls") or []:
+                by_url.setdefault(url, set()).add(element)
+        hints = []
+        for document in documents:
+            elements = by_url.get(document["source_url"], set())
+            if not elements:
+                continue
+            hints.append({
+                "source_url": document["source_url"],
+                "title": document["title"][:160],
+                "publisher": document["publisher"][:80],
+                "published_at": document["published_at"],
+                "source_tier": document["source_tier"],
+                "player_elements": sorted(elements),
+            })
+        hints.sort(key=lambda row: (-len(row["player_elements"]),
+                                    row["source_tier"] != "official", row["source_url"]))
+        return hints[:RESEARCH_REUSE_MAX_DOCUMENTS]
 
     def _strategic_memory(self, *, season: str, target_gw: int,
                           as_of_at: str) -> dict:
@@ -399,6 +458,9 @@ class StrategicContextService:
                 continue
             previous_signals.append(dict(row))
         research_focus = self._research_focus(squad, projection_payload)
+        reusable_evidence = self._recent_research_evidence(
+            cycle_id=cycle_id, focus=research_focus, now=current,
+        )
         memory_summary = self._strategic_memory(
             season=str(cycle["season"]), target_gw=int(cycle["gw"]),
             as_of_at=current.isoformat(timespec="seconds"),
@@ -429,6 +491,7 @@ class StrategicContextService:
                 "signals": [dict(row) for row in signals],
                 "unresolved_conflicts": unresolved,
                 "previous_active_signals": previous_signals,
+                "reusable_evidence_hints": reusable_evidence,
             },
             "memory_summary": memory_summary,
         }

@@ -15,8 +15,8 @@ Esta es la única hoja de ruta de cierre vigente. Sustituye la planificación C1
 14 de septiembre y los workpacks iniciales aún abiertos, no sus contratos ni su evidencia.
 `10-autonomous-harness-v1.md` conserva la arquitectura. Supabase conserva tareas, responsables,
 colas y compromisos; esta spec define resultados y aceptación, no un inventario PM vivo.
-La autorización de esta revisión cubre documentación y organización PM, no despliegues,
-activación A2/A3, envíos externos, cambios de modelo ni nuevas escrituras FPL.
+Esta revisión de hoja de ruta conserva la separación entre desarrollo, despliegue y
+autoridad: ninguna tarea PM o commit activa A2/A3 ni nuevas escrituras FPL.
 
 ### Objetivo y límites
 
@@ -73,6 +73,35 @@ mismo resultado. Los IDs PM existentes conservan historia y evidencia. Nuevas ta
 registran en backlog sin fecha ficticia; supervisor humano explícito; la ejecución no se activa por asignación.
 
 ### Dependencias y secuencia
+
+#### Primera iteración AC-02: continuidad de evidencia y economía de agentes
+
+El diagnóstico del 20/09 comparó tres corridas medidas: GW5 6/25 sujetos verificados con
+137921 tokens de entrada y 4506 de salida; GW4 6/25 con 146154/4802; otra de GW4 llegó
+a 11/25 con 348056/7010 y excedió el presupuesto de 160000 tokens. Son corridas, no tres
+GWs passing. El foco abarca hasta 25 jugadores de 12–14 clubes mientras la política permite
+8/5/4 búsquedas y 10/8/6 documentos según slot. Por ello el límite de discovery sigue siendo
+una hipótesis de insuficiencia que requiere medir cobertura por club, no una razón para reducir
+el gate de 90/80 o inventar sujetos revisados.
+
+Primera entrega implementada en código local: el manifiesto puede adjuntar hasta ocho pistas
+de documentos verificados de la última corrida del mismo ciclo, de máximo 36 horas. El worker
+revalida cada página y el importador conserva el fetch independiente; una pista sola jamás
+cuenta como cobertura. Las pruebas de contrato y de importación ejercen la reutilización y su
+expiración. Falta medir una pareja real broad→refresh/final; no se atribuye aún ahorro ni mejora
+del gate.
+
+Routing: mantener Codex Researcher Luna y Strategist/Critic Terra mientras se mide una línea
+base real. La suscripción registra tokens, pero `estimated_cost_usd=null`, por lo que no equivale
+a costo cero ni ofrece un costo marginal comparable. OpenRouter no tiene credencial provisionada
+en el VPS. Como escenario, Gemini 3.8 Flash figura a USD 0.75/M input y 3.75/M output; aplicado
+a los tokens reportados de GW5 serían ~USD 0.12 sólo de modelo, más búsquedas (p. ej. cinco a
+USD 0.005 serían ~USD 0.025). Esto no es factura ni predicción fiable: tokenización, tool calls,
+calidad y límites podrían diferir. Antes de cambiar, hacer shadow pareado con los mismos
+manifiestos, techo de gasto, 90/80, latencia, costo total por sujeto verificado y cero
+violaciones de evidencia. La decisión de proveedor se toma por costo de resultado válido.
+Precios consultados: [modelo](https://openrouter.ai/google/gemini-3.8-flash) y
+[web search](https://openrouter.ai/docs/guides/features/server-tools/web-search).
 
 1. AC-01 estabiliza la base; AC-02 y la preparación de AC-06/07 pueden desarrollarse
    independientemente. Elegir destinos precede a pruebas externas.

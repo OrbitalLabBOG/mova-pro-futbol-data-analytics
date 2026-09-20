@@ -77,6 +77,12 @@ chat. Su propio SHA-256 permite demostrar exactamente qué memoria recibió Stra
 batch baseline aprobado, resueltos contra el último snapshot público. Cada sujeto lleva notas
 oficiales, p_play/p60 y razón de inclusión cuando están disponibles. La corrida siguiente recibe
 las señales activas anteriores y debe producir deltas, no repetir claims sin cambios.
+También recibe hasta ocho `reusable_evidence_hints` de la última corrida v2 importada del
+mismo ciclo, con antigüedad máxima de 36 horas. Sólo se incluyen documentos con fetch
+verificado que respaldaron sujetos todavía presentes en el foco. URL y
+elementos cubiertos son pistas de descubrimiento, nunca evidencia transferida: el worker debe
+volver a leer la página y el importador debe verificar de nuevo el fragmento y locator en el
+brief actual. Una pista obsoleta o inaccesible no aumenta cobertura ni habilita señales.
 
 ## Operación
 
