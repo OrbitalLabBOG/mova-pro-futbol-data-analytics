@@ -1,7 +1,7 @@
 ---
 type: project
 name: "MOVA FPL — Technical Documentation"
-updated: 2026-09-05
+updated: 2026-09-20
 status: active
 tags: [mova, fpl, documentation]
 ---
@@ -17,6 +17,7 @@ tags: [mova, fpl, documentation]
 | Consultar `mova status/doctor` | [Contrato del operador](operations/operator.md) |
 | Ver funciones, costos, alertas o hacer triage | [Cockpit operativo](operations/cockpit.md) |
 | Diagnosticar o desplegar el VPS | [Runbook VPS](operations/vps.md) |
+| Ver el último corte verificado del runtime, la recuperación y el rollback | [Acta 2026-09-20](decisions/2026-27/runtime-recovery-20260920.md) |
 | Operar PostgreSQL shadow | [Runbook PostgreSQL](operations/postgres-shadow.md) |
 | Proyectar, explicar, evaluar o entrenar candidato | [Servicio analítico](operations/analytics-service.md) |
 | Operar plan y research | [Contexto estratégico](operations/strategic-research.md) |

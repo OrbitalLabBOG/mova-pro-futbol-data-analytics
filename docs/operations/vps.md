@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — operación del stack VPS"
 created: 2026-08-22
-updated: 2026-09-16
+updated: 2026-09-20
 tags: [mova, fpl, vps, docker, systemd, observability]
 status: active
 ---
@@ -97,7 +97,7 @@ mova analytics run
 mova strategy status
 mova strategy research due
 
-# Vista HTTP; abrir túnel ssh -L 8787:127.0.0.1:8787 root@72.60.245.2
+# Vista HTTP; abrir túnel ssh -L 8787:127.0.0.1:8787 ubuntu@72.60.245.2
 curl -s http://127.0.0.1:8787/api/v1/status | python -m json.tool
 curl -s http://127.0.0.1:8787/api/v1/readiness | python -m json.tool
 curl -s http://127.0.0.1:8787/metrics
@@ -181,16 +181,28 @@ Los pasos `fetch_fpl_bootstrap_events` y `fetch_fpl_fixtures` separan las dos ll
 refrescó; esto evita atribuir a la API FPL el tiempo consumido posteriormente por proyección y
 optimización.
 
-`mova-fpl-collector.timer` evalúa cada 15 minutos cadencias separadas para FPL, odds,
+En el VPS, los drop-ins `90-capacity.conf` vigentes al 20 de septiembre
+serializan tick, collector, analytics y research con
+`/run/lock/mova-fpl-capacity.lock`. La colisión omite la corrida (exit 75
+aceptado) en vez de acumular workers. Los calendarios efectivos son: tick
+cada 5 minutos, collector cada hora en el minuto 05, analytics cada 2 horas
+en el minuto 10 y research cada 30 minutos en los minutos 07 y 37. Los
+timers base del repositorio no describen por sí solos esta configuración
+del host. El tick volvió de 15 a 5 minutos porque un solo skip, con un
+intervalo de 15 minutos y heartbeat máximo de 20, dejaba al doctor en FAIL.
+Verificar `systemctl cat`, `systemctl list-timers` y el doctor después de
+cambiar cadencias; no aumentar la concurrencia quitando el lock.
+
+`mova-fpl-collector.timer` evalúa cadencias separadas para FPL, odds,
 calendario y eventos. La operación, tablas, calidad y recuperación están en
 [servicio autónomo de datos](data-service.md).
 
-`mova-fpl-analytics.timer` corre cada 30 minutos. No vuelve a proyectar si el artifact y las
+`mova-fpl-analytics.timer` no vuelve a proyectar si el artifact y las
 versiones ya fueron sellados; tampoco evalúa hasta que la API oficial marque `data_checked`.
 Cada ejecución queda como job `model_analytics`, con pasos, duración, hashes e incidentes. Ver
 [servicio analítico](analytics-service.md).
 
-`mova-fpl-research.timer` evalúa cada 15 minutos, pero sólo abre una corrida en cada slot:
+`mova-fpl-research.timer` sólo abre una corrida en cada slot:
 amplia T-24h…T-6h, refresh T-6h…T-2h y final T-120…T-70 minutos. Fuera de esas ventanas no
 consume Codex. Strategist/Critic corre una vez por research importado y espera un envelope que
 ya lo incorpore. El contenedor one-shot no recibe DB, runtime env, navegador ni secretos de
@@ -273,8 +285,28 @@ Compose necesita rutas host como `/etc/mova-fpl/alert-webhook.json`, mientras el
 rutas bajo `/run/secrets`. Invertir la precedencia puede convertir una ruta interna en la fuente de
 un bind mount y hacer fallar el collector antes de abrir Chromium.
 
-En un arranque en frío el wrapper espera explícitamente `DOMContentLoaded` y el origin FPL,
-valida schema/15 picks y reintenta hasta tres veces. Una salida vacía nunca llega al ingestor.
+El collector reconoce un redirect a Premier League Account/Google como
+`FPL_AUTH_INTERACTION_REQUIRED`, no como prueba de cookies vencidas. El operador
+inspecciona la página y puede seleccionar una cuenta ya autenticada; contraseña,
+MFA, CAPTCHA o consentimiento nuevo requieren intervención humana.
+
+El wrapper serializa con `mova-fpl-capacity.lock`, limita la captura a un intento
+de 120 segundos y arma antes de abrir el navegador un cooldown de 30 minutos en
+`runtime/private-state-retry-after` (sólo timestamp, sin secretos). Durante ese
+intervalo falla explícitamente sin levantar Docker: no simula una captura sana.
+Sólo una ingesta exitosa elimina el marcador; `--force` permite un reintento
+supervisado tras resolver el acceso, pero no omite locks ni validación. No equivale
+a notificación externa: el canal todavía debe provisionarse y probarse.
+Una salida vacía nunca llega al ingestor. El 18 de septiembre se aplicó un hotfix
+acotado a `browser-session.sh` y `collect-private-team-state.sh` sobre `cccc563`,
+sin reconstruir imágenes. Al corte del 20 de septiembre, el checkout del VPS
+es `a8cfa7d` y conserva esas modificaciones host sin versionar; la imagen de
+browser sí corresponde a `a8cfa7d`. Esto aún no es una release completa de
+los scripts de captura. Rollback de ambos scripts:
+`/opt/orbital/backups/mova-fpl/session-recovery-20260918T1450Z/deploy/bin/`.
+La captura ya no depende de botones de la cancha: un GET privado válido puede
+funcionar mientras la SPA muestra `Loading`. El control plane valida el equipo
+esperado y sus 15 picks. Esto no implementa login Google desatendido ni avisos push.
 
 ## Controles y hard stop
 
@@ -367,7 +399,7 @@ stack normal. Cuando llegue el rollout supervisado:
 ```bash
 sudo deploy/bin/browser-login.sh
 # desde el PC del operador
-ssh -N -L 6080:127.0.0.1:6080 root@72.60.245.2
+ssh -N -L 6080:127.0.0.1:6080 ubuntu@72.60.245.2
 ```
 
 Abrir `http://127.0.0.1:6080/vnc.html`; Julián completa login y MFA manualmente. No copiar
@@ -376,6 +408,19 @@ cambio de página, el executor debe tomar snapshot nuevo y verificar el estado d
 recargar. Supervisord mantiene un único Chromium normal sobre el perfil persistente y el
 executor se adjunta con `--cdp 9222`; CDP no se publica. Esto conserva la sesión tras recrear
 el contenedor, salvo expiración o revocación decidida por Google/FPL.
+
+Desde el 20 de septiembre el VPS tiene `MOVA_BROWSER_KEEP_RUNNING=1` en
+`/etc/mova-fpl/deploy.env`: el collector no detiene Chromium después de
+una captura exitosa o fallida. Compose mantiene `restart: unless-stopped`,
+el perfil continúa en `/var/lib/mova-fpl/browser-profile` con permisos
+`0700` y noVNC sólo escucha en loopback. Esto evita reiniciar el browser en
+cada captura; **no extiende ni garantiza** la vigencia de la sesión que
+controlan Premier League y Google. El timer privado sigue revisando frescura
+cada cinco minutos y sólo captura según el gate adaptativo. Una pérdida de
+auth exige login humano; no repetir credenciales ni copiar cookies. Para
+volver al modo on-demand, retirar esa única variable y detener el browser,
+sin borrar el perfil. La [acta de recuperación](../decisions/2026-27/runtime-recovery-20260920.md)
+incluye la prueba real y la copia de configuración previa.
 
 La operación repetible usa `deploy/bin/browser-session.sh`:
 
