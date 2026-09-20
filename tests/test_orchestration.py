@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import sqlite3
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -66,12 +68,86 @@ def test_workflow_detects_illegal_downstream_execution_and_review():
     }
 
 
+def test_verified_attempt_for_another_plan_cannot_complete_current_plan():
+    observed = _base()
+    observed["preflight"] = {"plan_id": "plan_current", "status": "authorized"}
+    observed["execution"] = {
+        "execution_id": "execution_old", "plan_id": "plan_old", "status": "verified",
+    }
+
+    report = evaluate_workflow(observed, now=NOW)
+
+    assert report["verdict"] == "blocked"
+    assert {row["code"] for row in report["violations"]} == {
+        "EXECUTION_PLAN_MISMATCH",
+    }
+    execution = next(row for row in report["stages"] if row["name"] == "execute_verify")
+    assert execution["status"] == "blocked"
+    assert execution["outcome"] == "verified"
+
+
+def test_workflow_reads_attempt_only_for_displayed_plan(tmp_path: Path):
+    config = RuntimeConfig(ops_db=tmp_path / "ops.db", artifact_root=tmp_path / "artifacts")
+    path = tmp_path / "ledger.db"
+    with sqlite3.connect(path) as con:
+        con.executescript("""
+            CREATE TABLE source_snapshots (cycle_id TEXT, snapshot_id TEXT,
+                quality_status TEXT, captured_at TEXT);
+            CREATE TABLE team_state_snapshots (cycle_id TEXT, team_state_id TEXT,
+                quality_status TEXT, observed_at TEXT);
+            CREATE TABLE cycle_manifests (cycle_id TEXT, manifest_id TEXT,
+                revision INTEGER, created_at TEXT);
+            CREATE TABLE research_runs (cycle_id TEXT, research_run_id TEXT,
+                status TEXT, provider TEXT, finished_at TEXT, queued_at TEXT);
+            CREATE TABLE decision_envelopes (cycle_id TEXT, envelope_id TEXT,
+                status TEXT, created_at TEXT);
+            CREATE TABLE execution_plans (cycle_id TEXT, plan_id TEXT,
+                status TEXT, risk_class TEXT, created_at TEXT);
+            CREATE TABLE execution_attempts (plan_id TEXT, execution_id TEXT,
+                status TEXT, created_at TEXT);
+            CREATE TABLE gameweek_settlements (cycle_id TEXT, settlement_id TEXT,
+                settled_at TEXT);
+            CREATE TABLE gameweek_reviews (settlement_id TEXT, review_id TEXT,
+                created_at TEXT);
+        """)
+        con.execute("INSERT INTO execution_plans VALUES (?,?,?,?,?)",
+                    ("cycle_1", "plan_old", "authorized", "R2", "2026-09-04T10:00:00Z"))
+        con.execute("INSERT INTO execution_plans VALUES (?,?,?,?,?)",
+                    ("cycle_1", "plan_current", "authorized", "R2", "2026-09-04T11:00:00Z"))
+        con.execute("INSERT INTO execution_attempts VALUES (?,?,?,?)",
+                    ("plan_old", "attempt_old", "verified", "2026-09-04T12:00:00Z"))
+
+    class ReadOnlyLedger:
+        def status(self):
+            return {"cycle": {"cycle_id": "cycle_1", "gw": 3,
+                              "deadline_at": "2026-09-04T17:30:00Z"}}
+
+        @contextmanager
+        def connect(self, readonly=True):
+            assert readonly
+            with sqlite3.connect(path) as con:
+                con.row_factory = sqlite3.Row
+                yield con
+
+        def deliberation_status(self, cycle_id):
+            return {"latest": {}}
+
+        def cost_report(self, policy, *, season, gw):
+            return {"status": "within_budget",
+                    "orphaned_reservations": {"status": "none"}}
+
+    report = build_workflow(config, ReadOnlyLedger(), now=NOW)
+    execution = next(row for row in report["stages"] if row["name"] == "execute_verify")
+    assert execution["status"] == "pending"
+    assert execution["subject_id"] is None
+
+
 def test_orchestration_drill_covers_deadline_fail_closed_and_zero_external_calls():
     result = orchestration_drill()
 
     assert result["schema"] == "mova-orchestration-drill-v1"
     assert result["status"] == "pass"
-    assert len(result["checks"]) == 12
+    assert len(result["checks"]) == 13
     assert all(result["checks"].values())
     assert result["external_calls"] == 0
     assert result["runtime_mutated"] is False
@@ -124,7 +200,7 @@ def test_orchestration_cli_is_audited_idempotent_and_conflict_safe(
     assert main(conflict) == 2
     assert json.loads(capsys.readouterr().out)["status"] == "conflict"
     db = OpsDB(config.ops_db, enforce_version=False)
-    assert db.orchestration_drill_status()["passed"] == 12
+    assert db.orchestration_drill_status()["passed"] == 13
     with db.connect(readonly=True) as con:
         assert con.execute(
             "SELECT COUNT(*) FROM job_runs WHERE job_type='orchestration_drill'"
