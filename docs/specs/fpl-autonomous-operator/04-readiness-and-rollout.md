@@ -207,7 +207,7 @@ No se modificó el host durante esta inspección.
 
 ### G0 — Spec approved
 
-- arquitectura aprobada por Julián y Buitra;
+- arquitectura y riesgos revisados por Julián como owner, con evidencia técnica registrada;
 - Q-01..Q-04 resueltas o aceptadas;
 - threat model y ownership de incidentes asignados;
 - ningún cambio operativo mezclado con la aprobación.

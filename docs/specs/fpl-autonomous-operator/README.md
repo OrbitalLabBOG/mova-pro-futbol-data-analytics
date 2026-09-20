@@ -26,7 +26,7 @@ PM de construcción del proyecto.
 | Estado | `active-shadow` |
 | Riesgo | alto: cuenta externa, deadlines irreversibles y sesión autenticada |
 | Business owner | Julián Zuluaga |
-| Aprobación técnica | pendiente de Nicolás Buitrago |
+| Owner y autoridad de promoción | Julián Zuluaga; sin gate de aprobación de otro rol |
 | Temporada | 2026/27 |
 | Equipo | `losmillosFPL`, `entry_id=3609854` |
 | Primera aplicación prevista | GW2; GW1 ya fue montada y sellada manualmente |
