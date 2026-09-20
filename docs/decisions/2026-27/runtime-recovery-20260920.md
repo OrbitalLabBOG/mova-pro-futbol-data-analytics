@@ -115,3 +115,38 @@ conforme al wrapper; el perfil persistente se conservó.
 Los controles de autonomía siguen en `shadow/A0` con writes deshabilitados.
 Esta recuperación operativa no equivale a promoción A2/A3 ni a cierre oficial
 de GW5, que depende de `data_checked` de FPL.
+
+## Persistencia de la sesión browser
+
+El 20 de septiembre a las 20:05 UTC se activó
+`MOVA_BROWSER_KEEP_RUNNING=1` en `/etc/mova-fpl/deploy.env`. El collector ya
+soportaba esta opción: en su `cleanup` deja de detener Chromium después de la
+captura. El perfil sigue montado en
+`/var/lib/mova-fpl/browser-profile` con permisos `0700`; `compose.yaml` ya
+tenía `restart: unless-stopped`. El browser se inició y quedó `running` y
+`healthy`. noVNC permanece publicado sólo en `127.0.0.1:6080` del VPS y los
+writes de FPL siguen deshabilitados.
+
+El primer ensayo coincidió con el retorno automático de SSO tras arrancar
+Chromium; el collector lo bloqueó con `FPL_AUTH_INTERACTION_REQUIRED`. Cuando
+la página regresó a Fantasy, un reintento supervisado completó la captura
+`job_1a995c3ce30041c3ae724b8eedda101e` a las 20:06 UTC: 15 picks y el
+mismo fingerprint
+`4e124b6efd6c983e8df7480407a5776c4813fe2374b336b6de05cd78f0865452`.
+Después del `cleanup`, el contenedor siguió `running/healthy` con política
+`unless-stopped`; `doctor` informó 24 PASS, 0 WARN y 0 FAIL. El marcador de
+cooldown quedó borrado por la ingesta exitosa.
+
+Mantener Chromium vivo evita el arranque y retorno SSO en cada captura; no
+extiende por fuerza la vigencia que Premier League o Google asignen a la
+autenticación. El timer privado continuará verificando frescura y fallará de
+forma explícita si se pierde el acceso. Este modo retiene hasta 1,25 GiB de
+RAM asignada al contenedor y conserva noVNC en loopback. No se almacenaron
+credenciales nuevas ni se modificaron cookies manualmente.
+
+Rollback: existe una copia root-only de `deploy.env` previa al cambio en
+`/opt/orbital/backups/mova-fpl/runtime-recovery-20260920/deploy.env.before-keep-browser`.
+Para volver al modo on-demand, retirar únicamente
+`MOVA_BROWSER_KEEP_RUNNING=1` de `deploy.env` y detener el browser mediante
+`sudo deploy/bin/browser-session.sh stop`; después comprobar el timer privado
+y `mova doctor`. El perfil autenticado no debe borrarse en ese rollback.
