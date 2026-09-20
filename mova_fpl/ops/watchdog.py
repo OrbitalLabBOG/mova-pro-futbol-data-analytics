@@ -127,6 +127,17 @@ def assess(db: OpsDB, *, max_age_seconds: int = 1200,
     current = now or datetime.now(timezone.utc)
     db.quick_check()
     tick = (db.status().get("latest_tick") or {})
+    if tick.get("status") == "running":
+        started = tick.get("started_at")
+        if started:
+            start_time = datetime.fromisoformat(str(started).replace("Z", "+00:00"))
+            age = max(0, int((current - start_time).total_seconds()))
+            return {
+                "healthy": age <= max_age_seconds,
+                "reason": None if age <= max_age_seconds else "tick_running_too_long",
+                "tick_age_seconds": age,
+                "latest_tick_status": "running",
+            }
     finished = tick.get("finished_at")
     if not finished:
         return {"healthy": False, "reason": "no_finished_tick",

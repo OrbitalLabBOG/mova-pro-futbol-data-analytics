@@ -158,6 +158,27 @@ def test_watchdog_marks_stale_completed_tick_as_down(tmp_path):
     assert result["reason"] == "tick_stale"
 
 
+def test_watchdog_allows_running_tick_then_detects_stall(tmp_path):
+    db = OpsDB(tmp_path / "ops.db", enforce_version=False)
+    db.migrate()
+    job_id, _ = db.start_job("tick", "tick:running", "corr_running")
+    now = datetime.now(timezone.utc)
+
+    running = run(db, now=now + timedelta(minutes=3),
+                  max_age_seconds=1200, sink=lambda _event: None)
+    assert running["status"] == "ok"
+    assert running["latest_tick_status"] == "running"
+
+    stalled = run(db, now=now + timedelta(minutes=21),
+                  max_age_seconds=1200, sink=lambda _event: None)
+    assert stalled["status"] == "down"
+    assert stalled["reason"] == "tick_running_too_long"
+
+    db.finish_job(job_id, "completed")
+    recovered = run(db, sink=lambda _event: None)
+    assert recovered["status"] == "ok"
+
+
 def test_watchdog_is_degraded_when_alert_delivery_dies(tmp_path):
     db = OpsDB(tmp_path / "ops.db", enforce_version=False)
     db.migrate()
