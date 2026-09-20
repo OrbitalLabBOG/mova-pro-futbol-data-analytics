@@ -23,7 +23,8 @@ def test_imagen_codex_esta_versionada_y_no_contiene_app():
 
 def test_worker_deshabilita_herramientas_que_podrian_leer_auth_o_actuar():
     worker = (ROOT / "deploy/research/codex-worker.mjs").read_text(encoding="utf-8")
-    for feature in ("shell_tool", "computer_use", "browser_use", "apps", "multi_agent"):
+    for feature in ("shell_tool", "computer_use", "browser_use", "apps", "multi_agent",
+                    "plugins"):
         assert f'"{feature}"' in worker
     assert '...(isResearch ? ["--search"] : [])' in worker
     assert "const prompt = isResearch ? researchPrompt : deliberationPrompt" in worker
@@ -36,6 +37,10 @@ def test_worker_deshabilita_herramientas_que_podrian_leer_auth_o_actuar():
     assert "fetch independiente" in worker
     assert "coverage.subjects" in worker
     assert "Cumple literalmente request.scope_policy" in worker
+    assert "world.catalog" in worker
+    assert "radar global acotado" in worker
+    assert "prior_gameweek_signals" in worker
+    assert "no constituye un hard limit verificable" in worker
     assert "scopePolicy.max_web_queries" in worker
     assert "scopePolicy.max_documents" in worker
     assert "scopePolicy.max_material_signals" in worker
@@ -123,6 +128,28 @@ process.stdout.write(JSON.stringify(normalizeResearchBrief(brief,request)));
     assert report["coverage_rows_dropped"] == 1
     assert report["changed"] is True
     assert "example.com" not in json.dumps(report)
+
+
+def test_normalizer_enforces_document_cap_and_drops_orphan_signal():
+    script = r'''
+import {normalizeResearchBrief} from "./deploy/research/research-normalize.mjs";
+const a="https://example.com/a", b="https://example.com/b";
+const brief={documents:[{source_url:a},{source_url:b}],
+signals:[{player_element:2,source_urls:[b]}], conflicts:[],
+coverage:{subjects:[{player_element:2,status:"material_signal",source_urls:[b],note:"old"}]}};
+const request={scope_policy:{max_documents:1},
+manifest:{research_summary:{focus:[{element:2}]}}};
+process.stdout.write(JSON.stringify(normalizeResearchBrief(brief,request)));
+'''
+    result = subprocess.run(
+        ["node", "--input-type=module", "-e", script], cwd=ROOT,
+        text=True, capture_output=True, check=True,
+    )
+    value = json.loads(result.stdout)
+    assert len(value["brief"]["documents"]) == 1
+    assert value["brief"]["signals"] == []
+    assert value["brief"]["coverage"]["subjects"][0]["status"] == "not_checked"
+    assert value["report"]["documents_dropped_budget"] == 1
 
 
 def test_compose_no_monta_db_browser_repo_ni_secretos_en_research():

@@ -26,7 +26,7 @@ PM de construcción del proyecto.
 | Estado | `active-shadow` |
 | Riesgo | alto: cuenta externa, deadlines irreversibles y sesión autenticada |
 | Business owner | Julián Zuluaga |
-| Aprobación técnica | pendiente de Nicolás Buitrago |
+| Owner y autoridad de promoción | Julián Zuluaga; sin gate de aprobación de otro rol |
 | Temporada | 2026/27 |
 | Equipo | `losmillosFPL`, `entry_id=3609854` |
 | Primera aplicación prevista | GW2; GW1 ya fue montada y sellada manualmente |
@@ -95,6 +95,7 @@ PM de construcción del proyecto.
 | [59-hv1-13-operations-cockpit-rollout.md](59-hv1-13-operations-cockpit-rollout.md) | Cockpit, triage, acceso web privado y sentinel deadline-aware |
 | [60-hv1-13b-owner-dashboard.md](60-hv1-13b-owner-dashboard.md) | Dashboard ejecutivo público, semántica verde/rojo y diagnóstico loopback-only |
 | [61-hv1-13c-control-room-feedback-contract.md](61-hv1-13c-control-room-feedback-contract.md) | Modelos, costo, DR, feedback y salida de shadow en cockpit/doctor/Prometheus |
+| [62-researcher-global-discovery-proposal.md](62-researcher-global-discovery-proposal.md) | Corrida GW3–GW5, diagnóstico vivo y refactor AC-02 de contexto, radar global y evidencia por claim; implementación A0 en progreso |
 | [contracts/](contracts/) | JSON Schemas máquina para request, result y signal |
 | [decisions/](decisions/) | decisiones arquitectónicas propuestas |
 | [workpacks/](workpacks/) | paquetes de construcción históricos; pendientes transferidos a la hoja de ruta de cierre |

@@ -10,6 +10,7 @@ import hashlib
 import json
 import os
 import re
+import urllib.parse
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -18,6 +19,7 @@ from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB, canonical_json, new_id, sha256_json, utcnow
 from mova_fpl.ops.schedule import phase_for
 from mova_fpl.ops.research_evidence import SafeEvidenceFetcher, canonical_public_url
+from mova_fpl.ops.research_quality import claim_fresh, claim_supported, subject_in_excerpt
 
 MAX_RESULT_BYTES = 1_048_576
 CLAIM_TYPES = {
@@ -172,7 +174,8 @@ class StrategicContextService:
             )},
         }
 
-    def _research_focus(self, squad: list[dict], analytics_manifest: dict) -> list[dict]:
+    def _research_focus(self, squad: list[dict], analytics_manifest: dict,
+                        *, as_of: datetime) -> list[dict]:
         """Combina plantilla, candidatos del modelo y notas públicas FPL."""
         fallback = [{
             "element": int(item["element"]),
@@ -190,10 +193,22 @@ class StrategicContextService:
                 squad=squad,
                 batch_id=analytics_manifest.get("batch_id"),
                 candidate_limit=RESEARCH_CANDIDATE_LIMIT,
+                as_of=as_of,
             )
         except Exception:  # el manifest declara foco parcial sin bloquear research
             return fallback
         return resolved or fallback
+
+    def _research_world(self, *, as_of: datetime, target_gw: int) -> dict:
+        if not self.config.postgres_credential_file.is_file():
+            return {"status": "missing", "catalog": [], "alerts": []}
+        try:
+            from mova_fpl.ops.analytics_store import AnalyticsStore
+            return AnalyticsStore(self.config).research_world(
+                as_of=as_of, target_gw=target_gw,
+            )
+        except Exception:
+            return {"status": "degraded", "catalog": [], "alerts": []}
 
     def _recent_research_evidence(self, *, cycle_id: str, focus: list[dict],
                                   now: datetime) -> list[dict]:
@@ -440,6 +455,15 @@ class StrategicContextService:
                 "AND validation_status IN ('accepted','candidate') "
                 "ORDER BY observed_at DESC,rowid DESC LIMIT 80", (cycle_id,),
             ).fetchall()
+            cross_gw_signal_rows = con.execute(
+                "SELECT s.subject_name,s.player_element,s.claim_type,s.claim_text,"
+                "s.validation_status,s.source_url,s.published_at,s.expires_at,"
+                "c.gw FROM research_signals s JOIN gameweek_cycles c "
+                "ON c.cycle_id=s.cycle_id WHERE c.season=? AND c.gw<? "
+                "AND c.gw>=? AND s.validation_status='accepted' "
+                "ORDER BY s.observed_at DESC LIMIT 30",
+                (str(cycle["season"]), int(cycle["gw"]), max(1, int(cycle["gw"])-3)),
+            ).fetchall()
         projection_payload = dict(projection) if projection else None
         if projection_payload and projection_payload.get("model_manifest_json"):
             projection_payload["model_manifest"] = json.loads(
@@ -457,7 +481,12 @@ class StrategicContextService:
             except ValueError:
                 continue
             previous_signals.append(dict(row))
-        research_focus = self._research_focus(squad, projection_payload)
+        research_focus = self._research_focus(
+            squad, projection_payload, as_of=current,
+        )
+        research_world = self._research_world(
+            as_of=current, target_gw=int(cycle["gw"]),
+        )
         reusable_evidence = self._recent_research_evidence(
             cycle_id=cycle_id, focus=research_focus, now=current,
         )
@@ -487,10 +516,19 @@ class StrategicContextService:
             "source_manifest": sources,
             "analytics_manifest": projection_payload,
             "research_summary": {
+                "plan": {
+                    key: plan.get(key) for key in (
+                        "plan_id", "revision", "horizon_start_gw", "horizon_end_gw",
+                        "assumptions", "chip_windows", "guardrails", "rationale",
+                        "content_sha256",
+                    )
+                } if plan else None,
                 "focus": research_focus,
                 "signals": [dict(row) for row in signals],
                 "unresolved_conflicts": unresolved,
                 "previous_active_signals": previous_signals,
+                "prior_gameweek_signals": [dict(row) for row in cross_gw_signal_rows],
+                "world": research_world,
                 "reusable_evidence_hints": reusable_evidence,
             },
             "memory_summary": memory_summary,
@@ -594,6 +632,7 @@ class StrategicContextService:
             "provider": self.config.research_provider,
             "run_kind": run_kind,
             "scope_policy": research_scope_policy(run_kind),
+            "quality_policy": "research-claim-2026.09.2",
             "objective": (
                 "Verificar noticias y contexto pre-deadline que puedan cambiar "
                 "disponibilidad, minutos, rol o decisión estratégica FPL. Priorizar "
@@ -732,24 +771,67 @@ class StrategicContextService:
         generated = _parse_time(payload.get("generated_at"), field="generated_at")
         if generated > deadline or generated > observed + timedelta(minutes=10):
             raise ValueError("resultado de research cruza el cutoff")
+        scope = request.get("scope_policy") or {}
+        if len(payload.get("documents") or []) > int(scope.get("max_documents", 80)):
+            raise ValueError("brief excede scope_policy sellada")
         documents = self._validate_documents(
             payload.get("documents"), observed, research_run_id=run_id,
             require_fetch=result_schema == "mova-research-brief-v2",
             cutoff=deadline,
         )
         by_url = {item["source_url"]: item for item in documents}
+        catalog_rows = (request.get("manifest", {}).get("research_summary", {})
+                        .get("world", {}).get("catalog", []))
+        catalog = {int(row[0]): str(row[1]) for row in catalog_rows
+                   if isinstance(row, list) and len(row) >= 2}
+        catalog_name_counts: dict[str, int] = {}
+        for name in catalog.values():
+            key = name.casefold()
+            catalog_name_counts[key] = catalog_name_counts.get(key, 0) + 1
+        quality_policy = request.get("quality_policy")
+        strict_quality = bool(catalog) and quality_policy in {
+            "research-claim-2026.09.1", "research-claim-2026.09.2",
+        }
         conflicts = self._validate_conflicts(payload.get("conflicts", []), by_url)
         conflict_keys = {(item["subject"].casefold(), item["claim_type"]) for item in conflicts
                          if item["status"] == "unresolved"}
         signals = self._validate_signals(
             payload.get("signals"), by_url, conflict_keys, observed,
             require_verified=result_schema == "mova-research-brief-v2",
+            catalog=catalog if strict_quality else None, cutoff=deadline,
+            catalog_name_counts=catalog_name_counts,
+            require_freshness=quality_policy == "research-claim-2026.09.2",
         )
         coverage = self._validate_coverage(
             payload.get("coverage"),
             request.get("manifest", {}).get("research_summary", {}).get("focus", []),
             by_url, signals, legacy=result_schema == "mova-research-brief-v1",
+            catalog=catalog if strict_quality else None,
+            fetched_at=observed, cutoff=deadline,
+            require_freshness=quality_policy == "research-claim-2026.09.2",
         )
+        if strict_quality:
+            focus_ids = {int(row["element"]) for row in request["manifest"][
+                "research_summary"]["focus"]}
+            coverage["quality"] = {
+                "policy_version": quality_policy,
+                "catalog_size": len(catalog),
+                "global_alerts": len(request["manifest"]["research_summary"]
+                                     ["world"].get("alerts", [])),
+                "accepted_outside_focus": sum(
+                    row["validation_status"] == "accepted" and
+                    row.get("player_element") not in focus_ids for row in signals
+                ),
+                "candidate_outside_focus": sum(
+                    row["validation_status"] == "candidate" and
+                    row.get("player_element") not in focus_ids for row in signals
+                ),
+                "semantic_rejections": sum(
+                    row.get("quality", {}).get("status") != "supported"
+                    for row in signals
+                ),
+                "search_requests": None,
+            }
         normalized = {
             "schema": result_schema, "research_run_id": run_id,
             "cycle_id": run["cycle_id"], "request_sha256": run["request_sha256"],
@@ -783,7 +865,7 @@ class StrategicContextService:
         if not isinstance(value, list) or not 1 <= len(value) <= 80:
             raise ValueError("documents debe contener entre 1 y 80 fuentes")
         documents = []
-        pending_fetches: list[tuple[int, str, str, str]] = []
+        pending_fetches: list[tuple[int, str, str, str, str | None]] = []
         seen = set()
         for raw in value:
             if not isinstance(raw, dict):
@@ -817,7 +899,8 @@ class StrategicContextService:
                 document_id = "document_" + hashlib.sha256(
                     f"{research_run_id}:{url}".encode("utf-8")
                 ).hexdigest()[:32]
-                pending_fetches.append((len(documents), document_id, url, evidence_text))
+                pending_fetches.append((len(documents), document_id, url,
+                                        evidence_text, published))
             else:
                 base |= {
                     "document_id": None, "final_url": None,
@@ -830,11 +913,12 @@ class StrategicContextService:
                 }
             documents.append(base)
         if pending_fetches:
-            def seal(item: tuple[int, str, str, str]) -> tuple[int, dict]:
-                index, document_id, url, evidence_text = item
+            def seal(item: tuple[int, str, str, str, str | None]) -> tuple[int, dict]:
+                index, document_id, url, evidence_text, published_at = item
                 return index, self.evidence_fetcher.seal(
                     research_run_id=research_run_id, document_id=document_id,
                     source_url=url, evidence_text=evidence_text,
+                    published_at=published_at,
                 )
 
             # Network I/O is bounded; executor.map preserves input ordering and the
@@ -873,7 +957,11 @@ class StrategicContextService:
     @staticmethod
     def _validate_signals(value: object, by_url: dict[str, dict],
                           conflict_keys: set[tuple[str, str]],
-                          observed: datetime, *, require_verified: bool = False) -> list[dict]:
+                          observed: datetime, *, require_verified: bool = False,
+                          catalog: dict[int, str] | None = None,
+                          cutoff: datetime | None = None,
+                          catalog_name_counts: dict[str, int] | None = None,
+                          require_freshness: bool = False) -> list[dict]:
         if not isinstance(value, list) or len(value) > 120:
             raise ValueError("signals inválido")
         signals = []
@@ -913,6 +1001,56 @@ class StrategicContextService:
                 )
             conflicted = (subject.casefold(), claim_type) in conflict_keys
             validation = "accepted" if has_strong_evidence and not conflicted else "candidate"
+            quality = {"status": "unmeasured", "reason": None}
+            if catalog is not None:
+                catalog_name = catalog.get(element) if element is not None else None
+                claimed_element = element
+                relevant = [by_url[url] for url in verified_urls]
+                independent_hosts = {
+                    urllib.parse.urlsplit(url).hostname for url in verified_urls
+                }
+                if not any(doc["source_tier"] == "official" for doc in relevant):
+                    has_strong_evidence = len(independent_hosts) >= 2
+                matching = [doc for doc in relevant if catalog_name and
+                            claim_supported(name=catalog_name, claim_type=claim_type,
+                                            excerpt=str(doc.get("excerpt") or ""))]
+                supported = bool(catalog_name and
+                                 subject_in_excerpt(catalog_name, subject) and matching)
+                dated = any(doc.get("publication_date_verified") for doc in matching)
+                fresh = any(doc.get("publication_date_verified") and claim_fresh(
+                    claim_type=claim_type, published_at=str(doc.get("published_at") or ""),
+                    observed=observed,
+                ) for doc in matching)
+                if require_freshness:
+                    strong_matching = [(url, by_url[url]) for url in verified_urls
+                                       if by_url[url] in matching and
+                                       by_url[url].get("publication_date_verified") and
+                                       claim_fresh(
+                                           claim_type=claim_type,
+                                           published_at=str(by_url[url].get("published_at") or ""),
+                                           observed=observed,
+                                       )]
+                    has_strong_evidence = (
+                        any(doc["source_tier"] == "official" for _, doc in strong_matching)
+                        or len({urllib.parse.urlsplit(url).hostname
+                                for url, _ in strong_matching}) >= 2
+                    )
+                as_of_safe = cutoff is None or observed <= cutoff
+                reason = ("unknown_element" if not catalog_name else
+                          "ambiguous_identity" if (
+                              catalog_name_counts or {}).get(catalog_name.casefold(), 1) > 1 else
+                          "identity_or_claim_unsupported" if not supported else
+                          "publication_unknown" if not dated else
+                          "stale_for_claim" if require_freshness and not fresh else
+                          "fetch_after_cutoff" if not as_of_safe else None)
+                quality = {"status": "supported" if reason is None else "unresolved",
+                           "reason": reason, "claimed_element": claimed_element}
+                if reason is not None:
+                    validation = "candidate"
+                elif not has_strong_evidence:
+                    validation = "candidate"
+                if reason == "unknown_element":
+                    element = None
             signals.append({
                 "subject_name": subject, "player_element": element,
                 "claim_type": claim_type,
@@ -925,12 +1063,17 @@ class StrategicContextService:
                 "expires_at": expires.isoformat(),
                 "conflict_status": "unresolved" if conflicted else "none",
                 "validation_status": validation,
+                "quality": quality,
             })
         return signals
 
     @staticmethod
     def _validate_coverage(value: object, focus: object, by_url: dict[str, dict],
-                           signals: list[dict], *, legacy: bool) -> dict:
+                           signals: list[dict], *, legacy: bool,
+                           catalog: dict[int, str] | None = None,
+                           fetched_at: datetime | None = None,
+                           cutoff: datetime | None = None,
+                           require_freshness: bool = False) -> dict:
         if legacy:
             return {
                 "schema": "mova-research-coverage-v1", "status": "legacy_unmeasured",
@@ -950,7 +1093,8 @@ class StrategicContextService:
             raise ValueError("coverage debe cubrir exactamente research_summary.focus")
         material_elements = {
             int(row["player_element"]) for row in signals
-            if row.get("player_element") is not None
+            if row.get("player_element") is not None and
+            (catalog is None or row.get("validation_status") == "accepted")
         }
         subjects = []
         seen = set()
@@ -970,12 +1114,28 @@ class StrategicContextService:
             urls = list(dict.fromkeys(_safe_url(url) for url in raw.get("source_urls", [])))
             if any(url not in by_url for url in urls):
                 raise ValueError("coverage referencia documento inexistente")
+            if catalog is not None:
+                name = catalog.get(element, "")
+                urls = [url for url in urls if
+                        (fetched_at is None or cutoff is None or fetched_at <= cutoff) and
+                        by_url[url].get("fetch_status") == "verified" and
+                        subject_in_excerpt(name, str(by_url[url].get("excerpt") or "")) and
+                        by_url[url].get("publication_date_verified") and
+                        (not require_freshness or fetched_at is None or claim_fresh(
+                            claim_type="fixture_context",
+                            published_at=str(by_url[url].get("published_at") or ""),
+                            observed=fetched_at,
+                        ))]
+                if not urls:
+                    status = "not_checked"
             if status == "not_checked" and urls:
                 raise ValueError("not_checked no puede citar evidencia")
             if status != "not_checked" and not urls:
                 raise ValueError("sujeto investigado exige evidencia")
             if status == "material_signal" and element not in material_elements:
-                raise ValueError("material_signal no tiene señal correspondiente")
+                if catalog is None:
+                    raise ValueError("material_signal no tiene señal correspondiente")
+                status = "unresolved" if urls else "not_checked"
             verified = any(by_url[url].get("fetch_status") == "verified" for url in urls)
             focus_row = focus_by_element[element]
             subjects.append({

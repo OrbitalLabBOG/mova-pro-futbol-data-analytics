@@ -250,9 +250,10 @@ def test_manifest_resuelve_plantilla_y_candidatos_para_research(tmp_path, monkey
         "official_news": "75% chance of playing",
     }]
 
-    def focus(_self, *, squad, batch_id, candidate_limit):
+    def focus(_self, *, squad, batch_id, candidate_limit, as_of):
         assert len(squad) == 15
         assert candidate_limit == 10
+        assert as_of == observed
         return list(resolved)
 
     monkeypatch.setattr(

@@ -76,6 +76,21 @@ def test_safe_fetch_seals_minimal_excerpt_and_verifiable_locator(tmp_path: Path)
     assert "ignore" not in artifact["excerpt"]
 
 
+def test_publication_date_must_appear_on_fetched_page(tmp_path: Path):
+    def transport(url):
+        return (b"<html><body>03 Sep 2026. Player One is available for selection.</body></html>",
+                {"content_type": "text/html", "http_status": 200, "final_url": url})
+    fetcher = SafeEvidenceFetcher(tmp_path, transport=transport)
+    common = {"research_run_id": "research_" + "a" * 32,
+              "source_url": CANONICAL_SOURCE, "evidence_text": EXCERPT}
+    verified = fetcher.seal(document_id="document_" + "c" * 32,
+                            published_at="2026-09-03T00:00:00+00:00", **common)
+    wrong = fetcher.seal(document_id="document_" + "d" * 32,
+                         published_at="2026-09-04T00:00:00+00:00", **common)
+    assert verified["publication_date_verified"] is True
+    assert wrong["publication_date_verified"] is False
+
+
 def test_safe_fetch_fails_closed_when_locator_cannot_be_verified(tmp_path: Path):
     result = _fetcher(tmp_path, excerpt="different page text").seal(
         research_run_id="research_" + "a" * 32,

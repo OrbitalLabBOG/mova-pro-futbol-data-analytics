@@ -37,6 +37,7 @@ export function normalizeResearchBrief(input, request) {
     documents_received: Array.isArray(brief.documents) ? brief.documents.length : 0,
     documents_emitted: 0,
     duplicate_documents_removed: 0,
+    documents_dropped_budget: 0,
     signal_references_removed: 0,
     signals_dropped: 0,
     conflict_references_removed: 0,
@@ -50,10 +51,16 @@ export function normalizeResearchBrief(input, request) {
 
   const documents = [];
   const documentUrls = new Set();
+  const rawCap = Number(request?.scope_policy?.max_documents);
+  const maxDocuments = Number.isInteger(rawCap) && rawCap > 0 ? rawCap : 80;
   for (const row of Array.isArray(brief.documents) ? brief.documents : []) {
     const canonical = canonicalUrl(row?.source_url);
     if (!canonical || documentUrls.has(canonical)) {
       if (canonical) report.duplicate_documents_removed += 1;
+      continue;
+    }
+    if (documents.length >= maxDocuments) {
+      report.documents_dropped_budget += 1;
       continue;
     }
     documentUrls.add(canonical);
