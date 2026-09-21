@@ -75,6 +75,7 @@ export RESTIC_REPOSITORY_FILE=${credential_files[0]}
 export RESTIC_PASSWORD_FILE=${credential_files[1]}
 trap 'unset RESTIC_REPOSITORY_FILE RESTIC_PASSWORD_FILE' EXIT HUP INT TERM
 restic backup --quiet --tag mova-fpl --tag operational-databases \
+  --exclude '*.db-wal' --exclude '*.db-shm' \
   "$backup_root/$sqlite_backup" "$backup_root/postgres/$postgres_backup"
 restic snapshots --json --latest 1 --tag mova-fpl >/dev/null
 restic forget --tag mova-fpl --group-by host,tags \
