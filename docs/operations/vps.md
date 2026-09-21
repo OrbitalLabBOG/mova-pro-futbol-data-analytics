@@ -374,6 +374,17 @@ está resguardada como versión en Secret Manager `mova-fpl-restic-password`, al
 del VPS no tiene acceso. En un host nuevo se recupera la contraseña con la identidad
 administrativa de Orbital, se crea una llave nueva para la cuenta acotada y se usa `restic`
 para descargar el snapshot. Nunca copiar el token amplio de Google Drive al VPS.
+El bucket aplica acceso uniforme, prevención de acceso público y soft delete de siete días.
+
+Ante pérdida total del VPS: crear un host aislado, instalar `restic`, generar una llave nueva
+para la cuenta acotada y restringirla a `0600`; recuperar la contraseña con
+`gcloud secrets versions access latest --secret=mova-fpl-restic-password --out-file=...`
+usando la identidad administrativa de Orbital. Fijar `GOOGLE_PROJECT_ID`,
+`GOOGLE_APPLICATION_CREDENTIALS`, `RESTIC_REPOSITORY_FILE` (contenido
+`gs:orbital-lab-483815-mova-fpl-backup-20260920:/`) y `RESTIC_PASSWORD_FILE`.
+Listar `restic snapshots --tag mova-fpl`, descargar el snapshot elegido a una ruta
+aislada y verificar los dos manifiestos antes de restaurar bases operativas. No ejecutar
+la restauración sobre un runtime vivo. Rotar la llave del VPS perdido al terminar.
 
 `mova status --json` debe mostrar únicamente estado sanitizado y fingerprint. El gate permanece
 `pending` si falta config/timer/evidencia y `blocked` si la configuración existe pero es insegura.

@@ -51,6 +51,24 @@ Evidencia de recuperación: [acta del 20/09](../../decisions/2026-27/runtime-rec
 La escritura humana de GW5 no suma rehearsals del driver. Los contadores anteriores son
 snapshots fechados; se vuelven a consultar antes de promover.
 
+### Corte de infraestructura — 20 de septiembre, 20:38 COT
+
+Readiness vivo: 21 pass, 5 pending, 1 blocked sobre 27; A0/shadow, kill switch activo y
+browser writes deshabilitados. Cuatro gates de integración pasaron desde el baseline:
+destino externo de alertas, live ping, backup cifrado off-host y restore aislado. El canal
+es DM del bot Orbital a Julián; prueba auditada `job_78c9dd7e94fb4a5fb99c3d93cd82e359`,
+aceptada por Slack y ligada al fingerprint sanitizado del destino. El bucket dedicado GCS
+`orbital-lab-483815-mova-fpl-backup-20260920` usa una cuenta de servicio acotada,
+credenciales root-only y contraseña de recuperación en Secret Manager. La copia terminó con
+servicio `success`, timer `enabled/active`, seis archivos sellados y sin sidecars WAL/SHM.
+
+El restore remoto final `job_a18aa088ecab4e1eb96250e69ebcb6f6` sobre la revisión
+`1312d13` pasó 8/8 checks en 531 s de ensayo, con `downtime_seconds=0`, sin reiniciar
+servicios ni mutar FPL; la base PostgreSQL temporal y el árbol descargado se eliminaron.
+La [guía de VPS](../../operations/vps.md) documenta el procedimiento ante pérdida total.
+Esta evidencia cierra AC-06/07 de infraestructura, no AC-03 ni AC-08: research sigue
+bloqueado por calidad y faltan jornadas/ejecuciones longitudinales y closeout vivo.
+
 ### Entregables y aceptación
 
 Los IDs AC siguientes identifican la evidencia exigida. Una tarea sólo termina cuando cada
