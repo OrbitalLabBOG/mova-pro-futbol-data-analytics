@@ -64,9 +64,9 @@ cd "$repo_dir"
 ./deploy/bin/backup-all.sh >/dev/null
 
 sqlite_backup=$(find "$backup_root" -mindepth 1 -maxdepth 1 -type d \
-  -name '20????????T??????Z' -printf '%f\n' | sort | tail -1)
+  -name '20??????T??????Z' -printf '%f\n' | sort | tail -1)
 postgres_backup=$(find "$backup_root/postgres" -mindepth 1 -maxdepth 1 -type d \
-  -name '20????????T??????Z' -printf '%f\n' | sort | tail -1)
+  -name '20??????T??????Z' -printf '%f\n' | sort | tail -1)
 [[ -n "$sqlite_backup" && -n "$postgres_backup" ]] || {
   echo "verified local backup set is incomplete" >&2; exit 6;
 }

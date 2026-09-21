@@ -112,5 +112,6 @@ def test_offsite_service_is_opt_in_and_excludes_runtime_secrets():
     assert "enable --now mova-fpl-offsite-backup.timer" not in install
     assert "RESTIC_REPOSITORY_FILE" in script and "RESTIC_PASSWORD_FILE" in script
     assert "backup-all.sh" in script and "postgres-shadow-backup.sh" in local_backup
+    assert script.count("-name '20??????T??????Z'") == 2
     assert "browser-profile" not in script and "codex-home" not in script
     assert "User=root" in service and "NoNewPrivileges=true" in service
