@@ -118,3 +118,5 @@ def test_offsite_service_is_opt_in_and_excludes_runtime_secrets():
     assert "User=root" in service and "NoNewPrivileges=true" in service
     restore = Path("deploy/bin/offsite-restore-drill.sh").read_text(encoding="utf-8")
     assert restore.count("mova safety | tail -n 1") == 2
+    local_restore = Path("deploy/bin/restore-drill.sh").read_text(encoding="utf-8")
+    assert "cp /restore/ops.db /tmp/mova-restore-ops.db" in local_restore

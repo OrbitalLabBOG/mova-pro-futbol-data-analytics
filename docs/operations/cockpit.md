@@ -195,6 +195,12 @@ mova alerts test --actor julian --reason "validar canal operativo" \
 lectura humana. Registrar acuse del incidente por separado. Si se rota token o destinatario,
 el ping anterior deja de satisfacer readiness.
 
+Para un P0/P1 real, consultar `mova triage --incident-id ID` y reconocerlo con
+`mova alerts acknowledge --incident-id ID --actor julian --reason '...'` después de
+atenderlo. Si un evento queda `dead`, corregir el canal antes de
+`mova alerts retry --outbox-id ID --actor julian --reason '...'`; la prueba de ping no
+reabre ni reconoce incidentes. Watchdog mantiene deduplicación y reintentos auditados.
+
 ## Límites deliberados
 
 - No Vercel ni GitHub Pages en v1: evitar otro origen, secretos frontend y una segunda capa de
