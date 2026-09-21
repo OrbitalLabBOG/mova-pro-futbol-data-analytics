@@ -9,6 +9,7 @@ import http.client
 import ipaddress
 import socket
 import ssl
+import re
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -28,7 +29,19 @@ class WebhookSettings:
     timeout_seconds: int = 5
 
 
-def _load_settings(config: RuntimeConfig) -> WebhookSettings | None:
+@dataclass(frozen=True, slots=True)
+class SlackSettings:
+    token: str
+    recipient_user_id: str
+    owner: str
+    channel: str = "slack_dm"
+    timeout_seconds: int = 5
+
+
+AlertSettings = WebhookSettings | SlackSettings
+
+
+def _load_settings(config: RuntimeConfig) -> AlertSettings | None:
     """Lee el secreto sin incluir URL, path ni token en respuestas o logs."""
     path = config.alert_webhook_config_file
     if not path.is_file():
@@ -37,10 +50,24 @@ def _load_settings(config: RuntimeConfig) -> WebhookSettings | None:
     if len(raw) > 16_384:
         raise ValueError("alert webhook config exceeds 16 KiB")
     value = json.loads(raw)
-    if not isinstance(value, dict) or value.get("version") != 1:
+    if not isinstance(value, dict) or value.get("version") not in (1, 2):
         raise ValueError("alert webhook config version invalid")
     if value.get("enabled") is not True:
         return None
+    if value["version"] == 2:
+        allowed = {"version", "enabled", "provider", "token",
+                   "recipient_user_id", "owner"}
+        if set(value) != allowed or value.get("provider") != "slack":
+            raise ValueError("invalid Slack alert config")
+        token = str(value.get("token") or "")
+        recipient = str(value.get("recipient_user_id") or "")
+        owner = str(value.get("owner") or "").strip()
+        if (not re.fullmatch(r"xoxb-[A-Za-z0-9-]{10,256}", token)
+                or not re.fullmatch(r"U[A-Z0-9]{8,20}", recipient)
+                or not re.fullmatch(r"[A-Za-z0-9_.@-]{2,80}", owner)):
+            raise ValueError("invalid Slack alert destination")
+        return SlackSettings(token, recipient, owner,
+                             timeout_seconds=config.alert_webhook_timeout_seconds)
     allowed = {"version", "enabled", "url", "owner", "channel"}
     if set(value) - allowed:
         raise ValueError("alert webhook config has unknown fields")
@@ -68,7 +95,7 @@ def _public_addresses(hostname: str) -> tuple[str, ...]:
     return tuple(addresses)
 
 
-def _payload(event: dict, settings: WebhookSettings) -> dict:
+def _payload(event: dict, settings: AlertSettings) -> dict:
     source = json.loads(event.get("payload_json") or "{}")
     return {
         "schema": "mova-alert-webhook-v1",
@@ -123,9 +150,58 @@ def webhook_sink(settings: WebhookSettings, *,
     return sink
 
 
+def _slack_post(settings: SlackSettings, body: bytes) -> int:
+    _public_addresses("slack.com")
+    connection = http.client.HTTPSConnection(
+        "slack.com", 443, timeout=settings.timeout_seconds,
+        context=ssl.create_default_context(),
+    )
+    try:
+        connection.request(
+            "POST", "/api/chat.postMessage", body=body,
+            headers={"Content-Type": "application/json; charset=utf-8",
+                     "Authorization": f"Bearer {settings.token}",
+                     "User-Agent": "mova-fpl/1"},
+        )
+        response = connection.getresponse()
+        payload = json.loads(response.read(4096))
+        if response.status != 200 or payload.get("ok") is not True:
+            raise RuntimeError("Slack alert delivery failed")
+        return response.status
+    finally:
+        connection.close()
+
+
+def slack_sink(settings: SlackSettings, *,
+               transport: Callable[[SlackSettings, bytes], int] = _slack_post
+               ) -> Callable[[dict], None]:
+    def sink(event: dict) -> None:
+        journal_sink(event)
+        content = _payload(event, settings)
+        severity = content["severity"]
+        title = str(content.get("title") or content["event_type"])[:180]
+        # Keep the destination message redacted and bounded; never include detail JSON.
+        body = json.dumps({
+            "channel": settings.recipient_user_id,
+            "text": f"MOVA FPL {severity}: {title}\nEvento: {content['event_key']}",
+        }, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+        transport(settings, body)
+    return sink
+
+
+def _fingerprint(settings: AlertSettings) -> str:
+    identity = (settings.url if isinstance(settings, WebhookSettings) else
+                f"slack:{settings.recipient_user_id}:{settings.token}")
+    return hashlib.sha256(identity.encode()).hexdigest()[:32]
+
+
+def _sink(settings: AlertSettings) -> Callable[[dict], None]:
+    return webhook_sink(settings) if isinstance(settings, WebhookSettings) else slack_sink(settings)
+
+
 def configured_sink(config: RuntimeConfig) -> Callable[[dict], None]:
     settings = _load_settings(config)
-    return journal_sink if settings is None else webhook_sink(settings)
+    return journal_sink if settings is None else _sink(settings)
 
 
 def channel_status(config: RuntimeConfig) -> dict:
@@ -140,7 +216,7 @@ def channel_status(config: RuntimeConfig) -> dict:
                 "configured": False, "external_delivery": False,
                 "owner": None, "channel": "journald"}
     # 128 bits ligan evidencia al destino sin revelar su URL.
-    fingerprint = hashlib.sha256(settings.url.encode()).hexdigest()[:32]
+    fingerprint = _fingerprint(settings)
     return {"schema": "mova-alert-channel-v1", "status": "configured",
             "configured": True, "external_delivery": True,
             "owner": settings.owner, "channel": settings.channel,
@@ -262,7 +338,7 @@ def live_ping(config: RuntimeConfig, db: OpsDB, *, actor: str, reason: str,
         return {"schema": "mova-alert-live-ping-v1", "status": "not_configured",
                 "channel_status": "local_only", "runtime_mutated": False,
                 "external_calls": 0}
-    fingerprint = hashlib.sha256(settings.url.encode()).hexdigest()[:32]
+    fingerprint = _fingerprint(settings)
     identity = sha256_json({
         "actor": actor, "reason": reason, "idempotency_key": idempotency_key,
         "destination_fingerprint": fingerprint,
@@ -295,7 +371,7 @@ def live_ping(config: RuntimeConfig, db: OpsDB, *, actor: str, reason: str,
             ), destination_fingerprint=fingerprint,
         )
         result = dispatch(
-            db, outbox_id=outbox_id, sink=sink or webhook_sink(settings),
+            db, outbox_id=outbox_id, sink=sink or _sink(settings),
         )
     except Exception as exc:  # ledger terminal incluso ante una falla interna
         db.finish_job(job_id, "failed", error_code=type(exc).__name__)

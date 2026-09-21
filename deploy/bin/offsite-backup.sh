@@ -48,6 +48,10 @@ print(payload["password_file"])
 PY
 )
 [[ ${#credential_files[@]} -eq 2 ]] || { echo "invalid off-host credentials" >&2; exit 5; }
+if [[ ${1:-} == --config-paths ]]; then
+  printf '%s\n' "${credential_files[@]}"
+  exit 0
+fi
 
 if [[ -r "$deploy_env" ]]; then
   set -a
@@ -58,7 +62,6 @@ fi
 
 cd "$repo_dir"
 ./deploy/bin/backup-all.sh >/dev/null
-./deploy/bin/postgres-shadow-backup.sh >/dev/null
 
 sqlite_backup=$(find "$backup_root" -mindepth 1 -maxdepth 1 -type d \
   -name '20????????T??????Z' -printf '%f\n' | sort | tail -1)
@@ -74,4 +77,6 @@ trap 'unset RESTIC_REPOSITORY_FILE RESTIC_PASSWORD_FILE' EXIT HUP INT TERM
 restic backup --quiet --tag mova-fpl --tag operational-databases \
   "$backup_root/$sqlite_backup" "$backup_root/postgres/$postgres_backup"
 restic snapshots --json --latest 1 --tag mova-fpl >/dev/null
+restic forget --tag mova-fpl --group-by host,tags \
+  --keep-daily 35 --keep-weekly 8 --keep-monthly 6 --prune >/dev/null
 echo "encrypted off-host backup completed"

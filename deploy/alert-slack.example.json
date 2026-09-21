@@ -1,0 +1,8 @@
+{
+  "version": 2,
+  "enabled": false,
+  "provider": "slack",
+  "token": "replace-with-existing-orbital-bot-token",
+  "recipient_user_id": "replace-with-julian-slack-user-id",
+  "owner": "julian"
+}
