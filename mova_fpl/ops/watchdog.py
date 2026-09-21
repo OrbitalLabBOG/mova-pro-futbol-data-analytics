@@ -44,6 +44,35 @@ def evaluate_workflow_deadline(workflow: dict, *, seconds_to_deadline: int | Non
         })
     if (seconds_to_deadline is not None and
             0 < seconds_to_deadline <= WORKFLOW_MILESTONES["research"][0]):
+        stale_severity = (
+            "P0" if seconds_to_deadline <= WORKFLOW_MILESTONES["observe"][2]
+            else "P1"
+        )
+        observe = stages.get("observe") or {}
+        if observe.get("status") == "blocked":
+            reasons.append({
+                "code": "public_data_unusable_t_minus_6h", "severity": stale_severity,
+                "stage": "observe", "outcome": observe.get("outcome"),
+            })
+        contextualize = stages.get("contextualize") or {}
+        if contextualize.get("outcome") == "stale_team_state":
+            reasons.append({
+                "code": "private_team_state_stale_t_minus_6h", "severity": stale_severity,
+                "stage": "contextualize", "outcome": "stale_team_state",
+            })
+        budget = workflow.get("budget") or {}
+        agent_incomplete = any(
+            (stages.get(name) or {}).get("status") != "complete"
+            for name in ("research", "deliberate")
+        )
+        if agent_incomplete and any(budget.get(key) == 0 for key in (
+            "gameweek_remaining_tokens", "gameweek_remaining_uses",
+            "month_remaining_tokens", "month_remaining_uses",
+        )):
+            reasons.append({
+                "code": "agent_budget_exhausted_before_terminal", "severity": "P1",
+                "stage": "research", "outcome": "budget_exhausted",
+            })
         for name in ("research", "deliberate"):
             row = stages.get(name) or {}
             if row.get("status") != "complete":
@@ -56,6 +85,8 @@ def evaluate_workflow_deadline(workflow: dict, *, seconds_to_deadline: int | Non
             0 < seconds_to_deadline <= WORKFLOW_MILESTONES["preflight"][0]):
         for name in ("contextualize", "propose_validate", "preflight"):
             row = stages.get(name) or {}
+            if name == "contextualize" and row.get("outcome") == "stale_team_state":
+                continue
             if row.get("status") != "complete":
                 reasons.append({
                     "code": f"{name}_incomplete_t_minus_3h", "severity": "P1",

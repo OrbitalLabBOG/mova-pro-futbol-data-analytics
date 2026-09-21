@@ -71,6 +71,43 @@ def test_workflow_sentinel_treats_dependency_or_execution_failure_as_p0():
     }
 
 
+def test_stale_inputs_escalate_at_target_and_hard_stop_without_retry():
+    workflow = _workflow()
+    for row in workflow["stages"]:
+        if row["name"] == "observe":
+            row.update(status="blocked", outcome="stale")
+        if row["name"] == "contextualize":
+            row.update(status="pending", outcome="stale_team_state")
+    early = evaluate_workflow_deadline(workflow, seconds_to_deadline=7 * 3600)
+    target = evaluate_workflow_deadline(workflow, seconds_to_deadline=6 * 3600)
+    stop = evaluate_workflow_deadline(workflow, seconds_to_deadline=30 * 60)
+    assert early["healthy"] is True
+    assert {r["code"] for r in target["reasons"]} == {
+        "public_data_unusable_t_minus_6h", "private_team_state_stale_t_minus_6h",
+    }
+    assert target["severity"] == "P1"
+    assert stop["severity"] == "P0"
+    assert stop["runtime_mutated"] is False
+
+
+def test_budget_exhaustion_escalates_only_if_agent_work_is_incomplete():
+    workflow = _workflow(deliberation="pending")
+    workflow["budget"] = {"gameweek_remaining_tokens": 1,
+                          "gameweek_remaining_uses": 1,
+                          "month_remaining_uses": 0}
+    report = evaluate_workflow_deadline(workflow, seconds_to_deadline=6 * 3600)
+    assert "agent_budget_exhausted_before_terminal" in {
+        row["code"] for row in report["reasons"]
+    }
+    workflow["stages"] = [
+        {**row, "status": "complete"} if row["name"] == "deliberate" else row
+        for row in workflow["stages"]
+    ]
+    assert evaluate_workflow_deadline(
+        workflow, seconds_to_deadline=6 * 3600,
+    )["healthy"] is True
+
+
 def test_authorized_execution_uses_window_and_predeadline_hard_stop():
     early = evaluate_workflow_deadline(
         _workflow(execution="pending"), seconds_to_deadline=3 * 3600,
