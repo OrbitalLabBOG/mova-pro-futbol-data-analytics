@@ -115,3 +115,5 @@ def test_offsite_service_is_opt_in_and_excludes_runtime_secrets():
     assert script.count("-name '20??????T??????Z'") == 2
     assert "browser-profile" not in script and "codex-home" not in script
     assert "User=root" in service and "NoNewPrivileges=true" in service
+    restore = Path("deploy/bin/offsite-restore-drill.sh").read_text(encoding="utf-8")
+    assert restore.count("mova safety | tail -n 1") == 2

@@ -49,7 +49,7 @@ started_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 started_epoch=$(date -u +%s)
 revision=$(git rev-parse --short HEAD)
 image_before=$(docker inspect mova-fpl-api-1 --format '{{.Image}}')
-controls_before=$(/usr/local/bin/mova safety | python3 -c \
+controls_before=$(/usr/local/bin/mova safety | tail -n 1 | python3 -c \
   'import json,sys; print(json.dumps(json.load(sys.stdin)["controls"], sort_keys=True))')
 curl --fail --silent --show-error "http://127.0.0.1:${MOVA_API_PORT:-8787}/readyz" >/dev/null
 
@@ -73,7 +73,7 @@ find "$work_dir/restore" -type f -exec chmod g+r {} +
 ./deploy/bin/postgres-shadow-restore-drill.sh "${restored[1]}" >/dev/null
 
 image_after=$(docker inspect mova-fpl-api-1 --format '{{.Image}}')
-controls_after=$(/usr/local/bin/mova safety | python3 -c \
+controls_after=$(/usr/local/bin/mova safety | tail -n 1 | python3 -c \
   'import json,sys; print(json.dumps(json.load(sys.stdin)["controls"], sort_keys=True))')
 [[ "$image_after" == "$image_before" && "$controls_after" == "$controls_before" ]]
 curl --fail --silent --show-error "http://127.0.0.1:${MOVA_API_PORT:-8787}/readyz" >/dev/null

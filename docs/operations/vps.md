@@ -364,6 +364,17 @@ remota y las credenciales deben ser independientes de los datos del VPS. Para pr
    manifiestos y hashes, restaura SQLite y Postgres temporalmente y registra ocho checks.
    No restaura sobre runtime ni incluye browser-profile/CODEX_HOME.
 
+Destino operativo: bucket privado `gs://orbital-lab-483815-mova-fpl-backup-20260920` en
+`US-CENTRAL1`, separado del bucket de modelos MOVA. La cuenta
+`mova-fpl-backup@orbital-lab-483815.iam.gserviceaccount.com` sólo tiene
+`roles/storage.objectAdmin` sobre ese bucket. El VPS guarda la llave JSON, repositorio y
+contraseña bajo `/etc/mova-fpl/` con `root:root 0600`; `deploy.env` apunta a la llave mediante
+`GOOGLE_APPLICATION_CREDENTIALS` y fija `GOOGLE_PROJECT_ID`. La contraseña de recuperación
+está resguardada como versión en Secret Manager `mova-fpl-restic-password`, al que la cuenta
+del VPS no tiene acceso. En un host nuevo se recupera la contraseña con la identidad
+administrativa de Orbital, se crea una llave nueva para la cuenta acotada y se usa `restic`
+para descargar el snapshot. Nunca copiar el token amplio de Google Drive al VPS.
+
 `mova status --json` debe mostrar únicamente estado sanitizado y fingerprint. El gate permanece
 `pending` si falta config/timer/evidencia y `blocked` si la configuración existe pero es insegura.
 
