@@ -226,8 +226,14 @@ def evaluate_workflow(observed: dict, *, now: datetime | None = None) -> dict:
                 "dependency": dependency,
             })
 
-    require("contextualize", "observe", bool(manifest or team))
-    require("propose_validate", "contextualize", bool(envelope))
+    # A completed downstream artifact remains historically valid when its live
+    # input later ages out. Freshness is an operational risk, not evidence that
+    # the artifact was created without its dependency.
+    require("contextualize", "observe",
+            bool(manifest or team) and source_outcome != "stale")
+    require("propose_validate", "contextualize",
+            bool(envelope) and not (
+                team.get("quality_status") == "valid" and not team_fresh))
     require("deliberate", "propose_validate", bool(deliberation))
     require("preflight", "propose_validate", bool(plan))
     if attempt:

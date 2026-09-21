@@ -73,6 +73,7 @@ def test_stale_source_and_private_state_cannot_complete_workflow_context():
     assert stages["contextualize"]["outcome"] == "stale_team_state"
     assert report["freshness"]["team_state_age_seconds"] == 3600
     assert report["verdict"] == "blocked"
+    assert report["violations"] == []
 
 
 def test_workflow_detects_illegal_downstream_execution_and_review():
