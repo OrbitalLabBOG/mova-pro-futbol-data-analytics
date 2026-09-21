@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — cockpit, triage y acceso web"
 created: 2026-09-01
-updated: 2026-09-12
+updated: 2026-09-20
 tags: [mova, fpl, cockpit, cli, dashboard, incidents, observability]
 status: active
 ---
@@ -93,8 +93,9 @@ alertas durante una espera normal:
 - antes de T−6h, research o deliberación degradados permanecen visibles pero no abren incidente;
 - desde T−6h, research o Strategist/Critic sin terminal abren un P1 deduplicado;
 - desde T−3h, contexto, envelope/validator o preflight incompletos abren P1;
-- una ejecución autorizada todavía pendiente en T−3h abre P1;
-- una ejecución pendiente después del deadline o un fallo terminal de ejecución abre P0;
+- una ejecución autorizada todavía pendiente al entrar en la ventana de ejecución T−1h abre P1;
+- una ejecución pendiente en T−15min (hard stop de verificación), después del deadline o con
+  fallo terminal abre P0;
 - violaciones de dependencias se vuelven P0 dentro de T−6h.
 
 El título canónico es `Autonomous cycle deadline risk`. Cuando los hitos se recuperan, el watchdog
@@ -108,6 +109,15 @@ mova_workflow_deadline_risks{severity="P0|P1"}
 
 No se alerta settlement inmediatamente después del deadline: FPL puede tardar en marcar
 `data_checked`. Esa transición conserva su gate propio.
+
+El workflow publica `workflow-timing-1.0.0` en `timing_policy_version` y, por stage,
+`target_at`, `recovery_until` y `hard_stop_at` derivados del deadline oficial. Research y
+deliberación apuntan a T−6h, contexto/envelope/preflight a T−3h y ejecución a T−1h;
+la recuperación de ejecución llega a T−30min y su hard stop a T−15min. Un plan
+`blocked` o `noop` termina en `skipped_policy` y no abre riesgo de ejecución. Settlement
+y review dependen de `finished + data_checked`, así que publican esa condición en
+`basis` sin inventar una hora de cierre. Estos tiempos son observabilidad y alertas;
+el ejecutor conserva sus propios gates y no recibe autoridad del workflow.
 
 ## Acciones y autoridad
 

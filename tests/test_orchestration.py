@@ -43,12 +43,18 @@ def test_workflow_explains_fail_closed_agent_chain_without_granting_authority():
     assert report["verdict"] == "safe_to_wait"
     assert report["violations"] == []
     assert report["runtime_mutated"] is False
+    assert report["timing_policy_version"] == "workflow-timing-1.0.0"
     stages = {row["name"]: row for row in report["stages"]}
     assert stages["research"]["status"] == "complete"
     assert stages["propose_validate"]["outcome"] == "blocked"
     assert stages["deliberate"]["status"] == "complete"
     assert stages["execute_verify"]["status"] == "skipped_policy"
     assert stages["settle"]["status"] == "not_due"
+    assert stages["research"]["timing"]["target_at"] == "2026-09-04T11:30:00+00:00"
+    assert stages["preflight"]["timing"]["recovery_until"] == "2026-09-04T16:30:00+00:00"
+    assert stages["execute_verify"]["timing"]["hard_stop_at"] == "2026-09-04T17:15:00+00:00"
+    assert stages["settle"]["timing"]["basis"] == "official_finished_data_checked"
+    assert stages["settle"]["timing"]["hard_stop_at"] is None
     assert set(report["roles"]["llm"]) == {"researcher", "strategist", "critic"}
 
 

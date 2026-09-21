@@ -71,6 +71,33 @@ def test_workflow_sentinel_treats_dependency_or_execution_failure_as_p0():
     }
 
 
+def test_authorized_execution_uses_window_and_predeadline_hard_stop():
+    early = evaluate_workflow_deadline(
+        _workflow(execution="pending"), seconds_to_deadline=3 * 3600,
+    )
+    window = evaluate_workflow_deadline(
+        _workflow(execution="pending"), seconds_to_deadline=3600,
+    )
+    cutoff = evaluate_workflow_deadline(
+        _workflow(execution="pending"), seconds_to_deadline=15 * 60,
+    )
+    noop = evaluate_workflow_deadline(
+        _workflow(execution="skipped_policy"), seconds_to_deadline=15 * 60,
+    )
+
+    assert early["healthy"] is True
+    assert window["severity"] == "P1"
+    assert [row["code"] for row in window["reasons"]] == [
+        "authorized_execution_pending_at_execution_window",
+    ]
+    assert cutoff["severity"] == "P0"
+    assert [row["code"] for row in cutoff["reasons"]] == [
+        "authorized_execution_pending_at_hard_stop",
+    ]
+    assert cutoff["timing_policy_version"] == "workflow-timing-1.0.0"
+    assert noop["healthy"] is True
+
+
 def _runtime_with_authorization(tmp_path):
     config = RuntimeConfig(
         ops_db=tmp_path / "ops.db", research_root=tmp_path / "research",
