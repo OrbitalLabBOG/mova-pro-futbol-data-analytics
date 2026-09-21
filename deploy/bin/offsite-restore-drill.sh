@@ -98,7 +98,7 @@ path, started, finished, duration, revision, snapshot_id = sys.argv[1:]
 payload = {
     "schema": "mova-host-drill-v1", "scenario": "offsite_restore",
     "status": "pass", "started_at": started, "finished_at": finished,
-    "downtime_seconds": int(duration), "revision": revision,
+    "downtime_seconds": 0, "elapsed_seconds": int(duration), "revision": revision,
     "checks": {key: True for key in (
         "encrypted_backup_present", "remote_snapshot_downloaded",
         "manifest_verified", "sqlite_restore_passed", "postgres_restore_passed",

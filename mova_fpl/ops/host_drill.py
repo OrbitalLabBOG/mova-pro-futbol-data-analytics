@@ -65,7 +65,7 @@ SCENARIOS = {
             "manifest_verified", "sqlite_restore_passed", "postgres_restore_passed",
             "artifacts_hashes_match", "credentials_not_persisted", "runtime_unchanged",
         },
-        "max_downtime_seconds": 1800,
+        "max_elapsed_seconds": 1800,
     },
 }
 MAX_BYTES = 64 * 1024
@@ -99,8 +99,13 @@ def validate(payload: dict, *, expected_revision: str,
     started = _time(payload.get("started_at"))
     finished = _time(payload.get("finished_at"))
     duration = int(payload.get("downtime_seconds") or 0)
-    if (finished < started
-            or not 0 <= duration <= int(contract["max_downtime_seconds"])):
+    offsite = scenario == "offsite_restore"
+    elapsed = int(payload.get("elapsed_seconds") or 0) if offsite else None
+    if (finished < started or
+            (offsite and (duration != 0 or elapsed is None
+                          or not 0 <= elapsed <= int(contract["max_elapsed_seconds"])
+                          or abs((finished - started).total_seconds() - elapsed) > 1))
+            or (not offsite and not 0 <= duration <= int(contract["max_downtime_seconds"]))):
         raise ValueError("host drill timing invalid")
     if payload.get("fpl_state_mutated") is not False:
         raise ValueError("host drill must prove FPL state remained untouched")
@@ -109,8 +114,10 @@ def validate(payload: dict, *, expected_revision: str,
         "started_at": started.isoformat(timespec="seconds"),
         "finished_at": finished.isoformat(timespec="seconds"),
         "downtime_seconds": duration, "revision": revision, "checks": checks,
-        "fpl_state_mutated": False, "host_service_restarted": True,
+        "fpl_state_mutated": False, "host_service_restarted": not offsite,
     }
+    if offsite:
+        normalized["elapsed_seconds"] = elapsed
     if scenario in {
         "postgres_recovery", "browser_recovery", "combined_recovery", "reboot_recovery",
     }:
