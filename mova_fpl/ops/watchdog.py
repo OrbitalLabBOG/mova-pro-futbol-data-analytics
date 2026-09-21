@@ -14,6 +14,7 @@ from tempfile import TemporaryDirectory
 from mova_fpl.ops.alerts import configured_sink, dispatch, journal_sink
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB
+from mova_fpl.ops.schedule import WORKFLOW_MILESTONES, WORKFLOW_TIMING_POLICY_VERSION
 
 INCIDENT_TITLE = "Scheduler heartbeat unhealthy"
 AGENT_QUEUE_INCIDENT_TITLE = "Agent queue integrity unhealthy"
@@ -30,7 +31,7 @@ def evaluate_workflow_deadline(workflow: dict, *, seconds_to_deadline: int | Non
     stages = {str(row.get("name")): row for row in workflow.get("stages") or []}
     reasons: list[dict] = []
     if (workflow.get("violations") and seconds_to_deadline is not None
-            and seconds_to_deadline <= 6 * 3600):
+            and seconds_to_deadline <= WORKFLOW_MILESTONES["research"][0]):
         reasons.append({
             "code": "workflow_dependency_violation", "severity": "P0",
             "violations": workflow.get("violations"),
@@ -41,7 +42,8 @@ def evaluate_workflow_deadline(workflow: dict, *, seconds_to_deadline: int | Non
             "code": "execution_terminal_failure", "severity": "P0",
             "outcome": execution.get("outcome"),
         })
-    if seconds_to_deadline is not None and 0 < seconds_to_deadline <= 6 * 3600:
+    if (seconds_to_deadline is not None and
+            0 < seconds_to_deadline <= WORKFLOW_MILESTONES["research"][0]):
         for name in ("research", "deliberate"):
             row = stages.get(name) or {}
             if row.get("status") != "complete":
@@ -50,7 +52,8 @@ def evaluate_workflow_deadline(workflow: dict, *, seconds_to_deadline: int | Non
                     "stage": name, "status": row.get("status"),
                     "outcome": row.get("outcome"),
                 })
-    if seconds_to_deadline is not None and 0 < seconds_to_deadline <= 3 * 3600:
+    if (seconds_to_deadline is not None and
+            0 < seconds_to_deadline <= WORKFLOW_MILESTONES["preflight"][0]):
         for name in ("contextualize", "propose_validate", "preflight"):
             row = stages.get(name) or {}
             if row.get("status") != "complete":
@@ -59,16 +62,21 @@ def evaluate_workflow_deadline(workflow: dict, *, seconds_to_deadline: int | Non
                     "stage": name, "status": row.get("status"),
                     "outcome": row.get("outcome"),
                 })
-        if execution.get("status") == "pending":
+    if seconds_to_deadline is not None and execution.get("status") == "pending":
+        target, _, hard_stop = WORKFLOW_MILESTONES["execute_verify"]
+        if seconds_to_deadline <= hard_stop:
             reasons.append({
-                "code": "authorized_execution_pending_t_minus_3h", "severity": "P1",
-                "stage": "execute_verify", "outcome": execution.get("outcome"),
+                "code": ("authorized_execution_pending_after_deadline"
+                         if seconds_to_deadline <= 0 else
+                         "authorized_execution_pending_at_hard_stop"),
+                "severity": "P0", "stage": "execute_verify",
+                "outcome": execution.get("outcome"),
             })
-    if seconds_to_deadline is not None and seconds_to_deadline <= 0:
-        if execution.get("status") == "pending":
+        elif seconds_to_deadline <= target:
             reasons.append({
-                "code": "authorized_execution_pending_after_deadline", "severity": "P0",
-                "stage": "execute_verify", "outcome": execution.get("outcome"),
+                "code": "authorized_execution_pending_at_execution_window",
+                "severity": "P1", "stage": "execute_verify",
+                "outcome": execution.get("outcome"),
             })
     severity = (
         "P0" if any(row["severity"] == "P0" for row in reasons) else
@@ -76,6 +84,7 @@ def evaluate_workflow_deadline(workflow: dict, *, seconds_to_deadline: int | Non
     )
     return {
         "schema": "mova-workflow-deadline-sentinel-v1",
+        "timing_policy_version": WORKFLOW_TIMING_POLICY_VERSION,
         "healthy": not reasons,
         "status": "ok" if not reasons else "critical" if severity == "P0" else "degraded",
         "severity": severity,

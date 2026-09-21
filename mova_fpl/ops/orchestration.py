@@ -12,6 +12,7 @@ from datetime import datetime, timedelta, timezone
 
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB, sha256_json
+from mova_fpl.ops.schedule import WORKFLOW_TIMING_POLICY_VERSION, workflow_stage_timing
 
 SCHEMA = "mova-orchestration-status-v1"
 DRILL_SCHEMA = "mova-orchestration-drill-v1"
@@ -181,6 +182,9 @@ def evaluate_workflow(observed: dict, *, now: datetime | None = None) -> dict:
         )
     stages.append(learning_stage)
 
+    for row in stages:
+        row["timing"] = workflow_stage_timing(row["name"], deadline)
+
     by_name = {row["name"]: row for row in stages}
     violations: list[dict] = []
 
@@ -235,6 +239,7 @@ def evaluate_workflow(observed: dict, *, now: datetime | None = None) -> dict:
         "generated_at": current.isoformat(timespec="seconds"),
         "cycle_id": cycle.get("cycle_id"),
         "gw": cycle.get("gw"),
+        "timing_policy_version": WORKFLOW_TIMING_POLICY_VERSION,
         "verdict": verdict,
         "stages": stages,
         "violations": violations,
