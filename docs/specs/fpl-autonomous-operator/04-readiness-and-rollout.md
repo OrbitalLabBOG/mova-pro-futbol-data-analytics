@@ -68,6 +68,11 @@ servicios ni mutar FPL; la base PostgreSQL temporal y el árbol descargado se el
 La [guía de VPS](../../operations/vps.md) documenta el procedimiento ante pérdida total.
 Esta evidencia cierra AC-06/07 de infraestructura, no AC-03 ni AC-08: research sigue
 bloqueado por calidad y faltan jornadas/ejecuciones longitudinales y closeout vivo.
+La siguiente iteración de AC-03 añade al workflow edades máximas por fase para el snapshot
+público y el team state, más presupuesto disponible de GW/mes. El watchdog escala datos
+stale desde T−6h y eleva P0 en el hard stop; presupuesto agotado con agentes aún no
+terminales produce P1. Son sentinelas deterministas y auditables, no un retry ni permiso
+de ejecución. AC-03 queda abierto hasta probar recuperación de auth y cierre vivo.
 
 ### Entregables y aceptación
 

@@ -58,6 +58,23 @@ def test_workflow_explains_fail_closed_agent_chain_without_granting_authority():
     assert set(report["roles"]["llm"]) == {"researcher", "strategist", "critic"}
 
 
+def test_stale_source_and_private_state_cannot_complete_workflow_context():
+    observed = _base()
+    observed["source"]["captured_at"] = "2026-09-04T13:00:00Z"
+    observed["team_state"]["observed_at"] = "2026-09-04T15:00:00Z"
+    observed["source_max_age_seconds"] = 3600
+    observed["team_state_max_age_seconds"] = 900
+
+    report = evaluate_workflow(observed, now=NOW)
+    stages = {row["name"]: row for row in report["stages"]}
+    assert stages["observe"]["status"] == "blocked"
+    assert stages["observe"]["outcome"] == "stale"
+    assert stages["contextualize"]["status"] == "pending"
+    assert stages["contextualize"]["outcome"] == "stale_team_state"
+    assert report["freshness"]["team_state_age_seconds"] == 3600
+    assert report["verdict"] == "blocked"
+
+
 def test_workflow_detects_illegal_downstream_execution_and_review():
     observed = _base()
     observed.update(

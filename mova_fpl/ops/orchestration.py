@@ -12,7 +12,10 @@ from datetime import datetime, timedelta, timezone
 
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB, sha256_json
-from mova_fpl.ops.schedule import WORKFLOW_TIMING_POLICY_VERSION, workflow_stage_timing
+from mova_fpl.ops.schedule import (
+    WORKFLOW_TIMING_POLICY_VERSION, private_state_cadence_seconds,
+    public_state_cadence_seconds, workflow_stage_timing,
+)
 
 SCHEMA = "mova-orchestration-status-v1"
 DRILL_SCHEMA = "mova-orchestration-drill-v1"
@@ -30,6 +33,18 @@ def _stage(name: str, owner: str, status: str, *, outcome: str | None = None,
         "subject_id": subject_id,
         "next_action": next_action if status in {"pending", "blocked", "degraded"} else None,
     }
+
+
+def _age_seconds(value: object, current: datetime) -> int | None:
+    if not value:
+        return None
+    try:
+        observed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        if observed.tzinfo is None:
+            return None
+        return max(0, int((current - observed.astimezone(timezone.utc)).total_seconds()))
+    except ValueError:
+        return None
 
 
 def evaluate_workflow(observed: dict, *, now: datetime | None = None) -> dict:
@@ -55,21 +70,34 @@ def evaluate_workflow(observed: dict, *, now: datetime | None = None) -> dict:
 
     stages: list[dict] = []
     source_status = source.get("quality_status")
+    source_age = _age_seconds(source.get("captured_at"), current)
+    source_max_age = observed.get("source_max_age_seconds")
+    source_fresh = (source_max_age is None or
+                    (source_age is not None and source_age <= int(source_max_age)))
+    source_outcome = ("stale" if source_status == "valid" and not source_fresh
+                      else source_status)
     stages.append(_stage(
         "observe", "collector",
-        "complete" if source_status == "valid" else
-        "blocked" if source_status in {"degraded", "quarantined"} else "pending",
-        outcome=source_status, subject_id=source.get("snapshot_id"),
+        "complete" if source_outcome == "valid" else
+        "blocked" if source_outcome in {"degraded", "quarantined", "stale"} else "pending",
+        outcome=source_outcome, subject_id=source.get("snapshot_id"),
         next_action="refrescar y calificar las fuentes públicas",
     ))
 
+    team_age = _age_seconds(team.get("observed_at"), current)
+    team_max_age = observed.get("team_state_max_age_seconds")
+    team_fresh = (team_max_age is None or
+                  (team_age is not None and team_age <= int(team_max_age)))
     context_ready = (
-        team.get("quality_status") == "valid" and bool(manifest.get("manifest_id"))
+        team.get("quality_status") == "valid" and team_fresh
+        and bool(manifest.get("manifest_id"))
     )
     stages.append(_stage(
         "contextualize", "deterministic_coordinator",
         "complete" if context_ready else "pending",
-        outcome="sealed" if context_ready else "incomplete",
+        outcome="sealed" if context_ready else
+        "stale_team_state" if team.get("quality_status") == "valid" and not team_fresh
+        else "incomplete",
         subject_id=manifest.get("manifest_id"),
         next_action="refrescar team state y sellar el manifest estratégico",
     ))
@@ -240,6 +268,12 @@ def evaluate_workflow(observed: dict, *, now: datetime | None = None) -> dict:
         "cycle_id": cycle.get("cycle_id"),
         "gw": cycle.get("gw"),
         "timing_policy_version": WORKFLOW_TIMING_POLICY_VERSION,
+        "freshness": {
+            "source_age_seconds": source_age,
+            "source_max_age_seconds": source_max_age,
+            "team_state_age_seconds": team_age,
+            "team_state_max_age_seconds": team_max_age,
+        },
         "verdict": verdict,
         "stages": stages,
         "violations": violations,
@@ -312,12 +346,26 @@ def build_workflow(config: RuntimeConfig, db: OpsDB, *,
             (review_id,),
         ).fetchone()[0])} if review_id else {"lesson_count": 0})
     observed["deliberation"] = db.deliberation_status(cycle_id).get("latest") or {}
+    current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+    deadline = str(cycle.get("deadline_at") or "")
+    if deadline:
+        observed["team_state_max_age_seconds"] = min(
+            config.private_state_max_age_seconds,
+            private_state_cadence_seconds(deadline, current),
+        )
+        observed["source_max_age_seconds"] = public_state_cadence_seconds(
+            deadline, current,
+        )
     report = evaluate_workflow(observed, now=now)
     budget = db.cost_report(config.agent_budget_policy(), season=config.season,
                             gw=cycle.get("gw"))
     report["budget"] = {
         "status": budget.get("status"),
         "orphaned_reservations": (budget.get("orphaned_reservations") or {}).get("status"),
+        "gameweek_remaining_tokens": (budget.get("gameweek") or {}).get("remaining_tokens"),
+        "gameweek_remaining_uses": (budget.get("gameweek") or {}).get("remaining_uses"),
+        "month_remaining_tokens": (budget.get("month") or {}).get("remaining_tokens"),
+        "month_remaining_uses": (budget.get("month") or {}).get("remaining_uses"),
     }
     if report["budget"]["orphaned_reservations"] == "observed":
         report["violations"].append({
