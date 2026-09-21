@@ -180,16 +180,26 @@ el bind del API como workaround.
 ## Alertas externas
 
 El banner web no sustituye push. Mientras `mova alerts channel` diga `local_only`, journald es el
-único destino y readiness permanece pending. Para configurar un webhook se necesita que Julián
-elija destino y owner; después se provisiona `/etc/mova-fpl/alert-webhook.json` root-only y se
-ejecuta una sola prueba auditada:
+único destino y readiness permanece pending. El destino operativo seleccionado es DM del bot
+Orbital a Julián (`owner=julian`). El contrato está en `deploy/alert-slack.example.json`:
+provisionar `/etc/mova-fpl/alert-webhook.json` como `root:root 0600`, con el token existente y
+el Slack user ID verificado, sin publicar ninguno en Git, logs o reportes. El runtime acepta
+también el webhook v1. Luego ejecutar una sola prueba auditada:
 
 ```bash
 mova alerts test --actor julian --reason "validar canal operativo" \
   --idempotency-key "alert-live:<fingerprint>:v1"
 ```
 
-No inventar un bot, chat ID, webhook o owner. `sent` prueba entrega HTTP, no lectura humana.
+`pass` prueba aceptación por Slack y liga el fingerprint al destino/token actual; no prueba
+lectura humana. Registrar acuse del incidente por separado. Si se rota token o destinatario,
+el ping anterior deja de satisfacer readiness.
+
+Para un P0/P1 real, consultar `mova triage --incident-id ID` y reconocerlo con
+`mova alerts acknowledge --incident-id ID --actor julian --reason '...'` después de
+atenderlo. Si un evento queda `dead`, corregir el canal antes de
+`mova alerts retry --outbox-id ID --actor julian --reason '...'`; la prueba de ping no
+reabre ni reconoce incidentes. Watchdog mantiene deduplicación y reintentos auditados.
 
 ## Límites deliberados
 

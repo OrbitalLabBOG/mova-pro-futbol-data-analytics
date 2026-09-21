@@ -345,8 +345,10 @@ sudo deploy/bin/postgres-shadow-restore-drill.sh "$pg_latest"
 El backup usa SQLite Online Backup API y ejecuta `quick_check`; nunca hace `cp` de una base
 viva ignorando WAL. PostgreSQL usa `pg_dump -Fc`, valida el catálogo del dump y conserva un
 manifest SHA-256. El timer diario ejecuta ambos. Retención local: 35 días.
-La copia off-host cifrada ya tiene implementación opt-in, pero no un destino autorizado. No
-habilites el timer sólo porque la unidad exista. Para provisionarla:
+La copia off-host cifrada es opt-in. El script crea un solo backup local verificado de SQLite y
+Postgres, sube ambos directorios a un snapshot cifrado y aplica retención remota de 35 diarios,
+8 semanales y 6 mensuales agrupados por host/tags (los paths llevan timestamps). La ubicación
+remota y las credenciales deben ser independientes de los datos del VPS. Para provisionarla:
 
 1. instala `restic` desde el paquete aprobado del host;
 2. crea `/etc/mova-fpl/offsite-repository`, `/etc/mova-fpl/offsite-password` y
@@ -354,11 +356,35 @@ habilites el timer sólo porque la unidad exista. Para provisionarla:
    `deploy/offsite-backup.example.json`;
 3. usa exclusivamente un repositorio remoto soportado (`s3:`, `sftp:`, `rest:`, `b2:`, `azure:`,
    `gs:`, `rclone:` o `swift:`) y registra owner; una ruta local no satisface off-host;
-4. inicializa el repositorio bajo autorización, ejecuta una vez
+4. inicializa el repositorio, ejecuta una vez
    `mova-fpl-offsite-backup.service`, revisa journald y sólo entonces habilita
    `mova-fpl-offsite-backup.timer`;
-5. completa un restore aislado y registra ocho checks con `mova drill import-host --scenario
-   offsite_restore`; nunca restaures sobre runtime ni incluyas browser-profile/CODEX_HOME.
+5. ejecuta `sudo deploy/bin/offsite-restore-drill.sh julian 'restore remoto aislado' \
+   offsite-restore:YYYYMMDD:v1`. El ejecutor descarga el último snapshot MOVA, valida los
+   manifiestos y hashes, restaura SQLite y Postgres temporalmente y registra ocho checks.
+   No restaura sobre runtime ni incluye browser-profile/CODEX_HOME.
+
+Destino operativo: bucket privado `gs://orbital-lab-483815-mova-fpl-backup-20260920` en
+`US-CENTRAL1`, separado del bucket de modelos MOVA. La cuenta
+`mova-fpl-backup@orbital-lab-483815.iam.gserviceaccount.com` sólo tiene
+`roles/storage.objectAdmin` sobre ese bucket. El VPS guarda la llave JSON, repositorio y
+contraseña bajo `/etc/mova-fpl/` con `root:root 0600`; `deploy.env` apunta a la llave mediante
+`GOOGLE_APPLICATION_CREDENTIALS` y fija `GOOGLE_PROJECT_ID`. La contraseña de recuperación
+está resguardada como versión en Secret Manager `mova-fpl-restic-password`, al que la cuenta
+del VPS no tiene acceso. En un host nuevo se recupera la contraseña con la identidad
+administrativa de Orbital, se crea una llave nueva para la cuenta acotada y se usa `restic`
+para descargar el snapshot. Nunca copiar el token amplio de Google Drive al VPS.
+El bucket aplica acceso uniforme, prevención de acceso público y soft delete de siete días.
+
+Ante pérdida total del VPS: crear un host aislado, instalar `restic`, generar una llave nueva
+para la cuenta acotada y restringirla a `0600`; recuperar la contraseña con
+`gcloud secrets versions access latest --secret=mova-fpl-restic-password --out-file=...`
+usando la identidad administrativa de Orbital. Fijar `GOOGLE_PROJECT_ID`,
+`GOOGLE_APPLICATION_CREDENTIALS`, `RESTIC_REPOSITORY_FILE` (contenido
+`gs:orbital-lab-483815-mova-fpl-backup-20260920:/`) y `RESTIC_PASSWORD_FILE`.
+Listar `restic snapshots --tag mova-fpl`, descargar el snapshot elegido a una ruta
+aislada y verificar los dos manifiestos antes de restaurar bases operativas. No ejecutar
+la restauración sobre un runtime vivo. Rotar la llave del VPS perdido al terminar.
 
 `mova status --json` debe mostrar únicamente estado sanitizado y fingerprint. El gate permanece
 `pending` si falta config/timer/evidencia y `blocked` si la configuración existe pero es insegura.

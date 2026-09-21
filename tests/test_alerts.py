@@ -7,8 +7,8 @@ from pathlib import Path
 import json
 
 from mova_fpl.ops.alerts import (
-    WebhookSettings, channel_drill, channel_prometheus, channel_report, channel_status,
-    dispatch, live_ping, webhook_sink,
+    SlackSettings, WebhookSettings, channel_drill, channel_prometheus,
+    channel_report, channel_status, dispatch, live_ping, slack_sink, webhook_sink,
 )
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB
@@ -128,6 +128,28 @@ def test_webhook_sink_uses_minimal_payload():
                                       "secret": "never"})})
     assert bodies[0]["incident_id"] == "i"
     assert "secret" not in bodies[0]
+
+
+def test_slack_sink_uses_fixed_user_and_redacted_message(tmp_path):
+    config_file = tmp_path / "alert.json"
+    config_file.write_text(json.dumps({
+        "version": 2, "enabled": True, "provider": "slack",
+        "token": "xoxb-123456789012345", "recipient_user_id": "U08GJTQDZ2T",
+        "owner": "julian",
+    }))
+    status = channel_status(RuntimeConfig(alert_webhook_config_file=config_file))
+    assert status["status"] == "configured"
+    assert status["owner"] == "julian" and status["channel"] == "slack_dm"
+    assert "xoxb" not in json.dumps(status) and "U08GJTQDZ2T" not in json.dumps(status)
+    bodies = []
+    sink = slack_sink(SlackSettings("xoxb-123456789012345", "U08GJTQDZ2T", "julian"),
+                      transport=lambda _settings, body: bodies.append(json.loads(body)) or 200)
+    sink({"outbox_id": "o", "event_key": "incident:i", "event_type": "opened",
+          "severity": "P0", "created_at": "now", "attempts": 1,
+          "payload_json": json.dumps({"incident_id": "i", "title": "runtime down",
+                                      "secret": "never"})})
+    assert bodies == [{"channel": "U08GJTQDZ2T",
+                       "text": "MOVA FPL P0: runtime down\nEvento: incident:i"}]
 
 
 def test_alert_channel_drill_is_hermetic_and_complete():
