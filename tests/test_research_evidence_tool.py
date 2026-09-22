@@ -93,3 +93,14 @@ def test_controlled_context_preserves_catalog_and_pages_memory_without_network(t
     assert tool.search({'query':'x'})['status']=='rejected'
     tool.search_calls=8
     assert tool.search({'query':'team news'})['reasons']==['search_budget_or_deadline']
+
+
+def test_search_missing_credential_is_typed_failure_and_never_calls_provider(tmp_path, monkeypatch):
+    mod=module()
+    tool=mod.EvidenceTool({'research_run_id':'research_'+'a'*32,
+        'manifest':{'deadline_at':'2026-10-10T10:00:00Z'}},tmp_path)
+    def missing(_path):
+        raise FileNotFoundError('redacted')
+    monkeypatch.setattr(mod.Path,'read_text',missing)
+    monkeypatch.setattr(mod.urllib.request,'urlopen',lambda *a,**k: (_ for _ in ()).throw(AssertionError('unexpected network')))
+    assert tool.search({'query':'Premier League team news'})['reasons']==['search_not_configured']

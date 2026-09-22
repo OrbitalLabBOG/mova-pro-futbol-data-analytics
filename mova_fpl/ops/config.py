@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from pathlib import Path
+from mova_fpl.ops.agent_releases import researcher_release
 
 
 def _bool(name: str, default: bool = False) -> bool:
@@ -164,10 +165,10 @@ class RuntimeConfig:
             research_provider=os.environ.get(
                 "MOVA_RESEARCH_PROVIDER", "codex_subscription"
             ),
-            research_model=os.environ.get("MOVA_RESEARCH_MODEL", "gpt-5.6-luna"),
+            research_model=os.environ.get("MOVA_RESEARCH_MODEL") or researcher_release()[1]["model"],
             research_reasoning_effort=os.environ.get(
-                "MOVA_RESEARCH_REASONING_EFFORT", "medium"
-            ),
+                "MOVA_RESEARCH_REASONING_EFFORT"
+            ) or researcher_release()[1]["reasoning_effort"],
             deliberation_model=os.environ.get(
                 "MOVA_DELIBERATION_MODEL", "gpt-5.6-terra"
             ),

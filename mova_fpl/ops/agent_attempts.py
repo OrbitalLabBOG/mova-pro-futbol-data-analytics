@@ -297,11 +297,23 @@ class AgentAttemptService:
         status = self.db.agent_worker_attempt_status()
         exhausted = []
         for item in status["subjects"]:
-            if int(item["attempts"]) < MAX_AUTOMATIC_ATTEMPTS or int(item["successes"]):
+            if not int(item["attempts"]) or int(item["successes"]):
                 continue
             subject_type, subject_id = item["subject_type"], item["subject_id"]
             subject = self.db.agent_subject(subject_type, subject_id)
             if not subject or subject["status"] in TERMINAL[subject_type]:
+                continue
+            max_attempts = MAX_AUTOMATIC_ATTEMPTS
+            request = Path(subject["request_path"])
+            if subject_type == "research" and request.is_file() and not request.is_symlink():
+                if request.resolve().parent != (self.config.research_root / "inbox").resolve():
+                    raise ValueError("experimental request fuera del inbox")
+                payload = json.loads(request.read_text())
+                embedded = payload.pop("request_sha256", None)
+                if (embedded == subject["request_sha256"] and sha256_json(payload) == embedded
+                        and payload.get("experiment") and int(item["failures"]) == int(item["attempts"])):
+                    max_attempts = 1
+            if int(item["attempts"]) < max_attempts:
                 continue
             detail = f"agotados {item['attempts']} intentos automáticos; failures={item['failures']}"
             if subject_type == "research":

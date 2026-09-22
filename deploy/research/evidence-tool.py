@@ -39,7 +39,7 @@ SEARCH_TOOL = {"name": "search_research_web", "description": "Discover public we
 READ_TOOL = {"name": "read_research_source", "description": "GET a public HTTPS page; return bounded literal text around requested official player names and publication metadata candidates. Validate excerpts before citing.",
  "inputSchema": {"type": "object", "additionalProperties": False, "required": ["source_url", "player_elements"],
   "properties": {"source_url": {"type": "string", "maxLength": 2048},
-   "player_elements": {"type": "array", "items": {"type": "integer"}, "maxItems": 4}}},
+   "player_elements": {"type": "array", "items": {"type": "integer"}, "maxItems": 32}}},
  "annotations": {"readOnlyHint": True, "destructiveHint": False, "openWorldHint": True}}
 CONTEXT_TOOL = {"name": "research_context", "description": "Retrieve sealed context on demand. Lookup official players by name; fetch memory or previous signals. No live database access.",
  "inputSchema": {"type": "object", "additionalProperties": False, "required": ["section", "query", "offset"],
@@ -106,7 +106,12 @@ class EvidenceTool:
         if self.search_calls >= limit or self.clock() >= self.deadline:
             return {"status": "rejected", "reasons": ["search_budget_or_deadline"]}
         self.search_calls += 1
-        key = Path("/run/secrets/research_search_key").read_text().strip()
+        try:
+            key = Path("/run/secrets/research_search_key").read_text().strip()
+        except OSError:
+            return {"status": "rejected", "reasons": ["search_not_configured"]}
+        if not key:
+            return {"status": "rejected", "reasons": ["search_not_configured"]}
         req = urllib.request.Request("https://api.firecrawl.dev/v1/search",
             data=json.dumps({"query": args["query"], "limit": 5}).encode(),
             headers={"Authorization": "Bearer "+key, "Content-Type": "application/json"}, method="POST")
@@ -128,11 +133,11 @@ class EvidenceTool:
         self.root.mkdir(parents=True, exist_ok=True)
         with (self.root/"search.jsonl").open("a") as stream:
             stream.write(json.dumps({"query_sha256": hashlib.sha256(args["query"].encode()).hexdigest(),
-                                    "status": result["status"], "query_number": self.search_calls})+"\n")
+                                    "status": result["status"], "query_number": self.search_calls, "result_count": len(result.get("results", []))})+"\n")
         return result
 
     def read_source(self, args):
-        if set(args) != {"source_url", "player_elements"} or not isinstance(args["player_elements"], list) or len(args["player_elements"]) > 4:
+        if set(args) != {"source_url", "player_elements"} or not isinstance(args["player_elements"], list) or len(args["player_elements"]) > 32 or any(type(x) is not int or x < 1 for x in args["player_elements"]):
             return {"status": "rejected", "reasons": ["invalid_arguments"]}
         if self.read_calls >= self.max_calls or self.clock() >= self.deadline:
             return {"status": "rejected", "reasons": ["read_budget_or_deadline"]}
@@ -151,7 +156,10 @@ class EvidenceTool:
                 name = self.catalog.get(element, "")
                 if not name: continue
                 position = text.casefold().find(name.casefold())
-                if position >= 0: snippets.append(text[max(0,position-150):position+600])
+                if position >= 0:
+                    snippet = text[max(0,position-150):position+600]
+                    if snippet not in snippets and sum(map(len,snippets)) + len(snippet) <= 6000:
+                        snippets.append(snippet)
             if not snippets: snippets = [text[:2400]]
             dates = re.findall(r'"date(?:Published|Modified)"\s*:\s*"([^"]{1,60})"', payload.decode("utf-8", "ignore"))[:4]
             return {"status": "ok", "source_url": url, "publication_candidates": dates,

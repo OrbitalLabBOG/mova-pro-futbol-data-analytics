@@ -63,7 +63,7 @@ def test_worker_deshabilita_herramientas_que_podrian_leer_auth_o_actuar():
     assert '"codex_output_missing"' in worker
     assert '"codex_exec_timeout"' in worker
     assert "MOVA_RESEARCH_TIMEOUT_MS || 480000" in worker
-    assert 'MOVA_RESEARCH_MODEL || "gpt-5.6-luna"' in worker
+    assert 'MOVA_RESEARCH_MODEL || release?.model || "gpt-5.6-luna"' in worker
     assert 'MOVA_RESEARCH_REASONING_EFFORT || "medium"' in worker
     assert 'MOVA_DELIBERATION_MODEL || "gpt-5.6-terra"' in worker
     assert 'MOVA_DELIBERATION_REASONING_EFFORT || "high"' in worker
@@ -163,8 +163,8 @@ def test_compose_no_monta_db_browser_repo_ni_secretos_en_research():
     assert section.count("/research") >= 1
     assert "/home/research/.codex" in section
     assert "MOVA_RESEARCH_TIMEOUT_MS:-480000" in section
-    assert "MOVA_RESEARCH_MODEL:-gpt-5.6-luna" in section
-    assert "MOVA_RESEARCH_REASONING_EFFORT:-medium" in section
+    assert "MOVA_RESEARCH_MODEL:-}" in section
+    assert "MOVA_RESEARCH_REASONING_EFFORT:-}" in section
     assert "MOVA_DELIBERATION_MODEL:-gpt-5.6-terra" in section
     assert "MOVA_DELIBERATION_REASONING_EFFORT:-high" in section
     for forbidden in (
