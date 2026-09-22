@@ -1,0 +1,53 @@
+{
+  "schema": "mova-research-frozen-policy-replay-v1",
+  "run_id": "research_73c7968ad6c2c3c71c4fc22fc7515a6d",
+  "observed_at": "2026-09-20T23:30:36.440000+00:00",
+  "request_sha256": "81911461ad83f4bf3446f48888eda742566a35c9d4bf49c778a45c015231f7ad",
+  "result_file_sha256": "187fda5cc21e360eaa692fb1835d578ee28c4f7b2d56ba734ca9fbff9cb390e3",
+  "documents": 6,
+  "sealed_artifacts_verified": 5,
+  "verified_documents": 5,
+  "date_verified_documents": 2,
+  "llm_calls": 0,
+  "runtime_ledger_mutated": false,
+  "results": [
+    {
+      "policy": "research-claim-2026.09.1",
+      "accepted_signals": 2,
+      "candidate_signals": 6,
+      "quality_reasons": {
+        "publication_unknown": 2,
+        "supported": 2,
+        "identity_or_claim_unsupported": 4
+      },
+      "coverage": {
+        "status": "partial",
+        "required_subjects": 25,
+        "checked_subjects": 3,
+        "evidence_verified_subjects": 3,
+        "coverage_ratio": 0.12,
+        "evidence_ratio": 0.12
+      },
+      "unresolved_conflicts": 1
+    },
+    {
+      "policy": "research-claim-2026.09.2",
+      "accepted_signals": 0,
+      "candidate_signals": 8,
+      "quality_reasons": {
+        "publication_unknown": 2,
+        "stale_for_claim": 2,
+        "identity_or_claim_unsupported": 4
+      },
+      "coverage": {
+        "status": "partial",
+        "required_subjects": 25,
+        "checked_subjects": 1,
+        "evidence_verified_subjects": 1,
+        "coverage_ratio": 0.04,
+        "evidence_ratio": 0.04
+      },
+      "unresolved_conflicts": 1
+    }
+  ]
+}

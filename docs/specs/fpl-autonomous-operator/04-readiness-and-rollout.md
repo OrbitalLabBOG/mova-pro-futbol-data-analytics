@@ -74,6 +74,14 @@ stale desde T−6h y eleva P0 en el hard stop; presupuesto agotado con agentes a
 terminales produce P1. Son sentinelas deterministas y auditables, no un retry ni permiso
 de ejecución. AC-03 queda abierto hasta probar recuperación de auth y cierre vivo.
 
+### Evidencia de la iteración de continuidad
+
+La [acta del 22/09](../../decisions/2026-27/runtime-review-recovery-20260922.md)
+conserva commits, pruebas, recuperación causal GW5, rollback, estado de sesión y
+paridad PostgreSQL. El [replay congelado de research](../../../experiments/research/20260922-recovery/README.md)
+separa adquisición deficiente y política de frescura. Es evidencia parcial de
+AC-01/02/03; no acredita una jornada autónoma ni cierra AC-08/09.
+
 ### Iteración de continuidad — 22 de septiembre
 
 Alcance autorizado: AC-03 y AC-01 primero; experimento acotado de AC-02 después.
