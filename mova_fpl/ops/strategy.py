@@ -577,12 +577,17 @@ class StrategicContextService:
             )
         with self.db.connect(readonly=True) as con:
             latest = con.execute(
-                "SELECT status,queued_at,imported_at FROM research_runs WHERE cycle_id=? "
+                "SELECT status,queued_at,imported_at FROM research_runs r WHERE cycle_id=? "
+                "AND NOT EXISTS (SELECT 1 FROM audit_events a WHERE a.subject_id=r.research_run_id "
+                "AND a.event_type IN ('research_experiment_enqueued','research_experiment_completed')) "
                 "ORDER BY queued_at DESC LIMIT 1", (cycle["cycle_id"],),
             ).fetchone()
             attempted_in_slot = con.execute(
-                "SELECT status,queued_at,imported_at FROM research_runs WHERE cycle_id=? "
-                "AND queued_at>=? ORDER BY queued_at DESC LIMIT 1",
+                "SELECT status,queued_at,imported_at FROM research_runs r WHERE cycle_id=? "
+                "AND queued_at>=? AND NOT EXISTS (SELECT 1 FROM audit_events a "
+                "WHERE a.subject_id=r.research_run_id AND a.event_type IN "
+                "('research_experiment_enqueued','research_experiment_completed')) "
+                "ORDER BY queued_at DESC LIMIT 1",
                 (cycle["cycle_id"], slot_start.isoformat()),
             ).fetchone()
         if latest:
@@ -667,6 +672,7 @@ class StrategicContextService:
             "research_run_id": run_id, "cycle_id": prepared["cycle_id"],
             "manifest_id": prepared["manifest_id"], "provider": self.config.research_provider,
             "request_path": str(request_path), "request_sha256": request_sha,
+            "experiment": _experiment,
             "budget_policy": self.config.agent_budget_policy(),
         })
         if result.get("status") == "blocked":

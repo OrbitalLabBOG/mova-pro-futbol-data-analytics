@@ -2284,6 +2284,11 @@ class OpsDB:
                 payload={"provider": payload["provider"],
                          "request_sha256": payload["request_sha256"]}, con=con,
             )
+            if payload.get("experiment"):
+                self.append_audit("research_experiment_enqueued", actor="mova-research-experiment",
+                    cycle_id=payload["cycle_id"], subject_type="research_run", subject_id=run_id,
+                    payload={"experiment": payload["experiment"],
+                             "request_sha256": payload["request_sha256"]}, con=con)
         return {"research_run_id": run_id, "status": "queued", "queued_at": now,
                 "budget": budget, "reused": False}
 

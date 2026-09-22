@@ -365,3 +365,20 @@ def test_equivalent_publication_timezone_is_verified_but_different_instant_is_no
     wrong=fetcher.seal(document_id='document_'+'c'*32,published_at='2026-09-21T06:30:13Z',**args)
     assert good['publication_date_verified'] is True
     assert wrong['publication_date_verified'] is False
+
+
+@pytest.mark.parametrize("state", ["queued", "completed", "failed"])
+def test_experiment_never_consumes_an_operational_research_slot(tmp_path, state):
+    config, db, service, cycle = _runtime(tmp_path)
+    service.activate_plan(_plan(), actor="test", reason="fixture")
+    exp=service.enqueue_experiment(versions=["1.8.0"], actor="test", reason="lab", idempotency_key="slot:lab")
+    run_id=exp["results"][0]["research_run_id"]
+    current=datetime.now(timezone.utc)
+    with db.transaction() as con:
+        con.execute("UPDATE gameweek_cycles SET deadline_at=? WHERE cycle_id=?",
+                    ((current+timedelta(hours=20)).isoformat(),cycle))
+        con.execute("UPDATE research_runs SET status=? WHERE research_run_id=?",(state,run_id))
+    assessment=service.due(now=current)
+    assert assessment["due"] is True
+    assert assessment["reason"] == "cadence_slot_due"
+    assert db.research_coverage()["measured_gameweeks"] == 0
