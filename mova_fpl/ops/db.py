@@ -228,7 +228,75 @@ class OpsDB:
         return dict(row) if row else None
 
     def start_job(self, job_type: str, idempotency_key: str, correlation_id: str,
-                  *, cycle_id: str | None = None, input_sha256: str | None = None) -> tuple[str, bool]:
+                  *, cycle_id: str | None = None, input_sha256: str | None = None,
+                  retry_failed: bool = False, recover_running: bool = False) -> tuple[str, bool]:
+        if recover_running and not retry_failed:
+            raise ValueError("running recovery requires the causal review retry contract")
+        if retry_failed:
+            # Opt-in only for transactional, replay-safe causal reviews. Never
+            # restart an executor or steal a running job through this path.
+            if job_type != "causal_review":
+                raise ValueError("failed-job recovery only supports causal_review")
+            with self.transaction() as con:
+                existing = con.execute(
+                    "SELECT * FROM job_runs WHERE idempotency_key=?", (idempotency_key,),
+                ).fetchone()
+                if existing:
+                    if (existing["job_type"] != job_type
+                            or existing["cycle_id"] != cycle_id
+                            or existing["input_sha256"] != input_sha256):
+                        raise ValueError("causal review idempotency input conflict")
+                    job_id = str(existing["job_id"])
+                    status = existing["status"]
+                    stale_running = False
+                    if status == "running" and recover_running:
+                        started = datetime.fromisoformat(existing["started_at"])
+                        stale_running = datetime.now(timezone.utc) - started >= timedelta(minutes=10)
+                    if status != "failed" and not stale_running:
+                        return job_id, True
+                    if existing["attempt"] >= 3:
+                        if stale_running:
+                            con.execute("UPDATE job_runs SET status='failed',finished_at=?,"
+                                        "error_code='RecoveryExhausted' WHERE job_id=?",
+                                        (utcnow(), job_id))
+                            self.append_audit(
+                                "job_recovery_exhausted", correlation_id=correlation_id,
+                                job_id=job_id, subject_type="job", subject_id=job_id,
+                                payload={"attempt": existing["attempt"]}, con=con,
+                            )
+                        return job_id, True
+                    if status == "failed" and (datetime.now(timezone.utc) -
+                            datetime.fromisoformat(existing["finished_at"]) < timedelta(minutes=5)):
+                        return job_id, True
+                    self.append_audit(
+                        "job_retry_claimed", actor="mova-causal-review",
+                        correlation_id=correlation_id, cycle_id=cycle_id,
+                        job_id=job_id, subject_type="job", subject_id=job_id,
+                        payload={"previous_attempt": existing["attempt"],
+                                 "previous_status": status,
+                                 "previous_error_code": existing["error_code"],
+                                 "previous_error_detail": existing["error_detail"],
+                                 "previous_finished_at": existing["finished_at"]}, con=con,
+                    )
+                    con.execute(
+                        "UPDATE job_runs SET status='running',attempt=attempt+1,started_at=?,"
+                        "finished_at=NULL,error_code=NULL,error_detail=NULL,output_sha256=NULL "
+                        "WHERE job_id=?", (utcnow(), job_id),
+                    )
+                    return job_id, False
+                job_id = new_id("job")
+                con.execute(
+                    "INSERT INTO job_runs(job_id,idempotency_key,correlation_id,cycle_id,"
+                    "job_type,status,started_at,input_sha256) VALUES(?,?,?,?,?,'running',?,?)",
+                    (job_id, idempotency_key, correlation_id, cycle_id, job_type,
+                     utcnow(), input_sha256),
+                )
+                self.append_audit(
+                    "job_started", correlation_id=correlation_id, cycle_id=cycle_id,
+                    job_id=job_id, subject_type="job", subject_id=job_id,
+                    payload={"job_type": job_type, "idempotency_key": idempotency_key}, con=con,
+                )
+                return job_id, False
         existing = self.get_job_by_key(idempotency_key)
         if existing:
             return str(existing["job_id"]), True
@@ -3532,11 +3600,11 @@ class OpsDB:
         source = payload["source"]
         with self.transaction() as con:
             existing = con.execute(
-                "SELECT review_id FROM gameweek_reviews WHERE settlement_id=? "
+                "SELECT review_id,artifact_path,artifact_sha256 FROM gameweek_reviews WHERE settlement_id=? "
                 "AND review_type='causal'", (source["settlement_id"],),
             ).fetchone()
             if existing:
-                return {"review_id": existing["review_id"], "reused": True}
+                return {**dict(existing), "reused": True}
             con.execute(
                 """INSERT INTO gameweek_reviews(
                 review_id,job_id,settlement_id,decision_id,review_type,causality_status,

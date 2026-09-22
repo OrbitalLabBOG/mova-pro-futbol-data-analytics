@@ -2,7 +2,7 @@
 type: project
 name: "MOVA FPL Autonomous Operator 2026/27 — Readiness and Rollout"
 created: 2026-08-21
-updated: 2026-09-20
+updated: 2026-09-22
 tags: [mova, fpl, readiness, rollout]
 status: active-shadow
 ---
@@ -73,6 +73,32 @@ público y el team state, más presupuesto disponible de GW/mes. El watchdog esc
 stale desde T−6h y eleva P0 en el hard stop; presupuesto agotado con agentes aún no
 terminales produce P1. Son sentinelas deterministas y auditables, no un retry ni permiso
 de ejecución. AC-03 queda abierto hasta probar recuperación de auth y cierre vivo.
+
+### Iteración de continuidad — 22 de septiembre
+
+Alcance autorizado: AC-03 y AC-01 primero; experimento acotado de AC-02 después.
+El cierre retrospectivo de GW5 está persistido, pero no acredita ejecución autónoma.
+La revisión causal reveló un contrato de propuestas incompatible y replay de fallos
+sin recuperación. La corrección exige pruebas de recurrencia, fallo antes/después de
+commit, replay sin duplicados, conflicto de entradas, cooldown y agotamiento de intentos.
+
+El collector tenía un override horario mientras la fuente de eventos conserva cadencia
+1800 s: recuperar evaluación cada 15 minutos, conservando admisión por lock y límites de
+CPU, evita que una oportunidad ocupada lo difiera una hora adicional. No se rebajan TTLs.
+
+Aceptación inmediata: suite completa y contratos, revisión causal GW5 persistida, incidente
+resuelto por éxito, timer efectivo verificado, release/imágenes/configuración identificadas,
+rollback del API comprobado y ninguna escritura FPL. Antes de la observación se fija una
+ventana de 30 minutos, muestras cada cinco minutos: API ready en <=15 s, RAM disponible
+>=2 GiB, disco libre >=10 GiB, ningún OOM/restart nuevo ni worker duplicado, heartbeat de
+tick <=15 minutos y ausencia de nuevos jobs fallidos sin tratamiento. CPU/steal se registran
+como diagnóstico; el VPS compartido no permite prometer latencia estable por una muestra.
+Esta ventana sólo acredita estabilidad corta; AC-01 integral sigue abierto.
+
+AC-02 requiere una comparación de investigación con entradas y presupuesto fijados,
+cobertura/evidencia/conflictos y tokens/duración. No se acredita ahorro por cambios de prompt.
+AC-04/05 conservan pruebas por capacidad/versión y tres GWs; AC-08 requiere la GW completa
+post-promoción. AC-09 prepara el expediente; ninguna tarea activa controles.
 
 ### Entregables y aceptación
 

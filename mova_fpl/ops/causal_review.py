@@ -8,6 +8,7 @@ from pathlib import Path
 from mova_fpl.ops.analytics_store import AnalyticsStore, read_status
 from mova_fpl.ops.collector.contracts import canonical_bytes, write_atomic
 from mova_fpl.ops.db import OpsDB, sha256_json, utcnow
+from mova_fpl.ops.tick import exclusive_lock
 
 
 class CausalReviewerService:
@@ -20,6 +21,15 @@ class CausalReviewerService:
 
     def run(self, *, gw: int, actor: str, reason: str,
             idempotency_key: str, analytics_state: dict | None = None) -> dict:
+        # The OS releases this lock on crash; only its holder may recover a
+        # stale running reviewer. Different keys cannot review one GW in parallel.
+        lock = self.config.artifact_root / "reviews" / self.config.season / f"gw{gw:02d}.lock"
+        with exclusive_lock(lock):
+            return self._run(gw=gw, actor=actor, reason=reason,
+                             idempotency_key=idempotency_key, analytics_state=analytics_state)
+
+    def _run(self, *, gw: int, actor: str, reason: str,
+             idempotency_key: str, analytics_state: dict | None = None) -> dict:
         if not actor.strip() or not reason.strip() or not idempotency_key.strip():
             raise ValueError("actor, reason e idempotency_key son obligatorios")
         self.db.migrate()
@@ -46,10 +56,14 @@ class CausalReviewerService:
             "causal_review", idempotency_key, correlation_id,
             cycle_id=source["cycle_id"], input_sha256=sha256_json({
                 "source_review_id": source["review_id"], "scorecards": scorecards,
-            }),
+            }), retry_failed=True, recover_running=True,
         )
         if reused:
-            return {"status": "reused", "job_id": job_id}
+            job = self.db.get_job_by_key(idempotency_key)
+            status = job["status"]
+            return {"status": "reused" if status == "completed" else status,
+                    "job_id": job_id, "attempt": job["attempt"],
+                    "retry_exhausted": status == "failed" and job["attempt"] >= 3}
         try:
             context = self.db.causal_review_context(source["cycle_id"])
             findings = self.classify(source, baseline, context)
@@ -87,10 +101,15 @@ class CausalReviewerService:
             raise
         output = {"status": "completed", "job_id": job_id, **result,
                   "findings": findings, "proposals": len(proposals),
-                  "artifact_path": str(path), "artifact_sha256": artifact_sha}
+                  "artifact_path": result.get("artifact_path", str(path)),
+                  "artifact_sha256": result.get("artifact_sha256", artifact_sha)}
         self.db.finish_job(job_id, "completed", output_sha256=sha256_json(output),
                            metrics={"gw": gw, "findings": len(findings),
                                     "proposals": len(proposals)})
+        self.db.resolve_incidents(
+            f"Causal review GW{gw} falló", actor=actor,
+            resolution=f"review causal persistido y job completado: {job_id}",
+        )
         return output
 
     def _analytics(self) -> dict:
@@ -141,12 +160,12 @@ class CausalReviewerService:
             # La tercera ocurrencia histórica permite proponer; nunca la primera observación.
             if not finding["actionable"] or finding["prior_occurrences"] < 2:
                 continue
-            category = finding["category"]
+            category = finding["category"].split("/", 1)[0]
             proposals.append({
                 "proposal_id": "proposal_" + hashlib.sha256(
                     f"{source['settlement_id']}:{category}".encode("utf-8")
                 ).hexdigest()[:24],
-                "category": category, "change_level": "experiment", "priority": "medium",
+                "category": category, "change_level": "C2", "priority": "P2",
                 "title": f"Evaluar patrón repetido: {category}",
                 "hypothesis": finding["summary"],
                 "evidence": {"finding": finding, "review_id": source["review_id"]},
