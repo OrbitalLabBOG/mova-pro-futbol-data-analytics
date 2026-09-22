@@ -317,7 +317,11 @@ try {
       `FECHA ACTUAL de observación: ${request.requested_at}. Deadline futuro: ${request.manifest.deadline_at}; no busques noticias del futuro ni confundas GW objetivo con la fecha de publicación.`,
       "Después de una consulta global, LEE y VERIFICA al menos una fuente antes de buscar más; no gastes todas las consultas en descubrimiento. Consultas breves por club/tema, no cadenas de 15 nombres. Usa URLs exactas de resultados, no las reconstruyas.",
       "Empieza con una consulta global y luego 2-3 dudas de mayor impacto para plantilla/candidatos. Agrupa por club y reutiliza fuentes multijugador explícitas.",
-      `Límites estrictos: ${scopePolicy.max_web_queries} consultas, ${scopePolicy.max_documents} documentos, ${scopePolicy.max_material_signals} señales. Apunta a un máximo de 12 tool calls y entrega pronto.`,
+      `Límites estrictos: ${scopePolicy.max_web_queries} consultas, ${scopePolicy.max_documents} documentos, ${scopePolicy.max_material_signals} señales.`,
+      ...(release.research_agenda === "multi_branch_v1" ? [
+        "Investiga con profundidad suficiente: una rama global abierta y al menos tres dudas de clubes distintos si existen fuentes pertinentes dentro del presupuesto. No termines al encontrar la primera noticia válida. Usa consultas restantes para las dudas de mayor impacto aún sin resolver y verifica los hallazgos antes de concluir; si las fuentes no existen o no son actuales, registra esa limitación y conserva not_checked.",
+        "Intenta cubrir varios jugadores con cada fuente oficial de equipo, pero elige siempre UN fragmento contiguo exacto por URL. El objetivo es información útil diversificada; no fabricar señales, corroboración ni cobertura para cumplir una cuota.",
+      ] : ["Apunta a un máximo de 12 tool calls y entrega pronto."]),
       "Usa search_research_web para descubrir URLs, read_research_source para fragmentos literales y fechas candidatas, verify_research_evidence antes de citar. No hay búsqueda nativa.",
       "Si falla una fuente, corrige una vez o descártala. No repitas consultas semánticamente equivalentes. Reserva salida para JSON antes del freno de tokens.",
       "Disponibilidad/lesión/minutos requieren publicación de máximo 3 días; rol inicial, cobertura y comentarios, máximo 7. Una lista de inscripción no demuestra disponibilidad. Si el filtro devuelve poco, prueba una consulta más corta antes de concluir ausencia de noticias.",
