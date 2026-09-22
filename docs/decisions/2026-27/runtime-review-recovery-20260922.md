@@ -95,6 +95,9 @@ Después se desplegó `ccf21d3` para corregir observabilidad del canal externo.
 Su comprobación posterior dio doctor **24 PASS / 0 WARN / 0 FAIL**, API/browser
 healthy, checkout e imagen coherentes, workflow sin violations y cola con cero
 anomalías. Readiness del API: **22 pass / 4 pending / 1 blocked**, A0 elegible.
+Los disparos programados posteriores también terminaron success: tick
+16:00:05–16:00:18 UTC y collector 16:00:45–16:01:04 UTC. A las 16:02:11 UTC,
+readiness seguía 22/4/1 y la cola sin anomalías.
 El watchdog real terminó success a las 15:56:44 UTC y publicó la observación
 15:56:43.657 UTC; el API reconoció los dos gates externos sin recibir secretos
 ni emitir otro ping. CI sobre `ccf21d3` pasó.
