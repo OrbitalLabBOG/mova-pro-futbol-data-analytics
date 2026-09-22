@@ -382,3 +382,15 @@ def test_experiment_never_consumes_an_operational_research_slot(tmp_path, state)
     assert assessment["due"] is True
     assert assessment["reason"] == "cadence_slot_due"
     assert db.research_coverage()["measured_gameweeks"] == 0
+
+
+def test_expanded_discovery_is_sealed_only_for_the_registered_candidate(tmp_path):
+    config, db, service, _ = _runtime(tmp_path)
+    service.activate_plan(_plan(), actor='test', reason='fixture')
+    pair=service.enqueue_experiment(versions=['1.9.0','1.10.0'],actor='test',reason='scope trial',idempotency_key='scope:pair')
+    requests=[json.loads(Path(db.research_run(r['research_run_id'])['request_path']).read_text()) for r in pair['results']]
+    assert requests[0]['manifest']==requests[1]['manifest']
+    assert requests[0]['scope_policy']['max_web_queries']==8
+    assert requests[1]['scope_policy']['max_web_queries']==16
+    assert requests[1]['scope_policy']['max_documents']==16
+    assert requests[1]['quality_policy']=='research-claim-2026.09.5'

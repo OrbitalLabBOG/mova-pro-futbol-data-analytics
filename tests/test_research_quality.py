@@ -183,3 +183,15 @@ def test_republished_claims_do_not_become_independent_corroboration():
         require_verified=True,catalog={411:'Haaland'},require_freshness=True,
         quality_policy='research-claim-2026.09.4')[0]
     assert row['validation_status']=='accepted'
+
+
+def test_football_role_phrases_do_not_require_one_exact_spelling():
+    from mova_fpl.ops.research_quality import claim_supported
+    for name,kind,text in [
+        ('Saka','starting_role','Bukayo Saka and Christos Tzolis line up either side of Kai Havertz.'),
+        ('Szoboszlai','set_pieces',"Szoboszlai is expected to battle with Alexander Isak for Liverpool's PK duties.")]:
+        args=dict(name=name,claim_type=kind,excerpt=text)
+        assert not claim_supported(**args,quality_policy='research-claim-2026.09.4')
+        assert claim_supported(**args,quality_policy='research-claim-2026.09.5')
+        assert not claim_supported(**{**args,'name':'Dunk'},quality_policy='research-claim-2026.09.5')
+    assert not claim_supported(name='Saka',claim_type='set_pieces',excerpt='Saka wears a PK shirt.',quality_policy='research-claim-2026.09.5')

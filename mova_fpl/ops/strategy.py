@@ -661,6 +661,8 @@ class StrategicContextService:
         request["agent_version"] = version
         request["agent_release"] = definition
         request["quality_policy"] = definition["quality_policy"]
+        if definition.get("discovery_profile") == "expanded_broad_v1" and run_kind in {"broad", "forced"}:
+            request["scope_policy"] |= {"max_web_queries": 16, "max_documents": 16}
         if _experiment:
             request["experiment"] = _experiment
             request["agent_version"] = _experiment["agent_version"]
@@ -826,7 +828,7 @@ class StrategicContextService:
             catalog_name_counts[key] = catalog_name_counts.get(key, 0) + 1
         quality_policy = request.get("quality_policy")
         strict_quality = bool(catalog) and quality_policy in {
-            "research-claim-2026.09.1", "research-claim-2026.09.2", "research-claim-2026.09.3", "research-claim-2026.09.4",
+            "research-claim-2026.09.1", "research-claim-2026.09.2", "research-claim-2026.09.3", "research-claim-2026.09.4", "research-claim-2026.09.5",
         }
         conflicts = self._validate_conflicts(payload.get("conflicts", []), by_url)
         conflict_keys = {(item["subject"].casefold(), item["claim_type"]) for item in conflicts
@@ -837,7 +839,7 @@ class StrategicContextService:
             catalog=catalog if strict_quality else None, cutoff=deadline,
             catalog_name_counts=catalog_name_counts,
             quality_policy=quality_policy,
-            require_freshness=quality_policy in {"research-claim-2026.09.2", "research-claim-2026.09.3", "research-claim-2026.09.4"},
+            require_freshness=quality_policy in {"research-claim-2026.09.2", "research-claim-2026.09.3", "research-claim-2026.09.4", "research-claim-2026.09.5"},
         )
         coverage = self._validate_coverage(
             payload.get("coverage"),
@@ -845,7 +847,7 @@ class StrategicContextService:
             by_url, signals, legacy=result_schema == "mova-research-brief-v1",
             catalog=catalog if strict_quality else None,
             fetched_at=observed, cutoff=deadline,
-            require_freshness=quality_policy in {"research-claim-2026.09.2", "research-claim-2026.09.3", "research-claim-2026.09.4"},
+            require_freshness=quality_policy in {"research-claim-2026.09.2", "research-claim-2026.09.3", "research-claim-2026.09.4", "research-claim-2026.09.5"},
         )
         if strict_quality:
             focus_ids = {int(row["element"]) for row in request["manifest"][
@@ -1085,7 +1087,7 @@ class StrategicContextService:
                                 for url, _ in strong_matching}) >= 2
                     )
                 corroboration = raw.get("corroboration_status", "unknown")
-                if quality_policy == "research-claim-2026.09.4":
+                if quality_policy in {"research-claim-2026.09.4", "research-claim-2026.09.5"}:
                     if corroboration not in {"independent", "same_primary_report", "unknown", "official_primary"}:
                         raise ValueError("corroboration_status inválido")
                     if not any(doc["source_tier"] == "official" for _,doc in strong_matching):
@@ -1119,7 +1121,7 @@ class StrategicContextService:
                 "conflict_status": "unresolved" if conflicted else "none",
                 "validation_status": validation,
                 **({"corroboration_status": raw.get("corroboration_status", "unknown")}
-                   if quality_policy == "research-claim-2026.09.4" else {}),
+                   if quality_policy in {"research-claim-2026.09.4", "research-claim-2026.09.5"} else {}),
                 "quality": quality,
             })
         return signals

@@ -110,7 +110,8 @@ class EvidenceTool:
         if (set(args) != {"query"} or not isinstance(args["query"], str)
                 or not 3 <= len(args["query"]) <= 400):
             return {"status": "rejected", "reasons": ["invalid_arguments"]}
-        limit = min(8, int(self.request.get("scope_policy", {}).get("max_web_queries", 4)))
+        query_ceiling = 16 if self.request.get("agent_release", {}).get("discovery_profile") == "expanded_broad_v1" else 8
+        limit = min(query_ceiling, int(self.request.get("scope_policy", {}).get("max_web_queries", 4)))
         if self.search_calls >= limit or self.clock() >= self.deadline:
             return {"status": "rejected", "reasons": ["search_budget_or_deadline"]}
         self.search_calls += 1
