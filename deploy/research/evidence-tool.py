@@ -39,7 +39,8 @@ SEARCH_TOOL = {"name": "search_research_web", "description": "Discover public we
 READ_TOOL = {"name": "read_research_source", "description": "GET a public HTTPS page; return bounded literal text around requested official player names and publication metadata candidates. Validate excerpts before citing.",
  "inputSchema": {"type": "object", "additionalProperties": False, "required": ["source_url", "player_elements"],
   "properties": {"source_url": {"type": "string", "maxLength": 2048},
-   "player_elements": {"type": "array", "items": {"type": "integer"}, "maxItems": 32}}},
+   "player_elements": {"type": "array", "items": {"type": "integer"}, "maxItems": 32},
+   "offset": {"type": "integer", "minimum": 0}}},
  "annotations": {"readOnlyHint": True, "destructiveHint": False, "openWorldHint": True}}
 CONTEXT_TOOL = {"name": "research_context", "description": "Retrieve sealed context on demand. Lookup official players by name; fetch memory or previous signals. No live database access.",
  "inputSchema": {"type": "object", "additionalProperties": False, "required": ["section", "query", "offset"],
@@ -153,7 +154,11 @@ class EvidenceTool:
         return self.page_cache[url]
 
     def read_source(self, args):
-        if set(args) != {"source_url", "player_elements"} or not isinstance(args["player_elements"], list) or len(args["player_elements"]) > 32 or any(type(x) is not int or x < 1 for x in args["player_elements"]):
+        if (not isinstance(args,dict) or not {"source_url", "player_elements"} <= set(args)
+                or set(args)-{"source_url", "player_elements", "offset"}
+                or not isinstance(args["player_elements"], list) or len(args["player_elements"]) > 32
+                or any(type(x) is not int or x < 1 for x in args["player_elements"])
+                or type(args.get("offset",0)) is not int or args.get("offset",0)<0):
             return {"status": "rejected", "reasons": ["invalid_arguments"]}
         if self.read_calls >= self.max_calls or self.clock() >= self.deadline:
             return {"status": "rejected", "reasons": ["read_budget_or_deadline"]}
@@ -174,9 +179,17 @@ class EvidenceTool:
                     if snippet not in snippets and sum(map(len,snippets)) + len(snippet) <= 6000:
                         snippets.append(snippet)
             if not snippets: snippets = [text[:2400]]
+            raw_text = payload.decode("utf-8", "ignore")
+            article = re.search(r'<article\b[^>]*>(.*?)</article\s*>',raw_text,re.I|re.S)
+            if article is None:
+                article = re.search(r'<main\b[^>]*>(.*?)</main\s*>',raw_text,re.I|re.S)
+            article_text = normalize_text(article.group(1).encode(),meta["content_type"]) if article else text
+            offset = args.get("offset",0)
             dates = re.findall(r'"date(?:Published|Modified)"\s*:\s*"([^"]{1,60})"', payload.decode("utf-8", "ignore"))[:4]
             return {"status": "ok", "source_url": url, "publication_candidates": dates,
-                    "literal_fragments": snippets, "truncated": True,
+                    "literal_fragments": snippets, "article_text": article_text[offset:offset+8000],
+                    "next_offset": offset+8000 if offset+8000<len(article_text) else None,
+                    "truncated": offset+8000<len(article_text),
                     "remaining_reads": self.max_calls-self.read_calls}
         except Exception:
             return {"status": "rejected", "reasons": ["source_read_failed"]}
@@ -224,7 +237,8 @@ class EvidenceTool:
             else:
                 excerpt = document.get("excerpt") or ""
                 supported = (subject_in_excerpt(name, excerpt) if args["claim_type"] == "coverage"
-                    else claim_supported(name=name, claim_type=args["claim_type"], excerpt=excerpt))
+                    else claim_supported(name=name, claim_type=args["claim_type"], excerpt=excerpt,
+                        allow_bench_role=self.request.get("quality_policy")=="research-claim-2026.09.3"))
                 if not supported:
                     reasons.append("identity_or_claim_unsupported")
                 if not document.get("publication_date_verified"):
@@ -242,7 +256,9 @@ class EvidenceTool:
                 and claim_fresh(claim_type="coverage", published_at=args["published_at"], observed=observed)
                 and self.catalog.get(element) and self.names[self.catalog[element].casefold()] == 1
                 and subject_in_excerpt(self.catalog[element], document.get("excerpt") or "")],
-            "final_acceptance": False, "observed_at": observed.isoformat(),
+            "final_acceptance": False,
+            "support_scope": "single source only; final signal acceptance requires an official source or two independent hosts supporting the SAME named claim",
+            "observed_at": observed.isoformat(),
             "duration_ms": int((time.monotonic() - started) * 1000)}
         self.root.mkdir(parents=True, exist_ok=True)
         with (self.root / "checks.jsonl").open("a", encoding="utf-8") as stream:

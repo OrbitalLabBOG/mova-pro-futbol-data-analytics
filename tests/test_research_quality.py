@@ -144,3 +144,12 @@ def test_manifest_embeds_active_plan_not_only_revision(tmp_path):
     assert manifest["research_summary"]["plan"]["assumptions"] == _plan()["assumptions"]
     assert manifest["research_summary"]["plan"]["guardrails"] == _plan()["guardrails"]
     assert manifest["research_summary"]["world"]["status"] == "missing"
+
+
+def test_negative_starting_role_is_supported_only_under_new_policy():
+    from mova_fpl.ops.research_quality import claim_supported
+    kwargs=dict(name="Sangaré",claim_type="starting_role",excerpt="Aaron Hickey and Mamadou Sangare drop to the bench.")
+    assert not claim_supported(**kwargs)
+    assert claim_supported(**kwargs,allow_bench_role=True)
+    assert not claim_supported(**{**kwargs,'claim_type':'injury'},allow_bench_role=True)
+    assert not claim_supported(**{**kwargs,'name':'Saka'},allow_bench_role=True)

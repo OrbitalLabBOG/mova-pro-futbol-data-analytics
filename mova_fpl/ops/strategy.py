@@ -655,6 +655,7 @@ class StrategicContextService:
         version, definition = researcher_release(_experiment["agent_version"] if _experiment else None)
         request["agent_version"] = version
         request["agent_release"] = definition
+        request["quality_policy"] = definition["quality_policy"]
         if _experiment:
             request["experiment"] = _experiment
             request["agent_version"] = _experiment["agent_version"]
@@ -819,7 +820,7 @@ class StrategicContextService:
             catalog_name_counts[key] = catalog_name_counts.get(key, 0) + 1
         quality_policy = request.get("quality_policy")
         strict_quality = bool(catalog) and quality_policy in {
-            "research-claim-2026.09.1", "research-claim-2026.09.2",
+            "research-claim-2026.09.1", "research-claim-2026.09.2", "research-claim-2026.09.3",
         }
         conflicts = self._validate_conflicts(payload.get("conflicts", []), by_url)
         conflict_keys = {(item["subject"].casefold(), item["claim_type"]) for item in conflicts
@@ -829,7 +830,8 @@ class StrategicContextService:
             require_verified=result_schema == "mova-research-brief-v2",
             catalog=catalog if strict_quality else None, cutoff=deadline,
             catalog_name_counts=catalog_name_counts,
-            require_freshness=quality_policy == "research-claim-2026.09.2",
+            allow_bench_role=quality_policy == "research-claim-2026.09.3",
+            require_freshness=quality_policy in {"research-claim-2026.09.2", "research-claim-2026.09.3"},
         )
         coverage = self._validate_coverage(
             payload.get("coverage"),
@@ -837,7 +839,7 @@ class StrategicContextService:
             by_url, signals, legacy=result_schema == "mova-research-brief-v1",
             catalog=catalog if strict_quality else None,
             fetched_at=observed, cutoff=deadline,
-            require_freshness=quality_policy == "research-claim-2026.09.2",
+            require_freshness=quality_policy in {"research-claim-2026.09.2", "research-claim-2026.09.3"},
         )
         if strict_quality:
             focus_ids = {int(row["element"]) for row in request["manifest"][
@@ -1000,7 +1002,7 @@ class StrategicContextService:
                           catalog: dict[int, str] | None = None,
                           cutoff: datetime | None = None,
                           catalog_name_counts: dict[str, int] | None = None,
-                          require_freshness: bool = False) -> list[dict]:
+                          require_freshness: bool = False, allow_bench_role: bool = False) -> list[dict]:
         if not isinstance(value, list) or len(value) > 120:
             raise ValueError("signals inválido")
         signals = []
@@ -1052,7 +1054,8 @@ class StrategicContextService:
                     has_strong_evidence = len(independent_hosts) >= 2
                 matching = [doc for doc in relevant if catalog_name and
                             claim_supported(name=catalog_name, claim_type=claim_type,
-                                            excerpt=str(doc.get("excerpt") or ""))]
+                                            excerpt=str(doc.get("excerpt") or ""),
+                                            allow_bench_role=allow_bench_role)]
                 supported = bool(catalog_name and
                                  subject_in_excerpt(catalog_name, subject) and matching)
                 dated = any(doc.get("publication_date_verified") for doc in matching)

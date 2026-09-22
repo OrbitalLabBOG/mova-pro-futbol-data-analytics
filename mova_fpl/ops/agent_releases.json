@@ -88,6 +88,19 @@
           "execution_timeout_ms": 420000,
           "search_window_days": 7,
           "codex_version": "0.153.4"
+        },
+        "1.6.0": {
+          "model": "gpt-6-astra",
+          "reasoning_effort": "medium",
+          "interactive_evidence": true,
+          "quality_policy": "research-claim-2026.09.3",
+          "output_schema": "mova-research-brief-v2",
+          "execution": "app_server",
+          "logical_token_guard": 600000,
+          "context_profile": "focus_on_demand",
+          "execution_timeout_ms": 420000,
+          "search_window_days": 7,
+          "codex_version": "0.153.4"
         }
       }
     }

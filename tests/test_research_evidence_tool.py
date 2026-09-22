@@ -147,3 +147,20 @@ def test_context_catalog_supports_multiple_names_without_inventing_ids(tmp_path)
     tool=mod.EvidenceTool(request,tmp_path)
     assert tool.context({'section':'catalog','query':'Lewis Dunk Pascal Struijk','offset':0})['rows']==[[1,'Dunk','BHA'],[2,'Struijk','LEE']]
     assert tool.context({'section':'catalog','query':'Sangare','offset':0})['rows']==[[3,'Sangaré','BRE']]
+
+
+def test_reader_exposes_unknown_subjects_and_bounded_article_pagination(tmp_path):
+    mod=module()
+    body='Global discovery: Dunk has a neck issue. '+('More article text. '*600)
+    raw=('<html><nav>Navigation '+('x'*9000)+'</nav><article>'+body+'</article></html>').encode()
+    def transport(url):return raw,{'content_type':'text/html','final_url':url,'http_status':200}
+    tool=mod.EvidenceTool({'research_run_id':'research_'+'a'*32,
+        'manifest':{'deadline_at':'2026-10-10T10:00:00Z','research_summary':{'world':{'catalog':[[1,'Saka','ARS']]}}}},
+        tmp_path,fetcher=mod.SafeEvidenceFetcher(tmp_path,transport=transport))
+    first=tool.read_source({'source_url':'https://example.com/news','player_elements':[1]})
+    assert first['article_text'].startswith('Global discovery: Dunk')
+    assert len(first['article_text'])==8000 and first['next_offset']==8000
+    rest=tool.read_source({'source_url':'https://example.com/news','player_elements':[],'offset':8000})
+    assert rest['next_offset'] is None
+    assert first['article_text']+rest['article_text']==body.strip()
+    assert tool.read_source({'source_url':'https://example.com/news','player_elements':[],'offset':-1})['status']=='rejected'
