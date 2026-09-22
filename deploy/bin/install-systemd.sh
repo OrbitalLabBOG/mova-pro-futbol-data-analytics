@@ -10,6 +10,12 @@ fi
 for unit in deploy/systemd/*.service deploy/systemd/*.timer; do
   sed "s|@@REPO_DIR@@|$repo_dir|g" "$unit" > "/etc/systemd/system/$(basename "$unit")"
 done
+for dropin in deploy/systemd/*.timer.d/*.conf; do
+  [[ -f "$dropin" ]] || continue
+  target="/etc/systemd/system/$(basename "$(dirname "$dropin")")"
+  install -d -m 0755 "$target"
+  install -m 0644 "$dropin" "$target/$(basename "$dropin")"
+done
 systemctl daemon-reload
 if [[ -e /usr/local/bin/mova && ! -L /usr/local/bin/mova ]]; then
   echo "/usr/local/bin/mova exists and is not a symlink; refusing to overwrite" >&2

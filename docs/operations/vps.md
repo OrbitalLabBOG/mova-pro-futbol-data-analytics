@@ -41,6 +41,16 @@ VPS. Supabase se reserva para seguimiento externo de construcción del proyecto.
 La imagen engine contiene Python 3.13.5, CBC y SQLite 3.53.4. Ninguna herramienta del host
 abre las bases: el SQLite 3.45.1 del VPS falla el gate deliberadamente.
 
+## Cadencia y perfil de capacidad
+
+El perfil sanitizado `deploy/compose.capacity.yaml` conserva los límites observados del
+VPS de 2 vCPU; se compara con `compose.override.yaml` y se registra su hash en cada release.
+No contiene credenciales. El drop-in versionado `95-cadence.conf` del collector prevalece
+sobre el override horario de recuperación: evalúa cada 15 minutos. La admisión por lock
+compartido se conserva; exit 75 difiere hasta la siguiente oportunidad y nunca crea una cola
+adicional de workers. No aumentar la cadencia de descarga de las fuentes ni sus TTLs para
+corregir un desajuste del timer.
+
 ## Build e instalación inicial
 
 ```bash
@@ -476,3 +486,15 @@ browser sólo se usa para login y lectura; no se permiten clicks que muten la cu
 
 Nunca restaurar encima de la base activa sin preservar primero el estado fallido. Nunca
 habilitar browser writes como mecanismo de recuperación.
+
+### Observación del canal externo desde el API
+
+Desde la corrección del 22/09, el watchdog publica el contrato sanitizado en
+`runtime/alert-channel.json` tras despachar. El API lo lee mediante
+`MOVA_ALERT_CHANNEL_STATUS_FILE`, sin montar credenciales de Slack/webhook.
+Ausencia, corrupción o edad mayor a 30 minutos hacen fallar el gate; no se debe
+copiar manualmente un reporte antiguo para forzar `pass`. Comparar `mova alerts
+channel`, `/api/v1/readiness` y cockpit tras recrear el API. Si discrepan, comprobar
+la ejecución del watchdog, frescura del archivo y fingerprint del live ping.
+La [decisión de observabilidad](../decisions/2026-27/alert-channel-observation-20260922.md)
+conserva el contrato y sus límites. Publicar esta observación no envía un mensaje.

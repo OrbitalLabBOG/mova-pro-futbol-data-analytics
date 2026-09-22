@@ -266,3 +266,35 @@ def test_v2_unverified_fetch_cannot_create_accepted_signal(tmp_path: Path):
             (run["research_run_id"],),
         ).fetchone()
     assert signal["validation_status"] == "candidate"
+
+
+def test_coverage_gate_is_independent_of_display_limit_and_retries(tmp_path):
+    config, db, service, _ = _runtime(tmp_path)
+    service.activate_plan(_plan(), actor="test", reason="fixture")
+    queued = service.enqueue(force=True, actor="test", reason="fixture",
+                             idempotency_key="coverage:pagination")
+    run = db.research_run(queued["research_run_id"])
+    # Fixture-only ledger: three measured GWs, oldest failed, 25 recent retries.
+    for gw in (3, 4):
+        db.upsert_cycle(config.season, gw, "2026-10-10T10:00:00Z", phase="press_conferences")
+    with db.transaction() as con:
+        cycles = [row[0] for row in con.execute(
+            "SELECT cycle_id FROM gameweek_cycles ORDER BY gw")]
+        con.execute("DELETE FROM research_runs WHERE research_run_id=?", (run["research_run_id"],))
+        for index in range(27):
+            cycle = cycles[min(index, 2)]
+            con.execute(
+                """INSERT INTO research_runs(research_run_id,cycle_id,manifest_id,provider,
+                status,request_path,request_sha256,queued_at,imported_at,coverage_status,
+                coverage_ratio,evidence_ratio,coverage_json)
+                VALUES(?,?,?,'fixture','imported','fixture',?,?,?,'complete',?,1,'{}')""",
+                (f"research_{index:032x}", cycle, run["manifest_id"], f"{index:064x}",
+                 f"2026-09-22T12:00:{index:02d}Z", f"2026-09-22T12:00:{index:02d}Z",
+                 0 if index == 0 else 1),
+            )
+    for limit in (1, 12, 20, 100):
+        report = db.research_coverage(limit=limit)
+        assert report["status"] == "failed"
+        assert report["measured_gameweeks"] == 3
+        assert report["passing_gameweeks"] == 2
+        assert len(report["runs"]) == min(limit, 27)

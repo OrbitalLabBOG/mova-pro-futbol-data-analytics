@@ -248,3 +248,79 @@ def test_worker_falla_cerrado_con_request_sin_permiso_host(tmp_path):
     )
     assert result.returncode == 75
     assert list((tmp_path / "receipts").glob("*.json")) == []
+
+
+def test_research_context_preserves_information_and_measures_conditional_scope():
+    script = r'''
+import assert from 'node:assert/strict';
+import {buildResearchContext} from './deploy/research/research-context.mjs';
+const sizes = [4,3,3,2,2,2,2,1,1,1,1,1,1,1];
+let element = 0;
+const focus = sizes.flatMap((size, team) => Array.from({length:size}, () => ({element:++element,team})));
+const catalog = focus.map(row => ({...row, name:'Player '+row.element, chance:null}));
+const request = {request_sha256:'a'.repeat(64), objective:'global radar',
+  scope_policy:{max_documents:10}, guardrails:{read_only:true},
+  manifest:{analytics_manifest:{model_versions:['v1']}, memory_summary:{lessons:['learn']},
+    research_summary:{focus, world:{catalog}, prior_gameweek_signals:[{claim:'historic'}]}}};
+const before = structuredClone(request);
+const {context,receipt} = buildResearchContext(request);
+assert.deepEqual(request,before);
+assert.deepEqual(context.manifest.research_summary.world.catalog,catalog);
+assert.deepEqual(context.manifest.memory_summary,request.manifest.memory_summary);
+assert.deepEqual(context.manifest.analytics_manifest,request.manifest.analytics_manifest);
+assert.deepEqual(context.manifest.research_summary.focus,focus);
+assert.deepEqual(context.guardrails,request.guardrails);
+assert.equal(context.acquisition_plan.conditional_club_source_capacity,21);
+assert.equal(context.acquisition_plan.conditional_documents_for_target,12);
+assert.equal(context.acquisition_plan.conditional_scope_shortfall,true);
+assert.deepEqual(receipt,buildResearchContext(request).receipt);
+assert.equal(receipt.context_json_bytes,Buffer.byteLength(JSON.stringify(context)));
+request.manifest.research_summary.world.catalog[0].optional = null;
+assert.deepEqual(buildResearchContext(request).context.manifest.research_summary.world.catalog,
+  request.manifest.research_summary.world.catalog);
+request.manifest.research_summary.world.catalog = [[1,'Name','ARS']];
+assert.deepEqual(buildResearchContext(request).context.manifest.research_summary.world.catalog, [[1,'Name','ARS']]);
+const missing = buildResearchContext({manifest:{research_summary:{focus:[{element:1},{element:2}]}}});
+assert.equal(missing.context.acquisition_plan.clubs.length,2);
+assert.equal(missing.context.acquisition_plan.conditional_scope_shortfall,null);
+'''
+    subprocess.run(['node', '--input-type=module', '-e', script], cwd=ROOT, check=True)
+
+
+def test_authorized_worker_records_context_actually_sent_on_failed_attempt(tmp_path):
+    from datetime import datetime, timedelta, timezone
+    import hashlib
+
+    run_id = 'research_' + 'a' * 32
+    request = {'schema':'mova-research-request-v1', 'research_run_id':run_id,
+               'request_sha256':'b' * 64, 'scope_policy':{'max_documents':2},
+               'manifest':{'research_summary':{'focus':[{'element':1,'team':'Club'}],
+                           'world':{'catalog':[[1,'Player','CLB']]}}}}
+    for name in ('inbox', 'permits', 'bin'):
+        (tmp_path / name).mkdir()
+    (tmp_path / 'inbox' / f'{run_id}.request.json').write_text(json.dumps(request))
+    authorization_id = 'agentauth_' + 'c' * 32
+    expiry = (datetime.now(timezone.utc) + timedelta(minutes=5)).isoformat()
+    permit = {'schema':'mova-agent-attempt-permit-v1','authorization_id':authorization_id,
+              'subject_type':'research','subject_id':run_id,'request_sha256':'b' * 64,
+              'attempt_number':1,'deadline_at':expiry,'expires_at':expiry,
+              'budget_snapshot_sha256':'d' * 64}
+    (tmp_path / 'permits' / f'{run_id}.{authorization_id}.permit.json').write_text(json.dumps(permit))
+    fake = tmp_path / 'bin' / 'codex'
+    fake.write_text('#!/bin/sh\ncat > "$MOVA_TEST_PROMPT"\nexit 1\n')
+    fake.chmod(0o755)
+    prompt_path = tmp_path / 'prompt'
+    result = subprocess.run(['node', str(ROOT / 'deploy/research/codex-worker.mjs')],
+        env={**os.environ, 'PATH':str(tmp_path / 'bin') + ':' + os.environ['PATH'],
+             'MOVA_RESEARCH_ROOT':str(tmp_path), 'MOVA_TEST_PROMPT':str(prompt_path)},
+        text=True, capture_output=True)
+    assert result.returncode == 1
+    receipt = json.loads(next((tmp_path / 'logs').glob('*.context.json')).read_text())
+    prompt = prompt_path.read_text()
+    context_json = prompt.split('REQUEST_JSON:\n', 1)[1]
+    assert hashlib.sha256(context_json.encode()).hexdigest() == receipt['context_sha256']
+    assert receipt['prompt_bytes'] == len(prompt.encode())
+    assert receipt['request_sha256'] == request['request_sha256']
+    assert json.loads(context_json)['acquisition_plan']['focus_subjects'] == 1
+    assert len(list((tmp_path / 'receipts').glob('*.started.json'))) == 1
+    assert len(list((tmp_path / 'receipts').glob('*.finished.json'))) == 1

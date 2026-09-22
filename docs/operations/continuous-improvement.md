@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — mejora continua controlada"
 created: 2026-08-30
-updated: 2026-09-16
+updated: 2026-09-22
 tags: [mova, fpl, learning, review, costs, promotion]
 status: active-shadow
 ---
@@ -43,7 +43,24 @@ Clasifica `data/freshness`, `model/calibration`, `optimizer`, `research/context`
 aparecer al menos tres veces antes de abrir experimento. `not_ready` no muta jobs ni memoria.
 Para `optimizer`, el reviewer cuenta códigos fallidos distintos únicamente en el envelope vigente.
 Los checks de envelopes `superseded` permanecen como diagnóstico histórico separado y no inflan
-la recurrencia causal ni abren una propuesta falsa.
+la recurrencia causal ni abren una propuesta falsa. Sólo legalidad de decisión, contabilidad de
+transferencias y ausencia de comparadores clasifican como defectos del optimizador. Bloqueos de
+autoridad, ventana o frescura se conservan como observación no accionable de guardrails; su
+recuperación pertenece al workflow/watchdog, no a una propuesta de recalibración.
+
+El reviewer serializa cada GW con un lock del sistema operativo. Un fallo permite
+hasta tres intentos totales con la misma clave y entradas idénticas, separados por
+cinco minutos. Un proceso interrumpido en `running` sólo se recupera después de diez
+minutos y con el lock de la GW adquirido; nunca se roba un proceso activo. Un fallo
+en cooldown o agotado se informa como `failed`, no como replay exitoso. El historial
+del intento previo permanece en auditoría. El éxito resuelve su incidente P2 sólo
+después de persistir la revisión. Esta recuperación no se aplica al executor FPL.
+
+Las propuestas recurrentes normalizan las categorías a los enums de almacenamiento
+(`model`, `research`, etc.), usan `C2/P2` y permanecen `proposed`: ni una clasificación
+ni el reintento autorizan cambios de modelo. La traza de cierres nuevos utiliza la
+etiqueta del comparador y el autor declarado; la ausencia de autor se registra como
+`unknown`. Las trazas históricas no se reescriben silenciosamente.
 
 Las tablas `change_proposal_evaluations` y `lessons` son append-only salvo el estado visible de
 la propuesta. Cada transición conserva actor, razón, clave idempotente, hash y evidencia. El

@@ -893,3 +893,132 @@ def test_active_model_pointer_uses_ledger_order_when_wall_clock_moves_backwards(
                                               at, 'test', 'rollback'))
     assert db.active_model_bundle()['release_id'] is None
     assert db.model_bundle_release_status()['active_model_bundle']['value']['release_id'] is None
+
+
+def _causal_fixture(tmp_path):
+    db, _ = _persisted_review(tmp_path)
+    service = CausalReviewerService(RuntimeConfig(artifact_root=tmp_path / 'artifacts'), db)
+    args = dict(gw=1, actor='test', reason='recovery test', idempotency_key='causal:recovery',
+                analytics_state={'latest_scorecards': [dict(season='2026-27', gw=1,
+                    variant='baseline', drift_status='alert')]})
+    return db, service, args
+
+
+def test_causal_repeated_findings_persist_with_storage_contract(tmp_path, monkeypatch):
+    db, service, args = _causal_fixture(tmp_path)
+    original = db.causal_review_context
+    def recurrent(cycle):
+        context = original(cycle)
+        context['category_occurrences'] = {c: 2 for c in service.CATEGORIES}
+        context['unresolved_research_conflicts'] = 1
+        return context
+    monkeypatch.setattr(db, 'causal_review_context', recurrent)
+    result = service.run(**args)
+    assert result['proposals'] >= 3
+    with db.connect(readonly=True) as con:
+        rows = con.execute('SELECT category,change_level,priority FROM change_proposals '
+                           'WHERE review_id=?', (result['review_id'],)).fetchall()
+    assert {'model', 'research', 'strategy'} <= {r['category'] for r in rows}
+    assert all((r['change_level'], r['priority']) == ('C2', 'P2') for r in rows)
+    assert service.run(**args)['status'] == 'reused'
+
+
+@pytest.mark.parametrize('after_commit', [False, True])
+def test_causal_recovers_failed_transaction_without_duplicate_review(tmp_path, monkeypatch, after_commit):
+    db, service, args = _causal_fixture(tmp_path)
+    record = db.record_causal_review
+    def interrupted(payload):
+        if after_commit:
+            record(payload)
+        raise OSError('injected lost response')
+    monkeypatch.setattr(db, 'record_causal_review', interrupted)
+    with pytest.raises(OSError):
+        service.run(**args)
+    assert service.run(**args)['status'] == 'failed'  # cooldown, never fake success
+    with db.transaction() as con:
+        con.execute("UPDATE job_runs SET finished_at='2026-01-01T00:00:00+00:00' "
+                    "WHERE idempotency_key=?", (args['idempotency_key'],))
+    monkeypatch.setattr(db, 'record_causal_review', record)
+    result = service.run(**args)
+    assert result['status'] == 'completed'
+    assert service.run(**args)['status'] == 'reused'
+    assert db.get_job_by_key(args['idempotency_key'])['attempt'] == 2
+    with db.connect(readonly=True) as con:
+        rows = con.execute("SELECT artifact_path,artifact_sha256 FROM gameweek_reviews "
+                           "WHERE review_type='causal'").fetchall()
+        assert len(rows) == 1
+        assert rows[0]['artifact_path'] == result['artifact_path']
+        assert rows[0]['artifact_sha256'] == hashlib.sha256(Path(result['artifact_path']).read_bytes()).hexdigest()
+
+
+def test_causal_retry_is_bounded_and_rejects_changed_inputs(tmp_path, monkeypatch):
+    db, service, args = _causal_fixture(tmp_path)
+    def broken(payload):
+        raise OSError('persistent failure')
+    monkeypatch.setattr(db, 'record_causal_review', broken)
+    for attempt in range(1, 4):
+        with pytest.raises(OSError):
+            service.run(**args)
+        assert db.get_job_by_key(args['idempotency_key'])['attempt'] == attempt
+        with db.transaction() as con:
+            con.execute("UPDATE job_runs SET finished_at='2026-01-01T00:00:00+00:00' "
+                        "WHERE idempotency_key=?", (args['idempotency_key'],))
+    assert service.run(**args)['retry_exhausted'] is True
+    args['analytics_state']['latest_scorecards'][0]['drift_status'] = 'ok'
+    with pytest.raises(ValueError, match='input conflict'):
+        service.run(**args)
+
+
+def test_trace_uses_actual_comparator_and_unknown_author(tmp_path):
+    _, package = _package()
+    package['comparator']['label'] = 'observed_no_change'
+    package['intervention'].pop('author')
+    path = tmp_path / 'package.json'
+    path.write_text(json.dumps(package))
+    config = RuntimeConfig(artifact_root=tmp_path / 'artifacts')
+    review = GameweekReviewService(config, OpsDB(tmp_path / 'ops.db', enforce_version=False))._build(
+        package, _official(package), path, 'job_test', '2026-27-gw01', 'corr',
+        'test', 'trace provenance', 'trace:provenance')
+    trace = tmp_path / 'trace.db'
+    export_trace(path, Path(review['ledger']['review']['artifact_path']), trace)
+    import sqlite3
+    with sqlite3.connect(trace) as con:
+        assert con.execute('SELECT author FROM interventions').fetchone()[0] == 'unknown'
+        labels = {r[0] for r in con.execute('SELECT baseline FROM benchmarks')}
+    assert 'observed_no_change' in labels
+    assert 'pure_model_v1.1.0' not in labels
+
+
+def test_causal_crash_recovery_uses_lock_and_preserves_live_job(tmp_path):
+    from mova_fpl.ops.tick import exclusive_lock, LockBusy
+    db, service, args = _causal_fixture(tmp_path)
+    source = db.causal_review_source('2026-27', 1)
+    job_id, _ = db.start_job('causal_review', args['idempotency_key'], 'corr',
+        cycle_id=source['cycle_id'], input_sha256=sha256_json({
+            'source_review_id': source['review_id'],
+            'scorecards': args['analytics_state']['latest_scorecards']}))
+    assert service.run(**args)['status'] == 'running'
+    with db.transaction() as con:
+        con.execute("UPDATE job_runs SET started_at='2026-01-01T00:00:00+00:00' "
+                    "WHERE job_id=?", (job_id,))
+    with exclusive_lock(service.config.artifact_root / 'reviews/2026-27/gw01.lock'):
+        with pytest.raises(LockBusy):
+            service.run(**args)
+    assert db.get_job_by_key(args['idempotency_key'])['attempt'] == 1
+    assert service.run(**args)['status'] == 'completed'
+    assert db.get_job_by_key(args['idempotency_key'])['attempt'] == 2
+
+
+def test_causal_policy_blocks_are_not_optimizer_defects(tmp_path):
+    db, service, _ = _causal_fixture(tmp_path)
+    source = db.causal_review_source('2026-27', 1)
+    context = db.causal_review_context(source['cycle_id'])
+    context.update(failed_validation_checks=2,
+                   failed_validation_check_codes=['TEAM_STATE_FRESH', 'IRREVERSIBLE_ACTION_WINDOW'],
+                   category_occurrences={'optimizer': 5})
+    findings = service.classify(source, {'drift_status': 'ok'}, context)
+    assert not any(f['category'] == 'optimizer' for f in findings)
+    assert service._proposals(findings, source) == []
+    context['failed_validation_check_codes'].append('SELECTED_DECISION_LEGAL')
+    findings = service.classify(source, {'drift_status': 'ok'}, context)
+    assert any(f['code'] == 'DECISION_LEGALITY_FAILURES' and f['actionable'] for f in findings)

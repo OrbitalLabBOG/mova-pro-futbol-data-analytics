@@ -1,7 +1,7 @@
 ---
 type: docs
 name: MOVA Fantasy Fútbol Data Analytics
-updated: 2026-09-20
+updated: 2026-09-22
 status: active
 tags: [mova, fpl, runtime, operations]
 ---
@@ -28,25 +28,29 @@ y la [guía de cierre, tamaños y límites](experiments/data_ground_truth/README
 
 ## Versiones y última comprobación
 
-El **20 de septiembre de 2026, 15:20 Colombia**, el VPS ejecutaba checkout e
-imagen API `a8cfa7d`, con los hotfixes host de captura privada conservados.
-El doctor terminó **24 PASS, 0 WARN, 0 FAIL** tras un tick programado con
-exit 0; API, PostgreSQL y browser estaban `healthy`, sin reinicios ni workers
-MOVA huérfanos. Los ocho timers quedaron activos. Analytics generó
-proyecciones GW6 y dejó GW5 en `waiting_for_data_checked`, sin cierre
-prematuro. La captura privada autenticada validó 15 jugadores; Chromium
-permanece activo entre capturas sobre el perfil persistente. El tick volvió
-a cada 5 minutos, con lock de capacidad, para mantener fresco el heartbeat.
-Se corrigió el falso P0 que trataba un tick `running` como caída. La
-[recuperación y auditoría del VPS](docs/decisions/2026-27/runtime-recovery-20260920.md)
-conserva jobs, mediciones, pruebas y rollback.
+El **22 de septiembre de 2026**, el VPS quedó desplegado en `ccf21d3`:
+recuperación acotada de revisión causal, propuestas con enums válidos,
+clasificación separada de bloqueos operativos, atribución correcta en trazas
+nuevas y collector evaluado cada 15 minutos con lock de capacidad compartido.
+GW5 está cerrada y su revisión causal recuperada; el replay no duplica resultados.
+La captura privada posterior al reinicio del browser validó los 15 jugadores.
+Doctor final: **24 PASS, 0 WARN, 0 FAIL**; readiness **22 pass, 4 pending, 1 blocked**.
+Suite: **1802 passed, 1 skipped, 79 deselected**; CI de PR #177 en verde.
 
-La autoridad sigue en `shadow/A0`, con `kill_switch=true`,
-`browser_writes=false` y compliance pendiente. El backup cifrado off-host y
-las alertas externas continúan sin configurar; el cierre de GW5 requiere el
-`data_checked` oficial. Los cambios de recuperación están en la
-[rama de revisión](https://github.com/OrbitalLabBOG/mova-pro-futbol-data-analytics/tree/codex/mova-runtime-recovery-20260920);
-el SHA del checkout del VPS no debe confundirse con la punta de `main`.
+La [evidencia de release, rollback y salud](docs/decisions/2026-27/runtime-review-recovery-20260922.md)
+registra el corte y sus límites. La [acta GW5](docs/decisions/2026-27/gw05-closeout.md)
+separa cierre factual, comparador y aprendizaje. El
+[replay de research](experiments/research/20260922-recovery/README.md) demuestra
+que la frescura y la calidad de evidencia siguen bloqueando esa capacidad.
+
+La autoridad continúa en `shadow/A0`, `kill_switch=true`, `browser_writes=false`
+y compliance pendiente. Alertas externas y backup cifrado off-host ya tienen
+evidencia de configuración y restore del 20/09 (AC-06/07); no son pendientes
+nuevos. Faltan calidad research, rehearsals del executor y una jornada completa
+sin rescates. El cierre supervisado de GW5 no acredita ese último gate.
+El código desplegado pertenece a la
+[PR #177](https://github.com/OrbitalLabBOG/mova-pro-futbol-data-analytics/pull/177),
+apilada sobre #176; no debe confundirse con la punta de `main`.
 
 Los cortes siguientes son históricos y no sustituyen esa comprobación.
 

@@ -972,9 +972,11 @@ def main(argv: list[str] | None = None) -> int:
             return 75
     elif args.command == "watchdog":
         from mova_fpl.ops.watchdog import run
+        from mova_fpl.ops.alerts import publish_channel_status
 
         try:
             payload = run(db, max_age_seconds=args.max_age_seconds, config=config)
+            publish_channel_status(config)
         except Exception as exc:  # DB rota puede impedir persistir; journald conserva el fallo
             payload = {"schema": "mova-watchdog-v2", "status": "down",
                        "reason": "control_plane_unavailable",

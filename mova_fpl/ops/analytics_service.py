@@ -146,6 +146,13 @@ class AnalyticsService:
                             )
                             causal = {"status": "failed", "gw": gw,
                                       "error_code": type(exc).__name__}
+                        if causal.get("status") == "failed":
+                            self.db.open_incident_once(
+                                "P2", f"Causal review GW{gw} falló",
+                                correlation_id=correlation_id,
+                                detail={"job_id": causal.get("job_id"),
+                                        "retry_exhausted": causal.get("retry_exhausted", False)},
+                            )
                         result["causal_reviews"].append(causal)
                 result["analytics_status"] = state["status"]
                 self.db.finish_job(job_id, "completed", output_sha256=sha256_json(result),

@@ -40,6 +40,9 @@ def _decision(spec: dict, season: str, gw: int) -> Decision:
         bench_order=tuple(int(value) for value in spec["bench_order"]),
         expected_points=float(spec["expected_points"]), total_cost=float(spec["total_cost"]),
         bank_after=float(spec.get("bank_after", 0)), policy=str(spec["policy_version"]),
+        transfers_in=tuple(int(v) for v in spec.get("transfers_in", ())),
+        transfers_out=tuple(int(v) for v in spec.get("transfers_out", ())),
+        hits=int(spec.get("hits", 0)), chip=spec.get("chip"),
     )
 
 
@@ -52,29 +55,33 @@ def export(package_path: Path, review_path: Path, trace_db: Path) -> dict:
     score = metrics["selected"]
     outcome = GwOutcome(
         gw=int(package["gw"]), points=int(score["points"]),
-        points_before_hits=int(score["points_before_hits"]), hits=0,
+        points_before_hits=int(score["points_before_hits"]), hits=selected.hits,
         captain_points=int(score["captain_points"]),
         auto_subs=tuple(tuple(item) for item in score["auto_subs"]),
         effective_captain=score["effective_captain"],
         players_played=int(score["players_played"]),
     )
+    author = str(package["intervention"].get("author") or "unknown")
+    comparator_label = str(package["comparator"].get("label") or "package_comparator")
     run_id = package["trace_run_id"]
     writer = TraceWriter(trace_db)
     writer.start_run(run_id, package["season"], "named", "human-reviewed", 3, 0, {
         "schema": package["schema"], "review": "retrospective", "causal_scorecard": False,
+        "comparator_label": comparator_label, "intervention_author": author,
     })
     writer.record_gw(run_id, selected, outcome, state="reconciled")
     writer.record_baselines(run_id, int(package["gw"]), {
-        "pure_model_v1.1.0": int(metrics["comparator"]["points"]),
+        comparator_label: int(metrics["comparator"]["points"]),
         "same_squad_hindsight_oracle": int(metrics["same_squad_oracle_free_captain"]),
     })
     attribution = Attribution(
-        gw=int(package["gw"]), author="julian+orbix",
+        gw=int(package["gw"]), author=author,
         rationale=package["intervention"]["rationale"],
         expected_delta=round(selected.expected_points - comparator.expected_points, 3),
         realized_delta=int(metrics["intervention"]["realized_delta"]),
         points_with=int(metrics["selected"]["points"]),
-        points_without=int(metrics["comparator"]["points"]), changed=True,
+        points_without=int(metrics["comparator"]["points"]),
+        changed=selected.fingerprint() != comparator.fingerprint(),
         detail={"fingerprint_with": selected.fingerprint(),
                 "fingerprint_without": comparator.fingerprint(),
                 "captain_with": selected.captain, "captain_without": comparator.captain,
@@ -82,7 +89,7 @@ def export(package_path: Path, review_path: Path, trace_db: Path) -> dict:
     )
     writer.record_intervention(
         run_id, int(package["gw"]), ManualOverride(
-            int(package["gw"]), "julian+orbix", package["intervention"]["rationale"],
+            int(package["gw"]), author, package["intervention"]["rationale"],
             package["intervention"],
         ), attribution,
     )

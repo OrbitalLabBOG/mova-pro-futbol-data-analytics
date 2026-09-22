@@ -226,3 +226,64 @@ def test_live_ping_failure_stays_auditable_and_retriable(tmp_path):
     assert result["outbox"]["last_error"] == "RuntimeError"
     assert "secret detail" not in json.dumps(result)
     assert db.alert_channel_live_status()["status"] == "failed"
+
+
+def test_api_observes_worker_channel_without_delivery_secret(tmp_path):
+    from dataclasses import replace
+    from mova_fpl.ops.alerts import configured_sink, journal_sink, publish_channel_status
+    secret = tmp_path / 'webhook.json'
+    secret.write_text(json.dumps({'version': 1, 'enabled': True,
+                                 'url': 'https://alerts.example.test/private-token',
+                                 'owner': 'julian', 'channel': 'test'}))
+    worker = RuntimeConfig(alert_webhook_config_file=secret,
+                           host_probe_path=tmp_path / 'runtime' / 'host-probe.json')
+    path = publish_channel_status(worker)
+    api = replace(worker, alert_webhook_config_file=tmp_path / 'absent-secret',
+                  alert_channel_status_file=path)
+    assert channel_status(api) == channel_status(worker)
+    assert channel_status(api)['configured'] is True
+    assert configured_sink(api) is journal_sink  # status is never delivery authority
+    assert 'private-token' not in path.read_text()
+    assert 'https://' not in path.read_text()
+    secret.unlink()
+    assert channel_status(worker)['status'] == 'local_only'  # never falls back to cache
+    publish_channel_status(worker)
+    assert channel_status(api)['status'] == 'local_only'
+
+
+def test_api_channel_projection_rejects_stale_future_corrupt_or_secret_data(tmp_path):
+    from datetime import datetime, timedelta, timezone
+    path = tmp_path / 'alert-channel.json'
+    api = RuntimeConfig(alert_channel_status_file=path)
+    assert channel_status(api)['status'] == 'invalid'
+    for delta in (-1801, 60):
+        path.write_text(json.dumps({
+            'schema': 'mova-alert-channel-observation-v1',
+            'generated_at': (datetime.now(timezone.utc) + timedelta(seconds=delta)).isoformat(),
+            'channel': {'schema': 'mova-alert-channel-v1', 'status': 'local_only',
+                        'configured': False, 'external_delivery': False},
+        }))
+        assert channel_status(api)['status'] == 'invalid'
+    for content in ('{', '[]', 'x' * 4097):
+        path.write_text(content)
+        assert channel_status(api)['configured'] is False
+    path.write_text(json.dumps({
+        'schema': 'mova-alert-channel-observation-v1',
+        'generated_at': datetime.now(timezone.utc).isoformat(),
+        'channel': {'schema': 'mova-alert-channel-v1', 'status': 'configured',
+                    'configured': True, 'external_delivery': True, 'token': 'do-not-expose'},
+    }))
+    assert 'do-not-expose' not in json.dumps(channel_status(api))
+    assert channel_status(api)['configured'] is False
+
+
+def test_compose_api_uses_observation_and_worker_retains_delivery_config():
+    compose = Path('compose.yaml').read_text()
+    api = compose.split('  api:\n', 1)[1].split('  worker:\n', 1)[0]
+    worker = compose.split('  worker:\n', 1)[1].split('  browser:\n', 1)[0]
+    assert 'MOVA_ALERT_CHANNEL_STATUS_FILE: /var/lib/mova-fpl/runtime/alert-channel.json' in api
+    assert 'environment: &engine_environment' in compose
+    assert '<<: *engine_environment' in api
+    assert 'secrets:' not in api
+    assert '- alert_webhook_config' in worker
+    assert 'MOVA_ALERT_CHANNEL_STATUS_FILE' not in worker
