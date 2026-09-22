@@ -124,3 +124,6 @@ Rollback de configuración conservado en
 no hubo migraciones. Doctor sin red: 23 PASS, 1 WARN por chequeo público omitido,
 0 FAIL. Autoridad A0/shadow intacta. API reporta 4 GWs medidas, 0 passing.
 Supabase AC-02 continúa in_progress, revisión 6. No se ejecutó una nueva inferencia.
+
+Doctor completo posterior (2026-09-22T17:10:54+00:00): **24 PASS, 0 WARN, 0 FAIL**,
+incluido GET público. No se requiere un nuevo despliegue para esta nota documental.
