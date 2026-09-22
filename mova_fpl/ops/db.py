@@ -2011,6 +2011,42 @@ class OpsDB:
         return {"settled": settled, "reserved": reserved, "charged": charged,
                 "estimated_cost_usd": cost["estimated_cost_usd"]}
 
+    def grant_agent_budget_allowance(self, *, cycle_id: str, tokens: int,
+                                     actor: str, reason: str, idempotency_key: str) -> dict:
+        """Append an authorized campaign allowance; never erase actual consumption."""
+        if type(tokens) is not int or tokens <= 0 or not all((actor,reason,idempotency_key)):
+            raise ValueError("allowance exige tokens positivos, actor, reason e idempotency_key")
+        key = "agent_budget_allowance:" + sha256_json(idempotency_key)[:32]
+        now = utcnow()
+        with self.transaction() as con:
+            if not con.execute("SELECT 1 FROM gameweek_cycles WHERE cycle_id=?",(cycle_id,)).fetchone():
+                raise ValueError("cycle_id desconocido")
+            old=con.execute("SELECT value_json FROM runtime_controls WHERE control_key=?",(key,)).fetchone()
+            identity={"cycle_id":cycle_id,"tokens":tokens,"actor":actor,"reason":reason,
+                      "idempotency_key":idempotency_key}
+            if old:
+                value=json.loads(old[0])
+                if any(value.get(k)!=v for k,v in identity.items()):
+                    raise ValueError("allowance idempotency conflict")
+                return {**value,"reused":True}
+            value={"schema":"mova-budget-allowance-v1",**identity,"month":now[:7],"granted_at":now}
+            con.execute("INSERT INTO runtime_controls(control_key,value_json,effective_at,actor,reason) VALUES(?,?,?,?,?)",
+                        (key,canonical_json(value),now,actor,reason))
+            self.append_audit("agent_budget_allowance_granted",actor=actor,cycle_id=cycle_id,
+                subject_type="budget_allowance",subject_id=key,payload=value,con=con)
+        return {**value,"reused":False}
+
+    @staticmethod
+    def _budget_with_allowances(con, policy: dict, *, cycle_id: str | None, month: str) -> tuple[dict,list]:
+        rows=con.execute("SELECT value_json FROM runtime_controls WHERE control_key LIKE 'agent_budget_allowance:%'").fetchall()
+        allowances=[json.loads(row[0]) for row in rows]
+        applicable=[a for a in allowances if a.get("schema")=="mova-budget-allowance-v1"
+                    and (a.get("cycle_id")==cycle_id or a.get("month")==month)]
+        result=dict(policy)
+        result["gw_tokens"]+=sum(a["tokens"] for a in applicable if a["cycle_id"]==cycle_id)
+        result["month_tokens"]+=sum(a["tokens"] for a in applicable if a["month"]==month)
+        return result,applicable
+
     def _reserve_agent_budget(self, con: sqlite3.Connection, *, cycle_id: str,
                               subject_type: str, subject_id: str, provider: str,
                               policy: dict | None, actor: str, now: str,
@@ -2030,6 +2066,7 @@ class OpsDB:
         if existing:
             return {**dict(existing), "reused": True}
         month = now[:7]
+        policy, _ = self._budget_with_allowances(con, policy, cycle_id=cycle_id, month=month)
         gw_accounting = self._agent_budget_aggregates(con, cycle_id=cycle_id)
         month_accounting = self._agent_budget_aggregates(con, month=month)
         estimate = int(policy["reservation_tokens"])
@@ -3891,6 +3928,9 @@ class OpsDB:
                     "ORDER BY deadline_at DESC LIMIT 1"
                 ).fetchone()
             cycle_id = cycle["cycle_id"] if cycle else None
+            base_policy = dict(policy)
+            policy, allowances = self._budget_with_allowances(con, policy,
+                cycle_id=cycle_id, month=observed_month)
             if cycle_id:
                 gw_accounting = self._agent_budget_aggregates(con, cycle_id=cycle_id)
             else:
@@ -4043,7 +4083,8 @@ class OpsDB:
         return {
             "schema": "mova-agent-cost-report-v1", "observed_at": utcnow(),
             "status": report_status,
-            "policy": dict(policy), "cycle": dict(cycle) if cycle else None,
+            "policy": dict(policy), "base_policy": base_policy, "allowances": allowances,
+            "cycle": dict(cycle) if cycle else None,
             "gameweek": scope(gw_accounting,
                               token_limit=policy["gw_tokens"], use_limit=policy["gw_uses"]),
             "month": {"month": observed_month, **scope(

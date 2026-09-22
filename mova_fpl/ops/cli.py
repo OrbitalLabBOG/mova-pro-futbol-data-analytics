@@ -145,6 +145,12 @@ def parser() -> argparse.ArgumentParser:
     cost_report.add_argument("--season")
     cost_report.add_argument("--gw", type=int)
     cost_report.add_argument("--month", help="mes UTC YYYY-MM")
+    allowance = cost_commands.add_parser("allowance", help="registrar presupuesto adicional autorizado para un ciclo y mes")
+    allowance.add_argument("--cycle-id", required=True)
+    allowance.add_argument("--tokens", type=int, required=True)
+    allowance.add_argument("--actor", required=True)
+    allowance.add_argument("--reason", required=True)
+    allowance.add_argument("--idempotency-key", required=True)
     cost_overrun = cost_commands.add_parser(
         "overrun", help="transiciona la revisión durable de un overrun por job"
     )
@@ -625,6 +631,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "cost":
         db = OpsDB(config.ops_db, minimum_version=config.sqlite_min_version)
         db.migrate()
+        if args.cost_command == "allowance":
+            payload = db.grant_agent_budget_allowance(cycle_id=args.cycle_id,tokens=args.tokens,
+                actor=args.actor,reason=args.reason,idempotency_key=args.idempotency_key)
+            print(json.dumps(payload, ensure_ascii=False))
+            return 0
         if args.cost_command == "overrun":
             payload = db.transition_budget_overrun(
                 args.reservation_id, to_status=args.to, action=args.action,

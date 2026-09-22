@@ -145,3 +145,16 @@ without fabricating missing evaluations. Local full suite: 1,825 passed, one ski
 79 deselected at baa265d. Live evaluation remains the promotion authority.
 
 Search contract source: [Firecrawl v1 OpenAPI](https://github.com/firecrawl/firecrawl/blob/main/apps/api/openapi.json).
+
+
+### Budget allowance contract
+
+`mova cost allowance --cycle-id ... --tokens ... --actor ... --reason ...
+--idempotency-key ...` records an append-only, idempotent resource allowance in
+runtime_controls and audit_events. It adds capacity only for that exact cycle and
+the grant month. Reports expose base_policy, applicable allowances and effective
+policy; all actual/estimated consumption remains unchanged. New reservations seal
+the effective policy; existing sealed permissions are not rewritten. Job limits,
+use limits, evidence gates and FPL authority are unaffected. Reusing a key with a
+different payload is a conflict. This avoids making temporary experiment capacity
+an undocumented permanent change to the production environment.

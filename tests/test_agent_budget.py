@@ -247,3 +247,28 @@ def test_reserva_huerfana_es_visible_y_sigue_comprometiendo_presupuesto(tmp_path
     assert report["orphaned_reservations"]["gameweek"] == {"uses": 1, "tokens": 100}
     metrics = db.cost_prometheus(POLICY, season="2026-27")
     assert 'mova_agent_budget_orphaned_reservations{scope="gameweek"} 1' in metrics
+
+
+def test_authorized_allowance_is_idempotent_scoped_and_preserves_spend(tmp_path):
+    db,cycle=_runtime(tmp_path)
+    _queue(db,cycle,'research_'+'d'*32)
+    before=db.cost_report(POLICY,season='2026-27',gw=3)
+    kwargs=dict(cycle_id=cycle,tokens=500,actor='julian',reason='Authorized isolated experiments',idempotency_key='lab-allowance')
+    result=db.grant_agent_budget_allowance(**kwargs)
+    assert result['reused'] is False
+    assert db.grant_agent_budget_allowance(**kwargs)['reused'] is True
+    with pytest.raises(ValueError,match='conflict'):
+        db.grant_agent_budget_allowance(**{**kwargs,'tokens':501})
+    after=db.cost_report(POLICY,season='2026-27',gw=3)
+    assert after['gameweek']['committed_tokens']==before['gameweek']['committed_tokens']==100
+    assert after['base_policy']==POLICY
+    assert after['policy']['gw_tokens']==700 and after['policy']['month_tokens']==800
+    assert len(after['allowances'])==1
+    db.upsert_cycle('2026-27',4,'2026-09-11T17:30:00+00:00',phase='preflight')
+    other=db.cost_report(POLICY,season='2026-27',gw=4,month='2026-10')
+    assert other['policy']==POLICY and other['allowances']==[]
+    queued=_queue(db,cycle,'research_'+'e'*32)
+    assert queued['budget']['policy']['gw_tokens']==700
+    assert queued['budget']['policy']['job_tokens']==120
+    with db.connect(readonly=True) as con:
+        assert con.execute("SELECT count(*) FROM audit_events WHERE event_type='agent_budget_allowance_granted'").fetchone()[0]==1
