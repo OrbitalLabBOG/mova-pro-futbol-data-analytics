@@ -179,7 +179,8 @@ def parser() -> argparse.ArgumentParser:
     plan.add_argument("--actor", required=True)
     plan.add_argument("--reason", required=True)
     research = strategy_commands.add_parser("research", help="opera la cola de investigación")
-    research.add_argument("operation", choices=("due", "coverage", "enqueue", "import", "resolve-conflict"))
+    research.add_argument("operation", choices=("due", "coverage", "enqueue", "experiment", "import", "resolve-conflict"))
+    research.add_argument("--agent-version", action="append")
     research.add_argument("--conflict-id")
     research.add_argument("--cycle-id")
     research.add_argument("--document-id", action="append")
@@ -699,6 +700,9 @@ def main(argv: list[str] | None = None) -> int:
             payload = service.due()
             print(json.dumps(payload, ensure_ascii=False, default=str))
             return 0 if payload["due"] else 75
+        elif args.operation == "experiment":
+            payload = service.enqueue_experiment(versions=args.agent_version or ["1.0.0", "1.1.0"],
+                actor=args.actor, reason=args.reason, idempotency_key=args.idempotency_key)
         elif args.operation == "coverage":
             payload = db.research_coverage()
         elif args.operation == "resolve-conflict":

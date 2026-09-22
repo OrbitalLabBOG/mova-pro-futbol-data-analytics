@@ -2716,6 +2716,41 @@ class OpsDB:
                 con=con,
             )
 
+    def complete_research_experiment(self, research_run_id: str, payload: dict, *,
+                                    result_path: str, result_sha256: str,
+                                    evaluation_path: str, experiment: dict) -> dict:
+        """Settle real usage without publishing experiment evidence or counting a GW."""
+        now = utcnow()
+        with self.transaction() as con:
+            run = con.execute("SELECT * FROM research_runs WHERE research_run_id=?",
+                              (research_run_id,)).fetchone()
+            if not run:
+                raise ValueError("research_run desconocido")
+            if run["status"] == "completed":
+                return {"status": "completed", "reused": True, "operational_import": False}
+            if run["status"] != "queued":
+                raise ValueError("experiment no está queued")
+            usage = payload["usage"]
+            con.execute("UPDATE research_runs SET status='completed',result_path=?,result_sha256=?,"
+                        "usage_json=?,finished_at=? WHERE research_run_id=?",
+                        (result_path, result_sha256, canonical_json(usage), now, research_run_id))
+            con.execute("""INSERT INTO cost_ledger(cost_id,research_run_id,provider,model,
+                input_tokens,output_tokens,subscription_usage,detail_json,occurred_at,
+                cycle_id,subject_type,subject_id,category,duration_ms)
+                VALUES(?,?,?,?,?,?,1,?,?,?,?,?,?,?)""",
+                (new_id("cost"), research_run_id, run["provider"], usage.get("model"),
+                 usage.get("input_tokens"), usage.get("output_tokens"),
+                 canonical_json({**usage, "experiment": experiment}), now, run["cycle_id"],
+                 "research", research_run_id, "research_experiment", usage.get("duration_ms")))
+            settlement = self._settle_agent_budget(con, subject_id=research_run_id,
+                usage=usage, cycle_id=run["cycle_id"], actor="mova-research-experiment", now=now)
+            self.append_audit("research_experiment_completed", actor="mova-research-experiment",
+                cycle_id=run["cycle_id"], subject_type="research_run", subject_id=research_run_id,
+                payload={"experiment": experiment, "evaluation_path": evaluation_path,
+                         "result_sha256": result_sha256, "operational_import": False}, con=con)
+        return {"status": "completed", "research_run_id": research_run_id,
+                "evaluation_path": evaluation_path, "budget": settlement, "operational_import": False}
+
     def import_research_result(self, research_run_id: str, payload: dict, *,
                                result_path: str, result_sha256: str) -> dict:
         now = utcnow()

@@ -298,3 +298,34 @@ def test_coverage_gate_is_independent_of_display_limit_and_retries(tmp_path):
         assert report["measured_gameweeks"] == 3
         assert report["passing_gameweeks"] == 2
         assert len(report["runs"]) == min(limit, 27)
+
+
+def test_paired_experiment_shares_context_settles_cost_and_never_publishes_signals(tmp_path):
+    config, db, _, _ = _runtime(tmp_path)
+    service = StrategicContextService(config, db, evidence_fetcher=_fetcher(config.research_root))
+    service.activate_plan(_plan(), actor='test', reason='fixture')
+    experiment=service.enqueue_experiment(versions=['1.0.0','1.1.0'], actor='test',
+        reason='paired comparison', idempotency_key='experiment:pair')
+    requests=[]
+    for row in experiment['results']:
+        run=db.research_run(row['research_run_id'])
+        request=json.loads(Path(run['request_path']).read_text())
+        requests.append(request)
+        result=_v2_result(run, run['cycle_id'], request['manifest']['research_summary']['focus'])
+        out=config.research_root/'outbox'/f"{run['research_run_id']}.result.json"
+        out.parent.mkdir(parents=True,exist_ok=True)
+        out.write_text(json.dumps(result))
+    assert requests[0]['manifest']==requests[1]['manifest']
+    assert requests[0]['scope_policy']==requests[1]['scope_policy']
+    imported=service.import_ready()
+    assert len(imported['results'])==2
+    assert all(row['status']=='completed' and row['operational_import'] is False for row in imported['results'])
+    with db.connect(readonly=True) as con:
+        assert con.execute('SELECT COUNT(*) FROM research_signals').fetchone()[0]==0
+        assert con.execute('SELECT COUNT(*) FROM research_documents').fetchone()[0]==0
+        assert con.execute("SELECT COUNT(*) FROM cost_ledger WHERE category='research_experiment'").fetchone()[0]==2
+        assert con.execute("SELECT COUNT(*) FROM agent_budget_reservations WHERE status='settled'").fetchone()[0]==2
+    assert db.research_coverage()['measured_gameweeks']==0
+    again=service.enqueue_experiment(versions=['1.0.0','1.1.0'],actor='test',reason='paired comparison',idempotency_key='experiment:pair')
+    assert all(row['reused'] for row in again['results'])
+    assert service.import_ready()['processed']==0

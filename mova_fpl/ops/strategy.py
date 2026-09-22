@@ -604,7 +604,8 @@ class StrategicContextService:
         }
 
     def enqueue(self, *, force: bool = False, actor: str = "mova-research",
-                reason: str | None = None, idempotency_key: str | None = None) -> dict:
+                reason: str | None = None, idempotency_key: str | None = None,
+                _experiment: dict | None = None, _prepared: dict | None = None) -> dict:
         assessment = self.due()
         if not force and not assessment["due"]:
             return {"status": "skipped", **assessment}
@@ -618,7 +619,7 @@ class StrategicContextService:
             existing = self.db.research_run(deterministic_id)
             if existing:
                 return {**existing, "reused": True, "due": assessment}
-        prepared = self.prepare()
+        prepared = _prepared or self.prepare()
         manifest = prepared["manifest"]
         run_id = deterministic_id or new_id("research")
         run_kind = assessment.get("run_kind", "forced" if force else "routine")
@@ -650,6 +651,9 @@ class StrategicContextService:
                 "agent_budget": self.config.agent_budget_policy(),
             },
         }
+        if _experiment:
+            request["experiment"] = _experiment
+            request["agent_version"] = _experiment["agent_version"]
         request_sha = sha256_json(request)
         request["request_sha256"] = request_sha
         request_path = self.config.research_root / "inbox" / f"{run_id}.request.json"
@@ -675,6 +679,27 @@ class StrategicContextService:
             )
         return {**result, "request_path": result.get("request_path", str(request_path)),
                 "request_file_sha256": file_sha, "due": assessment}
+
+    def enqueue_experiment(self, *, versions: list[str], actor: str,
+                           reason: str, idempotency_key: str) -> dict:
+        if not actor or not reason or not idempotency_key:
+            raise ValueError("experiment exige actor, reason, idempotency_key")
+        if not 1 <= len(versions) <= 2 or len(set(versions)) != len(versions):
+            raise ValueError("experiment admite una o dos variantes únicas")
+        if any(version not in {"1.0.0", "1.1.0"} for version in versions):
+            raise ValueError("versión experimental desconocida")
+        prepared = self.prepare()
+        experiment_id = "researchexp_" + hashlib.sha256(idempotency_key.encode()).hexdigest()[:32]
+        results = []
+        for version in versions:
+            results.append(self.enqueue(
+                force=True, actor=actor, reason=reason,
+                idempotency_key=f"{idempotency_key}:{version}", _prepared=prepared,
+                _experiment={"schema": "mova-research-experiment-v1", "experiment_id": experiment_id,
+                             "agent_version": version, "operational_import": False},
+            ))
+        return {"schema": "mova-research-experiment-v1", "experiment_id": experiment_id,
+                "results": results, "operational_import": False}
 
     def import_ready(self) -> dict:
         self.db.migrate()
@@ -850,9 +875,19 @@ class StrategicContextService:
         result_sha = hashlib.sha256(raw).hexdigest()
         archive = self.config.research_root / "archive" / path.name
         archive.parent.mkdir(parents=True, exist_ok=True)
-        imported = self.db.import_research_result(
-            run_id, normalized, result_path=str(archive), result_sha256=result_sha,
-        )
+        if request.get("experiment"):
+            report_path = archive.with_name(f"{run_id}.evaluation.json")
+            evaluation = {**normalized, "experiment": request["experiment"],
+                          "evaluated_at": observed.isoformat(), "operational_import": False}
+            _atomic_json(report_path, evaluation)
+            imported = self.db.complete_research_experiment(
+                run_id, normalized, result_path=str(archive), result_sha256=result_sha,
+                evaluation_path=str(report_path), experiment=request["experiment"],
+            )
+        else:
+            imported = self.db.import_research_result(
+                run_id, normalized, result_path=str(archive), result_sha256=result_sha,
+            )
         path.replace(archive)
         request_path = Path(run["request_path"])
         if request_path.is_file():

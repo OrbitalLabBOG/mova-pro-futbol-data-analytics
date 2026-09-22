@@ -14,7 +14,7 @@ from mova_fpl.ops.db import OpsDB, canonical_json, sha256_json
 MAX_RECEIPT_BYTES = 65_536
 MAX_AUTOMATIC_ATTEMPTS = 2
 TERMINAL = {
-    "research": {"imported", "rejected", "failed"},
+    "research": {"imported", "rejected", "failed", "completed"},
     "deliberation": {"accepted", "review_required", "blocked", "rejected", "failed"},
 }
 RECEIPT_NAME = re.compile(

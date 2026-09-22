@@ -2,9 +2,13 @@
 FROM node:22-bookworm-slim@sha256:4d676821dff059fd00d277ee4261ef34ea712317fed0737c03941481b5760c96
 
 ARG CODEX_VERSION=0.144.6
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/* && npm install --global --omit=dev "@openai/codex@${CODEX_VERSION}" && npm cache clean --force && groupadd --gid 10002 research && useradd --uid 10002 --gid 10002 --home-dir /home/research --create-home research
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates python3 && rm -rf /var/lib/apt/lists/* && npm install --global --omit=dev "@openai/codex@${CODEX_VERSION}" && npm cache clean --force && groupadd --gid 10002 research && useradd --uid 10002 --gid 10002 --home-dir /home/research --create-home research
 
 WORKDIR /opt/mova-research
+COPY mova_fpl/ops/research_evidence.py /opt/mova-research/research_evidence.py
+COPY mova_fpl/ops/research_quality.py /opt/mova-research/research_quality.py
+COPY deploy/research/evidence-tool.py /opt/mova-research/evidence-tool.py
+COPY deploy/research/agent-releases.json /opt/mova-research/agent-releases.json
 COPY deploy/research/codex-worker.mjs /opt/mova-research/codex-worker.mjs
 COPY deploy/research/research-context.mjs /opt/mova-research/research-context.mjs
 COPY deploy/research/research-normalize.mjs /opt/mova-research/research-normalize.mjs
