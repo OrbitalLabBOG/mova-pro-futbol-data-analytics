@@ -137,10 +137,21 @@ class CausalReviewerService:
             add("research/context", "UNRESOLVED_RESEARCH_CONFLICTS",
                 f"Persistieron {context['unresolved_research_conflicts']} conflictos.", True)
         if context["failed_validation_checks"]:
-            codes = ", ".join(context.get("failed_validation_check_codes") or [])
-            add("optimizer", "DECISION_VALIDATION_FAILURES",
-                f"El envelope vigente tuvo {context['failed_validation_checks']} checks "
-                f"deterministas fallidos ({codes}).", True)
+            codes = set(context.get("failed_validation_check_codes") or [])
+            decision_errors = codes & {
+                "SELECTED_DECISION_LEGAL", "TRANSFER_COST_ACCOUNTED",
+                "REQUIRED_COMPARATORS_PRESENT",
+            }
+            if decision_errors:
+                add("optimizer", "DECISION_LEGALITY_FAILURES",
+                    f"Falló el contrato de decisión: {', '.join(sorted(decision_errors))}.", True)
+            # A gate blocking an action is not evidence of an optimizer defect.
+            # Freshness, authority and timing have separate operational owners.
+            guards = codes - decision_errors
+            if guards:
+                add("variance", "GUARDRAIL_BLOCKS_OBSERVED",
+                    f"Bloqueos operativos conservados: {', '.join(sorted(guards))}; "
+                    "no demuestran un fallo del optimizador.", False)
         if context["execution_failures"]:
             add("execution", "EXECUTION_FAILURES",
                 f"Hubo {context['execution_failures']} fallos/ambigüedades de ejecución.", True)

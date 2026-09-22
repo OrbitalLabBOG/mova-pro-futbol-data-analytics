@@ -43,7 +43,10 @@ Clasifica `data/freshness`, `model/calibration`, `optimizer`, `research/context`
 aparecer al menos tres veces antes de abrir experimento. `not_ready` no muta jobs ni memoria.
 Para `optimizer`, el reviewer cuenta códigos fallidos distintos únicamente en el envelope vigente.
 Los checks de envelopes `superseded` permanecen como diagnóstico histórico separado y no inflan
-la recurrencia causal ni abren una propuesta falsa.
+la recurrencia causal ni abren una propuesta falsa. Sólo legalidad de decisión, contabilidad de
+transferencias y ausencia de comparadores clasifican como defectos del optimizador. Bloqueos de
+autoridad, ventana o frescura se conservan como observación no accionable de guardrails; su
+recuperación pertenece al workflow/watchdog, no a una propuesta de recalibración.
 
 El reviewer serializa cada GW con un lock del sistema operativo. Un fallo permite
 hasta tres intentos totales con la misma clave y entradas idénticas, separados por

@@ -1007,3 +1007,18 @@ def test_causal_crash_recovery_uses_lock_and_preserves_live_job(tmp_path):
     assert db.get_job_by_key(args['idempotency_key'])['attempt'] == 1
     assert service.run(**args)['status'] == 'completed'
     assert db.get_job_by_key(args['idempotency_key'])['attempt'] == 2
+
+
+def test_causal_policy_blocks_are_not_optimizer_defects(tmp_path):
+    db, service, _ = _causal_fixture(tmp_path)
+    source = db.causal_review_source('2026-27', 1)
+    context = db.causal_review_context(source['cycle_id'])
+    context.update(failed_validation_checks=2,
+                   failed_validation_check_codes=['TEAM_STATE_FRESH', 'IRREVERSIBLE_ACTION_WINDOW'],
+                   category_occurrences={'optimizer': 5})
+    findings = service.classify(source, {'drift_status': 'ok'}, context)
+    assert not any(f['category'] == 'optimizer' for f in findings)
+    assert service._proposals(findings, source) == []
+    context['failed_validation_check_codes'].append('SELECTED_DECISION_LEGAL')
+    findings = service.classify(source, {'drift_status': 'ok'}, context)
+    assert any(f['code'] == 'DECISION_LEGALITY_FAILURES' and f['actionable'] for f in findings)
