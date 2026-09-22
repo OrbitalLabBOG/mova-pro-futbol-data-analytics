@@ -138,3 +138,12 @@ def test_search_sends_recent_date_window_without_exposing_key(tmp_path,monkeypat
     assert result['status']=='ok'
     assert captured[0]['tbs']=='cdr:1,cd_min:09/15/2026,cd_max:09/22/2026'
     assert 'fake-test-key' not in json.dumps(result)
+
+
+def test_context_catalog_supports_multiple_names_without_inventing_ids(tmp_path):
+    mod=module()
+    request={'research_run_id':'research_'+'a'*32,'manifest':{'deadline_at':'2026-10-10T10:00:00Z',
+        'research_summary':{'world':{'catalog':[[1,'Dunk','BHA'],[2,'Struijk','LEE'],[3,'Sangaré','BRE']]}}}}
+    tool=mod.EvidenceTool(request,tmp_path)
+    assert tool.context({'section':'catalog','query':'Lewis Dunk Pascal Struijk','offset':0})['rows']==[[1,'Dunk','BHA'],[2,'Struijk','LEE']]
+    assert tool.context({'section':'catalog','query':'Sangare','offset':0})['rows']==[[3,'Sangaré','BRE']]

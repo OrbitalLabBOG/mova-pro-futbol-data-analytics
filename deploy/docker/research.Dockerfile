@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 FROM node:22-bookworm-slim@sha256:4d676821dff059fd00d277ee4261ef34ea712317fed0737c03941481b5760c96
 
-ARG CODEX_VERSION=0.144.6
+ARG CODEX_VERSION=0.153.4
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates python3 && rm -rf /var/lib/apt/lists/* && npm install --global --omit=dev "@openai/codex@${CODEX_VERSION}" && npm cache clean --force && groupadd --gid 10002 research && useradd --uid 10002 --gid 10002 --home-dir /home/research --create-home research
 
 WORKDIR /opt/mova-research
@@ -20,8 +20,8 @@ RUN chmod 0555 /opt/mova-research/codex-worker.mjs /opt/mova-research/research-n
 ENV HOME=/home/research \
     CODEX_HOME=/home/research/.codex \
     MOVA_RESEARCH_ROOT=/research \
-    MOVA_RESEARCH_MODEL=gpt-5.6-luna \
-    MOVA_RESEARCH_REASONING_EFFORT=medium \
+    MOVA_RESEARCH_MODEL="" \
+    MOVA_RESEARCH_REASONING_EFFORT="" \
     MOVA_DELIBERATION_MODEL=gpt-5.6-terra \
     MOVA_DELIBERATION_REASONING_EFFORT=high
 USER 10002:10002

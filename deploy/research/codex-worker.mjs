@@ -190,6 +190,11 @@ try {
         || Object.entries(release).some(([key, value]) => request.agent_release[key] !== value))) {
       throw new Error("research_agent_release_drift");
     }
+    if (isResearch && release.codex_version) {
+      const installed = spawnSync("codex", ["--version"], {encoding:"utf8", timeout:5000});
+      if (installed.status !== 0 || installed.stdout.trim() !== `codex-cli ${release.codex_version}`)
+        throw new Error("research_codex_version_mismatch");
+    }
     const researchModel = process.env.MOVA_RESEARCH_MODEL || release?.model || "gpt-5.6-luna";
     const model = isResearch ? researchModel : deliberationModel;
     const reasoningEffort = isResearch

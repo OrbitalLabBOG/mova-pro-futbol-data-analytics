@@ -112,3 +112,36 @@ immutable sealed release definition per request, effective model and implementat
 identity per attempt, explicit experimental/promotion status and domain-specific
 quality gates. A model alias alone is not an agent version. No general-purpose agent
 platform or additional persistence service is required for this iteration.
+
+
+## Authorized campaign continuation — 2026-09-22
+
+Julián explicitly authorized additional experimental consumption until a promotable
+agent is demonstrated. This supersedes the earlier pending-budget question. The lab
+uses documented per-command policy overrides (10M GW / 20M month, 400k per job),
+sealed in each reservation with actor/reason/idempotency key; production environment
+files and FPL permissions are unchanged. These are campaign capacity, not a target
+spend or evidence of model quality. Full logical tokens include cached input and
+must not be presented as a USD invoice.
+
+The first live 1.2.0 run was interrupted at 92,946 observed tokens after exhausting
+eight searches and issuing oversized read arguments. Its final provider usage is
+unknown; the conservative charge remains, and observed usage is not mislabeled as
+exact. Version 1.3.0 fixed current-date guidance, read batching and model selection,
+and completed on Terra at 245,365 tokens, but produced zero verified subjects and
+zero accepted signals. Neither result supports promotion.
+
+The next paired variants are 1.4.0 (Terra) and 1.5.0 (Astra), with identical current
+context, budgets and tools. Discovery is constrained to the last seven days using
+Firecrawl's documented `tbs` date range. The tool reuses a safely fetched page within
+one turn across reading and verification; final import still independently fetches.
+Multiple literal occurrences reduce title/navigation clipping. Evidence freshness,
+identity and acceptance requirements remain unchanged. Failed sealed experiments
+terminate after one completed failed attempt instead of silently retrying.
+
+App-server telemetry is written incrementally, and spawn/pipe failure rejects pending
+RPCs promptly. The comparison script reports failed attempts and observed usage
+without fabricating missing evaluations. Local full suite: 1,825 passed, one skipped,
+79 deselected at baa265d. Live evaluation remains the promotion authority.
+
+Search contract source: [Firecrawl v1 OpenAPI](https://github.com/firecrawl/firecrawl/blob/main/apps/api/openapi.json).

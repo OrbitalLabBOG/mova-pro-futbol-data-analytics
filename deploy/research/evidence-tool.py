@@ -14,7 +14,7 @@ from pathlib import Path
 
 # The image copies only these two stdlib modules, not the runtime application.
 from research_evidence import SafeEvidenceFetcher, canonical_public_url, normalize_text, ALLOWED_MIME
-from research_quality import claim_fresh, claim_supported, subject_in_excerpt, TOPIC_WORDS
+from research_quality import claim_fresh, claim_supported, subject_in_excerpt, TOPIC_WORDS, _normal
 
 TOOL = {
     "name": "verify_research_evidence",
@@ -79,7 +79,14 @@ class EvidenceTool:
             return {"status": "rejected", "reasons": ["invalid_arguments"]}
         summary = self.request["manifest"]["research_summary"]
         if section == "catalog":
-            rows = [row for row in summary["world"]["catalog"] if args["query"].casefold() in str(row).casefold()]
+            query = _normal(args["query"]).strip()
+            catalog = summary["world"]["catalog"]
+            rows = [row for row in catalog if query in _normal(str(row))]
+            if not rows and query:
+                terms = [word for word in re.findall(r"[a-z0-9]+",query) if len(word)>=3]
+                scored = [(sum(bool(re.search(r"\b"+re.escape(term)+r"\b",_normal(str(row))))
+                               for term in terms),row) for row in catalog]
+                rows = [row for score,row in sorted(scored,key=lambda pair:-pair[0]) if score]
         elif section == "world_alerts":
             rows = summary["world"].get("alerts", [])
         elif section == "memory":

@@ -14,7 +14,7 @@ def test_imagen_codex_esta_versionada_y_no_contiene_app():
     dockerfile = (ROOT / "deploy/docker/research.Dockerfile").read_text(encoding="utf-8")
     assert "node:22-bookworm-slim@sha256:" in dockerfile
     assert "@openai/codex@${CODEX_VERSION}" in dockerfile
-    assert "ARG CODEX_VERSION=0.144.6" in dockerfile
+    assert "ARG CODEX_VERSION=0.153.4" in dockerfile
     assert "ca-certificates" in dockerfile
     assert "COPY mova_fpl/ /" not in dockerfile
     assert "COPY mova_fpl/ops/research_evidence.py" in dockerfile
