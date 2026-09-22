@@ -324,6 +324,8 @@ try {
       "Verifica sujeto, tipo de claim y fecha reciente en la misma fuente. Un partido antiguo no demuestra aptitud actual. Las fechas candidatas de metadata requieren verificación.",
       "Declara corroboration_status: official_primary solo para fuente oficial; independent solo si dos reportes independientes respaldan el mismo claim; same_primary_report si una web reproduce a otra; unknown si no sabes. Dos hosts no demuestran independencia. Conserva como candidatos honestos los hallazgos de una sola fuente, sin inventar corroboración.",
       "Toda señal/conflicto cita URLs presentes en documents; evidence_text es literal, <=800 caracteres. Fuente oficial o dos hosts independientes para claims fuertes.",
+      "TRASPASO DE EVIDENCIA: copia source_url, published_at y evidence_text EXACTAMENTE de verified_document de una verificación supported. Cada URL permite UN fragmento CONTIGUO. Nunca concatenes dos fragmentos, nunca añadas una frase, puntos suspensivos ni otra línea. Si necesitas otra parte de la página, verifica un único fragmento contiguo que la contenga o elige el hallazgo de mayor valor; no cites claims que el fragmento final no respalde. Antes de entregar compara cada documento final con el verificado.",
+      "Si una verificación rechaza el tipo de claim pero muestra covered_focus_elements, puedes retener el fragmento como cobertura verificándolo con coverage. No conviertas esa cobertura en un claim aceptado. No repitas verificación por cada sujeto cuando covered_focus_elements ya los enumera.",
       "Lee article_text para descubrir novedades fuera de los IDs solicitados; esos fragmentos no están limitados al foco. Usa next_offset si necesitas continuar una fuente pertinente. Busca los IDs nuevos en research_context. Antes de concluir, intenta corroborar cada hallazgo material con una fuente oficial o un segundo host cuyo fragmento nombre al mismo jugador y respalde el mismo claim; no basta agregar una URL relacionada.",
       "Una URL puede cubrir varios sujetos solo si el fragmento los nombra. covered_focus_elements es diagnóstico, no aceptación final.",
       "coverage.subjects incluye exactamente todos los elementos únicos de focus. Usa not_checked cuando no puedas acreditar evidencia; no_material_update requiere fuente pertinente, no ausencia de búsqueda.",
@@ -372,6 +374,7 @@ try {
     const metered = isResearch && release.execution === "app_server";
     if (metered) writeFileSync(eventTmp, "", {mode: 0o660});
     const execution = metered ? await runMeteredTurn({
+      requiredTools: ["verify_research_evidence", "search_research_web", "read_research_source", "research_context"],
       prompt, model, effort: reasoningEffort, schema: JSON.parse(readFileSync(outputSchema, "utf8")),
       tokenLimit: Math.min(release.logical_token_guard, request.guardrails.agent_budget.job_tokens),
       timeoutMs: Math.min(release.execution_timeout_ms || 240000, Number(process.env.MOVA_RESEARCH_TIMEOUT_MS || 480000)),

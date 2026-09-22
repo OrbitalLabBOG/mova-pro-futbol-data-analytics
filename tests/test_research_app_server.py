@@ -61,3 +61,26 @@ const result=await runMeteredTurn({command:'/nonexistent/mova-codex',cwd:process
     r=subprocess.run(['node','--input-type=module','-e',script],cwd=ROOT,
         env={**os.environ,'MOVA_TEST_CWD':str(tmp_path)},capture_output=True,text=True,check=True,timeout=5)
     assert json.loads(r.stdout)['error_code']=='app_server_spawn_failed'
+
+
+def test_missing_required_tool_never_dispatches_inference(tmp_path):
+    fake=tmp_path/'fake-codex'
+    fake.write_text('''#!/usr/bin/env python3
+import json,sys
+for line in sys.stdin:
+ r=json.loads(line)
+ if 'id' not in r: continue
+ method=r['method']
+ if method=='turn/start': raise RuntimeError('must not dispatch')
+ result={'thread':{'id':'t'}} if method=='thread/start' else {'data':[]}
+ print(json.dumps({'id':r['id'],'result':result}),flush=True)
+''')
+    fake.chmod(0o755)
+    script="""import {runMeteredTurn} from './deploy/research/codex-app-server.mjs';
+const result=await runMeteredTurn({command:process.env.MOVA_FAKE_CODEX,cwd:process.env.MOVA_TEST_CWD,
+ requiredTools:['search_research_web'],timeoutMs:1000});process.stdout.write(JSON.stringify(result));"""
+    r=subprocess.run(['node','--input-type=module','-e',script],cwd=ROOT,
+        env={**os.environ,'MOVA_FAKE_CODEX':str(fake),'MOVA_TEST_CWD':str(tmp_path)},capture_output=True,text=True,check=True,timeout=5)
+    result=json.loads(r.stdout)
+    assert result['error_code']=='required_tools_unavailable'
+    assert result['usage']=={'input_tokens':0,'output_tokens':0}

@@ -251,6 +251,8 @@ class EvidenceTool:
             "reasons": reasons, "remaining_calls": self.max_calls - self.calls,
             "publication_date_verified": bool(document.get("publication_date_verified")),
             "excerpt_sha256": document.get("excerpt_sha256"),
+            "verified_document": {"source_url": url, "published_at": args["published_at"],
+                "evidence_text": document.get("excerpt")} if not reasons else None,
             "covered_focus_elements": [element for element in sorted(self.focus)
                 if document.get("fetch_status") == "verified" and document.get("publication_date_verified")
                 and claim_fresh(claim_type="coverage", published_at=args["published_at"], observed=observed)

@@ -36,6 +36,7 @@ def test_agent_can_correct_excerpt_and_stale_source_without_promotion(tmp_path):
     args['evidence_text']='Haaland is available.'
     result=tool.verify(args)
     assert result['status']=='supported' and result['final_acceptance'] is False
+    assert result['verified_document']=={k:args[k] for k in ('source_url','published_at','evidence_text')}
     args['player_element']=2
     assert 'identity_or_claim_unsupported' in tool.verify(args)['reasons']
     assert len(calls)==1  # one public fetch reused across excerpts/subjects within this turn

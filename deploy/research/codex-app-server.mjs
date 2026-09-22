@@ -3,7 +3,7 @@ import {spawn} from 'node:child_process';
 import {createInterface} from 'node:readline';
 
 export async function runMeteredTurn({command='codex', args=[], prompt, model, effort,
-    schema, config={}, cwd='/tmp/mova-research', tokenLimit=80000, timeoutMs=240000, preflightOnly=false, onEvent=()=>{}}) {
+    schema, config={}, cwd='/tmp/mova-research', tokenLimit=80000, timeoutMs=240000, preflightOnly=false, requiredTools=[], onEvent=()=>{}}) {
   const child=spawn(command,['app-server',...args],{cwd,
     stdio:['pipe','pipe','pipe'],detached:true});
   const pending=new Map();
@@ -11,7 +11,7 @@ export async function runMeteredTurn({command='codex', args=[], prompt, model, e
     for(const waiter of pending.values()){clearTimeout(waiter.timer);waiter.reject(new Error(reason));}
     pending.clear();
   };
-  let nextId=1; let threadId,turnId;
+  let nextId=1; let threadId,turnId; let inferenceDispatched=false;
   let usage=null, finalText='', stopped=false, failure=null, doneResolve;
   const done=new Promise(resolve=>{doneResolve=resolve;});
   let eventBytes=0;
@@ -80,12 +80,18 @@ export async function runMeteredTurn({command='codex', args=[], prompt, model, e
         ...config,project_doc_max_bytes:0,'skills.bundled.enabled':false,
         'skills.include_instructions':false,'web_search':'disabled'}});
     threadId=thread.thread.id;
+    let inventory;
+    if(preflightOnly || requiredTools.length){
+      inventory=await request('mcpServerStatus/list',{threadId});
+      const available=new Set((inventory.data||[]).filter(s=>s.name==='mova_evidence').flatMap(s=>Object.keys(s.tools||{})));
+      if(requiredTools.some(name=>!available.has(name))){failure='required_tools_unavailable';throw new Error(failure);}
+    }
     if(preflightOnly){
-      const inventory=await request('mcpServerStatus/list',{threadId});
       finalText=JSON.stringify({inference_dispatched:false,servers:(inventory.data||[]).map(s=>({
         name:s.name,tools:Object.keys(s.tools||{})}))});
       usage={input_tokens:0,output_tokens:0};result={status:'completed'};
     }else{
+      inferenceDispatched=true;
       const turn=await request('turn/start',{threadId,model,effort,
         input:[{type:'text',text:prompt,text_elements:[]}],outputSchema:schema});
       turnId=turn.turn.id;
@@ -103,5 +109,5 @@ export async function runMeteredTurn({command='codex', args=[], prompt, model, e
   // telemetry, but return null accounting so the host retains its conservative charge.
   return {status:success?0:1,stdout:'',text:success?finalText:null,
     error_code:success?null:failure||'app_server_turn_failed',
-    usage:success && usage?usage:{input_tokens:null,output_tokens:null},observed_usage:usage};
+    usage:success && usage?usage:!inferenceDispatched?{input_tokens:0,output_tokens:0}:{input_tokens:null,output_tokens:null},observed_usage:usage};
 }
