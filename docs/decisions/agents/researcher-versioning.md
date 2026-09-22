@@ -183,3 +183,22 @@ same-manifest Terra/Astra comparison after upgrading the worker to Codex 0.153.4
 Other sequential variants used newly prepared manifests and sometimes newer quality
 policies; their results are operational diagnostics, not a causal model benchmark.
 Production remains on 1.0.0 until a measured candidate passes release review.
+
+
+### Repeated useful evidence and broader discovery
+
+Variants 1.8.0 and 1.9.0 produced accepted official-source observations and explicitly
+qualified their limits; the same-context pair improved verified focus from 3 to 4,
+not enough for the comparator's two-subject gain flag. The candidate 1.10.0 broadens
+broad/forced scope to 16 queries/documents and versions football vocabulary fixes
+as quality policy 2026.09.5. Refresh/final delta scopes retain their previous caps.
+Its reactive token guard is 900k, with a 480-second turn limit; neither is a promise
+of useful coverage. Output remains brief v2 and the independent importer still
+checks exact excerpts, dates, identities and corroboration.
+
+The cockpit exposes the active researcher version and quality policy beside the
+effective model. Physical receipts and context hashes remain the authority for
+what a particular attempt actually ran. Experimental completion must not block
+normal cadence: enqueued/completed experiment audit records are excluded from
+operational slot queries. Existing completed experiment records are recognized
+without rewriting their historical requests or accounting.

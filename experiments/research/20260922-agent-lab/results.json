@@ -1,0 +1,732 @@
+{
+  "schema": "mova-research-lab-results-v1",
+  "runs": [
+    {
+      "run_id": "research_ea67ccd903c89e2f1bd0a4a609f459ca",
+      "agent_version": "1.0.0",
+      "models": [
+        "gpt-5.6-luna"
+      ],
+      "attempt_statuses": [
+        "succeeded"
+      ],
+      "errors": [],
+      "tool_calls": {},
+      "last_observed_usage": null,
+      "observed_usage_is_final": true,
+      "evaluation_present": true,
+      "manifest_sha256": "08f061adc4a44b6ef6e6298bc951af8eeea4f0f61b5dd8f2f91fd84876f1c722",
+      "scope_policy": {
+        "coverage_subjects": "exact_manifest_focus",
+        "freshness_mode": "material_exception_only",
+        "healthy_player_searches": "forbidden",
+        "max_documents": 10,
+        "max_material_signals": 8,
+        "max_web_queries": 8,
+        "on_budget_exhaustion": "mark_remaining_not_checked",
+        "run_kind": "forced",
+        "schema": "mova-research-scope-v1"
+      },
+      "quality_policy": "research-claim-2026.09.2",
+      "evaluated_at": "2026-09-22T17:31:33.130193+00:00",
+      "evaluation_sha256": "7c51febdca67e8b7ed834567e43714ecf5ca0424d3a8e04124c0af82a20d4376",
+      "documents": 7,
+      "verified_documents": 6,
+      "dated_documents": 4,
+      "verified_subjects": 1,
+      "coverage_ratio": 0.04,
+      "evidence_ratio": 0.04,
+      "accepted_subjects": [],
+      "accepted_outside_focus_subjects": [],
+      "supported_outside_focus_subjects": [],
+      "tool_failures": {},
+      "accepted_signals": 0,
+      "unresolved_conflicts": 1,
+      "tokens": 615333,
+      "tokens_per_verified_subject": 615333.0,
+      "duration_ms": 234898,
+      "job_token_limit": 160000,
+      "tool_checks": 0,
+      "tool_supported": 0,
+      "tool_rejections": {},
+      "context_receipts": 1,
+      "operational_import": false
+    },
+    {
+      "run_id": "research_49aca5a20215da22e7762e0dbfb04270",
+      "agent_version": "1.1.0",
+      "models": [],
+      "attempt_statuses": [],
+      "errors": [],
+      "tool_calls": {},
+      "last_observed_usage": null,
+      "observed_usage_is_final": false,
+      "evaluation_present": false,
+      "tokens": null,
+      "operational_import": false,
+      "eligible_for_promotion_review": false
+    },
+    {
+      "run_id": "research_52a4eeb2c43161385bbc6c2688ee8ac3",
+      "agent_version": "1.2.0",
+      "models": [
+        "gpt-5.6-luna"
+      ],
+      "attempt_statuses": [
+        "failed"
+      ],
+      "errors": [
+        "logical_token_guard"
+      ],
+      "tool_calls": {
+        "search_research_web": 8,
+        "read_research_source": 3
+      },
+      "last_observed_usage": {
+        "input_tokens": 90801,
+        "output_tokens": 2145,
+        "cached_input_tokens": 66560
+      },
+      "observed_usage_is_final": false,
+      "evaluation_present": false,
+      "tokens": null,
+      "operational_import": false,
+      "eligible_for_promotion_review": false
+    },
+    {
+      "run_id": "research_7cb03b13663bee91b7372c228bfb0d3e",
+      "agent_version": "1.3.0",
+      "models": [
+        "gpt-5.6-terra"
+      ],
+      "attempt_statuses": [
+        "succeeded"
+      ],
+      "errors": [],
+      "tool_calls": {
+        "search_research_web": 5,
+        "read_research_source": 6,
+        "research_context": 1,
+        "verify_research_evidence": 3
+      },
+      "last_observed_usage": {
+        "input_tokens": 240230,
+        "output_tokens": 5135,
+        "cached_input_tokens": 206336
+      },
+      "observed_usage_is_final": true,
+      "evaluation_present": true,
+      "manifest_sha256": "e3251ed7e2f6a572cf5a40b655e740b09bf5fa1f20c3598df92198244e79e389",
+      "scope_policy": {
+        "coverage_subjects": "exact_manifest_focus",
+        "freshness_mode": "material_exception_only",
+        "healthy_player_searches": "forbidden",
+        "max_documents": 10,
+        "max_material_signals": 8,
+        "max_web_queries": 8,
+        "on_budget_exhaustion": "mark_remaining_not_checked",
+        "run_kind": "forced",
+        "schema": "mova-research-scope-v1"
+      },
+      "quality_policy": "research-claim-2026.09.2",
+      "evaluated_at": "2026-09-22T18:48:53.247445+00:00",
+      "evaluation_sha256": "5b00517801d4f91009d4c095a68b67cfedee319cf191cce769d6ea1d87a8c129",
+      "documents": 1,
+      "verified_documents": 1,
+      "dated_documents": 0,
+      "verified_subjects": 0,
+      "coverage_ratio": 0.0,
+      "evidence_ratio": 0.0,
+      "accepted_subjects": [],
+      "accepted_outside_focus_subjects": [],
+      "supported_outside_focus_subjects": [],
+      "tool_failures": {
+        "verify_research_evidence": 3
+      },
+      "accepted_signals": 0,
+      "unresolved_conflicts": 0,
+      "tokens": 245365,
+      "tokens_per_verified_subject": null,
+      "duration_ms": 158403,
+      "job_token_limit": 400000,
+      "tool_checks": 3,
+      "tool_supported": 0,
+      "tool_rejections": {
+        "evidence_timeout": 3
+      },
+      "context_receipts": 1,
+      "operational_import": false
+    },
+    {
+      "run_id": "research_965a0f3ce00a84cb9c01ea498d0005fe",
+      "agent_version": "1.4.0",
+      "models": [
+        "gpt-5.6-terra"
+      ],
+      "attempt_statuses": [
+        "succeeded"
+      ],
+      "errors": [],
+      "tool_calls": {
+        "search_research_web": 5,
+        "read_research_source": 4,
+        "research_context": 1,
+        "verify_research_evidence": 1
+      },
+      "last_observed_usage": {
+        "input_tokens": 268015,
+        "output_tokens": 4156,
+        "cached_input_tokens": 243456
+      },
+      "observed_usage_is_final": true,
+      "evaluation_present": true,
+      "manifest_sha256": "fd41b88d48ea1c3eb43934747310395e2e2efb6599f584dd07a2ce18bffc700f",
+      "scope_policy": {
+        "coverage_subjects": "exact_manifest_focus",
+        "freshness_mode": "material_exception_only",
+        "healthy_player_searches": "forbidden",
+        "max_documents": 10,
+        "max_material_signals": 8,
+        "max_web_queries": 8,
+        "on_budget_exhaustion": "mark_remaining_not_checked",
+        "run_kind": "forced",
+        "schema": "mova-research-scope-v1"
+      },
+      "quality_policy": "research-claim-2026.09.2",
+      "evaluated_at": "2026-09-22T18:54:03.932523+00:00",
+      "evaluation_sha256": "0d66e0ae07bc846885ce49b4ab7666b9922becb134663b7229bfeeff593bffb9",
+      "documents": 1,
+      "verified_documents": 1,
+      "dated_documents": 1,
+      "verified_subjects": 1,
+      "coverage_ratio": 0.04,
+      "evidence_ratio": 0.04,
+      "accepted_subjects": [],
+      "accepted_outside_focus_subjects": [],
+      "supported_outside_focus_subjects": [],
+      "tool_failures": {
+        "read_research_source": 1
+      },
+      "accepted_signals": 0,
+      "unresolved_conflicts": 0,
+      "tokens": 272171,
+      "tokens_per_verified_subject": 272171.0,
+      "duration_ms": 121208,
+      "job_token_limit": 400000,
+      "tool_checks": 1,
+      "tool_supported": 1,
+      "tool_rejections": {},
+      "context_receipts": 1,
+      "operational_import": false
+    },
+    {
+      "run_id": "research_e98ec98c5033307df90b427964b7bc76",
+      "agent_version": "1.5.0",
+      "models": [
+        "gpt-6-astra"
+      ],
+      "attempt_statuses": [
+        "failed"
+      ],
+      "errors": [
+        "app_server_turn_failed"
+      ],
+      "tool_calls": {},
+      "last_observed_usage": null,
+      "observed_usage_is_final": false,
+      "evaluation_present": false,
+      "tokens": null,
+      "operational_import": false,
+      "eligible_for_promotion_review": false
+    },
+    {
+      "run_id": "research_99d46adb2388a10d00e5da997fd1bbf5",
+      "agent_version": "1.4.1",
+      "models": [
+        "gpt-5.6-terra"
+      ],
+      "attempt_statuses": [
+        "succeeded"
+      ],
+      "errors": [],
+      "tool_calls": {
+        "search_research_web": 5,
+        "read_research_source": 3,
+        "verify_research_evidence": 4
+      },
+      "last_observed_usage": {
+        "input_tokens": 264523,
+        "output_tokens": 3387,
+        "cached_input_tokens": 231680
+      },
+      "observed_usage_is_final": true,
+      "evaluation_present": true,
+      "manifest_sha256": "45ebe35957999461e092b0ef331cd8266d843179518148dfddcbd46dd7b4262a",
+      "scope_policy": {
+        "coverage_subjects": "exact_manifest_focus",
+        "freshness_mode": "material_exception_only",
+        "healthy_player_searches": "forbidden",
+        "max_documents": 10,
+        "max_material_signals": 8,
+        "max_web_queries": 8,
+        "on_budget_exhaustion": "mark_remaining_not_checked",
+        "run_kind": "forced",
+        "schema": "mova-research-scope-v1"
+      },
+      "quality_policy": "research-claim-2026.09.2",
+      "evaluated_at": "2026-09-22T19:02:04.540280+00:00",
+      "evaluation_sha256": "6e4fb1c11e3d3f1afef9159c0f45305d7923a0700a62affe3986de6573fc932d",
+      "documents": 1,
+      "verified_documents": 0,
+      "dated_documents": 0,
+      "verified_subjects": 0,
+      "coverage_ratio": 0.0,
+      "evidence_ratio": 0.0,
+      "accepted_subjects": [],
+      "accepted_outside_focus_subjects": [],
+      "supported_outside_focus_subjects": [],
+      "tool_failures": {
+        "verify_research_evidence": 3
+      },
+      "accepted_signals": 0,
+      "unresolved_conflicts": 0,
+      "tokens": 267910,
+      "tokens_per_verified_subject": null,
+      "duration_ms": 113594,
+      "job_token_limit": 400000,
+      "tool_checks": 4,
+      "tool_supported": 1,
+      "tool_rejections": {
+        "evidence_locator_not_verified": 1,
+        "identity_or_claim_unsupported": 1,
+        "stale_for_claim": 1
+      },
+      "context_receipts": 1,
+      "operational_import": false
+    },
+    {
+      "run_id": "research_3cff64dcd03802139fc14c579de10222",
+      "agent_version": "1.5.1",
+      "models": [
+        "gpt-6-astra"
+      ],
+      "attempt_statuses": [
+        "succeeded"
+      ],
+      "errors": [],
+      "tool_calls": {
+        "search_research_web": 7,
+        "research_context": 2,
+        "read_research_source": 6,
+        "verify_research_evidence": 4
+      },
+      "last_observed_usage": {
+        "input_tokens": 249780,
+        "output_tokens": 3725,
+        "cached_input_tokens": 215680
+      },
+      "observed_usage_is_final": true,
+      "evaluation_present": true,
+      "manifest_sha256": "45ebe35957999461e092b0ef331cd8266d843179518148dfddcbd46dd7b4262a",
+      "scope_policy": {
+        "coverage_subjects": "exact_manifest_focus",
+        "freshness_mode": "material_exception_only",
+        "healthy_player_searches": "forbidden",
+        "max_documents": 10,
+        "max_material_signals": 8,
+        "max_web_queries": 8,
+        "on_budget_exhaustion": "mark_remaining_not_checked",
+        "run_kind": "forced",
+        "schema": "mova-research-scope-v1"
+      },
+      "quality_policy": "research-claim-2026.09.2",
+      "evaluated_at": "2026-09-22T19:05:41.987109+00:00",
+      "evaluation_sha256": "9c7b9c9944b8da0eea7509b4b23dd14af8d9bacc3d6e3816dc028fe19479c91d",
+      "documents": 2,
+      "verified_documents": 2,
+      "dated_documents": 2,
+      "verified_subjects": 1,
+      "coverage_ratio": 0.04,
+      "evidence_ratio": 0.04,
+      "accepted_subjects": [],
+      "accepted_outside_focus_subjects": [],
+      "supported_outside_focus_subjects": [
+        116,
+        328
+      ],
+      "tool_failures": {
+        "verify_research_evidence": 1
+      },
+      "accepted_signals": 0,
+      "unresolved_conflicts": 0,
+      "tokens": 253505,
+      "tokens_per_verified_subject": 253505.0,
+      "duration_ms": 178603,
+      "job_token_limit": 400000,
+      "tool_checks": 4,
+      "tool_supported": 3,
+      "tool_rejections": {
+        "identity_or_claim_unsupported": 1
+      },
+      "context_receipts": 1,
+      "operational_import": false
+    },
+    {
+      "run_id": "research_1ec9688a086927d29537e5b20be39d72",
+      "agent_version": "1.6.0",
+      "models": [
+        "gpt-6-astra"
+      ],
+      "attempt_statuses": [
+        "succeeded"
+      ],
+      "errors": [],
+      "tool_calls": {
+        "search_research_web": 7,
+        "research_context": 3,
+        "read_research_source": 6,
+        "verify_research_evidence": 6
+      },
+      "last_observed_usage": {
+        "input_tokens": 301082,
+        "output_tokens": 3824,
+        "cached_input_tokens": 261376
+      },
+      "observed_usage_is_final": true,
+      "evaluation_present": true,
+      "manifest_sha256": "4f69a68bdfe7d247c2d766e909891a672773129ed1424d13243d694395d1107a",
+      "scope_policy": {
+        "coverage_subjects": "exact_manifest_focus",
+        "freshness_mode": "material_exception_only",
+        "healthy_player_searches": "forbidden",
+        "max_documents": 10,
+        "max_material_signals": 8,
+        "max_web_queries": 8,
+        "on_budget_exhaustion": "mark_remaining_not_checked",
+        "run_kind": "forced",
+        "schema": "mova-research-scope-v1"
+      },
+      "quality_policy": "research-claim-2026.09.3",
+      "evaluated_at": "2026-09-22T19:12:52.000176+00:00",
+      "evaluation_sha256": "cc68381a6e48a88d61280bd896f302baad25c407ed544184c904e9b7fedd1504",
+      "documents": 2,
+      "verified_documents": 2,
+      "dated_documents": 1,
+      "verified_subjects": 0,
+      "coverage_ratio": 0.0,
+      "evidence_ratio": 0.0,
+      "accepted_subjects": [],
+      "accepted_outside_focus_subjects": [],
+      "supported_outside_focus_subjects": [
+        328
+      ],
+      "tool_failures": {
+        "verify_research_evidence": 3
+      },
+      "accepted_signals": 0,
+      "unresolved_conflicts": 0,
+      "tokens": 304906,
+      "tokens_per_verified_subject": null,
+      "duration_ms": 173599,
+      "job_token_limit": 800000,
+      "tool_checks": 6,
+      "tool_supported": 3,
+      "tool_rejections": {
+        "identity_or_claim_unsupported": 3
+      },
+      "context_receipts": 1,
+      "operational_import": false
+    },
+    {
+      "run_id": "research_9be1ea6643965f7def84ea38b8087794",
+      "agent_version": "1.7.0",
+      "models": [
+        "gpt-6-astra"
+      ],
+      "attempt_statuses": [
+        "succeeded"
+      ],
+      "errors": [],
+      "tool_calls": {
+        "search_research_web": 5,
+        "research_context": 9,
+        "read_research_source": 7,
+        "verify_research_evidence": 12
+      },
+      "last_observed_usage": {
+        "input_tokens": 383020,
+        "output_tokens": 5346,
+        "cached_input_tokens": 331008
+      },
+      "observed_usage_is_final": true,
+      "evaluation_present": true,
+      "manifest_sha256": "c5523028c466e430e8c5d0cd9be3d05093e607e05ac34547784912f6b6358659",
+      "scope_policy": {
+        "coverage_subjects": "exact_manifest_focus",
+        "freshness_mode": "material_exception_only",
+        "healthy_player_searches": "forbidden",
+        "max_documents": 10,
+        "max_material_signals": 8,
+        "max_web_queries": 8,
+        "on_budget_exhaustion": "mark_remaining_not_checked",
+        "run_kind": "forced",
+        "schema": "mova-research-scope-v1"
+      },
+      "quality_policy": "research-claim-2026.09.4",
+      "evaluated_at": "2026-09-22T19:24:54.320818+00:00",
+      "evaluation_sha256": "3e9684dd3851fdbd091543d748413282799234553a8fb8e865153fb13719fdfa",
+      "documents": 3,
+      "verified_documents": 2,
+      "dated_documents": 2,
+      "verified_subjects": 1,
+      "coverage_ratio": 0.04,
+      "evidence_ratio": 0.04,
+      "accepted_subjects": [],
+      "accepted_outside_focus_subjects": [],
+      "supported_outside_focus_subjects": [],
+      "tool_failures": {
+        "verify_research_evidence": 5,
+        "research_context": 1
+      },
+      "accepted_signals": 0,
+      "unresolved_conflicts": 0,
+      "tokens": 388366,
+      "tokens_per_verified_subject": 388366.0,
+      "duration_ms": 219502,
+      "job_token_limit": 500000,
+      "tool_checks": 12,
+      "tool_supported": 7,
+      "tool_rejections": {
+        "identity_or_claim_unsupported": 3,
+        "evidence_locator_not_verified": 2
+      },
+      "context_receipts": 1,
+      "operational_import": false
+    },
+    {
+      "run_id": "research_63f46125944bb94ecc107533cfa7e81a",
+      "agent_version": "1.8.0",
+      "models": [
+        "gpt-6-astra"
+      ],
+      "attempt_statuses": [
+        "succeeded"
+      ],
+      "errors": [],
+      "tool_calls": {
+        "search_research_web": 5,
+        "read_research_source": 4,
+        "research_context": 4,
+        "verify_research_evidence": 3
+      },
+      "last_observed_usage": {
+        "input_tokens": 217478,
+        "output_tokens": 3396,
+        "cached_input_tokens": 182528
+      },
+      "observed_usage_is_final": true,
+      "evaluation_present": true,
+      "manifest_sha256": "cc0614f0b9ca616a33f557b83db068653db82e3794cc768d8b7c5f30197e529a",
+      "scope_policy": {
+        "coverage_subjects": "exact_manifest_focus",
+        "freshness_mode": "material_exception_only",
+        "healthy_player_searches": "forbidden",
+        "max_documents": 10,
+        "max_material_signals": 8,
+        "max_web_queries": 8,
+        "on_budget_exhaustion": "mark_remaining_not_checked",
+        "run_kind": "forced",
+        "schema": "mova-research-scope-v1"
+      },
+      "quality_policy": "research-claim-2026.09.4",
+      "evaluated_at": "2026-09-22T19:33:53.183967+00:00",
+      "evaluation_sha256": "7cade8602b5f96fc6e56afbd7fac0043550eb385c5b917853a33e5a519ae7101",
+      "documents": 1,
+      "verified_documents": 1,
+      "dated_documents": 1,
+      "verified_subjects": 1,
+      "coverage_ratio": 0.04,
+      "evidence_ratio": 0.04,
+      "accepted_subjects": [
+        96,
+        565
+      ],
+      "accepted_outside_focus_subjects": [
+        96
+      ],
+      "supported_outside_focus_subjects": [
+        96
+      ],
+      "tool_failures": {
+        "verify_research_evidence": 2
+      },
+      "accepted_signals": 2,
+      "unresolved_conflicts": 0,
+      "tokens": 220874,
+      "tokens_per_verified_subject": 220874.0,
+      "duration_ms": 150199,
+      "job_token_limit": 800000,
+      "tool_checks": 3,
+      "tool_supported": 1,
+      "tool_rejections": {
+        "identity_or_claim_unsupported": 1,
+        "stale_for_claim": 1,
+        "evidence_locator_not_verified": 1
+      },
+      "context_receipts": 1,
+      "operational_import": false
+    },
+    {
+      "run_id": "research_58495b855236c653235938695478b6f3",
+      "agent_version": "1.8.0",
+      "models": [
+        "gpt-6-astra"
+      ],
+      "attempt_statuses": [
+        "succeeded"
+      ],
+      "errors": [],
+      "tool_calls": {
+        "search_research_web": 8,
+        "research_context": 4,
+        "read_research_source": 8,
+        "verify_research_evidence": 4
+      },
+      "last_observed_usage": {
+        "input_tokens": 305758,
+        "output_tokens": 4146,
+        "cached_input_tokens": 265600
+      },
+      "observed_usage_is_final": true,
+      "evaluation_present": true,
+      "manifest_sha256": "a9bb554ac96baecd64b6dedf1cd4917713507093dbe547af6759c3ff8a755bd5",
+      "scope_policy": {
+        "coverage_subjects": "exact_manifest_focus",
+        "freshness_mode": "material_exception_only",
+        "healthy_player_searches": "forbidden",
+        "max_documents": 10,
+        "max_material_signals": 8,
+        "max_web_queries": 8,
+        "on_budget_exhaustion": "mark_remaining_not_checked",
+        "run_kind": "forced",
+        "schema": "mova-research-scope-v1"
+      },
+      "quality_policy": "research-claim-2026.09.4",
+      "evaluated_at": "2026-09-22T19:39:26.806988+00:00",
+      "evaluation_sha256": "8a5d4148737263b4fd48db88c29a4ff8918e122e67de1f095b0c6b8b11f7e6a6",
+      "documents": 2,
+      "verified_documents": 2,
+      "dated_documents": 2,
+      "verified_subjects": 3,
+      "coverage_ratio": 0.12,
+      "evidence_ratio": 0.12,
+      "accepted_subjects": [],
+      "accepted_outside_focus_subjects": [],
+      "supported_outside_focus_subjects": [],
+      "tool_failures": {
+        "verify_research_evidence": 2,
+        "read_research_source": 1
+      },
+      "accepted_signals": 0,
+      "unresolved_conflicts": 0,
+      "tokens": 309904,
+      "tokens_per_verified_subject": 103301.33,
+      "duration_ms": 189989,
+      "job_token_limit": 800000,
+      "tool_checks": 4,
+      "tool_supported": 2,
+      "tool_rejections": {
+        "identity_or_claim_unsupported": 2
+      },
+      "context_receipts": 1,
+      "operational_import": false
+    },
+    {
+      "run_id": "research_5360dd9d16e935f02f55ce5ac4ce8ac5",
+      "agent_version": "1.9.0",
+      "models": [
+        "gpt-6-astra"
+      ],
+      "attempt_statuses": [
+        "succeeded"
+      ],
+      "errors": [],
+      "tool_calls": {
+        "search_research_web": 8,
+        "research_context": 6,
+        "read_research_source": 10,
+        "verify_research_evidence": 4
+      },
+      "last_observed_usage": {
+        "input_tokens": 330347,
+        "output_tokens": 3855,
+        "cached_input_tokens": 281344
+      },
+      "observed_usage_is_final": true,
+      "evaluation_present": true,
+      "manifest_sha256": "a9bb554ac96baecd64b6dedf1cd4917713507093dbe547af6759c3ff8a755bd5",
+      "scope_policy": {
+        "coverage_subjects": "exact_manifest_focus",
+        "freshness_mode": "material_exception_only",
+        "healthy_player_searches": "forbidden",
+        "max_documents": 10,
+        "max_material_signals": 8,
+        "max_web_queries": 8,
+        "on_budget_exhaustion": "mark_remaining_not_checked",
+        "run_kind": "forced",
+        "schema": "mova-research-scope-v1"
+      },
+      "quality_policy": "research-claim-2026.09.4",
+      "evaluated_at": "2026-09-22T19:43:20.758854+00:00",
+      "evaluation_sha256": "0e1630167199a4108d168f1bae418463d4f28b612aed58fbd8b1ffdab85485b6",
+      "documents": 1,
+      "verified_documents": 1,
+      "dated_documents": 1,
+      "verified_subjects": 4,
+      "coverage_ratio": 0.16,
+      "evidence_ratio": 0.16,
+      "accepted_subjects": [
+        565
+      ],
+      "accepted_outside_focus_subjects": [],
+      "supported_outside_focus_subjects": [],
+      "tool_failures": {
+        "verify_research_evidence": 3
+      },
+      "accepted_signals": 1,
+      "unresolved_conflicts": 0,
+      "tokens": 334202,
+      "tokens_per_verified_subject": 83550.5,
+      "duration_ms": 191200,
+      "job_token_limit": 800000,
+      "tool_checks": 4,
+      "tool_supported": 1,
+      "tool_rejections": {
+        "stale_for_claim": 1,
+        "identity_or_claim_unsupported": 2
+      },
+      "context_receipts": 1,
+      "operational_import": false
+    }
+  ],
+  "paired_comparison_1_8_1_9": {
+    "schema": "mova-agent-comparison-v1",
+    "checks": {
+      "same_manifest": true,
+      "same_scope": true,
+      "same_quality_policy": true,
+      "candidate_within_budget": true,
+      "material_coverage_gain": false,
+      "no_conflict_regression": true,
+      "tool_used": true,
+      "verified_evidence_present": true
+    },
+    "eligible_for_promotion_review": false,
+    "autonomy_gate_satisfied": false,
+    "limitations": [
+      "Sequential live fetches are not a frozen-web randomized benchmark.",
+      "Deterministic identity/topic checks do not establish full claim semantics.",
+      "No experimental result contributes to operational multi-GW acceptance."
+    ]
+  }
+}
