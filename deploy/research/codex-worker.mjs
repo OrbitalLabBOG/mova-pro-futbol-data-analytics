@@ -313,6 +313,7 @@ try {
       `Límites estrictos: ${scopePolicy.max_web_queries} consultas, ${scopePolicy.max_documents} documentos, ${scopePolicy.max_material_signals} señales. Apunta a un máximo de 12 tool calls y entrega pronto.`,
       "Usa search_research_web para descubrir URLs, read_research_source para fragmentos literales y fechas candidatas, verify_research_evidence antes de citar. No hay búsqueda nativa.",
       "Si falla una fuente, corrige una vez o descártala. No repitas consultas semánticamente equivalentes. Reserva salida para JSON antes del freno de tokens.",
+      "Disponibilidad/lesión/minutos requieren publicación de máximo 3 días; rol inicial, cobertura y comentarios, máximo 7. Una lista de inscripción no demuestra disponibilidad. Si el filtro devuelve poco, prueba una consulta más corta antes de concluir ausencia de noticias.",
       "Verifica sujeto, tipo de claim y fecha reciente en la misma fuente. Un partido antiguo no demuestra aptitud actual. Las fechas candidatas de metadata requieren verificación.",
       "Toda señal/conflicto cita URLs presentes en documents; evidence_text es literal, <=800 caracteres. Fuente oficial o dos hosts independientes para claims fuertes.",
       "Una URL puede cubrir varios sujetos solo si el fragmento los nombra. covered_focus_elements es diagnóstico, no aceptación final.",

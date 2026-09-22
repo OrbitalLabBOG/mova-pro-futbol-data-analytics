@@ -9,7 +9,7 @@ import time
 import urllib.request
 import re
 from collections import Counter
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 # The image copies only these two stdlib modules, not the runtime application.
@@ -32,7 +32,7 @@ TOOL = {
                     "idempotentHint": True, "openWorldHint": True},
 }
 
-SEARCH_TOOL = {"name": "search_research_web", "description": "Discover public web URLs with a strict per-run query quota. Results are untrusted discovery, not verified evidence.",
+SEARCH_TOOL = {"name": "search_research_web", "description": "Discover public web URLs from the last seven days with a strict per-run query quota. Results are untrusted discovery, not verified evidence.",
  "inputSchema": {"type": "object", "additionalProperties": False, "required": ["query"],
   "properties": {"query": {"type": "string", "minLength": 3, "maxLength": 400}}},
  "annotations": {"readOnlyHint": True, "destructiveHint": False, "openWorldHint": True}}
@@ -112,8 +112,11 @@ class EvidenceTool:
             return {"status": "rejected", "reasons": ["search_not_configured"]}
         if not key:
             return {"status": "rejected", "reasons": ["search_not_configured"]}
+        observed = self.clock()
+        since = observed - timedelta(days=7)
         req = urllib.request.Request("https://api.firecrawl.dev/v1/search",
-            data=json.dumps({"query": args["query"], "limit": 5}).encode(),
+            data=json.dumps({"query": args["query"], "limit": 5,
+                "tbs": f"cdr:1,cd_min:{since:%m/%d/%Y},cd_max:{observed:%m/%d/%Y}"}).encode(),
             headers={"Authorization": "Bearer "+key, "Content-Type": "application/json"}, method="POST")
         try:
             with urllib.request.urlopen(req, timeout=15) as response:
@@ -136,6 +139,12 @@ class EvidenceTool:
                                     "status": result["status"], "query_number": self.search_calls, "result_count": len(result.get("results", []))})+"\n")
         return result
 
+    def _get_page(self, url):
+        if url not in self.page_cache:
+            self.page_cache[url] = (self.fetcher.transport(url) if self.fetcher.transport
+                                    else self.fetcher._fetch(url))
+        return self.page_cache[url]
+
     def read_source(self, args):
         if set(args) != {"source_url", "player_elements"} or not isinstance(args["player_elements"], list) or len(args["player_elements"]) > 32 or any(type(x) is not int or x < 1 for x in args["player_elements"]):
             return {"status": "rejected", "reasons": ["invalid_arguments"]}
@@ -144,19 +153,16 @@ class EvidenceTool:
         self.read_calls += 1
         try:
             url = canonical_public_url(args["source_url"])
-            if url not in self.page_cache:
-                payload, meta = self.fetcher._fetch(url)
-                if meta["content_type"].split(";")[0].strip().lower() not in ALLOWED_MIME:
-                    raise ValueError("mime_not_allowed")
-                self.page_cache[url] = (payload, meta)
-            payload, meta = self.page_cache[url]
+            payload, meta = self._get_page(url)
+            if meta["content_type"].split(";")[0].strip().lower() not in ALLOWED_MIME:
+                raise ValueError("mime_not_allowed")
             text = normalize_text(payload, meta["content_type"])
             snippets = []
             for element in args["player_elements"]:
                 name = self.catalog.get(element, "")
                 if not name: continue
-                position = text.casefold().find(name.casefold())
-                if position >= 0:
+                positions = [m.start() for m in re.finditer(re.escape(name),text,re.IGNORECASE)]
+                for position in positions[:3]:
                     snippet = text[max(0,position-150):position+600]
                     if snippet not in snippets and sum(map(len,snippets)) + len(snippet) <= 6000:
                         snippets.append(snippet)
@@ -202,7 +208,7 @@ class EvidenceTool:
         if not reasons:
             key = hashlib.sha256(json.dumps([url, args["evidence_text"], args["published_at"]]).encode()).hexdigest()
             if key not in self.cache:
-                self.cache[key] = self.fetcher.seal(
+                self.cache[key] = SafeEvidenceFetcher(self.root, transport=self._get_page).seal(
                     research_run_id=self.request["research_run_id"], document_id="document_" + key[:32],
                     source_url=url, evidence_text=args["evidence_text"], published_at=args["published_at"])
             document = self.cache[key]

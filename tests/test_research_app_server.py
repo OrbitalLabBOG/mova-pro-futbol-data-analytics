@@ -29,11 +29,11 @@ for line in sys.stdin:
     fake.chmod(0o755)
     script='''import {runMeteredTurn} from './deploy/research/codex-app-server.mjs';
 const events=[];const result=await runMeteredTurn({command:process.env.MOVA_FAKE_CODEX,
- prompt:'test',model:'mock',effort:'low',schema:{type:'object'},tokenLimit:100,
+ cwd:process.env.MOVA_TEST_CWD,prompt:'test',model:'mock',effort:'low',schema:{type:'object'},tokenLimit:100,
  timeoutMs:2000,onEvent:e=>events.push(e)});
 process.stdout.write(JSON.stringify({result,events}));'''
     result=subprocess.run(['node','--input-type=module','-e',script],cwd=ROOT,
-        env={**os.environ,'MOVA_FAKE_CODEX':str(fake)},capture_output=True,text=True,check=True,timeout=10)
+        env={**os.environ,'MOVA_FAKE_CODEX':str(fake),'MOVA_TEST_CWD':str(tmp_path)},capture_output=True,text=True,check=True,timeout=10)
     return json.loads(result.stdout)
 
 
@@ -52,3 +52,12 @@ def test_metered_driver_interrupts_and_does_not_claim_partial_usage_is_final(tmp
     assert data['result']['usage']['input_tokens'] is None
     assert data['result']['observed_usage']['input_tokens']==120
     assert any(e.get('type')=='meter.stop' for e in data['events'])
+
+
+def test_missing_executable_fails_promptly_without_hanging_rpc(tmp_path):
+    script="""import {runMeteredTurn} from './deploy/research/codex-app-server.mjs';
+const result=await runMeteredTurn({command:'/nonexistent/mova-codex',cwd:process.env.MOVA_TEST_CWD,
+ timeoutMs:1000});process.stdout.write(JSON.stringify(result));"""
+    r=subprocess.run(['node','--input-type=module','-e',script],cwd=ROOT,
+        env={**os.environ,'MOVA_TEST_CWD':str(tmp_path)},capture_output=True,text=True,check=True,timeout=5)
+    assert json.loads(r.stdout)['error_code']=='app_server_spawn_failed'

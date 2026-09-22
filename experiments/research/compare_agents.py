@@ -11,17 +11,36 @@ def digest(value):
 
 
 def summarize(root, run_id):
-    request=json.loads((root/'archive'/f'{run_id}.request.json').read_text())
+    request_path=next((root/folder/f'{run_id}.request.json' for folder in ['archive','quarantine','inbox']
+                       if (root/folder/f'{run_id}.request.json').is_file()),None)
+    if request_path is None: raise ValueError('request artifact missing')
+    request=json.loads(request_path.read_text())
     path=root/'archive'/f'{run_id}.evaluation.json'
-    report=json.loads(path.read_text())
+    report=json.loads(path.read_text()) if path.is_file() else None
     contexts=list((root/'logs').glob(f'{run_id}.*.context.json'))
     receipts=[json.loads(p.read_text()) for p in (root/'receipts').glob(f'{run_id}.*.finished.json')]
     checks=[json.loads(line) for p in (root/'logs').glob(f'{run_id}.*.verification/checks.jsonl')
             for line in p.read_text().splitlines()]
     tokens=sum(int(r.get('input_tokens') or 0)+int(r.get('output_tokens') or 0) for r in receipts)
     exact=bool(receipts) and all(r.get('input_tokens') is not None and r.get('output_tokens') is not None for r in receipts)
+    events=[json.loads(line) for p in (root/'logs').glob(f'{run_id}.*.events.jsonl')
+            for line in p.read_text().splitlines()]
+    usages=[e['usage'] for e in events if e.get('type')=='meter.usage']
+    calls=[e['params']['item'] for e in events if e.get('method')=='item/completed'
+           and e.get('params',{}).get('item',{}).get('type')=='mcpToolCall']
+    telemetry={'models':sorted({r['model'] for r in receipts}),
+        'attempt_statuses':[r['status'] for r in receipts],
+        'errors':[r.get('error_code') for r in receipts if r.get('error_code')],
+        'tool_calls':dict(__import__('collections').Counter(c['tool'] for c in calls)),
+        'last_observed_usage':usages[-1] if usages else None,
+        'observed_usage_is_final':exact,
+        'evaluation_present':report is not None}
+    if report is None:
+        return {'run_id':run_id,'agent_version':request['agent_version'],**telemetry,
+            'tokens':tokens if exact else None,'operational_import':False,
+            'eligible_for_promotion_review':False}
     useful=report['coverage'].get('evidence_verified_subjects',0)
-    return {'run_id':run_id,'agent_version':request['agent_version'],
+    return {'run_id':run_id,'agent_version':request['agent_version'],**telemetry,
         'manifest_sha256':digest(request['manifest']),'scope_policy':request['scope_policy'],
         'quality_policy':request['quality_policy'],'evaluated_at':report['evaluated_at'],
         'evaluation_sha256':hashlib.sha256(path.read_bytes()).hexdigest(),
@@ -43,6 +62,9 @@ def summarize(root, run_id):
 
 def compare(root, baseline_id, candidate_id):
     baseline=summarize(root,baseline_id); candidate=summarize(root,candidate_id)
+    if not baseline['evaluation_present'] or not candidate['evaluation_present']:
+        return {'baseline':baseline,'candidate':candidate,'eligible_for_promotion_review':False,
+                'reason':'evaluation_missing','autonomy_gate_satisfied':False}
     checks={
         'same_manifest':baseline['manifest_sha256']==candidate['manifest_sha256'],
         'same_scope':baseline['scope_policy']==candidate['scope_policy'],
@@ -62,5 +84,6 @@ def compare(root, baseline_id, candidate_id):
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('root',type=Path);p.add_argument('baseline');p.add_argument('candidate')
-    args=p.parse_args();print(json.dumps(compare(args.root,args.baseline,args.candidate),indent=2))
+    p=argparse.ArgumentParser();p.add_argument('root',type=Path);p.add_argument('baseline');p.add_argument('candidate',nargs='?')
+    args=p.parse_args();print(json.dumps(compare(args.root,args.baseline,args.candidate) if args.candidate
+        else summarize(args.root,args.baseline),indent=2))

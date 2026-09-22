@@ -3,10 +3,15 @@ import {spawn} from 'node:child_process';
 import {createInterface} from 'node:readline';
 
 export async function runMeteredTurn({command='codex', args=[], prompt, model, effort,
-    schema, config={}, tokenLimit=80000, timeoutMs=240000, preflightOnly=false, onEvent=()=>{}}) {
-  const child=spawn(command,['app-server',...args],{cwd:'/tmp/mova-research',
+    schema, config={}, cwd='/tmp/mova-research', tokenLimit=80000, timeoutMs=240000, preflightOnly=false, onEvent=()=>{}}) {
+  const child=spawn(command,['app-server',...args],{cwd,
     stdio:['pipe','pipe','pipe'],detached:true});
-  const pending=new Map(); let nextId=1; let threadId,turnId;
+  const pending=new Map();
+  const rejectPending=reason=>{
+    for(const waiter of pending.values()){clearTimeout(waiter.timer);waiter.reject(new Error(reason));}
+    pending.clear();
+  };
+  let nextId=1; let threadId,turnId;
   let usage=null, finalText='', stopped=false, failure=null, doneResolve;
   const done=new Promise(resolve=>{doneResolve=resolve;});
   let eventBytes=0;
@@ -24,6 +29,7 @@ export async function runMeteredTurn({command='codex', args=[], prompt, model, e
   const stop=reason=>{
     if(stopped)return;
     stopped=true;failure=reason;
+    rejectPending(reason);
     emit({type:'meter.stop',reason,observed_usage:usage});
     if(threadId && turnId) request('turn/interrupt',{threadId,turnId}).catch(()=>{});
     setTimeout(()=>doneResolve({status:'interrupted'}),3000).unref();
@@ -60,15 +66,16 @@ export async function runMeteredTurn({command='codex', args=[], prompt, model, e
   });
   // Drain stderr without persisting arbitrary credential/provider diagnostics.
   child.stderr.on('data',()=>{});
-  child.on('error',()=>{failure='app_server_spawn_failed';doneResolve({status:'failed'});});
-  child.on('exit',()=>{failure ||= 'app_server_exited';doneResolve({status:'failed'});});
+  child.on('error',()=>{failure='app_server_spawn_failed';rejectPending(failure);doneResolve({status:'failed'});});
+  child.stdin.on('error',()=>{failure ||= 'app_server_pipe_failed';rejectPending(failure);doneResolve({status:'failed'});});
+  child.on('exit',()=>{failure ||= 'app_server_exited';rejectPending(failure);doneResolve({status:'failed'});});
   const timeout=setTimeout(()=>stop('app_server_timeout'),timeoutMs);
   let result;
   try{
     await request('initialize',{clientInfo:{name:'mova-research',version:'1.2.0'},
       capabilities:{experimentalApi:true}});
     send({method:'initialized',params:{}});
-    const thread=await request('thread/start',{ephemeral:true,cwd:'/tmp/mova-research',
+    const thread=await request('thread/start',{ephemeral:true,cwd,
       model,approvalPolicy:'never',sandbox:'read-only',config:{
         ...config,project_doc_max_bytes:0,'skills.bundled.enabled':false,
         'skills.include_instructions':false,'web_search':'disabled'}});
