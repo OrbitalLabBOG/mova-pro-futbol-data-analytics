@@ -272,3 +272,18 @@ def test_authorized_allowance_is_idempotent_scoped_and_preserves_spend(tmp_path)
     assert queued['budget']['policy']['job_tokens']==120
     with db.connect(readonly=True) as con:
         assert con.execute("SELECT count(*) FROM audit_events WHERE event_type='agent_budget_allowance_granted'").fetchone()[0]==1
+
+
+def test_campaign_use_allowance_keeps_actual_calls_and_normal_scope(tmp_path):
+    db,cycle=_runtime(tmp_path)
+    _queue(db,cycle,'research_'+'d'*32)
+    before=db.cost_report(POLICY,season='2026-27',gw=3)
+    db.grant_agent_budget_allowance(cycle_id=cycle,tokens=500,uses=7,actor='julian',
+        reason='Authorized campaign capacity',idempotency_key='calls-allowance')
+    after=db.cost_report(POLICY,season='2026-27',gw=3)
+    assert after['gameweek']['committed_uses']==before['gameweek']['committed_uses']
+    assert after['policy']['gw_uses']==POLICY['gw_uses']+7
+    assert after['policy']['month_uses']==POLICY['month_uses']+7
+    assert after['base_policy']==POLICY
+    with pytest.raises(ValueError):
+        db.grant_agent_budget_allowance(cycle_id=cycle,tokens=500,uses=-1,actor='julian',reason='bad',idempotency_key='bad-uses')

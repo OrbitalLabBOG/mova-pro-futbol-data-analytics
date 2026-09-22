@@ -2012,9 +2012,10 @@ class OpsDB:
                 "estimated_cost_usd": cost["estimated_cost_usd"]}
 
     def grant_agent_budget_allowance(self, *, cycle_id: str, tokens: int,
-                                     actor: str, reason: str, idempotency_key: str) -> dict:
+                                     actor: str, reason: str, idempotency_key: str, uses: int = 0) -> dict:
         """Append an authorized campaign allowance; never erase actual consumption."""
-        if type(tokens) is not int or tokens <= 0 or not all((actor,reason,idempotency_key)):
+        if (type(tokens) is not int or tokens <= 0 or type(uses) is not int or uses < 0
+                or not all((actor,reason,idempotency_key))):
             raise ValueError("allowance exige tokens positivos, actor, reason e idempotency_key")
         key = "agent_budget_allowance:" + sha256_json(idempotency_key)[:32]
         now = utcnow()
@@ -2022,11 +2023,11 @@ class OpsDB:
             if not con.execute("SELECT 1 FROM gameweek_cycles WHERE cycle_id=?",(cycle_id,)).fetchone():
                 raise ValueError("cycle_id desconocido")
             old=con.execute("SELECT value_json FROM runtime_controls WHERE control_key=?",(key,)).fetchone()
-            identity={"cycle_id":cycle_id,"tokens":tokens,"actor":actor,"reason":reason,
+            identity={"cycle_id":cycle_id,"tokens":tokens,"uses":uses,"actor":actor,"reason":reason,
                       "idempotency_key":idempotency_key}
             if old:
                 value=json.loads(old[0])
-                if any(value.get(k)!=v for k,v in identity.items()):
+                if any(value.get(k, 0 if k == "uses" else None)!=v for k,v in identity.items()):
                     raise ValueError("allowance idempotency conflict")
                 return {**value,"reused":True}
             value={"schema":"mova-budget-allowance-v1",**identity,"month":now[:7],"granted_at":now}
@@ -2045,6 +2046,8 @@ class OpsDB:
         result=dict(policy)
         result["gw_tokens"]+=sum(a["tokens"] for a in applicable if a["cycle_id"]==cycle_id)
         result["month_tokens"]+=sum(a["tokens"] for a in applicable if a["month"]==month)
+        result["gw_uses"]+=sum(a.get("uses",0) for a in applicable if a["cycle_id"]==cycle_id)
+        result["month_uses"]+=sum(a.get("uses",0) for a in applicable if a["month"]==month)
         return result,applicable
 
     def _reserve_agent_budget(self, con: sqlite3.Connection, *, cycle_id: str,

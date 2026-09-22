@@ -153,9 +153,10 @@ Search contract source: [Firecrawl v1 OpenAPI](https://github.com/firecrawl/fire
 --idempotency-key ...` records an append-only, idempotent resource allowance in
 runtime_controls and audit_events. It adds capacity only for that exact cycle and
 the grant month. Reports expose base_policy, applicable allowances and effective
-policy; all actual/estimated consumption remains unchanged. New reservations seal
-the effective policy; existing sealed permissions are not rewritten. Job limits,
-use limits, evidence gates and FPL authority are unaffected. Reusing a key with a
+policy; all actual/estimated consumption remains unchanged. Optional `--uses` adds
+use capacity for that same cycle/month, without erasing consumed calls. New reservations seal
+the effective policy; existing sealed permissions are not rewritten. Job limits, evidence gates and FPL authority are unaffected; use limits change only
+when the allowance explicitly grants additional uses. Reusing a key with a
 different payload is a conflict. This avoids making temporary experiment capacity
 an undocumented permanent change to the production environment.
 

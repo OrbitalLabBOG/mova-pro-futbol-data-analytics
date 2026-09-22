@@ -65,3 +65,19 @@ records from normal cadence queries. Otherwise a completed experiment could bloc
 a future operational slot indefinitely. Failed/queued experiments cannot consume
 an operational research slot; their own physical attempts remain host-authorized.
 All consumption and unsuccessful attempts remain visible and auditable.
+
+First 1.10.0 live result (`research_70f8d29afd068cd0e824f346fcbe8fce`):
+12/25 verified focus subjects, six independently fetched and dated documents,
+four accepted signals including one outside focus, one unresolved conflict,
+621,969 logical tokens (614,111 input, 545,920 cached input, 7,858 output),
+343,205 ms. No overrun against the sealed 1M job allocation. All six final excerpts
+survived independent import. Manual inspection checked the role/bench/ball-taking
+claims against the literal excerpts and their qualifications. This is 48% current
+coverage, not 90/80 compliance, predictive accuracy or evidence from three GWs.
+
+The researcher explicitly retained the unresolved Haaland availability question;
+a recent starting XI does not resolve future fitness. Sangaré's bench observation
+does not establish a permanent loss of role. Dewsbury-Hall's added set-piece duties
+do not establish penalties or exclusive responsibility. These distinctions are
+part of release review, not just the accepted-signal counter. Exact-version repeat
+and normal-runtime smoke remain required before calling the component promoted.

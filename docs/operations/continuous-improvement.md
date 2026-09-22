@@ -176,3 +176,21 @@ La API `/api/v1/budget-reservations` expone las últimas reservas y Prometheus p
   no sobrescribir evaluaciones.
 - No simular ni forzar el reviewer antes de `finished + data_checked` y scorecard baseline.
 - PostgreSQL recibe estas tablas por el import shadow; SQLite continúa como writer oficial.
+
+## Researcher experiment capacity
+
+Agent experiments are real consumption. Their `research_experiment` ledger rows
+and measured input/output remain separate from operational evidence. An authorized
+campaign can add capacity with `mova cost allowance --cycle-id ... --tokens ...
+--uses ... --actor ... --reason ... --idempotency-key ...`; optional uses restore
+campaign call capacity in the same scope. It does not erase costs, resolve
+historical overruns or authorize FPL changes. The allowance applies to the named
+cycle and grant month. Reports show base and effective policy separately.
+
+For the expanded Researcher profile, deployment preparation uses 500k reservation,
+1M job ceiling, 4M per GW and 16M per month, retaining 20/60 use limits. The 900k
+observed-token guard is reactive and can overshoot within an in-flight response.
+These are capacity ceilings, not consumption targets. A broad run may use fewer
+than its 16 searches/documents; refresh/final keep their smaller scope. A new
+production profile requires a release record and restored health, not merely this
+documentation. Never report cached logical tokens as a USD invoice.

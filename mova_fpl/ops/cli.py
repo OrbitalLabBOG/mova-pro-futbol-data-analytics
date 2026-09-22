@@ -148,6 +148,7 @@ def parser() -> argparse.ArgumentParser:
     allowance = cost_commands.add_parser("allowance", help="registrar presupuesto adicional autorizado para un ciclo y mes")
     allowance.add_argument("--cycle-id", required=True)
     allowance.add_argument("--tokens", type=int, required=True)
+    allowance.add_argument("--uses", type=int, default=0, help="usos adicionales de la campaña; no borra usos consumidos")
     allowance.add_argument("--actor", required=True)
     allowance.add_argument("--reason", required=True)
     allowance.add_argument("--idempotency-key", required=True)
@@ -632,7 +633,7 @@ def main(argv: list[str] | None = None) -> int:
         db = OpsDB(config.ops_db, minimum_version=config.sqlite_min_version)
         db.migrate()
         if args.cost_command == "allowance":
-            payload = db.grant_agent_budget_allowance(cycle_id=args.cycle_id,tokens=args.tokens,
+            payload = db.grant_agent_budget_allowance(cycle_id=args.cycle_id,tokens=args.tokens,uses=args.uses,
                 actor=args.actor,reason=args.reason,idempotency_key=args.idempotency_key)
             print(json.dumps(payload, ensure_ascii=False))
             return 0

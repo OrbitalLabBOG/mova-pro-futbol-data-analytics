@@ -707,6 +707,80 @@
       },
       "context_receipts": 1,
       "operational_import": false
+    },
+    {
+      "run_id": "research_70f8d29afd068cd0e824f346fcbe8fce",
+      "agent_version": "1.10.0",
+      "models": [
+        "gpt-6-astra"
+      ],
+      "attempt_statuses": [
+        "succeeded"
+      ],
+      "errors": [],
+      "tool_calls": {
+        "search_research_web": 16,
+        "research_context": 8,
+        "read_research_source": 14,
+        "verify_research_evidence": 8
+      },
+      "last_observed_usage": {
+        "input_tokens": 614111,
+        "output_tokens": 7858,
+        "cached_input_tokens": 545920
+      },
+      "observed_usage_is_final": true,
+      "evaluation_present": true,
+      "manifest_sha256": "d73c52161e46259764a22fb99c7ab0d2ba1e0834632c14aac8dc6debd50d08fb",
+      "scope_policy": {
+        "coverage_subjects": "exact_manifest_focus",
+        "freshness_mode": "material_exception_only",
+        "healthy_player_searches": "forbidden",
+        "max_documents": 16,
+        "max_material_signals": 8,
+        "max_web_queries": 16,
+        "on_budget_exhaustion": "mark_remaining_not_checked",
+        "run_kind": "forced",
+        "schema": "mova-research-scope-v1"
+      },
+      "quality_policy": "research-claim-2026.09.5",
+      "evaluated_at": "2026-09-22T19:51:27.189349+00:00",
+      "evaluation_sha256": "7bde953f28649d39bebaed27ea61da4b0c0b185a5b4e3903f0efa45884f64b9f",
+      "documents": 6,
+      "verified_documents": 6,
+      "dated_documents": 6,
+      "verified_subjects": 12,
+      "coverage_ratio": 0.48,
+      "evidence_ratio": 0.48,
+      "accepted_subjects": [
+        12,
+        236,
+        557,
+        565
+      ],
+      "accepted_outside_focus_subjects": [
+        236
+      ],
+      "supported_outside_focus_subjects": [
+        236
+      ],
+      "tool_failures": {
+        "verify_research_evidence": 1,
+        "read_research_source": 1
+      },
+      "accepted_signals": 4,
+      "unresolved_conflicts": 1,
+      "tokens": 621969,
+      "tokens_per_verified_subject": 51830.75,
+      "duration_ms": 343205,
+      "job_token_limit": 1000000,
+      "tool_checks": 8,
+      "tool_supported": 7,
+      "tool_rejections": {
+        "identity_or_claim_unsupported": 1
+      },
+      "context_receipts": 1,
+      "operational_import": false
     }
   ],
   "paired_comparison_1_8_1_9": {
