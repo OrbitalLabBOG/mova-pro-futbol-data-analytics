@@ -329,3 +329,17 @@ def test_paired_experiment_shares_context_settles_cost_and_never_publishes_signa
     again=service.enqueue_experiment(versions=['1.0.0','1.1.0'],actor='test',reason='paired comparison',idempotency_key='experiment:pair')
     assert all(row['reused'] for row in again['results'])
     assert service.import_ready()['processed']==0
+
+
+def test_undispatched_experiment_reconciliation_is_scoped_and_idempotent(tmp_path):
+    config,db,service,_=_runtime(tmp_path)
+    service.activate_plan(_plan(),actor='test',reason='fixture')
+    exp=service.enqueue_experiment(versions=['1.1.0'],actor='test',reason='fixture',idempotency_key='unused:exp')
+    run=db.research_run(exp['results'][0]['research_run_id'])
+    request=json.loads(Path(run['request_path']).read_text())
+    db.reject_research_run(run['research_run_id'],error_code='agent_retry_budget_exhausted',error_detail='fixture')
+    with pytest.raises(ValueError):
+        db.release_undispatched_experiment(run['research_run_id'],{**request,'objective':'tampered'},actor='test',reason='proof')
+    result=db.release_undispatched_experiment(run['research_run_id'],request,actor='test',reason='proof')
+    assert result['actual_tokens']==0
+    assert db.release_undispatched_experiment(run['research_run_id'],request,actor='test',reason='proof')['reused']

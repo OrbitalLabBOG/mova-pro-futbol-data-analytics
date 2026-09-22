@@ -2716,6 +2716,42 @@ class OpsDB:
                 con=con,
             )
 
+    def release_undispatched_experiment(self, research_run_id: str, request: dict, *,
+                                       actor: str, reason: str) -> dict:
+        """Reconcile an experiment proven to have no host permission or physical attempt."""
+        if not actor or not reason or not request.get("experiment"):
+            raise ValueError("reconciliation exige experiment, actor y reason")
+        body = {key: value for key, value in request.items() if key != "request_sha256"}
+        with self.transaction() as con:
+            run = con.execute("SELECT * FROM research_runs WHERE research_run_id=?",
+                              (research_run_id,)).fetchone()
+            if (not run or run["status"] != "rejected"
+                    or run["error_code"] != "agent_retry_budget_exhausted"
+                    or run["request_sha256"] != sha256_json(body)
+                    or request.get("request_sha256") != run["request_sha256"]):
+                raise ValueError("no existe rechazo experimental verificable")
+            for table in ("agent_attempt_authorizations", "agent_worker_attempt_events"):
+                if con.execute(f"SELECT 1 FROM {table} WHERE subject_id=? LIMIT 1",
+                               (research_run_id,)).fetchone():
+                    raise ValueError("dispatch posible: conservar cargo")
+            reservation = con.execute("SELECT * FROM agent_budget_reservations WHERE subject_id=?",
+                                      (research_run_id,)).fetchone()
+            if not reservation or reservation["status"] not in {"charged", "released"}:
+                raise ValueError("reserva no conciliable")
+            if reservation["status"] == "released":
+                return {"status": "released", "reused": True}
+            now = utcnow()
+            con.execute("UPDATE agent_budget_reservations SET status='released',actual_tokens=0,"
+                        "estimated_tokens=0,attempt_count=NULL,accounting_mode='exact',released_at=? "
+                        "WHERE reservation_id=?", (now, reservation["reservation_id"]))
+            self.append_audit("undispatched_experiment_reconciled", actor=actor,
+                cycle_id=run["cycle_id"], subject_type="research_run", subject_id=research_run_id,
+                payload={"reason": reason, "reservation_id": reservation["reservation_id"],
+                         "previous_estimate": reservation["actual_tokens"], "actual_tokens": 0,
+                         "proof": "sealed_experiment_no_authorization_no_attempt"}, con=con)
+        return {"status": "released", "research_run_id": research_run_id, "actual_tokens": 0,
+                "reused": False}
+
     def complete_research_experiment(self, research_run_id: str, payload: dict, *,
                                     result_path: str, result_sha256: str,
                                     evaluation_path: str, experiment: dict) -> dict:

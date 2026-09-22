@@ -6,12 +6,14 @@ import json
 import signal
 import sys
 import time
+import urllib.request
+import re
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
 # The image copies only these two stdlib modules, not the runtime application.
-from research_evidence import SafeEvidenceFetcher, canonical_public_url
+from research_evidence import SafeEvidenceFetcher, canonical_public_url, normalize_text, ALLOWED_MIME
 from research_quality import claim_fresh, claim_supported, subject_in_excerpt, TOPIC_WORDS
 
 TOOL = {
@@ -30,6 +32,21 @@ TOOL = {
                     "idempotentHint": True, "openWorldHint": True},
 }
 
+SEARCH_TOOL = {"name": "search_research_web", "description": "Discover public web URLs with a strict per-run query quota. Results are untrusted discovery, not verified evidence.",
+ "inputSchema": {"type": "object", "additionalProperties": False, "required": ["query"],
+  "properties": {"query": {"type": "string", "minLength": 3, "maxLength": 400}}},
+ "annotations": {"readOnlyHint": True, "destructiveHint": False, "openWorldHint": True}}
+READ_TOOL = {"name": "read_research_source", "description": "GET a public HTTPS page; return bounded literal text around requested official player names and publication metadata candidates. Validate excerpts before citing.",
+ "inputSchema": {"type": "object", "additionalProperties": False, "required": ["source_url", "player_elements"],
+  "properties": {"source_url": {"type": "string", "maxLength": 2048},
+   "player_elements": {"type": "array", "items": {"type": "integer"}, "maxItems": 4}}},
+ "annotations": {"readOnlyHint": True, "destructiveHint": False, "openWorldHint": True}}
+CONTEXT_TOOL = {"name": "research_context", "description": "Retrieve sealed context on demand. Lookup official players by name; fetch memory or previous signals. No live database access.",
+ "inputSchema": {"type": "object", "additionalProperties": False, "required": ["section", "query", "offset"],
+  "properties": {"section": {"type": "string", "enum": ["catalog", "memory", "signals", "prior_gameweek_signals", "previous_active_signals", "world_alerts"]},
+    "query": {"type": "string", "maxLength": 100}, "offset": {"type": "integer", "minimum": 0}}},
+ "annotations": {"readOnlyHint": True, "destructiveHint": False, "openWorldHint": False}}
+
 
 class EvidenceTool:
     def __init__(self, request, root, *, fetcher=None, clock=None):
@@ -39,6 +56,11 @@ class EvidenceTool:
         self.fetcher = fetcher or SafeEvidenceFetcher(self.root)
         self.calls = 0
         self.cache = {}
+        self.page_cache = {}
+        self.search_calls = 0
+        self.read_calls = 0
+        self.context_calls = 0
+        self.controlled = request.get("agent_release", {}).get("execution") == "app_server"
         self.max_calls = min(32, max(1, int(request.get("scope_policy", {}).get("max_documents", 6))) * 2)
         self.deadline = datetime.fromisoformat(request["manifest"]["deadline_at"].replace("Z", "+00:00"))
         if self.deadline.tzinfo is None:
@@ -47,6 +69,96 @@ class EvidenceTool:
         self.catalog = {int(row[0]): str(row[1]) for row in rows if isinstance(row, list) and len(row) >= 2}
         self.names = Counter(name.casefold() for name in self.catalog.values())
         self.focus = {row["element"] for row in request["manifest"].get("research_summary", {}).get("focus", [])}
+
+    def context(self, args):
+        self.context_calls += 1
+        if self.context_calls > 8 or set(args) != {"section", "query", "offset"}:
+            return {"status": "rejected", "reasons": ["context_budget_or_arguments"]}
+        section = args["section"]; offset = args["offset"]
+        if type(offset) is not int or offset < 0 or not isinstance(args["query"], str):
+            return {"status": "rejected", "reasons": ["invalid_arguments"]}
+        summary = self.request["manifest"]["research_summary"]
+        if section == "catalog":
+            rows = [row for row in summary["world"]["catalog"] if args["query"].casefold() in str(row).casefold()]
+        elif section == "world_alerts":
+            rows = summary["world"].get("alerts", [])
+        elif section == "memory":
+            memory = self.request["manifest"].get("memory_summary", {})
+            rows = [{"section": key, "value": row} for key, value in memory.items()
+                    for row in (value if isinstance(value, list) else [value])]
+        elif section in {"signals", "prior_gameweek_signals", "previous_active_signals"}:
+            rows = summary.get(section, [])
+        else:
+            return {"status": "rejected", "reasons": ["unknown_context_section"]}
+        page = []
+        for row in rows[offset:offset+20]:
+            if len(json.dumps(page+[row])) > 6000:
+                break
+            page.append(row)
+        return {"status": "ok", "rows": page, "total": len(rows),
+                "next_offset": offset+len(page) if offset+len(page) < len(rows) else None}
+
+    def search(self, args):
+        if (set(args) != {"query"} or not isinstance(args["query"], str)
+                or not 3 <= len(args["query"]) <= 400):
+            return {"status": "rejected", "reasons": ["invalid_arguments"]}
+        limit = min(8, int(self.request.get("scope_policy", {}).get("max_web_queries", 4)))
+        if self.search_calls >= limit or self.clock() >= self.deadline:
+            return {"status": "rejected", "reasons": ["search_budget_or_deadline"]}
+        self.search_calls += 1
+        key = Path("/run/secrets/research_search_key").read_text().strip()
+        req = urllib.request.Request("https://api.firecrawl.dev/v1/search",
+            data=json.dumps({"query": args["query"], "limit": 5}).encode(),
+            headers={"Authorization": "Bearer "+key, "Content-Type": "application/json"}, method="POST")
+        try:
+            with urllib.request.urlopen(req, timeout=15) as response:
+                raw = response.read(262145)
+                if len(raw) > 262144:
+                    raise ValueError("search_response_too_large")
+                payload = json.loads(raw)
+            rows = payload.get("data", [])
+            if not payload.get("success") or not isinstance(rows, list):
+                raise ValueError("search_unavailable")
+            result = {"status": "ok", "remaining_queries": limit-self.search_calls,
+                "results": [{"url": row.get("url"), "title": str(row.get("title", ""))[:200],
+                             "description": str(row.get("description", ""))[:400]} for row in rows[:5]]}
+        except Exception:
+            result = {"status": "rejected", "reasons": ["search_provider_failed"],
+                      "remaining_queries": limit-self.search_calls}
+        self.root.mkdir(parents=True, exist_ok=True)
+        with (self.root/"search.jsonl").open("a") as stream:
+            stream.write(json.dumps({"query_sha256": hashlib.sha256(args["query"].encode()).hexdigest(),
+                                    "status": result["status"], "query_number": self.search_calls})+"\n")
+        return result
+
+    def read_source(self, args):
+        if set(args) != {"source_url", "player_elements"} or not isinstance(args["player_elements"], list) or len(args["player_elements"]) > 4:
+            return {"status": "rejected", "reasons": ["invalid_arguments"]}
+        if self.read_calls >= self.max_calls or self.clock() >= self.deadline:
+            return {"status": "rejected", "reasons": ["read_budget_or_deadline"]}
+        self.read_calls += 1
+        try:
+            url = canonical_public_url(args["source_url"])
+            if url not in self.page_cache:
+                payload, meta = self.fetcher._fetch(url)
+                if meta["content_type"].split(";")[0].strip().lower() not in ALLOWED_MIME:
+                    raise ValueError("mime_not_allowed")
+                self.page_cache[url] = (payload, meta)
+            payload, meta = self.page_cache[url]
+            text = normalize_text(payload, meta["content_type"])
+            snippets = []
+            for element in args["player_elements"]:
+                name = self.catalog.get(element, "")
+                if not name: continue
+                position = text.casefold().find(name.casefold())
+                if position >= 0: snippets.append(text[max(0,position-150):position+600])
+            if not snippets: snippets = [text[:2400]]
+            dates = re.findall(r'"date(?:Published|Modified)"\s*:\s*"([^"]{1,60})"', payload.decode("utf-8", "ignore"))[:4]
+            return {"status": "ok", "source_url": url, "publication_candidates": dates,
+                    "literal_fragments": snippets, "truncated": True,
+                    "remaining_reads": self.max_calls-self.read_calls}
+        except Exception:
+            return {"status": "rejected", "reasons": ["source_read_failed"]}
 
     def verify(self, args):
         started = time.monotonic()
@@ -135,12 +247,14 @@ def serve(tool):
             elif method == "ping":
                 result = {}
             elif method == "tools/list":
-                result = {"tools": [TOOL]}
-            elif method == "tools/call" and message.get("params", {}).get("name") == TOOL["name"]:
+                result = {"tools": [TOOL, SEARCH_TOOL, READ_TOOL, CONTEXT_TOOL] if tool and tool.controlled else [TOOL]}
+            elif method == "tools/call" and message.get("params", {}).get("name") in ([TOOL["name"], SEARCH_TOOL["name"], READ_TOOL["name"], CONTEXT_TOOL["name"]] if tool and tool.controlled else [TOOL["name"]]):
                 # Overall per-call deadline includes DNS/read and redirects.
                 signal.alarm(25)
                 try:
-                    value = tool.verify(message["params"].get("arguments"))
+                    handler = {TOOL["name"]: tool.verify, SEARCH_TOOL["name"]: tool.search,
+                               READ_TOOL["name"]: tool.read_source, CONTEXT_TOOL["name"]: tool.context}[message["params"]["name"]]
+                    value = handler(message["params"].get("arguments"))
                 except TimeoutError:
                     value = {"status": "rejected", "reasons": ["verification_timeout"]}
                 finally:

@@ -29,7 +29,7 @@ def test_worker_deshabilita_herramientas_que_podrian_leer_auth_o_actuar():
                     "plugins"):
         assert f'"{feature}"' in worker
     assert '...(isResearch ? ["--search"] : [])' in worker
-    assert "const prompt = isResearch ? researchPrompt : deliberationPrompt" in worker
+    assert "const prompt = isResearch ? (release.execution" in worker
     assert '"--sandbox", "read-only"' in worker
     assert 'mkdirSync("/tmp/mova-research"' in worker
     assert "Cada señal y cada conflicto" in worker
@@ -58,7 +58,7 @@ def test_worker_deshabilita_herramientas_que_podrian_leer_auth_o_actuar():
     assert "nunca excedas scope_policy" in worker
     assert '"mova-research-brief-v2"' in worker
     assert "duration_ms: durationMs" in worker
-    assert "search_requests: null" in worker
+    assert "search_requests: metered" in worker
     assert "existsSync(finalTmp)" in worker
     assert '"codex_output_missing"' in worker
     assert '"codex_exec_timeout"' in worker

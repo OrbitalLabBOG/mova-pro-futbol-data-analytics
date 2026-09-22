@@ -62,3 +62,34 @@ def test_evidence_tool_refuses_deadline_unknown_and_ambiguous_identity(tmp_path)
     assert tool.verify({**args,'player_element':99})['reasons']==['unknown_element']
     tool.clock=lambda:datetime(2026,9,22,11,tzinfo=timezone.utc)
     assert tool.verify(args)['reasons']==['fetch_after_cutoff']
+
+
+def test_stdio_protocol_lists_only_verifier_and_rejects_unknown_methods(monkeypatch):
+    import io
+    mod=module()
+    stream=io.StringIO()
+    messages=[{'jsonrpc':'2.0','id':1,'method':'initialize'},
+              {'jsonrpc':'2.0','method':'notifications/initialized'},
+              {'jsonrpc':'2.0','id':2,'method':'tools/list'},
+              {'jsonrpc':'2.0','id':3,'method':'tools/call','params':{'name':'shell'}}]
+    monkeypatch.setattr(sys,'stdin',io.StringIO('\n'.join(map(json.dumps,messages))))
+    monkeypatch.setattr(sys,'stdout',stream)
+    mod.serve(None)
+    responses=[json.loads(line) for line in stream.getvalue().splitlines()]
+    assert len(responses)==3
+    assert responses[0]['result']['protocolVersion']=='2025-06-18'
+    assert [tool['name'] for tool in responses[1]['result']['tools']]==['verify_research_evidence']
+    assert responses[2]['error']['code']==-32602
+
+
+def test_controlled_context_preserves_catalog_and_pages_memory_without_network(tmp_path):
+    mod=module()
+    request={'research_run_id':'research_'+'a'*32,'agent_release':{'execution':'app_server'},
+      'manifest':{'deadline_at':'2026-10-10T10:00:00Z','memory_summary':{'lessons':[{'text':'lesson'}]},
+        'research_summary':{'focus':[], 'world':{'catalog':[[1,'Haaland','MCI'],[2,'Saka','ARS']]}}}}
+    tool=mod.EvidenceTool(request,tmp_path)
+    assert tool.context({'section':'catalog','query':'Saka','offset':0})['rows']==[[2,'Saka','ARS']]
+    assert tool.context({'section':'memory','query':'','offset':0})['rows'][0]['value']=={'text':'lesson'}
+    assert tool.search({'query':'x'})['status']=='rejected'
+    tool.search_calls=8
+    assert tool.search({'query':'team news'})['reasons']==['search_budget_or_deadline']

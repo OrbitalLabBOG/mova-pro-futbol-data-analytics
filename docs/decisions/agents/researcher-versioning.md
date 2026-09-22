@@ -9,10 +9,11 @@ owner: Julián Zuluaga
 # Researcher versions and isolated evaluations
 
 The agent is a versioned runtime component, not merely a model name. Its registry is
-`deploy/research/agent-releases.json`. Each entry fixes expected model/reasoning,
+`mova_fpl/ops/agent_releases.json`. Each entry fixes expected model/reasoning,
 interactive tool availability, output contract and quality policy; each physical
 attempt records the selected version, effective model/reasoning, implementation hash,
-request hash and exact context hash/bytes. Git commit and image digest fix all source
+request hash and exact context hash/bytes. New requests seal the selected version
+and definition before enqueue; unknown versions or definition drift fail before paid dispatch. Git commit and image digest fix all source
 dependencies. Never overwrite historical receipts or claim an environment override
 ran the default model. A release changes `active` only after measured evaluation.
 Owner and promotion authority: Julián; this iteration is explicitly authorized.

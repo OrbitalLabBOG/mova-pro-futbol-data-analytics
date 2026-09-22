@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 import time
 from datetime import datetime, timezone
@@ -179,8 +180,9 @@ def parser() -> argparse.ArgumentParser:
     plan.add_argument("--actor", required=True)
     plan.add_argument("--reason", required=True)
     research = strategy_commands.add_parser("research", help="opera la cola de investigación")
-    research.add_argument("operation", choices=("due", "coverage", "enqueue", "experiment", "import", "resolve-conflict"))
+    research.add_argument("operation", choices=("due", "coverage", "enqueue", "experiment", "reconcile-experiment", "import", "resolve-conflict"))
     research.add_argument("--agent-version", action="append")
+    research.add_argument("--run-id")
     research.add_argument("--conflict-id")
     research.add_argument("--cycle-id")
     research.add_argument("--document-id", action="append")
@@ -700,6 +702,13 @@ def main(argv: list[str] | None = None) -> int:
             payload = service.due()
             print(json.dumps(payload, ensure_ascii=False, default=str))
             return 0 if payload["due"] else 75
+        elif args.operation == "reconcile-experiment":
+            if not args.run_id or not re.fullmatch(r"research_[0-9a-f]{32}", args.run_id):
+                raise ValueError("run-id experimental inválido")
+            request_path = config.research_root / "quarantine" / f"{args.run_id}.request.json"
+            request = json.loads(request_path.read_text())
+            payload = db.release_undispatched_experiment(args.run_id, request,
+                actor=args.actor, reason=args.reason)
         elif args.operation == "experiment":
             payload = service.enqueue_experiment(versions=args.agent_version or ["1.0.0", "1.1.0"],
                 actor=args.actor, reason=args.reason, idempotency_key=args.idempotency_key)

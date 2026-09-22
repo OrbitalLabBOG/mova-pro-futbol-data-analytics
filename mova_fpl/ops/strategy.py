@@ -16,6 +16,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from mova_fpl.ops.config import RuntimeConfig
+from mova_fpl.ops.agent_releases import researcher_release
 from mova_fpl.ops.db import OpsDB, canonical_json, new_id, sha256_json, utcnow
 from mova_fpl.ops.schedule import phase_for
 from mova_fpl.ops.research_evidence import SafeEvidenceFetcher, canonical_public_url
@@ -651,6 +652,9 @@ class StrategicContextService:
                 "agent_budget": self.config.agent_budget_policy(),
             },
         }
+        version, definition = researcher_release(_experiment["agent_version"] if _experiment else None)
+        request["agent_version"] = version
+        request["agent_release"] = definition
         if _experiment:
             request["experiment"] = _experiment
             request["agent_version"] = _experiment["agent_version"]
@@ -686,8 +690,8 @@ class StrategicContextService:
             raise ValueError("experiment exige actor, reason, idempotency_key")
         if not 1 <= len(versions) <= 2 or len(set(versions)) != len(versions):
             raise ValueError("experiment admite una o dos variantes únicas")
-        if any(version not in {"1.0.0", "1.1.0"} for version in versions):
-            raise ValueError("versión experimental desconocida")
+        for version in versions:
+            researcher_release(version)
         prepared = self.prepare()
         experiment_id = "researchexp_" + hashlib.sha256(idempotency_key.encode()).hexdigest()[:32]
         results = []

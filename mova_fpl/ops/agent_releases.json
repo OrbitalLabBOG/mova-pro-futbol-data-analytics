@@ -1,0 +1,34 @@
+{
+  "schema": "mova-agent-releases-v1",
+  "agents": {
+    "researcher": {
+      "active": "1.0.0",
+      "versions": {
+        "1.0.0": {
+          "model": "gpt-5.6-luna",
+          "reasoning_effort": "medium",
+          "interactive_evidence": false,
+          "quality_policy": "research-claim-2026.09.2",
+          "output_schema": "mova-research-brief-v2"
+        },
+        "1.1.0": {
+          "model": "gpt-5.6-luna",
+          "reasoning_effort": "medium",
+          "interactive_evidence": true,
+          "quality_policy": "research-claim-2026.09.2",
+          "output_schema": "mova-research-brief-v2"
+        },
+        "1.2.0": {
+          "model": "gpt-5.6-luna",
+          "reasoning_effort": "medium",
+          "interactive_evidence": true,
+          "quality_policy": "research-claim-2026.09.2",
+          "output_schema": "mova-research-brief-v2",
+          "execution": "app_server",
+          "logical_token_guard": 80000,
+          "context_profile": "focus_on_demand"
+        }
+      }
+    }
+  }
+}

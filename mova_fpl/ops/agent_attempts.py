@@ -62,7 +62,8 @@ class AgentAttemptService:
                     final_cutoff_seconds=self.config.research_final_cutoff_seconds,
                 )
                 if prepared["status"] in {"blocked", "skipped"}:
-                    terminal = self._terminalize_unretryable(subject, prepared)
+                    terminal = self._terminalize_unretryable(subject, prepared,
+                        request={**request, "request_sha256": embedded_sha})
                     if terminal:
                         prepared = {**prepared, "terminalized": terminal}
                     blocked.append(prepared)
@@ -107,7 +108,8 @@ class AgentAttemptService:
         return {"status": "skipped" if not blocked else "blocked",
                 "reason": "no_authorized_subject", "blocked_candidates": blocked}
 
-    def _terminalize_unretryable(self, subject: dict, gate: dict) -> dict | None:
+    def _terminalize_unretryable(self, subject: dict, gate: dict, *,
+                                request: dict | None = None) -> dict | None:
         """Close a queued request when no future automatic attempt can pass its gate.
 
         Budget commitments and the final deadline only move in one direction. Leaving one of
@@ -141,6 +143,15 @@ class AgentAttemptService:
                 subject["subject_id"], error_code=error_code, error_detail=detail
             )
 
+        reconciliation = None
+        if (subject["subject_type"] == "research" and request and request.get("experiment")
+                and permanent_budget_block):
+            try:
+                reconciliation = self.db.release_undispatched_experiment(
+                    subject["subject_id"], request, actor="mova-agent-authorizer",
+                    reason="no host authorization or attempt exists for the blocked experiment")
+            except ValueError:
+                pass  # Any possible dispatch preserves conservative accounting.
         request = Path(subject["request_path"])
         target = None
         if request.is_file():
@@ -152,6 +163,7 @@ class AgentAttemptService:
             "subject_type": subject["subject_type"],
             "subject_id": subject["subject_id"],
             "error_code": error_code,
+            **({"undispatched_reconciliation": reconciliation} if reconciliation else {}),
             "request_path": str(target) if target else None,
         }
 

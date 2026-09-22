@@ -8,7 +8,8 @@ WORKDIR /opt/mova-research
 COPY mova_fpl/ops/research_evidence.py /opt/mova-research/research_evidence.py
 COPY mova_fpl/ops/research_quality.py /opt/mova-research/research_quality.py
 COPY deploy/research/evidence-tool.py /opt/mova-research/evidence-tool.py
-COPY deploy/research/agent-releases.json /opt/mova-research/agent-releases.json
+COPY mova_fpl/ops/agent_releases.json /opt/mova-research/agent-releases.json
+COPY deploy/research/codex-app-server.mjs /opt/mova-research/codex-app-server.mjs
 COPY deploy/research/codex-worker.mjs /opt/mova-research/codex-worker.mjs
 COPY deploy/research/research-context.mjs /opt/mova-research/research-context.mjs
 COPY deploy/research/research-normalize.mjs /opt/mova-research/research-normalize.mjs
