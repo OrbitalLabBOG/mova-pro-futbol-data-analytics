@@ -52,3 +52,63 @@ exists there, and this is the MOVA isolated worker boundary.
 
 Protocol sources: [MCP stdio](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports)
 and [Codex MCP configuration](https://developers.openai.com/codex/config-reference).
+
+## Metered candidate 1.2.0 and experiment outcome (2026-09-22)
+
+Candidate 1.2.0 uses one ephemeral Codex app-server turn per host permit, with
+native web search disabled. Its MCP surface is `search_research_web`,
+`read_research_source`, `research_context`, and `verify_research_evidence`.
+Search uses the existing Orbital Firecrawl service with a dedicated read-only
+secret mount from `compose.research-lab.yaml`; the normal deployment does not yet
+mount it. No tool exposes the credential. Initial context retains the objective,
+focus and bounded world alerts; catalog, memory and historical signals remain
+available from the same sealed request through bounded context retrieval.
+
+The client observes total input plus output tokens, including cached input, and
+interrupts at 80,000 observed tokens. This is a reactive guard, not a provider hard
+cap: an in-flight response can overshoot. Interrupted usage stays unknown for
+accounting; observed usage is telemetry, never falsely reported as final usage.
+There is no automatic retry or extra repair turn.
+
+Experiment `researchexp_1d8ad24677ccc54fd9e1268c5d6c9d1c` produced:
+
+| Version | Outcome | Tokens | Verified subjects | Accepted signals |
+| --- | --- | ---: | ---: | ---: |
+| 1.0.0 | Completed experimental baseline | 615,333 | 1/25 | 0 |
+| 1.1.0 | Blocked before host authorization | 0 | Not evaluated | Not evaluated |
+| 1.2.0 | Real app-server/tool startup verified; no inference dispatched | 0 | Not evaluated | Not evaluated |
+
+Baseline input was 608,125 tokens, output 7,208; elapsed time 234,898 ms.
+Seven documents yielded six successful fetches and four dated sources, but only
+4% subject coverage and one unresolved conflict. Fetch success is not useful
+research coverage. The 455,333-token job overrun remains reviewed, not resolved.
+No experimental signals, documents or conflicts were published into operational
+research tables and these runs do not count toward cross-GW autonomy.
+
+The blocked 1.1.0 request initially retained a conservative 120,000-token charge.
+`strategy research reconcile-experiment` released it only after checking the
+sealed request hash, terminal budget rejection, zero authorization rows and zero
+attempt events. The previous charge and proof remain audited. This exception must
+never be used for uncertain or partially dispatched inference.
+
+The real Codex 0.144.6 preflight on image `research-lab-698c9ec` successfully
+initialized an ephemeral thread and listed all four MCP tools without `turn/start`.
+The deterministic suite passed 1,820 tests (one skipped, 79 deselected), followed
+by 24 targeted checks after preflight adjustments. These results validate contracts
+and startup, not research quality or the effectiveness of the token guard in live
+inference. Active version remains 1.0.0 and production remains 85365e8.
+
+Next promotion gate: run a bounded 1.2.0 experiment after an explicitly authorized
+experimental budget is available; inspect useful accepted evidence, coverage,
+conflicts, input/output/cached tokens, tool failures and elapsed time. A new prepared
+manifest is not a paired comparison with the old baseline. To claim a paired
+comparison, reuse an identical sealed input/cutoff and report source availability
+changes. Integrate the search mount into the normal cycle before deployment,
+verify image/revision, doctor and rollback, then change the active registry version.
+Do not promote based on protocol tests or erase the real baseline overrun.
+
+Future agents reuse this registry pattern: independent semantic version per agent,
+immutable sealed release definition per request, effective model and implementation
+identity per attempt, explicit experimental/promotion status and domain-specific
+quality gates. A model alias alone is not an agent version. No general-purpose agent
+platform or additional persistence service is required for this iteration.

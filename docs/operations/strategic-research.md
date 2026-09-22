@@ -307,3 +307,18 @@ docker compose --profile research down
 La migración es aditiva. El rollback de código conserva tablas, requests, resultados y audit.
 No se borra la cola durante recuperación. Reponer la revisión anterior de checkout/imagen,
 migrar solo hacia delante y ejecutar mova doctor. Nada de este flujo habilita browser writes.
+
+
+## Experimental versioning status — 2026-09-22
+
+Researcher candidates and their measured results are documented in
+[the agent versioning decision](../decisions/agents/researcher-versioning.md).
+Production remains 85365e8 / Researcher 1.0.0. Candidate 1.2.0 has real Codex startup
+and MCP inventory verification, but no live inference quality result and is not
+promoted. Its controlled search secret is mounted only by the laboratory compose
+overlay. Never enqueue its requests for the old production importer: hold the host
+research lock and exclude the normal timer while the new importer processes them.
+The experimental inbox was drained and the normal timer restored after this lab.
+The baseline token overrun is reviewed and remains unresolved; additional experiment
+budget must be explicit. Do not retry blocked requests or count experimental
+coverage toward an operational GW gate.
