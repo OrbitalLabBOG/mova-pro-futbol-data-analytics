@@ -4,6 +4,7 @@
 import { appendFileSync, closeSync, constants, existsSync, mkdirSync, openSync, readFileSync, renameSync,
          readdirSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
 import { runMeteredTurn } from "./codex-app-server.mjs";
@@ -12,9 +13,9 @@ import { normalizeResearchBrief } from "./research-normalize.mjs";
 
 const root = process.env.MOVA_RESEARCH_ROOT || "/research";
 const schemas = {
-  "mova-research-request-v1": "/opt/mova-research/research-brief.schema.json",
+  "mova-research-request-v1": fileURLToPath(new URL("./research-brief.schema.json", import.meta.url)),
   "mova-decision-deliberation-request-v1":
-    "/opt/mova-research/decision-deliberation.schema.json",
+    fileURLToPath(new URL("./decision-deliberation.schema.json", import.meta.url)),
 };
 
 const researchReasoningEffort = process.env.MOVA_RESEARCH_REASONING_EFFORT || "medium";

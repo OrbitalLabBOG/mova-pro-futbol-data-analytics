@@ -309,16 +309,30 @@ No se borra la cola durante recuperación. Reponer la revisión anterior de chec
 migrar solo hacia delante y ejecutar mova doctor. Nada de este flujo habilita browser writes.
 
 
-## Experimental versioning status — 2026-09-22
+## Researcher component release — 2026-09-22
 
-Researcher candidates and their measured results are documented in
-[the agent versioning decision](../decisions/agents/researcher-versioning.md).
-Production remains 85365e8 / Researcher 1.0.0. Candidate 1.2.0 has real Codex startup
-and MCP inventory verification, but no live inference quality result and is not
-promoted. Its controlled search secret is mounted only by the laboratory compose
-overlay. Never enqueue its requests for the old production importer: hold the host
-research lock and exclude the normal timer while the new importer processes them.
-The experimental inbox was drained and the normal timer restored after this lab.
-The baseline token overrun is reviewed and remains unresolved; additional experiment
-budget must be explicit. Do not retry blocked requests or count experimental
-coverage toward an operational GW gate.
+The active registry selects **Researcher 1.10.0**, Astra/medium, Codex 0.153.4,
+quality policy 2026.09.5 and brief v2. The [agent versioning decision](../decisions/agents/researcher-versioning.md)
+and `experiments/research/20260922-agent-lab/` preserve definitions, measured
+experiments, limitations and release evidence. Registry selection is not proof of
+VPS deployment: inspect cockpit version, checkout/image SHA and doctor.
+
+Two isolated live runs produced 12/25 and 10/25 verified focus subjects, six/seven
+valid dated documents, four/five accepted signals, and one/two discoveries outside
+focus. All final excerpts survived independent import. These are 48%/40% partial
+coverage, not 90%/80% or three passing GWs. Exact-version repetition plus manual
+claim/source review supports component release; it does not satisfy the stricter
+same-manifest comparator or promote FPL authority.
+
+The normal Compose worker now mounts the controlled search credential and exposes
+only four evidence/context tools. Startup fails before inference on a missing or
+unexpected tool surface. No database/browser credential or writable FPL tool is
+available. Version/model/context hashes and real token receipts identify each run.
+Broad/forced scope is 16 queries/documents; refresh/final retain delta scope.
+
+Experimental requests remain isolated from operational evidence and cadence slots;
+use the host research lock. The old 85365e8 importer must never process them.
+The authorized campaign allowance preserves consumption and restores scoped token
+and use capacity. The historical baseline overrun remains reviewed, not erased.
+The scheduler still operates its predeadline slots; a component release does not
+create a new daily background research schedule.

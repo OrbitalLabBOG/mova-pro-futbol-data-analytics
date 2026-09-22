@@ -2,6 +2,7 @@
 import json
 import os
 import subprocess
+import pytest
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -63,7 +64,8 @@ const result=await runMeteredTurn({command:'/nonexistent/mova-codex',cwd:process
     assert json.loads(r.stdout)['error_code']=='app_server_spawn_failed'
 
 
-def test_missing_required_tool_never_dispatches_inference(tmp_path):
+@pytest.mark.parametrize("extra", [False, True])
+def test_invalid_tool_surface_never_dispatches_inference(tmp_path, extra):
     fake=tmp_path/'fake-codex'
     fake.write_text('''#!/usr/bin/env python3
 import json,sys
@@ -72,9 +74,9 @@ for line in sys.stdin:
  if 'id' not in r: continue
  method=r['method']
  if method=='turn/start': raise RuntimeError('must not dispatch')
- result={'thread':{'id':'t'}} if method=='thread/start' else {'data':[]}
+ result={'thread':{'id':'t'}} if method=='thread/start' else INVENTORY
  print(json.dumps({'id':r['id'],'result':result}),flush=True)
-''')
+'''.replace('INVENTORY',repr({'data':[{'name':'mova_evidence','tools':{'search_research_web':{}}},{'name':'unexpected_app','tools':{'send':{}}}]} if extra else {'data':[]})))
     fake.chmod(0o755)
     script="""import {runMeteredTurn} from './deploy/research/codex-app-server.mjs';
 const result=await runMeteredTurn({command:process.env.MOVA_FAKE_CODEX,cwd:process.env.MOVA_TEST_CWD,
@@ -82,5 +84,5 @@ const result=await runMeteredTurn({command:process.env.MOVA_FAKE_CODEX,cwd:proce
     r=subprocess.run(['node','--input-type=module','-e',script],cwd=ROOT,
         env={**os.environ,'MOVA_FAKE_CODEX':str(fake),'MOVA_TEST_CWD':str(tmp_path)},capture_output=True,text=True,check=True,timeout=5)
     result=json.loads(r.stdout)
-    assert result['error_code']=='required_tools_unavailable'
+    assert result['error_code']==('unexpected_tools_available' if extra else 'required_tools_unavailable')
     assert result['usage']=={'input_tokens':0,'output_tokens':0}

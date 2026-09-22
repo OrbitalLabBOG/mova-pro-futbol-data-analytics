@@ -93,7 +93,8 @@ def test_research_request_sella_scope_del_checkpoint(tmp_path):
     request = json.loads(Path(queued["request_path"]).read_text(encoding="utf-8"))
 
     assert request["run_kind"] == "broad"
-    assert request["scope_policy"] == research_scope_policy("broad")
+    assert request["scope_policy"] == {**research_scope_policy("broad"),
+                                       "max_web_queries": 16, "max_documents": 16}
     assert request["guardrails"]["agent_budget"]["job_tokens"] == 160_000
 
 

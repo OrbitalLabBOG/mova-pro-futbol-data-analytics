@@ -85,6 +85,11 @@ export async function runMeteredTurn({command='codex', args=[], prompt, model, e
       inventory=await request('mcpServerStatus/list',{threadId});
       const available=new Set((inventory.data||[]).filter(s=>s.name==='mova_evidence').flatMap(s=>Object.keys(s.tools||{})));
       if(requiredTools.some(name=>!available.has(name))){failure='required_tools_unavailable';throw new Error(failure);}
+      if(requiredTools.length && (
+          (inventory.data||[]).some(s=>s.name!=='mova_evidence' && Object.keys(s.tools||{}).length)
+          || [...available].some(name=>!requiredTools.includes(name)))){
+        failure='unexpected_tools_available';throw new Error(failure);
+      }
     }
     if(preflightOnly){
       finalText=JSON.stringify({inference_dispatched:false,servers:(inventory.data||[]).map(s=>({

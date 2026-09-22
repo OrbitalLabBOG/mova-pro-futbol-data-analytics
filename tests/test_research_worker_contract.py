@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -290,15 +291,21 @@ assert.equal(missing.context.acquisition_plan.conditional_scope_shortfall,null);
     subprocess.run(['node', '--input-type=module', '-e', script], cwd=ROOT, check=True)
 
 
-def test_authorized_worker_records_context_actually_sent_on_failed_attempt(tmp_path):
+@pytest.mark.parametrize("version", ["1.0.0", "1.10.0"])
+def test_authorized_worker_records_context_actually_sent_on_failed_attempt(tmp_path, version):
     from datetime import datetime, timedelta, timezone
     import hashlib
 
+    from mova_fpl.ops.agent_releases import researcher_release
     run_id = 'research_' + 'a' * 32
     request = {'schema':'mova-research-request-v1', 'research_run_id':run_id,
                'request_sha256':'b' * 64, 'scope_policy':{'max_documents':2},
                'manifest':{'research_summary':{'focus':[{'element':1,'team':'Club'}],
                            'world':{'catalog':[[1,'Player','CLB']]}}}}
+    request['agent_version'],request['agent_release']=researcher_release(version)
+    request['requested_at']=datetime.now(timezone.utc).isoformat()
+    request['manifest']['deadline_at']=(datetime.now(timezone.utc)+timedelta(days=1)).isoformat()
+    request['guardrails']={'agent_budget':{'job_tokens':1000000}}
     for name in ('inbox', 'permits', 'bin'):
         (tmp_path / name).mkdir()
     (tmp_path / 'inbox' / f'{run_id}.request.json').write_text(json.dumps(request))
@@ -310,7 +317,24 @@ def test_authorized_worker_records_context_actually_sent_on_failed_attempt(tmp_p
               'budget_snapshot_sha256':'d' * 64}
     (tmp_path / 'permits' / f'{run_id}.{authorization_id}.permit.json').write_text(json.dumps(permit))
     fake = tmp_path / 'bin' / 'codex'
-    fake.write_text('#!/bin/sh\ncat > "$MOVA_TEST_PROMPT"\nexit 1\n')
+    fake.write_text('''#!/usr/bin/env python3
+import sys,json,os
+if '--version' in sys.argv:
+ print('codex-cli 0.153.4');sys.exit(0)
+if 'app-server' not in sys.argv:
+ open(os.environ['MOVA_TEST_PROMPT'],'w').write(sys.stdin.read());sys.exit(1)
+for line in sys.stdin:
+ r=json.loads(line)
+ if 'id' not in r:continue
+ method=r['method'];result={}
+ if method=='thread/start':result={'thread':{'id':'t'}}
+ if method=='mcpServerStatus/list':result={'data':[{'name':'mova_evidence','tools':{n:{} for n in ['verify_research_evidence','search_research_web','read_research_source','research_context']}}]}
+ if method=='turn/start':
+  open(os.environ['MOVA_TEST_PROMPT'],'w').write(r['params']['input'][0]['text'])
+  result={'turn':{'id':'turn'}}
+ print(json.dumps({'id':r['id'],'result':result}),flush=True)
+ if method=='turn/start':print(json.dumps({'method':'turn/completed','params':{'turn':{'status':'failed'}}}),flush=True)
+''')
     fake.chmod(0o755)
     prompt_path = tmp_path / 'prompt'
     result = subprocess.run(['node', str(ROOT / 'deploy/research/codex-worker.mjs')],

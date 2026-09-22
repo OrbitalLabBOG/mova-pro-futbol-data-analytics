@@ -81,3 +81,24 @@ does not establish a permanent loss of role. Dewsbury-Hall's added set-piece dut
 do not establish penalties or exclusive responsibility. These distinctions are
 part of release review, not just the accepted-signal counter. Exact-version repeat
 and normal-runtime smoke remain required before calling the component promoted.
+
+
+Exact-version repeat (`research_73d1724191bcc701629a385ddd1450f5`): 10/25 verified
+focus subjects, seven dated/verified documents, five accepted signals including
+two outside focus, 623,723 logical tokens and 374,896 ms. All seven final excerpts
+survived import. Manual review confirmed the qualified roles of Sangaré, Tzolis,
+Haaland and Cherki, plus the bounded set-piece claim for Dewsbury-Hall. A current
+starting-role signal does not resolve the historical future-availability conflict.
+Both 1.10.0 runs used image `research-lab-53a9a3e`; later deployment preparation
+adds cockpit identity, scoped campaign use allowances and an exact tool-surface
+startup gate, without changing the researcher prompt or quality policy.
+
+Component release review: passed for read-only research under existing A0 controls.
+The owner authorized iteration and promotion; Codex performed the technical review.
+This is not a claim of predictive accuracy, complete coverage or a passing paired
+comparison. The existing comparator remains unchanged and ineligible on its own
+criteria. Real startup with the isolated CLI flags exposed exactly the four tools
+and dispatched no inference. Legacy deliberation CLI flags parsed successfully
+on 0.153.4; this is compatibility smoke, not a new deliberation quality experiment.
+Final operational deployment/import and health evidence are recorded below once
+verified. Rollback target is production 85365e8 / Researcher 1.0.0.
