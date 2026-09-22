@@ -16,6 +16,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from mova_fpl.ops.config import RuntimeConfig
+from mova_fpl.ops.agent_releases import researcher_release
 from mova_fpl.ops.db import OpsDB, canonical_json, new_id, sha256_json, utcnow
 from mova_fpl.ops.schedule import phase_for
 from mova_fpl.ops.research_evidence import SafeEvidenceFetcher, canonical_public_url
@@ -576,12 +577,17 @@ class StrategicContextService:
             )
         with self.db.connect(readonly=True) as con:
             latest = con.execute(
-                "SELECT status,queued_at,imported_at FROM research_runs WHERE cycle_id=? "
+                "SELECT status,queued_at,imported_at FROM research_runs r WHERE cycle_id=? "
+                "AND NOT EXISTS (SELECT 1 FROM audit_events a WHERE a.subject_id=r.research_run_id "
+                "AND a.event_type IN ('research_experiment_enqueued','research_experiment_completed')) "
                 "ORDER BY queued_at DESC LIMIT 1", (cycle["cycle_id"],),
             ).fetchone()
             attempted_in_slot = con.execute(
-                "SELECT status,queued_at,imported_at FROM research_runs WHERE cycle_id=? "
-                "AND queued_at>=? ORDER BY queued_at DESC LIMIT 1",
+                "SELECT status,queued_at,imported_at FROM research_runs r WHERE cycle_id=? "
+                "AND queued_at>=? AND NOT EXISTS (SELECT 1 FROM audit_events a "
+                "WHERE a.subject_id=r.research_run_id AND a.event_type IN "
+                "('research_experiment_enqueued','research_experiment_completed')) "
+                "ORDER BY queued_at DESC LIMIT 1",
                 (cycle["cycle_id"], slot_start.isoformat()),
             ).fetchone()
         if latest:
@@ -604,7 +610,8 @@ class StrategicContextService:
         }
 
     def enqueue(self, *, force: bool = False, actor: str = "mova-research",
-                reason: str | None = None, idempotency_key: str | None = None) -> dict:
+                reason: str | None = None, idempotency_key: str | None = None,
+                _experiment: dict | None = None, _prepared: dict | None = None) -> dict:
         assessment = self.due()
         if not force and not assessment["due"]:
             return {"status": "skipped", **assessment}
@@ -618,7 +625,7 @@ class StrategicContextService:
             existing = self.db.research_run(deterministic_id)
             if existing:
                 return {**existing, "reused": True, "due": assessment}
-        prepared = self.prepare()
+        prepared = _prepared or self.prepare()
         manifest = prepared["manifest"]
         run_id = deterministic_id or new_id("research")
         run_kind = assessment.get("run_kind", "forced" if force else "routine")
@@ -650,6 +657,15 @@ class StrategicContextService:
                 "agent_budget": self.config.agent_budget_policy(),
             },
         }
+        version, definition = researcher_release(_experiment["agent_version"] if _experiment else None)
+        request["agent_version"] = version
+        request["agent_release"] = definition
+        request["quality_policy"] = definition["quality_policy"]
+        if definition.get("discovery_profile") == "expanded_broad_v1" and run_kind in {"broad", "forced"}:
+            request["scope_policy"] |= {"max_web_queries": 16, "max_documents": 16}
+        if _experiment:
+            request["experiment"] = _experiment
+            request["agent_version"] = _experiment["agent_version"]
         request_sha = sha256_json(request)
         request["request_sha256"] = request_sha
         request_path = self.config.research_root / "inbox" / f"{run_id}.request.json"
@@ -658,6 +674,7 @@ class StrategicContextService:
             "research_run_id": run_id, "cycle_id": prepared["cycle_id"],
             "manifest_id": prepared["manifest_id"], "provider": self.config.research_provider,
             "request_path": str(request_path), "request_sha256": request_sha,
+            "experiment": _experiment,
             "budget_policy": self.config.agent_budget_policy(),
         })
         if result.get("status") == "blocked":
@@ -675,6 +692,27 @@ class StrategicContextService:
             )
         return {**result, "request_path": result.get("request_path", str(request_path)),
                 "request_file_sha256": file_sha, "due": assessment}
+
+    def enqueue_experiment(self, *, versions: list[str], actor: str,
+                           reason: str, idempotency_key: str) -> dict:
+        if not actor or not reason or not idempotency_key:
+            raise ValueError("experiment exige actor, reason, idempotency_key")
+        if not 1 <= len(versions) <= 2 or len(set(versions)) != len(versions):
+            raise ValueError("experiment admite una o dos variantes únicas")
+        for version in versions:
+            researcher_release(version)
+        prepared = self.prepare()
+        experiment_id = "researchexp_" + hashlib.sha256(idempotency_key.encode()).hexdigest()[:32]
+        results = []
+        for version in versions:
+            results.append(self.enqueue(
+                force=True, actor=actor, reason=reason,
+                idempotency_key=f"{idempotency_key}:{version}", _prepared=prepared,
+                _experiment={"schema": "mova-research-experiment-v1", "experiment_id": experiment_id,
+                             "agent_version": version, "operational_import": False},
+            ))
+        return {"schema": "mova-research-experiment-v1", "experiment_id": experiment_id,
+                "results": results, "operational_import": False}
 
     def import_ready(self) -> dict:
         self.db.migrate()
@@ -790,7 +828,7 @@ class StrategicContextService:
             catalog_name_counts[key] = catalog_name_counts.get(key, 0) + 1
         quality_policy = request.get("quality_policy")
         strict_quality = bool(catalog) and quality_policy in {
-            "research-claim-2026.09.1", "research-claim-2026.09.2",
+            "research-claim-2026.09.1", "research-claim-2026.09.2", "research-claim-2026.09.3", "research-claim-2026.09.4", "research-claim-2026.09.5",
         }
         conflicts = self._validate_conflicts(payload.get("conflicts", []), by_url)
         conflict_keys = {(item["subject"].casefold(), item["claim_type"]) for item in conflicts
@@ -800,7 +838,8 @@ class StrategicContextService:
             require_verified=result_schema == "mova-research-brief-v2",
             catalog=catalog if strict_quality else None, cutoff=deadline,
             catalog_name_counts=catalog_name_counts,
-            require_freshness=quality_policy == "research-claim-2026.09.2",
+            quality_policy=quality_policy,
+            require_freshness=quality_policy in {"research-claim-2026.09.2", "research-claim-2026.09.3", "research-claim-2026.09.4", "research-claim-2026.09.5"},
         )
         coverage = self._validate_coverage(
             payload.get("coverage"),
@@ -808,7 +847,7 @@ class StrategicContextService:
             by_url, signals, legacy=result_schema == "mova-research-brief-v1",
             catalog=catalog if strict_quality else None,
             fetched_at=observed, cutoff=deadline,
-            require_freshness=quality_policy == "research-claim-2026.09.2",
+            require_freshness=quality_policy in {"research-claim-2026.09.2", "research-claim-2026.09.3", "research-claim-2026.09.4", "research-claim-2026.09.5"},
         )
         if strict_quality:
             focus_ids = {int(row["element"]) for row in request["manifest"][
@@ -850,9 +889,19 @@ class StrategicContextService:
         result_sha = hashlib.sha256(raw).hexdigest()
         archive = self.config.research_root / "archive" / path.name
         archive.parent.mkdir(parents=True, exist_ok=True)
-        imported = self.db.import_research_result(
-            run_id, normalized, result_path=str(archive), result_sha256=result_sha,
-        )
+        if request.get("experiment"):
+            report_path = archive.with_name(f"{run_id}.evaluation.json")
+            evaluation = {**normalized, "experiment": request["experiment"],
+                          "evaluated_at": observed.isoformat(), "operational_import": False}
+            _atomic_json(report_path, evaluation)
+            imported = self.db.complete_research_experiment(
+                run_id, normalized, result_path=str(archive), result_sha256=result_sha,
+                evaluation_path=str(report_path), experiment=request["experiment"],
+            )
+        else:
+            imported = self.db.import_research_result(
+                run_id, normalized, result_path=str(archive), result_sha256=result_sha,
+            )
         path.replace(archive)
         request_path = Path(run["request_path"])
         if request_path.is_file():
@@ -961,7 +1010,7 @@ class StrategicContextService:
                           catalog: dict[int, str] | None = None,
                           cutoff: datetime | None = None,
                           catalog_name_counts: dict[str, int] | None = None,
-                          require_freshness: bool = False) -> list[dict]:
+                          require_freshness: bool = False, quality_policy: str | None = None) -> list[dict]:
         if not isinstance(value, list) or len(value) > 120:
             raise ValueError("signals inválido")
         signals = []
@@ -1013,7 +1062,8 @@ class StrategicContextService:
                     has_strong_evidence = len(independent_hosts) >= 2
                 matching = [doc for doc in relevant if catalog_name and
                             claim_supported(name=catalog_name, claim_type=claim_type,
-                                            excerpt=str(doc.get("excerpt") or ""))]
+                                            excerpt=str(doc.get("excerpt") or ""),
+                                            quality_policy=quality_policy)]
                 supported = bool(catalog_name and
                                  subject_in_excerpt(catalog_name, subject) and matching)
                 dated = any(doc.get("publication_date_verified") for doc in matching)
@@ -1021,6 +1071,7 @@ class StrategicContextService:
                     claim_type=claim_type, published_at=str(doc.get("published_at") or ""),
                     observed=observed,
                 ) for doc in matching)
+                strong_matching = [(url,by_url[url]) for url in verified_urls if by_url[url] in matching]
                 if require_freshness:
                     strong_matching = [(url, by_url[url]) for url in verified_urls
                                        if by_url[url] in matching and
@@ -1035,6 +1086,12 @@ class StrategicContextService:
                         or len({urllib.parse.urlsplit(url).hostname
                                 for url, _ in strong_matching}) >= 2
                     )
+                corroboration = raw.get("corroboration_status", "unknown")
+                if quality_policy in {"research-claim-2026.09.4", "research-claim-2026.09.5"}:
+                    if corroboration not in {"independent", "same_primary_report", "unknown", "official_primary"}:
+                        raise ValueError("corroboration_status inválido")
+                    if not any(doc["source_tier"] == "official" for _,doc in strong_matching):
+                        has_strong_evidence = has_strong_evidence and corroboration == "independent"
                 as_of_safe = cutoff is None or observed <= cutoff
                 reason = ("unknown_element" if not catalog_name else
                           "ambiguous_identity" if (
@@ -1063,6 +1120,8 @@ class StrategicContextService:
                 "expires_at": expires.isoformat(),
                 "conflict_status": "unresolved" if conflicted else "none",
                 "validation_status": validation,
+                **({"corroboration_status": raw.get("corroboration_status", "unknown")}
+                   if quality_policy in {"research-claim-2026.09.4", "research-claim-2026.09.5"} else {}),
                 "quality": quality,
             })
         return signals
@@ -1205,6 +1264,14 @@ class StrategicContextService:
         for key in ("input_tokens", "output_tokens", "duration_ms", "search_requests"):
             item = raw.get(key)
             usage[key] = int(item) if item is not None and int(item) >= 0 else None
+        if "cached_input_tokens" in raw:
+            cached = raw["cached_input_tokens"]
+            if cached is not None and (type(cached) is not int or cached < 0
+                    or usage["input_tokens"] is None or cached > usage["input_tokens"]):
+                raise ValueError("cached_input_tokens inválido")
+            usage["cached_input_tokens"] = cached
+            usage["uncached_input_tokens"] = (usage["input_tokens"]-cached
+                if cached is not None else None)
         usage["estimated_cost_usd"] = None
         usage["billing"] = "chatgpt_subscription"
         return usage

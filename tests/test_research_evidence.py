@@ -298,3 +298,99 @@ def test_coverage_gate_is_independent_of_display_limit_and_retries(tmp_path):
         assert report["measured_gameweeks"] == 3
         assert report["passing_gameweeks"] == 2
         assert len(report["runs"]) == min(limit, 27)
+
+
+def test_paired_experiment_shares_context_settles_cost_and_never_publishes_signals(tmp_path):
+    config, db, _, _ = _runtime(tmp_path)
+    service = StrategicContextService(config, db, evidence_fetcher=_fetcher(config.research_root))
+    service.activate_plan(_plan(), actor='test', reason='fixture')
+    experiment=service.enqueue_experiment(versions=['1.0.0','1.1.0'], actor='test',
+        reason='paired comparison', idempotency_key='experiment:pair')
+    requests=[]
+    for row in experiment['results']:
+        run=db.research_run(row['research_run_id'])
+        request=json.loads(Path(run['request_path']).read_text())
+        requests.append(request)
+        result=_v2_result(run, run['cycle_id'], request['manifest']['research_summary']['focus'])
+        out=config.research_root/'outbox'/f"{run['research_run_id']}.result.json"
+        out.parent.mkdir(parents=True,exist_ok=True)
+        out.write_text(json.dumps(result))
+    assert requests[0]['manifest']==requests[1]['manifest']
+    assert requests[0]['scope_policy']==requests[1]['scope_policy']
+    imported=service.import_ready()
+    assert len(imported['results'])==2
+    assert all(row['status']=='completed' and row['operational_import'] is False for row in imported['results'])
+    with db.connect(readonly=True) as con:
+        assert con.execute('SELECT COUNT(*) FROM research_signals').fetchone()[0]==0
+        assert con.execute('SELECT COUNT(*) FROM research_documents').fetchone()[0]==0
+        assert con.execute("SELECT COUNT(*) FROM cost_ledger WHERE category='research_experiment'").fetchone()[0]==2
+        assert con.execute("SELECT COUNT(*) FROM agent_budget_reservations WHERE status='settled'").fetchone()[0]==2
+    assert db.research_coverage()['measured_gameweeks']==0
+    again=service.enqueue_experiment(versions=['1.0.0','1.1.0'],actor='test',reason='paired comparison',idempotency_key='experiment:pair')
+    assert all(row['reused'] for row in again['results'])
+    assert service.import_ready()['processed']==0
+
+
+def test_undispatched_experiment_reconciliation_is_scoped_and_idempotent(tmp_path):
+    config,db,service,_=_runtime(tmp_path)
+    service.activate_plan(_plan(),actor='test',reason='fixture')
+    exp=service.enqueue_experiment(versions=['1.1.0'],actor='test',reason='fixture',idempotency_key='unused:exp')
+    run=db.research_run(exp['results'][0]['research_run_id'])
+    request=json.loads(Path(run['request_path']).read_text())
+    db.reject_research_run(run['research_run_id'],error_code='agent_retry_budget_exhausted',error_detail='fixture')
+    with pytest.raises(ValueError):
+        db.release_undispatched_experiment(run['research_run_id'],{**request,'objective':'tampered'},actor='test',reason='proof')
+    result=db.release_undispatched_experiment(run['research_run_id'],request,actor='test',reason='proof')
+    assert result['actual_tokens']==0
+    assert db.release_undispatched_experiment(run['research_run_id'],request,actor='test',reason='proof')['reused']
+
+
+def test_usage_preserves_measured_cache_without_double_counting():
+    from mova_fpl.ops.strategy import StrategicContextService
+    usage=StrategicContextService._validate_usage({'model':'fixture','input_tokens':100,
+        'output_tokens':20,'cached_input_tokens':80})
+    assert usage['input_tokens']==100 and usage['uncached_input_tokens']==20
+    assert usage['cached_input_tokens']==80 and usage['estimated_cost_usd'] is None
+    with pytest.raises(ValueError,match='cached_input_tokens'):
+        StrategicContextService._validate_usage({'input_tokens':100,'cached_input_tokens':101})
+
+
+def test_equivalent_publication_timezone_is_verified_but_different_instant_is_not(tmp_path):
+    def transport(url):
+        return (b'<html><script type="application/ld+json">{"datePublished":"2026-09-20T22:30:13-07:00"}</script><body>Player One is available for selection.</body></html>',
+            {'content_type':'text/html','http_status':200,'final_url':url})
+    fetcher=SafeEvidenceFetcher(tmp_path,transport=transport)
+    args=dict(research_run_id='research_'+'a'*32,source_url=CANONICAL_SOURCE,evidence_text=EXCERPT)
+    good=fetcher.seal(document_id='document_'+'b'*32,published_at='2026-09-21T05:30:13Z',**args)
+    wrong=fetcher.seal(document_id='document_'+'c'*32,published_at='2026-09-21T06:30:13Z',**args)
+    assert good['publication_date_verified'] is True
+    assert wrong['publication_date_verified'] is False
+
+
+@pytest.mark.parametrize("state", ["queued", "completed", "failed"])
+def test_experiment_never_consumes_an_operational_research_slot(tmp_path, state):
+    config, db, service, cycle = _runtime(tmp_path)
+    service.activate_plan(_plan(), actor="test", reason="fixture")
+    exp=service.enqueue_experiment(versions=["1.8.0"], actor="test", reason="lab", idempotency_key="slot:lab")
+    run_id=exp["results"][0]["research_run_id"]
+    current=datetime.now(timezone.utc)
+    with db.transaction() as con:
+        con.execute("UPDATE gameweek_cycles SET deadline_at=? WHERE cycle_id=?",
+                    ((current+timedelta(hours=20)).isoformat(),cycle))
+        con.execute("UPDATE research_runs SET status=? WHERE research_run_id=?",(state,run_id))
+    assessment=service.due(now=current)
+    assert assessment["due"] is True
+    assert assessment["reason"] == "cadence_slot_due"
+    assert db.research_coverage()["measured_gameweeks"] == 0
+
+
+def test_expanded_discovery_is_sealed_only_for_the_registered_candidate(tmp_path):
+    config, db, service, _ = _runtime(tmp_path)
+    service.activate_plan(_plan(), actor='test', reason='fixture')
+    pair=service.enqueue_experiment(versions=['1.9.0','1.10.0'],actor='test',reason='scope trial',idempotency_key='scope:pair')
+    requests=[json.loads(Path(db.research_run(r['research_run_id'])['request_path']).read_text()) for r in pair['results']]
+    assert requests[0]['manifest']==requests[1]['manifest']
+    assert requests[0]['scope_policy']['max_web_queries']==8
+    assert requests[1]['scope_policy']['max_web_queries']==16
+    assert requests[1]['scope_policy']['max_documents']==16
+    assert requests[1]['quality_policy']=='research-claim-2026.09.5'

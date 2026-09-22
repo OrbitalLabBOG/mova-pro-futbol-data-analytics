@@ -93,7 +93,8 @@ def test_research_request_sella_scope_del_checkpoint(tmp_path):
     request = json.loads(Path(queued["request_path"]).read_text(encoding="utf-8"))
 
     assert request["run_kind"] == "broad"
-    assert request["scope_policy"] == research_scope_policy("broad")
+    assert request["scope_policy"] == {**research_scope_policy("broad"),
+                                       "max_web_queries": 16, "max_documents": 16}
     assert request["guardrails"]["agent_budget"]["job_tokens"] == 160_000
 
 
@@ -505,3 +506,16 @@ def test_url_privada_se_cuarentena_y_no_contamina_signals(tmp_path):
     replay = service.import_ready()
     assert replay["processed"] == 0
     assert replay["terminal_requests_quarantined"] == 0
+
+
+def test_queued_request_pins_agent_definition(tmp_path):
+    from mova_fpl.ops.agent_releases import researcher_release
+    _, db, service, _ = _runtime(tmp_path)
+    service.activate_plan(_plan(), actor='test', reason='fixture')
+    queued=service.enqueue(force=True, actor='test', reason='pin version',
+                           idempotency_key='version:pin')
+    request=json.loads(Path(db.research_run(queued['research_run_id'])['request_path']).read_text())
+    version, definition=researcher_release()
+    assert request['agent_version']==version
+    assert request['agent_release']==definition
+    assert request['agent_release']['output_schema']=='mova-research-brief-v2'

@@ -11,7 +11,7 @@ from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB, sha256_json
 
 
-def _runtime(tmp_path):
+def _runtime(tmp_path, *, experiment=False):
     config = RuntimeConfig(
         ops_db=tmp_path / "ops.db", research_root=tmp_path / "research",
         sqlite_min_version="0.0.0",
@@ -35,6 +35,8 @@ def _runtime(tmp_path):
     run_id = "research_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
     request = {"schema": "mova-research-request-v1", "research_run_id": run_id,
                "cycle_id": cycle_id, "fixture": True}
+    if experiment:
+        request["experiment"] = {"operational_import": False}
     request_sha = sha256_json(request)
     request["request_sha256"] = request_sha
     request_path = config.research_root / "inbox" / f"{run_id}.request.json"
@@ -296,3 +298,20 @@ def test_permiso_se_bloquea_dentro_del_cutoff_final(tmp_path):
     gate = result["blocked_candidates"][0]
     assert gate["reason"] == "pre_attempt_gate_failed"
     assert gate["checks"]["deadline_open"]["passed"] is False
+
+
+def test_failed_experiment_is_terminal_after_one_attempt_and_keeps_charge(tmp_path):
+    config, db, run_id, request_sha, request_path = _runtime(tmp_path, experiment=True)
+    attempt = "attempt_" + "c"*32
+    _receipt(config,run_id,request_sha,attempt,"started","running")
+    _receipt(config,run_id,request_sha,attempt,"finished","failed",
+             duration_ms=100,error_code="logical_token_guard",output_present=False)
+    service=AgentAttemptService(config,db)
+    result=service.import_ready()
+    assert len(result["exhausted"])==1
+    assert db.research_run(run_id)["status"]=="rejected"
+    assert not request_path.exists()
+    with db.connect(readonly=True) as con:
+        reservation=con.execute("SELECT status,estimated_tokens FROM agent_budget_reservations").fetchone()
+        assert reservation["status"]=="charged" and reservation["estimated_tokens"]==100
+    assert service.import_ready()["exhausted"]==[]

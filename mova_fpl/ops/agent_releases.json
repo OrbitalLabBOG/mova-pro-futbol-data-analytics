@@ -1,0 +1,168 @@
+{
+  "schema": "mova-agent-releases-v1",
+  "agents": {
+    "researcher": {
+      "active": "1.10.0",
+      "versions": {
+        "1.0.0": {
+          "model": "gpt-5.6-luna",
+          "reasoning_effort": "medium",
+          "interactive_evidence": false,
+          "quality_policy": "research-claim-2026.09.2",
+          "output_schema": "mova-research-brief-v2"
+        },
+        "1.1.0": {
+          "model": "gpt-5.6-luna",
+          "reasoning_effort": "medium",
+          "interactive_evidence": true,
+          "quality_policy": "research-claim-2026.09.2",
+          "output_schema": "mova-research-brief-v2"
+        },
+        "1.2.0": {
+          "model": "gpt-5.6-luna",
+          "reasoning_effort": "medium",
+          "interactive_evidence": true,
+          "quality_policy": "research-claim-2026.09.2",
+          "output_schema": "mova-research-brief-v2",
+          "execution": "app_server",
+          "logical_token_guard": 80000,
+          "context_profile": "focus_on_demand"
+        },
+        "1.3.0": {
+          "model": "gpt-5.6-terra",
+          "reasoning_effort": "medium",
+          "interactive_evidence": true,
+          "quality_policy": "research-claim-2026.09.2",
+          "output_schema": "mova-research-brief-v2",
+          "execution": "app_server",
+          "logical_token_guard": 300000,
+          "context_profile": "focus_on_demand",
+          "execution_timeout_ms": 420000
+        },
+        "1.4.0": {
+          "model": "gpt-5.6-terra",
+          "reasoning_effort": "medium",
+          "interactive_evidence": true,
+          "quality_policy": "research-claim-2026.09.2",
+          "output_schema": "mova-research-brief-v2",
+          "execution": "app_server",
+          "logical_token_guard": 300000,
+          "context_profile": "focus_on_demand",
+          "execution_timeout_ms": 420000,
+          "search_window_days": 7
+        },
+        "1.5.0": {
+          "model": "gpt-6-astra",
+          "reasoning_effort": "medium",
+          "interactive_evidence": true,
+          "quality_policy": "research-claim-2026.09.2",
+          "output_schema": "mova-research-brief-v2",
+          "execution": "app_server",
+          "logical_token_guard": 300000,
+          "context_profile": "focus_on_demand",
+          "execution_timeout_ms": 420000,
+          "search_window_days": 7
+        },
+        "1.4.1": {
+          "model": "gpt-5.6-terra",
+          "reasoning_effort": "medium",
+          "interactive_evidence": true,
+          "quality_policy": "research-claim-2026.09.2",
+          "output_schema": "mova-research-brief-v2",
+          "execution": "app_server",
+          "logical_token_guard": 300000,
+          "context_profile": "focus_on_demand",
+          "execution_timeout_ms": 420000,
+          "search_window_days": 7,
+          "codex_version": "0.153.4"
+        },
+        "1.5.1": {
+          "model": "gpt-6-astra",
+          "reasoning_effort": "medium",
+          "interactive_evidence": true,
+          "quality_policy": "research-claim-2026.09.2",
+          "output_schema": "mova-research-brief-v2",
+          "execution": "app_server",
+          "logical_token_guard": 300000,
+          "context_profile": "focus_on_demand",
+          "execution_timeout_ms": 420000,
+          "search_window_days": 7,
+          "codex_version": "0.153.4"
+        },
+        "1.6.0": {
+          "model": "gpt-6-astra",
+          "reasoning_effort": "medium",
+          "interactive_evidence": true,
+          "quality_policy": "research-claim-2026.09.3",
+          "output_schema": "mova-research-brief-v2",
+          "execution": "app_server",
+          "logical_token_guard": 600000,
+          "context_profile": "focus_on_demand",
+          "execution_timeout_ms": 420000,
+          "search_window_days": 7,
+          "codex_version": "0.153.4"
+        },
+        "1.7.0": {
+          "model": "gpt-6-astra",
+          "reasoning_effort": "medium",
+          "interactive_evidence": true,
+          "quality_policy": "research-claim-2026.09.4",
+          "output_schema": "mova-research-brief-v2",
+          "execution": "app_server",
+          "logical_token_guard": 400000,
+          "context_profile": "focus_on_demand",
+          "execution_timeout_ms": 420000,
+          "search_window_days": 7,
+          "codex_version": "0.153.4",
+          "research_agenda": "phase_aware_v1"
+        },
+        "1.8.0": {
+          "model": "gpt-6-astra",
+          "reasoning_effort": "medium",
+          "interactive_evidence": true,
+          "quality_policy": "research-claim-2026.09.4",
+          "output_schema": "mova-research-brief-v2",
+          "execution": "app_server",
+          "logical_token_guard": 700000,
+          "context_profile": "focus_on_demand",
+          "execution_timeout_ms": 420000,
+          "search_window_days": 7,
+          "codex_version": "0.153.4",
+          "research_agenda": "phase_aware_v1",
+          "evidence_handoff": "exact_verified_excerpt_v1"
+        },
+        "1.9.0": {
+          "model": "gpt-6-astra",
+          "reasoning_effort": "medium",
+          "interactive_evidence": true,
+          "quality_policy": "research-claim-2026.09.4",
+          "output_schema": "mova-research-brief-v2",
+          "execution": "app_server",
+          "logical_token_guard": 700000,
+          "context_profile": "focus_on_demand",
+          "execution_timeout_ms": 420000,
+          "search_window_days": 7,
+          "codex_version": "0.153.4",
+          "research_agenda": "multi_branch_v1",
+          "evidence_handoff": "exact_verified_excerpt_v1"
+        },
+        "1.10.0": {
+          "model": "gpt-6-astra",
+          "reasoning_effort": "medium",
+          "interactive_evidence": true,
+          "quality_policy": "research-claim-2026.09.5",
+          "output_schema": "mova-research-brief-v2",
+          "execution": "app_server",
+          "logical_token_guard": 900000,
+          "context_profile": "focus_on_demand",
+          "execution_timeout_ms": 480000,
+          "search_window_days": 7,
+          "codex_version": "0.153.4",
+          "research_agenda": "multi_branch_v1",
+          "evidence_handoff": "exact_verified_excerpt_v1",
+          "discovery_profile": "expanded_broad_v1"
+        }
+      }
+    }
+  }
+}

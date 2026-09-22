@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 import time
 from datetime import datetime, timezone
@@ -144,6 +145,13 @@ def parser() -> argparse.ArgumentParser:
     cost_report.add_argument("--season")
     cost_report.add_argument("--gw", type=int)
     cost_report.add_argument("--month", help="mes UTC YYYY-MM")
+    allowance = cost_commands.add_parser("allowance", help="registrar presupuesto adicional autorizado para un ciclo y mes")
+    allowance.add_argument("--cycle-id", required=True)
+    allowance.add_argument("--tokens", type=int, required=True)
+    allowance.add_argument("--uses", type=int, default=0, help="usos adicionales de la campaña; no borra usos consumidos")
+    allowance.add_argument("--actor", required=True)
+    allowance.add_argument("--reason", required=True)
+    allowance.add_argument("--idempotency-key", required=True)
     cost_overrun = cost_commands.add_parser(
         "overrun", help="transiciona la revisión durable de un overrun por job"
     )
@@ -179,7 +187,9 @@ def parser() -> argparse.ArgumentParser:
     plan.add_argument("--actor", required=True)
     plan.add_argument("--reason", required=True)
     research = strategy_commands.add_parser("research", help="opera la cola de investigación")
-    research.add_argument("operation", choices=("due", "coverage", "enqueue", "import", "resolve-conflict"))
+    research.add_argument("operation", choices=("due", "coverage", "enqueue", "experiment", "reconcile-experiment", "import", "resolve-conflict"))
+    research.add_argument("--agent-version", action="append")
+    research.add_argument("--run-id")
     research.add_argument("--conflict-id")
     research.add_argument("--cycle-id")
     research.add_argument("--document-id", action="append")
@@ -622,6 +632,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "cost":
         db = OpsDB(config.ops_db, minimum_version=config.sqlite_min_version)
         db.migrate()
+        if args.cost_command == "allowance":
+            payload = db.grant_agent_budget_allowance(cycle_id=args.cycle_id,tokens=args.tokens,uses=args.uses,
+                actor=args.actor,reason=args.reason,idempotency_key=args.idempotency_key)
+            print(json.dumps(payload, ensure_ascii=False))
+            return 0
         if args.cost_command == "overrun":
             payload = db.transition_budget_overrun(
                 args.reservation_id, to_status=args.to, action=args.action,
@@ -699,6 +714,16 @@ def main(argv: list[str] | None = None) -> int:
             payload = service.due()
             print(json.dumps(payload, ensure_ascii=False, default=str))
             return 0 if payload["due"] else 75
+        elif args.operation == "reconcile-experiment":
+            if not args.run_id or not re.fullmatch(r"research_[0-9a-f]{32}", args.run_id):
+                raise ValueError("run-id experimental inválido")
+            request_path = config.research_root / "quarantine" / f"{args.run_id}.request.json"
+            request = json.loads(request_path.read_text())
+            payload = db.release_undispatched_experiment(args.run_id, request,
+                actor=args.actor, reason=args.reason)
+        elif args.operation == "experiment":
+            payload = service.enqueue_experiment(versions=args.agent_version or ["1.0.0", "1.1.0"],
+                actor=args.actor, reason=args.reason, idempotency_key=args.idempotency_key)
         elif args.operation == "coverage":
             payload = db.research_coverage()
         elif args.operation == "resolve-conflict":

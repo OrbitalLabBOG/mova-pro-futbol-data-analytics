@@ -1,0 +1,8 @@
+# Optional controlled-search capability, only mounted for the experimental/promoted researcher.
+services:
+  research:
+    secrets:
+      - research_search_key
+secrets:
+  research_search_key:
+    file: ${MOVA_RESEARCH_SEARCH_KEY_FILE:-/etc/mova-fpl/research-search-key}

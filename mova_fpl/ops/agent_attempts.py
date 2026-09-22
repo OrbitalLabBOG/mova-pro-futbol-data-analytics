@@ -14,7 +14,7 @@ from mova_fpl.ops.db import OpsDB, canonical_json, sha256_json
 MAX_RECEIPT_BYTES = 65_536
 MAX_AUTOMATIC_ATTEMPTS = 2
 TERMINAL = {
-    "research": {"imported", "rejected", "failed"},
+    "research": {"imported", "rejected", "failed", "completed"},
     "deliberation": {"accepted", "review_required", "blocked", "rejected", "failed"},
 }
 RECEIPT_NAME = re.compile(
@@ -62,7 +62,8 @@ class AgentAttemptService:
                     final_cutoff_seconds=self.config.research_final_cutoff_seconds,
                 )
                 if prepared["status"] in {"blocked", "skipped"}:
-                    terminal = self._terminalize_unretryable(subject, prepared)
+                    terminal = self._terminalize_unretryable(subject, prepared,
+                        request={**request, "request_sha256": embedded_sha})
                     if terminal:
                         prepared = {**prepared, "terminalized": terminal}
                     blocked.append(prepared)
@@ -107,7 +108,8 @@ class AgentAttemptService:
         return {"status": "skipped" if not blocked else "blocked",
                 "reason": "no_authorized_subject", "blocked_candidates": blocked}
 
-    def _terminalize_unretryable(self, subject: dict, gate: dict) -> dict | None:
+    def _terminalize_unretryable(self, subject: dict, gate: dict, *,
+                                request: dict | None = None) -> dict | None:
         """Close a queued request when no future automatic attempt can pass its gate.
 
         Budget commitments and the final deadline only move in one direction. Leaving one of
@@ -141,6 +143,15 @@ class AgentAttemptService:
                 subject["subject_id"], error_code=error_code, error_detail=detail
             )
 
+        reconciliation = None
+        if (subject["subject_type"] == "research" and request and request.get("experiment")
+                and permanent_budget_block):
+            try:
+                reconciliation = self.db.release_undispatched_experiment(
+                    subject["subject_id"], request, actor="mova-agent-authorizer",
+                    reason="no host authorization or attempt exists for the blocked experiment")
+            except ValueError:
+                pass  # Any possible dispatch preserves conservative accounting.
         request = Path(subject["request_path"])
         target = None
         if request.is_file():
@@ -152,6 +163,7 @@ class AgentAttemptService:
             "subject_type": subject["subject_type"],
             "subject_id": subject["subject_id"],
             "error_code": error_code,
+            **({"undispatched_reconciliation": reconciliation} if reconciliation else {}),
             "request_path": str(target) if target else None,
         }
 
@@ -285,11 +297,23 @@ class AgentAttemptService:
         status = self.db.agent_worker_attempt_status()
         exhausted = []
         for item in status["subjects"]:
-            if int(item["attempts"]) < MAX_AUTOMATIC_ATTEMPTS or int(item["successes"]):
+            if not int(item["attempts"]) or int(item["successes"]):
                 continue
             subject_type, subject_id = item["subject_type"], item["subject_id"]
             subject = self.db.agent_subject(subject_type, subject_id)
             if not subject or subject["status"] in TERMINAL[subject_type]:
+                continue
+            max_attempts = MAX_AUTOMATIC_ATTEMPTS
+            request = Path(subject["request_path"])
+            if subject_type == "research" and request.is_file() and not request.is_symlink():
+                if request.resolve().parent != (self.config.research_root / "inbox").resolve():
+                    raise ValueError("experimental request fuera del inbox")
+                payload = json.loads(request.read_text())
+                embedded = payload.pop("request_sha256", None)
+                if (embedded == subject["request_sha256"] and sha256_json(payload) == embedded
+                        and payload.get("experiment") and int(item["failures"]) == int(item["attempts"])):
+                    max_attempts = 1
+            if int(item["attempts"]) < max_attempts:
                 continue
             detail = f"agotados {item['attempts']} intentos automáticos; failures={item['failures']}"
             if subject_type == "research":

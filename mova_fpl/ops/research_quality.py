@@ -36,10 +36,19 @@ def subject_in_excerpt(name: str, excerpt: str) -> bool:
                for token in candidates)
 
 
-def claim_supported(*, name: str, claim_type: str, excerpt: str) -> bool:
+def claim_supported(*, name: str, claim_type: str, excerpt: str, quality_policy: str | None = None) -> bool:
     if not subject_in_excerpt(name, excerpt):
         return False
     terms = TOPIC_WORDS.get(claim_type)
+    if quality_policy in {"research-claim-2026.09.3", "research-claim-2026.09.4", "research-claim-2026.09.5"} and claim_type == "starting_role":
+        terms = (*terms, "bench", "substitut", "suplente", "banquillo")
+    if quality_policy in {"research-claim-2026.09.4", "research-claim-2026.09.5"} and claim_type == "injury":
+        terms = (*terms, "neck issue", "neck problem")
+    if quality_policy == "research-claim-2026.09.5":
+        if claim_type == "starting_role":
+            terms = (*terms, "line up", "lines up")
+        elif claim_type == "set_pieces":
+            terms = (*terms, "pk duties", "on pks", "pk taker", "pk role")
     if not terms:
         return False
     text = _normal(excerpt)

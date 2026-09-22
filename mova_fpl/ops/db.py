@@ -2011,6 +2011,45 @@ class OpsDB:
         return {"settled": settled, "reserved": reserved, "charged": charged,
                 "estimated_cost_usd": cost["estimated_cost_usd"]}
 
+    def grant_agent_budget_allowance(self, *, cycle_id: str, tokens: int,
+                                     actor: str, reason: str, idempotency_key: str, uses: int = 0) -> dict:
+        """Append an authorized campaign allowance; never erase actual consumption."""
+        if (type(tokens) is not int or tokens <= 0 or type(uses) is not int or uses < 0
+                or not all((actor,reason,idempotency_key))):
+            raise ValueError("allowance exige tokens positivos, actor, reason e idempotency_key")
+        key = "agent_budget_allowance:" + sha256_json(idempotency_key)[:32]
+        now = utcnow()
+        with self.transaction() as con:
+            if not con.execute("SELECT 1 FROM gameweek_cycles WHERE cycle_id=?",(cycle_id,)).fetchone():
+                raise ValueError("cycle_id desconocido")
+            old=con.execute("SELECT value_json FROM runtime_controls WHERE control_key=?",(key,)).fetchone()
+            identity={"cycle_id":cycle_id,"tokens":tokens,"uses":uses,"actor":actor,"reason":reason,
+                      "idempotency_key":idempotency_key}
+            if old:
+                value=json.loads(old[0])
+                if any(value.get(k, 0 if k == "uses" else None)!=v for k,v in identity.items()):
+                    raise ValueError("allowance idempotency conflict")
+                return {**value,"reused":True}
+            value={"schema":"mova-budget-allowance-v1",**identity,"month":now[:7],"granted_at":now}
+            con.execute("INSERT INTO runtime_controls(control_key,value_json,effective_at,actor,reason) VALUES(?,?,?,?,?)",
+                        (key,canonical_json(value),now,actor,reason))
+            self.append_audit("agent_budget_allowance_granted",actor=actor,cycle_id=cycle_id,
+                subject_type="budget_allowance",subject_id=key,payload=value,con=con)
+        return {**value,"reused":False}
+
+    @staticmethod
+    def _budget_with_allowances(con, policy: dict, *, cycle_id: str | None, month: str) -> tuple[dict,list]:
+        rows=con.execute("SELECT value_json FROM runtime_controls WHERE control_key LIKE 'agent_budget_allowance:%'").fetchall()
+        allowances=[json.loads(row[0]) for row in rows]
+        applicable=[a for a in allowances if a.get("schema")=="mova-budget-allowance-v1"
+                    and (a.get("cycle_id")==cycle_id or a.get("month")==month)]
+        result=dict(policy)
+        result["gw_tokens"]+=sum(a["tokens"] for a in applicable if a["cycle_id"]==cycle_id)
+        result["month_tokens"]+=sum(a["tokens"] for a in applicable if a["month"]==month)
+        result["gw_uses"]+=sum(a.get("uses",0) for a in applicable if a["cycle_id"]==cycle_id)
+        result["month_uses"]+=sum(a.get("uses",0) for a in applicable if a["month"]==month)
+        return result,applicable
+
     def _reserve_agent_budget(self, con: sqlite3.Connection, *, cycle_id: str,
                               subject_type: str, subject_id: str, provider: str,
                               policy: dict | None, actor: str, now: str,
@@ -2030,6 +2069,7 @@ class OpsDB:
         if existing:
             return {**dict(existing), "reused": True}
         month = now[:7]
+        policy, _ = self._budget_with_allowances(con, policy, cycle_id=cycle_id, month=month)
         gw_accounting = self._agent_budget_aggregates(con, cycle_id=cycle_id)
         month_accounting = self._agent_budget_aggregates(con, month=month)
         estimate = int(policy["reservation_tokens"])
@@ -2247,6 +2287,11 @@ class OpsDB:
                 payload={"provider": payload["provider"],
                          "request_sha256": payload["request_sha256"]}, con=con,
             )
+            if payload.get("experiment"):
+                self.append_audit("research_experiment_enqueued", actor="mova-research-experiment",
+                    cycle_id=payload["cycle_id"], subject_type="research_run", subject_id=run_id,
+                    payload={"experiment": payload["experiment"],
+                             "request_sha256": payload["request_sha256"]}, con=con)
         return {"research_run_id": run_id, "status": "queued", "queued_at": now,
                 "budget": budget, "reused": False}
 
@@ -2715,6 +2760,77 @@ class OpsDB:
                 payload={"error_code": error_code, "error_detail": error_detail[:500]},
                 con=con,
             )
+
+    def release_undispatched_experiment(self, research_run_id: str, request: dict, *,
+                                       actor: str, reason: str) -> dict:
+        """Reconcile an experiment proven to have no host permission or physical attempt."""
+        if not actor or not reason or not request.get("experiment"):
+            raise ValueError("reconciliation exige experiment, actor y reason")
+        body = {key: value for key, value in request.items() if key != "request_sha256"}
+        with self.transaction() as con:
+            run = con.execute("SELECT * FROM research_runs WHERE research_run_id=?",
+                              (research_run_id,)).fetchone()
+            if (not run or run["status"] != "rejected"
+                    or run["error_code"] != "agent_retry_budget_exhausted"
+                    or run["request_sha256"] != sha256_json(body)
+                    or request.get("request_sha256") != run["request_sha256"]):
+                raise ValueError("no existe rechazo experimental verificable")
+            for table in ("agent_attempt_authorizations", "agent_worker_attempt_events"):
+                if con.execute(f"SELECT 1 FROM {table} WHERE subject_id=? LIMIT 1",
+                               (research_run_id,)).fetchone():
+                    raise ValueError("dispatch posible: conservar cargo")
+            reservation = con.execute("SELECT * FROM agent_budget_reservations WHERE subject_id=?",
+                                      (research_run_id,)).fetchone()
+            if not reservation or reservation["status"] not in {"charged", "released"}:
+                raise ValueError("reserva no conciliable")
+            if reservation["status"] == "released":
+                return {"status": "released", "reused": True}
+            now = utcnow()
+            con.execute("UPDATE agent_budget_reservations SET status='released',actual_tokens=0,"
+                        "estimated_tokens=0,attempt_count=NULL,accounting_mode='exact',released_at=? "
+                        "WHERE reservation_id=?", (now, reservation["reservation_id"]))
+            self.append_audit("undispatched_experiment_reconciled", actor=actor,
+                cycle_id=run["cycle_id"], subject_type="research_run", subject_id=research_run_id,
+                payload={"reason": reason, "reservation_id": reservation["reservation_id"],
+                         "previous_estimate": reservation["actual_tokens"], "actual_tokens": 0,
+                         "proof": "sealed_experiment_no_authorization_no_attempt"}, con=con)
+        return {"status": "released", "research_run_id": research_run_id, "actual_tokens": 0,
+                "reused": False}
+
+    def complete_research_experiment(self, research_run_id: str, payload: dict, *,
+                                    result_path: str, result_sha256: str,
+                                    evaluation_path: str, experiment: dict) -> dict:
+        """Settle real usage without publishing experiment evidence or counting a GW."""
+        now = utcnow()
+        with self.transaction() as con:
+            run = con.execute("SELECT * FROM research_runs WHERE research_run_id=?",
+                              (research_run_id,)).fetchone()
+            if not run:
+                raise ValueError("research_run desconocido")
+            if run["status"] == "completed":
+                return {"status": "completed", "reused": True, "operational_import": False}
+            if run["status"] != "queued":
+                raise ValueError("experiment no está queued")
+            usage = payload["usage"]
+            con.execute("UPDATE research_runs SET status='completed',result_path=?,result_sha256=?,"
+                        "usage_json=?,finished_at=? WHERE research_run_id=?",
+                        (result_path, result_sha256, canonical_json(usage), now, research_run_id))
+            con.execute("""INSERT INTO cost_ledger(cost_id,research_run_id,provider,model,
+                input_tokens,output_tokens,subscription_usage,detail_json,occurred_at,
+                cycle_id,subject_type,subject_id,category,duration_ms)
+                VALUES(?,?,?,?,?,?,1,?,?,?,?,?,?,?)""",
+                (new_id("cost"), research_run_id, run["provider"], usage.get("model"),
+                 usage.get("input_tokens"), usage.get("output_tokens"),
+                 canonical_json({**usage, "experiment": experiment}), now, run["cycle_id"],
+                 "research", research_run_id, "research_experiment", usage.get("duration_ms")))
+            settlement = self._settle_agent_budget(con, subject_id=research_run_id,
+                usage=usage, cycle_id=run["cycle_id"], actor="mova-research-experiment", now=now)
+            self.append_audit("research_experiment_completed", actor="mova-research-experiment",
+                cycle_id=run["cycle_id"], subject_type="research_run", subject_id=research_run_id,
+                payload={"experiment": experiment, "evaluation_path": evaluation_path,
+                         "result_sha256": result_sha256, "operational_import": False}, con=con)
+        return {"status": "completed", "research_run_id": research_run_id,
+                "evaluation_path": evaluation_path, "budget": settlement, "operational_import": False}
 
     def import_research_result(self, research_run_id: str, payload: dict, *,
                                result_path: str, result_sha256: str) -> dict:
@@ -3820,6 +3936,9 @@ class OpsDB:
                     "ORDER BY deadline_at DESC LIMIT 1"
                 ).fetchone()
             cycle_id = cycle["cycle_id"] if cycle else None
+            base_policy = dict(policy)
+            policy, allowances = self._budget_with_allowances(con, policy,
+                cycle_id=cycle_id, month=observed_month)
             if cycle_id:
                 gw_accounting = self._agent_budget_aggregates(con, cycle_id=cycle_id)
             else:
@@ -3972,7 +4091,8 @@ class OpsDB:
         return {
             "schema": "mova-agent-cost-report-v1", "observed_at": utcnow(),
             "status": report_status,
-            "policy": dict(policy), "cycle": dict(cycle) if cycle else None,
+            "policy": dict(policy), "base_policy": base_policy, "allowances": allowances,
+            "cycle": dict(cycle) if cycle else None,
             "gameweek": scope(gw_accounting,
                               token_limit=policy["gw_tokens"], use_limit=policy["gw_uses"]),
             "month": {"month": observed_month, **scope(

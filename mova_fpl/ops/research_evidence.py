@@ -155,6 +155,18 @@ class SafeEvidenceFetcher:
                         day.strftime("%d %b %y").casefold(),
                     )
                     publication_date_verified = any(value in haystack for value in candidates)
+                    # Equivalent timezone representations may fall on different calendar days.
+                    # Match actual publication metadata instants, never just a nearby date.
+                    claimed = datetime.fromisoformat(str(published_at).replace("Z", "+00:00"))
+                    dates = re.findall(r'"datePublished"\s*:\s*"([^"\n]{1,80})"',
+                                       payload.decode("utf-8", "ignore"))
+                    for stamp in dates:
+                        try:
+                            source_time = datetime.fromisoformat(stamp.replace("Z", "+00:00"))
+                            if claimed.tzinfo and source_time.tzinfo and source_time == claimed:
+                                publication_date_verified = True
+                        except ValueError:
+                            continue
                 except ValueError:
                     pass
             record = {

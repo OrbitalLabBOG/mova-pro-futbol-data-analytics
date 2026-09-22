@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -14,9 +15,11 @@ def test_imagen_codex_esta_versionada_y_no_contiene_app():
     dockerfile = (ROOT / "deploy/docker/research.Dockerfile").read_text(encoding="utf-8")
     assert "node:22-bookworm-slim@sha256:" in dockerfile
     assert "@openai/codex@${CODEX_VERSION}" in dockerfile
-    assert "ARG CODEX_VERSION=0.144.6" in dockerfile
+    assert "ARG CODEX_VERSION=0.153.4" in dockerfile
     assert "ca-certificates" in dockerfile
-    assert "COPY mova_fpl" not in dockerfile
+    assert "COPY mova_fpl/ /" not in dockerfile
+    assert "COPY mova_fpl/ops/research_evidence.py" in dockerfile
+    assert "COPY mova_fpl/ops/research_quality.py" in dockerfile
     assert "COPY deploy/research/research-normalize.mjs" in dockerfile
     assert "USER 10002:10002" in dockerfile
 
@@ -27,7 +30,7 @@ def test_worker_deshabilita_herramientas_que_podrian_leer_auth_o_actuar():
                     "plugins"):
         assert f'"{feature}"' in worker
     assert '...(isResearch ? ["--search"] : [])' in worker
-    assert "const prompt = isResearch ? researchPrompt : deliberationPrompt" in worker
+    assert "const prompt = isResearch ? (release.execution" in worker
     assert '"--sandbox", "read-only"' in worker
     assert 'mkdirSync("/tmp/mova-research"' in worker
     assert "Cada señal y cada conflicto" in worker
@@ -56,12 +59,12 @@ def test_worker_deshabilita_herramientas_que_podrian_leer_auth_o_actuar():
     assert "nunca excedas scope_policy" in worker
     assert '"mova-research-brief-v2"' in worker
     assert "duration_ms: durationMs" in worker
-    assert "search_requests: null" in worker
+    assert "search_requests: metered" in worker
     assert "existsSync(finalTmp)" in worker
     assert '"codex_output_missing"' in worker
     assert '"codex_exec_timeout"' in worker
     assert "MOVA_RESEARCH_TIMEOUT_MS || 480000" in worker
-    assert 'MOVA_RESEARCH_MODEL || "gpt-5.6-luna"' in worker
+    assert 'MOVA_RESEARCH_MODEL || release?.model || "gpt-5.6-luna"' in worker
     assert 'MOVA_RESEARCH_REASONING_EFFORT || "medium"' in worker
     assert 'MOVA_DELIBERATION_MODEL || "gpt-5.6-terra"' in worker
     assert 'MOVA_DELIBERATION_REASONING_EFFORT || "high"' in worker
@@ -152,17 +155,18 @@ process.stdout.write(JSON.stringify(normalizeResearchBrief(brief,request)));
     assert value["report"]["documents_dropped_budget"] == 1
 
 
-def test_compose_no_monta_db_browser_repo_ni_secretos_en_research():
+def test_compose_research_only_mounts_explicit_search_credential_not_runtime_secrets():
     compose = (ROOT / "compose.yaml").read_text(encoding="utf-8")
     section = compose.split("\n  research:\n", 1)[1].split("\nnetworks:\n", 1)[0]
+    assert "- research_search_key" in section
     assert "read_only: true" in section
     assert "cap_drop:" in section and "- ALL" in section
     assert 'group_add:' in section and '- "10001"' in section
     assert section.count("/research") >= 1
     assert "/home/research/.codex" in section
     assert "MOVA_RESEARCH_TIMEOUT_MS:-480000" in section
-    assert "MOVA_RESEARCH_MODEL:-gpt-5.6-luna" in section
-    assert "MOVA_RESEARCH_REASONING_EFFORT:-medium" in section
+    assert "MOVA_RESEARCH_MODEL:-}" in section
+    assert "MOVA_RESEARCH_REASONING_EFFORT:-}" in section
     assert "MOVA_DELIBERATION_MODEL:-gpt-5.6-terra" in section
     assert "MOVA_DELIBERATION_REASONING_EFFORT:-high" in section
     for forbidden in (
@@ -287,15 +291,21 @@ assert.equal(missing.context.acquisition_plan.conditional_scope_shortfall,null);
     subprocess.run(['node', '--input-type=module', '-e', script], cwd=ROOT, check=True)
 
 
-def test_authorized_worker_records_context_actually_sent_on_failed_attempt(tmp_path):
+@pytest.mark.parametrize("version", ["1.0.0", "1.10.0"])
+def test_authorized_worker_records_context_actually_sent_on_failed_attempt(tmp_path, version):
     from datetime import datetime, timedelta, timezone
     import hashlib
 
+    from mova_fpl.ops.agent_releases import researcher_release
     run_id = 'research_' + 'a' * 32
     request = {'schema':'mova-research-request-v1', 'research_run_id':run_id,
                'request_sha256':'b' * 64, 'scope_policy':{'max_documents':2},
                'manifest':{'research_summary':{'focus':[{'element':1,'team':'Club'}],
                            'world':{'catalog':[[1,'Player','CLB']]}}}}
+    request['agent_version'],request['agent_release']=researcher_release(version)
+    request['requested_at']=datetime.now(timezone.utc).isoformat()
+    request['manifest']['deadline_at']=(datetime.now(timezone.utc)+timedelta(days=1)).isoformat()
+    request['guardrails']={'agent_budget':{'job_tokens':1000000}}
     for name in ('inbox', 'permits', 'bin'):
         (tmp_path / name).mkdir()
     (tmp_path / 'inbox' / f'{run_id}.request.json').write_text(json.dumps(request))
@@ -307,7 +317,24 @@ def test_authorized_worker_records_context_actually_sent_on_failed_attempt(tmp_p
               'budget_snapshot_sha256':'d' * 64}
     (tmp_path / 'permits' / f'{run_id}.{authorization_id}.permit.json').write_text(json.dumps(permit))
     fake = tmp_path / 'bin' / 'codex'
-    fake.write_text('#!/bin/sh\ncat > "$MOVA_TEST_PROMPT"\nexit 1\n')
+    fake.write_text('''#!/usr/bin/env python3
+import sys,json,os
+if '--version' in sys.argv:
+ print('codex-cli 0.153.4');sys.exit(0)
+if 'app-server' not in sys.argv:
+ open(os.environ['MOVA_TEST_PROMPT'],'w').write(sys.stdin.read());sys.exit(1)
+for line in sys.stdin:
+ r=json.loads(line)
+ if 'id' not in r:continue
+ method=r['method'];result={}
+ if method=='thread/start':result={'thread':{'id':'t'}}
+ if method=='mcpServerStatus/list':result={'data':[{'name':'mova_evidence','tools':{n:{} for n in ['verify_research_evidence','search_research_web','read_research_source','research_context']}}]}
+ if method=='turn/start':
+  open(os.environ['MOVA_TEST_PROMPT'],'w').write(r['params']['input'][0]['text'])
+  result={'turn':{'id':'turn'}}
+ print(json.dumps({'id':r['id'],'result':result}),flush=True)
+ if method=='turn/start':print(json.dumps({'method':'turn/completed','params':{'turn':{'status':'failed'}}}),flush=True)
+''')
     fake.chmod(0o755)
     prompt_path = tmp_path / 'prompt'
     result = subprocess.run(['node', str(ROOT / 'deploy/research/codex-worker.mjs')],
