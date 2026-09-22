@@ -486,3 +486,15 @@ browser sólo se usa para login y lectura; no se permiten clicks que muten la cu
 
 Nunca restaurar encima de la base activa sin preservar primero el estado fallido. Nunca
 habilitar browser writes como mecanismo de recuperación.
+
+### Observación del canal externo desde el API
+
+Desde la corrección del 22/09, el watchdog publica el contrato sanitizado en
+`runtime/alert-channel.json` tras despachar. El API lo lee mediante
+`MOVA_ALERT_CHANNEL_STATUS_FILE`, sin montar credenciales de Slack/webhook.
+Ausencia, corrupción o edad mayor a 30 minutos hacen fallar el gate; no se debe
+copiar manualmente un reporte antiguo para forzar `pass`. Comparar `mova alerts
+channel`, `/api/v1/readiness` y cockpit tras recrear el API. Si discrepan, comprobar
+la ejecución del watchdog, frescura del archivo y fingerprint del live ping.
+La [decisión de observabilidad](../decisions/2026-27/alert-channel-observation-20260922.md)
+conserva el contrato y sus límites. Publicar esta observación no envía un mensaje.

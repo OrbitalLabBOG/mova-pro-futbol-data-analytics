@@ -10,7 +10,7 @@ x-engine: &engine
   env_file:
     - path: ${MOVA_ENV_FILE:-/etc/mova-fpl/runtime.env}
       required: false
-  environment:
+  environment: &engine_environment
     MOVA_GIT_SHA: ${MOVA_GIT_SHA:-unknown}
     MOVA_CANONICAL_DB: /var/lib/mova-fpl/db/fpl_canonical.db
     MOVA_TRACE_DB: /var/lib/mova-fpl/db/trace.db
@@ -90,6 +90,9 @@ services:
 
   api:
     <<: *engine
+    environment:
+      <<: *engine_environment
+      MOVA_ALERT_CHANNEL_STATUS_FILE: /var/lib/mova-fpl/runtime/alert-channel.json
     command: ["python", "-m", "mova_fpl.ops.cli", "serve"]
     restart: unless-stopped
     read_only: true

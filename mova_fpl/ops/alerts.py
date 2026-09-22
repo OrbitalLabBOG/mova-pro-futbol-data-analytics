@@ -11,7 +11,8 @@ import socket
 import ssl
 import re
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -204,7 +205,54 @@ def configured_sink(config: RuntimeConfig) -> Callable[[dict], None]:
     return journal_sink if settings is None else _sink(settings)
 
 
+def _published_channel_status(path: Path) -> dict:
+    """API-only projection; stale/missing state never grants a readiness pass."""
+    invalid = {"schema": "mova-alert-channel-v1", "status": "invalid",
+               "configured": False, "external_delivery": False}
+    try:
+        if path.stat().st_size > 4096:
+            raise ValueError("oversized channel status")
+        payload = json.loads(path.read_text())
+        observed = datetime.fromisoformat(payload["generated_at"])
+        age = (datetime.now(timezone.utc) - observed).total_seconds()
+        if payload["schema"] != "mova-alert-channel-observation-v1" or not 0 <= age <= 1800:
+            raise ValueError("stale channel status")
+        report = payload["channel"]
+        allowed = {"schema", "status", "configured", "external_delivery", "owner",
+                   "channel", "destination_fingerprint", "error_code"}
+        if not isinstance(report, dict) or set(report) - allowed:
+            raise ValueError("invalid channel projection")
+        if (report.get("schema") != "mova-alert-channel-v1" or
+                report.get("status") not in {"configured", "local_only", "invalid"}):
+            raise ValueError("invalid channel contract")
+        if report["status"] == "configured":
+            if (report.get("configured") is not True or report.get("external_delivery") is not True
+                    or not re.fullmatch(r"[0-9a-f]{32}", str(report.get("destination_fingerprint", "")))
+                    or not report.get("owner") or not report.get("channel")):
+                raise ValueError("incomplete configured channel")
+        elif report.get("configured") is not False or report.get("external_delivery") is not False:
+            raise ValueError("inconsistent channel projection")
+        return report
+    except (OSError, ValueError, KeyError, TypeError, AttributeError) as exc:
+        return {**invalid, "error_code": type(exc).__name__}
+
+
+def publish_channel_status(config: RuntimeConfig) -> Path:
+    """Watchdog publishes only sanitized configuration, never delivery credentials."""
+    from mova_fpl.ops.collector.contracts import canonical_bytes, write_atomic
+
+    report = channel_status(replace(config, alert_channel_status_file=None))
+    path = config.host_probe_path.parent / "alert-channel.json"
+    write_atomic(path, canonical_bytes({
+        "schema": "mova-alert-channel-observation-v1",
+        "generated_at": datetime.now(timezone.utc).isoformat(), "channel": report,
+    }))
+    return path
+
+
 def channel_status(config: RuntimeConfig) -> dict:
+    if config.alert_channel_status_file is not None:
+        return _published_channel_status(config.alert_channel_status_file)
     try:
         settings = _load_settings(config)
     except (OSError, ValueError, json.JSONDecodeError) as exc:
