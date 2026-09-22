@@ -316,4 +316,11 @@ def timeout_handler(*_):
 if __name__ == "__main__":
     signal.signal(signal.SIGALRM, timeout_handler)
     request = json.loads(Path(sys.argv[1]).read_text())
+    if request.get("agent_release", {}).get("execution") == "app_server":
+        try:
+            configured = bool(Path("/run/secrets/research_search_key").read_text().strip())
+        except OSError:
+            configured = False
+        if not configured:
+            raise SystemExit("search_not_configured")
     serve(EvidenceTool(request, Path(sys.argv[2])))

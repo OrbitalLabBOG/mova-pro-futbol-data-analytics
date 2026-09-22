@@ -184,6 +184,8 @@ services:
       context: .
       dockerfile: deploy/docker/research.Dockerfile
     profiles: ["research"]
+    secrets:
+      - research_search_key
     restart: "no"
     read_only: true
     environment:
@@ -220,6 +222,8 @@ networks:
     internal: true
 
 secrets:
+  research_search_key:
+    file: ${MOVA_RESEARCH_SEARCH_KEY_FILE:-/etc/mova-fpl/research-search-key}
   postgres_password:
     file: ${MOVA_POSTGRES_PASSWORD_FILE:-/etc/mova-fpl/postgres-password}
   postgres_app_password:

@@ -158,3 +158,28 @@ the effective policy; existing sealed permissions are not rewritten. Job limits,
 use limits, evidence gates and FPL authority are unaffected. Reusing a key with a
 different payload is a conflict. This avoids making temporary experiment capacity
 an undocumented permanent change to the production environment.
+
+### Evidence handoff and deployment preparation
+
+Live runs through 1.7.0 exposed a specific loss at final composition: the model
+concatenated two individually verified, noncontiguous excerpts into one document.
+Independent import correctly rejected that new excerpt. Candidate 1.8.0 returns a
+`verified_document` from the tool and instructs the producer to preserve its exact
+URL, date and single contiguous excerpt. The importer remains independent; no
+normalizer replaces invented evidence with a convenient source. An unsupported
+claim remains unsupported even when the same paragraph can establish coverage.
+
+The app-server now checks the four required tools before `turn/start`. Startup
+failure with no inference dispatch records exact zero usage; interruption after
+dispatch retains unknown final usage. The normal Compose research service mounts
+only its explicit Firecrawl search credential in addition to its dedicated Codex
+auth. No database or browser credentials are mounted. The MCP process fails startup
+when search is unconfigured, rather than letting a model spend a turn discovering
+that failure. This wiring is preparation, not proof of a production release.
+
+Measured results and limitations are retained in
+`experiments/research/20260922-agent-lab/results.json`. Versions 1.4.1/1.5.1 form the
+same-manifest Terra/Astra comparison after upgrading the worker to Codex 0.153.4.
+Other sequential variants used newly prepared manifests and sometimes newer quality
+policies; their results are operational diagnostics, not a causal model benchmark.
+Production remains on 1.0.0 until a measured candidate passes release review.

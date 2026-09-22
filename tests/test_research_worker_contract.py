@@ -154,9 +154,10 @@ process.stdout.write(JSON.stringify(normalizeResearchBrief(brief,request)));
     assert value["report"]["documents_dropped_budget"] == 1
 
 
-def test_compose_no_monta_db_browser_repo_ni_secretos_en_research():
+def test_compose_research_only_mounts_explicit_search_credential_not_runtime_secrets():
     compose = (ROOT / "compose.yaml").read_text(encoding="utf-8")
     section = compose.split("\n  research:\n", 1)[1].split("\nnetworks:\n", 1)[0]
+    assert "- research_search_key" in section
     assert "read_only: true" in section
     assert "cap_drop:" in section and "- ALL" in section
     assert 'group_add:' in section and '- "10001"' in section
