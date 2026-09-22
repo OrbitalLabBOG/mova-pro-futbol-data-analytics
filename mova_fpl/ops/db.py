@@ -3365,7 +3365,7 @@ class OpsDB:
         }
 
     def research_coverage(self, *, limit: int = 20) -> dict:
-        """Evaluate evidence coverage across immutable imported research runs."""
+        """Evaluate all latest cycle results; limit controls presentation only."""
         policy = {
             "version": "research-coverage-2026.08.1",
             "minimum_measured_gameweeks": 3,
@@ -3393,8 +3393,8 @@ class OpsDB:
                   WHERE x.research_run_id=r.research_run_id AND x.status='unresolved')
                   unresolved_conflicts
                 FROM research_runs r JOIN gameweek_cycles c ON c.cycle_id=r.cycle_id
-                WHERE r.status='imported' ORDER BY r.imported_at DESC LIMIT ?""",
-                (max(1, min(int(limit), 100)),),
+                WHERE r.status='imported'
+                ORDER BY r.imported_at DESC, r.queued_at DESC, r.research_run_id DESC""",
             ).fetchall()
         runs = []
         for row in rows:
@@ -3433,7 +3433,8 @@ class OpsDB:
                 row["coverage_status"] == "legacy_unmeasured"
                 for row in latest_by_cycle.values()
             ),
-            "latest": runs[0] if runs else None, "runs": runs,
+            "latest": runs[0] if runs else None,
+            "runs": runs[:max(1, min(int(limit), 100))],
         }
 
     def strategy_shadow_settlements(self, season: str) -> list[dict]:

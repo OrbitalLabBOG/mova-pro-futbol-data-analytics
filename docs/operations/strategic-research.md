@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — contexto estratégico e investigación"
 created: 2026-08-27
-updated: 2026-09-20
+updated: 2026-09-22
 tags: [mova, fpl, strategy, research, codex, evidence]
 status: active
 ---
@@ -36,6 +36,29 @@ El servicio tiene dos capas complementarias. El collector FPL conserva cada seis
 campo oficial `news`, `status` y `chance_of_playing_next_round`; el worker Codex hace
 investigación web profunda únicamente en ventanas de decisión. No existe un scraper de prensa
 residente ni una llamada LLM por tick.
+
+### Contexto y alcance trazables (22 de septiembre)
+
+El worker conserva íntegro el request sellado y añade `acquisition_plan` al contexto
+entregado a Researcher. Agrupa sujetos únicos por club, calcula el objetivo 90% y
+expone una estimación condicional de documentos necesarios. Supone una fuente reciente
+que nombre a todos los sujetos de cada club; fuentes multiclub pueden superar esa
+estimación. No es evidencia ni modifica budgets. Clubes desconocidos no se agrupan.
+Plan, plantilla, proyecciones, catálogo global, alertas, memoria y antecedentes siguen
+presentes. El catálogo real ya está compacto: no se anuncia ahorro de tokens.
+
+Cada intento autorizado conserva `logs/<run>.<attempt>.context.json`: hash de la vista
+realmente enviada, hash del request original, bytes de JSON/prompt y contadores de
+sujetos, catálogo, antecedentes y hints. Es diagnóstico; no cambia el receipt contable
+ni acredita búsquedas, calidad o cobertura. El importador sigue validando el request
+original y recuperando fuentes independientemente. La validación interactiva durante
+el turno sigue pendiente; no se añadió una tool MCP en esta entrega.
+
+El gate longitudinal evalúa la última corrida importada de **cada ciclo de todo el
+historial**, independientemente del `limit` de presentación. Conserva mínimo tres GWs,
+90/80 y cero conflictos en todas las medidas. Empates se ordenan por importación,
+encolado e ID. Reintentos no deben ocultar GWs fallidas. Esto corrige paginación, no
+introduce una ventana de tres GWs recientes ni reetiqueta resultados históricos.
 
 ### Refactor de contexto y calidad en A0/shadow
 

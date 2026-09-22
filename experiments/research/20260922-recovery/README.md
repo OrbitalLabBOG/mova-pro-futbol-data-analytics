@@ -93,3 +93,18 @@ utilidad: la corrida original consumió 253579 frente al límite 160000.
 
 El replay no cierra el overrun: sigue faltando un follow-up equivalente, liquidado
 y dentro de presupuesto. AC-02 sigue abierto y no habilita promoción.
+
+## Iteración de contexto y paginación
+
+`context-replay.json` reproduce el nuevo diagnóstico sobre el request archivado:
+63464 bytes JSON antes y 64677 después (incluye el plan de adquisición), 667 jugadores
+en catálogo, 25 en foco y 20 señales de GWs anteriores. No se elimina información.
+El catálogo ya estaba codificado como filas compactas; no hay ahorro demostrado.
+La estimación reproduce 21 sujetos con diez documentos de club y doce documentos
+para llegar a 23 sujetos. Ningún hint cuenta como evidencia vigente.
+
+Las pruebas adversariales verifican tres GWs con una fallida y 25 reintentos recientes:
+el gate falla igual con límites de presentación 1, 12, 20 y 100. Un worker con Codex
+simulado verifica que el hash de contexto corresponde exactamente al JSON enviado y
+que conserva receipts de intento fallido. No consume tokens ni acredita calidad LLM.
+La validación interactiva y el ensayo pareado del agente siguen abiertos en AC-02.

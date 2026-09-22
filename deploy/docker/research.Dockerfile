@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 
 WORKDIR /opt/mova-research
 COPY deploy/research/codex-worker.mjs /opt/mova-research/codex-worker.mjs
+COPY deploy/research/research-context.mjs /opt/mova-research/research-context.mjs
 COPY deploy/research/research-normalize.mjs /opt/mova-research/research-normalize.mjs
 COPY deploy/research/research-brief.schema.json /opt/mova-research/research-brief.schema.json
 COPY deploy/research/decision-deliberation.schema.json /opt/mova-research/decision-deliberation.schema.json
