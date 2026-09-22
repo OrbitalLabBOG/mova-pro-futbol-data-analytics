@@ -278,12 +278,12 @@ def test_api_channel_projection_rejects_stale_future_corrupt_or_secret_data(tmp_
 
 
 def test_compose_api_uses_observation_and_worker_retains_delivery_config():
-    import yaml
-    services = yaml.safe_load(Path('compose.yaml').read_text())['services']
-    api = services['api']
-    worker = services['worker']
-    assert api['environment']['MOVA_ALERT_CHANNEL_STATUS_FILE'] == '/var/lib/mova-fpl/runtime/alert-channel.json'
-    assert api['environment']['MOVA_GIT_SHA'] == worker['environment']['MOVA_GIT_SHA']
-    assert 'alert_webhook_config' not in api.get('secrets', [])
-    assert 'alert_webhook_config' in worker['secrets']
-    assert 'MOVA_ALERT_CHANNEL_STATUS_FILE' not in worker['environment']
+    compose = Path('compose.yaml').read_text()
+    api = compose.split('  api:\n', 1)[1].split('  worker:\n', 1)[0]
+    worker = compose.split('  worker:\n', 1)[1].split('  browser:\n', 1)[0]
+    assert 'MOVA_ALERT_CHANNEL_STATUS_FILE: /var/lib/mova-fpl/runtime/alert-channel.json' in api
+    assert 'environment: &engine_environment' in compose
+    assert '<<: *engine_environment' in api
+    assert 'secrets:' not in api
+    assert '- alert_webhook_config' in worker
+    assert 'MOVA_ALERT_CHANNEL_STATUS_FILE' not in worker
