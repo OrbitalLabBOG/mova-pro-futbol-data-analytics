@@ -108,3 +108,19 @@ el gate falla igual con límites de presentación 1, 12, 20 y 100. Un worker con
 simulado verifica que el hash de contexto corresponde exactamente al JSON enviado y
 que conserva receipts de intento fallido. No consume tokens ni acredita calidad LLM.
 La validación interactiva y el ensayo pareado del agente siguen abiertos en AC-02.
+
+### Verificación y despliegue de esta entrega
+
+Código `85365e8`, PR #177; CI test success. Suite local: **1805 passed, 1 skipped,
+79 deselected**. Compileall y node --check pasan; Compose config y smoke de la
+imagen research pasan en VPS. API desplegado healthy con imagen
+`sha256:e618dea3703ec4cd4246384c2e16a04f5cead6fd28d0c0e02810fe2c6d6e7819`;
+research `sha256:a1e269948b657a4a05cb0d01b153d9d7d48e97f88d2f7cb2dece9cbdd04b0f64`.
+
+El primer probe encontró connection reset durante el arranque y el trap restauró
+`ccf21d3`. La segunda ejecución esperó Docker healthy antes del GET readyz y pasó.
+Rollback de configuración conservado en
+`/opt/orbital/backups/mova-fpl/release-20260922-research-85365e8/` con SHA previo;
+no hubo migraciones. Doctor sin red: 23 PASS, 1 WARN por chequeo público omitido,
+0 FAIL. Autoridad A0/shadow intacta. API reporta 4 GWs medidas, 0 passing.
+Supabase AC-02 continúa in_progress, revisión 6. No se ejecutó una nueva inferencia.
