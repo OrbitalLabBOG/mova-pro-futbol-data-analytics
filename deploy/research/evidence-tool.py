@@ -238,7 +238,7 @@ class EvidenceTool:
                 excerpt = document.get("excerpt") or ""
                 supported = (subject_in_excerpt(name, excerpt) if args["claim_type"] == "coverage"
                     else claim_supported(name=name, claim_type=args["claim_type"], excerpt=excerpt,
-                        allow_bench_role=self.request.get("quality_policy")=="research-claim-2026.09.3"))
+                        quality_policy=self.request.get("quality_policy")))
                 if not supported:
                     reasons.append("identity_or_claim_unsupported")
                 if not document.get("publication_date_verified"):

@@ -343,3 +343,25 @@ def test_undispatched_experiment_reconciliation_is_scoped_and_idempotent(tmp_pat
     result=db.release_undispatched_experiment(run['research_run_id'],request,actor='test',reason='proof')
     assert result['actual_tokens']==0
     assert db.release_undispatched_experiment(run['research_run_id'],request,actor='test',reason='proof')['reused']
+
+
+def test_usage_preserves_measured_cache_without_double_counting():
+    from mova_fpl.ops.strategy import StrategicContextService
+    usage=StrategicContextService._validate_usage({'model':'fixture','input_tokens':100,
+        'output_tokens':20,'cached_input_tokens':80})
+    assert usage['input_tokens']==100 and usage['uncached_input_tokens']==20
+    assert usage['cached_input_tokens']==80 and usage['estimated_cost_usd'] is None
+    with pytest.raises(ValueError,match='cached_input_tokens'):
+        StrategicContextService._validate_usage({'input_tokens':100,'cached_input_tokens':101})
+
+
+def test_equivalent_publication_timezone_is_verified_but_different_instant_is_not(tmp_path):
+    def transport(url):
+        return (b'<html><script type="application/ld+json">{"datePublished":"2026-09-20T22:30:13-07:00"}</script><body>Player One is available for selection.</body></html>',
+            {'content_type':'text/html','http_status':200,'final_url':url})
+    fetcher=SafeEvidenceFetcher(tmp_path,transport=transport)
+    args=dict(research_run_id='research_'+'a'*32,source_url=CANONICAL_SOURCE,evidence_text=EXCERPT)
+    good=fetcher.seal(document_id='document_'+'b'*32,published_at='2026-09-21T05:30:13Z',**args)
+    wrong=fetcher.seal(document_id='document_'+'c'*32,published_at='2026-09-21T06:30:13Z',**args)
+    assert good['publication_date_verified'] is True
+    assert wrong['publication_date_verified'] is False

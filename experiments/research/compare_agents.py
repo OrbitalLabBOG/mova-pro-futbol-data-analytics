@@ -40,6 +40,11 @@ def summarize(root, run_id):
             'tokens':tokens if exact else None,'operational_import':False,
             'eligible_for_promotion_review':False}
     useful=report['coverage'].get('evidence_verified_subjects',0)
+    focus={row['element'] for row in request['manifest']['research_summary'].get('focus',[])}
+    accepted={row['player_element'] for row in report['signals'] if row.get('validation_status')=='accepted'
+              and row.get('player_element') is not None}
+    supported={row['player_element'] for row in report['signals'] if row.get('quality',{}).get('status')=='supported'
+              and row.get('player_element') is not None}
     return {'run_id':run_id,'agent_version':request['agent_version'],**telemetry,
         'manifest_sha256':digest(request['manifest']),'scope_policy':request['scope_policy'],
         'quality_policy':request['quality_policy'],'evaluated_at':report['evaluated_at'],
@@ -49,6 +54,9 @@ def summarize(root, run_id):
         'dated_documents':sum(bool(d.get('publication_date_verified')) for d in report['documents']),
         'verified_subjects':useful,'coverage_ratio':report['coverage'].get('coverage_ratio'),
         'evidence_ratio':report['coverage'].get('evidence_ratio'),
+        'accepted_subjects':sorted(accepted),'accepted_outside_focus_subjects':sorted(accepted-focus),
+        'supported_outside_focus_subjects':sorted(supported-focus),
+        'tool_failures':dict(__import__('collections').Counter(c['tool'] for c in calls if c.get('status')=='failed')),
         'accepted_signals':sum(s.get('validation_status')=='accepted' for s in report['signals']),
         'unresolved_conflicts':sum(c.get('status')=='unresolved' for c in report['conflicts']),
         'tokens':tokens if exact else None,

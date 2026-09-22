@@ -820,7 +820,7 @@ class StrategicContextService:
             catalog_name_counts[key] = catalog_name_counts.get(key, 0) + 1
         quality_policy = request.get("quality_policy")
         strict_quality = bool(catalog) and quality_policy in {
-            "research-claim-2026.09.1", "research-claim-2026.09.2", "research-claim-2026.09.3",
+            "research-claim-2026.09.1", "research-claim-2026.09.2", "research-claim-2026.09.3", "research-claim-2026.09.4",
         }
         conflicts = self._validate_conflicts(payload.get("conflicts", []), by_url)
         conflict_keys = {(item["subject"].casefold(), item["claim_type"]) for item in conflicts
@@ -830,8 +830,8 @@ class StrategicContextService:
             require_verified=result_schema == "mova-research-brief-v2",
             catalog=catalog if strict_quality else None, cutoff=deadline,
             catalog_name_counts=catalog_name_counts,
-            allow_bench_role=quality_policy == "research-claim-2026.09.3",
-            require_freshness=quality_policy in {"research-claim-2026.09.2", "research-claim-2026.09.3"},
+            quality_policy=quality_policy,
+            require_freshness=quality_policy in {"research-claim-2026.09.2", "research-claim-2026.09.3", "research-claim-2026.09.4"},
         )
         coverage = self._validate_coverage(
             payload.get("coverage"),
@@ -839,7 +839,7 @@ class StrategicContextService:
             by_url, signals, legacy=result_schema == "mova-research-brief-v1",
             catalog=catalog if strict_quality else None,
             fetched_at=observed, cutoff=deadline,
-            require_freshness=quality_policy in {"research-claim-2026.09.2", "research-claim-2026.09.3"},
+            require_freshness=quality_policy in {"research-claim-2026.09.2", "research-claim-2026.09.3", "research-claim-2026.09.4"},
         )
         if strict_quality:
             focus_ids = {int(row["element"]) for row in request["manifest"][
@@ -1002,7 +1002,7 @@ class StrategicContextService:
                           catalog: dict[int, str] | None = None,
                           cutoff: datetime | None = None,
                           catalog_name_counts: dict[str, int] | None = None,
-                          require_freshness: bool = False, allow_bench_role: bool = False) -> list[dict]:
+                          require_freshness: bool = False, quality_policy: str | None = None) -> list[dict]:
         if not isinstance(value, list) or len(value) > 120:
             raise ValueError("signals inválido")
         signals = []
@@ -1055,7 +1055,7 @@ class StrategicContextService:
                 matching = [doc for doc in relevant if catalog_name and
                             claim_supported(name=catalog_name, claim_type=claim_type,
                                             excerpt=str(doc.get("excerpt") or ""),
-                                            allow_bench_role=allow_bench_role)]
+                                            quality_policy=quality_policy)]
                 supported = bool(catalog_name and
                                  subject_in_excerpt(catalog_name, subject) and matching)
                 dated = any(doc.get("publication_date_verified") for doc in matching)
@@ -1063,6 +1063,7 @@ class StrategicContextService:
                     claim_type=claim_type, published_at=str(doc.get("published_at") or ""),
                     observed=observed,
                 ) for doc in matching)
+                strong_matching = [(url,by_url[url]) for url in verified_urls if by_url[url] in matching]
                 if require_freshness:
                     strong_matching = [(url, by_url[url]) for url in verified_urls
                                        if by_url[url] in matching and
@@ -1077,6 +1078,12 @@ class StrategicContextService:
                         or len({urllib.parse.urlsplit(url).hostname
                                 for url, _ in strong_matching}) >= 2
                     )
+                corroboration = raw.get("corroboration_status", "unknown")
+                if quality_policy == "research-claim-2026.09.4":
+                    if corroboration not in {"independent", "same_primary_report", "unknown", "official_primary"}:
+                        raise ValueError("corroboration_status inválido")
+                    if not any(doc["source_tier"] == "official" for _,doc in strong_matching):
+                        has_strong_evidence = has_strong_evidence and corroboration == "independent"
                 as_of_safe = cutoff is None or observed <= cutoff
                 reason = ("unknown_element" if not catalog_name else
                           "ambiguous_identity" if (
@@ -1105,6 +1112,8 @@ class StrategicContextService:
                 "expires_at": expires.isoformat(),
                 "conflict_status": "unresolved" if conflicted else "none",
                 "validation_status": validation,
+                **({"corroboration_status": raw.get("corroboration_status", "unknown")}
+                   if quality_policy == "research-claim-2026.09.4" else {}),
                 "quality": quality,
             })
         return signals
@@ -1247,6 +1256,14 @@ class StrategicContextService:
         for key in ("input_tokens", "output_tokens", "duration_ms", "search_requests"):
             item = raw.get(key)
             usage[key] = int(item) if item is not None and int(item) >= 0 else None
+        if "cached_input_tokens" in raw:
+            cached = raw["cached_input_tokens"]
+            if cached is not None and (type(cached) is not int or cached < 0
+                    or usage["input_tokens"] is None or cached > usage["input_tokens"]):
+                raise ValueError("cached_input_tokens inválido")
+            usage["cached_input_tokens"] = cached
+            usage["uncached_input_tokens"] = (usage["input_tokens"]-cached
+                if cached is not None else None)
         usage["estimated_cost_usd"] = None
         usage["billing"] = "chatgpt_subscription"
         return usage

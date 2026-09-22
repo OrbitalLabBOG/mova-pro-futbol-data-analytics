@@ -37,7 +37,7 @@
         "type": "object", "additionalProperties": false,
         "required": [
           "subject_name", "player_element", "claim_type", "claim_text", "direction",
-          "confidence", "source_urls", "expires_at"
+          "confidence", "source_urls", "expires_at", "corroboration_status"
         ],
         "properties": {
           "subject_name": {"type": "string"},
@@ -49,6 +49,7 @@
               "transfer", "other"]
           },
           "claim_text": {"type": "string"},
+          "corroboration_status": {"type": "string", "enum": ["independent", "same_primary_report", "unknown", "official_primary"]},
           "direction": {"type": "string", "enum": ["positive", "negative", "neutral", "uncertain"]},
           "confidence": {"type": "number", "minimum": 0, "maximum": 1},
           "source_urls": {

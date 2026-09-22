@@ -150,6 +150,36 @@ def test_negative_starting_role_is_supported_only_under_new_policy():
     from mova_fpl.ops.research_quality import claim_supported
     kwargs=dict(name="Sangaré",claim_type="starting_role",excerpt="Aaron Hickey and Mamadou Sangare drop to the bench.")
     assert not claim_supported(**kwargs)
-    assert claim_supported(**kwargs,allow_bench_role=True)
-    assert not claim_supported(**{**kwargs,'claim_type':'injury'},allow_bench_role=True)
-    assert not claim_supported(**{**kwargs,'name':'Saka'},allow_bench_role=True)
+    assert claim_supported(**kwargs,quality_policy="research-claim-2026.09.3")
+    assert not claim_supported(**{**kwargs,'claim_type':'injury'},quality_policy="research-claim-2026.09.3")
+    assert not claim_supported(**{**kwargs,'name':'Saka'},quality_policy="research-claim-2026.09.3")
+
+
+def test_neck_issue_is_injury_topic_only_in_explicit_new_policy():
+    from mova_fpl.ops.research_quality import claim_supported
+    args=dict(name='Dunk',claim_type='injury',excerpt='Lewis Dunk sustained a minor neck issue.')
+    assert not claim_supported(**args,quality_policy='research-claim-2026.09.3')
+    assert claim_supported(**args,quality_policy='research-claim-2026.09.4')
+    assert not claim_supported(**{**args,'excerpt':'Lewis Dunk wore a round neck shirt.'},quality_policy='research-claim-2026.09.4')
+
+
+def test_republished_claims_do_not_become_independent_corroboration():
+    observed=datetime.now(timezone.utc)
+    sources=_source('Haaland has a hamstring injury.',observed.isoformat())
+    sources[URL]['source_tier']='tier2'
+    second='https://second.example.net/report'
+    sources[second]=dict(sources[URL])
+    signal=_signal();signal['source_urls'].append(second)
+    for relation,expected in [('independent','accepted'),('same_primary_report','candidate'),('unknown','candidate')]:
+        signal['corroboration_status']=relation
+        row=StrategicContextService._validate_signals([signal],sources,set(),observed,
+            require_verified=True,catalog={411:'Haaland'},require_freshness=True,
+            quality_policy='research-claim-2026.09.4')[0]
+        assert row['validation_status']==expected
+        assert row['corroboration_status']==relation
+    sources[URL]['source_tier']='official'
+    signal['corroboration_status']='official_primary'
+    row=StrategicContextService._validate_signals([signal],sources,set(),observed,
+        require_verified=True,catalog={411:'Haaland'},require_freshness=True,
+        quality_policy='research-claim-2026.09.4')[0]
+    assert row['validation_status']=='accepted'
