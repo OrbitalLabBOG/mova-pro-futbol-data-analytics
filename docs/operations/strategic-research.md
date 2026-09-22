@@ -314,8 +314,10 @@ migrar solo hacia delante y ejecutar mova doctor. Nada de este flujo habilita br
 The active registry selects **Researcher 1.10.0**, Astra/medium, Codex 0.153.4,
 quality policy 2026.09.5 and brief v2. The [agent versioning decision](../decisions/agents/researcher-versioning.md)
 and `experiments/research/20260922-agent-lab/` preserve definitions, measured
-experiments, limitations and release evidence. Registry selection is not proof of
-VPS deployment: inspect cockpit version, checkout/image SHA and doctor.
+experiments, limitations and release evidence. Runtime deployment is `e903983`, with checkout/image parity and 24 passing doctor
+checks after rollout. Inspect cockpit version, checkout/image SHA and doctor for
+current state; Git selection alone is never proof of deployment. Rollback to
+85365e8 is preserved under `/opt/orbital/backups/mova-fpl/researcher-e903983/`.
 
 Two isolated live runs produced 12/25 and 10/25 verified focus subjects, six/seven
 valid dated documents, four/five accepted signals, and one/two discoveries outside

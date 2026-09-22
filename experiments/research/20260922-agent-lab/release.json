@@ -1,0 +1,123 @@
+{
+  "schema": "mova-researcher-release-evidence-v1",
+  "agent_version": "1.10.0",
+  "runtime_git_sha": "e903983e3cb31aa223d5c3ed8afe6a38932e2bc4",
+  "engine_image_id": "sha256:b4588d04b314b50c38b10aa65d0fbc189e2c6578c7cf285ddc121addbd58a311",
+  "research_image_id": "sha256:404ffb7cac5dbfb466889a4d52d190b17a99bda84e6862401b573156b01e17bf",
+  "rollback_git_sha": "85365e80192c05842d0fd06dd1d7a94a7f3e9f50",
+  "rollback_path": "/opt/orbital/backups/mova-fpl/researcher-e903983",
+  "tests": {
+    "passed": 1842,
+    "skipped": 1,
+    "deselected": 79,
+    "ci": "success"
+  },
+  "post_deploy_health": {
+    "observed_at": "2026-09-22T20:05:01+00:00",
+    "summary": {
+      "fail": 0,
+      "pass": 24,
+      "required_failures": 0,
+      "warn": 0
+    },
+    "authority": {
+      "browser_writes": false,
+      "current_action_level": "A0",
+      "kill_switch": true,
+      "mode": "shadow",
+      "promotion_is_automatic": false,
+      "technical_eligible_level": "A0",
+      "writes_enabled": false
+    },
+    "agent_routing": {
+      "provider": "codex_subscription",
+      "researcher": {
+        "agent_version": "1.10.0",
+        "model": "gpt-6-astra",
+        "quality_policy": "research-claim-2026.09.5",
+        "reasoning_effort": "medium"
+      },
+      "strategist_critic": {
+        "model": "gpt-5.6-terra",
+        "reasoning_effort": "high"
+      }
+    }
+  },
+  "operational_smoke": {
+    "run_id": "research_96ecea3c56544f9e08c6d0e3910922e7",
+    "status": "imported",
+    "runner": "mova-fpl-research.service",
+    "forced_outside_normal_window": true,
+    "imported_at": "2026-09-22T20:13:53.983+00:00",
+    "result_sha256": "94783b42f4aa666de9f10a682562fca3be547dcb2e26b3f8b840d991aa04a346",
+    "usage": {
+      "billing": "chatgpt_subscription",
+      "cached_input_tokens": 660864,
+      "duration_ms": 440589,
+      "estimated_cost_usd": null,
+      "input_tokens": 726667,
+      "model": "gpt-6-astra",
+      "output_tokens": 10592,
+      "search_requests": 16,
+      "uncached_input_tokens": 65803
+    },
+    "actual_tokens": 737259,
+    "job_limit": 1000000,
+    "overrun": false,
+    "verified_focus_subjects": 12,
+    "required_focus_subjects": 25,
+    "coverage_ratio": 0.48,
+    "utility": {
+      "accepted_signals": 4,
+      "candidate_signals": 3,
+      "outcome_validation": "pending_post_gameweek",
+      "signal_yield_ratio": 0.25,
+      "status": "material_context_found"
+    },
+    "quality": {
+      "accepted_outside_focus": 1,
+      "candidate_outside_focus": 1,
+      "catalog_size": 667,
+      "global_alerts": 80,
+      "policy_version": "research-claim-2026.09.5",
+      "search_requests": null,
+      "semantic_rejections": 0
+    }
+  },
+  "autonomy_gate_satisfied": false,
+  "post_smoke_health": {
+    "observed_at": "2026-09-22T20:17:11+00:00",
+    "summary": {
+      "fail": 0,
+      "pass": 24,
+      "required_failures": 0,
+      "warn": 0
+    },
+    "authority": {
+      "browser_writes": false,
+      "current_action_level": "A0",
+      "kill_switch": true,
+      "mode": "shadow",
+      "promotion_is_automatic": false,
+      "technical_eligible_level": "A0",
+      "writes_enabled": false
+    },
+    "api_ready": true,
+    "research_timer": "active",
+    "research_service_result": "success",
+    "research_service_exit_status": 0,
+    "inbox_requests": 0
+  },
+  "multi_gameweek_gate": {
+    "measured_gameweeks": 4,
+    "passing_gameweeks": 0,
+    "policy": {
+      "maximum_unresolved_conflicts": 0,
+      "minimum_coverage_ratio": 0.9,
+      "minimum_evidence_ratio": 0.8,
+      "minimum_measured_gameweeks": 3,
+      "version": "research-coverage-2026.08.1"
+    },
+    "status": "failed"
+  }
+}

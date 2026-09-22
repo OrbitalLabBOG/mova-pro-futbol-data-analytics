@@ -2,11 +2,21 @@
 type: adr
 name: Researcher versions and isolated evaluations
 created: 2026-09-22
-status: experimental
+status: accepted
 owner: Julián Zuluaga
 ---
 
 # Researcher versions and isolated evaluations
+
+Current release: **Researcher 1.10.0**, deployed at `e903983` on 22 September 2026
+under the existing A0/shadow controls. Two exact-version live experiments yielded
+12/25 and 10/25 verified focus subjects and four/five accepted source-grounded
+signals. The deployed image and rollback, full test results, real operational
+smoke and health receipts are recorded in
+`experiments/research/20260922-agent-lab/release.json`. Historical sections below
+retain the earlier rejected candidates; their pending-budget statements were
+superseded by Julián's explicit authorization. This release does not close AC-02
+or grant FPL write authority.
 
 The agent is a versioned runtime component, not merely a model name. Its registry is
 `mova_fpl/ops/agent_releases.json`. Each entry fixes expected model/reasoning,

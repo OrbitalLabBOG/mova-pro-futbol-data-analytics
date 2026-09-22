@@ -102,3 +102,16 @@ and dispatched no inference. Legacy deliberation CLI flags parsed successfully
 on 0.153.4; this is compatibility smoke, not a new deliberation quality experiment.
 Final operational deployment/import and health evidence are recorded below once
 verified. Rollback target is production 85365e8 / Researcher 1.0.0.
+
+
+Operational release verified on 2026-09-22: VPS checkout and images run `e903983`,
+Researcher 1.10.0. Forced normal-service run
+`research_96ecea3c56544f9e08c6d0e3910922e7` imported successfully at 20:13:53 UTC:
+12/25 verified subjects, four accepted signals (one outside focus), three candidate
+signals, 737,259 logical tokens, 440,589 ms, one attempt, no budget overrun.
+This was explicitly forced outside the normal pre-deadline window; it does not
+prove a naturally due slot or multi-GW performance. Post-run doctor at 20:17 UTC:
+24 PASS, zero warnings/failures; API ready, research timer active, service exited
+successfully and research inbox empty. A0/shadow, kill switch and disabled browser
+writes remain in force. See `release.json` for machine-readable evidence, image
+identities and rollback location. Coverage remains partial and AC-02 stays open.
