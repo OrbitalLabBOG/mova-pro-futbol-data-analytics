@@ -2,7 +2,7 @@
 type: adr
 name: MOVA harness — financing, wait states and research comparison
 created: 2026-09-29
-status: implemented-candidate
+status: released-shadow
 owner: Julián Zuluaga
 ---
 
@@ -39,3 +39,7 @@ No se modifican autoridades, compliance, writers ni activación del browser. Las
 locales/DOM no sustituyen rehearsals vivos ni el ciclo desatendido. Validación y
 limitaciones están en `experiments/research/20260929-harness/README.md`; el roadmap
 canónico conserva AC01/02/03/04 y las tareas PM correspondientes.
+
+La implementación se integró en `main` y se desplegó como `7144cdd` con autoridad A0
+preservada. La [verificación de release](release-20260929-7144cdd.md) conserva evidencia
+y límites; el laboratorio anterior no se reetiqueta como evidencia de operación natural.
