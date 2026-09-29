@@ -66,5 +66,10 @@ docker run --rm --network none --memory 1g --cpus 1 --read-only \
 ```
 
 Los cambios posteriores a `fc07672` registran evidencia y receta de pruebas; no cambian
-el código de la aplicación. Esta imagen se conserva como candidata, sin reemplazar
+el código de la aplicación. Esta imagen se conserva como candidata del ensayo. En esa validación no se reemplazó
 checkout, servicios ni imagen e903983 del runtime.
+
+El laboratorio previo permanece fechado. La implementación se integró y desplegó en
+`7144cdd`; la evidencia operativa nueva está en
+[la verificación de release](../../../docs/decisions/2026-27/release-20260929-7144cdd.md),
+separada del replay y de la suite aislada registrados aquí.

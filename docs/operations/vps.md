@@ -2,12 +2,20 @@
 type: runbook
 name: "MOVA FPL — operación del stack VPS"
 created: 2026-08-22
-updated: 2026-09-20
+updated: 2026-09-29
 tags: [mova, fpl, vps, docker, systemd, observability]
 status: active
 ---
 
 # MOVA FPL — operación del stack VPS
+
+## Release canónica — 29 de septiembre
+
+La revisión `7144cdd` consolidó el stack en `main` y desplegó engine, research y browser.
+La [acta de verificación](../decisions/2026-27/release-20260929-7144cdd.md) identifica
+imágenes, backups, rollback real, captura privada posterior al reinicio y límites de la
+observación. Researcher sigue en 1.10.0; A0/shadow y las escrituras FPL deshabilitadas se
+conservan. Los antecedentes de este documento llevan su fecha y no sustituyen el estado vivo.
 
 ## Estado seguro por defecto
 

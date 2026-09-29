@@ -1,0 +1,149 @@
+{
+  "capacity_override_sha256": "d0ee00f0cb50d42aafa3243fd5895fd8aab47068ab1299a1b20c82555bb110ac",
+  "deploy_revision_keys": {
+    "MOVA_GIT_SHA": "7144cdd",
+    "MOVA_IMAGE_TAG": "7144cdd"
+  },
+  "doctor_after": {
+    "generated_at": "2026-09-29T03:54:54+00:00",
+    "revision": {
+      "checkout": "7144cdd",
+      "image": "7144cdd"
+    },
+    "summary": {
+      "fail": 0,
+      "pass": 24,
+      "required_failures": 0,
+      "warn": 0
+    }
+  },
+  "images": {
+    "mova-fpl-browser:7144cdd": {
+      "id": "sha256:fe9e2e10d9398d09d99f362e86d487a53a849e30b6581d9a70c19ff106ce59a1",
+      "revision": "7144cdd"
+    },
+    "mova-fpl-engine:7144cdd": {
+      "id": "sha256:46d2ef0c0316052a60a302efd1cd880ca03d9606d8adaba729dc540055fefd99",
+      "revision": "7144cdd"
+    },
+    "mova-fpl-research:7144cdd": {
+      "id": "sha256:d4b2372fc5180a868390cbf512e533131f6e5e851beb3c32d58b14c30dada67c",
+      "revision": null
+    }
+  },
+  "observation_protocol": {
+    "authority": {
+      "browser_writes": false,
+      "current_action_level": "A0",
+      "kill_switch": true,
+      "mode": "shadow",
+      "writes_enabled": false
+    },
+    "cpu_steal": "diagnostic only; shared host",
+    "expected_revision": "7144cdd",
+    "interval_seconds": 300,
+    "limits": {
+      "disk_min_gib": 10,
+      "memory_min_gib": 2,
+      "new_failed_jobs": 0,
+      "new_oom": 0,
+      "new_restarts": 0,
+      "ready_max_ms": 15000,
+      "tick_max_age_seconds": 900,
+      "worker_max_count": 1
+    },
+    "minutes": 30,
+    "schema": "mova-release-observation-v1",
+    "window_end": "2026-09-29T04:28:32.304209+00:00",
+    "window_start": "2026-09-29T03:58:32.304209+00:00"
+  },
+  "observation_protocol_sha256": "9fd8666980e69ef943db064138c20e41acd2b45565a8eb1ffab7462cf7431e95",
+  "postgres_backup": {
+    "created_at": "20260929T033940Z",
+    "database": "mova",
+    "dump": {
+      "bytes": 117392818,
+      "name": "postgres-shadow.dump",
+      "sha256": "5b7460a4a44a0d1e335e0e6de742c43c747810289c87e07caeea643acbcf2b08"
+    },
+    "git_sha": "e903983e3cb31aa223d5c3ed8afe6a38932e2bc4",
+    "schema": "mova-postgres-backup-v1"
+  },
+  "previous_revision": "e903983e3cb31aa223d5c3ed8afe6a38932e2bc4",
+  "research_active": "1.10.0",
+  "revision": "7144cdddc351be481fc15dd75c7a4a629bbf0cbc",
+  "rollback_path": "/opt/orbital/backups/mova-fpl/releases/7144cdd/rollback.sh",
+  "rollback_permissions": "0o700",
+  "schema": "mova-release-deployment-evidence-v1",
+  "sqlite_backup_path": "/opt/orbital/backups/mova-fpl/20260929T033936Z",
+  "timers_preserved": [
+    "mova-fpl-analytics.timer",
+    "mova-fpl-backup.timer",
+    "mova-fpl-collector.timer",
+    "mova-fpl-offsite-backup.timer",
+    "mova-fpl-postgres-sync.timer",
+    "mova-fpl-private-state.timer",
+    "mova-fpl-research.timer",
+    "mova-fpl-tick.timer",
+    "mova-fpl-watchdog.timer"
+  ],
+  "implementation_revision": "fc07672302d5e9cb4041267e9de38fca730a9a72",
+  "integrated_tested_tree_revision": "48a6fdb",
+  "local_tests": {
+    "passed": 1904,
+    "skipped": 1,
+    "deselected": 79,
+    "seconds": 31.53
+  },
+  "canonical_ci": {
+    "status": "pass",
+    "url": "https://github.com/OrbitalLabBOG/mova-pro-futbol-data-analytics/actions/runs/36518150592"
+  },
+  "operator_lock_regression": {
+    "corrected_handler_releases_parent_locks": true,
+    "failure_exit_preserved": 56,
+    "negative_control_reproduces_deadlock": true,
+    "external_calls": 0,
+    "runtime_mutated": false
+  },
+  "rollback_test": {
+    "status": "pass",
+    "revision": "e903983",
+    "api_ready": true,
+    "doctor": {
+      "pass": 23,
+      "warn": 1,
+      "fail": 0
+    },
+    "warning": "network deliberately skipped",
+    "database_restored": false
+  },
+  "initial_cutover": {
+    "status": "verification_incomplete",
+    "exit_code": 56,
+    "reason": "startup connection reset; parent locks prevented automatic rollback. Operator procedure corrected and rollback/forward actually verified before observation."
+  },
+  "session_after_browser_restart": {
+    "status": "completed",
+    "job_id": "job_d1af946c48724bbf90fa6787b5b02b96",
+    "team_state_id": "teamstate_df12eae6c6a0401083b35ebfbe21b2e8",
+    "players": 15,
+    "trigger": "forced",
+    "parser": "private-team-state-v1"
+  },
+  "postgres_verification": {
+    "status": "pass",
+    "import_run_id": "pgimport_2b1c2548d3c349d6b6fa1daf258901af",
+    "writer": "sqlite",
+    "postgres_role": "shadow",
+    "tables": 57,
+    "read_parity": "pass",
+    "content_checks": 57
+  },
+  "autonomy_promoted": false,
+  "fpl_writes_attempted": false,
+  "llm_experiment_executed": false,
+  "observation": {
+    "status": "in_progress"
+  }
+}
