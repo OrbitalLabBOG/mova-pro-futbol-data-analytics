@@ -840,5 +840,97 @@
         "status": "PASS"
       }
     ]
+  },
+  "final_readonly_status": {
+    "generated_at": "2026-09-29T04:37:26+00:00",
+    "workflow_verdict": "safe_to_wait",
+    "workflow_violations": [],
+    "stages": [
+      {
+        "name": "observe",
+        "status": "complete",
+        "reason": "valid"
+      },
+      {
+        "name": "contextualize",
+        "status": "complete",
+        "reason": "sealed"
+      },
+      {
+        "name": "research",
+        "status": "complete",
+        "reason": "imported"
+      },
+      {
+        "name": "propose_validate",
+        "status": "complete",
+        "reason": "blocked"
+      },
+      {
+        "name": "deliberate",
+        "status": "not_due",
+        "reason": "outside_window"
+      },
+      {
+        "name": "preflight",
+        "status": "complete",
+        "reason": "blocked"
+      },
+      {
+        "name": "execute_verify",
+        "status": "skipped_policy",
+        "reason": "blocked"
+      },
+      {
+        "name": "settle",
+        "status": "not_due",
+        "reason": "predeadline"
+      },
+      {
+        "name": "review_learn",
+        "status": "not_due",
+        "reason": "awaiting_settlement"
+      }
+    ],
+    "gameweek_remaining_tokens": 2310934,
+    "gameweek_remaining_uses": 24,
+    "budget_status": "job_overrun_observed",
+    "overruns_status": "reviewed_pending",
+    "orphaned_reservations": "none",
+    "browser_driver": {
+      "schema": "mova-browser-driver-capabilities-v1",
+      "contract_version": "fpl-r2-host-driver-2026.09.1",
+      "captaincy": {
+        "contract": "implemented",
+        "host_entrypoint_enabled": true,
+        "autonomy_promoted": false,
+        "observed_rehearsals": 0,
+        "required_rehearsals": 3
+      },
+      "lineup": {
+        "contract": "implemented",
+        "host_entrypoint_enabled": false,
+        "autonomy_promoted": false,
+        "observed_rehearsals": 0,
+        "required_rehearsals": 3
+      },
+      "r3": {
+        "contract": "implemented",
+        "host_entrypoint_enabled": false,
+        "autonomy_promoted": false,
+        "observed_rehearsals": 1,
+        "required_rehearsals": 3
+      }
+    },
+    "autonomous_closeout": {
+      "contract": "mova-fpl-autonomous-closeout-v2",
+      "financing_evidence_required": true,
+      "status": "implemented",
+      "scheduler": "mova-fpl-analytics.timer",
+      "observed_closeouts": 0,
+      "pending_gameweeks": [],
+      "latest": null,
+      "autonomy_promoted": false
+    }
   }
 }
