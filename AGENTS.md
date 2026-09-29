@@ -5,10 +5,9 @@ fuente canónica de código y documentación, PostgreSQL/SQLite del VPS como dat
 operativos y Supabase únicamente como seguimiento PM.
 
 Julián Zuluaga es el owner y decide la dirección y promoción de MOVA Fantasy.
-No exigir aprobación de otro revisor como gate del
-proyecto. Las pruebas, contratos, límites de operación y decisiones de
-cumplimiento se verifican por su propia evidencia; no se sustituyen por un
-visto bueno personal.
+No exigir aprobación de otro revisor como gate del proyecto. Las pruebas,
+contratos, límites de operación y decisiones de cumplimiento se verifican por
+su propia evidencia; no se sustituyen por un visto bueno personal.
 
 ## Qué está vivo
 
