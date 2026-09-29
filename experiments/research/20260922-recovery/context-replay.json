@@ -1,0 +1,127 @@
+{
+  "schema": "mova-research-context-receipt-v1",
+  "request_sha256": "81911461ad83f4bf3446f48888eda742566a35c9d4bf49c778a45c015231f7ad",
+  "context_sha256": "14b86e1607e0694e14db0a142834198252264e5c953f6e58a23854c4b26ba0be",
+  "request_json_bytes": 63464,
+  "context_json_bytes": 64677,
+  "omitted_sections": [],
+  "catalog_encoding": "unchanged",
+  "focus_subjects": 25,
+  "catalog_subjects": 667,
+  "prior_gameweek_signals": 20,
+  "reusable_hints": 0,
+  "acquisition_plan": {
+    "schema": "mova-research-acquisition-plan-v1",
+    "focus_subjects": 25,
+    "clubs": [
+      {
+        "team": "Brentford",
+        "elements": [
+          565,
+          106,
+          82,
+          94
+        ]
+      },
+      {
+        "team": "Arsenal",
+        "elements": [
+          557,
+          4,
+          12
+        ]
+      },
+      {
+        "team": "Man Utd",
+        "elements": [
+          426,
+          427,
+          418
+        ]
+      },
+      {
+        "team": "Brighton",
+        "elements": [
+          124,
+          109
+        ]
+      },
+      {
+        "team": "Hull City",
+        "elements": [
+          277,
+          572
+        ]
+      },
+      {
+        "team": "Man City",
+        "elements": [
+          411,
+          388
+        ]
+      },
+      {
+        "team": "Spurs",
+        "elements": [
+          496,
+          112
+        ]
+      },
+      {
+        "team": "Bournemouth",
+        "elements": [
+          68
+        ]
+      },
+      {
+        "team": "Chelsea",
+        "elements": [
+          154
+        ]
+      },
+      {
+        "team": "Coventry City",
+        "elements": [
+          173
+        ]
+      },
+      {
+        "team": "Everton",
+        "elements": [
+          229
+        ]
+      },
+      {
+        "team": "Leeds",
+        "elements": [
+          346
+        ]
+      },
+      {
+        "team": "Newcastle",
+        "elements": [
+          445
+        ]
+      },
+      {
+        "team": "Nott'm Forest",
+        "elements": [
+          480
+        ]
+      }
+    ],
+    "target_checked_subjects": 23,
+    "reusable_hints": 0,
+    "conditional_club_source_capacity": 21,
+    "conditional_documents_for_target": 12,
+    "conditional_scope_shortfall": true,
+    "assumption": "One fresh document per club explicitly names every focus member; multi-club sources can exceed this estimate. Hints are not verified coverage.",
+    "priorities": [
+      "global radar within scope_policy",
+      "own squad risk and captain uncertainty",
+      "candidate decision uncertainty",
+      "uncovered club groups"
+    ],
+    "on_shortfall": "Keep budgets unchanged; report not_checked and explain missing evidence."
+  }
+}

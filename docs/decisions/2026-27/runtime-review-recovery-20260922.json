@@ -1,0 +1,22 @@
+{
+  "schema": "mova-runtime-stability-summary-v1",
+  "observed_api_revision": "e15cce7",
+  "started_at": "2026-09-22T15:25:24.172233+00:00",
+  "finished_at": "2026-09-22T15:55:24.172364+00:00",
+  "planned_seconds": 1800,
+  "complete": true,
+  "passed": true,
+  "sample_count": 7,
+  "passed_samples": 7,
+  "max_api_seconds": 1.861,
+  "minimum_memory_available_bytes": 4835651584,
+  "minimum_disk_free_bytes": 40394100736,
+  "maximum_tick_age_seconds": 314,
+  "maximum_worker_count": 1,
+  "oom_observed": false,
+  "maximum_container_restart_count": 0,
+  "failed_jobs_observed": 0,
+  "source_path": "/opt/orbital/backups/mova-fpl/release-20260922-8a9d4d8/stability-30m.json",
+  "source_sha256": "0be333850c3be15a6d25e515e46434f3626e861c690219349e600cba06225fbf",
+  "scope_note": "Window covers e15cce7 runtime before the later ccf21d3 API observability deployment; not a longitudinal autonomy acceptance."
+}

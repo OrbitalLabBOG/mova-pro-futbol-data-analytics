@@ -1,7 +1,7 @@
 ---
 type: project
 name: "MOVA FPL — Technical Documentation"
-updated: 2026-09-05
+updated: 2026-09-20
 status: active
 tags: [mova, fpl, documentation]
 ---
@@ -17,6 +17,7 @@ tags: [mova, fpl, documentation]
 | Consultar `mova status/doctor` | [Contrato del operador](operations/operator.md) |
 | Ver funciones, costos, alertas o hacer triage | [Cockpit operativo](operations/cockpit.md) |
 | Diagnosticar o desplegar el VPS | [Runbook VPS](operations/vps.md) |
+| Ver el último corte verificado del runtime, la recuperación y el rollback | [Acta 2026-09-20](decisions/2026-27/runtime-recovery-20260920.md) |
 | Operar PostgreSQL shadow | [Runbook PostgreSQL](operations/postgres-shadow.md) |
 | Proyectar, explicar, evaluar o entrenar candidato | [Servicio analítico](operations/analytics-service.md) |
 | Operar plan y research | [Contexto estratégico](operations/strategic-research.md) |
@@ -27,9 +28,10 @@ tags: [mova, fpl, documentation]
 | Operar tracking y registro MLOps | [MLflow privado](operations/mlflow.md) |
 | Comparar progreso entre experimentos | [Benchmark interno](../experiments/benchmark/README.md) |
 | Consultar el nuevo laboratorio de decisiones | [Participación y valor de temporada](../experiments/season_value/README.md) |
-| Implementar el harness | [Autonomous Harness v1](specs/fpl-autonomous-operator/10-autonomous-harness-v1.md) |
+| Cerrar autonomía y consultar entregables vigentes | [Cierre de autonomía operativa](specs/fpl-autonomous-operator/04-readiness-and-rollout.md) |
+| Entender la arquitectura del harness | [Autonomous Harness v1](specs/fpl-autonomous-operator/10-autonomous-harness-v1.md) |
 | Auditar el motor v1 cerrado | [Spec del decision engine](specs/fpl-decision-engine/README.md) |
 | Recuperar el capítulo histórico | [Historia](history.md) |
 
-`10-autonomous-harness-v1.md` es la hoja de ruta ejecutable. Las specs 08 y 09 son
+`04-readiness-and-rollout.md` es la única hoja de ruta ejecutable de cierre; `10-autonomous-harness-v1.md` conserva la arquitectura. Las specs 08 y 09 son
 referencias de hardening, no backlog automático.

@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — cockpit, triage y acceso web"
 created: 2026-09-01
-updated: 2026-09-12
+updated: 2026-09-20
 tags: [mova, fpl, cockpit, cli, dashboard, incidents, observability]
 status: active
 ---
@@ -93,8 +93,9 @@ alertas durante una espera normal:
 - antes de T−6h, research o deliberación degradados permanecen visibles pero no abren incidente;
 - desde T−6h, research o Strategist/Critic sin terminal abren un P1 deduplicado;
 - desde T−3h, contexto, envelope/validator o preflight incompletos abren P1;
-- una ejecución autorizada todavía pendiente en T−3h abre P1;
-- una ejecución pendiente después del deadline o un fallo terminal de ejecución abre P0;
+- una ejecución autorizada todavía pendiente al entrar en la ventana de ejecución T−1h abre P1;
+- una ejecución pendiente en T−15min (hard stop de verificación), después del deadline o con
+  fallo terminal abre P0;
 - violaciones de dependencias se vuelven P0 dentro de T−6h.
 
 El título canónico es `Autonomous cycle deadline risk`. Cuando los hitos se recuperan, el watchdog
@@ -108,6 +109,15 @@ mova_workflow_deadline_risks{severity="P0|P1"}
 
 No se alerta settlement inmediatamente después del deadline: FPL puede tardar en marcar
 `data_checked`. Esa transición conserva su gate propio.
+
+El workflow publica `workflow-timing-1.0.0` en `timing_policy_version` y, por stage,
+`target_at`, `recovery_until` y `hard_stop_at` derivados del deadline oficial. Research y
+deliberación apuntan a T−6h, contexto/envelope/preflight a T−3h y ejecución a T−1h;
+la recuperación de ejecución llega a T−30min y su hard stop a T−15min. Un plan
+`blocked` o `noop` termina en `skipped_policy` y no abre riesgo de ejecución. Settlement
+y review dependen de `finished + data_checked`, así que publican esa condición en
+`basis` sin inventar una hora de cierre. Estos tiempos son observabilidad y alertas;
+el ejecutor conserva sus propios gates y no recibe autoridad del workflow.
 
 ## Acciones y autoridad
 
@@ -170,16 +180,26 @@ el bind del API como workaround.
 ## Alertas externas
 
 El banner web no sustituye push. Mientras `mova alerts channel` diga `local_only`, journald es el
-único destino y readiness permanece pending. Para configurar un webhook se necesita que Julián
-elija destino y owner; después se provisiona `/etc/mova-fpl/alert-webhook.json` root-only y se
-ejecuta una sola prueba auditada:
+único destino y readiness permanece pending. El destino operativo seleccionado es DM del bot
+Orbital a Julián (`owner=julian`). El contrato está en `deploy/alert-slack.example.json`:
+provisionar `/etc/mova-fpl/alert-webhook.json` como `root:root 0600`, con el token existente y
+el Slack user ID verificado, sin publicar ninguno en Git, logs o reportes. El runtime acepta
+también el webhook v1. Luego ejecutar una sola prueba auditada:
 
 ```bash
 mova alerts test --actor julian --reason "validar canal operativo" \
   --idempotency-key "alert-live:<fingerprint>:v1"
 ```
 
-No inventar un bot, chat ID, webhook o owner. `sent` prueba entrega HTTP, no lectura humana.
+`pass` prueba aceptación por Slack y liga el fingerprint al destino/token actual; no prueba
+lectura humana. Registrar acuse del incidente por separado. Si se rota token o destinatario,
+el ping anterior deja de satisfacer readiness.
+
+Para un P0/P1 real, consultar `mova triage --incident-id ID` y reconocerlo con
+`mova alerts acknowledge --incident-id ID --actor julian --reason '...'` después de
+atenderlo. Si un evento queda `dead`, corregir el canal antes de
+`mova alerts retry --outbox-id ID --actor julian --reason '...'`; la prueba de ping no
+reabre ni reconoce incidentes. Watchdog mantiene deduplicación y reintentos auditados.
 
 ## Límites deliberados
 

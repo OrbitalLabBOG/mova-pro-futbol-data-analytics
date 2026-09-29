@@ -71,6 +71,70 @@ def test_workflow_sentinel_treats_dependency_or_execution_failure_as_p0():
     }
 
 
+def test_stale_inputs_escalate_at_target_and_hard_stop_without_retry():
+    workflow = _workflow()
+    for row in workflow["stages"]:
+        if row["name"] == "observe":
+            row.update(status="blocked", outcome="stale")
+        if row["name"] == "contextualize":
+            row.update(status="pending", outcome="stale_team_state")
+    early = evaluate_workflow_deadline(workflow, seconds_to_deadline=7 * 3600)
+    target = evaluate_workflow_deadline(workflow, seconds_to_deadline=6 * 3600)
+    stop = evaluate_workflow_deadline(workflow, seconds_to_deadline=30 * 60)
+    assert early["healthy"] is True
+    assert {r["code"] for r in target["reasons"]} == {
+        "public_data_unusable_t_minus_6h", "private_team_state_stale_t_minus_6h",
+    }
+    assert target["severity"] == "P1"
+    assert stop["severity"] == "P0"
+    assert stop["runtime_mutated"] is False
+
+
+def test_budget_exhaustion_escalates_only_if_agent_work_is_incomplete():
+    workflow = _workflow(deliberation="pending")
+    workflow["budget"] = {"gameweek_remaining_tokens": 1,
+                          "gameweek_remaining_uses": 1,
+                          "month_remaining_uses": 0}
+    report = evaluate_workflow_deadline(workflow, seconds_to_deadline=6 * 3600)
+    assert "agent_budget_exhausted_before_terminal" in {
+        row["code"] for row in report["reasons"]
+    }
+    workflow["stages"] = [
+        {**row, "status": "complete"} if row["name"] == "deliberate" else row
+        for row in workflow["stages"]
+    ]
+    assert evaluate_workflow_deadline(
+        workflow, seconds_to_deadline=6 * 3600,
+    )["healthy"] is True
+
+
+def test_authorized_execution_uses_window_and_predeadline_hard_stop():
+    early = evaluate_workflow_deadline(
+        _workflow(execution="pending"), seconds_to_deadline=3 * 3600,
+    )
+    window = evaluate_workflow_deadline(
+        _workflow(execution="pending"), seconds_to_deadline=3600,
+    )
+    cutoff = evaluate_workflow_deadline(
+        _workflow(execution="pending"), seconds_to_deadline=15 * 60,
+    )
+    noop = evaluate_workflow_deadline(
+        _workflow(execution="skipped_policy"), seconds_to_deadline=15 * 60,
+    )
+
+    assert early["healthy"] is True
+    assert window["severity"] == "P1"
+    assert [row["code"] for row in window["reasons"]] == [
+        "authorized_execution_pending_at_execution_window",
+    ]
+    assert cutoff["severity"] == "P0"
+    assert [row["code"] for row in cutoff["reasons"]] == [
+        "authorized_execution_pending_at_hard_stop",
+    ]
+    assert cutoff["timing_policy_version"] == "workflow-timing-1.0.0"
+    assert noop["healthy"] is True
+
+
 def _runtime_with_authorization(tmp_path):
     config = RuntimeConfig(
         ops_db=tmp_path / "ops.db", research_root=tmp_path / "research",
@@ -156,6 +220,27 @@ def test_watchdog_marks_stale_completed_tick_as_down(tmp_path):
     )
     assert result["status"] == "down"
     assert result["reason"] == "tick_stale"
+
+
+def test_watchdog_allows_running_tick_then_detects_stall(tmp_path):
+    db = OpsDB(tmp_path / "ops.db", enforce_version=False)
+    db.migrate()
+    job_id, _ = db.start_job("tick", "tick:running", "corr_running")
+    now = datetime.now(timezone.utc)
+
+    running = run(db, now=now + timedelta(minutes=3),
+                  max_age_seconds=1200, sink=lambda _event: None)
+    assert running["status"] == "ok"
+    assert running["latest_tick_status"] == "running"
+
+    stalled = run(db, now=now + timedelta(minutes=21),
+                  max_age_seconds=1200, sink=lambda _event: None)
+    assert stalled["status"] == "down"
+    assert stalled["reason"] == "tick_running_too_long"
+
+    db.finish_job(job_id, "completed")
+    recovered = run(db, sink=lambda _event: None)
+    assert recovered["status"] == "ok"
 
 
 def test_watchdog_is_degraded_when_alert_delivery_dies(tmp_path):

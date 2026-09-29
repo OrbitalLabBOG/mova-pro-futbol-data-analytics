@@ -2,12 +2,18 @@
 type: workpack
 name: "WP-007 — Observabilidad, alertas y runbooks"
 created: 2026-08-21
-updated: 2026-08-31
+updated: 2026-09-20
 tags: [mova, fpl, workpack, observability, runbooks]
-status: active-shadow
+status: superseded
 ---
 
 # WP-007 — Observabilidad, alertas y runbooks
+
+## Disposición del 20 de septiembre de 2026
+
+Planificación sustituida, no aceptación técnica. Los requisitos y cortes inferiores son históricos;
+el trabajo pendiente se conserva en AC-06 y costos AC-02 de la [hoja de ruta vigente](../04-readiness-and-rollout.md).
+No ejecutar calendarios, taxonomías de autoridad ni pendientes antiguos desde este documento.
 
 ## Objetivo
 

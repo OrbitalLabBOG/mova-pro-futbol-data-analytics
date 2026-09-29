@@ -2,14 +2,248 @@
 type: project
 name: "MOVA FPL Autonomous Operator 2026/27 — Readiness and Rollout"
 created: 2026-08-21
-updated: 2026-09-14
+updated: 2026-09-29
 tags: [mova, fpl, readiness, rollout]
 status: active-shadow
 ---
 
 # Readiness y rollout
 
-## Guía vigente de cierre autónomo — 14 de septiembre de 2026
+## Iteración de integridad — 29 de septiembre de 2026
+
+Implementación candidata sobre la base de Researcher 1.10.0; no representa un despliegue.
+AC03 incorpora closeout v2 con financiación sellada, atribución de chips, ausencia explícita
+de probabilidades y finales de review sin hipótesis aceptada. AC02 incorpora comparador
+pareado estricto, corpus offline y candidato experimental 1.11.0. El workflow explica
+esperas/dependencias/cutoff con la policy temporal compartida. AC04 añade fixtures DOM y
+fallos antes/después de commit; los entrypoints y la evidencia viva se conservan separados.
+
+Aceptación: regresiones y suite completa, replay offline y smoke aislado de imagen.
+AC01 conserva integración de la pila y release/estabilidad sobre la revisión final.
+El ensayo online debe caber tras reservar capacidad operativa; no se sustituye con replay
+ni se eleva 1.11.0 sin medir calidad. El cierre natural de GW, rehearsals y promoción siguen
+pendientes de su evidencia. Ver [decisión y alcance](../../decisions/2026-27/harness-integrity-20260929.md)
+y [laboratorio](../../../experiments/research/20260929-harness/README.md).
+
+## Cierre de autonomía operativa — 20 de septiembre de 2026
+
+Esta es la única hoja de ruta de cierre vigente. Sustituye la planificación C1–C5 del
+14 de septiembre y los workpacks iniciales aún abiertos, no sus contratos ni su evidencia.
+`10-autonomous-harness-v1.md` conserva la arquitectura. Supabase conserva tareas, responsables,
+colas y compromisos; esta spec define resultados y aceptación, no un inventario PM vivo.
+Esta revisión de hoja de ruta conserva la separación entre desarrollo, despliegue y
+autoridad: ninguna tarea PM o commit activa A2/A3 ni nuevas escrituras FPL.
+
+### Objetivo y límites
+
+Cerrar el recorrido captura → investigación → decisión/validación → ejecución única →
+verificación → settlement oficial → review → siguiente ciclo, sin intervención rutinaria.
+Excepciones que requieren al humano, como reautenticación exigida por FPL, se detectan temprano,
+se notifican y mantienen el último estado verificado. No se promete login perpetuo.
+
+No incluye un motor nuevo, ampliar roles LLM, auto-modificación sin revisión ni migrar el
+writer operativo como prerrequisito. Modelado y cutover PostgreSQL conservan sus líneas propias.
+Una mejora estadística no concede autoridad; aprobar el backlog tampoco habilita el executor.
+
+### Baseline observado y evidencia
+
+Corte vivo: 2026-09-20 20:49:19–20 UTC, GET loopback `/api/v1/readiness` y
+`/api/v1/harness-scorecard`. Readiness 17 pass, 9 pending, 1 blocked sobre 27; A0 elegible.
+Runtime healthy; shadow/A0, kill switch on, writes off, compliance pending.
+
+| Área | Hecho observado | Consecuencia |
+| --- | --- | --- |
+| Runtime | Operaciones 7/7; recuperación host 5/5 histórica; recuperación del 20/09 documentada | Consolidar release y comprobar estabilidad posterior; salud instantánea no equivale a autonomía |
+| Datos | GW6 preliminary mientras GW5 no tenga finished+data_checked; baseline GW6 aprobado | Esperar cierre; no producir evaluación causal retrospectiva |
+| Research | 3 GWs medidas, 0 passing; último brief 24% cobertura/evidencia, 142427 tokens | Bloqueo real de calidad; no sólo espera longitudinal |
+| R2 | Capitanía 0/3, lineup 0/3; entrypoint sólo capitanía | Completar integración y evidencia por capacidad/versión |
+| R3 | 1/3; entrypoint off y no promovido | Contrato/probe no prueba confirmación real |
+| Continuidad | Closeout instalado, 0 completos vivos; feedback 3 propuestas, 0 evaluaciones y 0 lecciones | Ejercer el circuito completo sin exigir una mejora positiva |
+| Alertas | local_only; destino y live ping ausentes | Falta operación desatendida fuera del proceso |
+| Durabilidad | Paridad/roles pass, 4 ciclos PG; off-host sin configurar/restaurar | Conservar separación de writers y completar recuperación externa |
+| Costos | Overrun histórico 355066/160000 reviewed_pending; cero reservas huérfanas | Exigir follow-up equivalente; una corrida menor distinta no cierra ese caso |
+
+Evidencia de recuperación: [acta del 20/09](../../decisions/2026-27/runtime-recovery-20260920.md).
+La escritura humana de GW5 no suma rehearsals del driver. Los contadores anteriores son
+snapshots fechados; se vuelven a consultar antes de promover.
+
+### Corte de infraestructura — 20 de septiembre, 20:38 COT
+
+Readiness vivo: 21 pass, 5 pending, 1 blocked sobre 27; A0/shadow, kill switch activo y
+browser writes deshabilitados. Cuatro gates de integración pasaron desde el baseline:
+destino externo de alertas, live ping, backup cifrado off-host y restore aislado. El canal
+es DM del bot Orbital a Julián; prueba auditada `job_78c9dd7e94fb4a5fb99c3d93cd82e359`,
+aceptada por Slack y ligada al fingerprint sanitizado del destino. El bucket dedicado GCS
+`orbital-lab-483815-mova-fpl-backup-20260920` usa una cuenta de servicio acotada,
+credenciales root-only y contraseña de recuperación en Secret Manager. La copia terminó con
+servicio `success`, timer `enabled/active`, seis archivos sellados y sin sidecars WAL/SHM.
+
+El restore remoto final `job_a18aa088ecab4e1eb96250e69ebcb6f6` sobre la revisión
+`1312d13` pasó 8/8 checks en 531 s de ensayo, con `downtime_seconds=0`, sin reiniciar
+servicios ni mutar FPL; la base PostgreSQL temporal y el árbol descargado se eliminaron.
+La [guía de VPS](../../operations/vps.md) documenta el procedimiento ante pérdida total.
+Esta evidencia cierra AC-06/07 de infraestructura, no AC-03 ni AC-08: research sigue
+bloqueado por calidad y faltan jornadas/ejecuciones longitudinales y closeout vivo.
+La siguiente iteración de AC-03 añade al workflow edades máximas por fase para el snapshot
+público y el team state, más presupuesto disponible de GW/mes. El watchdog escala datos
+stale desde T−6h y eleva P0 en el hard stop; presupuesto agotado con agentes aún no
+terminales produce P1. Son sentinelas deterministas y auditables, no un retry ni permiso
+de ejecución. AC-03 queda abierto hasta probar recuperación de auth y cierre vivo.
+
+### Evidencia de la iteración de continuidad
+
+La [acta del 22/09](../../decisions/2026-27/runtime-review-recovery-20260922.md)
+conserva commits, pruebas, recuperación causal GW5, rollback, estado de sesión y
+paridad PostgreSQL. El [replay congelado de research](../../../experiments/research/20260922-recovery/README.md)
+separa adquisición deficiente y política de frescura. Es evidencia parcial de
+AC-01/02/03; no acredita una jornada autónoma ni cierra AC-08/09.
+
+### Iteración de continuidad — 22 de septiembre
+
+Alcance autorizado: AC-03 y AC-01 primero; experimento acotado de AC-02 después.
+El cierre retrospectivo de GW5 está persistido, pero no acredita ejecución autónoma.
+La revisión causal reveló un contrato de propuestas incompatible y replay de fallos
+sin recuperación. La corrección exige pruebas de recurrencia, fallo antes/después de
+commit, replay sin duplicados, conflicto de entradas, cooldown y agotamiento de intentos.
+
+El collector tenía un override horario mientras la fuente de eventos conserva cadencia
+1800 s: recuperar evaluación cada 15 minutos, conservando admisión por lock y límites de
+CPU, evita que una oportunidad ocupada lo difiera una hora adicional. No se rebajan TTLs.
+
+Aceptación inmediata: suite completa y contratos, revisión causal GW5 persistida, incidente
+resuelto por éxito, timer efectivo verificado, release/imágenes/configuración identificadas,
+rollback del API comprobado y ninguna escritura FPL. Antes de la observación se fija una
+ventana de 30 minutos, muestras cada cinco minutos: API ready en <=15 s, RAM disponible
+>=2 GiB, disco libre >=10 GiB, ningún OOM/restart nuevo ni worker duplicado, heartbeat de
+tick <=15 minutos y ausencia de nuevos jobs fallidos sin tratamiento. CPU/steal se registran
+como diagnóstico; el VPS compartido no permite prometer latencia estable por una muestra.
+Esta ventana sólo acredita estabilidad corta; AC-01 integral sigue abierto.
+
+AC-02 requiere una comparación de investigación con entradas y presupuesto fijados,
+cobertura/evidencia/conflictos y tokens/duración. No se acredita ahorro por cambios de prompt.
+AC-04/05 conservan pruebas por capacidad/versión y tres GWs; AC-08 requiere la GW completa
+post-promoción. AC-09 prepara el expediente; ninguna tarea activa controles.
+
+### Entregables y aceptación
+
+Los IDs AC siguientes identifican la evidencia exigida. Una tarea sólo termina cuando cada
+criterio aplicable tiene un resultado y una referencia verificable; `not_exercised` no es pass.
+
+| Clave de entrega | Tarea canónica / reutilización | Resultado y aceptación |
+| --- | --- | --- |
+| AC-01 Release y sesión | Nueva `FPL-CLOSEOUT-RELEASE` | Release reproducible: SHA/digest, hotfixes y overrides inventariados, rollback comprobable. AC-01.1: mismos artefactos/configuración explican host e imagen. AC-01.2: ventana de observación y límites de CPU/RAM/retries definidos antes de medir, sin workers huérfanos ni rescates. AC-01.3: auth expirada se detecta, cooldown y aviso temprano; reinicio conserva perfil cuando el proveedor lo permite. |
+| AC-02 Research útil | Reutilizar `FPL-AUTO-RESEARCH-PIPELINE` | AC-02.1: priorizar plantilla/candidatos, fetch/locator/TTL e identidad exactos; cobertura según política vigente. AC-02.2: noticias antiguas, contradicciones y fuentes inaccesibles tienen resolución trazable; ninguna evidencia se fabrica. AC-02.3: tres GWs passing y Strategist/Critic terminal sobre envelope vigente. AC-02.4: presupuestos y follow-up equivalente del overrun verificados. |
+| AC-03 Continuidad del ciclo | Nueva `FPL-CLOSEOUT-LIFECYCLE` | AC-03.1: cada stage tiene entrada, salida terminal, hora objetivo, margen de recuperación y hard stop versionados. AC-03.2: reinicios, busy lock, datos stale, presupuesto agotado, research insuficiente y auth caída terminan en recuperación acotada o escalamiento; sin retry ciego ni decisión antigua ejecutable. AC-03.3: ejecución verificada conduce automáticamente a settlement/review/siguiente ciclo cuando FPL cierra, conservando cutoff e idempotencia. AC-03.4: retorno no-action o sin hipótesis suficiente es válido y auditable. |
+| AC-04 Ejecución R2 | Reutilizar `FPL-HV1-07D` | AC-04.1: entrypoints capitanía y XI/banca implementados y verificados. AC-04.2: pre-state, ejecución única, reload/post-state coinciden. AC-04.3: tres GWs distintas por capacidad/versión según ledger. AC-04.4: deriva DOM, crash y save ambiguo reconcilian sin duplicar; habilitación requiere autoridad separada. |
+| AC-05 Ejecución R3 | Reutilizar `FPL-HV1-07E` | AC-05.1: adapter productivo cubre transferencias, hits y chips con FT/banco/precios exactos. AC-05.2: preview coincide y existe una sola confirmación irreversible; pérdida de respuesta exige lectura/reconciliación antes de reintentar. AC-05.3: tres GWs válidas por contrato y evidencia específica de capacidades no ejercidas. AC-05.4: límites deportivos versionados, ventana y autorización A3 verificadas. |
+| AC-06 Alertas externas | Reutilizar `FPL-AUTO-ALERTING` | AC-06.1: destino y owner reales. AC-06.2: configured/live_proven corresponden al mismo fingerprint. AC-06.3: recepción, dedup, retry, acuse y ruta de fallo comprobados; HTTP 2xx no equivale a lectura humana. Enviar prueba requiere autorización del canal. |
+| AC-07 Recuperación externa | Reutilizar `FPL-AUTO-OFFSITE-BACKUP` | AC-07.1: destino/owner, copia cifrada, retención y timer. AC-07.2: restore aislado con ocho checks e integridad. AC-07.3: excluir perfil browser/CODEX_HOME y secretos; documentar recuperación de pérdida del VPS y vigencia de la prueba. |
+| AC-08 Aceptación longitudinal | Reutilizar `FPL-AUTO-SHADOW-DRILLS` | AC-08.1: matriz GW/capacidad/versión/SHA, sin inflar contadores por reintentos. AC-08.2: ensayos de excepciones y cero duplicados/huérfanos sin tratamiento. AC-08.3: una GW completa posterior a promoción, hasta review/siguiente ciclo, sin comandos de rescate. AC-08.4: expediente final distingue capacidad probada, no ejercida y restricciones. Es dueña de la evidencia viva; AC-03 es dueña de la integración. |
+| AC-09 Expediente de promoción | Nueva `FPL-CLOSEOUT-PROMOTION` | AC-09.1: distinguir elegibilidad técnica, entrega integral y autoridad; resolver la relación de off-host/closeout con required_for sin modificarla por documentación. AC-09.2: decisiones de compliance y aprobación por capacidad registradas; límites, rollback y excepciones explícitos. AC-09.3: expediente A2 y luego A3, sin activar controles por cambio de estado PM. La aceptación final permanece en AC-08. |
+
+El epic `FPL-HARNESS-V1` se reutiliza como programa de cierre; no se abre otro epic con el
+mismo resultado. Los IDs PM existentes conservan historia y evidencia. Nuevas tareas se
+registran en backlog sin fecha ficticia; supervisor humano explícito; la ejecución no se activa por asignación.
+
+### Dependencias y secuencia
+
+#### Primera iteración AC-02: continuidad de evidencia y economía de agentes
+
+El diagnóstico del 20/09 comparó tres corridas medidas: GW5 6/25 sujetos verificados con
+137921 tokens de entrada y 4506 de salida; GW4 6/25 con 146154/4802; otra de GW4 llegó
+a 11/25 con 348056/7010 y excedió el presupuesto de 160000 tokens. Son corridas, no tres
+GWs passing. El foco abarca hasta 25 jugadores de 12–14 clubes mientras la política permite
+8/5/4 búsquedas y 10/8/6 documentos según slot. Por ello el límite de discovery sigue siendo
+una hipótesis de insuficiencia que requiere medir cobertura por club, no una razón para reducir
+el gate de 90/80 o inventar sujetos revisados.
+
+Primera entrega desplegada en la release `1accdc4`: el manifiesto puede adjuntar hasta ocho pistas
+de documentos verificados de la última corrida del mismo ciclo, de máximo 36 horas. El worker
+revalida cada página y el importador conserva el fetch independiente; una pista sola jamás
+cuenta como cobertura. La cobertura por club queda registrada en nuevos briefs v2 para
+diagnosticar discovery. Las pruebas ejercen reutilización, expiración y agregación por club.
+Falta medir una pareja real broad→refresh/final; no se atribuye aún ahorro ni mejora del gate.
+La [release y sus límites](../../decisions/2026-27/release-20260920-1accdc4.md) son
+evidencia de AC-01.1/01.3, pero AC-01.2 y el rollback efectivo siguen pendientes.
+
+Routing: mantener Codex Researcher Luna y Strategist/Critic Terra mientras se mide una línea
+base real. La suscripción registra tokens, pero `estimated_cost_usd=null`, por lo que no equivale
+a costo cero ni ofrece un costo marginal comparable. OpenRouter no tiene credencial provisionada
+en el VPS. Como escenario, Gemini 3.8 Flash figura a USD 0.75/M input y 3.75/M output; aplicado
+a los tokens reportados de GW5 serían ~USD 0.12 sólo de modelo, más búsquedas (p. ej. cinco a
+USD 0.005 serían ~USD 0.025). Esto no es factura ni predicción fiable: tokenización, tool calls,
+calidad y límites podrían diferir. Antes de cambiar, hacer shadow pareado con los mismos
+manifiestos, techo de gasto, 90/80, latencia, costo total por sujeto verificado y cero
+violaciones de evidencia. La decisión de proveedor se toma por costo de resultado válido.
+Precios consultados: [modelo](https://openrouter.ai/google/gemini-3.8-flash) y
+[web search](https://openrouter.ai/docs/guides/features/server-tools/web-search).
+
+1. AC-01 estabiliza la base; AC-02 y la preparación de AC-06/07 pueden desarrollarse
+   independientemente. Elegir destinos precede a pruebas externas.
+2. AC-03 integra la evidencia de AC-02 y la instalación C1 existente. AC-04 y AC-05 completan
+   los adapters sobre contratos estables; AC-05 conserva dependencia de verificación R2.
+3. Los ensayos longitudinales AC-02/04/05/08 comienzan en la primera GW elegible y acumulan
+   jornadas reales. Antes de estabilizar el contrato, verificar qué evidencia sobrevivirá al cambio.
+4. AC-09 prepara el expediente sin habilitar nada. Activación por capacidad sólo después de
+   pruebas aplicables y decisión humana. AC-08 certifica el resultado posterior a promoción.
+
+Supabase sólo admite una dependencia estructurada: las dependencias adicionales de esta sección
+se conservan en las descripciones. No crear un ciclo entre promoción previa y aceptación posterior.
+La fecha histórica del epic, 15 de octubre, no se renueva ni se convierte en garantía de cierre.
+Con GW6 el 10 de octubre, la evidencia faltante de tres GWs no cabe necesariamente en esa fecha;
+la planificación de fechas requiere compromiso nuevo, sin rebajar requisitos.
+
+### Depuración de planificación anterior
+
+Esta tabla registra disposición de documentos y correspondencia de alcance, no estados vivos PM.
+
+| Documento/registro anterior | Disposición | Destino del pendiente |
+| --- | --- | --- |
+| Motor v1 cerrado; readiness todavía draft | Readiness histórico, no backlog nuevo; conservar evidencia y siete tareas spec_v1 cerradas | Calibración/claims en `FPL-MODEL-CALIBRATION-2026` y su subtarea existente |
+| WP-001 runtime, WP-002 control plane | Plan inicial sustituido; no declararlos aceptación autónoma | AC-01/03/06/07; cutover separado |
+| WP-004 research | Plan inicial sustituido; calidad todavía insuficiente | AC-02 |
+| WP-006 browser | Plan inicial sustituido; contratos conservados | AC-04/05 |
+| WP-007 observabilidad | Plan inicial sustituido; dashboards instalados no prueban delivery externo | AC-06 y costos AC-02 |
+| WP-008 rollout | Plan inicial sustituido; no reusar taxonomía histórica A1 para alineación | AC-08/09 |
+| WP-003 datos y WP-005 decisión | Conservar completed como instalación histórica | Continuidad y aceptación nuevas en AC-03/08 |
+| C1 `FPL-HV1-07` done | Precisar título como instalación de orquestación/contratos, sin reabrir ni atribuir driver productivo completo | AC-04/05/08 |
+| Diez tareas PM abiertas | Ninguna tiene evidencia de cierre integral; reutilizar ocho en revisión y conservar modelado/claims sin duplicados según mapa | No cancelar ni marcar done para limpiar el tablero |
+| `FPL-HV1-02` PostgreSQL | Línea de persistencia separada del camino crítico | Writer operativo SQLite permanece hasta cutover aprobado |
+
+### Recibo de organización PM — 20 de septiembre de 2026
+
+Epic conservado: `632a0e4c-e44e-4f98-b3ee-a1e2e357b63f`.
+Nuevas tareas, registradas en backlog bajo supervisión de Julián:
+
+- AC-01: `6aea32b2-b1d7-4dfb-9b80-fc92352da8af`.
+- AC-03: `7a0397a3-56c5-46da-9567-db28007a113a`.
+- AC-09: `4a5e96b3-c7a9-4d8b-979a-0ce3ca65643b`.
+
+Ocho tareas abiertas existentes revisadas; C1 cerrado sólo aclara su título/alcance.
+Siete tareas revisadas sin fecha pasan de active a backlog conservando estado de avance;
+no se pausa ningún servicio por ese cambio PM. Modelado y su subtarea se preservan.
+Ninguna tarea se cancela, borra o completa. Las seis specs iniciales sustituidas conservan
+el contenido histórico. Cinco referencias a actas ausentes en el checkout se señalan como
+tales, sin fabricar evidencia ni mantener enlaces rotos.
+
+### Verificación y definición de terminado
+
+Por entrega: AC, prueba proporcional, SHA, entorno, fecha, artefacto y resultado; para código,
+suite exigida por AGENTS y checks de despliegue pertinentes. Fixtures prueban comportamiento,
+probes prueban lectura/DOM, y pruebas reales prueban guardado: no intercambiar esas etiquetas.
+
+Cierre integral: AC-01…09 satisfechos, autoridad explícita, alertas y restore externo probados,
+una GW completa sin rescate y evidencia separada de capacidades no ejercidas. Modelo/policy
+permanecen versionados; candidato no se auto-promueve. Si falta evidencia, se conserva pendiente.
+No se exige cambiar el writer a PostgreSQL ni un resultado deportivo positivo para acreditar
+funcionamiento; tampoco se usa doctor verde o cantidad de tests como sustituto de aceptación.
+
+## Plan C1–C5 del 14 de septiembre — histórico, sustituido
+
+El contenido siguiente conserva contratos y contexto de aquella revisión. Sus fechas, prioridades,
+contadores y rutas de ejecución no son planificación vigente; usar la sección del 20 de septiembre.
+
+### Guía anterior de cierre autónomo — 14 de septiembre de 2026
 
 Esta sección sustituye como guía de ejecución los checkpoints y gates narrativos históricos
 inferiores. La spec [Autonomous Harness v1](10-autonomous-harness-v1.md) conserva la arquitectura;

@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — operación del stack VPS"
 created: 2026-08-22
-updated: 2026-09-16
+updated: 2026-09-20
 tags: [mova, fpl, vps, docker, systemd, observability]
 status: active
 ---
@@ -40,6 +40,16 @@ VPS. Supabase se reserva para seguimiento externo de construcción del proyecto.
 
 La imagen engine contiene Python 3.13.5, CBC y SQLite 3.53.4. Ninguna herramienta del host
 abre las bases: el SQLite 3.45.1 del VPS falla el gate deliberadamente.
+
+## Cadencia y perfil de capacidad
+
+El perfil sanitizado `deploy/compose.capacity.yaml` conserva los límites observados del
+VPS de 2 vCPU; se compara con `compose.override.yaml` y se registra su hash en cada release.
+No contiene credenciales. El drop-in versionado `95-cadence.conf` del collector prevalece
+sobre el override horario de recuperación: evalúa cada 15 minutos. La admisión por lock
+compartido se conserva; exit 75 difiere hasta la siguiente oportunidad y nunca crea una cola
+adicional de workers. No aumentar la cadencia de descarga de las fuentes ni sus TTLs para
+corregir un desajuste del timer.
 
 ## Build e instalación inicial
 
@@ -97,7 +107,7 @@ mova analytics run
 mova strategy status
 mova strategy research due
 
-# Vista HTTP; abrir túnel ssh -L 8787:127.0.0.1:8787 root@72.60.245.2
+# Vista HTTP; abrir túnel ssh -L 8787:127.0.0.1:8787 ubuntu@72.60.245.2
 curl -s http://127.0.0.1:8787/api/v1/status | python -m json.tool
 curl -s http://127.0.0.1:8787/api/v1/readiness | python -m json.tool
 curl -s http://127.0.0.1:8787/metrics
@@ -181,16 +191,28 @@ Los pasos `fetch_fpl_bootstrap_events` y `fetch_fpl_fixtures` separan las dos ll
 refrescó; esto evita atribuir a la API FPL el tiempo consumido posteriormente por proyección y
 optimización.
 
-`mova-fpl-collector.timer` evalúa cada 15 minutos cadencias separadas para FPL, odds,
+En el VPS, los drop-ins `90-capacity.conf` vigentes al 20 de septiembre
+serializan tick, collector, analytics y research con
+`/run/lock/mova-fpl-capacity.lock`. La colisión omite la corrida (exit 75
+aceptado) en vez de acumular workers. Los calendarios efectivos son: tick
+cada 5 minutos, collector cada hora en el minuto 05, analytics cada 2 horas
+en el minuto 10 y research cada 30 minutos en los minutos 07 y 37. Los
+timers base del repositorio no describen por sí solos esta configuración
+del host. El tick volvió de 15 a 5 minutos porque un solo skip, con un
+intervalo de 15 minutos y heartbeat máximo de 20, dejaba al doctor en FAIL.
+Verificar `systemctl cat`, `systemctl list-timers` y el doctor después de
+cambiar cadencias; no aumentar la concurrencia quitando el lock.
+
+`mova-fpl-collector.timer` evalúa cadencias separadas para FPL, odds,
 calendario y eventos. La operación, tablas, calidad y recuperación están en
 [servicio autónomo de datos](data-service.md).
 
-`mova-fpl-analytics.timer` corre cada 30 minutos. No vuelve a proyectar si el artifact y las
+`mova-fpl-analytics.timer` no vuelve a proyectar si el artifact y las
 versiones ya fueron sellados; tampoco evalúa hasta que la API oficial marque `data_checked`.
 Cada ejecución queda como job `model_analytics`, con pasos, duración, hashes e incidentes. Ver
 [servicio analítico](analytics-service.md).
 
-`mova-fpl-research.timer` evalúa cada 15 minutos, pero sólo abre una corrida en cada slot:
+`mova-fpl-research.timer` sólo abre una corrida en cada slot:
 amplia T-24h…T-6h, refresh T-6h…T-2h y final T-120…T-70 minutos. Fuera de esas ventanas no
 consume Codex. Strategist/Critic corre una vez por research importado y espera un envelope que
 ya lo incorpore. El contenedor one-shot no recibe DB, runtime env, navegador ni secretos de
@@ -273,8 +295,32 @@ Compose necesita rutas host como `/etc/mova-fpl/alert-webhook.json`, mientras el
 rutas bajo `/run/secrets`. Invertir la precedencia puede convertir una ruta interna en la fuente de
 un bind mount y hacer fallar el collector antes de abrir Chromium.
 
-En un arranque en frío el wrapper espera explícitamente `DOMContentLoaded` y el origin FPL,
-valida schema/15 picks y reintenta hasta tres veces. Una salida vacía nunca llega al ingestor.
+El collector reconoce un redirect a Premier League Account/Google como
+`FPL_AUTH_INTERACTION_REQUIRED`, no como prueba de cookies vencidas. El operador
+inspecciona la página y puede seleccionar una cuenta ya autenticada; contraseña,
+MFA, CAPTCHA o consentimiento nuevo requieren intervención humana.
+
+El wrapper serializa con `mova-fpl-capacity.lock`, limita la captura a un intento
+de 120 segundos y arma antes de abrir el navegador un cooldown de 30 minutos en
+`runtime/private-state-retry-after` (sólo timestamp, sin secretos). Durante ese
+intervalo falla explícitamente sin levantar Docker: no simula una captura sana.
+Sólo una ingesta exitosa elimina el marcador; `--force` permite un reintento
+supervisado tras resolver el acceso, pero no omite locks ni validación. No equivale
+a notificación externa: el canal todavía debe provisionarse y probarse.
+Una salida vacía nunca llega al ingestor. El 18 de septiembre se aplicó un hotfix
+acotado a `browser-session.sh` y `collect-private-team-state.sh` sobre `cccc563`,
+sin reconstruir imágenes. Al corte del 20 de septiembre, el checkout del VPS
+es `a8cfa7d` y conserva esas modificaciones host sin versionar; la imagen de
+browser sí corresponde a `a8cfa7d`. Esto aún no es una release completa de
+los scripts de captura. Rollback de ambos scripts:
+`/opt/orbital/backups/mova-fpl/session-recovery-20260918T1450Z/deploy/bin/`.
+Ese estado es histórico: la [release `1accdc4`](../decisions/2026-27/release-20260920-1accdc4.md)
+integró y versionó esos hotfixes, alineó checkout e imágenes y conservó un
+backup root-only. El acta distingue las comprobaciones hechas de la ventana de
+estabilidad y el rollback disruptivo todavía pendientes.
+La captura ya no depende de botones de la cancha: un GET privado válido puede
+funcionar mientras la SPA muestra `Loading`. El control plane valida el equipo
+esperado y sus 15 picks. Esto no implementa login Google desatendido ni avisos push.
 
 ## Controles y hard stop
 
@@ -309,8 +355,10 @@ sudo deploy/bin/postgres-shadow-restore-drill.sh "$pg_latest"
 El backup usa SQLite Online Backup API y ejecuta `quick_check`; nunca hace `cp` de una base
 viva ignorando WAL. PostgreSQL usa `pg_dump -Fc`, valida el catálogo del dump y conserva un
 manifest SHA-256. El timer diario ejecuta ambos. Retención local: 35 días.
-La copia off-host cifrada ya tiene implementación opt-in, pero no un destino autorizado. No
-habilites el timer sólo porque la unidad exista. Para provisionarla:
+La copia off-host cifrada es opt-in. El script crea un solo backup local verificado de SQLite y
+Postgres, sube ambos directorios a un snapshot cifrado y aplica retención remota de 35 diarios,
+8 semanales y 6 mensuales agrupados por host/tags (los paths llevan timestamps). La ubicación
+remota y las credenciales deben ser independientes de los datos del VPS. Para provisionarla:
 
 1. instala `restic` desde el paquete aprobado del host;
 2. crea `/etc/mova-fpl/offsite-repository`, `/etc/mova-fpl/offsite-password` y
@@ -318,11 +366,35 @@ habilites el timer sólo porque la unidad exista. Para provisionarla:
    `deploy/offsite-backup.example.json`;
 3. usa exclusivamente un repositorio remoto soportado (`s3:`, `sftp:`, `rest:`, `b2:`, `azure:`,
    `gs:`, `rclone:` o `swift:`) y registra owner; una ruta local no satisface off-host;
-4. inicializa el repositorio bajo autorización, ejecuta una vez
+4. inicializa el repositorio, ejecuta una vez
    `mova-fpl-offsite-backup.service`, revisa journald y sólo entonces habilita
    `mova-fpl-offsite-backup.timer`;
-5. completa un restore aislado y registra ocho checks con `mova drill import-host --scenario
-   offsite_restore`; nunca restaures sobre runtime ni incluyas browser-profile/CODEX_HOME.
+5. ejecuta `sudo deploy/bin/offsite-restore-drill.sh julian 'restore remoto aislado' \
+   offsite-restore:YYYYMMDD:v1`. El ejecutor descarga el último snapshot MOVA, valida los
+   manifiestos y hashes, restaura SQLite y Postgres temporalmente y registra ocho checks.
+   No restaura sobre runtime ni incluye browser-profile/CODEX_HOME.
+
+Destino operativo: bucket privado `gs://orbital-lab-483815-mova-fpl-backup-20260920` en
+`US-CENTRAL1`, separado del bucket de modelos MOVA. La cuenta
+`mova-fpl-backup@orbital-lab-483815.iam.gserviceaccount.com` sólo tiene
+`roles/storage.objectAdmin` sobre ese bucket. El VPS guarda la llave JSON, repositorio y
+contraseña bajo `/etc/mova-fpl/` con `root:root 0600`; `deploy.env` apunta a la llave mediante
+`GOOGLE_APPLICATION_CREDENTIALS` y fija `GOOGLE_PROJECT_ID`. La contraseña de recuperación
+está resguardada como versión en Secret Manager `mova-fpl-restic-password`, al que la cuenta
+del VPS no tiene acceso. En un host nuevo se recupera la contraseña con la identidad
+administrativa de Orbital, se crea una llave nueva para la cuenta acotada y se usa `restic`
+para descargar el snapshot. Nunca copiar el token amplio de Google Drive al VPS.
+El bucket aplica acceso uniforme, prevención de acceso público y soft delete de siete días.
+
+Ante pérdida total del VPS: crear un host aislado, instalar `restic`, generar una llave nueva
+para la cuenta acotada y restringirla a `0600`; recuperar la contraseña con
+`gcloud secrets versions access latest --secret=mova-fpl-restic-password --out-file=...`
+usando la identidad administrativa de Orbital. Fijar `GOOGLE_PROJECT_ID`,
+`GOOGLE_APPLICATION_CREDENTIALS`, `RESTIC_REPOSITORY_FILE` (contenido
+`gs:orbital-lab-483815-mova-fpl-backup-20260920:/`) y `RESTIC_PASSWORD_FILE`.
+Listar `restic snapshots --tag mova-fpl`, descargar el snapshot elegido a una ruta
+aislada y verificar los dos manifiestos antes de restaurar bases operativas. No ejecutar
+la restauración sobre un runtime vivo. Rotar la llave del VPS perdido al terminar.
 
 `mova status --json` debe mostrar únicamente estado sanitizado y fingerprint. El gate permanece
 `pending` si falta config/timer/evidencia y `blocked` si la configuración existe pero es insegura.
@@ -367,7 +439,7 @@ stack normal. Cuando llegue el rollout supervisado:
 ```bash
 sudo deploy/bin/browser-login.sh
 # desde el PC del operador
-ssh -N -L 6080:127.0.0.1:6080 root@72.60.245.2
+ssh -N -L 6080:127.0.0.1:6080 ubuntu@72.60.245.2
 ```
 
 Abrir `http://127.0.0.1:6080/vnc.html`; Julián completa login y MFA manualmente. No copiar
@@ -376,6 +448,19 @@ cambio de página, el executor debe tomar snapshot nuevo y verificar el estado d
 recargar. Supervisord mantiene un único Chromium normal sobre el perfil persistente y el
 executor se adjunta con `--cdp 9222`; CDP no se publica. Esto conserva la sesión tras recrear
 el contenedor, salvo expiración o revocación decidida por Google/FPL.
+
+Desde el 20 de septiembre el VPS tiene `MOVA_BROWSER_KEEP_RUNNING=1` en
+`/etc/mova-fpl/deploy.env`: el collector no detiene Chromium después de
+una captura exitosa o fallida. Compose mantiene `restart: unless-stopped`,
+el perfil continúa en `/var/lib/mova-fpl/browser-profile` con permisos
+`0700` y noVNC sólo escucha en loopback. Esto evita reiniciar el browser en
+cada captura; **no extiende ni garantiza** la vigencia de la sesión que
+controlan Premier League y Google. El timer privado sigue revisando frescura
+cada cinco minutos y sólo captura según el gate adaptativo. Una pérdida de
+auth exige login humano; no repetir credenciales ni copiar cookies. Para
+volver al modo on-demand, retirar esa única variable y detener el browser,
+sin borrar el perfil. La [acta de recuperación](../decisions/2026-27/runtime-recovery-20260920.md)
+incluye la prueba real y la copia de configuración previa.
 
 La operación repetible usa `deploy/bin/browser-session.sh`:
 
@@ -401,3 +486,15 @@ browser sólo se usa para login y lectura; no se permiten clicks que muten la cu
 
 Nunca restaurar encima de la base activa sin preservar primero el estado fallido. Nunca
 habilitar browser writes como mecanismo de recuperación.
+
+### Observación del canal externo desde el API
+
+Desde la corrección del 22/09, el watchdog publica el contrato sanitizado en
+`runtime/alert-channel.json` tras despachar. El API lo lee mediante
+`MOVA_ALERT_CHANNEL_STATUS_FILE`, sin montar credenciales de Slack/webhook.
+Ausencia, corrupción o edad mayor a 30 minutos hacen fallar el gate; no se debe
+copiar manualmente un reporte antiguo para forzar `pass`. Comparar `mova alerts
+channel`, `/api/v1/readiness` y cockpit tras recrear el API. Si discrepan, comprobar
+la ejecución del watchdog, frescura del archivo y fingerprint del live ping.
+La [decisión de observabilidad](../decisions/2026-27/alert-channel-observation-20260922.md)
+conserva el contrato y sus límites. Publicar esta observación no envía un mensaje.

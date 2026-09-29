@@ -76,6 +76,21 @@ def test_safe_fetch_seals_minimal_excerpt_and_verifiable_locator(tmp_path: Path)
     assert "ignore" not in artifact["excerpt"]
 
 
+def test_publication_date_must_appear_on_fetched_page(tmp_path: Path):
+    def transport(url):
+        return (b"<html><body>03 Sep 2026. Player One is available for selection.</body></html>",
+                {"content_type": "text/html", "http_status": 200, "final_url": url})
+    fetcher = SafeEvidenceFetcher(tmp_path, transport=transport)
+    common = {"research_run_id": "research_" + "a" * 32,
+              "source_url": CANONICAL_SOURCE, "evidence_text": EXCERPT}
+    verified = fetcher.seal(document_id="document_" + "c" * 32,
+                            published_at="2026-09-03T00:00:00+00:00", **common)
+    wrong = fetcher.seal(document_id="document_" + "d" * 32,
+                         published_at="2026-09-04T00:00:00+00:00", **common)
+    assert verified["publication_date_verified"] is True
+    assert wrong["publication_date_verified"] is False
+
+
 def test_safe_fetch_fails_closed_when_locator_cannot_be_verified(tmp_path: Path):
     result = _fetcher(tmp_path, excerpt="different page text").seal(
         research_run_id="research_" + "a" * 32,
@@ -172,6 +187,58 @@ def test_v2_import_seals_evidence_coverage_and_metrics(tmp_path: Path):
     assert "mova_research_evidence_ratio 1.000000" in metrics
 
 
+def test_next_manifest_reuses_only_recent_verified_evidence_as_hints(tmp_path: Path):
+    config, db, _service, cycle_id = _runtime(tmp_path)
+    service = StrategicContextService(
+        config, db, evidence_fetcher=_fetcher(config.research_root),
+    )
+    service.activate_plan(_plan(), actor="test", reason="fixture")
+    queued = service.enqueue(
+        force=True, actor="test", reason="first research",
+        idempotency_key="research:v2:reuse-hint",
+    )
+    run = db.research_run(queued["research_run_id"])
+    request = json.loads(Path(run["request_path"]).read_text(encoding="utf-8"))
+    assert request["manifest"]["research_summary"]["reusable_evidence_hints"] == []
+    result = _v2_result(run, cycle_id, request["manifest"]["research_summary"]["focus"])
+    out = config.research_root / "outbox" / f"{run['research_run_id']}.result.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(result), encoding="utf-8")
+    assert service.import_ready()["results"][0]["status"] == "imported"
+
+    now = datetime.now(timezone.utc) + timedelta(minutes=1)
+    hints = service.prepare(now=now)["manifest"]["research_summary"]["reusable_evidence_hints"]
+    assert len(hints) == 1
+    assert hints[0]["source_url"] == CANONICAL_SOURCE
+    assert "evidence_text" not in hints[0]
+    assert hints[0]["player_elements"] == list(range(1, 16))
+    assert service.prepare(now=now + timedelta(hours=37))["manifest"][
+        "research_summary"
+    ]["reusable_evidence_hints"] == []
+
+
+def test_coverage_reports_verified_subjects_by_team():
+    focus = [
+        {"element": 1, "team": "Club A", "focus_reason": ["current_squad"]},
+        {"element": 2, "team": "Club A", "focus_reason": ["current_squad"]},
+        {"element": 3, "team": "Club B", "focus_reason": ["top_projection_candidate"]},
+    ]
+    coverage = StrategicContextService._validate_coverage(
+        {"subjects": [
+            {"player_element": 1, "status": "no_material_update",
+             "source_urls": [CANONICAL_SOURCE], "note": "Fuente revisada."},
+            {"player_element": 2, "status": "not_checked",
+             "source_urls": [], "note": "Sin fuente."},
+            {"player_element": 3, "status": "no_material_update",
+             "source_urls": [CANONICAL_SOURCE], "note": "Fuente revisada."},
+        ]}, focus, {CANONICAL_SOURCE: {"fetch_status": "verified"}}, [], legacy=False,
+    )
+    assert coverage["teams"] == [
+        {"team": "Club A", "required": 2, "checked": 1, "evidence_verified": 1},
+        {"team": "Club B", "required": 1, "checked": 1, "evidence_verified": 1},
+    ]
+
+
 def test_v2_unverified_fetch_cannot_create_accepted_signal(tmp_path: Path):
     config, db, _service, cycle_id = _runtime(tmp_path)
     service = StrategicContextService(
@@ -199,3 +266,131 @@ def test_v2_unverified_fetch_cannot_create_accepted_signal(tmp_path: Path):
             (run["research_run_id"],),
         ).fetchone()
     assert signal["validation_status"] == "candidate"
+
+
+def test_coverage_gate_is_independent_of_display_limit_and_retries(tmp_path):
+    config, db, service, _ = _runtime(tmp_path)
+    service.activate_plan(_plan(), actor="test", reason="fixture")
+    queued = service.enqueue(force=True, actor="test", reason="fixture",
+                             idempotency_key="coverage:pagination")
+    run = db.research_run(queued["research_run_id"])
+    # Fixture-only ledger: three measured GWs, oldest failed, 25 recent retries.
+    for gw in (3, 4):
+        db.upsert_cycle(config.season, gw, "2026-10-10T10:00:00Z", phase="press_conferences")
+    with db.transaction() as con:
+        cycles = [row[0] for row in con.execute(
+            "SELECT cycle_id FROM gameweek_cycles ORDER BY gw")]
+        con.execute("DELETE FROM research_runs WHERE research_run_id=?", (run["research_run_id"],))
+        for index in range(27):
+            cycle = cycles[min(index, 2)]
+            con.execute(
+                """INSERT INTO research_runs(research_run_id,cycle_id,manifest_id,provider,
+                status,request_path,request_sha256,queued_at,imported_at,coverage_status,
+                coverage_ratio,evidence_ratio,coverage_json)
+                VALUES(?,?,?,'fixture','imported','fixture',?,?,?,'complete',?,1,'{}')""",
+                (f"research_{index:032x}", cycle, run["manifest_id"], f"{index:064x}",
+                 f"2026-09-22T12:00:{index:02d}Z", f"2026-09-22T12:00:{index:02d}Z",
+                 0 if index == 0 else 1),
+            )
+    for limit in (1, 12, 20, 100):
+        report = db.research_coverage(limit=limit)
+        assert report["status"] == "failed"
+        assert report["measured_gameweeks"] == 3
+        assert report["passing_gameweeks"] == 2
+        assert len(report["runs"]) == min(limit, 27)
+
+
+def test_paired_experiment_shares_context_settles_cost_and_never_publishes_signals(tmp_path):
+    config, db, _, _ = _runtime(tmp_path)
+    service = StrategicContextService(config, db, evidence_fetcher=_fetcher(config.research_root))
+    service.activate_plan(_plan(), actor='test', reason='fixture')
+    experiment=service.enqueue_experiment(versions=['1.0.0','1.1.0'], actor='test',
+        reason='paired comparison', idempotency_key='experiment:pair')
+    requests=[]
+    for row in experiment['results']:
+        run=db.research_run(row['research_run_id'])
+        request=json.loads(Path(run['request_path']).read_text())
+        requests.append(request)
+        result=_v2_result(run, run['cycle_id'], request['manifest']['research_summary']['focus'])
+        out=config.research_root/'outbox'/f"{run['research_run_id']}.result.json"
+        out.parent.mkdir(parents=True,exist_ok=True)
+        out.write_text(json.dumps(result))
+    assert requests[0]['manifest']==requests[1]['manifest']
+    assert requests[0]['scope_policy']==requests[1]['scope_policy']
+    imported=service.import_ready()
+    assert len(imported['results'])==2
+    assert all(row['status']=='completed' and row['operational_import'] is False for row in imported['results'])
+    with db.connect(readonly=True) as con:
+        assert con.execute('SELECT COUNT(*) FROM research_signals').fetchone()[0]==0
+        assert con.execute('SELECT COUNT(*) FROM research_documents').fetchone()[0]==0
+        assert con.execute("SELECT COUNT(*) FROM cost_ledger WHERE category='research_experiment'").fetchone()[0]==2
+        assert con.execute("SELECT COUNT(*) FROM agent_budget_reservations WHERE status='settled'").fetchone()[0]==2
+    assert db.research_coverage()['measured_gameweeks']==0
+    again=service.enqueue_experiment(versions=['1.0.0','1.1.0'],actor='test',reason='paired comparison',idempotency_key='experiment:pair')
+    assert all(row['reused'] for row in again['results'])
+    assert service.import_ready()['processed']==0
+
+
+def test_undispatched_experiment_reconciliation_is_scoped_and_idempotent(tmp_path):
+    config,db,service,_=_runtime(tmp_path)
+    service.activate_plan(_plan(),actor='test',reason='fixture')
+    exp=service.enqueue_experiment(versions=['1.1.0'],actor='test',reason='fixture',idempotency_key='unused:exp')
+    run=db.research_run(exp['results'][0]['research_run_id'])
+    request=json.loads(Path(run['request_path']).read_text())
+    db.reject_research_run(run['research_run_id'],error_code='agent_retry_budget_exhausted',error_detail='fixture')
+    with pytest.raises(ValueError):
+        db.release_undispatched_experiment(run['research_run_id'],{**request,'objective':'tampered'},actor='test',reason='proof')
+    result=db.release_undispatched_experiment(run['research_run_id'],request,actor='test',reason='proof')
+    assert result['actual_tokens']==0
+    assert db.release_undispatched_experiment(run['research_run_id'],request,actor='test',reason='proof')['reused']
+
+
+def test_usage_preserves_measured_cache_without_double_counting():
+    from mova_fpl.ops.strategy import StrategicContextService
+    usage=StrategicContextService._validate_usage({'model':'fixture','input_tokens':100,
+        'output_tokens':20,'cached_input_tokens':80})
+    assert usage['input_tokens']==100 and usage['uncached_input_tokens']==20
+    assert usage['cached_input_tokens']==80 and usage['estimated_cost_usd'] is None
+    with pytest.raises(ValueError,match='cached_input_tokens'):
+        StrategicContextService._validate_usage({'input_tokens':100,'cached_input_tokens':101})
+
+
+def test_equivalent_publication_timezone_is_verified_but_different_instant_is_not(tmp_path):
+    def transport(url):
+        return (b'<html><script type="application/ld+json">{"datePublished":"2026-09-20T22:30:13-07:00"}</script><body>Player One is available for selection.</body></html>',
+            {'content_type':'text/html','http_status':200,'final_url':url})
+    fetcher=SafeEvidenceFetcher(tmp_path,transport=transport)
+    args=dict(research_run_id='research_'+'a'*32,source_url=CANONICAL_SOURCE,evidence_text=EXCERPT)
+    good=fetcher.seal(document_id='document_'+'b'*32,published_at='2026-09-21T05:30:13Z',**args)
+    wrong=fetcher.seal(document_id='document_'+'c'*32,published_at='2026-09-21T06:30:13Z',**args)
+    assert good['publication_date_verified'] is True
+    assert wrong['publication_date_verified'] is False
+
+
+@pytest.mark.parametrize("state", ["queued", "completed", "failed"])
+def test_experiment_never_consumes_an_operational_research_slot(tmp_path, state):
+    config, db, service, cycle = _runtime(tmp_path)
+    service.activate_plan(_plan(), actor="test", reason="fixture")
+    exp=service.enqueue_experiment(versions=["1.8.0"], actor="test", reason="lab", idempotency_key="slot:lab")
+    run_id=exp["results"][0]["research_run_id"]
+    current=datetime.now(timezone.utc)
+    with db.transaction() as con:
+        con.execute("UPDATE gameweek_cycles SET deadline_at=? WHERE cycle_id=?",
+                    ((current+timedelta(hours=20)).isoformat(),cycle))
+        con.execute("UPDATE research_runs SET status=? WHERE research_run_id=?",(state,run_id))
+    assessment=service.due(now=current)
+    assert assessment["due"] is True
+    assert assessment["reason"] == "cadence_slot_due"
+    assert db.research_coverage()["measured_gameweeks"] == 0
+
+
+def test_expanded_discovery_is_sealed_only_for_the_registered_candidate(tmp_path):
+    config, db, service, _ = _runtime(tmp_path)
+    service.activate_plan(_plan(), actor='test', reason='fixture')
+    pair=service.enqueue_experiment(versions=['1.9.0','1.10.0'],actor='test',reason='scope trial',idempotency_key='scope:pair')
+    requests=[json.loads(Path(db.research_run(r['research_run_id'])['request_path']).read_text()) for r in pair['results']]
+    assert requests[0]['manifest']==requests[1]['manifest']
+    assert requests[0]['scope_policy']['max_web_queries']==8
+    assert requests[1]['scope_policy']['max_web_queries']==16
+    assert requests[1]['scope_policy']['max_documents']==16
+    assert requests[1]['quality_policy']=='research-claim-2026.09.5'

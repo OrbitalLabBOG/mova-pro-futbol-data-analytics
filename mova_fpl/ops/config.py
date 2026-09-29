@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from pathlib import Path
+from mova_fpl.ops.agent_releases import researcher_release
 
 
 def _bool(name: str, default: bool = False) -> bool:
@@ -83,6 +84,7 @@ class RuntimeConfig:
     odds_api_hard_reserve_credits: int = 75
     alert_webhook_config_file: Path = Path("/run/secrets/alert_webhook_config")
     alert_webhook_timeout_seconds: int = 5
+    alert_channel_status_file: Path | None = None
     postgres_host: str = "postgres"
     postgres_port: int = 5432
     postgres_db: str = "mova"
@@ -163,10 +165,10 @@ class RuntimeConfig:
             research_provider=os.environ.get(
                 "MOVA_RESEARCH_PROVIDER", "codex_subscription"
             ),
-            research_model=os.environ.get("MOVA_RESEARCH_MODEL", "gpt-5.6-luna"),
+            research_model=os.environ.get("MOVA_RESEARCH_MODEL") or researcher_release()[1]["model"],
             research_reasoning_effort=os.environ.get(
-                "MOVA_RESEARCH_REASONING_EFFORT", "medium"
-            ),
+                "MOVA_RESEARCH_REASONING_EFFORT"
+            ) or researcher_release()[1]["reasoning_effort"],
             deliberation_model=os.environ.get(
                 "MOVA_DELIBERATION_MODEL", "gpt-5.6-terra"
             ),
@@ -239,6 +241,8 @@ class RuntimeConfig:
                 "MOVA_ALERT_WEBHOOK_CONFIG_FILE",
                 "/run/secrets/alert_webhook_config",
             )),
+            alert_channel_status_file=(Path(os.environ["MOVA_ALERT_CHANNEL_STATUS_FILE"])
+                                       if os.environ.get("MOVA_ALERT_CHANNEL_STATUS_FILE") else None),
             alert_webhook_timeout_seconds=int(os.environ.get(
                 "MOVA_ALERT_WEBHOOK_TIMEOUT_SECONDS", "5"
             )),
@@ -344,6 +348,8 @@ class RuntimeConfig:
             raise ValueError("consulta The Odds API excede el guardrail de 4 créditos")
         if not 0 < self.odds_api_hard_reserve_credits < self.odds_api_reserve_credits:
             raise ValueError("reservas de cuota The Odds API inválidas")
+        if self.alert_channel_status_file and not self.alert_channel_status_file.is_absolute():
+            raise ValueError("MOVA_ALERT_CHANNEL_STATUS_FILE debe ser absoluto")
         if not self.alert_webhook_config_file.is_absolute():
             raise ValueError("MOVA_ALERT_WEBHOOK_CONFIG_FILE debe ser absoluto")
         if not 1 <= self.alert_webhook_timeout_seconds <= 15:

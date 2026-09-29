@@ -124,7 +124,8 @@ def _offsite_restore_payload() -> dict:
     return {
         "schema": "mova-host-drill-v1", "scenario": "offsite_restore",
         "status": "pass", "started_at": "2026-08-31T05:00:00Z",
-        "finished_at": "2026-08-31T05:20:00Z", "downtime_seconds": 1200,
+        "finished_at": "2026-08-31T05:20:00Z", "downtime_seconds": 0,
+        "elapsed_seconds": 1200,
         "revision": "abc1234",
         "checks": {
             "encrypted_backup_present": True, "remote_snapshot_downloaded": True,
@@ -284,10 +285,14 @@ def test_offsite_restore_drill_is_allowlisted_and_time_bounded():
     )
     assert result["scenario"] == "offsite_restore"
     assert len(result["checks"]) == 8
+    assert result["downtime_seconds"] == 0
+    assert result["elapsed_seconds"] == 1200
+    assert result["host_service_restarted"] is False
 
 
 @pytest.mark.parametrize("mutation", [
-    {"downtime_seconds": 1801},
+    {"elapsed_seconds": 1801},
+    {"downtime_seconds": 1},
     {"checks": {"encrypted_backup_present": True}},
     {"fpl_state_mutated": True},
 ])

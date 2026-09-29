@@ -1,0 +1,78 @@
+{
+  "schema": "mova-harness-iteration-validation-v1",
+  "base_revision": "6caf461",
+  "runtime_base": "e903983",
+  "local_suite": {
+    "passed": 1904,
+    "skipped": 1,
+    "deselected": 79,
+    "seconds": 28.5,
+    "command": "pytest -q",
+    "deselected_reason": "Project configuration excludes slow/integration_data requiring external datasets."
+  },
+  "checks": {
+    "compileall": "pass",
+    "compose_config": "pass",
+    "worker_syntax": "pass",
+    "diff_whitespace": "pass",
+    "offline_replay": "pass"
+  },
+  "online_pair": {
+    "status": "deferred_operational_capacity",
+    "observed_at": "2026-09-29T03:11:02.909Z",
+    "gw_remaining_tokens": 2310934,
+    "pair_max_tokens": 2000000,
+    "operational_capacity_to_preserve": 1000000,
+    "tokens_spent": 0
+  },
+  "active_researcher": "1.10.0",
+  "experimental_researcher": "1.11.0",
+  "runtime_mutated": false,
+  "autonomy_promoted": false,
+  "container_validation": {
+    "status": "pass",
+    "application_image_id": "sha256:8ee7586ab8d469efd0172e6ccc494a24669612dd499de0dc7db98d8df4d221d5",
+    "image_revision": "fc07672",
+    "sqlite_version": "3.53.4",
+    "module_path": "/app/mova_fpl/analytics/closeout_financing.py",
+    "test_image_additions": [
+      "pytest==8.4.2",
+      "nodejs",
+      "git"
+    ],
+    "passed": 1904,
+    "skipped": 1,
+    "deselected": 79,
+    "seconds": 47.1,
+    "network": "none",
+    "production_volumes": false,
+    "production_credentials": false,
+    "root_filesystem": "read_only",
+    "source_mount": "read_only",
+    "memory_limit": "1g",
+    "cpus": 1,
+    "tmpfs": "/tmp:rw,exec,size=256m",
+    "first_attempt": {
+      "passed": 1894,
+      "failed": 10,
+      "cause": "Test tooling lacked Git and /tmp tmpfs defaulted to noexec; executable fake fixtures could not start. Corrected only in disposable test environment. Application image unchanged."
+    }
+  },
+  "implementation_revision": "fc07672302d5e9cb4041267e9de38fca730a9a72",
+  "ci": {
+    "status": "pass",
+    "implementation_revision": "fc07672302d5e9cb4041267e9de38fca730a9a72",
+    "url": "https://github.com/OrbitalLabBOG/mova-pro-futbol-data-analytics/actions/runs/36517147339"
+  },
+  "production_control": {
+    "observed_at": "2026-09-29T03:32:32+00:00",
+    "doctor": {
+      "pass": 24,
+      "warn": 0,
+      "fail": 0
+    },
+    "checkout_revision": "e903983",
+    "image_revision": "e903983",
+    "candidate_deployed": false
+  }
+}

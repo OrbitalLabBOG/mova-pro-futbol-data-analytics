@@ -1,0 +1,53 @@
+{
+  "schema": "mova-research-usage-diagnostic-v1",
+  "run_id": "research_73c7968ad6c2c3c71c4fc22fc7515a6d",
+  "model": "gpt-5.6-luna",
+  "input_tokens": 246505,
+  "output_tokens": 7074,
+  "duration_ms": 162301,
+  "event_counts": {
+    "thread.started": 1,
+    "turn.started": 1,
+    "item.completed": 8,
+    "item.started": 4,
+    "turn.completed": 1
+  },
+  "completed_item_types": {
+    "error": 1,
+    "agent_message": 3,
+    "web_search": 4
+  },
+  "turn_usage": [
+    {
+      "input_tokens": 246505,
+      "cached_input_tokens": 177152,
+      "output_tokens": 7074,
+      "reasoning_output_tokens": 3051
+    }
+  ],
+  "request_file_bytes": 63465,
+  "request_top_level_json_bytes": {
+    "cycle_id": 14,
+    "guardrails": 325,
+    "manifest": 67453,
+    "manifest_id": 43,
+    "manifest_sha256": 66,
+    "objective": 218,
+    "provider": 20,
+    "quality_policy": 26,
+    "request_sha256": 66,
+    "requested_at": 31,
+    "research_run_id": 43,
+    "run_kind": 8,
+    "schema": 26,
+    "scope_policy": 312
+  },
+  "events_file_sha256": "ade17a9dfd8de9e6f965c97abd3879f8085db00f560f932ff8a7897609be1017",
+  "llm_calls_in_diagnostic": 0,
+  "web_action_types": {
+    "search": 2,
+    "other": 2
+  },
+  "declared_search_queries": 8,
+  "skill_catalog_warning": "descriptions_shortened_to_fit_2_percent_context_budget"
+}

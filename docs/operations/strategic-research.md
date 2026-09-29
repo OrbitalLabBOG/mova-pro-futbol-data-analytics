@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — contexto estratégico e investigación"
 created: 2026-08-27
-updated: 2026-09-16
+updated: 2026-09-29
 tags: [mova, fpl, strategy, research, codex, evidence]
 status: active
 ---
@@ -36,6 +36,67 @@ El servicio tiene dos capas complementarias. El collector FPL conserva cada seis
 campo oficial `news`, `status` y `chance_of_playing_next_round`; el worker Codex hace
 investigación web profunda únicamente en ventanas de decisión. No existe un scraper de prensa
 residente ni una llamada LLM por tick.
+
+### Contexto y alcance trazables (22 de septiembre)
+
+El worker conserva íntegro el request sellado y añade `acquisition_plan` al contexto
+entregado a Researcher. Agrupa sujetos únicos por club, calcula el objetivo 90% y
+expone una estimación condicional de documentos necesarios. Supone una fuente reciente
+que nombre a todos los sujetos de cada club; fuentes multiclub pueden superar esa
+estimación. No es evidencia ni modifica budgets. Clubes desconocidos no se agrupan.
+Plan, plantilla, proyecciones, catálogo global, alertas, memoria y antecedentes siguen
+presentes. El catálogo real ya está compacto: no se anuncia ahorro de tokens.
+
+Cada intento autorizado conserva `logs/<run>.<attempt>.context.json`: hash de la vista
+realmente enviada, hash del request original, bytes de JSON/prompt y contadores de
+sujetos, catálogo, antecedentes y hints. Es diagnóstico; no cambia el receipt contable
+ni acredita búsquedas, calidad o cobertura. El importador sigue validando el request
+original y recuperando fuentes independientemente. La validación interactiva durante
+el turno sigue pendiente; no se añadió una tool MCP en esta entrega.
+
+El gate longitudinal evalúa la última corrida importada de **cada ciclo de todo el
+historial**, independientemente del `limit` de presentación. Conserva mínimo tres GWs,
+90/80 y cero conflictos en todas las medidas. Empates se ordenan por importación,
+encolado e ID. Reintentos no deben ocultar GWs fallidas. Esto corrige paginación, no
+introduce una ventana de tres GWs recientes ni reetiqueta resultados históricos.
+
+### Refactor de contexto y calidad en A0/shadow
+
+El checkout actual prepara `research_summary.plan` con horizonte, supuestos, ventanas de chips y
+guardrails del plan activo. `research_summary.world` añade el catálogo oficial de IDs,
+fixtures de las cinco próximas GWs y hasta 80 alertas de cambios en status/chance/news
+entre snapshots FPL; declara `alerts_total` y `alerts_truncated`. La consulta se limita
+al `as_of_at` sellado. Las proyecciones de los 15 propios se resuelven por ID del batch,
+aunque no aparezcan en su top-N. Las señales aceptadas de las tres GWs anteriores son
+pistas históricas, no evidencia heredada. Si PostgreSQL no está disponible, `world.status`
+es `missing` o `degraded` y no se inventa catálogo global.
+
+El mismo worker dedica una exploración acotada a lesiones y cambios de rol en toda la liga;
+el resto sigue priorizando plantilla y candidatos. El importador aplica la política
+`research-claim-2026.09.2` a requests nuevos con catálogo: exige ID conocido, nombre
+explícito en el excerpt, vocabulario del tema, fecha declarada que aparece en la página y fetch anterior al
+deadline para `accepted`; dos fuentes no oficiales deben pertenecer a hosts distintos.
+La misma fuente debe respaldar sujeto, tema y fecha vigente: 3 días para disponibilidad,
+lesión, suspensión o minutos; 7 para rol, balón parado y contexto; 30 para fichajes.
+La cobertura actual también exige publicación de los últimos 7 días. Requests ya
+sellados con `2026.09.1` conservan su contrato anterior.
+Si no puede demostrarlo, conserva la señal como `candidate`
+y registra la razón; una página genérica deja `not_checked` en cobertura. Esta es una
+comprobación conservadora de identidad/tema, **no** una prueba completa de que cada matiz
+del claim sea verdadero. El replay etiquetado y la revisión de casos difíciles siguen
+siendo necesarios antes de afirmar calidad causal.
+
+La telemetría nueva está en `coverage.quality` y
+`mova_research_quality{measure=...}`: tamaño de catálogo, alertas, señales dentro/fuera
+del foco y señales degradadas por calidad. `search_requests` permanece `null`: Codex
+native search no expone al host un contador exigible. El límite del prompt orienta al
+agente; el enforcement real es timeout, autorización previa del presupuesto y límites
+de salida. Codex CLI reporta tokens solo al terminar: el límite por job **no** corta
+una llamada física al llegar a ese número. Un overrun se liquida con tokens reales y
+exige revisión durable. El worker desactiva plugins del host para reducir contexto
+ajeno al request; el ahorro real sigue pendiente de medición.
+No interpretar `search_requests=null` como cero consultas. El gate 90/80 vigente no
+cambia y los runs v1/v2 anteriores no se reetiquetan.
 
 Desde el corte del 14 de septiembre el prompt opera `coverage-first`: agrupa el foco por club,
 busca primero partes, convocatorias o alineaciones oficiales que nombren a varios sujetos y sólo
@@ -77,6 +138,15 @@ chat. Su propio SHA-256 permite demostrar exactamente qué memoria recibió Stra
 batch baseline aprobado, resueltos contra el último snapshot público. Cada sujeto lleva notas
 oficiales, p_play/p60 y razón de inclusión cuando están disponibles. La corrida siguiente recibe
 las señales activas anteriores y debe producir deltas, no repetir claims sin cambios.
+También recibe hasta ocho `reusable_evidence_hints` de la última corrida v2 importada del
+mismo ciclo, con antigüedad máxima de 36 horas. Sólo se incluyen documentos con fetch
+verificado que respaldaron sujetos todavía presentes en el foco. URL y
+elementos cubiertos son pistas de descubrimiento, nunca evidencia transferida: el worker debe
+volver a leer la página y el importador debe verificar de nuevo el fragmento y locator en el
+brief actual. Una pista obsoleta o inaccesible no aumenta cobertura ni habilita señales.
+La cobertura v2 incluye `teams` con sujetos requeridos, revisados y con evidencia verificada
+por club. El total y el gate 90/80 siguen calculándose sobre los sujetos individuales; este
+desglose diagnostica dónde se agota discovery y no concede cobertura adicional.
 
 ## Operación
 
@@ -183,6 +253,26 @@ utilidad. La promoción continúa bloqueada hasta observar al menos tres GWs med
 
 ## Diagnóstico
 
+### Adjudicar un falso conflicto temporal
+
+`mova strategy research resolve-conflict --conflict-id ID --cycle-id CICLO
+--document-id DOCUMENTO --actor OPERADOR --reason MOTIVO --idempotency-key CLAVE`
+registra una revisión supervisada `not_contradictory`. Repetir `--document-id`
+para cubrir **exactamente todas** las URLs originales del conflicto. Sólo admite
+documentos del mismo run con fetch verificado, excerpt y artefacto cuyos hashes
+siguen intactos. El operador debe explicar por qué los claims pueden coexistir;
+por ejemplo, rendimiento en un partido anterior no contradice una duda médica
+para el siguiente. La verificación de hashes no demuestra esa interpretación.
+
+La transacción conserva el conflicto original en auditoría, registra actor,
+motivo, fuentes y clave, y cambia únicamente su estado. Replay exacto reutiliza
+el evento; una clave con contenido distinto o una segunda resolución falla.
+No sirve para declarar una lesión resuelta, sustituir fuentes con otras nuevas,
+aceptar riesgo sin evidencia ni resolver contradicciones reales pendientes.
+No promueve señales, borra historia, altera modelos, controles o envelopes.
+Después requiere una decisión nueva con los gates normales; no habilita FPL.
+El CLI no se expone como endpoint HTTP ni se entrega al worker de research.
+
 ~~~bash
 mova strategy status
 mova doctor --json
@@ -217,3 +307,65 @@ docker compose --profile research down
 La migración es aditiva. El rollback de código conserva tablas, requests, resultados y audit.
 No se borra la cola durante recuperación. Reponer la revisión anterior de checkout/imagen,
 migrar solo hacia delante y ejecutar mova doctor. Nada de este flujo habilita browser writes.
+
+
+## Researcher component release — 2026-09-22
+
+The active registry selects **Researcher 1.10.0**, Astra/medium, Codex 0.153.4,
+quality policy 2026.09.5 and brief v2. The [agent versioning decision](../decisions/agents/researcher-versioning.md)
+and `experiments/research/20260922-agent-lab/` preserve definitions, measured
+experiments, limitations and release evidence. Runtime deployment is `e903983`, with checkout/image parity and 24 passing doctor
+checks after rollout. Inspect cockpit version, checkout/image SHA and doctor for
+current state; Git selection alone is never proof of deployment. Rollback to
+85365e8 is preserved under `/opt/orbital/backups/mova-fpl/researcher-e903983/`.
+
+Two isolated live runs produced 12/25 and 10/25 verified focus subjects, six/seven
+valid dated documents, four/five accepted signals, and one/two discoveries outside
+focus. All final excerpts survived independent import. These are 48%/40% partial
+coverage, not 90%/80% or three passing GWs. Exact-version repetition plus manual
+claim/source review supports component release; it does not satisfy the stricter
+same-manifest comparator or promote FPL authority.
+
+The normal Compose worker now mounts the controlled search credential and exposes
+only four evidence/context tools. Startup fails before inference on a missing or
+unexpected tool surface. No database/browser credential or writable FPL tool is
+available. Version/model/context hashes and real token receipts identify each run.
+Broad/forced scope is 16 queries/documents; refresh/final retain delta scope.
+
+Experimental requests remain isolated from operational evidence and cadence slots;
+use the host research lock. The old 85365e8 importer must never process them.
+The authorized campaign allowance preserves consumption and restores scoped token
+and use capacity. The historical baseline overrun remains reviewed, not erased.
+The scheduler still operates its predeadline slots; a component release does not
+create a new daily background research schedule.
+
+
+## Laboratorio de cobertura — candidato 1.11.0
+
+La versión activa sigue siendo 1.10.0. El candidato 1.11.0 añade la hipótesis
+`focus_completion_v1`: priorizar el foco pendiente mediante `research_context` sección
+`focus_progress`, agrupar dudas por club y cerrar cada sujeto con evidencia o limitación.
+El progreso cuenta verificaciones supported dentro del turno y permanece diagnóstico;
+la importación independiente decide cobertura/aceptación. No completa silencios de búsqueda.
+Modelo, calidad, scope, timeout y guard reactivo conservan los límites de 1.10.0.
+
+Replay sin red ni inferencias:
+
+```bash
+python -m experiments.research.replay_corpus experiments/research/20260929-harness
+python experiments/research/compare_agents.py /ruta/research baseline_run candidate_run
+```
+
+El comparador exige manifiesto, scope, calidad, contexto, método de fuente, implementación y
+límite de tokens compatibles; ambos consumos conocidos y dentro de límite, una tentativa
+completa por brazo, mejora de cobertura >=2 sujetos y ausencia de regresión de conflictos
+/soporte. Los hashes de contexto se reportan; incluyen versión e identidad de request y no
+se exige igualdad byte a byte. Falta de evaluación o metering nunca se inventa.
+Una comparación elegible es candidata a revisión, no promoción ni aceptación multi-GW.
+
+El corpus contiene seis extractos reales con hashes verificados y ocho etiquetas de contrato.
+Conserva fechas de captura y limita su uso retrospectivo: una captura posterior al deadline
+no entra al backtest de esa GW. Los checks léxicos no validan todo el significado de un claim.
+Antes del ensayo online pareado de máximo 2M tokens, comprobar presupuesto y conservar
+capacidad operativa. El snapshot de 29/09 03:11 UTC dejó 2.310.934 tokens en la GW: un par de
+2M dejaría 310.934, menos que un job operativo de 1M. El par se difiere sin ampliar allowances.

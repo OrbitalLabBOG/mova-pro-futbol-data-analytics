@@ -1,0 +1,53 @@
+{
+  "schema": "mova-research-feasibility-diagnostic-v1",
+  "research_run_id": "research_73c7968ad6c2c3c71c4fc22fc7515a6d",
+  "request_sha256": "81911461ad83f4bf3446f48888eda742566a35c9d4bf49c778a45c015231f7ad",
+  "request_file_sha256": "bd109b7428cb8873ee16a1c5e000ac2da6f4e4b5daa9586dd9588d85ab1e6dc1",
+  "required_subjects": 25,
+  "clubs": 14,
+  "club_sizes": [
+    4,
+    3,
+    3,
+    2,
+    2,
+    2,
+    2,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+  ],
+  "observed_verified_subjects": 3,
+  "reusable_hints": 0,
+  "scenarios": [
+    {
+      "kind": "broad",
+      "max_documents": 10,
+      "maximum_subjects_under_assumption": 21,
+      "coverage_ceiling": 0.84,
+      "can_reach_90_percent": false
+    },
+    {
+      "kind": "refresh",
+      "max_documents": 8,
+      "maximum_subjects_under_assumption": 19,
+      "coverage_ceiling": 0.76,
+      "can_reach_90_percent": false
+    },
+    {
+      "kind": "final",
+      "max_documents": 6,
+      "maximum_subjects_under_assumption": 16,
+      "coverage_ceiling": 0.64,
+      "can_reach_90_percent": false
+    }
+  ],
+  "assumption": "One club-specific document can cover every focus subject in that club; no cross-club source. Upper bound, not observed web coverage.",
+  "llm_calls": 0,
+  "runtime_ledger_mutated": false,
+  "minimum_club_documents_for_90_percent": 12
+}

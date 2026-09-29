@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 
 PUBLIC_CADENCE_SECONDS = {
@@ -16,6 +16,56 @@ PUBLIC_CADENCE_SECONDS = {
     "hard_stop": 5 * 60,
     "settlement": 6 * 3600,
 }
+
+WORKFLOW_TIMING_POLICY_VERSION = "workflow-timing-1.0.0"
+# Seconds before the official deadline. These boundaries match phase_for:
+# preflight begins at T-6h, freeze at T-90m, execution at T-60m,
+# verification at T-30m and hard_stop at T-15m.
+WORKFLOW_MILESTONES = {
+    "observe": (6 * 3600, 3 * 3600, 30 * 60),
+    "contextualize": (3 * 3600, 3600, 30 * 60),
+    "research": (6 * 3600, 3 * 3600, 30 * 60),
+    "propose_validate": (3 * 3600, 3600, 30 * 60),
+    "deliberate": (6 * 3600, 3 * 3600, 30 * 60),
+    "preflight": (3 * 3600, 3600, 30 * 60),
+    "execute_verify": (3600, 30 * 60, 15 * 60),
+}
+
+
+def agent_window(deadline: datetime, now: datetime, *, window_seconds: int,
+                 cutoff_seconds: int) -> dict:
+    """Shared temporal eligibility, independent of jobs, evidence and authority."""
+    seconds = int((deadline - now).total_seconds())
+    opens = deadline - timedelta(seconds=window_seconds)
+    cutoff = deadline - timedelta(seconds=cutoff_seconds)
+    reason = ("deadline_passed" if seconds <= 0 else
+              "outside_window" if seconds > window_seconds else
+              "final_cutoff_passed" if seconds <= cutoff_seconds else "window_open")
+    return {"due": reason == "window_open", "reason": reason,
+            "deadline_seconds": seconds, "opens_at": opens.isoformat(),
+            "cutoff_at": cutoff.isoformat(),
+            "next_eligible_at": opens.isoformat() if reason == "outside_window" else None}
+
+
+def workflow_stage_timing(name: str, deadline: datetime | None) -> dict:
+    """Expose bounded milestones without treating official settlement as a clock."""
+    if name in {"settle", "review_learn"}:
+        return {"policy_version": WORKFLOW_TIMING_POLICY_VERSION,
+                "basis": "official_finished_data_checked", "target_at": None,
+                "recovery_until": None, "hard_stop_at": None}
+    offsets = WORKFLOW_MILESTONES.get(name)
+    if not offsets or deadline is None:
+        return {"policy_version": WORKFLOW_TIMING_POLICY_VERSION,
+                "basis": "official_deadline", "target_at": None,
+                "recovery_until": None, "hard_stop_at": None}
+    target, recovery, hard_stop = offsets
+    return {
+        "policy_version": WORKFLOW_TIMING_POLICY_VERSION,
+        "basis": "official_deadline",
+        "target_at": (deadline - timedelta(seconds=target)).isoformat(),
+        "recovery_until": (deadline - timedelta(seconds=recovery)).isoformat(),
+        "hard_stop_at": (deadline - timedelta(seconds=hard_stop)).isoformat(),
+    }
 
 
 def select_event(boot: dict, now: datetime | None = None) -> dict:

@@ -1,7 +1,7 @@
 ---
 type: docs
 name: MOVA Fantasy Fútbol Data Analytics
-updated: 2026-09-14
+updated: 2026-09-22
 status: active
 tags: [mova, fpl, runtime, operations]
 ---
@@ -27,6 +27,40 @@ ni promueve un modelo. Empezar por el [contrato del dataset](experiments/data_gr
 y la [guía de cierre, tamaños y límites](experiments/data_ground_truth/README.md#cierre-del-gate-de-datos-g112).
 
 ## Versiones y última comprobación
+
+El **22 de septiembre de 2026**, el VPS quedó desplegado en `ccf21d3`:
+recuperación acotada de revisión causal, propuestas con enums válidos,
+clasificación separada de bloqueos operativos, atribución correcta en trazas
+nuevas y collector evaluado cada 15 minutos con lock de capacidad compartido.
+GW5 está cerrada y su revisión causal recuperada; el replay no duplica resultados.
+La captura privada posterior al reinicio del browser validó los 15 jugadores.
+Doctor final: **24 PASS, 0 WARN, 0 FAIL**; readiness **22 pass, 4 pending, 1 blocked**.
+Suite: **1802 passed, 1 skipped, 79 deselected**; CI de PR #177 en verde.
+
+La [evidencia de release, rollback y salud](docs/decisions/2026-27/runtime-review-recovery-20260922.md)
+registra el corte y sus límites. La [acta GW5](docs/decisions/2026-27/gw05-closeout.md)
+separa cierre factual, comparador y aprendizaje. El
+[replay de research](experiments/research/20260922-recovery/README.md) demuestra
+que la frescura y la calidad de evidencia siguen bloqueando esa capacidad.
+
+La autoridad continúa en `shadow/A0`, `kill_switch=true`, `browser_writes=false`
+y compliance pendiente. Alertas externas y backup cifrado off-host ya tienen
+evidencia de configuración y restore del 20/09 (AC-06/07); no son pendientes
+nuevos. Faltan calidad research, rehearsals del executor y una jornada completa
+sin rescates. El cierre supervisado de GW5 no acredita ese último gate.
+El código desplegado pertenece a la
+[PR #177](https://github.com/OrbitalLabBOG/mova-pro-futbol-data-analytics/pull/177),
+apilada sobre #176; no debe confundirse con la punta de `main`.
+
+Los cortes siguientes son históricos y no sustituyen esa comprobación.
+
+El **18 de septiembre de 2026**, GW5 quedó registrada antes del deadline mediante
+una operación supervisada en el Chrome personal de Julián: Van Hecke y Thiago
+entraron por Calafiori y João Pedro usando dos transferencias libres, sin hit ni
+chip; Haaland quedó capitán y Calvert-Lewin vice. La confirmación visual y una
+recarga posterior coincidieron. La [traza GW5](docs/decisions/2026-27/gw05-preparation.md)
+conserva el detalle. Esta operación no usó el executor del VPS, no suma rehearsals
+R2/R3 y no promueve la autoridad autónoma, que continúa en `shadow/A0`.
 
 La [guía de cierre autónomo](docs/specs/fpl-autonomous-operator/04-readiness-and-rollout.md)
 define desde el 14 de septiembre las etapas C1–C5, tareas, dependencias y evidencia de aceptación.
@@ -444,6 +478,10 @@ CycleManifest + memoria estratégica durable → modelos causales → matriz xP 
 - El worker enruta Researcher a `gpt-5.6-luna` con razonamiento `medium` y Strategist/Critic a
   `gpt-5.6-terra` con razonamiento `high`; ambos usan la suscripción Codex, sin fallback a API.
 - `mova_fpl` solo hace HTTP `GET`; no escribe en FPL.
+- `mova strategy research resolve-conflict` permite adjudicar claims no
+  contradictorios con evidencia original verificada, hashes y auditoría
+  idempotente. No declara disponibilidad médica ni promueve señales, decisiones
+  o permisos; exige regenerar la propuesta. Ver el runbook de research.
 - El browser autenticado vive aislado y sus mutaciones están gobernadas por controles.
 - Supabase no forma parte del runtime; se usa únicamente para seguimiento PM.
 - SQLite sigue siendo el writer del ledger operativo del harness. PostgreSQL es writer del

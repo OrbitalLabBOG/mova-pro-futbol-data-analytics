@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — mejora continua controlada"
 created: 2026-08-30
-updated: 2026-09-16
+updated: 2026-09-22
 tags: [mova, fpl, learning, review, costs, promotion]
 status: active-shadow
 ---
@@ -43,7 +43,24 @@ Clasifica `data/freshness`, `model/calibration`, `optimizer`, `research/context`
 aparecer al menos tres veces antes de abrir experimento. `not_ready` no muta jobs ni memoria.
 Para `optimizer`, el reviewer cuenta códigos fallidos distintos únicamente en el envelope vigente.
 Los checks de envelopes `superseded` permanecen como diagnóstico histórico separado y no inflan
-la recurrencia causal ni abren una propuesta falsa.
+la recurrencia causal ni abren una propuesta falsa. Sólo legalidad de decisión, contabilidad de
+transferencias y ausencia de comparadores clasifican como defectos del optimizador. Bloqueos de
+autoridad, ventana o frescura se conservan como observación no accionable de guardrails; su
+recuperación pertenece al workflow/watchdog, no a una propuesta de recalibración.
+
+El reviewer serializa cada GW con un lock del sistema operativo. Un fallo permite
+hasta tres intentos totales con la misma clave y entradas idénticas, separados por
+cinco minutos. Un proceso interrumpido en `running` sólo se recupera después de diez
+minutos y con el lock de la GW adquirido; nunca se roba un proceso activo. Un fallo
+en cooldown o agotado se informa como `failed`, no como replay exitoso. El historial
+del intento previo permanece en auditoría. El éxito resuelve su incidente P2 sólo
+después de persistir la revisión. Esta recuperación no se aplica al executor FPL.
+
+Las propuestas recurrentes normalizan las categorías a los enums de almacenamiento
+(`model`, `research`, etc.), usan `C2/P2` y permanecen `proposed`: ni una clasificación
+ni el reintento autorizan cambios de modelo. La traza de cierres nuevos utiliza la
+etiqueta del comparador y el autor declarado; la ausencia de autor se registra como
+`unknown`. Las trazas históricas no se reescriben silenciosamente.
 
 Las tablas `change_proposal_evaluations` y `lessons` son append-only salvo el estado visible de
 la propuesta. Cada transición conserva actor, razón, clave idempotente, hash y evidencia. El
@@ -159,3 +176,21 @@ La API `/api/v1/budget-reservations` expone las últimas reservas y Prometheus p
   no sobrescribir evaluaciones.
 - No simular ni forzar el reviewer antes de `finished + data_checked` y scorecard baseline.
 - PostgreSQL recibe estas tablas por el import shadow; SQLite continúa como writer oficial.
+
+## Researcher experiment capacity
+
+Agent experiments are real consumption. Their `research_experiment` ledger rows
+and measured input/output remain separate from operational evidence. An authorized
+campaign can add capacity with `mova cost allowance --cycle-id ... --tokens ...
+--uses ... --actor ... --reason ... --idempotency-key ...`; optional uses restore
+campaign call capacity in the same scope. It does not erase costs, resolve
+historical overruns or authorize FPL changes. The allowance applies to the named
+cycle and grant month. Reports show base and effective policy separately.
+
+For the expanded Researcher profile, deployment preparation uses 500k reservation,
+1M job ceiling, 4M per GW and 16M per month, retaining 20/60 use limits. The 900k
+observed-token guard is reactive and can overshoot within an in-flight response.
+These are capacity ceilings, not consumption targets. A broad run may use fewer
+than its 16 searches/documents; refresh/final keep their smaller scope. A new
+production profile requires a release record and restored health, not merely this
+documentation. Never report cached logical tokens as a USD invoice.

@@ -73,11 +73,16 @@ def _seed_authorized_service(tmp_path: Path) -> tuple[ExecutionService, dict, di
     source_job, _ = db.start_job("tick", "tick:authorized", "corr_authorized", cycle_id=cycle)
     pre = _private_state(list(range(1, 16)), captain=1, vice=2)
     _, pre_quality = validate_private_state(pre, expected_team_id=config.team_id)
+    pre_path, _, _ = seal_private_state(
+        pre, config.season, config.artifact_root / "team_state",
+        expected_team_id=config.team_id,
+    )
     team_id = db.add_team_state(
         job_id=source_job, cycle_id=cycle, observed_at=pre["observed_at"],
         source_name="fpl_authenticated_api", squad=pre["picks"], free_transfers=1,
         bank_tenths=10, chips=pre["chips"], fingerprint=pre_quality["fingerprint"],
-        artifact_path="team", manifest_sha256="c" * 64,
+        artifact_path=str(pre_path),
+        manifest_sha256=hashlib.sha256((pre_path / "manifest.json").read_bytes()).hexdigest(),
     )
     season_plan = db.activate_season_plan("2026-27", {
         "horizon_start_gw": 3, "horizon_end_gw": 8, "assumptions": [],
@@ -519,7 +524,7 @@ def test_native_verified_attempt_builds_autonomous_closeout_input(
         def execute(self, query, params):
             if "model_projection_batches" in query:
                 self.rows = [{"batch_id": "projection_native",
-                              "input_artifact_id": "artifact_pre"}]
+                              "input_artifact_id": "artifact_pre", "cutoff_at": NOW.isoformat()}]
             else:
                 positions = {1: "GKP", 15: "GKP", **{n: "DEF" for n in range(2, 7)},
                              **{n: "MID" for n in range(7, 12)},
@@ -660,3 +665,20 @@ def test_command_bundle_tamper_prevents_claim(tmp_path: Path):
         service.claim(execution_id=prepared["execution_id"], actor="fixture",
                       reason="must reject", now=NOW)
     assert service.db.execution_attempt(prepared["execution_id"])["status"] == "prepared"
+
+
+@pytest.mark.parametrize('failure', ['wrong_token', 'expired_lease'])
+def test_stale_or_invalid_claim_never_enters_applying(tmp_path, failure):
+    service, plan, pre = _seed_authorized_service(tmp_path)
+    prepared = service.prepare(plan_id=plan['plan_id'], adapter='fixture', actor='test',
+                               reason='lease regression', idempotency_key='lease-regression', now=NOW)
+    claim = service.claim(execution_id=prepared['execution_id'], actor='fixture', reason='claim', now=NOW)
+    error = PermissionError if failure == 'wrong_token' else RuntimeError
+    with pytest.raises(error):
+        service.begin(execution_id=prepared['execution_id'],
+                      claim_token='incorrect' if failure == 'wrong_token' else claim['claim_token'],
+                      pre_state=pre, actor='fixture', reason='must reject',
+                      now=NOW if failure == 'wrong_token' else NOW+timedelta(minutes=6))
+    attempt = service.db.execution_attempt(prepared['execution_id'])
+    assert attempt['status'] == 'claimed'
+    assert all(e['to_status'] != 'applying' for e in attempt['events'])

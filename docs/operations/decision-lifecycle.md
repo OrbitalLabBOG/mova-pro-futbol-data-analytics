@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — lifecycle de decisión shadow"
 created: 2026-08-28
-updated: 2026-08-31
+updated: 2026-09-20
 tags: [mova, fpl, decision-envelope, validator, shadow]
 status: active
 ---
@@ -34,6 +34,13 @@ Cada corrida contiene exactamente:
 - `milp_baseline`: MILP con el planner vigente, candidato seleccionado en shadow;
 - `primary_alternative`: MILP sin chip o, si coincide con baseline, plantilla conservada con XI
   optimizado.
+
+`mova harness workflow` lee el intento de ejecución ligado al `plan_id` del preflight
+que muestra. Un intento `verified` de otro plan del mismo ciclo no completa
+`execute_verify`; una combinación incoherente produce
+`EXECUTION_PLAN_MISMATCH` y bloquea el veredicto. Un plan nuevo sin intento propio
+permanece `pending`, aunque un plan anterior haya terminado. Este reporte es
+observabilidad de solo lectura: no ejecuta ni reintenta acciones.
 
 El acta Markdown es una vista para humanos. El tick consume el JSON producido por
 `mova_fpl.cli.live --json-out`; nunca extrae valores con expresiones regulares.

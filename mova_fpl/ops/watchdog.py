@@ -14,6 +14,7 @@ from tempfile import TemporaryDirectory
 from mova_fpl.ops.alerts import configured_sink, dispatch, journal_sink
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB
+from mova_fpl.ops.schedule import WORKFLOW_MILESTONES, WORKFLOW_TIMING_POLICY_VERSION
 
 INCIDENT_TITLE = "Scheduler heartbeat unhealthy"
 AGENT_QUEUE_INCIDENT_TITLE = "Agent queue integrity unhealthy"
@@ -30,7 +31,7 @@ def evaluate_workflow_deadline(workflow: dict, *, seconds_to_deadline: int | Non
     stages = {str(row.get("name")): row for row in workflow.get("stages") or []}
     reasons: list[dict] = []
     if (workflow.get("violations") and seconds_to_deadline is not None
-            and seconds_to_deadline <= 6 * 3600):
+            and seconds_to_deadline <= WORKFLOW_MILESTONES["research"][0]):
         reasons.append({
             "code": "workflow_dependency_violation", "severity": "P0",
             "violations": workflow.get("violations"),
@@ -41,7 +42,37 @@ def evaluate_workflow_deadline(workflow: dict, *, seconds_to_deadline: int | Non
             "code": "execution_terminal_failure", "severity": "P0",
             "outcome": execution.get("outcome"),
         })
-    if seconds_to_deadline is not None and 0 < seconds_to_deadline <= 6 * 3600:
+    if (seconds_to_deadline is not None and
+            0 < seconds_to_deadline <= WORKFLOW_MILESTONES["research"][0]):
+        stale_severity = (
+            "P0" if seconds_to_deadline <= WORKFLOW_MILESTONES["observe"][2]
+            else "P1"
+        )
+        observe = stages.get("observe") or {}
+        if observe.get("status") == "blocked":
+            reasons.append({
+                "code": "public_data_unusable_t_minus_6h", "severity": stale_severity,
+                "stage": "observe", "outcome": observe.get("outcome"),
+            })
+        contextualize = stages.get("contextualize") or {}
+        if contextualize.get("outcome") == "stale_team_state":
+            reasons.append({
+                "code": "private_team_state_stale_t_minus_6h", "severity": stale_severity,
+                "stage": "contextualize", "outcome": "stale_team_state",
+            })
+        budget = workflow.get("budget") or {}
+        agent_incomplete = any(
+            (stages.get(name) or {}).get("status") != "complete"
+            for name in ("research", "deliberate")
+        )
+        if agent_incomplete and any(budget.get(key) == 0 for key in (
+            "gameweek_remaining_tokens", "gameweek_remaining_uses",
+            "month_remaining_tokens", "month_remaining_uses",
+        )):
+            reasons.append({
+                "code": "agent_budget_exhausted_before_terminal", "severity": "P1",
+                "stage": "research", "outcome": "budget_exhausted",
+            })
         for name in ("research", "deliberate"):
             row = stages.get(name) or {}
             if row.get("status") != "complete":
@@ -50,25 +81,33 @@ def evaluate_workflow_deadline(workflow: dict, *, seconds_to_deadline: int | Non
                     "stage": name, "status": row.get("status"),
                     "outcome": row.get("outcome"),
                 })
-    if seconds_to_deadline is not None and 0 < seconds_to_deadline <= 3 * 3600:
+    if (seconds_to_deadline is not None and
+            0 < seconds_to_deadline <= WORKFLOW_MILESTONES["preflight"][0]):
         for name in ("contextualize", "propose_validate", "preflight"):
             row = stages.get(name) or {}
+            if name == "contextualize" and row.get("outcome") == "stale_team_state":
+                continue
             if row.get("status") != "complete":
                 reasons.append({
                     "code": f"{name}_incomplete_t_minus_3h", "severity": "P1",
                     "stage": name, "status": row.get("status"),
                     "outcome": row.get("outcome"),
                 })
-        if execution.get("status") == "pending":
+    if seconds_to_deadline is not None and execution.get("status") == "pending":
+        target, _, hard_stop = WORKFLOW_MILESTONES["execute_verify"]
+        if seconds_to_deadline <= hard_stop:
             reasons.append({
-                "code": "authorized_execution_pending_t_minus_3h", "severity": "P1",
-                "stage": "execute_verify", "outcome": execution.get("outcome"),
+                "code": ("authorized_execution_pending_after_deadline"
+                         if seconds_to_deadline <= 0 else
+                         "authorized_execution_pending_at_hard_stop"),
+                "severity": "P0", "stage": "execute_verify",
+                "outcome": execution.get("outcome"),
             })
-    if seconds_to_deadline is not None and seconds_to_deadline <= 0:
-        if execution.get("status") == "pending":
+        elif seconds_to_deadline <= target:
             reasons.append({
-                "code": "authorized_execution_pending_after_deadline", "severity": "P0",
-                "stage": "execute_verify", "outcome": execution.get("outcome"),
+                "code": "authorized_execution_pending_at_execution_window",
+                "severity": "P1", "stage": "execute_verify",
+                "outcome": execution.get("outcome"),
             })
     severity = (
         "P0" if any(row["severity"] == "P0" for row in reasons) else
@@ -76,6 +115,7 @@ def evaluate_workflow_deadline(workflow: dict, *, seconds_to_deadline: int | Non
     )
     return {
         "schema": "mova-workflow-deadline-sentinel-v1",
+        "timing_policy_version": WORKFLOW_TIMING_POLICY_VERSION,
         "healthy": not reasons,
         "status": "ok" if not reasons else "critical" if severity == "P0" else "degraded",
         "severity": severity,
@@ -127,6 +167,17 @@ def assess(db: OpsDB, *, max_age_seconds: int = 1200,
     current = now or datetime.now(timezone.utc)
     db.quick_check()
     tick = (db.status().get("latest_tick") or {})
+    if tick.get("status") == "running":
+        started = tick.get("started_at")
+        if started:
+            start_time = datetime.fromisoformat(str(started).replace("Z", "+00:00"))
+            age = max(0, int((current - start_time).total_seconds()))
+            return {
+                "healthy": age <= max_age_seconds,
+                "reason": None if age <= max_age_seconds else "tick_running_too_long",
+                "tick_age_seconds": age,
+                "latest_tick_status": "running",
+            }
     finished = tick.get("finished_at")
     if not finished:
         return {"healthy": False, "reason": "no_finished_tick",

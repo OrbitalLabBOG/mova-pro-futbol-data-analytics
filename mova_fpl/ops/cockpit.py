@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 
+from mova_fpl.ops.agent_releases import researcher_release
 from mova_fpl.ops.alerts import channel_report
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB
@@ -396,6 +397,8 @@ def build_cockpit(config: RuntimeConfig, db: OpsDB, *,
         agent_routing={
             "provider": config.research_provider,
             "researcher": {
+                "agent_version": researcher_release()[0],
+                "quality_policy": researcher_release()[1]["quality_policy"],
                 "model": config.research_model,
                 "reasoning_effort": config.research_reasoning_effort,
             },

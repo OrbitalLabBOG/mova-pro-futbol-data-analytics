@@ -1,3 +1,10 @@
+---
+type: runbook
+name: MOVA FPL — operar y cerrar una jornada
+updated: 2026-09-29
+status: active
+---
+
 # Runbook — operar una jornada de FPL
 
 Para la persona que tiene que emitir el acta antes del cierre, incluso si algo se rompió.
@@ -234,6 +241,33 @@ SQLite soportado dentro del contenedor. No abrir `ops.db` con el `sqlite3` del h
 
 La traza vive en `data/processed/trace.db`. Cada decisión guarda su huella
 (`fingerprint`), que permite comprobar si dos corridas decidieron lo mismo.
+
+### Financiación y atribución del cierre autónomo v2
+
+`mova-fpl-autonomous-closeout-v2` requiere `mova-closeout-financing-v1` en ambos
+escenarios. El estado inicial proviene del team-state vinculado al manifest del envelope;
+el seleccionado también exige el estado posterior durable de la ejecución. Se verifican
+hashes físicos, fingerprints, pertenencia al ledger y precios del batch approved predeadline.
+Importes en décimas: banco posterior = banco inicial + ventas a selling_price − compras.
+Los jugadores retenidos conservan purchase_price. Valor de mercado no equivale a coste de
+compra ni a efectivo disponible. Un roster valorizado puede ser legal sin volver a aplicar
+el presupuesto de compra inicial; esta excepción sólo procede tras validar financiación.
+El validador general del motor conserva su presupuesto.
+
+Wildcard y Free Hit eximen hits, sin eximir financiación. Free Hit deja reversión
+`pending_next_gameweek` con hash del estado previo; el cierre de la jornada del chip
+no acredita que la reversión futura haya ocurrido. Si falta evidencia o los precios del
+batch no reproducen las compras observadas, el cierre falla y requiere evidencia compatible.
+No aproximar la financiación con precios posteriores.
+
+Los paquetes v1 siguen siendo legibles y conservan `legacy_initial_budget`; un cierre v1
+no cuenta como evidencia del contrato autónomo v2. Los contadores sólo incluyen jobs
+completos etiquetados v2. Las contribuciones por jugador usan los multiplicadores del
+motor, incluyendo BB, TC, vice y autosubs: suma de filas = bruto; neto = bruto − hits.
+La expectativa declara el chip y los oracles mantienen chip/hits del escenario. La
+comparación expone `same_chip`, sin atribuir automáticamente diferencias de chip al modelo.
+`p60_brier_15=null`, contador cero y `probabilities_missing` indican ausencia de datos,
+sin impedir el settlement ni fabricar calibración.
 
 ## 8. La bitácora de intervenciones
 

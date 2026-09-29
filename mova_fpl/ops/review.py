@@ -6,10 +6,12 @@ import hashlib
 import json
 import os
 import sys
+from datetime import datetime
 from pathlib import Path
 
+from mova_fpl.analytics.closeout_financing import build_financing, digest
 from mova_fpl.analytics.gameweek_review import (
-    analyze_scenarios, load_closeout_package,
+    analyze_scenarios, build_decision, load_closeout_package,
 )
 from mova_fpl.analytics.strategy_shadow import (
     aggregate_strategy_shadow, settle_strategy_shadow,
@@ -120,6 +122,7 @@ class GameweekReviewService:
         package = load_closeout_package(package_path)
         if package["season"] != self.config.season or int(package["entry_id"]) != self.config.team_id:
             raise ValueError("package no corresponde al runtime configurado")
+        self._verify_financing_artifacts(package)
         self.db.migrate()
         cycle_id = self.db.upsert_cycle(
             package["season"], int(package["gw"]), package["deadline_at"],
@@ -205,6 +208,8 @@ class GameweekReviewService:
                 "gw": package["gw"], "entry_points": result["selected_score"]["points"],
                 "comparator_points": result["comparator_score"]["points"],
                 "causal_scorecard_created": False,
+                "closeout_contract": package["schema"],
+                "financing_status": result["selected_score"].get("financing_status"),
             }
             if result.get("strategy_shadow"):
                 job_metrics.update({
@@ -235,6 +240,54 @@ class GameweekReviewService:
             package_path=package_path, actor=actor, reason=reason,
             idempotency_key=idempotency_key,
         )
+
+    def _verify_financing_artifacts(self, package: dict) -> None:
+        for name in ("selected", "comparator"):
+            certificate = package[name].get("financing")
+            if not certificate:
+                continue
+            for key in ("before", "after"):
+                state = certificate.get(key)
+                if state is None:
+                    continue
+                source = certificate[key + "_source"]
+                path = Path(source["artifact_path"])
+                manifest = path / "manifest.json"
+                if (not path.resolve().is_relative_to(self.config.artifact_root.resolve())
+                        or not manifest.is_file()
+                        or hashlib.sha256(manifest.read_bytes()).hexdigest()
+                        != source["manifest_sha256"]):
+                    raise ValueError("procedencia financiera ausente, externa o alterada")
+                loaded, _ = load_private_state(path, expected_team_id=self.config.team_id)
+                if digest(loaded) != digest(state):
+                    raise ValueError("estado financiero difiere del artifact sellado")
+                with self.db.connect(readonly=True) as con:
+                    durable = con.execute(
+                        "SELECT 1 FROM team_state_snapshots WHERE artifact_path=? "
+                        "AND manifest_sha256=? AND fingerprint=? AND quality_status='valid'",
+                        (str(path), source["manifest_sha256"], source["fingerprint"]),
+                    ).fetchone()
+                if not durable:
+                    raise ValueError("estado financiero sin ledger durable")
+            price_source = certificate["price_source"]
+            with connect(self.config, autocommit=True) as con:
+                batch = con.execute(
+                    "SELECT input_artifact_id,cutoff_at FROM analytics.model_projection_batches "
+                    "WHERE batch_id=%s AND season=%s AND target_gw=%s AND status='approved'",
+                    (price_source["batch_id"], package["season"], int(package["gw"])),
+                ).fetchone()
+                if (not batch or str(batch["input_artifact_id"]) != price_source["input_artifact_id"]
+                        or datetime.fromisoformat(str(batch["cutoff_at"]).replace("Z", "+00:00"))
+                        != datetime.fromisoformat(price_source["cutoff_at"].replace("Z", "+00:00"))):
+                    raise ValueError("precios sin procedencia approved")
+                prices = con.execute(
+                    "SELECT element,now_cost FROM analytics.fpl_player_observations "
+                    "WHERE artifact_id=%s AND element=any(%s)",
+                    (price_source["input_artifact_id"],
+                     [int(e) for e in certificate["market_prices_tenths"]]),
+                ).fetchall()
+            if {str(r["element"]): int(r["now_cost"]) for r in prices} != certificate["market_prices_tenths"]:
+                raise ValueError("precios difieren del artifact causal")
 
     def _autonomous_package(self, *, gw: int) -> Path:
         cycle_id = f"{self.config.season}-gw{int(gw):02d}"
@@ -412,6 +465,28 @@ class GameweekReviewService:
                 or decision_fingerprint(comparator) != str(comparator.get("fingerprint"))):
             raise RuntimeError("fingerprint de candidato no reproduce el envelope")
 
+        with self.db.connect(readonly=True) as con:
+            pre_state = con.execute(
+                """SELECT t.* FROM cycle_manifests m JOIN team_state_snapshots t
+                ON t.team_state_id=m.team_state_id WHERE m.manifest_id=?
+                AND t.cycle_id=? AND t.quality_status='valid'""",
+                (matched["manifest_id"], cycle_id),
+            ).fetchone()
+        if (not pre_state or
+                datetime.fromisoformat(str(pre_state["observed_at"]).replace("Z", "+00:00")) >
+                datetime.fromisoformat(str(executed["started_at"]).replace("Z", "+00:00"))):
+            raise RuntimeError("sin team-state inicial sellado para financiar el cierre")
+        pre_path = Path(str(pre_state["artifact_path"]))
+        pre_manifest_path = pre_path / "manifest.json"
+        if (not pre_path.resolve().is_relative_to(self.config.artifact_root.resolve())
+                or not pre_manifest_path.is_file()
+                or hashlib.sha256(pre_manifest_path.read_bytes()).hexdigest()
+                != str(pre_state["manifest_sha256"])):
+            raise RuntimeError("team-state inicial ausente, externo o alterado")
+        before, before_manifest = load_private_state(pre_path, expected_team_id=self.config.team_id)
+        if before_manifest["quality"]["fingerprint"] != str(pre_state["fingerprint"]):
+            raise RuntimeError("team-state inicial no reproduce su ledger")
+
         deadline = str(cycle["deadline_at"])
         required = sorted({int(value) for value in selected["squad_15"]}
                           | {int(value) for value in comparator["squad_15"]})
@@ -481,8 +556,22 @@ class GameweekReviewService:
         }
         selected_spec = scenario(selected, label=str(selected_row["label"]))
         comparator_spec = scenario(comparator, label=str(comparator_row["label"]))
+        financing_inputs = {
+            "before": before, "before_source": dict(pre_state), "deadline_at": deadline,
+            "market_prices": {element: int(row["now_cost"]) for element, row in projections.items()},
+            "price_source": {"batch_id": str(batch["batch_id"]),
+                             "input_artifact_id": str(batch["input_artifact_id"]),
+                             "cutoff_at": str(batch["cutoff_at"])},
+        }
+        selected_spec["financing"] = build_financing(
+            **financing_inputs, decision=build_decision(selected_spec, self.config.season, int(gw)),
+            after=normalized_team_state, after_source=dict(verified_team_state),
+        )
+        comparator_spec["financing"] = build_financing(
+            **financing_inputs, decision=build_decision(comparator_spec, self.config.season, int(gw)),
+        )
         package = {
-            "schema": "mova-fpl-autonomous-closeout-v1",
+            "schema": "mova-fpl-autonomous-closeout-v2",
             "season": self.config.season, "gw": int(gw), "entry_id": self.config.team_id,
             "deadline_at": deadline, "reviewed_at": utcnow(),
             "mounted_at": str(executed["finished_at"]),
@@ -610,6 +699,7 @@ class GameweekReviewService:
             "intervention": {
                 "expected_delta": round(selected.expected_points - comparator.expected_points, 2),
                 "realized_delta": selected_score["points"] - comparator_score["points"],
+                "same_chip": selected.chip == comparator.chip,
             },
             "low_p60_players_who_reached_60": low_p60_success,
         }

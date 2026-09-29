@@ -1,0 +1,215 @@
+---
+type: adr
+name: Researcher versions and isolated evaluations
+created: 2026-09-22
+status: accepted
+owner: Julián Zuluaga
+---
+
+# Researcher versions and isolated evaluations
+
+Current release: **Researcher 1.10.0**, deployed at `e903983` on 22 September 2026
+under the existing A0/shadow controls. Two exact-version live experiments yielded
+12/25 and 10/25 verified focus subjects and four/five accepted source-grounded
+signals. The deployed image and rollback, full test results, real operational
+smoke and health receipts are recorded in
+`experiments/research/20260922-agent-lab/release.json`. Historical sections below
+retain the earlier rejected candidates; their pending-budget statements were
+superseded by Julián's explicit authorization. This release does not close AC-02
+or grant FPL write authority.
+
+The agent is a versioned runtime component, not merely a model name. Its registry is
+`mova_fpl/ops/agent_releases.json`. Each entry fixes expected model/reasoning,
+interactive tool availability, output contract and quality policy; each physical
+attempt records the selected version, effective model/reasoning, implementation hash,
+request hash and exact context hash/bytes. New requests seal the selected version
+and definition before enqueue; unknown versions or definition drift fail before paid dispatch. Git commit and image digest fix all source
+dependencies. Never overwrite historical receipts or claim an environment override
+ran the default model. A release changes `active` only after measured evaluation.
+Owner and promotion authority: Julián; this iteration is explicitly authorized.
+
+`1.0.0` is the existing researcher. Candidate `1.1.0` adds bounded stdio MCP
+`verify_research_evidence@1.0.0`, reusing the exact stdlib source-fetch and quality
+modules used by the final importer. It has no DB, SQL, shell, authenticated FPL,
+browser or credential-reading tool. Inputs are URL/excerpt/date/element/claim type;
+output is diagnostic reasons, remaining calls, verified focus IDs and hashes.
+The host chooses request/artifact paths. Max 32 calls and twice document budget,
+25 seconds per call, 8 seconds per HTTP operation, 2 MiB response, 800-character
+excerpt. URLs use existing public HTTPS/DNS/redirect guards. The tool does not
+validate source-tier classification, conflict resolution or the complete meaning of
+claims, and never grants acceptance. Final import independently re-fetches.
+
+The experimental CLI seals up to two variants against one manifest with normal
+budget reservations and host attempt authorization. Outcomes finish as `completed`
+(not `imported`), store evaluation artifacts and settle actual token receipts.
+No research_documents/signals/conflicts are published and no GW coverage gate counts
+these rows. Existing SQLite enum supports completed; no new database migration.
+The normal timer must be excluded with the host research lock while experimental
+code evaluates its pending requests. Existing production importer must never consume
+experiment requests until this isolation change is deployed.
+
+Acceptance: adversarial tool tests (wrong excerpt, date, identity, SSRF, quota,
+deadline), stdio protocol/real Codex compatibility, equivalent input/budget comparison,
+quality and token evidence, full suite, image smoke and doctor. A candidate with no
+useful verified evidence or an overrun cannot be described as successfully promoted.
+The cross-GW autonomy gate is separate from promoting a better researcher version.
+
+H01/H08/H11/H13 map to tests/test_research_evidence_tool.py,
+tests/test_research_worker_contract.py and tests/test_research_evidence.py; operational
+health remains doctor.research_worker and doctor.agent_queue_integrity. No new entry
+is registered in the separate Orbix Web catalog: no equivalent FPL evidence function
+exists there, and this is the MOVA isolated worker boundary.
+
+Protocol sources: [MCP stdio](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports)
+and [Codex MCP configuration](https://developers.openai.com/codex/config-reference).
+
+## Metered candidate 1.2.0 and experiment outcome (2026-09-22)
+
+Candidate 1.2.0 uses one ephemeral Codex app-server turn per host permit, with
+native web search disabled. Its MCP surface is `search_research_web`,
+`read_research_source`, `research_context`, and `verify_research_evidence`.
+Search uses the existing Orbital Firecrawl service with a dedicated read-only
+secret mount from `compose.research-lab.yaml`; the normal deployment does not yet
+mount it. No tool exposes the credential. Initial context retains the objective,
+focus and bounded world alerts; catalog, memory and historical signals remain
+available from the same sealed request through bounded context retrieval.
+
+The client observes total input plus output tokens, including cached input, and
+interrupts at 80,000 observed tokens. This is a reactive guard, not a provider hard
+cap: an in-flight response can overshoot. Interrupted usage stays unknown for
+accounting; observed usage is telemetry, never falsely reported as final usage.
+There is no automatic retry or extra repair turn.
+
+Experiment `researchexp_1d8ad24677ccc54fd9e1268c5d6c9d1c` produced:
+
+| Version | Outcome | Tokens | Verified subjects | Accepted signals |
+| --- | --- | ---: | ---: | ---: |
+| 1.0.0 | Completed experimental baseline | 615,333 | 1/25 | 0 |
+| 1.1.0 | Blocked before host authorization | 0 | Not evaluated | Not evaluated |
+| 1.2.0 | Real app-server/tool startup verified; no inference dispatched | 0 | Not evaluated | Not evaluated |
+
+Baseline input was 608,125 tokens, output 7,208; elapsed time 234,898 ms.
+Seven documents yielded six successful fetches and four dated sources, but only
+4% subject coverage and one unresolved conflict. Fetch success is not useful
+research coverage. The 455,333-token job overrun remains reviewed, not resolved.
+No experimental signals, documents or conflicts were published into operational
+research tables and these runs do not count toward cross-GW autonomy.
+
+The blocked 1.1.0 request initially retained a conservative 120,000-token charge.
+`strategy research reconcile-experiment` released it only after checking the
+sealed request hash, terminal budget rejection, zero authorization rows and zero
+attempt events. The previous charge and proof remain audited. This exception must
+never be used for uncertain or partially dispatched inference.
+
+The real Codex 0.144.6 preflight on image `research-lab-698c9ec` successfully
+initialized an ephemeral thread and listed all four MCP tools without `turn/start`.
+The deterministic suite passed 1,820 tests (one skipped, 79 deselected), followed
+by 24 targeted checks after preflight adjustments. These results validate contracts
+and startup, not research quality or the effectiveness of the token guard in live
+inference. Active version remains 1.0.0 and production remains 85365e8.
+
+Next promotion gate: run a bounded 1.2.0 experiment after an explicitly authorized
+experimental budget is available; inspect useful accepted evidence, coverage,
+conflicts, input/output/cached tokens, tool failures and elapsed time. A new prepared
+manifest is not a paired comparison with the old baseline. To claim a paired
+comparison, reuse an identical sealed input/cutoff and report source availability
+changes. Integrate the search mount into the normal cycle before deployment,
+verify image/revision, doctor and rollback, then change the active registry version.
+Do not promote based on protocol tests or erase the real baseline overrun.
+
+Future agents reuse this registry pattern: independent semantic version per agent,
+immutable sealed release definition per request, effective model and implementation
+identity per attempt, explicit experimental/promotion status and domain-specific
+quality gates. A model alias alone is not an agent version. No general-purpose agent
+platform or additional persistence service is required for this iteration.
+
+
+## Authorized campaign continuation — 2026-09-22
+
+Julián explicitly authorized additional experimental consumption until a promotable
+agent is demonstrated. This supersedes the earlier pending-budget question. The lab
+uses documented per-command policy overrides (10M GW / 20M month, 400k per job),
+sealed in each reservation with actor/reason/idempotency key; production environment
+files and FPL permissions are unchanged. These are campaign capacity, not a target
+spend or evidence of model quality. Full logical tokens include cached input and
+must not be presented as a USD invoice.
+
+The first live 1.2.0 run was interrupted at 92,946 observed tokens after exhausting
+eight searches and issuing oversized read arguments. Its final provider usage is
+unknown; the conservative charge remains, and observed usage is not mislabeled as
+exact. Version 1.3.0 fixed current-date guidance, read batching and model selection,
+and completed on Terra at 245,365 tokens, but produced zero verified subjects and
+zero accepted signals. Neither result supports promotion.
+
+The next paired variants are 1.4.0 (Terra) and 1.5.0 (Astra), with identical current
+context, budgets and tools. Discovery is constrained to the last seven days using
+Firecrawl's documented `tbs` date range. The tool reuses a safely fetched page within
+one turn across reading and verification; final import still independently fetches.
+Multiple literal occurrences reduce title/navigation clipping. Evidence freshness,
+identity and acceptance requirements remain unchanged. Failed sealed experiments
+terminate after one completed failed attempt instead of silently retrying.
+
+App-server telemetry is written incrementally, and spawn/pipe failure rejects pending
+RPCs promptly. The comparison script reports failed attempts and observed usage
+without fabricating missing evaluations. Local full suite: 1,825 passed, one skipped,
+79 deselected at baa265d. Live evaluation remains the promotion authority.
+
+Search contract source: [Firecrawl v1 OpenAPI](https://github.com/firecrawl/firecrawl/blob/main/apps/api/openapi.json).
+
+
+### Budget allowance contract
+
+`mova cost allowance --cycle-id ... --tokens ... --actor ... --reason ...
+--idempotency-key ...` records an append-only, idempotent resource allowance in
+runtime_controls and audit_events. It adds capacity only for that exact cycle and
+the grant month. Reports expose base_policy, applicable allowances and effective
+policy; all actual/estimated consumption remains unchanged. Optional `--uses` adds
+use capacity for that same cycle/month, without erasing consumed calls. New reservations seal
+the effective policy; existing sealed permissions are not rewritten. Job limits, evidence gates and FPL authority are unaffected; use limits change only
+when the allowance explicitly grants additional uses. Reusing a key with a
+different payload is a conflict. This avoids making temporary experiment capacity
+an undocumented permanent change to the production environment.
+
+### Evidence handoff and deployment preparation
+
+Live runs through 1.7.0 exposed a specific loss at final composition: the model
+concatenated two individually verified, noncontiguous excerpts into one document.
+Independent import correctly rejected that new excerpt. Candidate 1.8.0 returns a
+`verified_document` from the tool and instructs the producer to preserve its exact
+URL, date and single contiguous excerpt. The importer remains independent; no
+normalizer replaces invented evidence with a convenient source. An unsupported
+claim remains unsupported even when the same paragraph can establish coverage.
+
+The app-server now checks the four required tools before `turn/start`. Startup
+failure with no inference dispatch records exact zero usage; interruption after
+dispatch retains unknown final usage. The normal Compose research service mounts
+only its explicit Firecrawl search credential in addition to its dedicated Codex
+auth. No database or browser credentials are mounted. The MCP process fails startup
+when search is unconfigured, rather than letting a model spend a turn discovering
+that failure. This wiring is preparation, not proof of a production release.
+
+Measured results and limitations are retained in
+`experiments/research/20260922-agent-lab/results.json`. Versions 1.4.1/1.5.1 form the
+same-manifest Terra/Astra comparison after upgrading the worker to Codex 0.153.4.
+Other sequential variants used newly prepared manifests and sometimes newer quality
+policies; their results are operational diagnostics, not a causal model benchmark.
+Production remains on 1.0.0 until a measured candidate passes release review.
+
+
+### Repeated useful evidence and broader discovery
+
+Variants 1.8.0 and 1.9.0 produced accepted official-source observations and explicitly
+qualified their limits; the same-context pair improved verified focus from 3 to 4,
+not enough for the comparator's two-subject gain flag. The candidate 1.10.0 broadens
+broad/forced scope to 16 queries/documents and versions football vocabulary fixes
+as quality policy 2026.09.5. Refresh/final delta scopes retain their previous caps.
+Its reactive token guard is 900k, with a 480-second turn limit; neither is a promise
+of useful coverage. Output remains brief v2 and the independent importer still
+checks exact excerpts, dates, identities and corroboration.
+
+The cockpit exposes the active researcher version and quality policy beside the
+effective model. Physical receipts and context hashes remain the authority for
+what a particular attempt actually ran. Experimental completion must not block
+normal cadence: enqueued/completed experiment audit records are excluded from
+operational slot queries. Existing completed experiment records are recognized
+without rewriting their historical requests or accounting.

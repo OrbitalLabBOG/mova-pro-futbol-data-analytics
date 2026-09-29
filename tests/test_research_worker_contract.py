@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -14,19 +15,22 @@ def test_imagen_codex_esta_versionada_y_no_contiene_app():
     dockerfile = (ROOT / "deploy/docker/research.Dockerfile").read_text(encoding="utf-8")
     assert "node:22-bookworm-slim@sha256:" in dockerfile
     assert "@openai/codex@${CODEX_VERSION}" in dockerfile
-    assert "ARG CODEX_VERSION=0.144.6" in dockerfile
+    assert "ARG CODEX_VERSION=0.153.4" in dockerfile
     assert "ca-certificates" in dockerfile
-    assert "COPY mova_fpl" not in dockerfile
+    assert "COPY mova_fpl/ /" not in dockerfile
+    assert "COPY mova_fpl/ops/research_evidence.py" in dockerfile
+    assert "COPY mova_fpl/ops/research_quality.py" in dockerfile
     assert "COPY deploy/research/research-normalize.mjs" in dockerfile
     assert "USER 10002:10002" in dockerfile
 
 
 def test_worker_deshabilita_herramientas_que_podrian_leer_auth_o_actuar():
     worker = (ROOT / "deploy/research/codex-worker.mjs").read_text(encoding="utf-8")
-    for feature in ("shell_tool", "computer_use", "browser_use", "apps", "multi_agent"):
+    for feature in ("shell_tool", "computer_use", "browser_use", "apps", "multi_agent",
+                    "plugins"):
         assert f'"{feature}"' in worker
     assert '...(isResearch ? ["--search"] : [])' in worker
-    assert "const prompt = isResearch ? researchPrompt : deliberationPrompt" in worker
+    assert "const prompt = isResearch ? (release.execution" in worker
     assert '"--sandbox", "read-only"' in worker
     assert 'mkdirSync("/tmp/mova-research"' in worker
     assert "Cada señal y cada conflicto" in worker
@@ -36,6 +40,10 @@ def test_worker_deshabilita_herramientas_que_podrian_leer_auth_o_actuar():
     assert "fetch independiente" in worker
     assert "coverage.subjects" in worker
     assert "Cumple literalmente request.scope_policy" in worker
+    assert "world.catalog" in worker
+    assert "radar global acotado" in worker
+    assert "prior_gameweek_signals" in worker
+    assert "no constituye un hard limit verificable" in worker
     assert "scopePolicy.max_web_queries" in worker
     assert "scopePolicy.max_documents" in worker
     assert "scopePolicy.max_material_signals" in worker
@@ -51,12 +59,12 @@ def test_worker_deshabilita_herramientas_que_podrian_leer_auth_o_actuar():
     assert "nunca excedas scope_policy" in worker
     assert '"mova-research-brief-v2"' in worker
     assert "duration_ms: durationMs" in worker
-    assert "search_requests: null" in worker
+    assert "search_requests: metered" in worker
     assert "existsSync(finalTmp)" in worker
     assert '"codex_output_missing"' in worker
     assert '"codex_exec_timeout"' in worker
     assert "MOVA_RESEARCH_TIMEOUT_MS || 480000" in worker
-    assert 'MOVA_RESEARCH_MODEL || "gpt-5.6-luna"' in worker
+    assert 'MOVA_RESEARCH_MODEL || release?.model || "gpt-5.6-luna"' in worker
     assert 'MOVA_RESEARCH_REASONING_EFFORT || "medium"' in worker
     assert 'MOVA_DELIBERATION_MODEL || "gpt-5.6-terra"' in worker
     assert 'MOVA_DELIBERATION_REASONING_EFFORT || "high"' in worker
@@ -125,17 +133,40 @@ process.stdout.write(JSON.stringify(normalizeResearchBrief(brief,request)));
     assert "example.com" not in json.dumps(report)
 
 
-def test_compose_no_monta_db_browser_repo_ni_secretos_en_research():
+def test_normalizer_enforces_document_cap_and_drops_orphan_signal():
+    script = r'''
+import {normalizeResearchBrief} from "./deploy/research/research-normalize.mjs";
+const a="https://example.com/a", b="https://example.com/b";
+const brief={documents:[{source_url:a},{source_url:b}],
+signals:[{player_element:2,source_urls:[b]}], conflicts:[],
+coverage:{subjects:[{player_element:2,status:"material_signal",source_urls:[b],note:"old"}]}};
+const request={scope_policy:{max_documents:1},
+manifest:{research_summary:{focus:[{element:2}]}}};
+process.stdout.write(JSON.stringify(normalizeResearchBrief(brief,request)));
+'''
+    result = subprocess.run(
+        ["node", "--input-type=module", "-e", script], cwd=ROOT,
+        text=True, capture_output=True, check=True,
+    )
+    value = json.loads(result.stdout)
+    assert len(value["brief"]["documents"]) == 1
+    assert value["brief"]["signals"] == []
+    assert value["brief"]["coverage"]["subjects"][0]["status"] == "not_checked"
+    assert value["report"]["documents_dropped_budget"] == 1
+
+
+def test_compose_research_only_mounts_explicit_search_credential_not_runtime_secrets():
     compose = (ROOT / "compose.yaml").read_text(encoding="utf-8")
     section = compose.split("\n  research:\n", 1)[1].split("\nnetworks:\n", 1)[0]
+    assert "- research_search_key" in section
     assert "read_only: true" in section
     assert "cap_drop:" in section and "- ALL" in section
     assert 'group_add:' in section and '- "10001"' in section
     assert section.count("/research") >= 1
     assert "/home/research/.codex" in section
     assert "MOVA_RESEARCH_TIMEOUT_MS:-480000" in section
-    assert "MOVA_RESEARCH_MODEL:-gpt-5.6-luna" in section
-    assert "MOVA_RESEARCH_REASONING_EFFORT:-medium" in section
+    assert "MOVA_RESEARCH_MODEL:-}" in section
+    assert "MOVA_RESEARCH_REASONING_EFFORT:-}" in section
     assert "MOVA_DELIBERATION_MODEL:-gpt-5.6-terra" in section
     assert "MOVA_DELIBERATION_REASONING_EFFORT:-high" in section
     for forbidden in (
@@ -221,3 +252,102 @@ def test_worker_falla_cerrado_con_request_sin_permiso_host(tmp_path):
     )
     assert result.returncode == 75
     assert list((tmp_path / "receipts").glob("*.json")) == []
+
+
+def test_research_context_preserves_information_and_measures_conditional_scope():
+    script = r'''
+import assert from 'node:assert/strict';
+import {buildResearchContext} from './deploy/research/research-context.mjs';
+const sizes = [4,3,3,2,2,2,2,1,1,1,1,1,1,1];
+let element = 0;
+const focus = sizes.flatMap((size, team) => Array.from({length:size}, () => ({element:++element,team})));
+const catalog = focus.map(row => ({...row, name:'Player '+row.element, chance:null}));
+const request = {request_sha256:'a'.repeat(64), objective:'global radar',
+  scope_policy:{max_documents:10}, guardrails:{read_only:true},
+  manifest:{analytics_manifest:{model_versions:['v1']}, memory_summary:{lessons:['learn']},
+    research_summary:{focus, world:{catalog}, prior_gameweek_signals:[{claim:'historic'}]}}};
+const before = structuredClone(request);
+const {context,receipt} = buildResearchContext(request);
+assert.deepEqual(request,before);
+assert.deepEqual(context.manifest.research_summary.world.catalog,catalog);
+assert.deepEqual(context.manifest.memory_summary,request.manifest.memory_summary);
+assert.deepEqual(context.manifest.analytics_manifest,request.manifest.analytics_manifest);
+assert.deepEqual(context.manifest.research_summary.focus,focus);
+assert.deepEqual(context.guardrails,request.guardrails);
+assert.equal(context.acquisition_plan.conditional_club_source_capacity,21);
+assert.equal(context.acquisition_plan.conditional_documents_for_target,12);
+assert.equal(context.acquisition_plan.conditional_scope_shortfall,true);
+assert.deepEqual(receipt,buildResearchContext(request).receipt);
+assert.equal(receipt.context_json_bytes,Buffer.byteLength(JSON.stringify(context)));
+request.manifest.research_summary.world.catalog[0].optional = null;
+assert.deepEqual(buildResearchContext(request).context.manifest.research_summary.world.catalog,
+  request.manifest.research_summary.world.catalog);
+request.manifest.research_summary.world.catalog = [[1,'Name','ARS']];
+assert.deepEqual(buildResearchContext(request).context.manifest.research_summary.world.catalog, [[1,'Name','ARS']]);
+const missing = buildResearchContext({manifest:{research_summary:{focus:[{element:1},{element:2}]}}});
+assert.equal(missing.context.acquisition_plan.clubs.length,2);
+assert.equal(missing.context.acquisition_plan.conditional_scope_shortfall,null);
+'''
+    subprocess.run(['node', '--input-type=module', '-e', script], cwd=ROOT, check=True)
+
+
+@pytest.mark.parametrize("version", ["1.0.0", "1.10.0"])
+def test_authorized_worker_records_context_actually_sent_on_failed_attempt(tmp_path, version):
+    from datetime import datetime, timedelta, timezone
+    import hashlib
+
+    from mova_fpl.ops.agent_releases import researcher_release
+    run_id = 'research_' + 'a' * 32
+    request = {'schema':'mova-research-request-v1', 'research_run_id':run_id,
+               'request_sha256':'b' * 64, 'scope_policy':{'max_documents':2},
+               'manifest':{'research_summary':{'focus':[{'element':1,'team':'Club'}],
+                           'world':{'catalog':[[1,'Player','CLB']]}}}}
+    request['agent_version'],request['agent_release']=researcher_release(version)
+    request['requested_at']=datetime.now(timezone.utc).isoformat()
+    request['manifest']['deadline_at']=(datetime.now(timezone.utc)+timedelta(days=1)).isoformat()
+    request['guardrails']={'agent_budget':{'job_tokens':1000000}}
+    for name in ('inbox', 'permits', 'bin'):
+        (tmp_path / name).mkdir()
+    (tmp_path / 'inbox' / f'{run_id}.request.json').write_text(json.dumps(request))
+    authorization_id = 'agentauth_' + 'c' * 32
+    expiry = (datetime.now(timezone.utc) + timedelta(minutes=5)).isoformat()
+    permit = {'schema':'mova-agent-attempt-permit-v1','authorization_id':authorization_id,
+              'subject_type':'research','subject_id':run_id,'request_sha256':'b' * 64,
+              'attempt_number':1,'deadline_at':expiry,'expires_at':expiry,
+              'budget_snapshot_sha256':'d' * 64}
+    (tmp_path / 'permits' / f'{run_id}.{authorization_id}.permit.json').write_text(json.dumps(permit))
+    fake = tmp_path / 'bin' / 'codex'
+    fake.write_text('''#!/usr/bin/env python3
+import sys,json,os
+if '--version' in sys.argv:
+ print('codex-cli 0.153.4');sys.exit(0)
+if 'app-server' not in sys.argv:
+ open(os.environ['MOVA_TEST_PROMPT'],'w').write(sys.stdin.read());sys.exit(1)
+for line in sys.stdin:
+ r=json.loads(line)
+ if 'id' not in r:continue
+ method=r['method'];result={}
+ if method=='thread/start':result={'thread':{'id':'t'}}
+ if method=='mcpServerStatus/list':result={'data':[{'name':'mova_evidence','tools':{n:{} for n in ['verify_research_evidence','search_research_web','read_research_source','research_context']}}]}
+ if method=='turn/start':
+  open(os.environ['MOVA_TEST_PROMPT'],'w').write(r['params']['input'][0]['text'])
+  result={'turn':{'id':'turn'}}
+ print(json.dumps({'id':r['id'],'result':result}),flush=True)
+ if method=='turn/start':print(json.dumps({'method':'turn/completed','params':{'turn':{'status':'failed'}}}),flush=True)
+''')
+    fake.chmod(0o755)
+    prompt_path = tmp_path / 'prompt'
+    result = subprocess.run(['node', str(ROOT / 'deploy/research/codex-worker.mjs')],
+        env={**os.environ, 'PATH':str(tmp_path / 'bin') + ':' + os.environ['PATH'],
+             'MOVA_RESEARCH_ROOT':str(tmp_path), 'MOVA_TEST_PROMPT':str(prompt_path)},
+        text=True, capture_output=True)
+    assert result.returncode == 1
+    receipt = json.loads(next((tmp_path / 'logs').glob('*.context.json')).read_text())
+    prompt = prompt_path.read_text()
+    context_json = prompt.split('REQUEST_JSON:\n', 1)[1]
+    assert hashlib.sha256(context_json.encode()).hexdigest() == receipt['context_sha256']
+    assert receipt['prompt_bytes'] == len(prompt.encode())
+    assert receipt['request_sha256'] == request['request_sha256']
+    assert json.loads(context_json)['acquisition_plan']['focus_subjects'] == 1
+    assert len(list((tmp_path / 'receipts').glob('*.started.json'))) == 1
+    assert len(list((tmp_path / 'receipts').glob('*.finished.json'))) == 1

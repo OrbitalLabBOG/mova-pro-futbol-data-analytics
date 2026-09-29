@@ -228,7 +228,75 @@ class OpsDB:
         return dict(row) if row else None
 
     def start_job(self, job_type: str, idempotency_key: str, correlation_id: str,
-                  *, cycle_id: str | None = None, input_sha256: str | None = None) -> tuple[str, bool]:
+                  *, cycle_id: str | None = None, input_sha256: str | None = None,
+                  retry_failed: bool = False, recover_running: bool = False) -> tuple[str, bool]:
+        if recover_running and not retry_failed:
+            raise ValueError("running recovery requires the causal review retry contract")
+        if retry_failed:
+            # Opt-in only for transactional, replay-safe causal reviews. Never
+            # restart an executor or steal a running job through this path.
+            if job_type != "causal_review":
+                raise ValueError("failed-job recovery only supports causal_review")
+            with self.transaction() as con:
+                existing = con.execute(
+                    "SELECT * FROM job_runs WHERE idempotency_key=?", (idempotency_key,),
+                ).fetchone()
+                if existing:
+                    if (existing["job_type"] != job_type
+                            or existing["cycle_id"] != cycle_id
+                            or existing["input_sha256"] != input_sha256):
+                        raise ValueError("causal review idempotency input conflict")
+                    job_id = str(existing["job_id"])
+                    status = existing["status"]
+                    stale_running = False
+                    if status == "running" and recover_running:
+                        started = datetime.fromisoformat(existing["started_at"])
+                        stale_running = datetime.now(timezone.utc) - started >= timedelta(minutes=10)
+                    if status != "failed" and not stale_running:
+                        return job_id, True
+                    if existing["attempt"] >= 3:
+                        if stale_running:
+                            con.execute("UPDATE job_runs SET status='failed',finished_at=?,"
+                                        "error_code='RecoveryExhausted' WHERE job_id=?",
+                                        (utcnow(), job_id))
+                            self.append_audit(
+                                "job_recovery_exhausted", correlation_id=correlation_id,
+                                job_id=job_id, subject_type="job", subject_id=job_id,
+                                payload={"attempt": existing["attempt"]}, con=con,
+                            )
+                        return job_id, True
+                    if status == "failed" and (datetime.now(timezone.utc) -
+                            datetime.fromisoformat(existing["finished_at"]) < timedelta(minutes=5)):
+                        return job_id, True
+                    self.append_audit(
+                        "job_retry_claimed", actor="mova-causal-review",
+                        correlation_id=correlation_id, cycle_id=cycle_id,
+                        job_id=job_id, subject_type="job", subject_id=job_id,
+                        payload={"previous_attempt": existing["attempt"],
+                                 "previous_status": status,
+                                 "previous_error_code": existing["error_code"],
+                                 "previous_error_detail": existing["error_detail"],
+                                 "previous_finished_at": existing["finished_at"]}, con=con,
+                    )
+                    con.execute(
+                        "UPDATE job_runs SET status='running',attempt=attempt+1,started_at=?,"
+                        "finished_at=NULL,error_code=NULL,error_detail=NULL,output_sha256=NULL "
+                        "WHERE job_id=?", (utcnow(), job_id),
+                    )
+                    return job_id, False
+                job_id = new_id("job")
+                con.execute(
+                    "INSERT INTO job_runs(job_id,idempotency_key,correlation_id,cycle_id,"
+                    "job_type,status,started_at,input_sha256) VALUES(?,?,?,?,?,'running',?,?)",
+                    (job_id, idempotency_key, correlation_id, cycle_id, job_type,
+                     utcnow(), input_sha256),
+                )
+                self.append_audit(
+                    "job_started", correlation_id=correlation_id, cycle_id=cycle_id,
+                    job_id=job_id, subject_type="job", subject_id=job_id,
+                    payload={"job_type": job_type, "idempotency_key": idempotency_key}, con=con,
+                )
+                return job_id, False
         existing = self.get_job_by_key(idempotency_key)
         if existing:
             return str(existing["job_id"]), True
@@ -1214,17 +1282,21 @@ class OpsDB:
             completed = con.execute(
                 """SELECT COUNT(DISTINCT cycle_id) FROM job_runs
                 WHERE job_type='gameweek_review' AND status='completed'
-                  AND idempotency_key LIKE ?""",
+                  AND idempotency_key LIKE ?
+                  AND json_extract(metrics_json,'$.closeout_contract')='mova-fpl-autonomous-closeout-v2'""",
                 (f"autonomous-closeout:{season}:gw%",),
             ).fetchone()[0]
             latest = con.execute(
                 """SELECT job_id,cycle_id,finished_at,output_sha256 FROM job_runs
                 WHERE job_type='gameweek_review' AND status='completed'
-                  AND idempotency_key LIKE ? ORDER BY finished_at DESC LIMIT 1""",
+                  AND idempotency_key LIKE ?
+                  AND json_extract(metrics_json,'$.closeout_contract')='mova-fpl-autonomous-closeout-v2'
+                ORDER BY finished_at DESC LIMIT 1""",
                 (f"autonomous-closeout:{season}:gw%",),
             ).fetchone()
         return {
-            "contract": "mova-fpl-autonomous-closeout-v1",
+            "contract": "mova-fpl-autonomous-closeout-v2",
+            "financing_evidence_required": True,
             "status": "implemented",
             "scheduler": "mova-fpl-analytics.timer",
             "observed_closeouts": int(completed),
@@ -1943,6 +2015,45 @@ class OpsDB:
         return {"settled": settled, "reserved": reserved, "charged": charged,
                 "estimated_cost_usd": cost["estimated_cost_usd"]}
 
+    def grant_agent_budget_allowance(self, *, cycle_id: str, tokens: int,
+                                     actor: str, reason: str, idempotency_key: str, uses: int = 0) -> dict:
+        """Append an authorized campaign allowance; never erase actual consumption."""
+        if (type(tokens) is not int or tokens <= 0 or type(uses) is not int or uses < 0
+                or not all((actor,reason,idempotency_key))):
+            raise ValueError("allowance exige tokens positivos, actor, reason e idempotency_key")
+        key = "agent_budget_allowance:" + sha256_json(idempotency_key)[:32]
+        now = utcnow()
+        with self.transaction() as con:
+            if not con.execute("SELECT 1 FROM gameweek_cycles WHERE cycle_id=?",(cycle_id,)).fetchone():
+                raise ValueError("cycle_id desconocido")
+            old=con.execute("SELECT value_json FROM runtime_controls WHERE control_key=?",(key,)).fetchone()
+            identity={"cycle_id":cycle_id,"tokens":tokens,"uses":uses,"actor":actor,"reason":reason,
+                      "idempotency_key":idempotency_key}
+            if old:
+                value=json.loads(old[0])
+                if any(value.get(k, 0 if k == "uses" else None)!=v for k,v in identity.items()):
+                    raise ValueError("allowance idempotency conflict")
+                return {**value,"reused":True}
+            value={"schema":"mova-budget-allowance-v1",**identity,"month":now[:7],"granted_at":now}
+            con.execute("INSERT INTO runtime_controls(control_key,value_json,effective_at,actor,reason) VALUES(?,?,?,?,?)",
+                        (key,canonical_json(value),now,actor,reason))
+            self.append_audit("agent_budget_allowance_granted",actor=actor,cycle_id=cycle_id,
+                subject_type="budget_allowance",subject_id=key,payload=value,con=con)
+        return {**value,"reused":False}
+
+    @staticmethod
+    def _budget_with_allowances(con, policy: dict, *, cycle_id: str | None, month: str) -> tuple[dict,list]:
+        rows=con.execute("SELECT value_json FROM runtime_controls WHERE control_key LIKE 'agent_budget_allowance:%'").fetchall()
+        allowances=[json.loads(row[0]) for row in rows]
+        applicable=[a for a in allowances if a.get("schema")=="mova-budget-allowance-v1"
+                    and (a.get("cycle_id")==cycle_id or a.get("month")==month)]
+        result=dict(policy)
+        result["gw_tokens"]+=sum(a["tokens"] for a in applicable if a["cycle_id"]==cycle_id)
+        result["month_tokens"]+=sum(a["tokens"] for a in applicable if a["month"]==month)
+        result["gw_uses"]+=sum(a.get("uses",0) for a in applicable if a["cycle_id"]==cycle_id)
+        result["month_uses"]+=sum(a.get("uses",0) for a in applicable if a["month"]==month)
+        return result,applicable
+
     def _reserve_agent_budget(self, con: sqlite3.Connection, *, cycle_id: str,
                               subject_type: str, subject_id: str, provider: str,
                               policy: dict | None, actor: str, now: str,
@@ -1962,6 +2073,7 @@ class OpsDB:
         if existing:
             return {**dict(existing), "reused": True}
         month = now[:7]
+        policy, _ = self._budget_with_allowances(con, policy, cycle_id=cycle_id, month=month)
         gw_accounting = self._agent_budget_aggregates(con, cycle_id=cycle_id)
         month_accounting = self._agent_budget_aggregates(con, month=month)
         estimate = int(policy["reservation_tokens"])
@@ -2179,6 +2291,11 @@ class OpsDB:
                 payload={"provider": payload["provider"],
                          "request_sha256": payload["request_sha256"]}, con=con,
             )
+            if payload.get("experiment"):
+                self.append_audit("research_experiment_enqueued", actor="mova-research-experiment",
+                    cycle_id=payload["cycle_id"], subject_type="research_run", subject_id=run_id,
+                    payload={"experiment": payload["experiment"],
+                             "request_sha256": payload["request_sha256"]}, con=con)
         return {"research_run_id": run_id, "status": "queued", "queued_at": now,
                 "budget": budget, "reused": False}
 
@@ -2648,6 +2765,77 @@ class OpsDB:
                 con=con,
             )
 
+    def release_undispatched_experiment(self, research_run_id: str, request: dict, *,
+                                       actor: str, reason: str) -> dict:
+        """Reconcile an experiment proven to have no host permission or physical attempt."""
+        if not actor or not reason or not request.get("experiment"):
+            raise ValueError("reconciliation exige experiment, actor y reason")
+        body = {key: value for key, value in request.items() if key != "request_sha256"}
+        with self.transaction() as con:
+            run = con.execute("SELECT * FROM research_runs WHERE research_run_id=?",
+                              (research_run_id,)).fetchone()
+            if (not run or run["status"] != "rejected"
+                    or run["error_code"] != "agent_retry_budget_exhausted"
+                    or run["request_sha256"] != sha256_json(body)
+                    or request.get("request_sha256") != run["request_sha256"]):
+                raise ValueError("no existe rechazo experimental verificable")
+            for table in ("agent_attempt_authorizations", "agent_worker_attempt_events"):
+                if con.execute(f"SELECT 1 FROM {table} WHERE subject_id=? LIMIT 1",
+                               (research_run_id,)).fetchone():
+                    raise ValueError("dispatch posible: conservar cargo")
+            reservation = con.execute("SELECT * FROM agent_budget_reservations WHERE subject_id=?",
+                                      (research_run_id,)).fetchone()
+            if not reservation or reservation["status"] not in {"charged", "released"}:
+                raise ValueError("reserva no conciliable")
+            if reservation["status"] == "released":
+                return {"status": "released", "reused": True}
+            now = utcnow()
+            con.execute("UPDATE agent_budget_reservations SET status='released',actual_tokens=0,"
+                        "estimated_tokens=0,attempt_count=NULL,accounting_mode='exact',released_at=? "
+                        "WHERE reservation_id=?", (now, reservation["reservation_id"]))
+            self.append_audit("undispatched_experiment_reconciled", actor=actor,
+                cycle_id=run["cycle_id"], subject_type="research_run", subject_id=research_run_id,
+                payload={"reason": reason, "reservation_id": reservation["reservation_id"],
+                         "previous_estimate": reservation["actual_tokens"], "actual_tokens": 0,
+                         "proof": "sealed_experiment_no_authorization_no_attempt"}, con=con)
+        return {"status": "released", "research_run_id": research_run_id, "actual_tokens": 0,
+                "reused": False}
+
+    def complete_research_experiment(self, research_run_id: str, payload: dict, *,
+                                    result_path: str, result_sha256: str,
+                                    evaluation_path: str, experiment: dict) -> dict:
+        """Settle real usage without publishing experiment evidence or counting a GW."""
+        now = utcnow()
+        with self.transaction() as con:
+            run = con.execute("SELECT * FROM research_runs WHERE research_run_id=?",
+                              (research_run_id,)).fetchone()
+            if not run:
+                raise ValueError("research_run desconocido")
+            if run["status"] == "completed":
+                return {"status": "completed", "reused": True, "operational_import": False}
+            if run["status"] != "queued":
+                raise ValueError("experiment no está queued")
+            usage = payload["usage"]
+            con.execute("UPDATE research_runs SET status='completed',result_path=?,result_sha256=?,"
+                        "usage_json=?,finished_at=? WHERE research_run_id=?",
+                        (result_path, result_sha256, canonical_json(usage), now, research_run_id))
+            con.execute("""INSERT INTO cost_ledger(cost_id,research_run_id,provider,model,
+                input_tokens,output_tokens,subscription_usage,detail_json,occurred_at,
+                cycle_id,subject_type,subject_id,category,duration_ms)
+                VALUES(?,?,?,?,?,?,1,?,?,?,?,?,?,?)""",
+                (new_id("cost"), research_run_id, run["provider"], usage.get("model"),
+                 usage.get("input_tokens"), usage.get("output_tokens"),
+                 canonical_json({**usage, "experiment": experiment}), now, run["cycle_id"],
+                 "research", research_run_id, "research_experiment", usage.get("duration_ms")))
+            settlement = self._settle_agent_budget(con, subject_id=research_run_id,
+                usage=usage, cycle_id=run["cycle_id"], actor="mova-research-experiment", now=now)
+            self.append_audit("research_experiment_completed", actor="mova-research-experiment",
+                cycle_id=run["cycle_id"], subject_type="research_run", subject_id=research_run_id,
+                payload={"experiment": experiment, "evaluation_path": evaluation_path,
+                         "result_sha256": result_sha256, "operational_import": False}, con=con)
+        return {"status": "completed", "research_run_id": research_run_id,
+                "evaluation_path": evaluation_path, "budget": settlement, "operational_import": False}
+
     def import_research_result(self, research_run_id: str, payload: dict, *,
                                result_path: str, result_sha256: str) -> dict:
         now = utcnow()
@@ -2717,10 +2905,11 @@ class OpsDB:
                      signal.get("published_at"), signal["expires_at"], signal["confidence"],
                      signal["conflict_status"], sha256_json(signal_body), research_run_id,
                      signal["subject_name"], signal["direction"], validation,
-                     canonical_json({"source_urls": evidence_urls,
+                    canonical_json({"source_urls": evidence_urls,
                                      "document_ids": [document_ids.get(url)
                                                       for url in evidence_urls],
-                                     "evidence_refs": evidence_refs})),
+                                     "evidence_refs": evidence_refs,
+                                     "quality": signal.get("quality", {})})),
                 )
                 accepted += validation == "accepted"
             for conflict in payload["conflicts"]:
@@ -2782,6 +2971,83 @@ class OpsDB:
                 "budget_settlement": budget_settlement,
                 "reused": False}
 
+    def resolve_research_conflict(self, conflict_id: str, *, cycle_id: str,
+                                  document_ids: list[str], actor: str, reason: str,
+                                  idempotency_key: str) -> dict:
+        """Adjudicación supervisada de claims no contradictorios, nunca alta médica.
+
+        Requiere revisar todas las fuentes originales selladas. No acepta evidencia
+        inventada por el operador ni promueve señales, envelopes o permisos.
+        """
+        if not all(isinstance(v, str) and v.strip() for v in
+                   (conflict_id, cycle_id, actor, reason, idempotency_key)):
+            raise ValueError("resolución exige identidad, actor, razón y clave")
+        if not document_ids or any(not isinstance(v, str) or not v.strip()
+                                   for v in document_ids):
+            raise ValueError("resolución exige document_ids")
+        request = {"conflict_id": conflict_id, "cycle_id": cycle_id,
+                   "document_ids": sorted(set(document_ids)), "actor": actor,
+                   "reason": reason, "idempotency_key": idempotency_key,
+                   "resolution": "not_contradictory"}
+        with self.transaction() as con:
+            existing = con.execute(
+                "SELECT * FROM audit_events WHERE event_type='research_conflict_resolved' "
+                "AND json_extract(payload_json,'$.request.idempotency_key')=?",
+                (idempotency_key,),
+            ).fetchone()
+            if existing:
+                if json.loads(existing["payload_json"])["request"] != request:
+                    raise ValueError("idempotency_key ya usada con otro contenido")
+                return {"status": "reused", "event_id": existing["event_id"],
+                        "conflict_id": conflict_id, "runtime_mutated": False,
+                        "fpl_state_mutated": False}
+            conflict = con.execute(
+                "SELECT * FROM research_conflicts WHERE conflict_id=?", (conflict_id,),
+            ).fetchone()
+            if not conflict or conflict["cycle_id"] != cycle_id:
+                raise ValueError("conflicto desconocido o ciclo distinto")
+            if conflict["status"] != "unresolved":
+                raise ValueError("conflicto ya resuelto; usar clave original")
+            evidence = []
+            for document_id in request["document_ids"]:
+                doc = con.execute(
+                    "SELECT * FROM research_documents WHERE document_id=? "
+                    "AND research_run_id=?", (document_id, conflict["research_run_id"]),
+                ).fetchone()
+                if not doc or doc["fetch_status"] != "verified":
+                    raise ValueError("evidencia no verificada del run original")
+                if not doc["excerpt"] or hashlib.sha256(
+                    doc["excerpt"].encode("utf-8")
+                ).hexdigest() != doc["excerpt_sha256"]:
+                    raise ValueError("excerpt alterado o ausente")
+                artifact = Path(doc["artifact_path"] or "")
+                if (not artifact.is_file() or artifact.stat().st_size > 1_048_576
+                        or hashlib.sha256(artifact.read_bytes()).hexdigest()
+                        != doc["artifact_sha256"]):
+                    raise ValueError("artefacto de evidencia alterado o ausente")
+                evidence.append({"document_id": document_id,
+                                 "source_url": doc["source_url"],
+                                 "excerpt_sha256": doc["excerpt_sha256"],
+                                 "artifact_sha256": doc["artifact_sha256"]})
+            if set(json.loads(conflict["source_urls_json"])) != {
+                row["source_url"] for row in evidence
+            }:
+                raise ValueError("evidencia debe cubrir exactamente las fuentes del conflicto")
+            payload = {"schema": "mova-research-conflict-resolution-v1",
+                       "request": request, "before": dict(conflict),
+                       "evidence": evidence, "after_status": "resolved",
+                       "signals_promoted": False, "fpl_state_mutated": False}
+            event_id = self.append_audit(
+                "research_conflict_resolved", actor=actor, cycle_id=cycle_id,
+                subject_type="research_conflict", subject_id=conflict_id,
+                payload=payload, con=con,
+            )
+            con.execute("UPDATE research_conflicts SET status='resolved' WHERE conflict_id=?",
+                        (conflict_id,))
+        return {"status": "resolved", "event_id": event_id,
+                "conflict_id": conflict_id, "runtime_mutated": True,
+                "fpl_state_mutated": False, "requires_new_decision": True}
+
     def deliberation_source(self) -> dict | None:
         """Último envelope vigente con los enlaces necesarios para deliberar."""
         with self.connect(readonly=True) as con:
@@ -2837,16 +3103,13 @@ class OpsDB:
         """
         current = now.astimezone(timezone.utc)
         deadline = datetime.fromisoformat(deadline_at.replace("Z", "+00:00"))
-        seconds = int((deadline - current).total_seconds())
-        if seconds <= 0:
-            return {"due": False, "reason": "deadline_passed",
-                    "deadline_seconds": seconds}
-        if seconds > deadline_window_seconds:
-            return {"due": False, "reason": "outside_deliberation_window",
-                    "deadline_seconds": seconds}
-        if seconds <= final_cutoff_seconds:
-            return {"due": False, "reason": "final_cutoff_passed",
-                    "deadline_seconds": seconds}
+        from mova_fpl.ops.schedule import agent_window
+        window = agent_window(deadline, current, window_seconds=deadline_window_seconds,
+                              cutoff_seconds=final_cutoff_seconds)
+        seconds = window["deadline_seconds"]
+        if not window["due"]:
+            return {**window, "reason": "outside_deliberation_window"
+                    if window["reason"] == "outside_window" else window["reason"]}
         with self.connect(readonly=True) as con:
             research = con.execute(
                 "SELECT research_run_id,imported_at FROM research_runs "
@@ -3219,7 +3482,7 @@ class OpsDB:
         }
 
     def research_coverage(self, *, limit: int = 20) -> dict:
-        """Evaluate evidence coverage across immutable imported research runs."""
+        """Evaluate all latest cycle results; limit controls presentation only."""
         policy = {
             "version": "research-coverage-2026.08.1",
             "minimum_measured_gameweeks": 3,
@@ -3247,8 +3510,8 @@ class OpsDB:
                   WHERE x.research_run_id=r.research_run_id AND x.status='unresolved')
                   unresolved_conflicts
                 FROM research_runs r JOIN gameweek_cycles c ON c.cycle_id=r.cycle_id
-                WHERE r.status='imported' ORDER BY r.imported_at DESC LIMIT ?""",
-                (max(1, min(int(limit), 100)),),
+                WHERE r.status='imported'
+                ORDER BY r.imported_at DESC, r.queued_at DESC, r.research_run_id DESC""",
             ).fetchall()
         runs = []
         for row in rows:
@@ -3287,7 +3550,8 @@ class OpsDB:
                 row["coverage_status"] == "legacy_unmeasured"
                 for row in latest_by_cycle.values()
             ),
-            "latest": runs[0] if runs else None, "runs": runs,
+            "latest": runs[0] if runs else None,
+            "runs": runs[:max(1, min(int(limit), 100))],
         }
 
     def strategy_shadow_settlements(self, season: str) -> list[dict]:
@@ -3454,11 +3718,11 @@ class OpsDB:
         source = payload["source"]
         with self.transaction() as con:
             existing = con.execute(
-                "SELECT review_id FROM gameweek_reviews WHERE settlement_id=? "
+                "SELECT review_id,artifact_path,artifact_sha256 FROM gameweek_reviews WHERE settlement_id=? "
                 "AND review_type='causal'", (source["settlement_id"],),
             ).fetchone()
             if existing:
-                return {"review_id": existing["review_id"], "reused": True}
+                return {**dict(existing), "reused": True}
             con.execute(
                 """INSERT INTO gameweek_reviews(
                 review_id,job_id,settlement_id,decision_id,review_type,causality_status,
@@ -3673,6 +3937,9 @@ class OpsDB:
                     "ORDER BY deadline_at DESC LIMIT 1"
                 ).fetchone()
             cycle_id = cycle["cycle_id"] if cycle else None
+            base_policy = dict(policy)
+            policy, allowances = self._budget_with_allowances(con, policy,
+                cycle_id=cycle_id, month=observed_month)
             if cycle_id:
                 gw_accounting = self._agent_budget_aggregates(con, cycle_id=cycle_id)
             else:
@@ -3825,7 +4092,8 @@ class OpsDB:
         return {
             "schema": "mova-agent-cost-report-v1", "observed_at": utcnow(),
             "status": report_status,
-            "policy": dict(policy), "cycle": dict(cycle) if cycle else None,
+            "policy": dict(policy), "base_policy": base_policy, "allowances": allowances,
+            "cycle": dict(cycle) if cycle else None,
             "gameweek": scope(gw_accounting,
                               token_limit=policy["gw_tokens"], use_limit=policy["gw_uses"]),
             "month": {"month": observed_month, **scope(
@@ -4615,6 +4883,10 @@ class OpsDB:
         research_coverage_ratio = 0.0
         research_evidence_ratio = 0.0
         research_measured_gameweeks = 0
+        research_quality = {"catalog_size": 0, "global_alerts": 0,
+                            "accepted_outside_focus": 0,
+                            "candidate_outside_focus": 0,
+                            "semantic_rejections": 0}
         decision_envelope_status = "missing"
         execution_plan_status = "missing"
         execution_plan_blockers = 0
@@ -4688,13 +4960,20 @@ class OpsDB:
                 except ValueError:
                     pass
             latest_coverage = con.execute(
-                "SELECT coverage_ratio,evidence_ratio FROM research_runs "
+                "SELECT coverage_ratio,evidence_ratio,coverage_json FROM research_runs "
                 "WHERE status='imported' AND coverage_status IN ('complete','partial','failed') "
                 "ORDER BY imported_at DESC LIMIT 1"
             ).fetchone()
             if latest_coverage:
                 research_coverage_ratio = float(latest_coverage["coverage_ratio"] or 0)
                 research_evidence_ratio = float(latest_coverage["evidence_ratio"] or 0)
+                try:
+                    measured_quality = json.loads(latest_coverage["coverage_json"]).get(
+                        "quality", {})
+                    research_quality = {key: int(measured_quality.get(key) or 0)
+                                        for key in research_quality}
+                except (TypeError, ValueError, json.JSONDecodeError):
+                    pass
             research_measured_gameweeks = int(con.execute(
                 "SELECT COUNT(DISTINCT cycle_id) FROM research_runs "
                 "WHERE status='imported' AND coverage_status IN ('complete','partial','failed')"
@@ -4829,6 +5108,10 @@ class OpsDB:
             "# HELP mova_research_measured_gameweeks Gameweeks with explicit coverage v2.",
             "# TYPE mova_research_measured_gameweeks gauge",
             f"mova_research_measured_gameweeks {research_measured_gameweeks}",
+            "# HELP mova_research_quality Latest import's global discovery and claim checks.",
+            "# TYPE mova_research_quality gauge",
+            *[f'mova_research_quality{{measure="{key}"}} {value}'
+              for key, value in sorted(research_quality.items())],
             "# HELP mova_strategic_memory_status Latest sealed memory lifecycle status.",
             "# TYPE mova_strategic_memory_status gauge",
             *[f'mova_strategic_memory_status{{status="{name}"}} '

@@ -8,7 +8,7 @@ test -f "$backup_dir/ops.db"
 
 docker compose --project-directory "$repo_dir" -f "$repo_dir/compose.yaml" \
   --profile jobs run --rm --no-deps \
-  -e MOVA_OPS_DB="/restore/ops.db" \
   -v "$backup_dir:/restore:ro" worker \
-  python -m mova_fpl.ops.cli check
+  sh -c 'cp /restore/ops.db /tmp/mova-restore-ops.db && \
+    MOVA_OPS_DB=/tmp/mova-restore-ops.db python -m mova_fpl.ops.cli check'
 echo "restore drill passed for $backup_dir"

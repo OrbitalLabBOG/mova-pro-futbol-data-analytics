@@ -2,12 +2,17 @@
 type: project
 name: "Motor de decision FPL 2026/27 - modelos, reglas y harness de backtest blind — Readiness"
 created: 2026-08-07
-updated: 2026-08-07
+updated: 2026-09-20
 tags: [readiness, quality-gate, fpl-decision-engine, mova]
-status: draft
+status: historical
 ---
 
 # Motor de decisión FPL 2026/27 — Readiness Review
+
+Este review describe el corte del 7 de agosto. El [paquete del motor está cerrado](README.md);
+las siete tareas de construcción están done en PM. Sus pendientes narrativos no reabren trabajo:
+entry_id ya está registrado y el seguimiento de calibración/claims tiene tareas propias.
+Para autonomía usar la [hoja de ruta vigente](../fpl-autonomous-operator/04-readiness-and-rollout.md).
 
 **Fecha de evaluación:** 2026-08-07 · **Versión evaluada:** 1 · **Modalidad:** standard
 

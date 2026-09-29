@@ -9,8 +9,10 @@ import http.client
 import ipaddress
 import socket
 import ssl
+import re
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -28,7 +30,19 @@ class WebhookSettings:
     timeout_seconds: int = 5
 
 
-def _load_settings(config: RuntimeConfig) -> WebhookSettings | None:
+@dataclass(frozen=True, slots=True)
+class SlackSettings:
+    token: str
+    recipient_user_id: str
+    owner: str
+    channel: str = "slack_dm"
+    timeout_seconds: int = 5
+
+
+AlertSettings = WebhookSettings | SlackSettings
+
+
+def _load_settings(config: RuntimeConfig) -> AlertSettings | None:
     """Lee el secreto sin incluir URL, path ni token en respuestas o logs."""
     path = config.alert_webhook_config_file
     if not path.is_file():
@@ -37,10 +51,24 @@ def _load_settings(config: RuntimeConfig) -> WebhookSettings | None:
     if len(raw) > 16_384:
         raise ValueError("alert webhook config exceeds 16 KiB")
     value = json.loads(raw)
-    if not isinstance(value, dict) or value.get("version") != 1:
+    if not isinstance(value, dict) or value.get("version") not in (1, 2):
         raise ValueError("alert webhook config version invalid")
     if value.get("enabled") is not True:
         return None
+    if value["version"] == 2:
+        allowed = {"version", "enabled", "provider", "token",
+                   "recipient_user_id", "owner"}
+        if set(value) != allowed or value.get("provider") != "slack":
+            raise ValueError("invalid Slack alert config")
+        token = str(value.get("token") or "")
+        recipient = str(value.get("recipient_user_id") or "")
+        owner = str(value.get("owner") or "").strip()
+        if (not re.fullmatch(r"xoxb-[A-Za-z0-9-]{10,256}", token)
+                or not re.fullmatch(r"U[A-Z0-9]{8,20}", recipient)
+                or not re.fullmatch(r"[A-Za-z0-9_.@-]{2,80}", owner)):
+            raise ValueError("invalid Slack alert destination")
+        return SlackSettings(token, recipient, owner,
+                             timeout_seconds=config.alert_webhook_timeout_seconds)
     allowed = {"version", "enabled", "url", "owner", "channel"}
     if set(value) - allowed:
         raise ValueError("alert webhook config has unknown fields")
@@ -68,7 +96,7 @@ def _public_addresses(hostname: str) -> tuple[str, ...]:
     return tuple(addresses)
 
 
-def _payload(event: dict, settings: WebhookSettings) -> dict:
+def _payload(event: dict, settings: AlertSettings) -> dict:
     source = json.loads(event.get("payload_json") or "{}")
     return {
         "schema": "mova-alert-webhook-v1",
@@ -123,12 +151,108 @@ def webhook_sink(settings: WebhookSettings, *,
     return sink
 
 
+def _slack_post(settings: SlackSettings, body: bytes) -> int:
+    _public_addresses("slack.com")
+    connection = http.client.HTTPSConnection(
+        "slack.com", 443, timeout=settings.timeout_seconds,
+        context=ssl.create_default_context(),
+    )
+    try:
+        connection.request(
+            "POST", "/api/chat.postMessage", body=body,
+            headers={"Content-Type": "application/json; charset=utf-8",
+                     "Authorization": f"Bearer {settings.token}",
+                     "User-Agent": "mova-fpl/1"},
+        )
+        response = connection.getresponse()
+        payload = json.loads(response.read(4096))
+        if response.status != 200 or payload.get("ok") is not True:
+            raise RuntimeError("Slack alert delivery failed")
+        return response.status
+    finally:
+        connection.close()
+
+
+def slack_sink(settings: SlackSettings, *,
+               transport: Callable[[SlackSettings, bytes], int] = _slack_post
+               ) -> Callable[[dict], None]:
+    def sink(event: dict) -> None:
+        journal_sink(event)
+        content = _payload(event, settings)
+        severity = content["severity"]
+        title = str(content.get("title") or content["event_type"])[:180]
+        # Keep the destination message redacted and bounded; never include detail JSON.
+        body = json.dumps({
+            "channel": settings.recipient_user_id,
+            "text": f"MOVA FPL {severity}: {title}\nEvento: {content['event_key']}",
+        }, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+        transport(settings, body)
+    return sink
+
+
+def _fingerprint(settings: AlertSettings) -> str:
+    identity = (settings.url if isinstance(settings, WebhookSettings) else
+                f"slack:{settings.recipient_user_id}:{settings.token}")
+    return hashlib.sha256(identity.encode()).hexdigest()[:32]
+
+
+def _sink(settings: AlertSettings) -> Callable[[dict], None]:
+    return webhook_sink(settings) if isinstance(settings, WebhookSettings) else slack_sink(settings)
+
+
 def configured_sink(config: RuntimeConfig) -> Callable[[dict], None]:
     settings = _load_settings(config)
-    return journal_sink if settings is None else webhook_sink(settings)
+    return journal_sink if settings is None else _sink(settings)
+
+
+def _published_channel_status(path: Path) -> dict:
+    """API-only projection; stale/missing state never grants a readiness pass."""
+    invalid = {"schema": "mova-alert-channel-v1", "status": "invalid",
+               "configured": False, "external_delivery": False}
+    try:
+        if path.stat().st_size > 4096:
+            raise ValueError("oversized channel status")
+        payload = json.loads(path.read_text())
+        observed = datetime.fromisoformat(payload["generated_at"])
+        age = (datetime.now(timezone.utc) - observed).total_seconds()
+        if payload["schema"] != "mova-alert-channel-observation-v1" or not 0 <= age <= 1800:
+            raise ValueError("stale channel status")
+        report = payload["channel"]
+        allowed = {"schema", "status", "configured", "external_delivery", "owner",
+                   "channel", "destination_fingerprint", "error_code"}
+        if not isinstance(report, dict) or set(report) - allowed:
+            raise ValueError("invalid channel projection")
+        if (report.get("schema") != "mova-alert-channel-v1" or
+                report.get("status") not in {"configured", "local_only", "invalid"}):
+            raise ValueError("invalid channel contract")
+        if report["status"] == "configured":
+            if (report.get("configured") is not True or report.get("external_delivery") is not True
+                    or not re.fullmatch(r"[0-9a-f]{32}", str(report.get("destination_fingerprint", "")))
+                    or not report.get("owner") or not report.get("channel")):
+                raise ValueError("incomplete configured channel")
+        elif report.get("configured") is not False or report.get("external_delivery") is not False:
+            raise ValueError("inconsistent channel projection")
+        return report
+    except (OSError, ValueError, KeyError, TypeError, AttributeError) as exc:
+        return {**invalid, "error_code": type(exc).__name__}
+
+
+def publish_channel_status(config: RuntimeConfig) -> Path:
+    """Watchdog publishes only sanitized configuration, never delivery credentials."""
+    from mova_fpl.ops.collector.contracts import canonical_bytes, write_atomic
+
+    report = channel_status(replace(config, alert_channel_status_file=None))
+    path = config.host_probe_path.parent / "alert-channel.json"
+    write_atomic(path, canonical_bytes({
+        "schema": "mova-alert-channel-observation-v1",
+        "generated_at": datetime.now(timezone.utc).isoformat(), "channel": report,
+    }))
+    return path
 
 
 def channel_status(config: RuntimeConfig) -> dict:
+    if config.alert_channel_status_file is not None:
+        return _published_channel_status(config.alert_channel_status_file)
     try:
         settings = _load_settings(config)
     except (OSError, ValueError, json.JSONDecodeError) as exc:
@@ -140,7 +264,7 @@ def channel_status(config: RuntimeConfig) -> dict:
                 "configured": False, "external_delivery": False,
                 "owner": None, "channel": "journald"}
     # 128 bits ligan evidencia al destino sin revelar su URL.
-    fingerprint = hashlib.sha256(settings.url.encode()).hexdigest()[:32]
+    fingerprint = _fingerprint(settings)
     return {"schema": "mova-alert-channel-v1", "status": "configured",
             "configured": True, "external_delivery": True,
             "owner": settings.owner, "channel": settings.channel,
@@ -262,7 +386,7 @@ def live_ping(config: RuntimeConfig, db: OpsDB, *, actor: str, reason: str,
         return {"schema": "mova-alert-live-ping-v1", "status": "not_configured",
                 "channel_status": "local_only", "runtime_mutated": False,
                 "external_calls": 0}
-    fingerprint = hashlib.sha256(settings.url.encode()).hexdigest()[:32]
+    fingerprint = _fingerprint(settings)
     identity = sha256_json({
         "actor": actor, "reason": reason, "idempotency_key": idempotency_key,
         "destination_fingerprint": fingerprint,
@@ -295,7 +419,7 @@ def live_ping(config: RuntimeConfig, db: OpsDB, *, actor: str, reason: str,
             ), destination_fingerprint=fingerprint,
         )
         result = dispatch(
-            db, outbox_id=outbox_id, sink=sink or webhook_sink(settings),
+            db, outbox_id=outbox_id, sink=sink or _sink(settings),
         )
     except Exception as exc:  # ledger terminal incluso ante una falla interna
         db.finish_job(job_id, "failed", error_code=type(exc).__name__)
