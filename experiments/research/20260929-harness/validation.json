@@ -1,0 +1,35 @@
+{
+  "schema": "mova-harness-iteration-validation-v1",
+  "base_revision": "6caf461",
+  "runtime_base": "e903983",
+  "local_suite": {
+    "passed": 1904,
+    "skipped": 1,
+    "deselected": 79,
+    "seconds": 28.5,
+    "command": "pytest -q",
+    "deselected_reason": "Project configuration excludes slow/integration_data requiring external datasets."
+  },
+  "checks": {
+    "compileall": "pass",
+    "compose_config": "pass",
+    "worker_syntax": "pass",
+    "diff_whitespace": "pass",
+    "offline_replay": "pass"
+  },
+  "online_pair": {
+    "status": "deferred_operational_capacity",
+    "observed_at": "2026-09-29T03:11:02.909Z",
+    "gw_remaining_tokens": 2310934,
+    "pair_max_tokens": 2000000,
+    "operational_capacity_to_preserve": 1000000,
+    "tokens_spent": 0
+  },
+  "active_researcher": "1.10.0",
+  "experimental_researcher": "1.11.0",
+  "runtime_mutated": false,
+  "autonomy_promoted": false,
+  "container_validation": {
+    "status": "pending"
+  }
+}

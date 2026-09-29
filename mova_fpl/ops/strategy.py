@@ -18,7 +18,7 @@ from pathlib import Path
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.agent_releases import researcher_release
 from mova_fpl.ops.db import OpsDB, canonical_json, new_id, sha256_json, utcnow
-from mova_fpl.ops.schedule import phase_for
+from mova_fpl.ops.schedule import phase_for, agent_window
 from mova_fpl.ops.research_evidence import SafeEvidenceFetcher, canonical_public_url
 from mova_fpl.ops.research_quality import claim_fresh, claim_supported, subject_in_excerpt
 
@@ -552,15 +552,13 @@ class StrategicContextService:
         if not cycle:
             return {"due": False, "reason": "no_cycle"}
         deadline = _parse_time(cycle["deadline_at"], field="deadline_at")
-        seconds = int((deadline - current).total_seconds())
-        if seconds <= 0:
-            return {"due": False, "reason": "deadline_passed", "deadline_seconds": seconds}
-        if seconds > self.config.research_deadline_window_seconds:
-            return {"due": False, "reason": "outside_research_window",
-                    "deadline_seconds": seconds}
-        if seconds <= self.config.research_final_cutoff_seconds:
-            return {"due": False, "reason": "final_cutoff_passed",
-                    "deadline_seconds": seconds,
+        window = agent_window(deadline, current,
+                              window_seconds=self.config.research_deadline_window_seconds,
+                              cutoff_seconds=self.config.research_final_cutoff_seconds)
+        seconds = window["deadline_seconds"]
+        if not window["due"]:
+            return {**window, "reason": "outside_research_window"
+                    if window["reason"] == "outside_window" else window["reason"],
                     "final_cutoff_seconds": self.config.research_final_cutoff_seconds}
         if seconds <= self.config.research_final_window_seconds:
             run_kind = "final"

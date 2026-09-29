@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — contexto estratégico e investigación"
 created: 2026-08-27
-updated: 2026-09-22
+updated: 2026-09-29
 tags: [mova, fpl, strategy, research, codex, evidence]
 status: active
 ---
@@ -338,3 +338,34 @@ The authorized campaign allowance preserves consumption and restores scoped toke
 and use capacity. The historical baseline overrun remains reviewed, not erased.
 The scheduler still operates its predeadline slots; a component release does not
 create a new daily background research schedule.
+
+
+## Laboratorio de cobertura — candidato 1.11.0
+
+La versión activa sigue siendo 1.10.0. El candidato 1.11.0 añade la hipótesis
+`focus_completion_v1`: priorizar el foco pendiente mediante `research_context` sección
+`focus_progress`, agrupar dudas por club y cerrar cada sujeto con evidencia o limitación.
+El progreso cuenta verificaciones supported dentro del turno y permanece diagnóstico;
+la importación independiente decide cobertura/aceptación. No completa silencios de búsqueda.
+Modelo, calidad, scope, timeout y guard reactivo conservan los límites de 1.10.0.
+
+Replay sin red ni inferencias:
+
+```bash
+python -m experiments.research.replay_corpus experiments/research/20260929-harness
+python experiments/research/compare_agents.py /ruta/research baseline_run candidate_run
+```
+
+El comparador exige manifiesto, scope, calidad, contexto, método de fuente, implementación y
+límite de tokens compatibles; ambos consumos conocidos y dentro de límite, una tentativa
+completa por brazo, mejora de cobertura >=2 sujetos y ausencia de regresión de conflictos
+/soporte. Los hashes de contexto se reportan; incluyen versión e identidad de request y no
+se exige igualdad byte a byte. Falta de evaluación o metering nunca se inventa.
+Una comparación elegible es candidata a revisión, no promoción ni aceptación multi-GW.
+
+El corpus contiene seis extractos reales con hashes verificados y ocho etiquetas de contrato.
+Conserva fechas de captura y limita su uso retrospectivo: una captura posterior al deadline
+no entra al backtest de esa GW. Los checks léxicos no validan todo el significado de un claim.
+Antes del ensayo online pareado de máximo 2M tokens, comprobar presupuesto y conservar
+capacidad operativa. El snapshot de 29/09 03:11 UTC dejó 2.310.934 tokens en la GW: un par de
+2M dejaría 310.934, menos que un job operativo de 1M. El par se difiere sin ampliar allowances.

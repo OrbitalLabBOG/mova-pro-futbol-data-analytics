@@ -1,0 +1,105 @@
+{
+  "schema": "mova-research-offline-corpus-v1",
+  "source_request_sha256": "15a2a99d4ee215892fb52062148c743692e4b43fcca3a067c4320d345d1f448c",
+  "source_run_id": "research_96ecea3c56544f9e08c6d0e3910922e7",
+  "sources_sha256": "3aa42b912a71b0c66c6fdf7e47407e502b4c10f67bdf1e9d8529319e9429d3ee",
+  "cutoff_at": "2026-10-10T10:00:00Z",
+  "catalog": [
+    [
+      12,
+      "Saka",
+      "ARS"
+    ],
+    [
+      90,
+      "Hickey",
+      "BRE"
+    ],
+    [
+      411,
+      "Haaland",
+      "MCI"
+    ],
+    [
+      481,
+      "Anderson",
+      "MCI"
+    ]
+  ],
+  "cases": [
+    {
+      "id": "official_saka_role",
+      "document_id": "document_ee178e710c3fbc209604de3c445f528f",
+      "element": 12,
+      "claim_type": "starting_role",
+      "expected_validation": "accepted",
+      "expected_reason": null
+    },
+    {
+      "id": "official_hickey_bench",
+      "document_id": "document_30691af78ab8e4f01547ecf24b08e9c7",
+      "element": 90,
+      "claim_type": "starting_role",
+      "expected_validation": "accepted",
+      "expected_reason": null
+    },
+    {
+      "id": "lineup_is_not_injury",
+      "document_id": "document_fd0c30e9a29ed0c0b1a239764ba65d6c",
+      "element": 411,
+      "claim_type": "injury",
+      "expected_validation": "candidate",
+      "expected_reason": "identity_or_claim_unsupported"
+    },
+    {
+      "id": "stale_role",
+      "document_id": "document_ee178e710c3fbc209604de3c445f528f",
+      "element": 12,
+      "claim_type": "starting_role",
+      "observed_at": "2026-10-08T00:00:00Z",
+      "expected_validation": "candidate",
+      "expected_reason": "stale_for_claim"
+    },
+    {
+      "id": "post_deadline_fetch",
+      "document_id": "document_ee178e710c3fbc209604de3c445f528f",
+      "element": 12,
+      "claim_type": "starting_role",
+      "cutoff_at": "2026-09-19T00:00:00Z",
+      "expected_validation": "candidate",
+      "expected_reason": "fetch_after_cutoff"
+    },
+    {
+      "id": "one_secondary_report",
+      "document_id": "document_83c89bb153434a22cf7dac3140eb770c",
+      "element": 481,
+      "claim_type": "starting_role",
+      "expected_validation": "candidate",
+      "expected_reason": null
+    },
+    {
+      "id": "explicit_unresolved_conflict",
+      "document_id": "document_30691af78ab8e4f01547ecf24b08e9c7",
+      "element": 90,
+      "claim_type": "starting_role",
+      "conflicted": true,
+      "expected_validation": "candidate",
+      "expected_reason": null
+    },
+    {
+      "id": "unmentioned_subject",
+      "document_id": "document_ee178e710c3fbc209604de3c445f528f",
+      "element": 411,
+      "claim_type": "starting_role",
+      "expected_validation": "candidate",
+      "expected_reason": "identity_or_claim_unsupported"
+    }
+  ],
+  "limitations": [
+    "Retrospective fixtures, with original capture times. Post-cutoff capture cannot enter that earlier GW.",
+    "Lexical support is not full claim semantics. Conflict labels are explicit; chronology is not automatically resolved.",
+    "No inference, network, import or operational GW acceptance."
+  ],
+  "full_catalog_sha256": "3f6ec3f12cc9086bedb80a00935de12ebdff8063118db5183e73866ae16a67d8",
+  "full_catalog_subjects": 667
+}

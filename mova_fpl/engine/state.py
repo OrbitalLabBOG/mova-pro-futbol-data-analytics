@@ -182,3 +182,4 @@ class GwOutcome:
     auto_subs: tuple[tuple[int, int], ...]
     effective_captain: int | None
     players_played: int
+    player_multipliers: tuple[tuple[int, int], ...] = ()

@@ -8,13 +8,17 @@ dependencias.
 
 from __future__ import annotations
 
+import hashlib
+import json
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
+from mova_fpl.data.snapshot import load_snapshot
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB, sha256_json
 from mova_fpl.ops.schedule import (
     WORKFLOW_TIMING_POLICY_VERSION, private_state_cadence_seconds,
-    public_state_cadence_seconds, workflow_stage_timing,
+    public_state_cadence_seconds, workflow_stage_timing, agent_window,
 )
 
 SCHEMA = "mova-orchestration-status-v1"
@@ -197,7 +201,14 @@ def evaluate_workflow(observed: dict, *, now: datetime | None = None) -> dict:
             "review_learn", "reviewer", "pending", outcome="review_missing",
             next_action="ejecutar review causal y proponer mejoras",
         )
-    elif learning.get("lesson_count", 0) > 0:
+    elif learning.get("review_completed") and learning.get("open_proposals", 0) == 0:
+        learning_stage = _stage(
+            "review_learn", "reviewer", "complete",
+            outcome="lesson_validated" if learning.get("lesson_count", 0) else
+            "proposals_rejected" if learning.get("rejected_proposals", 0) else "no_hypothesis",
+            subject_id=review.get("review_id"),
+        )
+    elif learning.get("lesson_count", 0) > 0 and not learning.get("open_proposals", 0):
         learning_stage = _stage(
             "review_learn", "reviewer", "complete", outcome="lesson_validated",
             subject_id=review.get("review_id"),
@@ -212,6 +223,55 @@ def evaluate_workflow(observed: dict, *, now: datetime | None = None) -> dict:
 
     for row in stages:
         row["timing"] = workflow_stage_timing(row["name"], deadline)
+        row["reason"] = row["outcome"] or row["status"]
+        row["next_eligible_at"] = None
+        row["dependency"] = None
+
+    by_name = {row["name"]: row for row in stages}
+    dependencies = {"contextualize": "observe", "research": "contextualize",
+                    "propose_validate": "contextualize", "deliberate": "propose_validate",
+                    "preflight": "propose_validate", "review_learn": "settle"}
+    window = (agent_window(deadline, current,
+                           window_seconds=int(observed.get("agent_window_seconds", 24 * 3600)),
+                           cutoff_seconds=int(observed.get("agent_cutoff_seconds", 70 * 60)))
+              if deadline else None)
+    for row in stages:
+        dependency = dependencies.get(row["name"])
+        row["dependency"] = dependency
+        if row["status"] == "pending":
+            active_agent = (research_status if row["name"] == "research" else
+                            deliberation_status if row["name"] == "deliberate" else None)
+            if active_agent in {"queued", "running", "completed"}:
+                row["status"] = "waiting_dependency"
+                row["reason"] = "awaiting_agent_worker_or_import"
+                row["dependency"] = "agent_worker_or_import"
+                row["next_action"] = None
+            elif row["name"] in {"research", "deliberate"} and window and not window["due"]:
+                row["status"] = "not_due" if window["reason"] == "outside_window" else "overdue"
+                row["reason"] = window["reason"]
+                row["next_eligible_at"] = window["next_eligible_at"]
+                if row["status"] == "not_due": row["next_action"] = None
+            elif dependency and by_name[dependency]["status"] != "complete":
+                row["status"] = "waiting_dependency"
+                row["reason"] = "awaiting_" + dependency
+                row["next_action"] = None
+            elif row["name"] == "deliberate" and research_status != "imported":
+                row["status"] = "waiting_dependency"
+                row["reason"] = "research_not_imported"
+                row["dependency"] = "research"
+                row["next_action"] = None
+            elif row["name"] == "settle" and observed.get("official_ready") is not True:
+                row["status"] = "waiting_dependency"
+                row["reason"] = "awaiting_official_finished_data_checked"
+                row["dependency"] = "official_finished_data_checked"
+                row["next_action"] = None
+            elif row["timing"].get("hard_stop_at") and current >= datetime.fromisoformat(row["timing"]["hard_stop_at"]):
+                row["status"] = "overdue"
+                row["reason"] = "hard_stop_passed"
+        row["actionable_now"] = bool(row.get("next_action") and row["status"] in {
+            "pending", "blocked", "degraded", "overdue"})
+        if row["status"] == "overdue":
+            row["next_action"] = "diagnosticar etapa vencida; no ejecutar fuera de ventana"
 
     by_name = {row["name"]: row for row in stages}
     violations: list[dict] = []
@@ -262,7 +322,7 @@ def evaluate_workflow(observed: dict, *, now: datetime | None = None) -> dict:
     degraded = [row for row in stages if row["status"] == "degraded"]
     actionable = [
         row for row in stages
-        if row["status"] == "pending" and row.get("next_action")
+        if row["actionable_now"]
     ]
     verdict = (
         "blocked" if violations or blocked else
@@ -314,7 +374,7 @@ def build_workflow(config: RuntimeConfig, db: OpsDB, *,
         observed = {
             "cycle": cycle,
             "source": _row(con,
-                "SELECT snapshot_id,quality_status,captured_at FROM source_snapshots "
+                "SELECT snapshot_id,quality_status,captured_at,artifact_path,manifest_sha256 FROM source_snapshots "
                 "WHERE cycle_id=? ORDER BY captured_at DESC LIMIT 1", (cycle_id,)),
             "team_state": _row(con,
                 "SELECT team_state_id,quality_status,observed_at FROM team_state_snapshots "
@@ -323,8 +383,11 @@ def build_workflow(config: RuntimeConfig, db: OpsDB, *,
                 "SELECT manifest_id,revision,created_at FROM cycle_manifests "
                 "WHERE cycle_id=? ORDER BY revision DESC LIMIT 1", (cycle_id,)),
             "research": _row(con,
-                "SELECT research_run_id,status,provider,finished_at FROM research_runs "
-                "WHERE cycle_id=? ORDER BY queued_at DESC LIMIT 1", (cycle_id,)),
+                "SELECT research_run_id,status,provider,finished_at FROM research_runs r "
+                "WHERE cycle_id=? AND NOT EXISTS (SELECT 1 FROM audit_events a "
+                "WHERE a.subject_id=r.research_run_id AND a.event_type IN "
+                "('research_experiment_enqueued','research_experiment_completed')) "
+                "ORDER BY queued_at DESC LIMIT 1", (cycle_id,)),
             "envelope": _row(con,
                 "SELECT envelope_id,status,created_at FROM decision_envelopes "
                 "WHERE cycle_id=? ORDER BY created_at DESC LIMIT 1", (cycle_id,)),
@@ -335,7 +398,7 @@ def build_workflow(config: RuntimeConfig, db: OpsDB, *,
                 "SELECT settlement_id,settled_at FROM gameweek_settlements "
                 "WHERE cycle_id=? ORDER BY settled_at DESC LIMIT 1", (cycle_id,)),
             "review": _row(con,
-                "SELECT r.review_id,r.created_at FROM gameweek_reviews r "
+                "SELECT r.review_id,r.created_at,r.metrics_json FROM gameweek_reviews r "
                 "JOIN gameweek_settlements s ON s.settlement_id=r.settlement_id "
                 "WHERE s.cycle_id=? ORDER BY r.created_at DESC LIMIT 1", (cycle_id,)),
         }
@@ -351,10 +414,34 @@ def build_workflow(config: RuntimeConfig, db: OpsDB, *,
             "SELECT COUNT(*) FROM lessons WHERE review_id=? AND status='validated'",
             (review_id,),
         ).fetchone()[0])} if review_id else {"lesson_count": 0})
+        if review_id:
+            metrics = json.loads(observed["review"].pop("metrics_json") or "{}")
+            proposals = con.execute("SELECT status FROM change_proposals WHERE review_id=?",
+                                    (review_id,)).fetchall()
+            observed["learning"].update({
+                "review_completed": metrics.get("schema") == "mova-causal-review-v1",
+                "open_proposals": sum(r["status"] not in {"accepted", "rejected"} for r in proposals),
+                "rejected_proposals": sum(r["status"] == "rejected" for r in proposals),
+            })
     observed["deliberation"] = db.deliberation_status(cycle_id).get("latest") or {}
+    source = observed["source"]
+    if source.get("quality_status") == "valid":
+        try:
+            path = Path(source["artifact_path"])
+            manifest = path / "manifest.json"
+            if (not path.resolve().is_relative_to(config.artifact_root.resolve())
+                    or hashlib.sha256(manifest.read_bytes()).hexdigest() != source["manifest_sha256"]):
+                raise ValueError("source provenance mismatch")
+            boot, _, _ = load_snapshot(path)
+            event = next(e for e in boot["events"] if int(e["id"]) == int(cycle["gw"]))
+            observed["official_ready"] = event.get("finished") is True and event.get("data_checked") is True
+        except (OSError, ValueError, TypeError, KeyError, StopIteration):
+            source["quality_status"] = "quarantined"
     current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
     deadline = str(cycle.get("deadline_at") or "")
     if deadline:
+        observed["agent_window_seconds"] = config.research_deadline_window_seconds
+        observed["agent_cutoff_seconds"] = config.research_final_cutoff_seconds
         observed["team_state_max_age_seconds"] = min(
             config.private_state_max_age_seconds,
             private_state_cadence_seconds(deadline, current),
@@ -423,7 +510,8 @@ def orchestration_drill() -> dict:
     review_without_settlement = evaluate_workflow({
         **base, "review": {"review_id": "review_orphan"},
     }, now=current)
-    after_deadline = evaluate_workflow(base, now=current + timedelta(hours=2))
+    after_deadline = evaluate_workflow({**base, "official_ready": True},
+                                       now=current + timedelta(hours=2))
     deterministic = evaluate_workflow(base, now=current)
     checks = {
         "valid_flow_has_no_dependency_violations": not valid["violations"],
@@ -480,7 +568,8 @@ def orchestration_drill() -> dict:
 
 
 def prometheus(report: dict) -> str:
-    statuses = ("complete", "pending", "blocked", "degraded", "not_due", "skipped_policy")
+    statuses = ("complete", "pending", "blocked", "degraded", "not_due", "skipped_policy",
+                "waiting_dependency", "overdue")
     lines = [
         "# HELP mova_orchestration_status Current orchestration verdict.",
         "# TYPE mova_orchestration_status gauge",

@@ -1282,17 +1282,21 @@ class OpsDB:
             completed = con.execute(
                 """SELECT COUNT(DISTINCT cycle_id) FROM job_runs
                 WHERE job_type='gameweek_review' AND status='completed'
-                  AND idempotency_key LIKE ?""",
+                  AND idempotency_key LIKE ?
+                  AND json_extract(metrics_json,'$.closeout_contract')='mova-fpl-autonomous-closeout-v2'""",
                 (f"autonomous-closeout:{season}:gw%",),
             ).fetchone()[0]
             latest = con.execute(
                 """SELECT job_id,cycle_id,finished_at,output_sha256 FROM job_runs
                 WHERE job_type='gameweek_review' AND status='completed'
-                  AND idempotency_key LIKE ? ORDER BY finished_at DESC LIMIT 1""",
+                  AND idempotency_key LIKE ?
+                  AND json_extract(metrics_json,'$.closeout_contract')='mova-fpl-autonomous-closeout-v2'
+                ORDER BY finished_at DESC LIMIT 1""",
                 (f"autonomous-closeout:{season}:gw%",),
             ).fetchone()
         return {
-            "contract": "mova-fpl-autonomous-closeout-v1",
+            "contract": "mova-fpl-autonomous-closeout-v2",
+            "financing_evidence_required": True,
             "status": "implemented",
             "scheduler": "mova-fpl-analytics.timer",
             "observed_closeouts": int(completed),
@@ -3099,16 +3103,13 @@ class OpsDB:
         """
         current = now.astimezone(timezone.utc)
         deadline = datetime.fromisoformat(deadline_at.replace("Z", "+00:00"))
-        seconds = int((deadline - current).total_seconds())
-        if seconds <= 0:
-            return {"due": False, "reason": "deadline_passed",
-                    "deadline_seconds": seconds}
-        if seconds > deadline_window_seconds:
-            return {"due": False, "reason": "outside_deliberation_window",
-                    "deadline_seconds": seconds}
-        if seconds <= final_cutoff_seconds:
-            return {"due": False, "reason": "final_cutoff_passed",
-                    "deadline_seconds": seconds}
+        from mova_fpl.ops.schedule import agent_window
+        window = agent_window(deadline, current, window_seconds=deadline_window_seconds,
+                              cutoff_seconds=final_cutoff_seconds)
+        seconds = window["deadline_seconds"]
+        if not window["due"]:
+            return {**window, "reason": "outside_deliberation_window"
+                    if window["reason"] == "outside_window" else window["reason"]}
         with self.connect(readonly=True) as con:
             research = con.execute(
                 "SELECT research_run_id,imported_at FROM research_runs "

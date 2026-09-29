@@ -320,7 +320,10 @@ try {
       "Después de una consulta global, LEE y VERIFICA al menos una fuente antes de buscar más; no gastes todas las consultas en descubrimiento. Consultas breves por club/tema, no cadenas de 15 nombres. Usa URLs exactas de resultados, no las reconstruyas.",
       "Empieza con una consulta global y luego 2-3 dudas de mayor impacto para plantilla/candidatos. Agrupa por club y reutiliza fuentes multijugador explícitas.",
       `Límites estrictos: ${scopePolicy.max_web_queries} consultas, ${scopePolicy.max_documents} documentos, ${scopePolicy.max_material_signals} señales.`,
-      ...(release.research_agenda === "multi_branch_v1" ? [
+      ...(release.research_agenda === "focus_completion_v1" ? [
+        "HIPÓTESIS DE LABORATORIO: asigna primero el presupuesto al foco aún no cubierto. Consulta research_context section=focus_progress al comenzar y antes de componer; prioriza los sujetos pendientes con mayor impacto de minutos/decisión y agrupa dudas del mismo club. Conserva una rama global acotada; no consumas nuevas consultas sobre sujetos ya cubiertos salvo contradicción material.",
+        "Cierra cada sujeto con evidencia exacta o limitación explícita. Un silencio de búsqueda no acredita no_material_update ni disponibilidad. No cambies not_checked por evidencia débil para subir cobertura. La cobertura del tool es diagnóstico local: la importación independiente sigue siendo la autoridad.",
+      ] : release.research_agenda === "multi_branch_v1" ? [
         "Investiga con profundidad suficiente: una rama global abierta y al menos tres dudas de clubes distintos si existen fuentes pertinentes dentro del presupuesto. No termines al encontrar la primera noticia válida. Usa consultas restantes para las dudas de mayor impacto aún sin resolver y verifica los hallazgos antes de concluir; si las fuentes no existen o no son actuales, registra esa limitación y conserva not_checked.",
         "Intenta cubrir varios jugadores con cada fuente oficial de equipo, pero elige siempre UN fragmento contiguo exacto por URL. El objetivo es información útil diversificada; no fabricar señales, corroboración ni cobertura para cumplir una cuota.",
       ] : ["Apunta a un máximo de 12 tool calls y entrega pronto."]),

@@ -82,7 +82,8 @@ def test_gw1_retrospective_scores_selected_and_pure_model(tmp_path: Path):
     assert result["selected_score"]["points"] == 50
     assert result["comparator_score"]["points"] == 62
     assert metrics["bench_points"] == 25
-    assert metrics["intervention"] == {"expected_delta": -12.33, "realized_delta": -12}
+    assert metrics["intervention"] == {"expected_delta": -12.33, "realized_delta": -12,
+                                       "same_chip": True}
     assert metrics["causal_scorecard_created"] is False
     assert metrics["causality_reason"] == "not_eligible_no_predeadline_batch"
     assert metrics["same_squad_oracle_fixed_captain"] == 69
@@ -228,6 +229,13 @@ def test_autonomous_closeout_package_uses_sealed_execution_and_causal_batch(
     comparator = build_decision(
         documented["comparator"], documented["season"], documented["gw"]
     ).to_dict()
+    # A do-nothing comparator must retain the sealed initial roster/bank.
+    selected["bank_after"] = 0.5
+    comparator = dict(selected)
+    comparator["captain"], comparator["vice_captain"] = selected["vice_captain"], selected["captain"]
+    from mova_fpl.engine.state import Decision
+    comparator.pop("fingerprint")
+    comparator["fingerprint"] = Decision.from_dict(comparator).fingerprint()
     envelope_body = {
         "schema": "mova-decision-envelope-v1", "cycle_id": cycle_id,
         "selected_candidate_key": "milp_baseline",
@@ -350,6 +358,10 @@ def test_autonomous_closeout_package_uses_sealed_execution_and_causal_batch(
         bank_tenths=5, chips=[], fingerprint=team_fingerprint,
         artifact_path=str(team_state_path), manifest_sha256=team_manifest_sha,
     )
+    with db.transaction() as con:
+        con.execute("UPDATE cycle_manifests SET team_state_id=(SELECT team_state_id "
+                    "FROM team_state_snapshots WHERE cycle_id=? LIMIT 1) "
+                    "WHERE manifest_id='manifest_auto'", (cycle_id,))
 
     players = {}
     for scenario in (documented["selected"], documented["comparator"]):
@@ -367,20 +379,27 @@ def test_autonomous_closeout_package_uses_sealed_execution_and_causal_batch(
         def execute(self, query, params):
             if "model_projection_batches" in query:
                 self.rows = [{"batch_id": "projection_auto",
-                              "input_artifact_id": "artifact_pre"}]
+                              "input_artifact_id": "artifact_pre", "cutoff_at": now}]
             else:
-                self.rows = list(players.values())
+                self.rows = [players[e] for e in params[-1]]
             return self
         def fetchall(self): return self.rows
+        def fetchone(self): return self.rows[0] if self.rows else None
 
     monkeypatch.setattr("mova_fpl.ops.review.connect", lambda *a, **k: FakeConnection())
     path = GameweekReviewService(config, db)._autonomous_package(gw=1)
     package = load_closeout_package(path)
-    assert package["schema"] == "mova-fpl-autonomous-closeout-v1"
+    assert package["schema"] == "mova-fpl-autonomous-closeout-v2"
     assert package["intervention"]["payload"]["projection_batch_id"] == "projection_auto"
     assert package["selected"]["captain"] == documented["selected"]["captain"]
-    assert package["comparator"]["captain"] == documented["comparator"]["captain"]
+    assert package["comparator"]["captain"] == selected["vice_captain"]
     assert package["verified_team_state"]["bank_tenths"] == 5
+    service = GameweekReviewService(config, db)
+    service._verify_financing_artifacts(package)
+    score, _ = score_scenario(package["selected"], build_decision(
+        package["selected"], package["season"], 1), _official(documented),
+        get_rules(package["season"]).SQUAD)
+    assert score["points"] == 50
     assert db.pending_autonomous_closeout_gws(documented["season"]) == [1]
 
 

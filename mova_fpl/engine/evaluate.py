@@ -46,10 +46,10 @@ def score_decision(decision: Decision, results: pd.DataFrame, rules: dict,
         xi, subs = apply_auto_subs(squad, minutos, rules)
 
     cap = effective_captain(squad, minutos)
-    base = sum(int(puntos.get(e, 0)) for e in xi)
-    extra_cap = int(puntos.get(cap, 0)) * (ef.captain_multiplier - 1) if cap is not None else 0
-
-    bruto = base + extra_cap
+    multipliers = tuple((e, int(e in xi) + (
+        ef.captain_multiplier - 1 if e == cap else 0
+    )) for e in decision.squad_15)
+    bruto = sum(int(puntos.get(e, 0)) * multiplier for e, multiplier in multipliers)
     return GwOutcome(
         gw=decision.gw,
         points=bruto - decision.hits * int(rules["hit_cost"]),
@@ -59,4 +59,5 @@ def score_decision(decision: Decision, results: pd.DataFrame, rules: dict,
         auto_subs=tuple(subs),
         effective_captain=cap,
         players_played=sum(1 for e in xi if int(minutos.get(e, 0)) > 0),
+        player_multipliers=multipliers,
     )

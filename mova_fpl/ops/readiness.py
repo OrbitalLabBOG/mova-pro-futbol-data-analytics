@@ -394,11 +394,12 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
         _gate(
             "AUTONOMOUS_CLOSEOUT_INSTALLED",
             "pass" if closeout.get("status") == "implemented"
+            and closeout.get("contract") == "mova-fpl-autonomous-closeout-v2"
             and closeout.get("scheduler") == "mova-fpl-analytics.timer" else "blocked",
             "closeout post-GW fail-closed conectado al timer analítico",
             levels=("A2", "A3"),
             observed={key: closeout.get(key) for key in ("contract", "status", "scheduler")},
-            required={"contract": "mova-fpl-autonomous-closeout-v1",
+            required={"contract": "mova-fpl-autonomous-closeout-v2",
                       "status": "implemented", "scheduler": "mova-fpl-analytics.timer"},
             source="mova execute status",
             next_action="desplegar el contrato de closeout y conectarlo al timer analítico",

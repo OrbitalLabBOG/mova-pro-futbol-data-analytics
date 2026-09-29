@@ -373,3 +373,21 @@ Para desplegar el control plane se construye una imagen con el mismo SHA del che
 schema salvo una migración versionada. Ante regresión de HV1-06A/B, restaurar checkout e imagen
 anterior; las migraciones 007/008 son aditivas y envelopes/deliberaciones pueden permanecer como
 evidencia. PostgreSQL 008/009 son espejos shadow y no cambian el writer operativo.
+
+
+## Esperas del workflow
+
+El workflow conserva los milestones y usa la misma ventana temporal que research y
+deliberación. Cada stage expone `reason`, `dependency`, `next_eligible_at` y
+`actionable_now`. `not_due/outside_window` indica espera con la próxima apertura;
+`waiting_dependency` espera inputs, worker/import o `finished+data_checked` oficiales;
+`overdue` requiere diagnóstico y no autoriza ejecutar después del cutoff.
+El deadline por sí solo no acredita settlement. Los flags oficiales se leen del snapshot
+público sellado; un snapshot alterado queda quarantined. Experimentos completados se
+excluyen del último research operativo. Un fallo de research, input stale o contradicción
+conserva atención/bloqueo aunque la ventana esté cerrada. Readiness mantiene sus gates de
+calidad y autoridad separados de estas esperas.
+
+La revisión causal puede terminar con `no_hypothesis` o `proposals_rejected` cuando no
+quedan propuestas abiertas. Un review retrospectivo o una evaluación pendiente no
+satisfacen ese resultado. No exigir una lección positiva para completar el proceso.

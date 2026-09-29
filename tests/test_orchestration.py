@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import pytest
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
@@ -69,7 +70,7 @@ def test_stale_source_and_private_state_cannot_complete_workflow_context():
     stages = {row["name"]: row for row in report["stages"]}
     assert stages["observe"]["status"] == "blocked"
     assert stages["observe"]["outcome"] == "stale"
-    assert stages["contextualize"]["status"] == "pending"
+    assert stages["contextualize"]["status"] == "waiting_dependency"
     assert stages["contextualize"]["outcome"] == "stale_team_state"
     assert report["freshness"]["team_state_age_seconds"] == 3600
     assert report["verdict"] == "blocked"
@@ -116,13 +117,14 @@ def test_workflow_reads_attempt_only_for_displayed_plan(tmp_path: Path):
     with sqlite3.connect(path) as con:
         con.executescript("""
             CREATE TABLE source_snapshots (cycle_id TEXT, snapshot_id TEXT,
-                quality_status TEXT, captured_at TEXT);
+                quality_status TEXT, captured_at TEXT, artifact_path TEXT, manifest_sha256 TEXT);
             CREATE TABLE team_state_snapshots (cycle_id TEXT, team_state_id TEXT,
                 quality_status TEXT, observed_at TEXT);
             CREATE TABLE cycle_manifests (cycle_id TEXT, manifest_id TEXT,
                 revision INTEGER, created_at TEXT);
             CREATE TABLE research_runs (cycle_id TEXT, research_run_id TEXT,
                 status TEXT, provider TEXT, finished_at TEXT, queued_at TEXT);
+            CREATE TABLE audit_events (subject_id TEXT, event_type TEXT);
             CREATE TABLE decision_envelopes (cycle_id TEXT, envelope_id TEXT,
                 status TEXT, created_at TEXT);
             CREATE TABLE execution_plans (cycle_id TEXT, plan_id TEXT,
@@ -132,7 +134,7 @@ def test_workflow_reads_attempt_only_for_displayed_plan(tmp_path: Path):
             CREATE TABLE gameweek_settlements (cycle_id TEXT, settlement_id TEXT,
                 settled_at TEXT);
             CREATE TABLE gameweek_reviews (settlement_id TEXT, review_id TEXT,
-                created_at TEXT);
+                created_at TEXT, metrics_json TEXT);
         """)
         con.execute("INSERT INTO execution_plans VALUES (?,?,?,?,?)",
                     ("cycle_1", "plan_old", "authorized", "R2", "2026-09-04T10:00:00Z"))
@@ -238,3 +240,108 @@ def test_parser_exposes_workflow_and_orchestration_drill():
         "--idempotency-key", "orchestration:v1",
     ])
     assert parsed.drill_command == "orchestration"
+
+
+@pytest.mark.parametrize('hours,status,reason', [
+    (72, 'not_due', 'outside_window'), (24, 'pending', 'pending'),
+    (2, 'pending', 'pending'), (1, 'overdue', 'final_cutoff_passed'),
+])
+def test_deliberation_window_explains_wait_and_cutoff(hours, status, reason):
+    from datetime import timedelta
+    observed = _base(); observed['deliberation'] = {}
+    deadline = datetime(2026, 9, 4, 17, 30, tzinfo=timezone.utc)
+    report = evaluate_workflow(observed, now=deadline-timedelta(hours=hours))
+    stage = next(s for s in report['stages'] if s['name'] == 'deliberate')
+    assert stage['status'] == status and stage['reason'] == reason
+    assert stage['actionable_now'] == (status != 'not_due')
+    if status == 'not_due':
+        assert report['verdict'] == 'safe_to_wait'
+        assert stage['next_eligible_at'] == '2026-09-03T17:30:00+00:00'
+
+
+def test_waiting_research_dependency_is_not_permission_to_deliberate():
+    observed = _base(); observed.update(research={}, deliberation={})
+    report = evaluate_workflow(observed, now=NOW)
+    stage = next(s for s in report['stages'] if s['name'] == 'deliberate')
+    assert stage['status'] == 'waiting_dependency'
+    assert stage['reason'] == 'research_not_imported'
+    assert stage['actionable_now'] is False
+    assert any(s['stage'] == 'research' for s in report['next_actions'])
+
+
+@pytest.mark.parametrize('learning,outcome,status', [
+    ({'review_completed': True, 'open_proposals': 0, 'lesson_count': 0}, 'no_hypothesis', 'complete'),
+    ({'review_completed': True, 'open_proposals': 0, 'rejected_proposals': 2}, 'proposals_rejected', 'complete'),
+    ({'review_completed': True, 'open_proposals': 1, 'lesson_count': 1}, 'evaluation_pending', 'pending'),
+    ({'lesson_count': 0}, 'evaluation_pending', 'pending'),
+])
+def test_review_can_finish_without_forcing_a_validated_lesson(learning, outcome, status):
+    observed = _base(); observed.update(settlement={'settlement_id': 'settled'},
+                                       review={'review_id': 'review'}, learning=learning)
+    report = evaluate_workflow(observed, now=NOW)
+    stage = next(s for s in report['stages'] if s['name'] == 'review_learn')
+    assert stage['status'] == status and stage['outcome'] == outcome
+
+
+def test_deadline_is_not_proof_of_official_settlement_readiness():
+    observed = _base()
+    report = evaluate_workflow(observed, now=datetime(2026, 9, 5, tzinfo=timezone.utc))
+    stage = next(s for s in report['stages'] if s['name'] == 'settle')
+    assert stage['status'] == 'waiting_dependency'
+    assert stage['reason'] == 'awaiting_official_finished_data_checked'
+    assert stage['actionable_now'] is False
+    observed['official_ready'] = True
+    report = evaluate_workflow(observed, now=datetime(2026, 9, 5, tzinfo=timezone.utc))
+    assert next(s for s in report['stages'] if s['name'] == 'settle')['status'] == 'pending'
+
+
+def test_wait_semantics_preserve_contradictions_and_research_failures():
+    observed = _base(); observed.update(research={'status': 'rejected'}, deliberation={})
+    early = datetime(2026, 9, 1, tzinfo=timezone.utc)
+    assert evaluate_workflow(observed, now=early)['verdict'] == 'attention_required'
+    observed['execution'] = {'execution_id': 'illegal', 'status': 'verified'}
+    report = evaluate_workflow(observed, now=early)
+    assert report['verdict'] == 'blocked'
+    assert any(v['code'] == 'EXECUTION_WITHOUT_AUTHORIZED_PLAN' for v in report['violations'])
+    assert report['runtime_mutated'] is False
+
+
+def test_queued_research_is_observed_as_work_in_flight_even_outside_window():
+    observed = _base(); observed['research'] = {'status': 'queued'}
+    report = evaluate_workflow(observed, now=datetime(2026, 9, 1, tzinfo=timezone.utc))
+    stage = next(s for s in report['stages'] if s['name'] == 'research')
+    assert stage['status'] == 'waiting_dependency'
+    assert stage['reason'] == 'awaiting_agent_worker_or_import'
+    assert stage['actionable_now'] is False
+
+
+@pytest.mark.parametrize('tamper', [False, True])
+def test_runtime_workflow_reads_official_completion_only_from_sealed_snapshot(tmp_path, tamper):
+    import hashlib
+    config = RuntimeConfig(ops_db=tmp_path/'ops.db', artifact_root=tmp_path/'artifacts')
+    db = OpsDB(config.ops_db, enforce_version=False); db.migrate()
+    cycle = db.upsert_cycle('2026-27', 3, '2026-09-04T17:30:00Z', phase='settlement')
+    job, _ = db.start_job('fixture', 'official-ready', 'corr', cycle_id=cycle)
+    path = config.artifact_root/'snapshot'; path.mkdir(parents=True)
+    boot = json.dumps({'events': [{'id': 3, 'finished': True, 'data_checked': True}]}).encode()
+    fixtures = b'[]'
+    manifest = json.dumps({'bootstrap_sha256': hashlib.sha256(boot).hexdigest(),
+                           'fixtures_sha256': hashlib.sha256(fixtures).hexdigest()}).encode()
+    (path/'manifest.json').write_bytes(manifest)
+    (path/'bootstrap-static.json').write_bytes(boot)
+    (path/'fixtures.json').write_bytes(fixtures)
+    captured = '2026-09-05T00:00:00Z'
+    db.add_snapshot(job_id=job, cycle_id=cycle, source_name='fpl_official', captured_at=captured,
+                    artifact_path=str(path), manifest_sha256=hashlib.sha256(manifest).hexdigest(),
+                    payload_sha256='a'*64, freshness_seconds=0, quality_status='valid', quality={})
+    if tamper: (path/'bootstrap-static.json').write_bytes(b'{"events":[]}')
+    report = build_workflow(config, db, now=datetime(2026, 9, 5, tzinfo=timezone.utc))
+    stages = {s['name']: s for s in report['stages']}
+    if tamper:
+        assert stages['observe']['status'] == 'blocked'
+        assert stages['observe']['outcome'] == 'quarantined'
+        assert report['verdict'] == 'blocked'
+    else:
+        assert stages['observe']['status'] == 'complete'
+        assert stages['settle']['status'] == 'pending' and stages['settle']['actionable_now']
+    assert report['runtime_mutated'] is False

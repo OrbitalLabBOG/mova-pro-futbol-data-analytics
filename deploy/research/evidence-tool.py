@@ -44,7 +44,7 @@ READ_TOOL = {"name": "read_research_source", "description": "GET a public HTTPS 
  "annotations": {"readOnlyHint": True, "destructiveHint": False, "openWorldHint": True}}
 CONTEXT_TOOL = {"name": "research_context", "description": "Retrieve sealed context on demand. Lookup official players by name; fetch memory or previous signals. No live database access.",
  "inputSchema": {"type": "object", "additionalProperties": False, "required": ["section", "query", "offset"],
-  "properties": {"section": {"type": "string", "enum": ["catalog", "memory", "signals", "prior_gameweek_signals", "previous_active_signals", "world_alerts"]},
+  "properties": {"section": {"type": "string", "enum": ["catalog", "memory", "signals", "prior_gameweek_signals", "previous_active_signals", "world_alerts", "focus_progress"]},
     "query": {"type": "string", "maxLength": 100}, "offset": {"type": "integer", "minimum": 0}}},
  "annotations": {"readOnlyHint": True, "destructiveHint": False, "openWorldHint": False}}
 
@@ -70,6 +70,7 @@ class EvidenceTool:
         self.catalog = {int(row[0]): str(row[1]) for row in rows if isinstance(row, list) and len(row) >= 2}
         self.names = Counter(name.casefold() for name in self.catalog.values())
         self.focus = {row["element"] for row in request["manifest"].get("research_summary", {}).get("focus", [])}
+        self.verified_focus = set()
 
     def context(self, args):
         self.context_calls += 1
@@ -79,7 +80,11 @@ class EvidenceTool:
         if type(offset) is not int or offset < 0 or not isinstance(args["query"], str):
             return {"status": "rejected", "reasons": ["invalid_arguments"]}
         summary = self.request["manifest"]["research_summary"]
-        if section == "catalog":
+        if section == "focus_progress":
+            rows = [{**row, "evidence_verified_in_turn": row["element"] in self.verified_focus,
+                     "final_acceptance": False}
+                    for row in summary.get("focus", []) if row["element"] not in self.verified_focus]
+        elif section == "catalog":
             query = _normal(args["query"]).strip()
             catalog = summary["world"]["catalog"]
             rows = [row for row in catalog if query in _normal(str(row))]
@@ -263,6 +268,8 @@ class EvidenceTool:
             "support_scope": "single source only; final signal acceptance requires an official source or two independent hosts supporting the SAME named claim",
             "observed_at": observed.isoformat(),
             "duration_ms": int((time.monotonic() - started) * 1000)}
+        if result["status"] == "supported":
+            self.verified_focus.update(result["covered_focus_elements"])
         self.root.mkdir(parents=True, exist_ok=True)
         with (self.root / "checks.jsonl").open("a", encoding="utf-8") as stream:
             stream.write(json.dumps({**result, "player_element": args["player_element"],

@@ -165,3 +165,25 @@ def test_reader_exposes_unknown_subjects_and_bounded_article_pagination(tmp_path
     assert rest['next_offset'] is None
     assert first['article_text']+rest['article_text']==body.strip()
     assert tool.read_source({'source_url':'https://example.com/news','player_elements':[],'offset':-1})['status']=='rejected'
+
+
+def test_focus_progress_tracks_verified_evidence_without_filling_silence(tmp_path):
+    mod = module()
+    now = datetime(2026, 9, 22, 12, tzinfo=timezone.utc)
+    request = {'research_run_id': 'research_'+'a'*32, 'scope_policy': {'max_documents': 3},
+               'manifest': {'deadline_at': '2026-10-10T10:00:00Z', 'research_summary': {
+                   'focus': [{'element': 1}, {'element': 2}],
+                   'world': {'catalog': [[1, 'Haaland', 'MCI'], [2, 'Saka', 'ARS']]}}}}
+    def transport(url):
+        return b'<html>22 September 2026. Haaland is available.</html>', {'content_type': 'text/html', 'final_url': url, 'http_status': 200}
+    tool = mod.EvidenceTool(request, tmp_path, clock=lambda: now,
+                            fetcher=mod.SafeEvidenceFetcher(tmp_path, transport=transport))
+    args = {'section': 'focus_progress', 'query': '', 'offset': 0}
+    assert [r['element'] for r in tool.context(args)['rows']] == [1, 2]
+    result = tool.verify({'source_url': 'https://example.com/news', 'evidence_text': 'Haaland is available.',
+                          'published_at': '2026-09-22T00:00:00Z', 'player_element': 1, 'claim_type': 'availability'})
+    assert result['status'] == 'supported'
+    remaining = tool.context(args)['rows']
+    assert [r['element'] for r in remaining] == [2]
+    assert remaining[0]['final_acceptance'] is False
+    assert remaining[0]['evidence_verified_in_turn'] is False

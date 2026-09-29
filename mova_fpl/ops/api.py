@@ -76,7 +76,7 @@ def _dashboard_state(cockpit: dict) -> dict:
     pending_gates = int(readiness.get("pending") or 0) + int(readiness.get("blocked") or 0)
     stages = workflow.get("stages") or []
     cycle_pending = workflow.get("verdict") == "attention_required" or any(
-        row.get("status") in {"pending", "blocked", "degraded"} for row in stages
+        row.get("status") in {"pending", "blocked", "degraded", "overdue"} for row in stages
     )
     action_level = str(authority.get("current_action_level") or "A0")
     writes_enabled = authority.get("writes_enabled") is True

@@ -2,12 +2,28 @@
 type: project
 name: "MOVA FPL Autonomous Operator 2026/27 — Readiness and Rollout"
 created: 2026-08-21
-updated: 2026-09-22
+updated: 2026-09-29
 tags: [mova, fpl, readiness, rollout]
 status: active-shadow
 ---
 
 # Readiness y rollout
+
+## Iteración de integridad — 29 de septiembre de 2026
+
+Implementación candidata sobre la base de Researcher 1.10.0; no representa un despliegue.
+AC03 incorpora closeout v2 con financiación sellada, atribución de chips, ausencia explícita
+de probabilidades y finales de review sin hipótesis aceptada. AC02 incorpora comparador
+pareado estricto, corpus offline y candidato experimental 1.11.0. El workflow explica
+esperas/dependencias/cutoff con la policy temporal compartida. AC04 añade fixtures DOM y
+fallos antes/después de commit; los entrypoints y la evidencia viva se conservan separados.
+
+Aceptación: regresiones y suite completa, replay offline y smoke aislado de imagen.
+AC01 conserva integración de la pila y release/estabilidad sobre la revisión final.
+El ensayo online debe caber tras reservar capacidad operativa; no se sustituye con replay
+ni se eleva 1.11.0 sin medir calidad. El cierre natural de GW, rehearsals y promoción siguen
+pendientes de su evidencia. Ver [decisión y alcance](../../decisions/2026-27/harness-integrity-20260929.md)
+y [laboratorio](../../../experiments/research/20260929-harness/README.md).
 
 ## Cierre de autonomía operativa — 20 de septiembre de 2026
 

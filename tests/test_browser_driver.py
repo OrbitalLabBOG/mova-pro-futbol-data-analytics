@@ -411,3 +411,64 @@ with open(os.environ['TEST_CALL_LOG'], 'a', encoding='utf-8') as stream:
     assert calls.count("driver ") == 2
     assert "secret-once" not in calls
     assert not list(tmp_path.glob("mova-fpl-r2.*"))
+
+
+@pytest.mark.parametrize('kind,expected', [('correct', True), ('wrong_order', False),
+                                          ('missing_player', False), ('hidden_player', False)])
+def test_lineup_dom_order_scripts_against_sanitized_nodes(kind, expected):
+    import shutil
+    node = shutil.which('node')
+    if not node: pytest.skip('Node runtime required for DOM-script contract tests')
+    module = _host_driver_module()
+    slots = [{'position': i, 'element': i, 'web_name': f'Player {i}'} for i in range(1, 16)]
+    names = [s['web_name'] for s in slots]
+    if kind == 'wrong_order': names[10], names[11] = names[11], names[10]
+    if kind == 'missing_player': names.pop()
+    harness = """
+const fs=require('fs'),vm=require('vm');const p=JSON.parse(fs.readFileSync(0,'utf8'));
+const nodes=p.names.map((name,i)=>({innerText:name,getClientRects:()=>p.hidden&&i===14?[]:[{}]}));
+const document={querySelectorAll:()=>nodes};
+process.stdout.write(JSON.stringify(vm.runInNewContext(p.script,{document}, {timeout:1000})));
+"""
+    result = subprocess.run([node, '-e', harness], input=json.dumps({
+        'names': names, 'hidden': kind == 'hidden_player', 'script': module._lineup_order_script(slots)}),
+        text=True, capture_output=True, check=True)
+    assert json.loads(result.stdout) is expected
+
+
+@pytest.mark.parametrize('failure', ['missing_switch', 'wrong_visual_order', 'ambiguous_commit', 'late_response'])
+def test_lineup_failures_stop_before_commit(failure):
+    module = _host_driver_module()
+    plan = compile_r2_driver_plan(_lineup_ui_plan(), lineup_rehearsed=True)
+    class Browser:
+        def __init__(self): self.commits = 0
+        def run(self, *args, capture=False):
+            if args[:2] == ('get', 'url'): return 'https://fantasy.premierleague.com/en/my-team'
+            if args[0] == 'find' and 'click' in args: self.commits += 1
+            if args[0] == 'eval':
+                script = args[1]
+                if failure == 'missing_switch' and 'Switch player' in script: return 'false'
+                if failure == 'wrong_visual_order' and 'const expected=' in script: return 'false'
+                if "querySelectorAll('button')" in script: return '2' if failure == 'ambiguous_commit' else '1'
+                if failure == 'late_response': raise RuntimeError('DOM_RESPONSE_TIMEOUT')
+                return 'true'
+            return ''
+    browser = Browser()
+    with pytest.raises(RuntimeError): module.execute(plan, browser)
+    assert browser.commits == 0
+
+
+def test_timeout_after_commit_does_not_retry_click():
+    module = _host_driver_module()
+    plan = compile_r2_driver_plan(_lineup_ui_plan(), lineup_rehearsed=True)
+    class Browser:
+        def __init__(self): self.commits = 0
+        def run(self, *args, capture=False):
+            if args[:2] == ('get', 'url'): return 'https://fantasy.premierleague.com/en/my-team'
+            if args[0] == 'find' and 'click' in args: self.commits += 1
+            if args[0] == 'wait' and self.commits: raise RuntimeError('COMMIT_RESPONSE_TIMEOUT')
+            if args[0] == 'eval': return '1' if "querySelectorAll('button')" in args[1] else 'true'
+            return ''
+    browser = Browser()
+    with pytest.raises(RuntimeError, match='COMMIT_RESPONSE_TIMEOUT'): module.execute(plan, browser)
+    assert browser.commits == 1

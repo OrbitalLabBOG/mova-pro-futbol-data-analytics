@@ -32,6 +32,21 @@ WORKFLOW_MILESTONES = {
 }
 
 
+def agent_window(deadline: datetime, now: datetime, *, window_seconds: int,
+                 cutoff_seconds: int) -> dict:
+    """Shared temporal eligibility, independent of jobs, evidence and authority."""
+    seconds = int((deadline - now).total_seconds())
+    opens = deadline - timedelta(seconds=window_seconds)
+    cutoff = deadline - timedelta(seconds=cutoff_seconds)
+    reason = ("deadline_passed" if seconds <= 0 else
+              "outside_window" if seconds > window_seconds else
+              "final_cutoff_passed" if seconds <= cutoff_seconds else "window_open")
+    return {"due": reason == "window_open", "reason": reason,
+            "deadline_seconds": seconds, "opens_at": opens.isoformat(),
+            "cutoff_at": cutoff.isoformat(),
+            "next_eligible_at": opens.isoformat() if reason == "outside_window" else None}
+
+
 def workflow_stage_timing(name: str, deadline: datetime | None) -> dict:
     """Expose bounded milestones without treating official settlement as a clock."""
     if name in {"settle", "review_learn"}:

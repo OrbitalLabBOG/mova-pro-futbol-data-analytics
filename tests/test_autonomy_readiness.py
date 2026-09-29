@@ -62,7 +62,7 @@ def _execution() -> dict:
             "captaincy": dict(proven), "lineup": dict(proven), "r3": dict(proven),
         },
         "autonomous_closeout": {
-            "contract": "mova-fpl-autonomous-closeout-v1", "status": "implemented",
+            "contract": "mova-fpl-autonomous-closeout-v2", "status": "implemented",
             "scheduler": "mova-fpl-analytics.timer", "observed_closeouts": 1,
             "latest": {"job_id": "job_closeout"},
         },

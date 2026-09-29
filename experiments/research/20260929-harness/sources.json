@@ -1,0 +1,80 @@
+[
+  {
+    "document_id": "document_d6c7ab9ab3bdee09e1e6206f01149954",
+    "research_run_id": "research_96ecea3c56544f9e08c6d0e3910922e7",
+    "source_url": "https://www.chelseafc.com/en/news/article/confirmed-chelsea-line-up-vs-brentford-180926",
+    "excerpt": "Brentford: Kelleher; Kayode, Ajer, Schuster, Lewis-Potter; Janelt, Yarmoliuk, Damsgaard; Anthony, Thiago, Schade Substitutes: Balcombe, Hickey, Henry, Ouattara, Wilson, Carvalho, Sangare, Diouf, Fredrick",
+    "excerpt_sha256": "ddc474d59054451068eb8d217a8104a31fef5476250c669a5e9e9b2cc687ee96",
+    "published_at": "2026-09-18T00:00:00+00:00",
+    "publication_date_verified": true,
+    "observed_at": "2026-09-22T20:13:53.983+00:00",
+    "fetch_status": "verified",
+    "source_artifact_sha256": "2b8698ec29aa4820f88d80cc82ed16a9769efdc84df648745174c59f92335cfc",
+    "source_tier": "official"
+  },
+  {
+    "document_id": "document_30691af78ab8e4f01547ecf24b08e9c7",
+    "research_run_id": "research_96ecea3c56544f9e08c6d0e3910922e7",
+    "source_url": "https://www.brentfordfc.com/en/news/article/first-team-confirmed-team-news-brentford-v-chelsea-premier-league-michael-kayode-mikkel-damsgaard-",
+    "excerpt": "Mikkel Damsgaard comes into midfield in place of Mamadou Sangaré. Hickey and Sangaré are both named among the substitutes.",
+    "excerpt_sha256": "cb358c6b6517a9d3c4bf14a4d81b6f2781db434ffb6c095d16c0e52a5756afc3",
+    "published_at": "2026-09-18T00:00:00+00:00",
+    "publication_date_verified": true,
+    "observed_at": "2026-09-22T20:13:53.983+00:00",
+    "fetch_status": "verified",
+    "source_artifact_sha256": "87e99e829e05de03f6df32bb77d373ab2dcb3a975daedde665ac026dd9c7e910",
+    "source_tier": "official"
+  },
+  {
+    "document_id": "document_ee178e710c3fbc209604de3c445f528f",
+    "research_run_id": "research_96ecea3c56544f9e08c6d0e3910922e7",
+    "source_url": "https://www.arsenal.com/news/team-news-guimaraes-and-timber-start-at-brighton-a2J404Z7WgZv",
+    "excerpt": "Bukayo Saka and Christos Tzolis line up either side of Kai Havertz for the fifth consecutive time in the league this season. Max Dowman – double goalscorer against Ipswich Town on Tuesday – is among the substitutes, and Piero Hincapie is also fit enough for selection on the bench. Brighton beat Manchester United 3-2 in the Carabao Cup on Wednesday, and they restore the likes of Maxim De Cuyper and Ferdi Kadioglu to the starting line up. Pascal Gross, who’s scored in three of his last four appearances, also starts. LINE-UPS Arsenal: Raya, Timber, Konsa, Gabriel, Calafiori, Guimaraes, Rice, Odegaard, Saka, Tzolis, Havertz. Subs: Arrizabalaga, Hincapie, Merino, Zubimendi, Lewis-Skelly, Eze, Madueke, Dowman, Gyokeres. Brighton: Verbruggen",
+    "excerpt_sha256": "6917e7895734b2eb68acbbc3bb6fa62a8f45fad1b3286f4fea2761b3ed39a1f6",
+    "published_at": "2026-09-19T12:45:14.251000+00:00",
+    "publication_date_verified": true,
+    "observed_at": "2026-09-22T20:13:53.983+00:00",
+    "fetch_status": "verified",
+    "source_artifact_sha256": "3b6adae3b5e98ccd0e90b3ca74f30504d562399c63bbecbf6de08de3d9f5c974",
+    "source_tier": "official"
+  },
+  {
+    "document_id": "document_fd0c30e9a29ed0c0b1a239764ba65d6c",
+    "research_run_id": "research_96ecea3c56544f9e08c6d0e3910922e7",
+    "source_url": "https://www.mancity.com/news/mens/city-v-sunderland-match-report-20-september-63925504",
+    "excerpt": "CITY: Donnarumma, Nunes, Dias (C), Guéhi, Gvardiol, Anderson, Fernández, Ndiaye, Cherki (O’Reilly 85), Semenyo (Doku 75), Haaland. Subs not used: Rulli, Kovačić, Aït-Nouri, Bouaddi, Allan, Khusanov, Lewis.",
+    "excerpt_sha256": "26b05d685f454c3a0a71b082785757c01e00f3feb8416574c0210f2c30790d1e",
+    "published_at": "2026-09-20T00:00:00+00:00",
+    "publication_date_verified": true,
+    "observed_at": "2026-09-22T20:13:53.983+00:00",
+    "fetch_status": "verified",
+    "source_artifact_sha256": "86e9d6b919541e6d8912a48303928a31d5141be1e6286463bbec0902f3bc1803",
+    "source_tier": "official"
+  },
+  {
+    "document_id": "document_e93472f1e3eb0fa6de9194599c39bead",
+    "research_run_id": "research_96ecea3c56544f9e08c6d0e3910922e7",
+    "source_url": "https://www.irishtimes.com/sport/soccer/2026/09/20/matheus-cunha-strikes-late-to-deny-fulham-and-salvage-point-for-manchester-united/",
+    "excerpt": "His solution, once again, was to use Cunha as a false nine and ask Bruno Fernandes to play close to him. It was a box midfield, with Youri Tielemans and Kabbie Mainoo further back.",
+    "excerpt_sha256": "f0bf6cbf83a04fe7265ef4519e49748f614ec00bfd181d888f80dc22a50a6c5b",
+    "published_at": "2026-09-20T18:08:37.911000+00:00",
+    "publication_date_verified": true,
+    "observed_at": "2026-09-22T20:13:53.983+00:00",
+    "fetch_status": "verified",
+    "source_artifact_sha256": "9122f04a339822b58642a1cea29bb875915c7a6f2eb0918fc6b77e239449aec9",
+    "source_tier": "tier1"
+  },
+  {
+    "document_id": "document_83c89bb153434a22cf7dac3140eb770c",
+    "research_run_id": "research_96ecea3c56544f9e08c6d0e3910922e7",
+    "source_url": "https://readmancity.com/2026/09/21/enzo-fernandez-elliot-anderson-man-city-midfield-partnership/",
+    "excerpt": "Enzo Fernandez took the individual honours after Man City’s 5-3 victory over Sunderland, but his developing partnership with Elliot Anderson was another feature of Enzo Maresca’s fifth successive Premier League win. Fernandez scored his first City goal after nine minutes at the Etihad and was named man of the match by the club as Maresca’s side maintained their perfect league start. City also described the Fernandez-Anderson combination as a “burgeoning partnership”, and successive Premier League starts together suggest it is one Maresca wants to explore.",
+    "excerpt_sha256": "f7901e5325f8150b348f7274cd0b38306b071430ddb4633d1823f17a7feb420d",
+    "published_at": "2026-09-21T09:45:00+00:00",
+    "publication_date_verified": true,
+    "observed_at": "2026-09-22T20:13:53.983+00:00",
+    "fetch_status": "verified",
+    "source_artifact_sha256": "622695dcadbbe83f5b112eadd6779421ffec2a1deb792e2c9aced4fd20e801a8",
+    "source_tier": "tier2"
+  }
+]
