@@ -45,3 +45,26 @@ contexto incompatibles; DOM de XI alterado/ausente, commit ambiguo, respuesta ta
 leases inválidos/expirados. Estos contratos no acreditan una escritura real ni una GW nueva.
 
 Los resultados finales de suite y smoke se registran en `validation.json`.
+
+La implementación `fc07672` tiene CI pass y una imagen candidata construida, con etiqueta
+de revisión comprobada y SQLite 3.53.4. Se repitió la suite completa dentro de una imagen
+de prueba derivada: **1904 passed, 1 skipped, 79 deselected**, 47,10 s. Sólo se añadieron
+pytest, Node y Git para las pruebas; el módulo operativo se cargó desde `/app`.
+El contenedor no tuvo red, volúmenes ni credenciales de producción; filesystem y fuente
+en sólo lectura, un CPU y 1 GiB. `/tmp` efímero permite ejecutar los scripts simulados.
+El primer intento tenía Git ausente y tmpfs noexec; esos diez fallos de fixtures se
+corrigieron en el entorno de prueba, sin cambiar la imagen de aplicación.
+
+Con la imagen candidata y este checkout disponibles, la prueba se reproduce así:
+
+```bash
+docker build -f experiments/research/20260929-harness/container-test.Dockerfile \
+  -t mova-fpl-engine:harness-proof-fc07672 .
+docker run --rm --network none --memory 1g --cpus 1 --read-only \
+  --tmpfs /tmp:rw,exec,size=256m -v "$PWD:/proof:ro" \
+  mova-fpl-engine:harness-proof-fc07672
+```
+
+Los cambios posteriores a `fc07672` registran evidencia y receta de pruebas; no cambian
+el código de la aplicación. Esta imagen se conserva como candidata, sin reemplazar
+checkout, servicios ni imagen e903983 del runtime.
