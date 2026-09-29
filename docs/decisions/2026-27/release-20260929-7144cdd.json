@@ -144,6 +144,701 @@
   "fpl_writes_attempted": false,
   "llm_experiment_executed": false,
   "observation": {
-    "status": "in_progress"
+    "status": "pass",
+    "samples": 7,
+    "all_samples_passed": true,
+    "planned_duration_seconds": 1800,
+    "first_sample_at": "2026-09-29T03:58:46.647082+00:00",
+    "last_sample_at": "2026-09-29T04:28:36.437498+00:00",
+    "raw_sha256": "9729ba7296f50e5e2460f32f132e724d7f518c4bdf124f52bae26e8b234da259",
+    "ready_max_ms": 1338.51,
+    "memory_min_gib": 4.477,
+    "disk_min_gib": 39.911,
+    "worker_max_sampled": 0,
+    "distinct_tick_jobs": 5,
+    "tick_max_age_seconds": 525.83,
+    "new_failed_jobs": 0,
+    "new_restarts": 0,
+    "new_oom": 0,
+    "lifecycle_after": [
+      {
+        "name": "mova-fpl-api-1",
+        "id": "0b4d1492ab309a124693d41768e196b45bece163eb16dee8ff7646f9ea9acd9f",
+        "started_at": "2026-09-29T03:54:31.974049957Z",
+        "restarts": 0,
+        "oom": false,
+        "health": "healthy"
+      },
+      {
+        "name": "mova-fpl-postgres-1",
+        "id": "c0829da3c116b37cef16846e68ceca27ec5eb1aa39d1c3b484d3b3d454aaf48a",
+        "started_at": "2026-09-17T14:03:54.268381937Z",
+        "restarts": 0,
+        "oom": false,
+        "health": "healthy"
+      },
+      {
+        "name": "mova-fpl-browser-1",
+        "id": "9501cb75bb9c44472ecde6c50de3c124ae25ee8b9e428d7001d5611409dd436a",
+        "started_at": "2026-09-29T03:55:55.296053723Z",
+        "restarts": 0,
+        "oom": false,
+        "health": "healthy"
+      }
+    ],
+    "cpu_diagnostic": [
+      {
+        "from": "2026-09-29T03:58:46.647082+00:00",
+        "to": "2026-09-29T04:03:53.054932+00:00",
+        "usage_percent": 28.67,
+        "steal_percent": 14.09
+      },
+      {
+        "from": "2026-09-29T04:03:53.054932+00:00",
+        "to": "2026-09-29T04:08:57.847672+00:00",
+        "usage_percent": 23.72,
+        "steal_percent": 9.95
+      },
+      {
+        "from": "2026-09-29T04:08:57.847672+00:00",
+        "to": "2026-09-29T04:14:04.761777+00:00",
+        "usage_percent": 26.3,
+        "steal_percent": 9.04
+      },
+      {
+        "from": "2026-09-29T04:14:04.761777+00:00",
+        "to": "2026-09-29T04:19:09.742369+00:00",
+        "usage_percent": 22.16,
+        "steal_percent": 8.99
+      },
+      {
+        "from": "2026-09-29T04:19:09.742369+00:00",
+        "to": "2026-09-29T04:24:13.962043+00:00",
+        "usage_percent": 21.23,
+        "steal_percent": 6.93
+      },
+      {
+        "from": "2026-09-29T04:24:13.962043+00:00",
+        "to": "2026-09-29T04:28:36.437498+00:00",
+        "usage_percent": 18.38,
+        "steal_percent": 5.89
+      }
+    ],
+    "samples_raw": [
+      {
+        "authority": {
+          "browser_writes": false,
+          "current_action_level": "A0",
+          "kill_switch": true,
+          "mode": "shadow",
+          "promotion_is_automatic": false,
+          "technical_eligible_level": "A0",
+          "writes_enabled": false
+        },
+        "containers": [
+          {
+            "health": "healthy",
+            "id": "0b4d1492ab309a124693d41768e196b45bece163eb16dee8ff7646f9ea9acd9f",
+            "name": "mova-fpl-api-1",
+            "oom": false,
+            "restarts": 0,
+            "running": true
+          },
+          {
+            "health": "healthy",
+            "id": "c0829da3c116b37cef16846e68ceca27ec5eb1aa39d1c3b484d3b3d454aaf48a",
+            "name": "mova-fpl-postgres-1",
+            "oom": false,
+            "restarts": 0,
+            "running": true
+          },
+          {
+            "health": "healthy",
+            "id": "9501cb75bb9c44472ecde6c50de3c124ae25ee8b9e428d7001d5611409dd436a",
+            "name": "mova-fpl-browser-1",
+            "oom": false,
+            "restarts": 0,
+            "running": true
+          }
+        ],
+        "cpu_counters": [
+          46807122,
+          368981,
+          52306420,
+          361609285,
+          961730,
+          0,
+          1857185,
+          55028603,
+          0,
+          0
+        ],
+        "disk_free_bytes": 42860150784,
+        "errors": [],
+        "failed_jobs": [],
+        "latest_tick": {
+          "cycle_id": null,
+          "error_code": null,
+          "finished_at": "2026-09-29T03:55:11.185+00:00",
+          "job_id": "job_c91e03e7c6044adabcc4caf012a0f506",
+          "output_sha256": "4c25263df9887185e8b62478b2cff498dd968511365f25d38bf9ed51c5aa6fcb",
+          "started_at": "2026-09-29T03:55:11.150+00:00",
+          "status": "completed"
+        },
+        "memory_available_kib": 4759820,
+        "observed_at": "2026-09-29T03:58:46.647082+00:00",
+        "ready": {
+          "status": "ready"
+        },
+        "ready_ms": 1311.56,
+        "revision": "7144cdd",
+        "tick_age_seconds": 215.46,
+        "worker_names": []
+      },
+      {
+        "authority": {
+          "browser_writes": false,
+          "current_action_level": "A0",
+          "kill_switch": true,
+          "mode": "shadow",
+          "promotion_is_automatic": false,
+          "technical_eligible_level": "A0",
+          "writes_enabled": false
+        },
+        "containers": [
+          {
+            "health": "healthy",
+            "id": "0b4d1492ab309a124693d41768e196b45bece163eb16dee8ff7646f9ea9acd9f",
+            "name": "mova-fpl-api-1",
+            "oom": false,
+            "restarts": 0,
+            "running": true
+          },
+          {
+            "health": "healthy",
+            "id": "c0829da3c116b37cef16846e68ceca27ec5eb1aa39d1c3b484d3b3d454aaf48a",
+            "name": "mova-fpl-postgres-1",
+            "oom": false,
+            "restarts": 0,
+            "running": true
+          },
+          {
+            "health": "healthy",
+            "id": "9501cb75bb9c44472ecde6c50de3c124ae25ee8b9e428d7001d5611409dd436a",
+            "name": "mova-fpl-browser-1",
+            "oom": false,
+            "restarts": 0,
+            "running": true
+          }
+        ],
+        "cpu_counters": [
+          46813578,
+          368997,
+          52309221,
+          361656470,
+          961893,
+          0,
+          1857589,
+          55037959,
+          0,
+          0
+        ],
+        "disk_free_bytes": 42859405312,
+        "errors": [],
+        "failed_jobs": [],
+        "latest_tick": {
+          "cycle_id": null,
+          "error_code": null,
+          "finished_at": "2026-09-29T03:55:11.185+00:00",
+          "job_id": "job_c91e03e7c6044adabcc4caf012a0f506",
+          "output_sha256": "4c25263df9887185e8b62478b2cff498dd968511365f25d38bf9ed51c5aa6fcb",
+          "started_at": "2026-09-29T03:55:11.150+00:00",
+          "status": "completed"
+        },
+        "memory_available_kib": 4730912,
+        "observed_at": "2026-09-29T04:03:53.054932+00:00",
+        "ready": {
+          "status": "ready"
+        },
+        "ready_ms": 1338.51,
+        "revision": "7144cdd",
+        "tick_age_seconds": 521.87,
+        "worker_names": []
+      },
+      {
+        "authority": {
+          "browser_writes": false,
+          "current_action_level": "A0",
+          "kill_switch": true,
+          "mode": "shadow",
+          "promotion_is_automatic": false,
+          "technical_eligible_level": "A0",
+          "writes_enabled": false
+        },
+        "containers": [
+          {
+            "health": "healthy",
+            "id": "0b4d1492ab309a124693d41768e196b45bece163eb16dee8ff7646f9ea9acd9f",
+            "name": "mova-fpl-api-1",
+            "oom": false,
+            "restarts": 0,
+            "running": true
+          },
+          {
+            "health": "healthy",
+            "id": "c0829da3c116b37cef16846e68ceca27ec5eb1aa39d1c3b484d3b3d454aaf48a",
+            "name": "mova-fpl-postgres-1",
+            "oom": false,
+            "restarts": 0,
+            "running": true
+          },
+          {
+            "health": "healthy",
+            "id": "9501cb75bb9c44472ecde6c50de3c124ae25ee8b9e428d7001d5611409dd436a",
+            "name": "mova-fpl-browser-1",
+            "oom": false,
+            "restarts": 0,
+            "running": true
+          }
+        ],
+        "cpu_counters": [
+          46819408,
+          369047,
+          52311944,
+          361705822,
+          962039,
+          0,
+          1857923,
+          55044414,
+          0,
+          0
+        ],
+        "disk_free_bytes": 42858577920,
+        "errors": [],
+        "failed_jobs": [],
+        "latest_tick": {
+          "cycle_id": null,
+          "error_code": null,
+          "finished_at": "2026-09-29T04:05:18.934+00:00",
+          "job_id": "job_92994fd5c3b5409aaecb9f286c822958",
+          "output_sha256": "7afe0515b2b37ed6815c19bc2fb83e41a70d62b511530cf0c1c952f13c9faa23",
+          "started_at": "2026-09-29T04:05:18.837+00:00",
+          "status": "completed"
+        },
+        "memory_available_kib": 4694680,
+        "observed_at": "2026-09-29T04:08:57.847672+00:00",
+        "ready": {
+          "status": "ready"
+        },
+        "ready_ms": 1115.98,
+        "revision": "7144cdd",
+        "tick_age_seconds": 218.91,
+        "worker_names": []
+      },
+      {
+        "authority": {
+          "browser_writes": false,
+          "current_action_level": "A0",
+          "kill_switch": true,
+          "mode": "shadow",
+          "promotion_is_automatic": false,
+          "technical_eligible_level": "A0",
+          "writes_enabled": false
+        },
+        "containers": [
+          {
+            "health": "healthy",
+            "id": "0b4d1492ab309a124693d41768e196b45bece163eb16dee8ff7646f9ea9acd9f",
+            "name": "mova-fpl-api-1",
+            "oom": false,
+            "restarts": 0,
+            "running": true
+          },
+          {
+            "health": "healthy",
+            "id": "c0829da3c116b37cef16846e68ceca27ec5eb1aa39d1c3b484d3b3d454aaf48a",
+            "name": "mova-fpl-postgres-1",
+            "oom": false,
+            "restarts": 0,
+            "running": true
+          },
+          {
+            "health": "healthy",
+            "id": "9501cb75bb9c44472ecde6c50de3c124ae25ee8b9e428d7001d5611409dd436a",
+            "name": "mova-fpl-browser-1",
+            "oom": false,
+            "restarts": 0,
+            "running": true
+          }
+        ],
+        "cpu_counters": [
+          46827251,
+          369068,
+          52314832,
+          361753329,
+          962180,
+          0,
+          1858332,
+          55050260,
+          0,
+          0
+        ],
+        "disk_free_bytes": 42856038400,
+        "errors": [],
+        "failed_jobs": [],
+        "latest_tick": {
+          "cycle_id": null,
+          "error_code": null,
+          "finished_at": "2026-09-29T04:05:18.934+00:00",
+          "job_id": "job_92994fd5c3b5409aaecb9f286c822958",
+          "output_sha256": "7afe0515b2b37ed6815c19bc2fb83e41a70d62b511530cf0c1c952f13c9faa23",
+          "started_at": "2026-09-29T04:05:18.837+00:00",
+          "status": "completed"
+        },
+        "memory_available_kib": 4751956,
+        "observed_at": "2026-09-29T04:14:04.761777+00:00",
+        "ready": {
+          "status": "ready"
+        },
+        "ready_ms": 936.71,
+        "revision": "7144cdd",
+        "tick_age_seconds": 525.83,
+        "worker_names": []
+      },
+      {
+        "authority": {
+          "browser_writes": false,
+          "current_action_level": "A0",
+          "kill_switch": true,
+          "mode": "shadow",
+          "promotion_is_automatic": false,
+          "technical_eligible_level": "A0",
+          "writes_enabled": false
+        },
+        "containers": [
+          {
+            "health": "healthy",
+            "id": "0b4d1492ab309a124693d41768e196b45bece163eb16dee8ff7646f9ea9acd9f",
+            "name": "mova-fpl-api-1",
+            "oom": false,
+            "restarts": 0,
+            "running": true
+          },
+          {
+            "health": "healthy",
+            "id": "c0829da3c116b37cef16846e68ceca27ec5eb1aa39d1c3b484d3b3d454aaf48a",
+            "name": "mova-fpl-postgres-1",
+            "oom": false,
+            "restarts": 0,
+            "running": true
+          },
+          {
+            "health": "healthy",
+            "id": "9501cb75bb9c44472ecde6c50de3c124ae25ee8b9e428d7001d5611409dd436a",
+            "name": "mova-fpl-browser-1",
+            "oom": false,
+            "restarts": 0,
+            "running": true
+          }
+        ],
+        "cpu_counters": [
+          46832849,
+          369112,
+          52317361,
+          361802998,
+          962442,
+          0,
+          1858612,
+          55056026,
+          0,
+          0
+        ],
+        "disk_free_bytes": 42855260160,
+        "errors": [],
+        "failed_jobs": [],
+        "latest_tick": {
+          "cycle_id": null,
+          "error_code": null,
+          "finished_at": "2026-09-29T04:15:13.621+00:00",
+          "job_id": "job_43990d14947348f3a04ed59b49f955f1",
+          "output_sha256": "b2173ea27e0521bdccc5ec3ca5531dce81f538dd1804a9ec0451ff28b9747024",
+          "started_at": "2026-09-29T04:15:13.480+00:00",
+          "status": "completed"
+        },
+        "memory_available_kib": 4772312,
+        "observed_at": "2026-09-29T04:19:09.742369+00:00",
+        "ready": {
+          "status": "ready"
+        },
+        "ready_ms": 1322.5,
+        "revision": "7144cdd",
+        "tick_age_seconds": 236.12,
+        "worker_names": []
+      },
+      {
+        "authority": {
+          "browser_writes": false,
+          "current_action_level": "A0",
+          "kill_switch": true,
+          "mode": "shadow",
+          "promotion_is_automatic": false,
+          "technical_eligible_level": "A0",
+          "writes_enabled": false
+        },
+        "containers": [
+          {
+            "health": "healthy",
+            "id": "0b4d1492ab309a124693d41768e196b45bece163eb16dee8ff7646f9ea9acd9f",
+            "name": "mova-fpl-api-1",
+            "oom": false,
+            "restarts": 0,
+            "running": true
+          },
+          {
+            "health": "healthy",
+            "id": "c0829da3c116b37cef16846e68ceca27ec5eb1aa39d1c3b484d3b3d454aaf48a",
+            "name": "mova-fpl-postgres-1",
+            "oom": false,
+            "restarts": 0,
+            "running": true
+          },
+          {
+            "health": "healthy",
+            "id": "9501cb75bb9c44472ecde6c50de3c124ae25ee8b9e428d7001d5611409dd436a",
+            "name": "mova-fpl-browser-1",
+            "oom": false,
+            "restarts": 0,
+            "running": true
+          }
+        ],
+        "cpu_counters": [
+          46839214,
+          369131,
+          52319724,
+          361852571,
+          962510,
+          0,
+          1858881,
+          55060391,
+          0,
+          0
+        ],
+        "disk_free_bytes": 42854629376,
+        "errors": [],
+        "failed_jobs": [],
+        "latest_tick": {
+          "cycle_id": null,
+          "error_code": null,
+          "finished_at": "2026-09-29T04:20:12.821+00:00",
+          "job_id": "job_d0f91c5c17814955920231e46c8efa77",
+          "output_sha256": "907208c3ceb93d23298995f0343f8664bc4d4377097e6029a9b6105748282eed",
+          "started_at": "2026-09-29T04:20:12.729+00:00",
+          "status": "completed"
+        },
+        "memory_available_kib": 4747928,
+        "observed_at": "2026-09-29T04:24:13.962043+00:00",
+        "ready": {
+          "status": "ready"
+        },
+        "ready_ms": 952.63,
+        "revision": "7144cdd",
+        "tick_age_seconds": 241.14,
+        "worker_names": []
+      },
+      {
+        "authority": {
+          "browser_writes": false,
+          "current_action_level": "A0",
+          "kill_switch": true,
+          "mode": "shadow",
+          "promotion_is_automatic": false,
+          "technical_eligible_level": "A0",
+          "writes_enabled": false
+        },
+        "containers": [
+          {
+            "health": "healthy",
+            "id": "0b4d1492ab309a124693d41768e196b45bece163eb16dee8ff7646f9ea9acd9f",
+            "name": "mova-fpl-api-1",
+            "oom": false,
+            "restarts": 0,
+            "running": true
+          },
+          {
+            "health": "healthy",
+            "id": "c0829da3c116b37cef16846e68ceca27ec5eb1aa39d1c3b484d3b3d454aaf48a",
+            "name": "mova-fpl-postgres-1",
+            "oom": false,
+            "restarts": 0,
+            "running": true
+          },
+          {
+            "health": "healthy",
+            "id": "9501cb75bb9c44472ecde6c50de3c124ae25ee8b9e428d7001d5611409dd436a",
+            "name": "mova-fpl-browser-1",
+            "oom": false,
+            "restarts": 0,
+            "running": true
+          }
+        ],
+        "cpu_counters": [
+          46843748,
+          369147,
+          52321710,
+          361896617,
+          962595,
+          0,
+          1859097,
+          55063578,
+          0,
+          0
+        ],
+        "disk_free_bytes": 42862505984,
+        "errors": [],
+        "failed_jobs": [],
+        "latest_tick": {
+          "cycle_id": null,
+          "error_code": null,
+          "finished_at": "2026-09-29T04:25:10.769+00:00",
+          "job_id": "job_e45fc8e13aa54a178a977307ad16dd23",
+          "output_sha256": "9706585612a6e93589161fc73043524f26a9cecbab984a92657dd9db2e243be0",
+          "started_at": "2026-09-29T04:25:10.676+00:00",
+          "status": "completed"
+        },
+        "memory_available_kib": 4779376,
+        "observed_at": "2026-09-29T04:28:36.437498+00:00",
+        "ready": {
+          "status": "ready"
+        },
+        "ready_ms": 907.45,
+        "revision": "7144cdd",
+        "tick_age_seconds": 205.67,
+        "worker_names": []
+      }
+    ],
+    "limits": "Short stability window; no longitudinal autonomy acceptance."
+  },
+  "dashboard": {
+    "http_status": 200,
+    "revision_visible": "7144cdd",
+    "bytes": 5328
+  },
+  "r2_validation": {
+    "status": "blocked_readonly_probe",
+    "attempts": 2,
+    "initial_reason": "navigation_timeout",
+    "loaded_page_retry_reason": "FPL_CAPTAIN_CHECKBOX_MISSING",
+    "writes_attempted": false,
+    "rehearsal_imported": false,
+    "authority_promoted": false,
+    "player_sheet_dismissed": true,
+    "next_requirement": "Inspect actual captaincy UI and validate its semantic contract before a new read-only probe."
+  },
+  "doctor_final_after_r2": {
+    "summary": {
+      "fail": 0,
+      "pass": 24,
+      "required_failures": 0,
+      "warn": 0
+    },
+    "overall_status": "healthy",
+    "checks": [
+      {
+        "name": "configuration",
+        "status": "PASS"
+      },
+      {
+        "name": "ops_database",
+        "status": "PASS"
+      },
+      {
+        "name": "ops_schema",
+        "status": "PASS"
+      },
+      {
+        "name": "scheduler_heartbeat",
+        "status": "PASS"
+      },
+      {
+        "name": "private_team_state",
+        "status": "PASS"
+      },
+      {
+        "name": "agent_queue_integrity",
+        "status": "PASS"
+      },
+      {
+        "name": "canonical_database",
+        "status": "PASS"
+      },
+      {
+        "name": "trace_database",
+        "status": "PASS"
+      },
+      {
+        "name": "postgres_shadow",
+        "status": "PASS"
+      },
+      {
+        "name": "autonomous_data_service",
+        "status": "PASS"
+      },
+      {
+        "name": "model_analytics_service",
+        "status": "PASS"
+      },
+      {
+        "name": "model_artifacts",
+        "status": "PASS"
+      },
+      {
+        "name": "resource_gates",
+        "status": "PASS"
+      },
+      {
+        "name": "recent_backup",
+        "status": "PASS"
+      },
+      {
+        "name": "host_probe",
+        "status": "PASS"
+      },
+      {
+        "name": "systemd_units",
+        "status": "PASS"
+      },
+      {
+        "name": "systemd_service_results",
+        "status": "PASS"
+      },
+      {
+        "name": "data_collector_timer",
+        "status": "PASS"
+      },
+      {
+        "name": "api_container",
+        "status": "PASS"
+      },
+      {
+        "name": "postgres_container",
+        "status": "PASS"
+      },
+      {
+        "name": "deployment_revision",
+        "status": "PASS"
+      },
+      {
+        "name": "browser_profile",
+        "status": "PASS"
+      },
+      {
+        "name": "research_worker",
+        "status": "PASS"
+      },
+      {
+        "name": "fpl_public_api",
+        "status": "PASS"
+      }
+    ]
   }
 }
