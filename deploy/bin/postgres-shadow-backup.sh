@@ -22,10 +22,40 @@ destination="$backup_root/$timestamp"
 
 install -d -m 0750 "$backup_root"
 install -d -m 0750 "$partial"
-cleanup() { rm -rf -- "$partial"; }
+postgres_container=''
+original_cpus=''
+cleanup() {
+  if [[ -n "$original_cpus" ]]; then
+    docker update --cpus "$original_cpus" "$postgres_container" >/dev/null
+  fi
+  rm -rf -- "$partial"
+}
 trap cleanup EXIT
+trap 'exit 143' TERM
+trap 'exit 130' INT
+trap 'exit 129' HUP
 
 cd "$repo_dir"
+# The steady-state 0.10 CPU cap cannot finish the full content inventory within
+# the backup service's 900 s window. Borrow bounded capacity for this job only.
+postgres_container=$(docker compose ps -q postgres)
+[[ -n "$postgres_container" ]]
+current_nano=$(docker inspect "$postgres_container" --format '{{.HostConfig.NanoCpus}}')
+backup_cpus=${MOVA_POSTGRES_BACKUP_CPUS:-0.50}
+original_cpus=$(python3 - "$current_nano" "$backup_cpus" <<'PY'
+import math
+import sys
+current = int(sys.argv[1])
+target = float(sys.argv[2])
+if not math.isfinite(target) or not 0 < target <= 0.50:
+    raise SystemExit('backup CPU budget must be greater than zero and at most 0.50')
+if 0 < current < round(target * 1_000_000_000):
+    print(f'{current / 1_000_000_000:.9f}')
+PY
+)
+if [[ -n "$original_cpus" ]]; then
+  docker update --cpus "$backup_cpus" "$postgres_container" >/dev/null
+fi
 git_sha=$(git rev-parse --short HEAD)
 python3 -m mova_fpl.ops.postgres_backup backup "$partial" \
   --database "$postgres_db" --user "$postgres_user" --revision "$git_sha"
@@ -33,7 +63,6 @@ python3 -m mova_fpl.ops.postgres_backup backup "$partial" \
 docker compose exec -T postgres pg_restore --list < "$partial/postgres-shadow.dump" >/dev/null
 chmod 0640 "$partial/postgres-shadow.dump" "$partial/manifest.json"
 mv "$partial" "$destination"
-trap - EXIT
 
 while IFS= read -r expired; do
   [[ "$expired" == "$backup_root"/20??????T??????Z ]]

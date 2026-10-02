@@ -152,3 +152,49 @@ def test_importing_old_dr_evidence_does_not_refresh_its_actual_age():
     validity = dr_evidence_validity(row, 'abc1234', now)
     assert validity['valid'] is False
     assert 'evidence_expired_or_future' in validity['reasons']
+
+
+@pytest.mark.parametrize('backup_exit', [0, 31])
+def test_postgres_backup_restores_temporary_cpu_budget(tmp_path, monkeypatch, backup_exit):
+    import os
+    import shlex
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    scripts = tmp_path / 'bin'
+    scripts.mkdir()
+    docker = scripts / 'docker'
+    docker.write_text('''#!/bin/bash
+if [[ "$1 $2 $3 $4" == "compose ps -q postgres" ]]; then echo fixture; exit 0; fi
+if [[ "$1" == inspect ]]; then echo 100000000; exit 0; fi
+if [[ "$1" == update ]]; then echo "$*" >> "$CPU_LOG"; exit 0; fi
+exit 0
+''')
+    python = scripts / 'python3'
+    python.write_text('''#!/bin/bash
+if [[ "$1" == -m ]]; then
+  touch "$3/postgres-shadow.dump"
+  echo '{}' > "$3/manifest.json"
+  exit "$BACKUP_EXIT"
+fi
+exec ''' + shlex.quote(sys.executable) + ''' "$@"
+''')
+    git = scripts / 'git'
+    git.write_text('#!/bin/bash\necho fixture123\n')
+    for path in (docker, python, git):
+        path.chmod(0o755)
+    log = tmp_path / 'cpu.log'
+    monkeypatch.setenv('PATH', str(scripts) + os.pathsep + os.environ['PATH'])
+    monkeypatch.setenv('MOVA_REPO_DIR', str(tmp_path))
+    monkeypatch.setenv('MOVA_DEPLOY_ENV', str(tmp_path / 'absent.env'))
+    monkeypatch.setenv('MOVA_BACKUP_ROOT', str(tmp_path / 'backups'))
+    monkeypatch.setenv('CPU_LOG', str(log))
+    monkeypatch.setenv('BACKUP_EXIT', str(backup_exit))
+    monkeypatch.delenv('MOVA_POSTGRES_BACKUP_CPUS', raising=False)
+    script = Path(__file__).resolve().parents[1] / 'deploy/bin/postgres-shadow-backup.sh'
+    result = subprocess.run(['bash', str(script)], capture_output=True, text=True)
+    assert result.returncode == backup_exit, result.stderr
+    assert log.read_text().splitlines() == [
+        'update --cpus 0.50 fixture', 'update --cpus 0.100000000 fixture']
+    assert not list((tmp_path / 'backups/postgres').glob('.*.partial'))
