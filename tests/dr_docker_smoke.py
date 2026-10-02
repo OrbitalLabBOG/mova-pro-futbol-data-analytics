@@ -17,7 +17,7 @@ def run(args,**kwargs):
 try:
     run(['docker','run','-d','--name',seed,'--network','none','--tmpfs','/var/lib/postgresql/data:rw,size=512m','-e','POSTGRES_HOST_AUTH_METHOD=trust','-e','POSTGRES_DB=fixture',image],stdout=subprocess.DEVNULL)
     for _ in range(60):
-        if subprocess.run(['docker','exec',seed,'pg_isready','-U','postgres','-d','fixture'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode==0: break
+        if subprocess.run(['docker','exec',seed,'pg_isready','-h','127.0.0.1','-U','postgres','-d','fixture'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode==0: break
         time.sleep(1)
     sql=';'.join('CREATE SCHEMA '+x+';CREATE TABLE '+x+'.fixture(id int PRIMARY KEY, payload jsonb);INSERT INTO '+x+".fixture VALUES (1, '{\"value\": 1}'),(2,'{\"value\": 2}')" for x in ('mova_meta','raw','analytics','game','research','agent','ops'))+';'
     run(['docker','exec','-i',seed,'psql','-Xq','-v','ON_ERROR_STOP=1','-U','postgres','-d','fixture'],input=sql,text=True)

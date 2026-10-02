@@ -31,9 +31,10 @@ docker run -d --name "$container" --network none --user postgres \
   --tmpfs /tmp:rw,size=64m,mode=1777 \
   -e POSTGRES_HOST_AUTH_METHOD=trust -e POSTGRES_DB=mova_restore \
   -e PGDATA=/var/lib/postgresql/data/pgdata "$image" >/dev/null
+# initdb uses a temporary socket-only server; TCP readiness waits for the final server.
 ready=false
 for _ in $(seq 1 60); do
-  if docker exec "$container" pg_isready -U postgres -d mova_restore >/dev/null 2>&1; then
+  if docker exec "$container" pg_isready -h 127.0.0.1 -U postgres -d mova_restore >/dev/null 2>&1; then
     ready=true; break
   fi
   sleep 1
