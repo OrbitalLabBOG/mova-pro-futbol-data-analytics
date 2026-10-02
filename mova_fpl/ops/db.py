@@ -1733,6 +1733,8 @@ class OpsDB:
             row.update({
                 "checks": int(metrics.get("checks") or 0),
                 "passed": int(metrics.get("passed") or 0),
+                "revision": metrics.get("revision"),
+                "evidence_finished_at": metrics.get("evidence_finished_at"),
                 "downtime_seconds": metrics.get("downtime_seconds"),
             })
             scenarios[scenario] = row
@@ -1771,6 +1773,8 @@ class OpsDB:
             row.update({
                 "checks": int(metrics.get("checks") or 0),
                 "passed": int(metrics.get("passed") or 0),
+                "revision": metrics.get("revision"),
+                "evidence_finished_at": metrics.get("evidence_finished_at"),
                 "downtime_seconds": metrics.get("downtime_seconds"),
             })
             return row

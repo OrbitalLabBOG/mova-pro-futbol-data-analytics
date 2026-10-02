@@ -350,15 +350,52 @@ y compliance aprobado; el rollout exige además shadow suficiente y prueba de ve
 
 ## Backup y restore drill
 
+Contrato endurecido **v2, 02/10/2026**:
+
+- Backup exige `ops.db`, `trace.db`, `fpl_canonical.db` y los joblib activos de
+  minutes/points, resueltos contra el ops snapshot. Falta, symlink o cambio de hash falla
+  antes de publicar el conjunto. No incluye secretos, perfil browser ni CODEX_HOME.
+- Restore SQLite verifica hashes, abre las tres DBs con `integrity_check`, lee sus tablas
+  y carga ambos modelos dentro de un contenedor sin red, envs, secretos ni mounts de
+  producción. Requiere `MOVA_IMAGE_TAG` provisionado y la imagen del release candidato.
+- Backup PostgreSQL v2 mantiene un snapshot `REPEATABLE READ` exportado mientras toma
+  el inventario y `pg_dump --snapshot`. El inventario contiene todas las tablas de usuario,
+  columnas, conteos y digest SHA-256 del multiconjunto de hashes de filas ordenados. El dump
+  completo conserva además SHA-256. Los hashes de filas son controles de paridad, no firmas.
+- Restore PostgreSQL crea un cluster nuevo efímero, sin red ni puertos publicados,
+  de la misma imagen PG fijada en Compose; restaura sin owner/ACL y compara todo el inventario.
+  Tiene límites de 768 MiB RAM y 2 GiB de almacenamiento tmpfs. Falla cerrado si los supera.
+- Backups legacy v1 no acreditan el contrato v2: generar un backup nuevo antes del restore.
+- Readiness exige revisión exacta del runtime y evidencia con timezone de hasta 30 días;
+  falta de revisión, caducidad o timestamp futuro produce `pending`, con la razón visible.
+  Renovar las pruebas con claves nuevas; no editar ni backfillear evidencia histórica.
+
+Este ensayo acredita **bases y modelos activos**. Para aceptar recuperación de host completo,
+probar aparte un host vacío: obtener Git e imagen del release, reprovisionar configuraciones
+por el canal autorizado, recuperar artefactos de auditoría necesarios y verificar API/modelos,
+collectors y timers. Reautenticar browser/Codex bajo supervisión; su estado está excluido del
+backup. No usar el éxito de un reboot del mismo VPS como evidencia de host reconstruido.
+
+
 ```bash
 sudo systemctl start mova-fpl-backup.service
-latest="$(find /opt/orbital/backups/mova-fpl -mindepth 1 -maxdepth 1 -type d | sort | tail -1)"
+latest="$(find /opt/orbital/backups/mova-fpl -mindepth 1 -maxdepth 1 -type d -name '20??????T??????Z' | sort | tail -1)"
 sudo deploy/bin/restore-drill.sh "$latest"
 
-# PostgreSQL shadow: dump custom + restauración en DB temporal
-pg_latest="$(find /opt/orbital/backups/mova-fpl/postgres -mindepth 1 -maxdepth 1 -type d | sort | tail -1)"
+# PostgreSQL: dump sellado + restauración en cluster aislado
+pg_latest="$(find /opt/orbital/backups/mova-fpl/postgres -mindepth 1 -maxdepth 1 -type d -name '20??????T??????Z' | sort | tail -1)"
 sudo deploy/bin/postgres-shadow-restore-drill.sh "$pg_latest"
 ```
+
+Aceptación sintética reproducible (Docker, sin datos productivos):
+
+```bash
+sudo python3 tests/dr_docker_smoke.py --engine-base mova-fpl-engine:<sha-disponible>
+```
+
+Prueba escritura concurrente entre inventario y dump, restaura siete tablas en un cluster
+nuevo, rechaza drift de contenido y abre tres SQLite/dos modelos en un contenedor sin red.
+Elimina sus contenedores, imagen candidata y fixtures al terminar.
 
 El backup usa SQLite Online Backup API y ejecuta `quick_check`; nunca hace `cp` de una base
 viva ignorando WAL. PostgreSQL usa `pg_dump -Fc`, valida el catálogo del dump y conserva un

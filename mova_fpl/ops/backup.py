@@ -51,19 +51,41 @@ def create_backup(config: RuntimeConfig, db: OpsDB, *, retention_days: int = 35)
     tmp.mkdir(parents=True, exist_ok=False)
     try:
         files: list[dict] = []
-        for source in (config.ops_db, config.trace_db, config.canonical_db):
-            if not source.is_file():
-                if source == config.ops_db:
-                    raise FileNotFoundError(source)
-                continue
-            destination = tmp / source.name
+        for name, source in zip(("ops.db", "trace.db", "fpl_canonical.db"),
+                                (config.ops_db, config.trace_db, config.canonical_db)):
+            if source.is_symlink() or not source.is_file():
+                raise FileNotFoundError(f"required backup database missing or unsafe: {source.name}")
+            destination = tmp / name
             _sqlite_backup(source, destination)
-            files.append({"name": source.name, "size": destination.stat().st_size,
+            files.append({"name": name, "size": destination.stat().st_size,
                           "sha256": _sha256(destination)})
+        # Resolve against the sealed ops snapshot, not a concurrently changing pointer.
+        from mova_fpl.ops.model_release import resolve_active_model_bundle
+        sealed_db = OpsDB(tmp / "ops.db", enforce_version=False)
+        bundle = resolve_active_model_bundle(config, sealed_db)
+        models = []
+        for family in ("minutes", "points"):
+            model = bundle["models"][family]
+            source = Path(model["artifact_path"])
+            if source.is_symlink():
+                raise ValueError("unsafe active model artifact")
+            relative = f"models/{family}/{family}-{model['version']}.joblib"
+            destination = tmp / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(source, destination)
+            digest = _sha256(destination)
+            if digest != model["artifact_sha256"]:
+                raise ValueError("active model changed during backup")
+            models.append({"name": relative, "family": family, "version": model["version"],
+                           "size": destination.stat().st_size, "sha256": digest})
         manifest = {
-            "schema": "mova-fpl-backup-v1", "created_at": now.isoformat(),
+            "schema": "mova-fpl-backup-v2", "created_at": now.isoformat(),
             "sqlite_version": sqlite3.sqlite_version, "git_sha": config.git_sha,
             "files": files, "ops_wal_checkpoint": checkpoint,
+            "models": models,
+            "recovery": {"season": config.season, "team_id": config.team_id,
+                         "mode": "shadow", "action_level": "A0", "kill_switch": True,
+                         "browser_writes": False, "release_id": bundle.get("release_id")},
         }
         (tmp / "manifest.json").write_text(
             json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n",

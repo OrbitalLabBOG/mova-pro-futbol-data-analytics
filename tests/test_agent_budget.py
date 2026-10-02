@@ -265,7 +265,10 @@ def test_authorized_allowance_is_idempotent_scoped_and_preserves_spend(tmp_path)
     assert after['policy']['gw_tokens']==700 and after['policy']['month_tokens']==800
     assert len(after['allowances'])==1
     db.upsert_cycle('2026-27',4,'2026-09-11T17:30:00+00:00',phase='preflight')
-    other=db.cost_report(POLICY,season='2026-27',gw=4,month='2026-10')
+    # Scope must use a different month regardless of the wall clock.
+    allowance_year = int(after['month']['month'][:4])
+    other_month = f'{allowance_year + 1}-01'
+    other=db.cost_report(POLICY,season='2026-27',gw=4,month=other_month)
     assert other['policy']==POLICY and other['allowances']==[]
     queued=_queue(db,cycle,'research_'+'e'*32)
     assert queued['budget']['policy']['gw_tokens']==700

@@ -26,38 +26,18 @@ cleanup() { rm -rf -- "$partial"; }
 trap cleanup EXIT
 
 cd "$repo_dir"
-docker compose exec -T postgres \
-  pg_dump --format=custom --no-owner --no-acl \
-  --username="$postgres_user" --dbname="$postgres_db" > "$partial/postgres-shadow.dump"
+git_sha=$(git rev-parse --short HEAD)
+python3 -m mova_fpl.ops.postgres_backup backup "$partial" \
+  --database "$postgres_db" --user "$postgres_user" --revision "$git_sha"
+# Validate the archive catalog before publishing the sealed set.
 docker compose exec -T postgres pg_restore --list < "$partial/postgres-shadow.dump" >/dev/null
-
-dump_sha256=$(sha256sum "$partial/postgres-shadow.dump" | awk '{print $1}')
-dump_bytes=$(stat -c '%s' "$partial/postgres-shadow.dump")
-git_sha=$(git rev-parse HEAD)
-python3 - "$partial/manifest.json" "$timestamp" "$git_sha" "$postgres_db" \
-  "$dump_sha256" "$dump_bytes" <<'PY'
-import json
-import sys
-
-path, created_at, git_sha, database, sha256, size = sys.argv[1:]
-payload = {
-    "schema": "mova-postgres-backup-v1",
-    "created_at": created_at,
-    "git_sha": git_sha,
-    "database": database,
-    "dump": {"name": "postgres-shadow.dump", "sha256": sha256, "bytes": int(size)},
-}
-with open(path, "w", encoding="utf-8") as handle:
-    json.dump(payload, handle, ensure_ascii=False, indent=2, sort_keys=True)
-    handle.write("\n")
-PY
 chmod 0640 "$partial/postgres-shadow.dump" "$partial/manifest.json"
 mv "$partial" "$destination"
 trap - EXIT
 
 while IFS= read -r expired; do
-  [[ "$expired" == "$backup_root"/20????????T??????Z ]]
+  [[ "$expired" == "$backup_root"/20??????T??????Z ]]
   rm -rf -- "$expired"
 done < <(find "$backup_root" -mindepth 1 -maxdepth 1 -type d \
-  -name '20????????T??????Z' -mtime "+$retention_days" -print)
+  -name '20??????T??????Z' -mtime "+$retention_days" -print)
 echo "$destination"

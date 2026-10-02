@@ -1,14 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_dir=${MOVA_REPO_DIR:-/opt/orbital/services/mova-fpl}
-backup_dir=${1:?usage: restore-drill.sh /opt/orbital/backups/mova-fpl/TIMESTAMP}
+deploy_env=${MOVA_DEPLOY_ENV:-/etc/mova-fpl/deploy.env}
+backup_dir=${1:?usage: restore-drill.sh BACKUP_DIRECTORY}
+if [[ -r "$deploy_env" ]]; then
+  set -a
+  source "$deploy_env"
+  set +a
+fi
+backup_dir=$(realpath -e "$backup_dir")
 test -f "$backup_dir/manifest.json"
-test -f "$backup_dir/ops.db"
-
-docker compose --project-directory "$repo_dir" -f "$repo_dir/compose.yaml" \
-  --profile jobs run --rm --no-deps \
-  -v "$backup_dir:/restore:ro" worker \
-  sh -c 'cp /restore/ops.db /tmp/mova-restore-ops.db && \
-    MOVA_OPS_DB=/tmp/mova-restore-ops.db python -m mova_fpl.ops.cli check'
-echo "restore drill passed for $backup_dir"
+# Bypass production Compose: no runtime mounts, network or secrets.
+docker run --rm --network none --read-only --cap-drop ALL \
+  --security-opt no-new-privileges:true \
+  --mount "type=bind,src=$backup_dir,dst=/restore,readonly" \
+  --entrypoint python "mova-fpl-engine:${MOVA_IMAGE_TAG:?deploy image tag required}" \
+  -m mova_fpl.ops.sqlite_restore /restore
+echo "complete SQLite restore drill passed"

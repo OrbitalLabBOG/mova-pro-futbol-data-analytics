@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import sqlite3
+import pytest
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -19,7 +21,7 @@ def _config(tmp_path: Path, *, shadow: bool = False) -> RuntimeConfig:
     return RuntimeConfig(
         ops_db=tmp_path / "db" / "ops.db",
         trace_db=tmp_path / "db" / "trace.db",
-        canonical_db=tmp_path / "db" / "canonical.db",
+        canonical_db=tmp_path / "db" / "fpl_canonical.db",
         artifact_root=tmp_path / "artifacts",
         backup_root=tmp_path / "backups",
         lock_path=tmp_path / "runtime.lock",
@@ -366,10 +368,11 @@ def test_backup_online_es_restaurable(tmp_path):
     config = _config(tmp_path)
     db = _db(config)
     db.migrate()
+    _backup_inputs(config)
     result = create_backup(config, db, retention_days=35)
     manifest = json.loads((Path(result["path"]) / "manifest.json").read_text())
-    assert manifest["schema"] == "mova-fpl-backup-v1"
-    assert [item["name"] for item in manifest["files"]] == ["ops.db"]
+    assert manifest["schema"] == "mova-fpl-backup-v2"
+    assert [item["name"] for item in manifest["files"]] == ["ops.db", "trace.db", "fpl_canonical.db"]
     restored = OpsDB(Path(result["path"]) / "ops.db", enforce_version=False)
     assert restored.quick_check() == "ok"
 
@@ -383,6 +386,7 @@ def test_backup_forzado_es_auditado_e_idempotente(tmp_path, monkeypatch, capsys)
     monkeypatch.setattr(
         RuntimeConfig, "from_env", classmethod(lambda _cls: config)
     )
+    _backup_inputs(config)
     argv = [
         "backup", "--force", "--actor", "codex", "--reason", "post migration",
         "--idempotency-key", "backup:test:v1",
@@ -399,3 +403,27 @@ def test_backup_forzado_es_auditado_e_idempotente(tmp_path, monkeypatch, capsys)
         ).fetchone()
     assert audit["actor"] == "codex"
     assert json.loads(audit["payload_json"])["reason"] == "post migration"
+
+
+def _backup_inputs(config):
+    import joblib
+    for family in ("minutes", "points"):
+        path = config.artifact_root / "models" / family / f"{family}-1.1.0.joblib"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        joblib.dump({"family": family}, path)
+    for path in (config.trace_db, config.canonical_db):
+        with sqlite3.connect(path) as con:
+            con.execute("CREATE TABLE fixture (id INTEGER PRIMARY KEY)")
+            con.execute("INSERT INTO fixture VALUES (1)")
+
+
+@pytest.mark.parametrize("missing", ["trace.db", "fpl_canonical.db"])
+def test_backup_missing_required_database_fails_without_publishing(tmp_path, missing):
+    config = _config(tmp_path)
+    db = _db(config)
+    db.migrate()
+    _backup_inputs(config)
+    (config.ops_db.parent / missing).unlink()
+    with pytest.raises(FileNotFoundError):
+        create_backup(config, db)
+    assert not list(config.backup_root.iterdir())

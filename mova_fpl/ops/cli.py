@@ -1142,6 +1142,8 @@ def main(argv: list[str] | None = None) -> int:
                 output_sha256=payload.get("artifact_sha256") or sha256_json(payload),
                 metrics={"scenario": payload.get("scenario") or "scheduler_p0_recovery",
                          "checks": len(checks), "passed": sum(checks.values()),
+                         "revision": payload.get("revision"),
+                         "evidence_finished_at": payload.get("finished_at"),
                          "downtime_seconds": payload.get("downtime_seconds")},
                 error_code=None if result_status == "completed" else "DrillFailed",
             )
