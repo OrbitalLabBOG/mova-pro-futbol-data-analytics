@@ -362,6 +362,11 @@ Contrato endurecido **v2, 02/10/2026**:
   el inventario y `pg_dump --snapshot`. El inventario contiene todas las tablas de usuario,
   columnas, conteos y digest SHA-256 del multiconjunto de hashes de filas ordenados. El dump
   completo conserva además SHA-256. Los hashes de filas son controles de paridad, no firmas.
+  La sesión keeper tiene un timeout de inactividad de 35 minutos; inventario y dump siguen
+  acotados a 900 segundos cada uno. El script eleva temporalmente un cap inferior a 0,50 CPU
+  hasta ese presupuesto (`MOVA_POSTGRES_BACKUP_CPUS`, máximo 0,50), y restaura el cap previo
+  al terminar o fallar. No reduce un cap mayor ni cambia Compose. Este margen permite que
+  el inventario real termine dentro de la ventana de backup con el perfil habitual de 0,10 CPU.
 - Restore PostgreSQL crea un cluster nuevo efímero, sin red ni puertos publicados,
   de la misma imagen PG fijada en Compose; restaura sin owner/ACL y compara todo el inventario.
   Tiene límites de 768 MiB RAM y 2 GiB de almacenamiento tmpfs. Falla cerrado si los supera.
