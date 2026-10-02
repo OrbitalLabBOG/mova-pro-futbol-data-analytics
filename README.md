@@ -1,7 +1,7 @@
 ---
 type: docs
 name: MOVA Fantasy Fútbol Data Analytics
-updated: 2026-09-22
+updated: 2026-10-02
 status: active
 tags: [mova, fpl, runtime, operations]
 ---
@@ -366,6 +366,18 @@ python -m mova_fpl.cli.train_points --holdout 2025-26
 pytest -m integration_data -q
 pytest -m slow -q
 ```
+
+## Recuperación de bases y modelos
+
+El contrato DR v2 exige las tres bases SQLite y los dos modelos activos sellados por hash.
+El dump PostgreSQL y su inventario de todas las tablas comparten un snapshot exportado;
+el restore compara columnas, conteos y hashes de contenido en un cluster desechable sin
+montajes ni credenciales del runtime. SQLite y los modelos se abren en un contenedor
+sin red. Las pruebas host/offsite deben corresponder a la revisión desplegada y tener
+como máximo 30 días; la evidencia legacy sin revisión queda pendiente, sin borrarse.
+Estas verificaciones acreditan bases y modelos, y no equivalen a reconstrucción completa
+del VPS. Reprovisionamiento, integraciones autenticadas y artefactos de auditoría externos
+al conjunto requieren su aceptación separada. Procedimiento: [DR](docs/operations/vps.md#backup-y-restore-drill).
 
 ## Operación
 

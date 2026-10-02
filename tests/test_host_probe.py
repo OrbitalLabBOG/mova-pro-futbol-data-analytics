@@ -119,4 +119,7 @@ def test_offsite_service_is_opt_in_and_excludes_runtime_secrets():
     restore = Path("deploy/bin/offsite-restore-drill.sh").read_text(encoding="utf-8")
     assert restore.count("mova safety | tail -n 1") == 2
     local_restore = Path("deploy/bin/restore-drill.sh").read_text(encoding="utf-8")
-    assert "cp /restore/ops.db /tmp/mova-restore-ops.db" in local_restore
+    assert "--network none --read-only --cap-drop ALL" in local_restore
+    assert "mova_fpl.ops.sqlite_restore /restore" in local_restore
+    assert "docker compose" not in local_restore
+    assert "MOVA_OPS_DB=" not in local_restore

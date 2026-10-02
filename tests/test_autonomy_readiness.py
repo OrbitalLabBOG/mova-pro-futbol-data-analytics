@@ -9,7 +9,7 @@ from mova_fpl.ops.readiness import evaluate_readiness, prometheus
 def _operator() -> dict:
     return {
         "overall_status": "healthy",
-        "runtime": {"season": "2026-27", "controls": {
+        "runtime": {"git_sha": "abc1234", "season": "2026-27", "controls": {
             "action_level": "A0", "browser_writes": False,
             "kill_switch": True, "compliance_gate": "pending", "mode": "shadow",
         }},
@@ -106,11 +106,11 @@ def _host_recovery() -> dict:
     return {
         "status": "completed", "completed": 5, "required": 5,
         "scenarios": {
-            "api_recovery": {"status": "completed", "checks": 5, "passed": 5},
-            "postgres_recovery": {"status": "completed", "checks": 8, "passed": 8},
-            "browser_recovery": {"status": "completed", "checks": 9, "passed": 9},
-            "combined_recovery": {"status": "completed", "checks": 13, "passed": 13},
-            "reboot_recovery": {"status": "completed", "checks": 11, "passed": 11},
+            "api_recovery": {"status": "completed", "checks": 5, "passed": 5, "revision": "abc1234", "finished_at": "2026-08-30T05:00:00+00:00"},
+            "postgres_recovery": {"status": "completed", "checks": 8, "passed": 8, "revision": "abc1234", "finished_at": "2026-08-30T05:00:00+00:00"},
+            "browser_recovery": {"status": "completed", "checks": 9, "passed": 9, "revision": "abc1234", "finished_at": "2026-08-30T05:00:00+00:00"},
+            "combined_recovery": {"status": "completed", "checks": 13, "passed": 13, "revision": "abc1234", "finished_at": "2026-08-30T05:00:00+00:00"},
+            "reboot_recovery": {"status": "completed", "checks": 11, "passed": 11, "revision": "abc1234", "finished_at": "2026-08-30T05:00:00+00:00"},
         },
     }
 
@@ -126,7 +126,7 @@ def _snapshot_rejection() -> dict:
 def _offsite_restore() -> dict:
     return {
         "job_id": "job_offsite_restore", "status": "completed", "checks": 8,
-        "passed": 8, "finished_at": "2026-08-31T05:00:00+00:00",
+        "passed": 8, "revision": "abc1234", "finished_at": "2026-08-30T05:00:00+00:00",
         "output_sha256": "9" * 64,
     }
 
@@ -226,6 +226,7 @@ def test_readiness_cli_can_be_used_as_a_level_gate_and_metrics_are_bounded() -> 
     parsed = parser().parse_args(["readiness", "--require-level", "A2"])
     assert parsed.command == "readiness" and parsed.require_level == "A2"
     report = evaluate_readiness(
+        generated_at="2026-08-30T22:00:00+00:00",
         operator_status=_operator(), research_coverage=_research(),
         execution_status=_execution(), resilience_evidence=_resilience(),
         orchestration_evidence=_orchestration(),

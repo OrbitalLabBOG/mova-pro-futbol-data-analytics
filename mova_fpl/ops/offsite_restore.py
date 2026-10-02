@@ -79,14 +79,14 @@ def verify_restored_set(restore_root: Path, backup_root: Path,
         raise ValueError("restored manifest missing or unsafe")
     sqlite_manifest = json.loads(sqlite_manifest_path.read_text(encoding="utf-8"))
     postgres_manifest = json.loads(postgres_manifest_path.read_text(encoding="utf-8"))
-    if (sqlite_manifest.get("schema") != "mova-fpl-backup-v1"
-            or postgres_manifest.get("schema") != "mova-postgres-backup-v1"):
+    if (sqlite_manifest.get("schema") != "mova-fpl-backup-v2"
+            or postgres_manifest.get("schema") != "mova-postgres-backup-v2"):
         raise ValueError("restored manifest schema mismatch")
     files = sqlite_manifest.get("files")
     if not isinstance(files, list) or not all(isinstance(item, dict) for item in files):
         raise ValueError("restored SQLite file list invalid")
     names = [item.get("name") for item in files]
-    if ("ops.db" not in names
+    if (set(names) != {"ops.db", "trace.db", "fpl_canonical.db"}
             or len(names) != len(set(names))
             or any(name not in {"ops.db", "trace.db", "fpl_canonical.db"}
                    for name in names)):
@@ -96,6 +96,22 @@ def verify_restored_set(restore_root: Path, backup_root: Path,
         path = sqlite_dir / item["name"]
         if type(item.get("size")) is not int:
             raise ValueError("restored SQLite size invalid")
+        _checked_file(path, size=item["size"], sha256=str(item.get("sha256")))
+        allowed.add(path)
+    models = sqlite_manifest.get("models")
+    if (not isinstance(models, list) or len(models) != 2
+            or not all(isinstance(item, dict) for item in models)
+            or {item.get("family") for item in models} != {"minutes", "points"}):
+        raise ValueError("complete active model set required")
+    for item in models:
+        family = item["family"]
+        version = str(item.get("version") or "")
+        name = f"models/{family}/{family}-{version}.joblib"
+        if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", version) or item.get("name") != name:
+            raise ValueError("unsafe restored model path")
+        path = sqlite_dir / name
+        if any(parent.is_symlink() for parent in path.parents) or type(item.get("size")) is not int:
+            raise ValueError("unsafe restored model")
         _checked_file(path, size=item["size"], sha256=str(item.get("sha256")))
         allowed.add(path)
     dump = postgres_manifest.get("dump") or {}

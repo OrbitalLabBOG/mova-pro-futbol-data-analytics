@@ -26,15 +26,22 @@ def _restored(tmp_path: Path) -> tuple[Path, Path]:
     backups = root / "opt/orbital/backups/mova-fpl"
     sqlite = backups / SQLITE_STAMP
     postgres = backups / "postgres" / POSTGRES_STAMP
-    info = _write(sqlite / "ops.db", b"sqlite fixture")
+    files = []
+    for name in ("ops.db", "trace.db", "fpl_canonical.db"):
+        info = _write(sqlite / name, b"sqlite fixture")
+        files.append({"name": name, "size": info["size"], "sha256": info["sha256"]})
+    models = []
+    for family in ("minutes", "points"):
+        name = f"models/{family}/{family}-1.1.0.joblib"
+        info = _write(sqlite / name, b"model fixture")
+        models.append({"name": name, "family": family, "version": "1.1.0",
+                       "size": info["size"], "sha256": info["sha256"]})
     (sqlite / "manifest.json").write_text(json.dumps({
-        "schema": "mova-fpl-backup-v1", "files": [
-            {"name": "ops.db", "size": info["size"], "sha256": info["sha256"]},
-        ],
+        "schema": "mova-fpl-backup-v2", "files": files, "models": models,
     }), encoding="utf-8")
     info = _write(postgres / "postgres-shadow.dump", b"postgres fixture")
     (postgres / "manifest.json").write_text(json.dumps({
-        "schema": "mova-postgres-backup-v1",
+        "schema": "mova-postgres-backup-v2",
         "dump": {"name": "postgres-shadow.dump", "bytes": info["bytes"],
                  "sha256": info["sha256"]},
     }), encoding="utf-8")

@@ -16,6 +16,28 @@ from mova_fpl.ops.operator import build_status
 
 SCHEMA = "mova-autonomy-readiness-v1"
 LEVELS = ("A0", "A1", "A2", "A3")
+DR_MAX_AGE_SECONDS = 30 * 86400
+
+
+def dr_evidence_validity(evidence: dict, revision: str, now: datetime) -> dict:
+    """A historical success is not proof for a different or expired release."""
+    reasons = []
+    observed = evidence.get("revision")
+    if not revision or revision == "unknown" or not observed or observed != revision:
+        reasons.append("revision_mismatch_or_missing")
+    age = None
+    try:
+        stamp = evidence.get("evidence_finished_at", evidence.get("finished_at"))
+        finished = datetime.fromisoformat(str(stamp).replace("Z", "+00:00"))
+        if finished.tzinfo is None:
+            raise ValueError("timezone required")
+        age = (now - finished).total_seconds()
+        if not 0 <= age <= DR_MAX_AGE_SECONDS:
+            reasons.append("evidence_expired_or_future")
+    except (ValueError, TypeError):
+        reasons.append("finished_at_missing_or_invalid")
+    return {"valid": not reasons, "reasons": reasons, "age_seconds": age,
+            "max_age_seconds": DR_MAX_AGE_SECONDS, "expected_revision": revision}
 
 
 def _gate(code: str, status: str, summary: str, *, levels: tuple[str, ...],
@@ -55,6 +77,8 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
     strategy = operator_status.get("strategy") or {}
     operations = operator_status.get("operations") or {}
     runtime = operator_status.get("runtime") or {}
+    now = datetime.fromisoformat(generated_at.replace("Z", "+00:00")) if generated_at else datetime.now(timezone.utc)
+    revision = str(runtime.get("git_sha") or "unknown")
     controls = runtime.get("controls") or {}
     driver = execution_status.get("browser_driver") or {}
     captaincy = driver.get("captaincy") or {}
@@ -112,10 +136,22 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
     host_recovery = host_recovery_evidence or {
         "status": "incomplete", "completed": 0, "required": 5, "scenarios": {},
     }
+    host_recovery = {**host_recovery, "scenarios": {
+        name: {**row, "validity": dr_evidence_validity(row, revision, now)}
+        for name, row in (host_recovery.get("scenarios") or {}).items()
+    }}
     host_recovery_passed = (
         host_recovery.get("status") == "completed"
         and int(host_recovery.get("completed") or 0)
         == int(host_recovery.get("required") or 5)
+        and all(
+            (host_recovery["scenarios"].get(name) or {}).get("validity", {}).get("valid") is True
+            and host_recovery["scenarios"][name].get("status") == "completed"
+            and int(host_recovery["scenarios"][name].get("checks") or 0) > 0
+            and host_recovery["scenarios"][name].get("checks") == host_recovery["scenarios"][name].get("passed")
+            for name in ("api_recovery", "postgres_recovery", "browser_recovery",
+                         "combined_recovery", "reboot_recovery")
+        )
     )
     offsite = (operator_status.get("host") or {}).get("offsite_backup") or {
         "status": "unconfigured", "configured": False, "encrypted": False,
@@ -124,11 +160,14 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
     offsite_restore = offsite_restore_evidence or {
         "status": "missing", "checks": 0, "passed": 0,
     }
+    offsite_restore = {**offsite_restore,
+                      "validity": dr_evidence_validity(offsite_restore, revision, now)}
     offsite_restore_passed = (
         offsite_restore.get("status") == "completed"
         and int(offsite_restore.get("checks") or 0) >= 8
         and int(offsite_restore.get("passed") or 0)
         == int(offsite_restore.get("checks") or 0)
+        and offsite_restore["validity"]["valid"] is True
     )
     snapshot_rejection = snapshot_rejection_evidence or {
         "status": "missing", "checks": 0, "passed": 0,
@@ -308,12 +347,14 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
             "caídas aisladas, combinadas y reboot completo recuperados sin mutar FPL",
             levels=("A1", "A2", "A3"),
             observed={
+                "scope": "same_host_service_recovery",
                 "status": host_recovery.get("status"),
                 "completed": host_recovery.get("completed"),
                 "required": host_recovery.get("required"),
                 "scenarios": host_recovery.get("scenarios") or {},
             },
-            required={"status": "completed", "scenarios": [
+            required={"status": "completed", "revision": revision,
+                      "max_age_seconds": DR_MAX_AGE_SECONDS, "scenarios": [
                 "api_recovery", "postgres_recovery", "browser_recovery",
                 "combined_recovery", "reboot_recovery",
             ]},
@@ -461,11 +502,14 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
             "OFF_HOST_RESTORE_PROVEN",
             "pass" if offsite_restore_passed else
             "blocked" if offsite_restore.get("status") == "failed" else "pending",
-            "restore desde copia off-host cifrada verificado sin mutar runtime",
+            "bases y modelos activos restaurados desde copia cifrada sin mutar runtime",
             levels=(), observed={key: offsite_restore.get(key) for key in (
-                "job_id", "status", "checks", "passed", "finished_at", "output_sha256",
+                "job_id", "status", "checks", "passed", "finished_at", "evidence_finished_at",
+                "output_sha256", "revision", "validity",
             )},
-            required={"status": "completed", "checks": ">=8", "all_passed": True},
+            required={"status": "completed", "checks": ">=8", "all_passed": True,
+                      "revision": revision, "max_age_seconds": DR_MAX_AGE_SECONDS,
+                      "scope": "databases_and_active_models"},
             source="job_runs.host_recovery_drill:offsite_restore",
             next_action="ejecutar restore drill desde el destino off-host autorizado",
         ),
