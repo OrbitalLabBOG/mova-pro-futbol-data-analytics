@@ -369,7 +369,10 @@ Contrato endurecido **v2, 02/10/2026**:
   el inventario real termine dentro de la ventana de backup con el perfil habitual de 0,10 CPU.
 - Restore PostgreSQL crea un cluster nuevo efímero, sin red ni puertos publicados,
   de la misma imagen PG fijada en Compose; restaura sin owner/ACL y compara todo el inventario.
-  Tiene límites de 768 MiB RAM y 2 GiB de almacenamiento tmpfs. Falla cerrado si los supera.
+  Tiene límites de 768 MiB RAM y 2 GiB en un filesystem ext4 desechable sobre disco,
+  creado bajo `/opt/orbital/restore-drills`; requiere root y al menos 3 GiB libres.
+  El filesystem se desmonta y elimina junto con el contenedor. Falla cerrado si supera
+  su capacidad. Los datos no usan tmpfs porque ese almacenamiento consumiría el cap de RAM.
 - Backups legacy v1 no acreditan el contrato v2: generar un backup nuevo antes del restore.
 - Readiness exige revisión exacta del runtime y evidencia con timezone de hasta 30 días;
   falta de revisión, caducidad o timestamp futuro produce `pending`, con la razón visible.
