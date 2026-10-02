@@ -174,8 +174,8 @@ exit 0
     python = scripts / 'python3'
     python.write_text('''#!/bin/bash
 if [[ "$1" == -m ]]; then
-  touch "$3/postgres-shadow.dump"
-  echo '{}' > "$3/manifest.json"
+  touch "$4/postgres-shadow.dump"
+  echo '{}' > "$4/manifest.json"
   exit "$BACKUP_EXIT"
 fi
 exec ''' + shlex.quote(sys.executable) + ''' "$@"
