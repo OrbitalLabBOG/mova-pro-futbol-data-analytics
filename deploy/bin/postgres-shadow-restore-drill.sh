@@ -42,10 +42,10 @@ PY
 restore_parent=/opt/orbital/restore-drills
 install -d -m 0700 -o root -g root "$restore_parent"
 available=$(df -B1 --output=avail "$restore_parent" | tail -n 1 | tr -d ' ')
-(( available >= 3 * 1024 * 1024 * 1024 )) || { echo 'insufficient restore disk budget' >&2; exit 3; }
+(( available >= 5 * 1024 * 1024 * 1024 )) || { echo 'insufficient restore disk budget' >&2; exit 3; }
 scratch=$(mktemp -d "$restore_parent/postgres.XXXXXXXX")
 mkdir "$scratch/data"
-fallocate -l 2G "$scratch/data.ext4"
+fallocate -l 4G "$scratch/data.ext4"
 mkfs.ext4 -q -F "$scratch/data.ext4"
 mount -o loop,nosuid,nodev,noexec "$scratch/data.ext4" "$scratch/data"
 chown 999:999 "$scratch/data"
@@ -56,7 +56,8 @@ docker run -d --name "$container" --network none --user postgres \
   --tmpfs /var/run/postgresql:rw,size=16m,uid=999,gid=999 \
   --tmpfs /tmp:rw,size=64m,mode=1777 \
   -e POSTGRES_HOST_AUTH_METHOD=trust -e POSTGRES_DB=mova_restore \
-  -e PGDATA=/var/lib/postgresql/data/pgdata "$image" >/dev/null
+  -e PGDATA=/var/lib/postgresql/data/pgdata "$image" \
+  postgres -c max_wal_size=128MB -c min_wal_size=80MB >/dev/null
 # initdb uses a temporary socket-only server; TCP readiness waits for the final server.
 ready=false
 for _ in $(seq 1 60); do
