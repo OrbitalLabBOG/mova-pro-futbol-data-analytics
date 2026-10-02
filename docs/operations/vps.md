@@ -2,14 +2,22 @@
 type: runbook
 name: "MOVA FPL — operación del stack VPS"
 created: 2026-08-22
-updated: 2026-09-29
+updated: 2026-10-02
 tags: [mova, fpl, vps, docker, systemd, observability]
 status: active
 ---
 
 # MOVA FPL — operación del stack VPS
 
-## Release canónica — 29 de septiembre
+## Release verificada — 2 de octubre
+
+La revisión `653051a` despliega DR v2 y pasó la recuperación de la copia cifrada externa:
+80 tablas PostgreSQL, tres SQLite y dos modelos. Doctor 24 PASS; nueve timers activos y
+autoridad A0/shadow. La [acta DR](../decisions/2026-27/release-20261002-653051a.md) registra
+los intentos, ajustes de capacidad, hashes y límites. Los drills del host siguen pendientes;
+esta prueba no acredita reconstrucción de un VPS vacío.
+
+## Antecedente de release — 29 de septiembre
 
 La revisión `7144cdd` consolidó el stack en `main` y desplegó engine, research y browser.
 La [acta de verificación](../decisions/2026-27/release-20260929-7144cdd.md) identifica
