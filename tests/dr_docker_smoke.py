@@ -15,7 +15,7 @@ engine='mova-fpl-engine:dr-test-'+suffix
 def run(args,**kwargs):
     return subprocess.run(args,check=True,**kwargs)
 try:
-    run(['docker','run','-d','--name',seed,'--network','none','--tmpfs','/var/lib/postgresql/data:rw,size=512m','-e','POSTGRES_HOST_AUTH_METHOD=trust','-e','POSTGRES_DB=fixture',image],stdout=subprocess.DEVNULL)
+    run(['docker','run','-d','--name',seed,'--network','none','--tmpfs','/var/lib/postgresql/data:rw,size=512m','-e','POSTGRES_HOST_AUTH_METHOD=trust','-e','POSTGRES_DB=fixture',image,'postgres','-c','idle_in_transaction_session_timeout=1s'],stdout=subprocess.DEVNULL)
     for _ in range(60):
         if subprocess.run(['docker','exec',seed,'pg_isready','-h','127.0.0.1','-U','postgres','-d','fixture'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode==0: break
         time.sleep(1)
@@ -26,6 +26,8 @@ try:
         def inventory(self, snapshot=None):
             result=super().inventory(snapshot)
             if snapshot:
+                # Exceed the source server's idle limit before using the snapshot.
+                time.sleep(2)
                 run(['docker','exec','-i',seed,'psql','-Xq','-v','ON_ERROR_STOP=1',
                      '-U','postgres','-d','fixture'], input="INSERT INTO ops.fixture VALUES(99, '{}');", text=True)
             return result
@@ -38,7 +40,7 @@ try:
     (target/'manifest.json').write_text(json.dumps(manifest))
     failed=subprocess.run(['bash',str(repo/'deploy/bin/postgres-shadow-restore-drill.sh'),str(target)],env={**os.environ,'MOVA_REPO_DIR':str(repo)},stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
     if failed.returncode==0: raise RuntimeError('semantic corruption accepted')
-    print(json.dumps({'postgres_restore':'pass','concurrent_snapshot':'pass','corrupt_inventory':'rejected','production_mutated':False}),flush=True)
+    print(json.dumps({'postgres_restore':'pass','concurrent_snapshot':'pass','idle_snapshot_timeout':'pass','corrupt_inventory':'rejected','production_mutated':False}),flush=True)
     shutil.copytree(repo/'mova_fpl', root/'mova_fpl', ignore=shutil.ignore_patterns('__pycache__'))
     (root/'Dockerfile.dr-test').write_text('FROM '+args.engine_base+'\nCOPY mova_fpl /app/mova_fpl\n')
     run(['docker','build','-q','-t',engine,'-f',str(root/'Dockerfile.dr-test'),str(root)],stdout=subprocess.DEVNULL)

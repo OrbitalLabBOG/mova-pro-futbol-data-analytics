@@ -89,7 +89,11 @@ class Client:
             self.prefix + ['psql', '-w', '-XAtq', '-v', 'ON_ERROR_STOP=1'] + self.args,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
         try:
-            keeper.stdin.write('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY;\nSELECT pg_export_snapshot();\n')
+            # Inventory and dump each have a 900 s client timeout. Keep their
+            # shared snapshot alive beyond that bounded window even when the
+            # server's normal idle transaction limit is much shorter.
+            keeper.stdin.write("SET idle_in_transaction_session_timeout = '35min';\n"
+                               'BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY;\nSELECT pg_export_snapshot();\n')
             keeper.stdin.flush()
             if not select.select([keeper.stdout], [], [], 30)[0]:
                 raise RuntimeError('PostgreSQL snapshot export timed out')
