@@ -1,0 +1,102 @@
+{
+  "active_timer_count": 9,
+  "authority": {
+    "browser_writes": false,
+    "current_action_level": "A0",
+    "kill_switch": true,
+    "mode": "shadow",
+    "promotion_is_automatic": false,
+    "technical_eligible_level": "A0",
+    "writes_enabled": false
+  },
+  "doctor": {
+    "fail": 0,
+    "pass": 24,
+    "required_failures": 0,
+    "warn": 0
+  },
+  "offsite_restore": {
+    "checks": {
+      "artifacts_hashes_match": true,
+      "credentials_not_persisted": true,
+      "encrypted_backup_present": true,
+      "manifest_verified": true,
+      "postgres_restore_passed": true,
+      "remote_snapshot_downloaded": true,
+      "runtime_unchanged": true,
+      "sqlite_restore_passed": true
+    },
+    "downtime_seconds": 0,
+    "elapsed_seconds": 504,
+    "finished_at": "2026-10-02T18:24:23+00:00",
+    "fpl_state_mutated": false,
+    "host_service_restarted": false,
+    "revision": "653051a",
+    "scenario": "offsite_restore",
+    "schema": "mova-host-drill-v1",
+    "started_at": "2026-10-02T18:15:59+00:00",
+    "status": "pass"
+  },
+  "postgres": {
+    "backup_revision": "27f243d",
+    "created_at": "2026-10-02T17:45:59.811195+00:00",
+    "directory": "20261002T174032Z",
+    "dump_sha256": "d1d84e1f548dd61767e32ba55a2dbe8b5c4de61a62bde20ce6628196244eae01",
+    "manifest_sha256": "bbdfb160e5b7f2831a74b322b235102b419fbeeb3f67967ad4ea2be89f5232b1",
+    "schema": "mova-postgres-backup-v2",
+    "schemas": [
+      "agent",
+      "analytics",
+      "game",
+      "mova_meta",
+      "ops",
+      "raw",
+      "research"
+    ],
+    "tables": 80
+  },
+  "postgres_cpu_nano": 100000000,
+  "proof_sha256": "e0b0a79266c4eb873281d7a38910301f47c736be8c9cde4c393f09427c6a95aa",
+  "remaining_dr_containers": [],
+  "remaining_restore_directories": [],
+  "remaining_restore_mounts": [],
+  "resilience_gates": {
+    "host_recovery": "pending",
+    "offsite_backup": "pass",
+    "offsite_restore": "pass"
+  },
+  "restic_snapshot": {
+    "id": "a424ddbc489f37d88c56dc1b7e48adfc11fe2b749de805a536c781ff16725ccb",
+    "selection": "reconstructed_from_immutable_restic_ledger_at_drill_start",
+    "time": "2026-10-02T17:46:00.979624355Z"
+  },
+  "revision": "653051ae28b1d03f6d568ee99fc4b40f060ced8b",
+  "safety": "safe_to_wait",
+  "schema": "mova-dr-release-verification-v1",
+  "sqlite": {
+    "backup_revision": "27f243d",
+    "created_at": "2026-10-02T17:40:08.825352+00:00",
+    "databases": 3,
+    "directory": "20261002T174008Z",
+    "manifest_sha256": "10ab7fc40a6bf3a6e6139fc9ea131ccfce15f0f53b396c6b0301c6f56a0bed36",
+    "models": [
+      {
+        "family": "minutes",
+        "sha256": "6daf1bdf6b0e769d0fb05d2a80311c381d5770141411bbdd51e8c2a4f214d76b",
+        "version": "1.1.0"
+      },
+      {
+        "family": "points",
+        "sha256": "65793fc352df3168002fca8eb9d85cec6c6439a1bcc38d553e75ff5f53d78bd9",
+        "version": "1.1.0"
+      }
+    ],
+    "schema": "mova-fpl-backup-v2"
+  },
+  "tests": {
+    "deselected": 79,
+    "docker_timeout_fixture": "pass",
+    "passed": 1932,
+    "skipped": 1
+  }
+}

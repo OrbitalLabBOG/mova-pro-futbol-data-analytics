@@ -28,6 +28,13 @@ y la [guía de cierre, tamaños y límites](experiments/data_ground_truth/README
 
 ## Versiones y última comprobación
 
+El **2 de octubre de 2026**, la revisión desplegada `653051a` pasó el restore externo DR v2:
+80 tablas PostgreSQL, tres SQLite y dos modelos; doctor 24 PASS y autoridad A0/shadow.
+La [acta DR y su evidencia](docs/decisions/2026-27/release-20261002-653051a.md) separa esta
+recuperación de bases/modelos de los drills del host y la reconstrucción completa pendientes.
+
+### Antecedente — 22 de septiembre
+
 El **22 de septiembre de 2026**, el VPS quedó desplegado en `ccf21d3`:
 recuperación acotada de revisión causal, propuestas con enums válidos,
 clasificación separada de bloqueos operativos, atribución correcta en trazas
