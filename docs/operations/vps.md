@@ -219,6 +219,13 @@ intervalo de 15 minutos y heartbeat máximo de 20, dejaba al doctor en FAIL.
 Verificar `systemctl cat`, `systemctl list-timers` y el doctor después de
 cambiar cadencias; no aumentar la concurrencia quitando el lock.
 
+El lock interno del tick (`mova-fpl-worker.lock`) también debe usar
+`flock -n -E 75`, tanto en la unidad base como en el `ExecStart` del drop-in
+de capacidad. `SuccessExitStatus=75` acepta la omisión por contención; un
+exit 1 del worker sigue siendo fallo. El ensayo PostgreSQL del 03/10/2026
+detectó el código 1 del flock interno anterior. Tras corregirlo, la colisión
+controlada devolvió 75/success y el tick normal posterior 0/success.
+
 `mova-fpl-collector.timer` evalúa cadencias separadas para FPL, odds,
 calendario y eventos. La operación, tablas, calidad y recuperación están en
 [servicio autónomo de datos](data-service.md).
