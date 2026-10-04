@@ -3852,6 +3852,9 @@ class OpsDB:
                         or followup["subject_type"] != reservation["subject_type"]
                         or followup["provider"] != reservation["provider"]
                         or followup["created_at"] < reservation["created_at"]
+                        or followup_limit <= 0
+                        or followup_limit > job_limit
+                        or followup_actual > job_limit
                         or followup_actual > followup_limit):
                     raise ValueError("followup no prueba un run posterior equivalente dentro de límite")
             elif followup_reservation_id:

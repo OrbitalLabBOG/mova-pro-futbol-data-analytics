@@ -424,7 +424,11 @@ Elimina sus contenedores, imagen candidata y fixtures al terminar.
 
 El backup usa SQLite Online Backup API y ejecuta `quick_check`; nunca hace `cp` de una base
 viva ignorando WAL. PostgreSQL usa `pg_dump -Fc`, valida el catálogo del dump y conserva un
-manifest SHA-256. El timer diario ejecuta ambos. Retención local: 35 días.
+manifest SHA-256. Los timers de esta iteración ejecutan ambos cada seis horas. Retención local: 35 días.
+Objetivos, preflight y reconstrucción: [recuperación en host nuevo](host-recovery.md).
+El inventario DR horario conserva el resultado en `/var/lib/mova-dr/status.json`;
+su instalación no modifica los gates de autonomía ni acredita host reconstruido.
+
 La copia off-host cifrada es opt-in. El script crea un solo backup local verificado de SQLite y
 Postgres, sube ambos directorios a un snapshot cifrado y aplica retención remota de 35 diarios,
 8 semanales y 6 mensuales agrupados por host/tags (los paths llevan timestamps). La ubicación
