@@ -383,6 +383,14 @@ pytest -m integration_data -q
 pytest -m slow -q
 ```
 
+## Preparación de agentes y autonomía
+
+El [paquete del 04/10 UTC](experiments/research/20261004-preparation/README.md)
+fija la comparación 1.10.0/1.12.0, conserva capacidad operativa y audita los cuatro
+conflictos originales. Los tools son read-only; no encolan agentes ni conceden
+autoridad. La guía de recuperación por etapa está implementada para el siguiente
+release; el runtime verificado sigue en 4917df0.
+
 ## Recuperación de bases y modelos
 
 La iteración operativa incorpora backups cada seis horas, objetivo RPO de siete horas

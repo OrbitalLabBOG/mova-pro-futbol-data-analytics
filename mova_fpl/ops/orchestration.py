@@ -14,6 +14,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from mova_fpl.data.snapshot import load_snapshot
+from mova_fpl.ops.recovery_guidance import stage_guidance, exception_contracts
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB, sha256_json
 from mova_fpl.ops.schedule import (
@@ -273,6 +274,9 @@ def evaluate_workflow(observed: dict, *, now: datetime | None = None) -> dict:
         if row["status"] == "overdue":
             row["next_action"] = "diagnosticar etapa vencida; no ejecutar fuera de ventana"
 
+    for row in stages:
+        row["recovery"] = stage_guidance(row, now=current)
+
     by_name = {row["name"]: row for row in stages}
     violations: list[dict] = []
 
@@ -334,6 +338,7 @@ def evaluate_workflow(observed: dict, *, now: datetime | None = None) -> dict:
         "cycle_id": cycle.get("cycle_id"),
         "gw": cycle.get("gw"),
         "timing_policy_version": WORKFLOW_TIMING_POLICY_VERSION,
+        "recovery_contracts": exception_contracts(),
         "freshness": {
             "source_age_seconds": source_age,
             "source_max_age_seconds": source_max_age,

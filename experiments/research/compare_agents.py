@@ -22,13 +22,14 @@ def summarize(root, run_id):
     checks=[json.loads(line) for p in (root/'logs').glob(f'{run_id}.*.verification/checks.jsonl')
             for line in p.read_text().splitlines()]
     tokens=sum(int(r.get('input_tokens') or 0)+int(r.get('output_tokens') or 0) for r in receipts)
-    exact=bool(receipts) and all(r.get('input_tokens') is not None and r.get('output_tokens') is not None for r in receipts)
+    exact=bool(receipts) and all(type(r.get(k)) is int and r[k]>=0
+                               for r in receipts for k in ('input_tokens','output_tokens'))
     events=[json.loads(line) for p in (root/'logs').glob(f'{run_id}.*.events.jsonl')
             for line in p.read_text().splitlines()]
     usages=[e['usage'] for e in events if e.get('type')=='meter.usage']
     calls=[e['params']['item'] for e in events if e.get('method')=='item/completed'
            and e.get('params',{}).get('item',{}).get('type')=='mcpToolCall']
-    telemetry={'models':sorted({r['model'] for r in receipts}),
+    telemetry={'models':sorted({r.get('model') for r in receipts if r.get('model')}),
         'attempt_statuses':[r['status'] for r in receipts],
         'errors':[r.get('error_code') for r in receipts if r.get('error_code')],
         'tool_calls':dict(__import__('collections').Counter(c['tool'] for c in calls)),
@@ -48,6 +49,7 @@ def summarize(root, run_id):
     return {'run_id':run_id,'agent_version':request['agent_version'],**telemetry,
         'manifest_sha256':digest(request['manifest']),'scope_policy':request['scope_policy'],
         'comparison_context': {key: request.get('agent_release', {}).get(key) for key in (
+            'model', 'reasoning_effort', 'output_schema', 'codex_version',
             'context_profile', 'execution', 'interactive_evidence', 'search_window_days',
             'discovery_profile', 'evidence_handoff', 'logical_token_guard', 'execution_timeout_ms')},
         'source_method': request.get('experiment', {}).get('source_method', 'sequential_live_fetch'),
@@ -88,9 +90,12 @@ def compare(root, baseline_id, candidate_id):
         'single_successful_attempt_each':baseline['attempt_statuses']==candidate['attempt_statuses']==['completed'],
         'same_context':baseline.get('comparison_context') is not None and baseline.get('comparison_context')==candidate.get('comparison_context'),
         'same_source_method':baseline.get('source_method') is not None and baseline.get('source_method')==candidate.get('source_method'),
+        'receipt_model_matches_release':all(
+            arm['models']==[arm['comparison_context'].get('model')]
+            for arm in (baseline,candidate)),
         'baseline_within_budget':baseline['tokens'] is not None and 0<=baseline['tokens']<=baseline['job_token_limit'],
         'candidate_within_budget':candidate['tokens'] is not None and 0<=candidate['tokens']<=candidate['job_token_limit'],
-        'no_supported_signal_regression':len(candidate['accepted_subjects'])>=len(baseline['accepted_subjects']),
+        'no_supported_signal_regression':set(baseline['accepted_subjects']).issubset(candidate['accepted_subjects']),
         'material_coverage_gain':candidate['verified_subjects']>=baseline['verified_subjects']+2,
         'no_conflict_regression':candidate['unresolved_conflicts']<=baseline['unresolved_conflicts'],
         'tool_used':candidate['tool_checks']>0,

@@ -1,0 +1,103 @@
+{
+  "schema": "mova-research-pair-preparation-v1",
+  "generated_at": "2026-10-04T01:33:55.305912+00:00",
+  "status": "deferred",
+  "checks": {
+    "same_model": true,
+    "same_reasoning_effort": true,
+    "same_interactive_evidence": true,
+    "same_quality_policy": true,
+    "same_output_schema": true,
+    "same_execution": true,
+    "same_logical_token_guard": true,
+    "same_context_profile": true,
+    "same_execution_timeout_ms": true,
+    "same_search_window_days": true,
+    "same_codex_version": true,
+    "same_evidence_handoff": true,
+    "same_discovery_profile": true,
+    "same_sealed_job_limit": true,
+    "no_orphan_reservations": true,
+    "gameweek_within_budget": true,
+    "gameweek_capacity_after_operational_reserve": false,
+    "month_within_budget": true,
+    "month_capacity_after_operational_reserve": true
+  },
+  "versions": {
+    "baseline": "1.10.0",
+    "candidate": "1.12.0",
+    "active": "1.10.0"
+  },
+  "intentional_differences": {
+    "coverage_allocation": [
+      null,
+      "club_first_pass_v1"
+    ],
+    "research_agenda": [
+      "multi_branch_v1",
+      "focus_completion_v1"
+    ]
+  },
+  "request_sha256": "15a2a99d4ee215892fb52062148c743692e4b43fcca3a067c4320d345d1f448c",
+  "manifest_sha256": "135658d968f08d76eacc21879d0bbee5cbe9d6cccf8e1ea993809c858a512389",
+  "scope_policy": {
+    "coverage_subjects": "exact_manifest_focus",
+    "freshness_mode": "material_exception_only",
+    "healthy_player_searches": "forbidden",
+    "max_documents": 16,
+    "max_material_signals": 8,
+    "max_web_queries": 16,
+    "on_budget_exhaustion": "mark_remaining_not_checked",
+    "run_kind": "forced",
+    "schema": "mova-research-scope-v1"
+  },
+  "focus_subjects": 25,
+  "common_contract": {
+    "model": "gpt-6-astra",
+    "reasoning_effort": "medium",
+    "interactive_evidence": true,
+    "quality_policy": "research-claim-2026.09.5",
+    "output_schema": "mova-research-brief-v2",
+    "execution": "app_server",
+    "logical_token_guard": 900000,
+    "context_profile": "focus_on_demand",
+    "execution_timeout_ms": 480000,
+    "search_window_days": 7,
+    "codex_version": "0.153.4",
+    "evidence_handoff": "exact_verified_excerpt_v1",
+    "discovery_profile": "expanded_broad_v1"
+  },
+  "implementation_sha256s": {
+    "deploy/research/codex-worker.mjs": "d34769ee77921ea3243e9ace837a299ba99bff70cd605b5f7b084a7b8f5ac0fa",
+    "deploy/research/research-context.mjs": "62324e9df56e88487e5e6f5321edc1f8991afd6d61db07122151068be4958359",
+    "deploy/research/evidence-tool.py": "27f76e39a7691c97777c340f8a089f93476965d535f9d479f3e370001fc4c1e7",
+    "mova_fpl/ops/agent_releases.json": "95a8cc85fb2636ad132328759e733fe69507634ba9572cc5e1046e8bb208bb08"
+  },
+  "budget": {
+    "per_arm_maximum_tokens": 1000000,
+    "pair_maximum_tokens": 2000000,
+    "preserved_operational_tokens": 1000000,
+    "required_available_tokens": 3000000,
+    "required_available_uses": 3,
+    "available": {
+      "gameweek": {
+        "remaining_tokens": 2310934,
+        "remaining_uses": 24
+      },
+      "month": {
+        "remaining_tokens": 16000000,
+        "remaining_uses": 60
+      }
+    }
+  },
+  "enqueued": false,
+  "budget_reserved": false,
+  "external_calls": 0,
+  "runtime_mutated": false,
+  "limitations": [
+    "Recheck live capacity and seal a fresh common manifest before enqueue.",
+    "Token guard is reactive, not a physical inference cutoff.",
+    "This compares the combined agenda/allocation change, not allocation alone.",
+    "Preparation is not quality evidence, authority or multi-GW acceptance."
+  ]
+}

@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — lifecycle de decisión shadow"
 created: 2026-08-28
-updated: 2026-09-20
+updated: 2026-10-04
 tags: [mova, fpl, decision-envelope, validator, shadow]
 status: active
 ---
@@ -141,3 +141,34 @@ huérfanos o terminales, mueve conjuntamente el request de un resultado rechazad
 `decision_deliberation_artifacts_quarantined` en `audit_events`. Una segunda pasada debe reportar
 cero procesados y cero cuarentenas. No borrar manualmente evidencia: las colisiones se conservan
 con hash y secuencia.
+
+## Preparación de recuperación por etapa — 04/10 UTC
+
+`recovery_guidance.py` añade `stages[].recovery` y `recovery_contracts` al workflow.
+Es guía de sólo lectura, ligada a `workflow-timing-1.0.0`; no ejecuta repairs,
+programa retries, cambia veredictos ni habilita FPL. Requiere desplegar el release
+que la contiene para verla en el VPS. Las fronteras del scheduler y driver siguen
+siendo las que hacen enforcement.
+
+| Situación | Respuesta | Límite / escalamiento |
+| --- | --- | --- |
+| Espera de worker/import | Observar el request existente | No duplicar clave/reserva; al agotar recuperación, escalar |
+| Lock ocupado | Diferir al siguiente tick | Exit 75; no eliminar locks ni forzar agentes |
+| Datos stale | Refrescar y volver a sellar | Manifest/envelope/preflight nuevos; decisión vieja permanece cerrada |
+| Sesión expirada | Bloquear y solicitar reauth supervisada | No retry ciego ni copia de perfil |
+| Presupuesto agotado | Diferir sin inferencia | No ampliar allowance ni activar proveedor alterno |
+| Research insuficiente | Conservar not_checked y blocker | No completar cobertura o fechas por inferencia |
+| Output incompleto/rechazado | Conservar receipt, quarantine y tombstone | Nueva request auditada sólo con causa, capacidad y ventana válidas |
+| Save ambiguo | Leer post-state y conciliar apply-once | Ningún segundo save sin resultado establecido |
+| Settlement pendiente | Esperar finished + data_checked | No fabricar cierre por reloj ni activar review antes |
+
+Cada etapa conserva `target_at`, `recovery_until` y `hard_stop_at` existentes.
+Para una etapa pendiente/esperando/fallida: margen agotado → `escalate`; hard stop
+pasado → `escalate_and_stop`. No-action/policy bloqueada preservan su resultado;
+settlement/review conservan base oficial sin deadline inventado. Un save ambiguo
+siempre exige reconciliación antes de retry, incluso cuando ya venció la ventana.
+
+La recuperación efectiva aún debe demostrar AC-03/08 sobre una GW real. La guía
+no suma rehearsals, jornadas passing ni aceptación sin rescates. El
+[paquete de preparación](../../experiments/research/20261004-preparation/README.md)
+fija comparación, presupuesto y evidencia histórica pendiente.
