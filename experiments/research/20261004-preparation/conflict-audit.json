@@ -1,0 +1,149 @@
+{
+  "schema": "mova-research-conflict-audit-v1",
+  "generated_at": "2026-10-04T01:33:49.389760+00:00",
+  "findings": [
+    {
+      "conflict_id": "conflict_a3fcb96c1b4a43bab5160c800a1a5ecc",
+      "cycle_id": "2026-27-gw06",
+      "research_run_id": "research_73c7968ad6c2c3c71c4fc22fc7515a6d",
+      "subject": "Erling Haaland",
+      "source_count": 2,
+      "original_documents": [
+        {
+          "document_id": "document_b007aee4cb7dc5b15ebe54aab9fb0699",
+          "fetch_status": "verified",
+          "published_at": null,
+          "artifact_sha256": "16bda7c53e705024f02ad29c9fbb02474e6de629201b0d6ea627f1ab5277f881",
+          "publication_date_verified": false,
+          "issues": [
+            "original_publication_date_unverified"
+          ]
+        },
+        {
+          "document_id": "document_9d520a5a99082f47755b1c19ac063f72",
+          "fetch_status": "verified",
+          "published_at": null,
+          "artifact_sha256": "5c95d34fdc3c5e4bb50b180dd64c19bf8e62aac2714a488989ef82587ca32bf6",
+          "publication_date_verified": false,
+          "issues": [
+            "original_publication_date_unverified"
+          ]
+        }
+      ],
+      "classification": "evidence_insufficient",
+      "reasons": [
+        "original_publication_date_unverified"
+      ],
+      "resolution_performed": false,
+      "next_action": "Preserve conflict; recover original evidence and establish exact period before supervised adjudication."
+    },
+    {
+      "conflict_id": "conflict_ca9a4cd8925f4806ad6a948afc740639",
+      "cycle_id": "2026-27-gw04",
+      "research_run_id": "research_38bf2fbd7ff0bd5f1e215ea470c71870",
+      "subject": "Erling Haaland",
+      "source_count": 1,
+      "original_documents": [
+        {
+          "document_id": "document_f96188e81ebec1b1e5589b3084254d66",
+          "fetch_status": "verified",
+          "published_at": "2026-09-10T00:00:00+00:00",
+          "artifact_sha256": "096b6b5022a474908c27246fce28d25fdd12a1e7c73217da0fbf47fd0eb68898",
+          "publication_date_verified": false,
+          "issues": [
+            "original_publication_date_unverified"
+          ]
+        }
+      ],
+      "classification": "evidence_insufficient",
+      "reasons": [
+        "original_publication_date_unverified"
+      ],
+      "resolution_performed": false,
+      "next_action": "Preserve conflict; recover original evidence and establish exact period before supervised adjudication."
+    },
+    {
+      "conflict_id": "conflict_8af84fc11cc4482aa7e4dbf2a22d94b6",
+      "cycle_id": "2026-27-gw02",
+      "research_run_id": "research_cac868ddf4cc4014b34a2740898e1441",
+      "subject": "Marc Guehi",
+      "source_count": 2,
+      "original_documents": [
+        {
+          "document_id": "document_09c8c1e5a0de4fd3b82dd61277fc4f0d",
+          "fetch_status": "legacy_unverified",
+          "published_at": "2026-08-23T00:00:00+00:00",
+          "artifact_sha256": null,
+          "publication_date_verified": false,
+          "issues": [
+            "original_fetch_unverified",
+            "original_excerpt_missing_or_changed",
+            "original_artifact_missing_changed_or_unbound",
+            "original_publication_date_unverified"
+          ]
+        },
+        {
+          "document_id": "document_c527d030f4304d69bb7f17c97d30d48a",
+          "fetch_status": "legacy_unverified",
+          "published_at": "2026-08-27T00:00:00+00:00",
+          "artifact_sha256": null,
+          "publication_date_verified": false,
+          "issues": [
+            "original_fetch_unverified",
+            "original_excerpt_missing_or_changed",
+            "original_artifact_missing_changed_or_unbound",
+            "original_publication_date_unverified"
+          ]
+        }
+      ],
+      "classification": "evidence_insufficient",
+      "reasons": [
+        "original_artifact_missing_changed_or_unbound",
+        "original_excerpt_missing_or_changed",
+        "original_fetch_unverified",
+        "original_publication_date_unverified"
+      ],
+      "resolution_performed": false,
+      "next_action": "Preserve conflict; recover original evidence and establish exact period before supervised adjudication."
+    },
+    {
+      "conflict_id": "conflict_29274809ec6c4c98be449d3a650b8e62",
+      "cycle_id": "2026-27-gw02",
+      "research_run_id": "research_016a64c302e545d3a20b9dd3ad1a48ea",
+      "subject": "Ollie Watkins",
+      "source_count": 1,
+      "original_documents": [
+        {
+          "document_id": "document_7a0ba61508604a35815dfd1ecf049d77",
+          "fetch_status": "legacy_unverified",
+          "published_at": "2026-08-24T00:00:00+00:00",
+          "artifact_sha256": null,
+          "publication_date_verified": false,
+          "issues": [
+            "original_fetch_unverified",
+            "original_excerpt_missing_or_changed",
+            "original_artifact_missing_changed_or_unbound",
+            "original_publication_date_unverified"
+          ]
+        }
+      ],
+      "classification": "evidence_insufficient",
+      "reasons": [
+        "original_artifact_missing_changed_or_unbound",
+        "original_excerpt_missing_or_changed",
+        "original_fetch_unverified",
+        "original_publication_date_unverified"
+      ],
+      "resolution_performed": false,
+      "next_action": "Preserve conflict; recover original evidence and establish exact period before supervised adjudication."
+    }
+  ],
+  "external_calls": 0,
+  "runtime_mutated": false,
+  "conflicts_resolved": 0,
+  "limitations": [
+    "Inventory truncation is treated as missing evidence, never as absence of conflict.",
+    "Verified fetch/hash/date does not prove that claims are semantically compatible.",
+    "Fresh web content cannot replace missing original evidence or backfill timestamps."
+  ]
+}

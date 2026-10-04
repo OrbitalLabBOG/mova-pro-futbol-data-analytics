@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — contexto estratégico e investigación"
 created: 2026-08-27
-updated: 2026-09-29
+updated: 2026-10-04
 tags: [mova, fpl, strategy, research, codex, evidence]
 status: active
 ---
@@ -392,3 +392,18 @@ con noticias actuales: `resolve-conflict` exige exactamente los documentos del
 run original con hashes verificados. Un documento sin fecha fiable no autoriza
 resolver una contradicción temporal. Research coverage 90/80 y tres jornadas
 passing mantienen sus requisitos.
+
+## Preparación pareada y auditoría — 04/10 UTC
+
+El [protocolo preparado](../../experiments/research/20261004-preparation/README.md)
+fija 1.10.0 / 1.12.0 con entrada común, contratos, método de fuentes, presupuesto
+máximo y reserva operativa. El par queda deferred: 2.310.934 tokens GW frente a
+3M requeridos para dos brazos y un job operativo. No se encoló ni amplió allowance.
+Se comparan agenda y distribución conjuntamente; aislar distribución requiere
+1.11.0 / 1.12.0. Resultados, metering y capacidad se revisan de nuevo al ejecutarlo.
+
+`audit_conflicts.py` verificó los originales sellados sin descargar web de nuevo.
+Los dos conflictos de Haaland conservan artefactos/fragmentos íntegros pero sin
+publicación verificada; los otros dos son legacy_unverified sin evidencia original
+sellada. Los cuatro permanecen abiertos. Una resolución exige evidencia original
+suficiente y revisión semántica; el auditor sólo clasifica, no adjudica.
