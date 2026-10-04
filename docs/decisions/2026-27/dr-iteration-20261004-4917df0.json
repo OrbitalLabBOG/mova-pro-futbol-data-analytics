@@ -1,0 +1,145 @@
+{
+  "schema": "mova-dr-iteration-acta-v1",
+  "runtime_revision": "4917df03552f3c2d41b34f8ebd4af3a569ddb59e",
+  "owner": "julian",
+  "merged_prs": [
+    186,
+    187,
+    188
+  ],
+  "authority": "A0_shadow_kill_switch_on_writes_disabled",
+  "targets": {
+    "backup_interval_hours": 6,
+    "rpo_hours": 7,
+    "data_model_restore_rto_minutes": 15,
+    "host_rebuild_rto_minutes": 120
+  },
+  "preflight": {
+    "generated_at": "2026-10-04T00:38:24.716123+00:00",
+    "passed_checks": 6,
+    "data_age_seconds": 1674,
+    "sqlite_backup": "20261004T001030Z",
+    "postgres_backup": "20261004T001042Z",
+    "external_snapshot_prefix": "f63187e6ec6a",
+    "backup_source_revision": "653051a",
+    "host_reconstruction_proven": false
+  },
+  "budget": {
+    "resolved": [
+      "budget_01c7c07ea38ce1c1a4371d25",
+      "budget_1e10286b0d3b1005df945552"
+    ],
+    "reviewed_pending": [
+      "budget_84eab76009624c2ddda2b674",
+      "budget_ba17f01c9a662539cdf53390"
+    ],
+    "original_job_limit": 160000,
+    "followup_actual_tokens": [
+      150956,
+      142427
+    ],
+    "limits_increased": false
+  },
+  "research": {
+    "candidate": "1.12.0",
+    "active": "1.10.0",
+    "llm_calls_this_iteration": 0,
+    "conflicts_resolved_this_iteration": 0,
+    "quality_proven": false
+  },
+  "scenarios": [
+    {
+      "scenario": "offsite_restore",
+      "status": "pass",
+      "checks": 8,
+      "elapsed_seconds": 323,
+      "downtime_seconds": 0,
+      "started_at": "2026-10-04T00:38:06+00:00",
+      "finished_at": "2026-10-04T00:43:29+00:00",
+      "artifact_sha256": "bac1b8c35534ca0318fb132dec3b29db001ca5d7de88648fca604ad4cccbda18",
+      "job_id": "job_de5474e9289f4f16a68557d126d1221b",
+      "revision": "4917df0",
+      "fpl_state_mutated": false
+    },
+    {
+      "scenario": "api_recovery",
+      "status": "pass",
+      "checks": 5,
+      "recorded_downtime_seconds": 28,
+      "started_at": "2026-10-04T00:43:47+00:00",
+      "finished_at": "2026-10-04T00:44:15+00:00",
+      "artifact_sha256": "0d73b2b12a969e1bf1e60a640dd378a2634994193b95ec382d9123d5c52f053e",
+      "job_id": "job_f680b74b79e24cb3b4c6218172729096",
+      "revision": "4917df0",
+      "fpl_state_mutated": false,
+      "measurement_note": "includes sqlite integrity check, not independently measured endpoint outage"
+    },
+    {
+      "scenario": "postgres_recovery",
+      "status": "pass",
+      "checks": 8,
+      "downtime_seconds": 16,
+      "started_at": "2026-10-04T00:44:34+00:00",
+      "finished_at": "2026-10-04T00:46:54+00:00",
+      "artifact_sha256": "0e04a3794b155074f2658ed929ca1df47d25d51d75b5db66e6ade8bc465fa027",
+      "job_id": "job_ebc6827719c2402ea3754b26769e8f57",
+      "revision": "4917df0",
+      "fpl_state_mutated": false
+    },
+    {
+      "scenario": "browser_recovery",
+      "status": "pass",
+      "checks": 9,
+      "downtime_seconds": 17,
+      "started_at": "2026-10-04T00:47:36+00:00",
+      "finished_at": "2026-10-04T00:49:09+00:00",
+      "artifact_sha256": "0aa6423d4847bbc507cb61602e04b03796a499a859dcbc3dc08b7aaa9d19e78d",
+      "job_id": "job_5a76ed9d87724b59bf90226ac7f54caf",
+      "revision": "4917df0",
+      "fpl_state_mutated": false
+    },
+    {
+      "scenario": "combined_recovery",
+      "status": "pass",
+      "checks": 13,
+      "downtime_seconds": 47,
+      "started_at": "2026-10-04T00:49:43+00:00",
+      "finished_at": "2026-10-04T00:53:07+00:00",
+      "artifact_sha256": "fa5357d1b8f8251c4addb662e3ea42a3ce7f7ed1fa1bd49c85be20ec526098cd",
+      "job_id": "job_77d5474a5eda47d8b7cb77d8d21fc4e2",
+      "revision": "4917df0",
+      "fpl_state_mutated": false
+    }
+  ],
+  "not_proven": [
+    "current_revision_reboot",
+    "blank_host_reconstruction",
+    "research_quality"
+  ],
+  "collector_lock_correction": {
+    "cause": "live base and capacity override retained default inner flock exit 1",
+    "canonical_template_already_correct": true,
+    "live_changed": true,
+    "contended_result": "success",
+    "contended_exit_status": 75,
+    "normal_result": "success",
+    "normal_exit_status": 0
+  },
+  "final_health": {
+    "observed_at": "2026-10-04T00:55:09.612822+00:00",
+    "doctor": {
+      "pass": 24,
+      "warn": 0,
+      "fail": 0,
+      "required_failures": 0
+    },
+    "verdict": "healthy",
+    "safety": "safe_to_wait",
+    "critical_open": 0,
+    "open_incidents": 0,
+    "failed_jobs_last_24h": 0,
+    "offsite_restore_gate": "pass",
+    "four_current_revision_proofs_valid": true,
+    "host_recovery_gate": "pending_reboot"
+  }
+}
