@@ -29,4 +29,8 @@ systemctl enable --now mova-fpl-analytics.timer
 systemctl enable --now mova-fpl-research.timer
 systemctl enable --now mova-fpl-postgres-sync.timer
 systemctl enable mova-fpl-reboot-recovery.service
+if systemctl is-active --quiet mova-fpl-offsite-backup.timer \
+  && "$repo_dir/deploy/bin/offsite-backup.sh" --config-paths >/dev/null 2>&1; then
+  systemctl enable --now mova-fpl-dr-status.timer
+fi
 systemctl list-timers --all 'mova-fpl-*' --no-pager

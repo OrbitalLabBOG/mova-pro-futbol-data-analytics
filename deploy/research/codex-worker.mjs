@@ -211,6 +211,12 @@ try {
     const attemptId = `attempt_${randomUUID().replaceAll("-", "")}`;
     const researchContext = isResearch ? buildResearchContext(request) : null;
     const researchPrompt = [
+      ...(isResearch && release.coverage_allocation === "club_first_pass_v1" ? [
+        "Sigue acquisition_plan.first_pass: intenta una fuente reciente para cada club pendiente antes de repetir discovery de un club ya cubierto; empieza por clubes de la plantilla propia.",
+        "Excepción acotada: una alerta material de lesión o capitanía puede requerir una segunda fuente; vuelve después a los clubes pendientes.",
+        "Una página sin fecha fiable no prueba actualidad y una noticia antigua no contradice una posterior sólo por describir estados distintos. Conserva conflictos históricos y no declares alta médica.",
+        "No aumentes consultas, documentos, tiempo ni tokens del request. Si la primera pasada no cabe, conserva not_checked y explica la falta de cobertura por club.",
+      ] : []),
       ...(isResearch && release.interactive_evidence ? [
         "Antes de incluir cada documento usa verify_research_evidence con su fragmento literal, fecha ISO con timezone, ID y tipo de claim.",
         "La herramienta comprueba una fuente por llamada. Reutiliza el mismo fragmento si nombra varios sujetos; covered_focus_elements enumera el foco explícitamente respaldado por ese fragmento; no repitas llamadas idénticas por jugador.",

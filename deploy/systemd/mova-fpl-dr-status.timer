@@ -1,0 +1,11 @@
+[Unit]
+Description=Check MOVA FPL recovery objectives hourly
+
+[Timer]
+OnCalendar=hourly
+RandomizedDelaySec=300s
+Persistent=true
+Unit=mova-fpl-dr-status.service
+
+[Install]
+WantedBy=timers.target

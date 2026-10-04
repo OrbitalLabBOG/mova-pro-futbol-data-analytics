@@ -6,7 +6,8 @@ After=mova-fpl-stack.service mova-fpl-backup.service
 [Service]
 Type=oneshot
 WorkingDirectory=@@REPO_DIR@@
-ExecStart=/usr/bin/flock -n /run/lock/mova-fpl-worker.lock /usr/local/bin/mova postgres sync
+ExecStart=/usr/bin/flock -w 60 -E 75 /run/lock/mova-fpl-worker.lock /usr/local/bin/mova postgres sync
+SuccessExitStatus=75
 TimeoutStartSec=15min
 Nice=10
 

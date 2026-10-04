@@ -153,7 +153,7 @@ llamada ya terminada. Una reserva `reserved` cuyo subject ya no está queued se 
 
 Cada overrun individual recorre un ledger inmutable `open -> reviewed -> resolved|waived`.
 `reviewed` exige acción y razón; `resolved` exige una reserva posterior del mismo tipo de trabajo
-y proveedor, liquidada dentro del límite, enlazada con `--followup-reservation-id`. `waived` es
+y proveedor, liquidada dentro del límite original y de su propio límite (que no puede ser mayor), enlazada con `--followup-reservation-id`. `waived` es
 una excepción humana explícita y nunca se automatiza. Replay con la misma clave y semántica
 reutiliza evidencia; una clave reutilizada con otra transición falla sin mutar. El scorecard
 mantiene economics en pending mientras exista un caso `reviewed_pending`.

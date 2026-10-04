@@ -1,8 +1,8 @@
 [Unit]
-Description=Schedule MOVA FPL daily verified backup
+Description=Schedule MOVA FPL verified backup every six hours
 
 [Timer]
-OnCalendar=*-*-* 04:17:00 America/Bogota
+OnCalendar=*-*-* 04,10,16,22:17:00 America/Bogota
 RandomizedDelaySec=300s
 Persistent=true
 Unit=mova-fpl-backup.service

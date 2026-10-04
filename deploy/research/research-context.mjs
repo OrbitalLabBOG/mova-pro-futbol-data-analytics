@@ -47,6 +47,17 @@ export function buildResearchContext(request) {
       'candidate decision uncertainty', 'uncovered club groups'],
     on_shortfall: 'Keep budgets unchanged; report not_checked and explain missing evidence.',
   };
+  if (request.agent_release?.coverage_allocation === 'club_first_pass_v1') {
+    const own = new Set(unique.filter(row =>
+      row.focus_reason?.includes('current_squad')).map(row => row.element));
+    const firstPass = clubs.map(group => ({...group,
+      own_squad_subjects: group.elements.filter(element => own.has(element)).length,
+    })).sort((a,b) => b.own_squad_subjects - a.own_squad_subjects
+      || b.elements.length - a.elements.length || a.team.localeCompare(b.team));
+    context.acquisition_plan.coverage_allocation = 'club_first_pass_v1';
+    context.acquisition_plan.first_pass = firstPass;
+    context.acquisition_plan.before_repeat = 'Attempt uncovered clubs before a second discovery pass on a covered club; retain not_checked when evidence or quota is unavailable.';
+  }
   if (request.agent_release?.context_profile === 'focus_on_demand') {
     for (const key of ['signals', 'prior_gameweek_signals', 'previous_active_signals']) {
       if (Object.hasOwn(summary,key)) {

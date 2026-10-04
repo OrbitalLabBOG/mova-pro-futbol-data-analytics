@@ -1,7 +1,7 @@
 ---
 type: docs
 name: MOVA Fantasy Fútbol Data Analytics
-updated: 2026-10-02
+updated: 2026-10-04
 status: active
 tags: [mova, fpl, runtime, operations]
 ---
@@ -375,6 +375,12 @@ pytest -m slow -q
 ```
 
 ## Recuperación de bases y modelos
+
+La iteración operativa incorpora backups cada seis horas, objetivo RPO de siete horas
+y preflight horario de datos/modelos, imágenes y recursos. El
+[runbook de reconstrucción](docs/operations/host-recovery.md) fija fases y criterios
+de aceptación en un host distinto. El preflight no acredita por sí solo recuperación
+completa; reboot, integraciones y artefactos externos conservan su evidencia separada.
 
 El contrato DR v2 exige las tres bases SQLite y los dos modelos activos sellados por hash.
 El dump PostgreSQL y su inventario de todas las tablas comparten un snapshot exportado;

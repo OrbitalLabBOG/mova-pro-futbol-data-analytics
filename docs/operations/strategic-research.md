@@ -369,3 +369,26 @@ no entra al backtest de esa GW. Los checks léxicos no validan todo el significa
 Antes del ensayo online pareado de máximo 2M tokens, comprobar presupuesto y conservar
 capacidad operativa. El snapshot de 29/09 03:11 UTC dejó 2.310.934 tokens en la GW: un par de
 2M dejaría 310.934, menos que un job operativo de 1M. El par se difiere sin ampliar allowances.
+
+## Iteración operativa 04/10/2026 UTC
+
+La candidata Researcher **1.12.0** agrega `club_first_pass_v1`: deriva del foco
+sellado una primera pasada por club, prioriza sujetos propios y exige intentar
+clubes sin cobertura antes de repetir discovery de un club ya cubierto. Una alerta
+material puede requerir corroboración; después vuelve a los grupos pendientes.
+No aumenta consultas, documentos, tiempo ni tokens. Conserva fecha verificada,
+conflictos históricos y `not_checked`; no interpreta una noticia de otro período
+como evidencia contemporánea ni como alta médica. La activa permanece **1.10.0**.
+
+La última cobertura viva observada es **12/25 = 48%**, con siete de quince sujetos
+propios verificados y cinco de diez candidatos. Es evidencia parcial del 22/09,
+no información fresca del 04/10. El foco se distribuye en trece clubes y varios
+quedaron sin evidencia; el candidate intenta evitar repetir discovery sobre los
+grupos ya cubiertos. Su efectividad necesita un experimento comparable, con uso
+real registrado; no acredita una GW passing ni resuelve conflictos existentes.
+
+Cuatro conflictos siguen sin resolver (uno en GW6). No se borraron ni se cerraron
+con noticias actuales: `resolve-conflict` exige exactamente los documentos del
+run original con hashes verificados. Un documento sin fecha fiable no autoriza
+resolver una contradicción temporal. Research coverage 90/80 y tres jornadas
+passing mantienen sus requisitos.
