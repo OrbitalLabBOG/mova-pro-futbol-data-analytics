@@ -15,7 +15,9 @@ COPY deploy/research/research-context.mjs /opt/mova-research/research-context.mj
 COPY deploy/research/research-normalize.mjs /opt/mova-research/research-normalize.mjs
 COPY deploy/research/research-brief.schema.json /opt/mova-research/research-brief.schema.json
 COPY deploy/research/decision-deliberation.schema.json /opt/mova-research/decision-deliberation.schema.json
-RUN chmod 0555 /opt/mova-research/codex-worker.mjs /opt/mova-research/research-normalize.mjs && install -d -m 0700 -o 10002 -g 10002 /home/research/.codex /tmp/mova-research
+RUN chmod -R a+rX /opt/mova-research \
+ && chmod 0555 /opt/mova-research/codex-worker.mjs /opt/mova-research/research-normalize.mjs \
+ && install -d -m 0700 -o 10002 -g 10002 /home/research/.codex /tmp/mova-research
 
 ENV HOME=/home/research \
     CODEX_HOME=/home/research/.codex \
