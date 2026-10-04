@@ -1,0 +1,95 @@
+{
+  "schema": "mova-service-recovery-acta-v1",
+  "runtime_revision": "653051ae28b1d03f6d568ee99fc4b40f060ced8b",
+  "owner": "julian",
+  "scenarios": [
+    {
+      "scenario": "api_recovery",
+      "passed_checks": 5,
+      "recorded_downtime_seconds": 25,
+      "started_at": "2026-10-03T23:38:49+00:00",
+      "finished_at": "2026-10-03T23:39:14+00:00",
+      "artifact_sha256": "4d5718f7fbd33c49e9eea6a10ae83ccc993621349f583cfc0a9ef8d22cf52402",
+      "job_id": "job_c3a6cbdfd15f4422bfc3ccb5fa4739d1",
+      "status": "pass",
+      "fpl_state_mutated": false
+    },
+    {
+      "scenario": "postgres_recovery",
+      "passed_checks": 8,
+      "recorded_downtime_seconds": 17,
+      "started_at": "2026-10-03T23:39:47+00:00",
+      "finished_at": "2026-10-03T23:42:43+00:00",
+      "artifact_sha256": "f4038fe2051a818eebce10949f0ae288f231da202261e2c2c0e893f337bf2ecc",
+      "job_id": "job_626bc0c746c64b158a4c670c020d95eb",
+      "status": "pass",
+      "fpl_state_mutated": false
+    },
+    {
+      "scenario": "browser_recovery",
+      "passed_checks": 9,
+      "recorded_downtime_seconds": 33,
+      "started_at": "2026-10-03T23:46:14+00:00",
+      "finished_at": "2026-10-03T23:48:09+00:00",
+      "artifact_sha256": "6b209152ac7f60aaf80c70dbb537cd04172ae3d6cc4ebc739ae2fcb4f995eb45",
+      "job_id": "job_3886b8f0c6e04909839244bd4c5b7218",
+      "status": "pass",
+      "fpl_state_mutated": false
+    },
+    {
+      "scenario": "combined_recovery",
+      "passed_checks": 13,
+      "recorded_downtime_seconds": 49,
+      "started_at": "2026-10-03T23:48:48+00:00",
+      "finished_at": "2026-10-03T23:52:13+00:00",
+      "artifact_sha256": "a3300c83d993b21107721fdadddbc168e76a5ace099cf6a4584ccc86dbffb468",
+      "job_id": "job_770f40c5191140479983d7d31fde6268",
+      "status": "pass",
+      "fpl_state_mutated": false
+    }
+  ],
+  "tick_contention_correction": {
+    "cause": "inner flock default conflict exit 1",
+    "change": "flock -n -E 75 and SuccessExitStatus=75; base unit and existing capacity override",
+    "live_verification": {
+      "contended": {
+        "Result": "success",
+        "ExecMainStatus": 75
+      },
+      "normal": {
+        "Result": "success",
+        "ExecMainStatus": 0
+      }
+    },
+    "rollback_files_root": "/opt/orbital/backups/mova-fpl/service-recovery-20261003"
+  },
+  "prior_backup": {
+    "sqlite": "20261003T102102Z",
+    "postgres": "20261003T102113Z",
+    "external_snapshot_prefix": "9d4c1c7921fb"
+  },
+  "acceptance_scope": "same_host_service_recovery_four_scenarios",
+  "not_proven": [
+    "reboot_recovery_current_revision",
+    "blank_host_reconstruction"
+  ],
+  "application_images_changed": false,
+  "final_health": {
+    "doctor_at": "2026-10-03T23:55:28+00:00",
+    "doctor": {
+      "pass": 24,
+      "warn": 0,
+      "fail": 0
+    },
+    "cockpit_at": "2026-10-03T23:55:53+00:00",
+    "verdict": "healthy",
+    "safety": "safe_to_wait",
+    "critical_open": 0,
+    "open_incidents": 0,
+    "failed_jobs_last_24h": 0,
+    "four_current_revision_proofs_valid": true,
+    "host_recovery_gate": "pending_reboot",
+    "offsite_restore_gate": "pass",
+    "authority": "A0_shadow_kill_switch_on_writes_disabled"
+  }
+}
