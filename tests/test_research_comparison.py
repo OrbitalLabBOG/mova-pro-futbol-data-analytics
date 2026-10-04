@@ -15,6 +15,8 @@ spec.loader.exec_module(comparison)
 def _write(root, run, *, limit=1000, tokens=500, version='1.10.0', subjects=2,
            context='focus_on_demand', source='sequential_live_fetch'):
     request = {'agent_version': version, 'agent_release': {
+        'model': 'gpt-6-astra', 'reasoning_effort': 'medium',
+        'output_schema': 'mova-research-brief-v2', 'codex_version': '0.153.4',
         'execution': 'app_server', 'context_profile': context, 'interactive_evidence': True},
         'experiment': {'source_method': source},
         'manifest': {'research_summary': {'focus': [{'element': i} for i in range(10)]}},
