@@ -28,6 +28,15 @@ y la [guía de cierre, tamaños y límites](experiments/data_ground_truth/README
 
 ## Versiones y última comprobación
 
+El **4 de octubre UTC / 3 de octubre Colombia**, la revisión desplegada `4917df0`
+incorporó backups cada seis horas, preflight DR horario, followups de presupuesto
+acotados y Researcher candidato 1.12.0 (activo 1.10.0). Pasó restore externo 8/8
+(323 s) y recuperación API/PG/browser/combinada 5/5, 8/8, 9/9 y 13/13;
+doctor final 24 PASS, sin WARN/FAIL. [Acta y límites](docs/decisions/2026-27/dr-iteration-20261004-4917df0.md):
+reboot y host vacío siguen pendientes; autoridad shadow/A0 intacta.
+
+### Antecedente — 2 de octubre
+
 El **2 de octubre de 2026**, la revisión desplegada `653051a` pasó el restore externo DR v2:
 80 tablas PostgreSQL, tres SQLite y dos modelos; doctor 24 PASS y autoridad A0/shadow.
 La [acta DR y su evidencia](docs/decisions/2026-27/release-20261002-653051a.md) separa esta
