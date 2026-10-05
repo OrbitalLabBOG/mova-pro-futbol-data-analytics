@@ -83,6 +83,16 @@ def test_r3_plan_is_authorized_only_with_all_a3_gates():
     }
 
 
+def test_preflight_blocks_at_workflow_hard_stop_before_official_deadline():
+    args = _inputs(_decision(captain=2, vice=1), controls=AUTONOMOUS_A3)
+    args["now"] = datetime(2026, 9, 4, 17, 15, tzinfo=timezone.utc)
+    args["team_state"]["observed_at"] = args["now"].isoformat()
+    result = build_execution_plan(**args)
+    assert result["authorization"]["status"] == "blocked"
+    codes = {row["code"] for row in result["authorization"]["checks"] if not row["passed"]}
+    assert "EXECUTION_HARD_STOP_OPEN" in codes
+
+
 def test_shadow_a0_fails_closed_with_explicit_blockers():
     selected = _decision(
         starters=(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12), captain=2, vice=3,
@@ -217,4 +227,4 @@ def test_preflight_service_persists_artifact_checks_and_reuses_key(tmp_path: Pat
         assert con.execute("SELECT COUNT(*) FROM execution_plans").fetchone()[0] == 1
         assert con.execute(
             "SELECT COUNT(*) FROM execution_preflight_checks"
-        ).fetchone()[0] == 16
+        ).fetchone()[0] == 17

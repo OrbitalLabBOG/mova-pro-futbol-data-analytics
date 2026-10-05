@@ -5,7 +5,7 @@ metadata:
   vertical: mova
   type: skill
   repo: mova-pro-futbol-data-analytics
-  updated: 2026-09-01
+  updated: 2026-10-04
 ---
 
 # MOVA FPL Operator
@@ -35,6 +35,10 @@ consulta ordinaria: `mova` y `/api/v1/status` son el contrato estable.
    Policy → Executor/Verifier → Reviewer. Un stage `complete` con outcome `blocked` y un
    `execute_verify=skipped_policy` es fail-closed correcto; una fila en `violations` sí es una
    contradicción operativa y bloquea. `runtime_mutated=false` debe permanecer explícito.
+   La iteración 04/10 expone `stages[].evidence`: terminalidad del import, edad,
+   cobertura y relación con el manifest. Imported no acredita calidad/frescura;
+   un manifest distinto es diagnóstico, no invalida por sí solo señales cuyos
+   contratos de TTL/as-of sigan vigentes.
 4. Si el estado es degradado, incompleto o contradictorio, ejecuta `mova doctor --json`.
    Para una respuesta compacta usa `mova safety` o `/api/v1/safety`: `unsafe` exige atención
    inmediata, `attention_required` exige leer `reasons`, y `safe_to_wait` sólo describe el estado
@@ -185,6 +189,31 @@ orchestration --actor ... --reason ... --idempotency-key ...`. Debe pasar al men
 declarar `external_calls=0` y `runtime_mutated=false`. Replay exacto reutiliza el job; la misma
 clave con actor/razón distintos es conflicto. Este drill prueba policy y dependencias, no cuenta
 como research, rehearsal browser, settlement ni aprobación de autonomía.
+
+## Recuperación y relojes — iteración 04/10
+
+Verifica la revisión desplegada antes de atribuir estas capacidades al VPS.
+`status.host.disaster_recovery`, `cockpit.resilience.backup_freshness` y
+`watchdog.disaster_recovery` deben concordar: reporte horario de la misma revisión,
+seis checks pass, máximo 90 minutos y edad real del snapshot dentro de RPO 7 h.
+Missing/stale/invalid abre P1 deduplicado, no un restore automático. Doctor no usa
+mtime de carpetas de release como evidencia de backup. Sensor sano no prueba
+reboot ni host vacío; sigue `docs/operations/host-recovery.md`.
+
+R2 `fpl-r2-host-driver-2026.10.1` consume lease/hard stop explícitos, reserva 30 s
+para verificación y limita llamadas dentro del contenedor. Begin sin respuesta
+se reconcilia mediante transiciones atómicas. Interrupción tras begin conserva
+ambigüedad y nunca repite Save. No heredar rehearsals de otro contrato ni
+habilitar lineup/R3 por actualizar código.
+
+Timeouts/conexión y HTTP 5xx del collector admiten dos retries programados con
+cooldown 15/30 minutos, después cadencia normal. 403/auth, 429/cuota, calidad
+inválida y errores desconocidos conservan cadencia/escalamiento. Odds conserva
+su planner de cuota. No fuerces retries repetidos ni declares datos viejos frescos.
+
+El gate research sigue evaluando todas las GWs históricas medidas. ADR-011 es
+propuesta de cohorte prospectiva, no aprobada ni aplicada; tres nuevas GWs
+passing no satisfacen por sí solas la policy actual.
 
 ## Fuentes de verdad
 

@@ -1,0 +1,97 @@
+{
+  "schema": "mova-harness-audit-v1",
+  "observed_at": "2026-10-05T03:10:59+00:00",
+  "runtime_revision": "4917df0",
+  "main_revision_before_iteration": "3a620d1b2a1be31feb8e1160c3fc46ac37ad0283",
+  "local_branch": "codex/harness-autonomy-audit-20261004",
+  "local_changes_deployed": false,
+  "automated_tests_run": true,
+  "syntax_compilation_passed": true,
+  "diff_whitespace_check_passed": true,
+  "readiness": {
+    "pass": 21,
+    "pending": 5,
+    "blocked": 1,
+    "total": 27
+  },
+  "doctor": {
+    "exit_code": 0,
+    "pass": 24,
+    "warn": 0,
+    "fail": 0
+  },
+  "incidents": {
+    "open": 0,
+    "critical_open": 0
+  },
+  "controls": {
+    "mode": "shadow",
+    "action_level": "A0",
+    "kill_switch": true,
+    "browser_writes": false
+  },
+  "schedule_recovery": {
+    "job_id": "job_aa096610153c4a93975c12d86d04060a",
+    "idempotency_key": "harness-audit-20261004-schedule-recovery-01",
+    "actor": "julian",
+    "status": "completed",
+    "scheduled_matches": 380,
+    "unique_match_ids": 380,
+    "completed_matches": 50,
+    "duration_ms": 114803,
+    "payload_sha256": "5bc3394dc9dc05792a514a2e1352a3496e052b374934722b9fa668201d7efd3f",
+    "manifest_sha256": "0fbd3e92b77b4db36a4affda300be2655c5b33b98054fb28ecbce228938c66ad",
+    "provider_failure_root_cause_proven": false
+  },
+  "last_pm_update_observed": "2026-09-29T04:43:40.775899+00:00",
+  "pm_mutated": false,
+  "research_cohort_adr": "proposed-not-approved",
+  "goal_status": "active",
+  "scope_limitations": [
+    "Local implementation tested; release and revised DR proofs remain pending",
+    "Research policy and authority remain unchanged",
+    "Real gameweeks, browser rehearsals and live closeout remain pending",
+    "Reboot requires separate explicit authorization and a new valid preparation",
+    "Full empty-host reconstruction remains unproven"
+  ],
+  "verification": {
+    "suite_command": "../mova-pro-futbol-data-analytics/.venv/bin/python -m pytest -q",
+    "suite": {
+      "passed": 1972,
+      "skipped": 1,
+      "deselected": 79
+    },
+    "marker_exclusions": "slow and integration_data per pytest configuration",
+    "additional_verification_in_progress": false,
+    "compileall": true,
+    "bash_syntax": true,
+    "compose_config": true,
+    "container_timeout_binary": "/usr/bin/timeout",
+    "duration_seconds": 33.22
+  },
+  "local_implemented_gaps": [
+    "H01",
+    "H02",
+    "H03",
+    "H04",
+    "H05",
+    "H06",
+    "H07",
+    "H13"
+  ],
+  "existing_contract_verified": [
+    "H09"
+  ],
+  "browser_probe": {
+    "status": "navigation_timeout",
+    "read_only": true,
+    "save_dispatched": false,
+    "doctor": {
+      "pass": 6,
+      "warn": 1,
+      "fail": 0,
+      "stale_daemon_files_cleaned": true
+    },
+    "physical_selector_fix_proven": false
+  }
+}

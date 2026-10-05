@@ -12,6 +12,7 @@ from typing import Callable
 from mova_fpl.data.sources import fetch_bootstrap
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB
+from mova_fpl.ops.dr_health import assess_backup_freshness
 from mova_fpl.ops.schedule import (
     phase_for,
     private_state_cadence_seconds,
@@ -278,6 +279,9 @@ def build_status(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
         if failure_age is not None and failure_age <= 86400:
             active_failures.append(item)
     host = _load_host_probe(config.host_probe_path, current)
+    host["disaster_recovery"] = assess_backup_freshness(
+        host, revision=config.git_sha, now=current,
+    )
     model_root = config.artifact_root / "models"
     model_artifacts = []
     if model_root.is_dir():
@@ -379,6 +383,8 @@ def build_status(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
             reasons.append("failed_jobs_last_24h")
         if data_service.get("status") == "degraded":
             reasons.append("data_service_degraded")
+        if not host["disaster_recovery"]["healthy"]:
+            reasons.append("backup_recovery_observation_unhealthy")
         if analytics_service.get("status") == "alert":
             reasons.append("model_drift_alert")
         if storage["postgres_role"] == "shadow" and (
@@ -781,14 +787,22 @@ def build_doctor(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
         checks.append(_check("resource_gates", "FAIL", "resources could not be measured",
                              detail={"error": type(exc).__name__}))
 
-    backups = [item for item in config.backup_root.iterdir() if item.is_dir()] \
-        if config.backup_root.is_dir() else []
-    latest_backup = max(backups, key=lambda item: item.stat().st_mtime) if backups else None
-    backup_age = int(current.timestamp() - latest_backup.stat().st_mtime) if latest_backup else None
-    backup_ok = backup_age is not None and backup_age <= 36 * 3600
+    # Source snapshot age is measured on the host. Directory mtime could select
+    # releases/postgres folders and falsely report a fresh backup.
+    host = _load_host_probe(config.host_probe_path, current)
+    dr = assess_backup_freshness(host, revision=config.git_sha, now=current)
+    backup_age = dr["data_age_seconds"]["local_backup"]
+    backup_ok = (backup_age is not None and 0 <= backup_age <= dr["rpo_seconds"]
+                 and dr["checks"].get("local_v2_within_rpo") == "pass"
+                 and dr["report_age_seconds"] is not None
+                 and 0 <= dr["report_age_seconds"] <= dr["report_max_age_seconds"])
     checks.append(_check("recent_backup", "PASS" if backup_ok else "WARN",
                          "recent local backup is present" if backup_ok else "recent backup not found",
-                         required=False, detail={"age_seconds": backup_age}))
+                         required=False, detail={"age_seconds": backup_age,
+                                                "rpo_seconds": dr["rpo_seconds"]}))
+    checks.append(_check("disaster_recovery_observation", "PASS" if dr["healthy"] else "WARN",
+                         "DR metadata and backup RPO are current" if dr["healthy"]
+                         else "DR observation needs attention", required=False, detail=dr))
 
     host = _load_host_probe(config.host_probe_path, current)
     if host.get("available"):

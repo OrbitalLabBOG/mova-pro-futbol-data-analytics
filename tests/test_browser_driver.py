@@ -6,6 +6,7 @@ import json
 import importlib.util
 import os
 import subprocess
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -284,7 +285,7 @@ def test_host_driver_lineup_contract_mode_never_starts_browser(tmp_path: Path):
     )
     payload = json.loads(validated.stdout)
     assert payload["scope"] == "lineup_and_captaincy"
-    assert payload["contract_version"] == "fpl-r2-host-driver-2026.09.1"
+    assert payload["contract_version"] == "fpl-r2-host-driver-2026.10.1"
 
 
 def test_host_driver_prefers_current_dismiss_control_for_player_sheet():
@@ -292,6 +293,29 @@ def test_host_driver_prefers_current_dismiss_control_for_player_sheet():
 
     assert "Dismiss" in script
     assert script.index("Dismiss") < script.index("Close")
+
+
+def test_host_driver_enforces_clock_and_bounds_container_command(monkeypatch):
+    module = _host_driver_module()
+    now = datetime.now(timezone.utc)
+    clock = {"lease_expires_at": (now + timedelta(minutes=5)).isoformat(),
+             "hard_stop_at": (now + timedelta(minutes=10)).isoformat(),
+             "verification_reserve_seconds": 30}
+    calls = []
+    def fake_run(argv, **kwargs):
+        calls.append((argv, kwargs))
+        return subprocess.CompletedProcess(argv, 0, stdout="true")
+    monkeypatch.setattr(module.subprocess, "run", fake_run)
+    browser = module.AgentBrowser(["docker", "compose"], session="fixture", cdp_port=9222, clock=clock)
+    assert browser.run("eval", "true", capture=True) == "true"
+    argv, options = calls[0]
+    assert argv[:6] == ["docker", "compose", "exec", "-T", "browser", "timeout"]
+    assert "--kill-after=3s" in argv
+    assert 0 < options["timeout"] <= 34
+    browser.monotonic_stop = 0
+    with pytest.raises(RuntimeError, match="EXECUTION_CLOCK_EXPIRED"):
+        browser.run("find", "role", "button", "click", "--name", "Save")
+    assert len(calls) == 1
 
 
 def test_lineup_instruction_stream_materializes_against_fake_browser():
@@ -332,7 +356,7 @@ def test_host_orchestrator_keeps_claim_secret_in_pipe_and_cleans_up():
     assert 'mktemp -d "$run_root/mova-fpl-r2.' in script
     assert "--claim-token-stdin" in script
     assert "--claim-token " not in script
-    assert "printf '%s' \"$claim_token\" | \"$mova_bin\" execute" in script
+    assert "printf '%s' \"$claim_token\" | bounded 30 \"$mova_bin\" execute begin" in script
     assert "rm -f \"$pre_state\" \"$dom_probe\" \"$ui_plan\" \"$post_state\"" in script
     assert "cookies" not in script and "storage" not in script and "state save" not in script
 
@@ -350,7 +374,8 @@ def test_transfer_probe_is_read_only_allowlisted_and_numeric_only():
     assert "localStorage" not in probe and "document.cookie" not in probe
 
 
-def test_host_orchestrator_runs_claim_apply_verify_once_and_cleans_temp(tmp_path: Path):
+@pytest.mark.parametrize("begin_mode", ["ok", "lost_applying", "lost_claimed"])
+def test_host_orchestrator_runs_claim_apply_verify_once_and_cleans_temp(tmp_path: Path, begin_mode):
     log = tmp_path / "calls.log"
     fake_mova = tmp_path / "mova"
     fake_browser = tmp_path / "browser-session.sh"
@@ -360,9 +385,10 @@ def test_host_orchestrator_runs_claim_apply_verify_once_and_cleans_temp(tmp_path
 set -euo pipefail
 printf 'mova %s\\n' "$*" >>"$TEST_CALL_LOG"
 case "$1 $2" in
-  'execute claim') printf '%s\\n' '{"status":"claimed","claim_token":"secret-once"}' ;;
+  'execute claim') python3 -c 'import json; from datetime import datetime,timedelta,timezone; print(json.dumps({"status":"claimed","claim_token":"secret-once","lease_expires_at":(datetime.now(timezone.utc)+timedelta(minutes=5)).isoformat()}))' ;;
   'execute ui-plan') printf '%s\\n' '{"status":"ready"}' ;;
-  'execute begin') [[ $(cat) == secret-once ]]; printf '%s\\n' '{"status":"applying"}' ;;
+  'execute begin') [[ $(cat) == secret-once ]]; [[ $TEST_BEGIN_MODE == ok ]] || exit 9; printf '%s\\n' '{"status":"applying"}' ;;
+  'execute fail') [[ $(cat) == secret-once ]]; if [[ $TEST_BEGIN_MODE == lost_claimed && $* == *ambiguous* ]]; then exit 9; fi; printf '%s\\n' '{"status":"failed"}' ;;
   'execute finalize') [[ $(cat) == secret-once ]]; printf '%s\\n' '{"status":"verified"}' ;;
   *) exit 9 ;;
 esac
@@ -394,21 +420,28 @@ with open(os.environ['TEST_CALL_LOG'], 'a', encoding='utf-8') as stream:
         "MOVA_BROWSER_SESSION_BIN": str(fake_browser),
         "MOVA_BROWSER_R2_DRIVER": str(fake_driver),
         "TEST_CALL_LOG": str(log),
+        "TEST_BEGIN_MODE": begin_mode,
     }
-    subprocess.run(
+    result = subprocess.run(
         ["bash", "deploy/bin/execute-r2-browser.sh",
          "--execution-id", "execution_fixture", "--actor", "test",
          "--reason", "contract rehearsal"],
-        cwd=ROOT, env=env, text=True, capture_output=True, check=True,
+        cwd=ROOT, env=env, text=True, capture_output=True,
     )
     calls = log.read_text(encoding="utf-8")
     assert calls.count("execute claim") == 1
     assert calls.count("execute begin") == 1
-    assert calls.count("execute finalize") == 1
-    assert calls.count("browser collect") == 2
+    assert result.returncode == (0 if begin_mode == "ok" else 2)
+    assert calls.count("execute finalize") == (1 if begin_mode == "ok" else 0)
+    assert calls.count("execute fail") == {"ok": 0, "lost_applying": 1, "lost_claimed": 2}[begin_mode]
+    if begin_mode != "ok":
+        assert "--classification ambiguous" in calls
+    if begin_mode == "lost_claimed":
+        assert "--classification failed" in calls
+    assert calls.count("browser collect") == (2 if begin_mode == "ok" else 1)
     assert calls.count("browser probe") == 1
     assert calls.count("browser stop") == 1
-    assert calls.count("driver ") == 2
+    assert sum(line.startswith("driver ") for line in calls.splitlines()) == (2 if begin_mode == "ok" else 1)
     assert "secret-once" not in calls
     assert not list(tmp_path.glob("mova-fpl-r2.*"))
 

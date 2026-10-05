@@ -231,7 +231,7 @@ def evaluate_cockpit(*, operator_status: dict, safety: dict, readiness: dict,
         "verdict": verdict,
         "headline": (
             "Intervención inmediata requerida" if verdict == "critical" else
-            "Operación estable con pendientes" if verdict == "attention_required" else
+            "Operación requiere atención" if verdict == "attention_required" else
             "Operación estable"
         ),
         "gameweek": {key: gameweek.get(key) for key in (
@@ -251,8 +251,10 @@ def evaluate_cockpit(*, operator_status: dict, safety: dict, readiness: dict,
             "verdict": workflow.get("verdict"),
             "stages": [{key: row.get(key) for key in (
                 "name", "owner", "status", "outcome", "subject_id", "next_action",
+                "timing", "recovery", "evidence",
             )} for row in workflow.get("stages") or []],
             "violations": workflow.get("violations") or [],
+            "recovery_contracts": workflow.get("recovery_contracts") or [],
         },
         "economics": {
             "status": costs.get("status"),
@@ -326,6 +328,9 @@ def evaluate_cockpit(*, operator_status: dict, safety: dict, readiness: dict,
             ),
         },
         "resilience": {
+            "backup_freshness": host.get("disaster_recovery") or {
+                "status": "unavailable", "healthy": False,
+            },
             "host_recovery": gate_contract("HOST_RECOVERY_DRILLS_PROVEN"),
             "snapshot_rejection": gate_contract("SNAPSHOT_REJECTION_PROVEN"),
             "browser_failure": gate_contract("BROWSER_FAILURE_DRILL_PROVEN"),

@@ -29,7 +29,7 @@ def _config(tmp_path: Path) -> RuntimeConfig:
         lock_path=tmp_path / "runtime.lock",
         disk_gate_bytes=1,
         memory_gate_bytes=1,
-        git_sha="abc123",
+        git_sha="abc1234",
     )
 
 
@@ -62,7 +62,16 @@ def _seed(tmp_path: Path) -> tuple[RuntimeConfig, OpsDB, datetime]:
         manifest_sha256="d" * 64,
     )
     db.finish_job(job, "completed", metrics={"gw": 2})
+    _host_probe(config, now, postgres_running=False)
     return config, db, now
+
+
+def _dr_observation(now):
+    from mova_fpl.ops.dr_health import REQUIRED_CHECKS
+    return {"generated_at": now.isoformat(), "revision": "abc1234" + "0" * 33,
+            "checks": {name: "pass" for name in REQUIRED_CHECKS},
+            "local_backup": {"data_age_seconds": 60},
+            "remote_backup": {"data_age_seconds": 60}}
 
 
 def _sqlite(path: Path, tables: tuple[str, ...]) -> None:
@@ -72,7 +81,7 @@ def _sqlite(path: Path, tables: tuple[str, ...]) -> None:
             con.execute(f'CREATE TABLE "{table}"(id INTEGER PRIMARY KEY)')
 
 
-def _host_probe(config: RuntimeConfig, now: datetime) -> None:
+def _host_probe(config: RuntimeConfig, now: datetime, *, postgres_running=True) -> None:
     config.host_probe_path.parent.mkdir(parents=True, exist_ok=True)
     units = {
         name: {"active_state": "active", "unit_file_state": "enabled"}
@@ -100,10 +109,11 @@ def _host_probe(config: RuntimeConfig, now: datetime) -> None:
     config.host_probe_path.write_text(json.dumps({
         "schema": "mova-host-probe-v1",
         "observed_at": now.isoformat(),
+        "dr_observation": _dr_observation(now),
         "systemd": units,
         "api": {"ready": True, "container_state": "running"},
         "postgres": {
-            "container_state": "running", "container_health": "healthy",
+            "container_state": "running" if postgres_running else "stopped", "container_health": "healthy",
             "published_ports": False, "role": "shadow",
         },
         "browser": {"profile_present": True, "container_state": "stopped"},

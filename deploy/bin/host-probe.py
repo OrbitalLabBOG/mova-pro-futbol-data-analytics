@@ -33,6 +33,10 @@ UNITS = (
     "mova-fpl-research.timer",
     "mova-fpl-postgres-sync.service",
     "mova-fpl-postgres-sync.timer",
+    "mova-fpl-offsite-backup.service",
+    "mova-fpl-offsite-backup.timer",
+    "mova-fpl-dr-status.service",
+    "mova-fpl-dr-status.timer",
 )
 OFFSITE_CONFIG_KEYS = {
     "schema", "enabled", "provider", "owner", "repository_file", "password_file",
@@ -201,6 +205,44 @@ def offsite_backup_status(
         return {**base, "status": "invalid", "reasons": [code]}
 
 
+def dr_observation(path: Path) -> dict:
+    """Only project metadata; never return arbitrary report fields or paths."""
+    try:
+        if path.is_symlink() or not path.is_file() or path.stat().st_size > 65536:
+            return {}
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        if raw.get("schema") != "mova-dr-preflight-v1" or raw.get("mode") != "source":
+            return {}
+        rows = raw.get("checks") or []
+        if not isinstance(rows, list) or len(rows) != 6:
+            return {}
+        checks = {row["name"]: row["status"] for row in rows}
+        required = {"local_v2_within_rpo", "external_snapshot_within_rpo",
+                    "checkout_images_match", "timers", "restore_resources", "api_ready"}
+        if set(checks) != required or any(value not in {"pass", "blocked"}
+                                          for value in checks.values()):
+            return {}
+        facts = raw.get("facts") or {}
+        revision_row = next(row for row in rows if row["name"] == "checkout_images_match")
+        generated_at = raw.get("generated_at")
+        observed = datetime.fromisoformat(generated_at.replace("Z", "+00:00"))
+        if observed.tzinfo is None:
+            return {}
+        sha = (revision_row.get("detail") or {}).get("checkout")
+        if sha is not None and (not isinstance(sha, str) or not re.fullmatch(r"[0-9a-f]{40}", sha)):
+            return {}
+        ages = {}
+        for name in ("local_backup", "remote_backup"):
+            value = (facts.get(name) or {}).get("data_age_seconds")
+            ages[name] = {"data_age_seconds": value if type(value) is int else None}
+        return {
+            "generated_at": observed.isoformat(), "checks": checks,
+            "revision": sha, **ages,
+        }
+    except (OSError, ValueError, KeyError, TypeError, AttributeError, StopIteration):
+        return {}
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo", type=Path, required=True)
@@ -247,6 +289,7 @@ def main() -> int:
             ).is_dir(),
         },
         "offsite_backup": offsite_backup_status(args.offsite_config),
+        "dr_observation": dr_observation(Path("/var/lib/mova-dr/status.json")),
         "revisions": {"checkout": revision(args.repo), "image": revision(args.repo, "api")},
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)

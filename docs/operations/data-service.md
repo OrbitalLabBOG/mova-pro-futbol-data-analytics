@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — servicio autónomo de datos"
 created: 2026-08-23
-updated: 2026-08-24
+updated: 2026-10-04
 tags: [mova, fpl, collector, postgres, whoscored, odds, observability]
 status: active
 ---
@@ -43,6 +43,16 @@ del proveedor no forma parte de este contrato.
 El adapter anterior de `football-data.co.uk` queda como histórico legado. Sus filas, si existen,
 permanecen en `analytics.match_odds_observations`, pero ya no es una fuente live ni mantiene un
 cursor de salud.
+
+## Recuperación de lecturas
+
+`collector-read-recovery-2026.10.1` admite un retry tras 15 minutos para el primer
+fallo HTTP 5xx/timeout/conexión y tras 30 minutos para el segundo; desde el tercero
+vuelve a la cadencia normal. HTTP 403, 429, auth, errores de calidad y fallos sin
+clasificación conservan la cadencia normal. No se aplica al planner de odds.
+El cursor conserva la clase/status sanitizados; un fetch válido reinicia el contador.
+Un calendario se valida antes de publicar la caché: un payload inválido conserva
+la última versión válida y mantiene el fallo observable.
 
 ## Operación
 

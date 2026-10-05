@@ -208,3 +208,16 @@ reabre ni reconoce incidentes. Watchdog mantiene deduplicación y reintentos aud
 - No controles mutables desde navegador.
 - No datos operativos en Supabase; sólo tracking PM.
 - No alertas por condiciones longitudinales normales como research 1/3 o PostgreSQL 2/3.
+
+
+## Proyecciones de evidencia — iteración 2026-10-04
+
+Cockpit conserva `timing`, `recovery` y `evidence` por stage y publica los
+`recovery_contracts` del workflow. En research, `processing_terminal` significa
+import procesado; edad, ratios, política y comparación del manifest son hechos
+separados. No conceden ejecución ni alteran TTLs o el gate longitudinal.
+`resilience.backup_freshness` proyecta el reporte DR sanitizado: edad máxima
+90 minutos, RPO 7 h y revisión compatible. La edad de los datos sigue avanzando
+entre reportes. Un reporte ausente/obsoleto/inválido abre un P1 deduplicado en
+watchdog y sólo una observación fresca válida lo resuelve. Esto no acredita
+reconstrucción desde host vacío.

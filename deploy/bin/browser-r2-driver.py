@@ -12,6 +12,8 @@ import argparse
 import json
 import subprocess
 import sys
+import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -26,15 +28,38 @@ def _emit(event: str, **detail: object) -> None:
 
 
 class AgentBrowser:
-    def __init__(self, compose: list[str], *, session: str, cdp_port: int):
+    def __init__(self, compose: list[str], *, session: str, cdp_port: int,
+                 clock: dict):
+        times = [datetime.fromisoformat(clock[key].replace("Z", "+00:00"))
+                 for key in ("lease_expires_at", "hard_stop_at")]
+        if any(value.tzinfo is None for value in times):
+            raise ValueError("EXECUTION_CLOCK_TIMEZONE_REQUIRED")
+        if clock.get("verification_reserve_seconds") != 30:
+            raise ValueError("EXECUTION_CLOCK_RESERVE_INVALID")
+        remaining = (min(times) - datetime.now(timezone.utc)).total_seconds() - 30
+        if remaining <= 0:
+            raise ValueError("EXECUTION_CLOCK_EXPIRED")
+        self.expires_at = min(times)
+        self.monotonic_stop = time.monotonic() + remaining
         self.prefix = [
-            *compose, "exec", "-T", "browser", "agent-browser",
+            *compose, "exec", "-T", "browser",
+        ]
+        self.browser_args = ["agent-browser",
             "--session", session, "--cdp", str(cdp_port),
         ]
 
     def run(self, *args: str, capture: bool = False) -> str:
+        remaining = min(self.monotonic_stop - time.monotonic(),
+                        (self.expires_at - datetime.now(timezone.utc)).total_seconds() - 30)
+        # Kill the actual browser CLI inside its container as well as bounding
+        # the Docker client; a client timeout alone leaves exec work running.
+        timeout_seconds = min(30, int(remaining) - 4)
+        if timeout_seconds <= 0:
+            raise RuntimeError("EXECUTION_CLOCK_EXPIRED")
         result = subprocess.run(
-            [*self.prefix, *args], check=True, text=True,
+            [*self.prefix, "timeout", "--signal=TERM", "--kill-after=3s",
+             f"{timeout_seconds}s", *self.browser_args, *args], check=True, text=True,
+            timeout=timeout_seconds + 4,
             stdout=subprocess.PIPE if capture else subprocess.DEVNULL,
             stderr=subprocess.PIPE if capture else None,
         )
@@ -213,14 +238,14 @@ def main() -> int:
     if args.validate_only or args.validate_lineup_contract_only:
         print(json.dumps(driver_plan, ensure_ascii=False, sort_keys=True))
         return 0
-    browser = AgentBrowser(
-        ["docker", "compose", "--profile", "browser"],
-        session=args.session,
-        cdp_port=args.cdp_port,
-    )
     try:
+        browser = AgentBrowser(
+            ["docker", "compose", "--profile", "browser"],
+            session=args.session, cdp_port=args.cdp_port,
+            clock=driver_plan.get("execution_clock") or {},
+        )
         execute(driver_plan, browser)
-    except (RuntimeError, subprocess.CalledProcessError, ValueError) as exc:
+    except (RuntimeError, subprocess.SubprocessError, OSError, ValueError, KeyError, TypeError) as exc:
         _emit(
             "browser_driver_failed", error_code=type(exc).__name__,
             error_detail=str(exc)[:500],

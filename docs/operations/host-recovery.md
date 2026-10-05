@@ -30,6 +30,13 @@ revisión de checkout/imágenes, nueve timers operativos, disco y API. Produce
 contenido de bases ni perfil browser. El servicio `mova-fpl-dr-status` corre cada hora.
 Su resultado se consulta por systemd/journal y JSON; la incorporación al cockpit y
 alertas externas requiere un release del motor, no se presume activa por instalarlo.
+El cambio preparado el 4 de octubre proyecta sólo timestamp, revisión, estados
+de seis checks y edades locales/externas al host-probe. El engine extrapola esas
+edades con el tiempo transcurrido, aplica RPO 7 h y caduca el reporte tras 90 min.
+Missing/invalid/stale/future, revisión distinta y checks blocked requieren atención;
+el watchdog abre un P1 deduplicado y sólo lo resuelve tras una observación vigente
+válida. `doctor.recent_backup` usa el snapshot medido, nunca mtime de directorios
+de releases. Ninguno de esos checks afirma reconstrucción de host vacío.
 
 Para aceptar un host distinto:
 
