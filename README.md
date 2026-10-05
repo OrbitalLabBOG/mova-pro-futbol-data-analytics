@@ -43,8 +43,8 @@ El CLI agent-browser permanece 0.26.0 para captura/driver; la conexión CDP
 directa está acotada exclusivamente al probe y no concede autoridad de escritura.
 
 La [acta de release](docs/decisions/2026-27/harness-release-20261004-dcf98b8.md)
-conserva los escenarios DR y la estabilidad que siguen en verificación contra
-acd84a9. Continúa shadow/A0, kill switch activo y browser writes off;
+conserva cinco escenarios DR PASS y la estabilidad completa de 30 min, cuatro
+muestras y tick nuevo PASS contra acd84a9. Continúa shadow/A0, kill switch activo y browser writes off;
 instalar estos cambios no cierra autonomía ni hereda pruebas de otra versión.
 
 ### Antecedente — infraestructura del 4 de octubre UTC

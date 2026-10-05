@@ -1,99 +1,5 @@
 {
   "schema": "mova-harness-audit-v1",
-  "observed_at": "2026-10-05T03:10:59+00:00",
-  "runtime_revision": "4917df0",
-  "main_revision_before_iteration": "3a620d1b2a1be31feb8e1160c3fc46ac37ad0283",
-  "local_branch": "codex/harness-autonomy-audit-20261004",
-  "local_changes_deployed": false,
-  "automated_tests_run": true,
-  "syntax_compilation_passed": true,
-  "diff_whitespace_check_passed": true,
-  "readiness": {
-    "pass": 21,
-    "pending": 5,
-    "blocked": 1,
-    "total": 27
-  },
-  "doctor": {
-    "exit_code": 0,
-    "pass": 24,
-    "warn": 0,
-    "fail": 0
-  },
-  "incidents": {
-    "open": 0,
-    "critical_open": 0
-  },
-  "controls": {
-    "mode": "shadow",
-    "action_level": "A0",
-    "kill_switch": true,
-    "browser_writes": false
-  },
-  "schedule_recovery": {
-    "job_id": "job_aa096610153c4a93975c12d86d04060a",
-    "idempotency_key": "harness-audit-20261004-schedule-recovery-01",
-    "actor": "julian",
-    "status": "completed",
-    "scheduled_matches": 380,
-    "unique_match_ids": 380,
-    "completed_matches": 50,
-    "duration_ms": 114803,
-    "payload_sha256": "5bc3394dc9dc05792a514a2e1352a3496e052b374934722b9fa668201d7efd3f",
-    "manifest_sha256": "0fbd3e92b77b4db36a4affda300be2655c5b33b98054fb28ecbce228938c66ad",
-    "provider_failure_root_cause_proven": false
-  },
-  "last_pm_update_observed": "2026-09-29T04:43:40.775899+00:00",
-  "pm_mutated": false,
-  "research_cohort_adr": "proposed-not-approved",
-  "goal_status": "active",
-  "scope_limitations": [
-    "Local implementation tested; release and revised DR proofs remain pending",
-    "Research policy and authority remain unchanged",
-    "Real gameweeks, browser rehearsals and live closeout remain pending",
-    "Reboot requires separate explicit authorization and a new valid preparation",
-    "Full empty-host reconstruction remains unproven"
-  ],
-  "verification": {
-    "suite_command": "../mova-pro-futbol-data-analytics/.venv/bin/python -m pytest -q",
-    "suite": {
-      "passed": 1972,
-      "skipped": 1,
-      "deselected": 79
-    },
-    "marker_exclusions": "slow and integration_data per pytest configuration",
-    "additional_verification_in_progress": false,
-    "compileall": true,
-    "bash_syntax": true,
-    "compose_config": true,
-    "container_timeout_binary": "/usr/bin/timeout",
-    "duration_seconds": 33.22
-  },
-  "local_implemented_gaps": [
-    "H01",
-    "H02",
-    "H03",
-    "H04",
-    "H05",
-    "H06",
-    "H07",
-    "H13"
-  ],
-  "existing_contract_verified": [
-    "H09"
-  ],
-  "browser_probe": {
-    "status": "navigation_timeout",
-    "read_only": true,
-    "save_dispatched": false,
-    "doctor": {
-      "pass": 6,
-      "warn": 1,
-      "fail": 0,
-      "stale_daemon_files_cleaned": true
-    },
-    "physical_selector_fix_proven": false
-  },
   "latest_candidate_verification": {
     "observed_at": "2026-10-05T07:09:09.483920+00:00",
     "pr": 195,
@@ -114,10 +20,692 @@
     "cpu_restored_nano_after_probe": 250000000,
     "save_dispatched": false,
     "rehearsal_imported": true,
-    "final_release_and_bound_dr_proofs": "verification-in-progress",
+    "final_release_and_bound_dr_proofs": "accepted",
     "final_release_status": "healthy",
     "captaincy_rehearsals": 1,
     "lineup_rehearsals": 1,
     "rehearsals_required_distinct_cycles": 3
+  },
+  "initial_audit_cut": {
+    "observed_at": "2026-10-05T03:10:59+00:00",
+    "runtime_revision": "4917df0",
+    "main_revision_before_iteration": "3a620d1b2a1be31feb8e1160c3fc46ac37ad0283",
+    "local_branch": "codex/harness-autonomy-audit-20261004",
+    "local_changes_deployed": false,
+    "automated_tests_run": true,
+    "syntax_compilation_passed": true,
+    "diff_whitespace_check_passed": true,
+    "readiness": {
+      "pass": 21,
+      "pending": 5,
+      "blocked": 1,
+      "total": 27
+    },
+    "doctor": {
+      "exit_code": 0,
+      "pass": 24,
+      "warn": 0,
+      "fail": 0
+    },
+    "incidents": {
+      "open": 0,
+      "critical_open": 0
+    },
+    "controls": {
+      "mode": "shadow",
+      "action_level": "A0",
+      "kill_switch": true,
+      "browser_writes": false
+    },
+    "schedule_recovery": {
+      "job_id": "job_aa096610153c4a93975c12d86d04060a",
+      "idempotency_key": "harness-audit-20261004-schedule-recovery-01",
+      "actor": "julian",
+      "status": "completed",
+      "scheduled_matches": 380,
+      "unique_match_ids": 380,
+      "completed_matches": 50,
+      "duration_ms": 114803,
+      "payload_sha256": "5bc3394dc9dc05792a514a2e1352a3496e052b374934722b9fa668201d7efd3f",
+      "manifest_sha256": "0fbd3e92b77b4db36a4affda300be2655c5b33b98054fb28ecbce228938c66ad",
+      "provider_failure_root_cause_proven": false
+    },
+    "last_pm_update_observed": "2026-09-29T04:43:40.775899+00:00",
+    "pm_mutated": false,
+    "research_cohort_adr": "proposed-not-approved",
+    "goal_status": "active",
+    "scope_limitations": [
+      "Local implementation tested; release and revised DR proofs remain pending",
+      "Research policy and authority remain unchanged",
+      "Real gameweeks, browser rehearsals and live closeout remain pending",
+      "Reboot requires separate explicit authorization and a new valid preparation",
+      "Full empty-host reconstruction remains unproven"
+    ],
+    "verification": {
+      "suite_command": "../mova-pro-futbol-data-analytics/.venv/bin/python -m pytest -q",
+      "suite": {
+        "passed": 1972,
+        "skipped": 1,
+        "deselected": 79
+      },
+      "marker_exclusions": "slow and integration_data per pytest configuration",
+      "additional_verification_in_progress": false,
+      "compileall": true,
+      "bash_syntax": true,
+      "compose_config": true,
+      "container_timeout_binary": "/usr/bin/timeout",
+      "duration_seconds": 33.22
+    },
+    "local_implemented_gaps": [
+      "H01",
+      "H02",
+      "H03",
+      "H04",
+      "H05",
+      "H06",
+      "H07",
+      "H13"
+    ],
+    "existing_contract_verified": [
+      "H09"
+    ],
+    "browser_probe": {
+      "status": "navigation_timeout",
+      "read_only": true,
+      "save_dispatched": false,
+      "doctor": {
+        "pass": 6,
+        "warn": 1,
+        "fail": 0,
+        "stale_daemon_files_cleaned": true
+      },
+      "physical_selector_fix_proven": false
+    }
+  },
+  "status": "iteration-accepted-autonomy-pending",
+  "runtime_revision": "acd84a9",
+  "local_changes_deployed": true,
+  "pm_mutated": false,
+  "latest_live_cut": {
+    "observed_at": "2026-10-05T08:17:53.195030+00:00",
+    "runtime_revision": "acd84a9",
+    "controls": {
+      "action_level": "A0",
+      "browser_writes": false,
+      "compliance_gate": "pending",
+      "kill_switch": true,
+      "mode": "shadow"
+    },
+    "overall_status": "healthy",
+    "status_reasons": [],
+    "gameweek": {
+      "cycle_id": "2026-27-gw06",
+      "deadline_at": "2026-10-10T10:00:00Z",
+      "gw": 6,
+      "phase": "baseline",
+      "readiness": "ready",
+      "seconds_to_deadline": 438177
+    },
+    "authority": {
+      "browser_writes": false,
+      "current_action_level": "A0",
+      "kill_switch": true,
+      "mode": "shadow",
+      "promotion_is_automatic": false,
+      "technical_eligible_level": "A0",
+      "writes_enabled": false
+    },
+    "quality": {
+      "analytics": "healthy",
+      "data": "healthy",
+      "operator": "healthy",
+      "postgres": "healthy",
+      "readiness": 0.7778,
+      "readiness_summary": {
+        "blocked": 1,
+        "pass": 21,
+        "pending": 5,
+        "total": 27
+      },
+      "safety": "safe_to_wait",
+      "scorecard": "blocked"
+    },
+    "economics_gameweek": {
+      "committed_tokens": 5689066,
+      "committed_uses": 16,
+      "remaining_tokens": 2310934,
+      "remaining_uses": 24,
+      "status": "within_budget",
+      "token_limit": 8000000,
+      "use_limit": 40
+    },
+    "agents": {
+      "provider": "codex_subscription",
+      "researcher": {
+        "agent_version": "1.10.0",
+        "model": "gpt-6-astra",
+        "quality_policy": "research-claim-2026.09.5",
+        "reasoning_effort": "medium"
+      },
+      "strategist_critic": {
+        "model": "gpt-5.6-terra",
+        "reasoning_effort": "high"
+      }
+    },
+    "readiness": {
+      "summary": {
+        "blocked": 1,
+        "pass": 21,
+        "pending": 5,
+        "total": 27
+      },
+      "gates": [
+        {
+          "code": "RUNTIME_HEALTHY",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "GAMEWEEK_INPUTS_READY",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "PRIVATE_TEAM_STATE_FRESH",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "DATA_SERVICE_HEALTHY",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "ANALYTICS_SERVICE_HEALTHY",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "APPROVED_CURRENT_PROJECTION",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "STRATEGIC_MANIFEST_PRESENT",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "RESEARCH_EVIDENCE_CALIBRATED",
+          "status": "blocked",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "NO_OPEN_P0_P1",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "RESILIENCE_DRILL_PROVEN",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "ORCHESTRATION_DRILL_PROVEN",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "ALERT_CHANNEL_DRILL_PROVEN",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "EXTERNAL_ALERT_CHANNEL_CONFIGURED",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "EXTERNAL_ALERT_CHANNEL_LIVE_PROVEN",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "HOST_RECOVERY_DRILLS_PROVEN",
+          "status": "pending",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "SNAPSHOT_REJECTION_PROVEN",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "BROWSER_FAILURE_DRILL_PROVEN",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "CAPTAINCY_DRIVER_PROVEN",
+          "status": "pending",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "LINEUP_DRIVER_PROVEN",
+          "status": "pending",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "R3_DRIVER_PROVEN",
+          "status": "pending",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "AUTONOMOUS_CLOSEOUT_INSTALLED",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "AUTONOMOUS_CLOSEOUT_LIVE_PROVEN",
+          "status": "pending",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "POSTGRES_SHADOW_PARITY",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "POSTGRES_ROLE_SEPARATION",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "POSTGRES_THREE_GAMEWEEK_CYCLES",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "OFF_HOST_BACKUP_CONFIGURED",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "OFF_HOST_RESTORE_PROVEN",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        }
+      ]
+    },
+    "workflow": {
+      "verdict": "safe_to_wait",
+      "violations_count": 0
+    },
+    "feedback": {
+      "change_proposals": 4,
+      "evaluations": 1,
+      "lessons": 0,
+      "model_scorecards": 236
+    },
+    "operations": {
+      "open_incidents_count": 0,
+      "failed_jobs_last_24h_count": 0,
+      "latest_tick": {
+        "job_id": "job_d06ce1b924f2456d900787b117754c97",
+        "status": "completed",
+        "finished_at": "2026-10-05T08:15:10.207+00:00"
+      }
+    },
+    "dr": {
+      "status": "pass",
+      "healthy": true,
+      "report_age_seconds": 997,
+      "revision": "acd84a9c3241bc93b9860dc732d7f57dd189484b",
+      "checks": {
+        "api_ready": "pass",
+        "checkout_images_match": "pass",
+        "external_snapshot_within_rpo": "pass",
+        "local_v2_within_rpo": "pass",
+        "restore_resources": "pass",
+        "timers": "pass"
+      }
+    }
+  },
+  "latest_dependencies": {
+    "observed_at": "2026-10-05T08:20:39.945578+00:00",
+    "nonpassing_gates": [
+      {
+        "code": "RESEARCH_EVIDENCE_CALIBRATED",
+        "status": "blocked",
+        "observed": {
+          "measured_gameweeks": 4,
+          "passing_gameweeks": 0,
+          "status": "failed"
+        },
+        "required": {
+          "minimum_gameweeks": 3,
+          "status": "passed"
+        },
+        "next_action": "importar briefs v2 v\u00e1lidos hasta completar 3 jornadas medidas"
+      },
+      {
+        "code": "HOST_RECOVERY_DRILLS_PROVEN",
+        "status": "pending",
+        "observed": {
+          "completed": 5,
+          "required": 5,
+          "scenarios": {
+            "api_recovery": {
+              "checks": 5,
+              "downtime_seconds": 25,
+              "error_code": null,
+              "evidence_finished_at": "2026-10-05T07:38:02+00:00",
+              "finished_at": "2026-10-05T07:38:08.667+00:00",
+              "job_id": "job_381393fac3d445ffbb632f3efbab312b",
+              "output_sha256": "6fc9371b65cdd96cb7cdeecbb9e84dfe5ff1de7c9775dc1098d6c84b3a3a9e99",
+              "passed": 5,
+              "revision": "acd84a9",
+              "started_at": "2026-10-05T07:38:08.575+00:00",
+              "status": "completed",
+              "validity": {
+                "age_seconds": 2531.0,
+                "expected_revision": "acd84a9",
+                "max_age_seconds": 2592000,
+                "reasons": [],
+                "valid": true
+              }
+            },
+            "browser_recovery": {
+              "checks": 9,
+              "downtime_seconds": 17,
+              "error_code": null,
+              "evidence_finished_at": "2026-10-05T07:50:34+00:00",
+              "finished_at": "2026-10-05T07:50:40.360+00:00",
+              "job_id": "job_129b6b8dfab84fd8bf62b3c31d854d57",
+              "output_sha256": "07daa8f4776b0c61830d32fb90c9b404b9038528dd2c81a5f863be38531e5ab5",
+              "passed": 9,
+              "revision": "acd84a9",
+              "started_at": "2026-10-05T07:50:40.342+00:00",
+              "status": "completed",
+              "validity": {
+                "age_seconds": 1779.0,
+                "expected_revision": "acd84a9",
+                "max_age_seconds": 2592000,
+                "reasons": [],
+                "valid": true
+              }
+            },
+            "combined_recovery": {
+              "checks": 13,
+              "downtime_seconds": 57,
+              "error_code": null,
+              "evidence_finished_at": "2026-10-05T07:57:28+00:00",
+              "finished_at": "2026-10-05T07:57:33.386+00:00",
+              "job_id": "job_98dcf0cd4d964f138675aa6fa61e75f5",
+              "output_sha256": "998568d9251d52b6038732fa6183a1378474a576bb6be08ae943471d33cb304e",
+              "passed": 13,
+              "revision": "acd84a9",
+              "started_at": "2026-10-05T07:57:33.363+00:00",
+              "status": "completed",
+              "validity": {
+                "age_seconds": 1365.0,
+                "expected_revision": "acd84a9",
+                "max_age_seconds": 2592000,
+                "reasons": [],
+                "valid": true
+              }
+            },
+            "postgres_recovery": {
+              "checks": 8,
+              "downtime_seconds": 19,
+              "error_code": null,
+              "evidence_finished_at": "2026-10-05T07:45:34+00:00",
+              "finished_at": "2026-10-05T07:45:40.137+00:00",
+              "job_id": "job_1dd68e3f59e44b199183194bbeda5242",
+              "output_sha256": "bd17d7a274e4ae2caa3328fa66df353164a4795cc2cf87ab010a4102dd0464d5",
+              "passed": 8,
+              "revision": "acd84a9",
+              "started_at": "2026-10-05T07:45:40.118+00:00",
+              "status": "completed",
+              "validity": {
+                "age_seconds": 2079.0,
+                "expected_revision": "acd84a9",
+                "max_age_seconds": 2592000,
+                "reasons": [],
+                "valid": true
+              }
+            },
+            "reboot_recovery": {
+              "checks": 11,
+              "downtime_seconds": 221,
+              "error_code": null,
+              "evidence_finished_at": null,
+              "finished_at": "2026-08-31T15:11:32.492+00:00",
+              "job_id": "job_1c7cfb92a1e9466599c90cc7a9a9959f",
+              "output_sha256": "7a000fdf2d38ddb2e25d1ed07d19749d6354f632f1f654367ab7b6e9baffb2c2",
+              "passed": 11,
+              "revision": null,
+              "started_at": "2026-08-31T15:11:32.473+00:00",
+              "status": "completed",
+              "validity": {
+                "age_seconds": null,
+                "expected_revision": "acd84a9",
+                "max_age_seconds": 2592000,
+                "reasons": [
+                  "revision_mismatch_or_missing",
+                  "finished_at_missing_or_invalid"
+                ],
+                "valid": false
+              }
+            }
+          },
+          "scope": "same_host_service_recovery",
+          "status": "completed"
+        },
+        "required": {
+          "max_age_seconds": 2592000,
+          "revision": "acd84a9",
+          "scenarios": [
+            "api_recovery",
+            "postgres_recovery",
+            "browser_recovery",
+            "combined_recovery",
+            "reboot_recovery"
+          ],
+          "status": "completed"
+        },
+        "next_action": "ejecutar los drills host allowlisted pendientes; el reboot exige preparaci\u00f3n y autorizaci\u00f3n expl\u00edcita"
+      },
+      {
+        "code": "CAPTAINCY_DRIVER_PROVEN",
+        "status": "pending",
+        "observed": {
+          "contract": "implemented",
+          "host_entrypoint_enabled": true,
+          "observed_rehearsals": 1
+        },
+        "required": {
+          "contract": "implemented",
+          "host_entrypoint_enabled": true,
+          "rehearsals": 3
+        },
+        "next_action": "completar tres rehearsals R2 verificables de capitan\u00eda"
+      },
+      {
+        "code": "LINEUP_DRIVER_PROVEN",
+        "status": "pending",
+        "observed": {
+          "contract": "implemented",
+          "host_entrypoint_enabled": false,
+          "observed_rehearsals": 1
+        },
+        "required": {
+          "contract": "implemented",
+          "host_entrypoint_enabled": true,
+          "rehearsals": 3
+        },
+        "next_action": "completar tres rehearsals R2 y promover el entrypoint de lineup"
+      },
+      {
+        "code": "R3_DRIVER_PROVEN",
+        "status": "pending",
+        "observed": {
+          "autonomy_promoted": false,
+          "contract": "implemented",
+          "host_entrypoint_enabled": false,
+          "observed_rehearsals": 1,
+          "required_rehearsals": 3
+        },
+        "required": {
+          "contract": "implemented",
+          "host_entrypoint_enabled": true,
+          "rehearsals": 3
+        },
+        "next_action": "completar tres rehearsals R3 y habilitar el entrypoint de forma expl\u00edcita"
+      },
+      {
+        "code": "AUTONOMOUS_CLOSEOUT_LIVE_PROVEN",
+        "status": "pending",
+        "observed": {
+          "completed": 0,
+          "latest": null
+        },
+        "required": {
+          "completed": 1
+        },
+        "next_action": "ejercer una ejecuci\u00f3n A2/A3 elegible hasta settlement y review oficiales"
+      }
+    ],
+    "overruns": {
+      "status": "reviewed_pending",
+      "gameweek": {
+        "status": "reviewed_pending",
+        "uses": 2,
+        "excess_tokens": 548912,
+        "max_actual_tokens": 615333,
+        "states": {
+          "open": 0,
+          "reviewed": 2,
+          "resolved": 0,
+          "waived": 0
+        }
+      },
+      "month": {
+        "month": "2026-10",
+        "status": "none",
+        "uses": 0,
+        "excess_tokens": 0,
+        "max_actual_tokens": 0,
+        "states": {
+          "open": 0,
+          "reviewed": 0,
+          "resolved": 0,
+          "waived": 0
+        }
+      },
+      "items": [
+        {
+          "reservation_id": "budget_ba17f01c9a662539cdf53390",
+          "cycle_id": "2026-27-gw06",
+          "subject_type": "research",
+          "subject_id": "research_ea67ccd903c89e2f1bd0a4a609f459ca",
+          "provider": "codex_subscription",
+          "actual_tokens": 615333,
+          "created_at": "2026-09-22T17:27:00.724+00:00",
+          "job_limit": 160000,
+          "excess_tokens": 455333,
+          "review_status": "reviewed",
+          "review_action": "reduce_scope",
+          "reviewed_at": "2026-09-22T17:54:28.266+00:00"
+        },
+        {
+          "reservation_id": "budget_84eab76009624c2ddda2b674",
+          "cycle_id": "2026-27-gw06",
+          "subject_type": "research",
+          "subject_id": "research_73c7968ad6c2c3c71c4fc22fc7515a6d",
+          "provider": "codex_subscription",
+          "actual_tokens": 253579,
+          "created_at": "2026-09-20T23:26:50.252+00:00",
+          "job_limit": 160000,
+          "excess_tokens": 93579,
+          "review_status": "reviewed",
+          "review_action": "optimize_prompt",
+          "reviewed_at": "2026-09-20T23:40:00.477+00:00"
+        }
+      ]
+    },
+    "research": {
+      "status": "failed",
+      "policy": {
+        "version": "research-coverage-2026.08.1",
+        "minimum_measured_gameweeks": 3,
+        "minimum_coverage_ratio": 0.9,
+        "minimum_evidence_ratio": 0.8,
+        "maximum_unresolved_conflicts": 0
+      },
+      "measured_gameweeks": 4,
+      "passing_gameweeks": 0
+    },
+    "orphaned_reservations": {
+      "status": "none",
+      "gameweek": {
+        "uses": 0,
+        "tokens": 0
+      },
+      "month": {
+        "month": "2026-10",
+        "uses": 0,
+        "tokens": 0
+      }
+    }
+  },
+  "observed_at": "2026-10-05T08:35:38.538257+00:00",
+  "implemented_and_deployed_gaps": [
+    "H01",
+    "H02",
+    "H03",
+    "H04",
+    "H05",
+    "H06",
+    "H07",
+    "H13",
+    "H11"
+  ],
+  "existing_contract_verified": [
+    "H09"
+  ],
+  "final_stability": {
+    "status": "pass",
+    "artifact_sha256": "692363eb7e0a1ccbb4a78d3ef1f91fdda4663de5f569a923488f6d91a09a92af",
+    "elapsed_seconds": 1870.49,
+    "observations": 4,
+    "new_completed_tick": true
   }
 }
