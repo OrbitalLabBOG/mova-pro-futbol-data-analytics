@@ -1,8 +1,14 @@
 (async () => {
   const teamId = __MOVA_TEAM_ID__;
+  const stage = __MOVA_PROBE_STAGE__;
+  const expected = __MOVA_PROBE_EXPECTED__;
   const origin = "https://fantasy.premierleague.com";
   const visible = (node) => Boolean(node && node.getClientRects().length > 0);
-  const waitFor = async (predicate, code, timeoutMs = 2500) => {
+  const checkboxByLabel = (label) => [...document.querySelectorAll('input[type="checkbox"]')]
+    .find((node) => visible(node) && [...(node.labels || [])].some(
+      (candidate) => (candidate.innerText || candidate.textContent || "").trim() === label,
+    ));
+  const waitFor = async (predicate, code, timeoutMs) => {
     const deadline = Date.now() + timeoutMs;
     while (Date.now() < deadline) {
       const value = predicate();
@@ -11,132 +17,113 @@
     }
     throw new Error(code);
   };
-  const checkboxByLabel = (label) => [...document.querySelectorAll('input[type="checkbox"]')]
-    .find((node) => visible(node) && [...(node.labels || [])].some(
-      (candidate) => (candidate.innerText || candidate.textContent || "").trim() === label,
-  ));
   const closePlayerSheet = async () => {
-    const buttons = [...document.querySelectorAll("button")].filter(visible);
-    const close = buttons.find(
-      (node) => (node.getAttribute("aria-label") || "").trim() === "Dismiss",
-    ) || buttons.find(
-      (node) => (node.getAttribute("aria-label") || "").trim() === "Close",
-    );
-    if (!close) throw new Error("FPL_PLAYER_SHEET_CLOSE_MISSING");
-    close.click();
-    await waitFor(
-      () => !checkboxByLabel("Captain") && !checkboxByLabel("Vice Captain"),
-      "FPL_PLAYER_SHEET_DID_NOT_CLOSE",
-    );
+    const control = checkboxByLabel("Captain") || checkboxByLabel("Vice Captain");
+    const scope = control?.closest('[role="dialog"]') || document;
+    const buttons = [...scope.querySelectorAll("button")].filter(visible);
+    let close = buttons.filter(n => (n.getAttribute("aria-label") || "").trim() === "Dismiss");
+    if (!close.length) close = buttons.filter(n => (n.getAttribute("aria-label") || "").trim() === "Close");
+    if (close.length !== 1) throw new Error("FPL_PLAYER_SHEET_CLOSE_MISSING_OR_AMBIGUOUS");
+    close[0].click();
+    await waitFor(() => !checkboxByLabel("Captain") && !checkboxByLabel("Vice Captain"),
+      "FPL_PLAYER_SHEET_DID_NOT_CLOSE", 5000);
   };
+  if (stage === "diagnose") {
+    const fpl = location.origin === origin;
+    const knownPath = ["/", "/en/", "/en/my-team"].includes(location.pathname);
+    let privateStatus = null;
+    if (fpl) {
+      try { privateStatus = (await fetch(origin + "/api/my-team/" + teamId + "/", {
+        credentials:"include",cache:"no-store",signal:AbortSignal.timeout(5000),
+      })).status; } catch (_) { privateStatus = "unavailable"; }
+    }
+    return {fpl_origin:fpl,path:knownPath?location.pathname:"other",ready:document.readyState,
+      pitch_controls:document.querySelectorAll('button[data-pitch-element="true"]').length,
+      private_http_status:privateStatus};
+  }
+  if (stage === "page_gate") {
+    return {ready: location.origin === origin && location.pathname === "/en/my-team" &&
+      ["interactive", "complete"].includes(document.readyState) &&
+      [...document.querySelectorAll('button[data-pitch-element="true"]')].filter(visible).length === 15};
+  }
+  if (stage === "navigate") {
+    if (location.origin !== origin) throw new Error("FPL_AUTH_OR_ORIGIN_REQUIRED");
+    if (location.pathname !== "/en/my-team") {
+      // Return before the read-only navigation destroys this evaluation context.
+      setTimeout(() => location.assign(origin + "/en/my-team"), 0);
+      return {navigation_requested:true};
+    }
+    return {navigation_requested:false};
+  }
   if (location.origin !== origin || location.pathname !== "/en/my-team") {
     throw new Error("FPL_PICK_TEAM_PAGE_REQUIRED");
   }
-  const [teamResponse, bootstrapResponse] = await Promise.all([
-    fetch(`${origin}/api/my-team/${teamId}/`, {
-      credentials: "include",
-      cache: "no-store",
-      headers: { Accept: "application/json" },
-    }),
-    fetch(`${origin}/api/bootstrap-static/`, {
-      credentials: "omit",
-      cache: "no-store",
-      headers: { Accept: "application/json" },
-    }),
-  ]);
-  if (teamResponse.status === 403) throw new Error("FPL_AUTH_REQUIRED");
-  if (!teamResponse.ok || !bootstrapResponse.ok) {
-    throw new Error(`FPL_API_ERROR team=${teamResponse.status} bootstrap=${bootstrapResponse.status}`);
-  }
-  const [team, bootstrap] = await Promise.all([
-    teamResponse.json(), bootstrapResponse.json(),
-  ]);
-  if (checkboxByLabel("Captain") || checkboxByLabel("Vice Captain")) {
-    await closePlayerSheet();
-  }
-  const players = new Map(bootstrap.elements.map((row) => [row.id, row.web_name]));
-  const picks = [...(team.picks || [])].sort((a, b) => a.position - b.position);
-  const playerButtons = [...document.querySelectorAll('button[data-pitch-element="true"]')]
-    .filter((node) => node.getClientRects().length > 0);
-  const switchButtons = [...document.querySelectorAll('button[aria-label="Switch player"]')]
-    .filter((node) => node.getClientRects().length > 0);
-  const signedIn = [...document.querySelectorAll("a")].some(
-    (node) => node.textContent.trim() === "Sign Out" && node.getClientRects().length > 0,
-  );
-  const slots = picks.map((pick, index) => {
-    const webName = players.get(pick.element) || null;
-    const visibleLabel = (playerButtons[index]?.innerText || "").trim();
-    return {
-      position: pick.position,
-      element: pick.element,
-      web_name: webName,
-      player_button_index: index,
-      switch_button_index: index,
-      label_matches: Boolean(webName && visibleLabel.includes(webName)),
-    };
-  });
-  const checks = {
-    signed_in: signedIn,
-    fifteen_api_picks: picks.length === 15,
-    fifteen_player_controls: playerButtons.length === 15,
-    fifteen_switch_controls: switchButtons.length === 15,
-    positional_order_matches: slots.length === 15 && slots.every((row) => row.label_matches),
-  };
-  const starterControls = [];
-  for (let index = 0; index < Math.min(11, picks.length); index += 1) {
-    const currentButtons = [...document.querySelectorAll('button[data-pitch-element="true"]')]
-      .filter(visible);
-    if (currentButtons.length !== 15) throw new Error("FPL_PLAYER_CONTROLS_CHANGED");
-    currentButtons[index].click();
-    const captain = await waitFor(
-      () => checkboxByLabel("Captain"), "FPL_CAPTAIN_CHECKBOX_MISSING",
-    );
-    const vice = await waitFor(
-      () => checkboxByLabel("Vice Captain"), "FPL_VICE_CAPTAIN_CHECKBOX_MISSING",
-    );
-    starterControls.push({
-      position: picks[index].position,
-      element: picks[index].element,
-      player_button_index: index,
-      captain_checkbox: true,
-      vice_captain_checkbox: true,
-      captain_checked: Boolean(captain.checked),
-      vice_captain_checked: Boolean(vice.checked),
+  const privateTeam = async () => {
+    const response = await fetch(origin + "/api/my-team/" + teamId + "/", {
+      credentials: "include", cache: "no-store", headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(12000),
     });
-    await closePlayerSheet();
+    if (response.status === 403) throw new Error("FPL_AUTH_REQUIRED");
+    if (!response.ok) throw new Error("FPL_PRIVATE_API_ERROR");
+    return response.json();
+  };
+  const pickSignature = team => [...(team.picks || [])].sort((a,b) => a.position-b.position)
+    .map(p => [p.element, p.position, Boolean(p.is_captain), Boolean(p.is_vice_captain)]);
+  if (stage === "base") {
+    if (checkboxByLabel("Captain") || checkboxByLabel("Vice Captain")) await closePlayerSheet();
+    const [team, response] = await Promise.all([
+      privateTeam(), fetch(origin + "/api/bootstrap-static/", {
+        credentials: "omit", cache: "no-store", headers: { Accept: "application/json" },
+        signal: AbortSignal.timeout(12000),
+      }),
+    ]);
+    if (!response.ok) throw new Error("FPL_BOOTSTRAP_API_ERROR");
+    const bootstrap = await response.json();
+    const players = new Map(bootstrap.elements.map(row => [row.id, row.web_name]));
+    const picks = [...(team.picks || [])].sort((a,b) => a.position-b.position);
+    const buttons = [...document.querySelectorAll('button[data-pitch-element="true"]')].filter(visible);
+    const switches = [...document.querySelectorAll('button[aria-label="Switch player"]')].filter(visible);
+    const slots = picks.map((pick,index) => ({
+      position: pick.position, element: pick.element, web_name: players.get(pick.element) || null,
+      player_button_index: index, switch_button_index: index,
+      label_matches: Boolean(players.get(pick.element) && (buttons[index]?.innerText || "").includes(players.get(pick.element))),
+    }));
+    return {slots, signature: pickSignature(team), checks: {
+      signed_in: true, fifteen_api_picks: picks.length === 15,
+      fifteen_player_controls: buttons.length === 15, fifteen_switch_controls: switches.length === 15,
+      positional_order_matches: slots.length === 15 && slots.every(row => row.label_matches),
+    }};
   }
-  const captainControlsChecks = {
-    eleven_starter_sheets: starterControls.length === 11,
-    semantic_checkboxes: starterControls.every(
-      (row) => row.captain_checkbox && row.vice_captain_checkbox,
-    ),
-    one_captain: starterControls.filter((row) => row.captain_checked).length === 1,
-    one_vice_captain: starterControls.filter((row) => row.vice_captain_checked).length === 1,
-    captain_matches_api: starterControls.some(
-      (row) => row.captain_checked && picks.find(
-        (pick) => pick.element === row.element,
-      )?.is_captain,
-    ),
-    vice_captain_matches_api: starterControls.some(
-      (row) => row.vice_captain_checked && picks.find(
-        (pick) => pick.element === row.element,
-      )?.is_vice_captain,
-    ),
-  };
-  checks.captain_controls = Object.values(captainControlsChecks).every(Boolean);
-  return {
-    schema: "mova-browser-dom-probe-v1",
-    contract_version: "fpl-pick-team-a11y-2026.09.1",
-    observed_at: new Date().toISOString(),
-    team_id: teamId,
-    status: Object.values(checks).every(Boolean) ? "pass" : "fail",
-    checks,
-    slots,
-    captain_controls: {
-      status: checks.captain_controls ? "pass" : "fail",
-      selector_strategy: "player_button_index_then_accessible_checkbox",
-      checks: captainControlsChecks,
-      starters: starterControls,
-    },
-  };
+  if (stage === "starter") {
+    if (!Number.isInteger(expected.index) || expected.index < 0 || expected.index > 10) {
+      throw new Error("FPL_STARTER_INDEX_INVALID");
+    }
+    const buttons = [...document.querySelectorAll('button[data-pitch-element="true"]')].filter(visible);
+    if (buttons.length !== 15 || !(buttons[expected.index].innerText || "").includes(expected.web_name)) {
+      throw new Error("FPL_PLAYER_CONTROLS_CHANGED");
+    }
+    buttons[expected.index].click();
+    try {
+      const controls = await waitFor(() => {
+        const captain = checkboxByLabel("Captain"), vice = checkboxByLabel("Vice Captain");
+        return captain && vice ? {captain,vice} : null;
+      }, "FPL_CAPTAIN_CHECKBOX_MISSING", 10000);
+      return {position: expected.index+1, element: expected.element, player_button_index: expected.index,
+        captain_checkbox: true, vice_captain_checkbox: true,
+        captain_checked: Boolean(controls.captain.checked), vice_captain_checked: Boolean(controls.vice.checked)};
+    } finally {
+      await closePlayerSheet();
+    }
+  }
+  if (stage === "verify") {
+    const team = await privateTeam();
+    if (JSON.stringify(pickSignature(team)) !== JSON.stringify(expected.signature)) {
+      throw new Error("FPL_TEAM_CHANGED_DURING_PROBE");
+    }
+    const buttons = [...document.querySelectorAll('button[data-pitch-element="true"]')].filter(visible);
+    if (buttons.length !== 15 || !expected.slots.every((row,index) =>
+      (buttons[index].innerText || "").includes(row.web_name))) throw new Error("FPL_PLAYER_CONTROLS_CHANGED");
+    return {unchanged:true};
+  }
+  throw new Error("FPL_PROBE_STAGE_INVALID");
 })()

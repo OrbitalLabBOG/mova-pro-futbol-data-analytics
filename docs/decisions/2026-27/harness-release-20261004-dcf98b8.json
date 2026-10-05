@@ -70,20 +70,23 @@
       "/",
       "/en/"
     ],
-    "private_get_status": 403,
+    "private_get_status": 200,
     "private_get_after_stable_route_context_error": false,
     "read_only": true,
     "save_dispatched": false,
     "followup_local_commit": "f0ba402",
     "followup_deployed": false,
-    "human_login_pending": true,
+    "human_login_pending": false,
     "followup_pr": 192,
     "followup_merged_revision": "8820c56306f616b24e78a6e9248d3ad720ad2f07",
     "followup_ci_runs": [
       37264258191,
       37264381284
     ],
-    "followup_images": "built"
+    "followup_images": "built",
+    "private_get_verified_at": "2026-10-05T04:53:46.742Z",
+    "private_capture_job": "job_5d8642cbafba4381b52807d51801fa6e",
+    "authenticated_api_not_dom_proof": true
   },
   "pm_mutated": false,
   "host_reconstruction_proven": false,
@@ -143,5 +146,22 @@
       "network": "none"
     },
     "deployed": false
+  },
+  "browser_probe_followup": {
+    "status": "local-investigation",
+    "contract_version": "fpl-pick-team-a11y-2026.10.1",
+    "driver_contract_version": "fpl-r2-host-driver-2026.10.2",
+    "deployed": false,
+    "passing_live_probe": false,
+    "observations": [
+      {
+        "stage": "page_gate",
+        "error_code": "FPL_PROBE_CDP_TIMEOUT",
+        "fpl_origin": true,
+        "path": "/en/my-team",
+        "pitch_controls": 0,
+        "private_http_status": 200
+      }
+    ]
   }
 }

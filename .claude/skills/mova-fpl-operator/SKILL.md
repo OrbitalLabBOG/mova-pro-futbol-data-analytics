@@ -5,7 +5,7 @@ metadata:
   vertical: mova
   type: skill
   repo: mova-pro-futbol-data-analytics
-  updated: 2026-10-04
+  updated: 2026-10-05
 ---
 
 # MOVA FPL Operator
@@ -214,7 +214,13 @@ Missing/stale/invalid abre P1 deduplicado, no un restore automático. Doctor no 
 mtime de carpetas de release como evidencia de backup. Sensor sano no prueba
 reboot ni host vacío; sigue `docs/operations/host-recovery.md`.
 
-R2 `fpl-r2-host-driver-2026.10.1` consume lease/hard stop explícitos, reserva 30 s
+El probe DOM `fpl-pick-team-a11y-2026.10.1` inspecciona las once fichas en
+etapas CDP independientes, sin toggles ni Save. Su helper del host conserva
+un reloj total de 90 s y un máximo de 25 s por llamada; un timeout falla
+cerrado. HTTP 200 no acredita cancha ni rehearsal. Ver el runbook VPS de
+`fpl-web-ops` para la espera acotada y el inbox protegido.
+
+R2 `fpl-r2-host-driver-2026.10.2` consume lease/hard stop explícitos, reserva 30 s
 para verificación y limita llamadas dentro del contenedor. Begin sin respuesta
 se reconcilia mediante transiciones atómicas. Interrupción tras begin conserva
 ambigüedad y nunca repite Save. No heredar rehearsals de otro contrato ni

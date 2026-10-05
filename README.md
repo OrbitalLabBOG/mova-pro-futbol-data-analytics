@@ -34,6 +34,11 @@ validación de caché WhoScored, retries acotados del collector, sensor DR ligad
 a revisión/RPO, proyección completa del cockpit y reloj/timeout del driver R2.
 Doctor posterior **25 PASS, 0 WARN, 0 FAIL**; suite **1.972 passed, 1 skipped,
 79 deselected**. Restore externo renovado **8/8 en 425 s** y API **5/5 en 23 s**.
+El follow-up del probe de cancha divide la inspección en etapas CDP acotadas
+y arranca Chromium directamente en My Team. Los contratos nuevos DOM .10.1
+y R2 .10.2 requieren evidencia propia; no heredan pruebas de versiones
+anteriores. Consultar el acta para distinguir código candidato y SHA desplegado.
+
 La [acta de release](docs/decisions/2026-27/harness-release-20261004-dcf98b8.md)
 conserva los escenarios y estabilidad aún en verificación. Continúa shadow/A0,
 kill switch activo y browser writes off; instalar estos cambios no cierra autonomía.
