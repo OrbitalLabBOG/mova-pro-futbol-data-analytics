@@ -615,6 +615,25 @@ def test_runtime_gate_change_blocks_before_claim_without_token(tmp_path: Path):
     assert "KILL_SWITCH_ON" in result["blocking_codes"]
 
 
+def test_claim_lease_never_extends_past_workflow_hard_stop(tmp_path):
+    service, plan, pre = _seed_authorized_service(tmp_path)
+    prepared = service.prepare(plan_id=plan["plan_id"], adapter="fixture", actor="test",
+        reason="clock boundary", idempotency_key="execute:hard-stop", now=NOW)
+    source = service.db.execution_claim_source(plan["plan_id"])
+    current = datetime(2026, 9, 4, 17, 14, 50, tzinfo=timezone.utc)
+    job, _ = service.db.start_job("private_state", "private:clock", "corr-clock",
+                                  cycle_id=plan["cycle_id"])
+    service.db.add_team_state(job_id=job, cycle_id=plan["cycle_id"], observed_at=current.isoformat(),
+        source_name="fpl_authenticated_api", squad=pre["picks"], free_transfers=1,
+        bank_tenths=0, chips=[], fingerprint=source["team_state"]["fingerprint"],
+        artifact_path="hermetic-private-clock", manifest_sha256="c" * 64)
+    service.db.finish_job(job, "completed")
+    claimed = service.claim(execution_id=prepared["execution_id"], actor="test",
+                             reason="clock boundary", now=current, lease_seconds=300)
+    assert claimed["status"] == "claimed"
+    assert datetime.fromisoformat(claimed["lease_expires_at"]) == datetime(2026, 9, 4, 17, 15, tzinfo=timezone.utc)
+
+
 def test_runtime_gate_change_after_claim_blocks_before_applying(tmp_path: Path):
     service, plan, pre = _seed_authorized_service(tmp_path)
     prepared = service.prepare(

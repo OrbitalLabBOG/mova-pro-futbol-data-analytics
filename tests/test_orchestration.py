@@ -123,7 +123,9 @@ def test_workflow_reads_attempt_only_for_displayed_plan(tmp_path: Path):
             CREATE TABLE cycle_manifests (cycle_id TEXT, manifest_id TEXT,
                 revision INTEGER, created_at TEXT);
             CREATE TABLE research_runs (cycle_id TEXT, research_run_id TEXT,
-                status TEXT, provider TEXT, finished_at TEXT, queued_at TEXT);
+                status TEXT, provider TEXT, finished_at TEXT, queued_at TEXT,
+                imported_at TEXT, manifest_id TEXT, coverage_status TEXT,
+                coverage_ratio REAL, evidence_ratio REAL);
             CREATE TABLE audit_events (subject_id TEXT, event_type TEXT);
             CREATE TABLE decision_envelopes (cycle_id TEXT, envelope_id TEXT,
                 status TEXT, created_at TEXT);
@@ -157,6 +159,10 @@ def test_workflow_reads_attempt_only_for_displayed_plan(tmp_path: Path):
 
         def deliberation_status(self, cycle_id):
             return {"latest": {}}
+
+        def research_coverage(self, limit=1):
+            return {"policy": {"version": "fixture", "minimum_coverage_ratio": .90,
+                               "minimum_evidence_ratio": .80}}
 
         def cost_report(self, policy, *, season, gw):
             return {"status": "within_budget",

@@ -120,6 +120,21 @@ def evaluate_workflow(observed: dict, *, now: datetime | None = None) -> dict:
         ),
     ))
 
+    policy = observed.get("research_quality_policy") or {}
+    stages[-1]["evidence"] = {
+        "processing_terminal": research_status == "imported",
+        "imported_at": research.get("imported_at"),
+        "import_age_seconds": _age_seconds(research.get("imported_at"), current),
+        "coverage_status": research.get("coverage_status"),
+        "coverage_ratio": research.get("coverage_ratio"),
+        "evidence_ratio": research.get("evidence_ratio"),
+        "quality_policy": policy,
+        "manifest_matches_current": bool(research.get("manifest_id")
+            and research.get("manifest_id") == manifest.get("manifest_id")),
+        "quality_and_applicability_are_separate": True,
+        "permits_execution": False,
+    }
+
     envelope_status = envelope.get("status")
     envelope_complete = envelope_status in {"blocked", "staged"}
     stages.append(_stage(
@@ -388,7 +403,8 @@ def build_workflow(config: RuntimeConfig, db: OpsDB, *,
                 "SELECT manifest_id,revision,created_at FROM cycle_manifests "
                 "WHERE cycle_id=? ORDER BY revision DESC LIMIT 1", (cycle_id,)),
             "research": _row(con,
-                "SELECT research_run_id,status,provider,finished_at FROM research_runs r "
+                "SELECT research_run_id,status,provider,finished_at,imported_at,manifest_id,"
+                "coverage_status,coverage_ratio,evidence_ratio FROM research_runs r "
                 "WHERE cycle_id=? AND NOT EXISTS (SELECT 1 FROM audit_events a "
                 "WHERE a.subject_id=r.research_run_id AND a.event_type IN "
                 "('research_experiment_enqueued','research_experiment_completed')) "
@@ -429,6 +445,7 @@ def build_workflow(config: RuntimeConfig, db: OpsDB, *,
                 "rejected_proposals": sum(r["status"] == "rejected" for r in proposals),
             })
     observed["deliberation"] = db.deliberation_status(cycle_id).get("latest") or {}
+    observed["research_quality_policy"] = db.research_coverage(limit=1)["policy"]
     source = observed["source"]
     if source.get("quality_status") == "valid":
         try:

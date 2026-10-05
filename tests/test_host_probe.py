@@ -123,3 +123,31 @@ def test_offsite_service_is_opt_in_and_excludes_runtime_secrets():
     assert "mova_fpl.ops.sqlite_restore /restore" in local_restore
     assert "docker compose" not in local_restore
     assert "MOVA_OPS_DB=" not in local_restore
+
+
+def test_dr_report_projects_only_allowlisted_metadata(tmp_path):
+    import json
+    from mova_fpl.ops.dr_health import REQUIRED_CHECKS
+    module = _module()
+    path = tmp_path / "status.json"
+    raw = {"schema": "mova-dr-preflight-v1", "mode": "source",
+           "generated_at": "2026-10-05T03:00:00+00:00", "secret": "must-not-project",
+           "checks": [{"name": name, "status": "pass", "detail": {
+               "checkout": "a" * 40, "private_path": "/secret/backup"}}
+                      for name in REQUIRED_CHECKS],
+           "facts": {name: {"data_age_seconds": 150, "secret": "must-not-project"}
+                     for name in ("local_backup", "remote_backup")}}
+    path.write_text(json.dumps(raw))
+    result = module.dr_observation(path)
+    assert result["revision"] == "a" * 40
+    assert set(result["checks"]) == REQUIRED_CHECKS
+    assert "must-not-project" not in json.dumps(result)
+    assert "/secret/backup" not in json.dumps(result)
+    link = tmp_path / "link.json"
+    link.symlink_to(path)
+    assert module.dr_observation(link) == {}
+    raw["checks"].append(raw["checks"][0])
+    path.write_text(json.dumps(raw))
+    assert module.dr_observation(path) == {}
+    path.write_text("[]")
+    assert module.dr_observation(path) == {}

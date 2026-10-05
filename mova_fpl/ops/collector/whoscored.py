@@ -9,6 +9,7 @@ from pathlib import Path
 
 from mova_fpl.ops.collector.contracts import (
     DataQualityError,
+    SourceHTTPError,
     SourceOutput,
     canonical_bytes,
     seal_manifest,
@@ -124,8 +125,9 @@ def discover_schedule(browser_path: Path, season: str, *, timeout_ms: int = 6000
                     {"stageId": stage_id, "month": month},
                 )
                 if int(result["status"]) != 200:
-                    raise RuntimeError(
-                        f"WhoScored calendario {stage_id}/{month}: HTTP {result['status']}"
+                    raise SourceHTTPError(
+                        f"WhoScored calendario {stage_id}/{month}: HTTP {result['status']}",
+                        int(result["status"]),
                     )
                 try:
                     payloads.append(json.loads(result["body"]))
@@ -178,11 +180,14 @@ def collect_schedule(config, store, run_id: str, *, now: datetime | None = None,
     started = time.monotonic()
     if refresh:
         rows = discover_schedule(config.collector_browser_path, config.season)
-        write_atomic(path, canonical_bytes(rows))
     else:
         rows = read_schedule(config)
     quality, checks = validate_schedule(rows)
     payload = canonical_bytes(rows)
+    # Events consume this cache independently. Never replace a valid calendar
+    # with a partial discovery that has not passed the full schedule contract.
+    if refresh:
+        write_atomic(path, payload)
     payload_sha = sha256_bytes(payload)
     stamp = observed_at.replace("-", "").replace(":", "").replace("+00:00", "Z")
     directory = config.collector_root / "raw" / "whoscored-schedule" / config.season / stamp

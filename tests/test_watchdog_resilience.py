@@ -13,9 +13,28 @@ from mova_fpl.ops.watchdog import (
     assess_agent_queue,
     evaluate_workflow_deadline,
     resilience_drill,
-    run,
+    run as watchdog_run,
     workflow_deadline_prometheus,
 )
+
+
+def run(db, **kwargs):
+    """Healthy DR input for tests of other watchdog domains, never an IO mock."""
+    from dataclasses import replace
+    from mova_fpl.ops.dr_health import REQUIRED_CHECKS
+    current = kwargs.get("now") or datetime.now(timezone.utc)
+    config = replace(kwargs.get("config") or RuntimeConfig(),
+                     host_probe_path=db.path.parent / "watchdog-host.json", git_sha="f" * 40)
+    config.host_probe_path.write_text(json.dumps({
+        "schema": "mova-host-probe-v1", "observed_at": current.isoformat(),
+        "dr_observation": {
+            "generated_at": current.isoformat(), "revision": config.git_sha,
+            "checks": {name: "pass" for name in REQUIRED_CHECKS},
+            "local_backup": {"data_age_seconds": 60},
+            "remote_backup": {"data_age_seconds": 60},
+        },
+    }))
+    return watchdog_run(db, **{**kwargs, "config": config})
 
 
 def _workflow(*, deliberation: str = "complete", execution: str = "skipped_policy",

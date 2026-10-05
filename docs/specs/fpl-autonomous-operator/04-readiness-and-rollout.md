@@ -2,12 +2,29 @@
 type: project
 name: "MOVA FPL Autonomous Operator 2026/27 — Readiness and Rollout"
 created: 2026-08-21
-updated: 2026-09-29
+updated: 2026-10-04
 tags: [mova, fpl, readiness, rollout]
 status: active-shadow
 ---
 
 # Readiness y rollout
+
+## Auditoría e iteración completa — 4 de octubre de 2026
+
+[Auditoría del harness](../../decisions/2026-27/harness-autonomy-audit-20261004.md):
+código, logs, skills, VPS y updates PM contrastados; gaps H01–H13 y paquetes de
+cierre ligados a AC01–09. VPS 4917df0, 19 pass/5 pending/3 blocked en el corte
+fechado; PR190 en main todavía sin desplegar. El calendario WhoScored falla
+HTTP 403; caché, RPO/observabilidad, recuperación acotada y contratos browser
+requieren trabajo concreto. Cambios locales no equivalen a release validado.
+Un único retry auditado recuperó después el calendario completo: el corte
+03:10:59 UTC muestra doctor 24/0/0, cero incidentes y readiness 21/5/1.
+La causa del rechazo HTTP anterior no quedó demostrada y el VPS mantiene 4917df0.
+
+El gate longitudinal actual exige todas las GWs históricas medidas passing:
+tres GWs futuras passing no bastan por sí solas. La auditoría solicita un
+expediente versionado antes de cualquier cambio de cohorte, conservando todos
+los fallos históricos. Autonomía, compliance y escrituras permanecen sin promover.
 
 ## Iteración de integridad — 29 de septiembre de 2026
 

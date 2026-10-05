@@ -233,6 +233,13 @@ deploy/bin/execute-r2-browser.sh \
   --reason "capitanía R2 promovida"
 ```
 
+La iteración 04/10 acota claim/begin por el hard stop T-15m del workflow y limita
+el lease por ese instante. UI plan lleva `execution_clock`; R2 2026.10.1 consume
+el mínimo lease/hard stop, reserva 30 s para verificación y aplica timeout dentro
+del contenedor. Una respuesta perdida de begin no autoriza otro begin ni Save:
+la transición atómica admite ambiguous si applying, o failed si aún claimed.
+Captura, finalización del ledger y cleanup también tienen tiempos acotados.
+
 El wrapper reclama una sola vez, recoge pre-state/probe en un directorio `0700`, valida el plan
 antes de `begin`, cruza explícitamente la frontera `applying`, ejecuta y finaliza contra un GET
 privado posterior al reload. Antes de `begin`, el error termina `failed`; desde `begin`, termina

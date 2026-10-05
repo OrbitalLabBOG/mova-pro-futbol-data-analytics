@@ -28,7 +28,9 @@ from mova_fpl.ops.browser_driver import (
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB, sha256_json
 from mova_fpl.ops.decision_envelope import decision_fingerprint
-from mova_fpl.ops.schedule import phase_for, private_state_cadence_seconds
+from mova_fpl.ops.schedule import (
+    phase_for, private_state_cadence_seconds, workflow_stage_timing,
+)
 
 SCHEMA = "mova-execution-plan-v1"
 POLICY_VERSION = "autonomy-policy-1.0.0"
@@ -171,6 +173,10 @@ def build_execution_plan(*, envelope: dict, envelope_row: dict, manifest_row: di
                phase=effective_phase, allowed=sorted(EXECUTION_PHASES)),
         _check("DEADLINE_OPEN", now < deadline,
                "el deadline oficial sigue abierto", deadline_at=deadline.isoformat()),
+        _check("EXECUTION_HARD_STOP_OPEN", now < _parse_time(workflow_stage_timing(
+            "execute_verify", deadline,
+        )["hard_stop_at"]), "la ejecución conserva el margen de hard stop del workflow",
+               hard_stop_at=workflow_stage_timing("execute_verify", deadline)["hard_stop_at"]),
         _check("NO_OPEN_P0_P1", not open_high_incidents,
                "no existen incidentes P0/P1 abiertos",
                incidents=[row.get("incident_id") for row in open_high_incidents]),
@@ -717,6 +723,11 @@ class ExecutionService:
             blockers.append("PLAN_NOT_AUTHORIZED")
         if now >= _parse_time(row["deadline_at"]):
             blockers.append("DEADLINE_CLOSED")
+        hard_stop = _parse_time(workflow_stage_timing(
+            "execute_verify", _parse_time(row["deadline_at"]),
+        )["hard_stop_at"])
+        if now >= hard_stop:
+            blockers.append("EXECUTION_HARD_STOP_REACHED")
         if controls.get("kill_switch") is not False:
             blockers.append("KILL_SWITCH_ON")
         if controls.get("browser_writes") is not True:
@@ -833,7 +844,10 @@ class ExecutionService:
                                error_detail=",".join(blockers))
             return result
         token = secrets.token_urlsafe(32)
-        expires = current + timedelta(seconds=int(lease_seconds))
+        hard_stop = _parse_time(workflow_stage_timing(
+            "execute_verify", _parse_time(source["plan"]["deadline_at"]),
+        )["hard_stop_at"])
+        expires = min(current + timedelta(seconds=int(lease_seconds)), hard_stop)
         result = self.db.claim_execution_attempt(
             execution_id=execution_id,
             token_sha256=hashlib.sha256(token.encode("utf-8")).hexdigest(),
@@ -857,8 +871,19 @@ class ExecutionService:
             compile_r3_ui_action_plan
             if bundle.get("risk_class") == "R3" else compile_r2_ui_action_plan
         )
-        return compiler(bundle=bundle, pre_state=pre_state, dom_probe=dom_probe,
-                        expected_team_id=self.config.team_id)
+        result = compiler(bundle=bundle, pre_state=pre_state, dom_probe=dom_probe,
+                          expected_team_id=self.config.team_id)
+        source = self.db.execution_claim_source(str(attempt["plan_id"]))
+        timing = workflow_stage_timing(
+            "execute_verify", _parse_time(source["plan"]["deadline_at"]),
+        )
+        result["execution_clock"] = {
+            "policy_version": timing["policy_version"],
+            "lease_expires_at": attempt["lease_expires_at"],
+            "hard_stop_at": timing["hard_stop_at"],
+            "verification_reserve_seconds": 30,
+        }
+        return result
 
     @staticmethod
     def _token_sha(token: str) -> str:

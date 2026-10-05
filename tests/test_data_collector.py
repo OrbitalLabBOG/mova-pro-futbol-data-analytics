@@ -25,6 +25,33 @@ from mova_fpl.ops.collector.store import (
 from mova_fpl.postgres.store import MIGRATIONS, latest_version
 
 
+def test_invalid_discovered_schedule_preserves_previous_valid_cache(tmp_path, monkeypatch):
+    from mova_fpl.ops.collector import whoscored
+    config = RuntimeConfig(collector_root=tmp_path / "collector", season="2026-27")
+    path = whoscored.schedule_file(config)
+    path.parent.mkdir(parents=True)
+    previous = json.dumps([{"game_id": value, "status": "FT"} for value in range(1, 381)]).encode()
+    path.write_bytes(previous)
+    monkeypatch.setattr(whoscored, "discover_schedule", lambda *a, **k: [{"game_id": 1}])
+    with pytest.raises(ValueError, match="calendario WhoScored"):
+        whoscored.collect_schedule(config, object(), "ingest_fixture", now=datetime.now(timezone.utc))
+    assert path.read_bytes() == previous
+
+
+@pytest.mark.parametrize("status,code,failures,elapsed,expected", [
+    (503, "SourceHTTPError", 1, 899, False), (503, "SourceHTTPError", 1, 900, True),
+    (None, "TimeoutError", 2, 1799, False), (None, "TimeoutError", 2, 1800, True),
+    (503, "SourceHTTPError", 3, 3600, False),
+    (403, "SourceHTTPError", 1, 3600, False), (429, "SourceHTTPError", 1, 3600, False),
+    (None, "DataQualityError", 1, 3600, False), (None, "RuntimeError", 1, 3600, False),
+])
+def test_source_recovery_is_bounded_and_preserves_auth_quota_quality_cadence(status, code, failures, elapsed, expected):
+    now = datetime.now(timezone.utc)
+    row = {"last_status": "failed", "last_attempt_at": now - timedelta(seconds=elapsed),
+           "consecutive_failures": failures, "detail": {"error_code": code, "http_status": status}}
+    assert cursor_is_due(row, 86400, now=now) is expected
+
+
 def _fpl_bundle():
     boot = {
         "teams": [{"id": value} for value in range(1, 21)],

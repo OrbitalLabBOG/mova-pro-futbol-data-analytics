@@ -45,7 +45,25 @@ def cursor_is_due(row: dict | None, cadence_seconds: int, *, now: datetime,
         return True
     if observed.tzinfo is None:
         observed = observed.replace(tzinfo=timezone.utc)
-    return (now - observed).total_seconds() >= cadence_seconds
+    effective_cadence = cadence_seconds
+    detail = row.get("detail") or {}
+    if isinstance(detail, str):
+        try:
+            detail = json.loads(detail)
+        except ValueError:
+            detail = {}
+    if not isinstance(detail, dict):
+        detail = {}
+    failures = int(row.get("consecutive_failures") or 0)
+    code, http = detail.get("error_code"), detail.get("http_status")
+    transient = ((type(http) is int and 500 <= http <= 599)
+                 or (http is None and code in {"TimeoutError", "ConnectionError", "URLError"}))
+    # Two accelerated scheduled read retries, then normal cadence. Unknown,
+    # auth, 403, quota/rate-limit and data-quality failures retain cadence.
+    # Odds has its independent quota-aware planner and never uses this policy.
+    if row.get("last_status") == "failed" and transient and 1 <= failures <= 2:
+        effective_cadence = min(cadence_seconds, 900 * (2 ** (failures - 1)))
+    return (now - observed).total_seconds() >= effective_cadence
 
 
 class CollectorStore:
@@ -90,6 +108,12 @@ class CollectorStore:
         result = output or {}
         payload_sha = result.get("payload_sha256")
         detail = {"quality": result.get("quality", {}), "rows": result.get("rows", {})}
+        if error is not None:
+            detail["error_code"] = type(error).__name__
+            http_status = getattr(error, "http_status", getattr(error, "code", None))
+            if type(http_status) is int and 100 <= http_status <= 599:
+                detail["http_status"] = http_status
+            detail["recovery_policy"] = "collector-read-recovery-2026.10.1"
         with connect(self.config) as con:
             con.execute(
                 "update raw.ingestion_runs set status=%s,finished_at=now(),artifact_path=%s,"

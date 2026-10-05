@@ -7,7 +7,7 @@ red y perfil; no comparte el runtime del engine ni monta `ops.db`.
 
 | Campo | Valor |
 | --- | --- |
-| VPS | `root@72.60.245.2` |
+| VPS | `ubuntu@72.60.245.2` |
 | Repo | `/opt/orbital/services/mova-fpl` |
 | Servicio Compose | `browser` con profile `browser` |
 | Sesión agent-browser | `mova-fpl` |
@@ -30,7 +30,7 @@ deploy/bin/browser-session.sh login
 En el PC del operador, mantén abierto este túnel:
 
 ```bash
-ssh -N -L 6080:127.0.0.1:6080 root@72.60.245.2
+ssh -N -L 6080:127.0.0.1:6080 ubuntu@72.60.245.2
 ```
 
 Abre `http://127.0.0.1:6080/vnc.html`. Julián completa cualquier email, contraseña, OTP,

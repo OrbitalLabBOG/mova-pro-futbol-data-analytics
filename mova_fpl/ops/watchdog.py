@@ -14,11 +14,13 @@ from tempfile import TemporaryDirectory
 from mova_fpl.ops.alerts import configured_sink, dispatch, journal_sink
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB
+from mova_fpl.ops.dr_health import assess_backup_freshness
 from mova_fpl.ops.schedule import WORKFLOW_MILESTONES, WORKFLOW_TIMING_POLICY_VERSION
 
 INCIDENT_TITLE = "Scheduler heartbeat unhealthy"
 AGENT_QUEUE_INCIDENT_TITLE = "Agent queue integrity unhealthy"
 WORKFLOW_INCIDENT_TITLE = "Autonomous cycle deadline risk"
+DR_INCIDENT_TITLE = "Backup recovery observation unhealthy"
 MAX_REQUEST_BYTES = 1_048_576
 REQUEST_ID = re.compile(r"(?:research|deliberation)_[0-9a-f]{32}")
 ACTIVE_RESEARCH_STATUSES = {"queued", "running", "completed"}
@@ -405,6 +407,20 @@ def run(db: OpsDB, *, max_age_seconds: int = 1200,
     )
     agent_queue = assess_agent_queue(effective_config, db, now=now)
     workflow = assess_workflow_deadline(effective_config, db, now=now)
+    from mova_fpl.ops.operator import _load_host_probe
+    current = now or datetime.now(timezone.utc)
+    dr = assess_backup_freshness(
+        _load_host_probe(effective_config.host_probe_path, current),
+        revision=effective_config.git_sha, now=current,
+    )
+    if dr["healthy"]:
+        dr_resolved = db.resolve_incidents(
+            DR_INCIDENT_TITLE, resolution="fresh DR observation recovered",
+            actor="mova-watchdog",
+        )
+    else:
+        db.open_incident_once("P1", DR_INCIDENT_TITLE, detail=dr)
+        dr_resolved = 0
     if state["healthy"]:
         scheduler_resolved = db.resolve_incidents(
             INCIDENT_TITLE, resolution="scheduler heartbeat recovered",
@@ -454,24 +470,27 @@ def run(db: OpsDB, *, max_age_seconds: int = 1200,
     operational_status = (
         "down" if not state["healthy"] else
         "degraded" if (not agent_queue["healthy"] or not workflow["healthy"]
-                       or alerts["failed"] or dead) else "ok"
+                       or not dr["healthy"] or alerts["failed"] or dead) else "ok"
     )
     return {
         "schema": "mova-watchdog-v2",
         "status": operational_status,
         "reason": state["reason"] or (
             "agent_queue_unhealthy" if not agent_queue["healthy"] else
-            "workflow_deadline_risk" if not workflow["healthy"] else None
+            "workflow_deadline_risk" if not workflow["healthy"] else
+            "backup_recovery_observation_unhealthy" if not dr["healthy"] else None
         ),
         "tick_age_seconds": state["tick_age_seconds"],
         "latest_tick_status": state["latest_tick_status"],
-        "incidents_resolved": scheduler_resolved + queue_resolved + workflow_resolved,
+        "incidents_resolved": scheduler_resolved + queue_resolved + workflow_resolved + dr_resolved,
         "resolved_by_domain": {
             "scheduler": scheduler_resolved, "agent_queue": queue_resolved,
             "workflow": workflow_resolved,
+            "disaster_recovery": dr_resolved,
         },
         "agent_queue": agent_queue,
         "workflow": workflow,
+        "disaster_recovery": dr,
         "expired_authorizations": expired_authorizations,
         "alerts": alerts,
         "outbox_dead": dead,
@@ -485,8 +504,21 @@ def resilience_drill() -> dict:
         root = Path(temporary)
         db = OpsDB(root / "ops.db", enforce_version=False)
         db.migrate()
-        config = RuntimeConfig(research_root=root / "research")
+        config = RuntimeConfig(research_root=root / "research",
+                               host_probe_path=root / "host.json", git_sha="f" * 40)
         current = datetime.now(timezone.utc)
+        # All healthy domains are explicit hermetic inputs. This synthetic
+        # observation is scoped to the ephemeral drill, never host DR evidence.
+        from mova_fpl.ops.dr_health import REQUIRED_CHECKS
+        config.host_probe_path.write_text(json.dumps({
+            "schema": "mova-host-probe-v1", "observed_at": current.isoformat(),
+            "dr_observation": {
+                "generated_at": current.isoformat(), "revision": config.git_sha,
+                "checks": {name: "pass" for name in REQUIRED_CHECKS},
+                "local_backup": {"data_age_seconds": 0},
+                "remote_backup": {"data_age_seconds": 0},
+            },
+        }))
         first = run(
             db, now=current,
             sink=lambda event: delivered.append(str(event["event_key"])),

@@ -15,7 +15,7 @@ from mova_fpl.ops.browser_contract import R3_UI_ACTION_PLAN_SCHEMA, UI_ACTION_PL
 
 
 DRIVER_PLAN_SCHEMA = "mova-browser-r2-driver-plan-v1"
-DRIVER_CONTRACT_VERSION = "fpl-r2-host-driver-2026.09.1"
+DRIVER_CONTRACT_VERSION = "fpl-r2-host-driver-2026.10.1"
 R3_DRIVER_PLAN_SCHEMA = "mova-browser-r3-driver-plan-v1"
 R3_DRIVER_CONTRACT_VERSION = "fpl-r3-host-driver-2026.08.1"
 LINEUP_EXECUTION_PROMOTED = False
@@ -246,6 +246,7 @@ def compile_r2_driver_plan(ui_plan: dict, *, lineup_rehearsed: bool = False) -> 
         "execution_id": ui_plan["execution_id"],
         "plan_id": ui_plan.get("plan_id"),
         "pre_state_fingerprint": ui_plan.get("pre_state_fingerprint"),
+        "execution_clock": ui_plan.get("execution_clock"),
         "scope": "lineup_and_captaincy" if ui_plan.get("swaps") else "captaincy_only",
         "steps": [step.as_dict() for step in steps],
         "failure_policy": {

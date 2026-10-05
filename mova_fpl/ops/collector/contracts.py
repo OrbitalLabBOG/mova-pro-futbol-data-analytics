@@ -14,6 +14,13 @@ class DataQualityError(ValueError):
     """El transporte respondió, pero el payload no cumple el contrato."""
 
 
+class SourceHTTPError(RuntimeError):
+    """Public status metadata, without response bodies or credentials."""
+    def __init__(self, message: str, status: int):
+        super().__init__(message)
+        self.http_status = int(status)
+
+
 def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="milliseconds")
 
