@@ -93,15 +93,8 @@ case "$action" in
       exit 2
     fi
     start_browser
-    "${compose[@]}" exec -T browser \
-      agent-browser --session mova-fpl --cdp "$cdp_port" \
-      open https://fantasy.premierleague.com/en/my-team >/dev/null
-    "${compose[@]}" exec -T browser \
-      agent-browser --session mova-fpl --cdp "$cdp_port" \
-      wait --load domcontentloaded >/dev/null
-    "${compose[@]}" exec -T browser sh -c \
-      "sed 's/__MOVA_TEAM_ID__/$team_id/' /opt/mova/pick-team-dom-probe.js | \
-       agent-browser --session mova-fpl --cdp '$cdp_port' eval --stdin"
+    python3 "$repo_dir/deploy/bin/browser-pick-team-probe.py" \
+      --team-id "$team_id" --cdp-port "$cdp_port"
     ;;
   probe-transfers)
     team_id=${MOVA_TEAM_ID:-3609854}

@@ -234,3 +234,36 @@ reanuda private-state.timer tras 60 min si el handoff sigue abierto. Cancelar es
 timer al completar login/cleanup; no dejarlo para una sesión posterior.
 Suite actual repetida tras reconciliación canónica: 1.973 passed, 1 skipped,
 79 deselected, 39,82 s. Check documental y orbital check PASS.
+
+## Corte posterior: autenticación confirmada y probe aún pendiente
+
+La observación 403 de las 04:32 es histórica. A las
+**2026-10-05T04:53:46.742Z**, el GET privado respondió HTTP 200 con
+15 picks. Captura canónica posterior: job
+`job_5d8642cbafba4381b52807d51801fa6e`, snapshot
+`teamstate_5449d227bbf74c00a7f1e6586053b455`. Se cerraron el túnel
+y el timer temporal de handoff; private-state.timer quedó reanudado.
+No se escribieron credenciales ni se despachó Save.
+
+El acceso privado no acredita la cancha. El probe monolítico falló primero
+por espera insuficiente del checkbox; el selector nativo de Captain/Vice Captain
+sí se observó después. Una espera ampliada dentro de una sola evaluación agotó
+el timeout CDP. Se investiga un helper local con etapas independientes, reloj
+total de 90 s y llamadas de máximo 25 s, contrato DOM .10.1 y R2 .10.2.
+Sus tests sintéticos no cuentan como rehearsals. El ensayo en frío todavía
+falló en page_gate: ruta /en/my-team, cero controles de cancha, GET privado 200.
+No hay probe vivo PASS ni evidencia nueva importada al ledger.
+
+El runtime sigue dcf98b8; las imágenes 8820c56 siguen siendo candidatas
+sin cutover. El cierre de browser/combined DR y la ventana de estabilidad
+de 30 min continúan pendientes. El pin del Debian del stage SQLite y el
+helper por etapas aún son cambios locales, no capacidades desplegadas.
+
+Diagnóstico adicional: en frío, tras la navegación la cancha permaneció
+vacía y finalmente renderizó 15 controles de jugador y 15 switches, con
+identidad de equipo coincidente. No fue pérdida de sesión. El candidato
+arranca Chromium directamente en My Team y sustituye la espera CDP larga
+por consultas cortas, reservando 40 s del reloj total para las fichas.
+Suite del candidato: **1.994 passed, 1 skipped, 79 deselected, 34,92 s**.
+El positivo de la cancha no sustituye la verificación completa de las 11
+fichas ni cuenta como rehearsal.

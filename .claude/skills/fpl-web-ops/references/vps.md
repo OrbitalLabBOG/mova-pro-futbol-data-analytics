@@ -15,6 +15,10 @@ red y perfil; no comparte el runtime del engine ni monta `ops.db`.
 | noVNC | `127.0.0.1:6080` del VPS |
 | CDP | `127.0.0.1:9222` sólo dentro del contenedor |
 
+Chromium arranca directamente en `/en/my-team` para evitar cargar y abandonar
+la portada durante el arranque. Esto es navegación GET; una ruta correcta no prueba
+login ni que la cancha haya terminado de renderizar.
+
 Ejecuta `agent-browser skills get core --full` dentro del contenedor cuando cambie la imagen;
 la documentación debe corresponder a la versión instalada, actualmente 0.26.0.
 
@@ -94,3 +98,27 @@ persistencia de la sesión. No lo incluyas en backups generales ni lo copies fue
 
 Usa Windows/CDP sólo si el browser VPS no puede completar un flujo que requiere interacción
 visible y después de leer `recovery.md`. No mezcles cookies o perfiles entre Windows y VPS.
+
+## Probe de cancha por etapas
+
+`deploy/bin/browser-session.sh probe` usa el helper del host
+`browser-pick-team-probe.py` y el contrato `fpl-pick-team-a11y-2026.10.1`.
+Cada llamada CDP termina en máximo 25 s y el helper tiene un reloj monotónico
+total de 90 s. La carga de la SPA se verifica con evaluaciones cortas y
+reserva 40 s para la inspección: no se prolonga una sola evaluación hasta
+agotar Runtime.evaluate.
+
+Se requieren 15 picks privados, 15 controles visibles y 15 switches en orden
+posicional; después se abre y cierra cada una de las 11 fichas titulares.
+Captain y Vice Captain deben ser checkboxes nativos con labels accesibles
+exactos. La inspección no los activa ni guarda. Una nueva lectura privada al
+final debe conservar todos los jugadores, posiciones, capitán y vice.
+HTTP 200 prueba acceso privado; por sí solo no prueba DOM ni un rehearsal.
+Un timeout o una cancha incompleta termina en fail con un código sanitizado.
+Nunca importar ese resultado como PASS ni contabilizar tres pruebas de la
+misma GW como tres jornadas distintas.
+
+Conservar el JSON satisfactorio sólo en el inbox protegido y usar el comando
+canónico de rehearsal con actor, razón, ciclo e idempotency key. El JSON
+contiene identificadores de jugadores para validar el contrato: no publicarlo
+en Git ni logs de consola. El error sólo contiene código y diagnóstico acotado.
