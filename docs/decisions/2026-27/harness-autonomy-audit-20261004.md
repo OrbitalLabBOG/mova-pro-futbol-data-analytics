@@ -218,3 +218,31 @@ promoción y cambiar software no equivalen a promover. El objetivo es eliminar
 dependencia humana rutinaria, manteniendo escalamiento real para auth,
 proveedores, ambigüedad y autoridad. Toda aceptación pendiente debe conservar
 causa, evidencia y próximo evento verificable; no se rellena con documentación.
+
+
+## Corte técnico posterior — 5 de octubre de 2026
+
+La continuidad detallada se conserva en [acta de release](harness-release-20261004-dcf98b8.md).
+PR191 instaló los ocho cambios de datos/observabilidad/recovery/clock en dcf98b8;
+PR192/194/195 incorporan estabilización de startup, stages, locks y transporte
+read-only. PR195, acd84a9, pasó suite 2.025/1 skipped/79 deselected y CI.
+Captura privada → probe física candidata PASS a 07:09 UTC, sin Save, con CPU
+restaurada a 0,25. La revisión final se encuentra en aceptación de release/DR;
+no describir aún esos cinco drills ni la estabilidad como completados.
+
+PM consultado de nuevo por conector Supabase el 5 de octubre: proyecto
+`cbd36dc4-0c1a-45ad-9134-1019e99639e4`, current_status continúa fechado
+29/09 y describe 7144cdd. Epic `632a0e4c-e44e-4f98-b3ee-a1e2e357b63f`
+sigue in_progress. R2 `e716c251-bdd3-4ee4-957a-e553d300104f` conserva blocked
+por checkbox missing; research `b14c9d93-5175-4645-b6ed-328dc2d34f1f`,
+continuidad `7a0397a3-56c5-46da-9567-db28007a113a`, release
+`6aea32b2-b1d7-4dfb-9b80-fc92352da8af` y jornada completa
+`7dca6314-9b77-460e-a126-11b852e86ef4` siguen in_progress; promoción
+`4a5e96b3-c7a9-4d8b-979a-0ce3ca65643b` todo. No hubo escritura PM.
+
+Preview del próximo update: sustituir el motivo DOM ausente por el corte
+físico final y su cobertura real, sin cerrar R2 ni tareas longitudinales.
+Conservar responsables, colas, fechas y porcentaje; enlazar acta/SHA/CI/DR.
+El transporte read-only satisfactorio no prueba el cliente de escritura,
+Save/recarga/post-state ni promoción. Preparar publicación sólo con el corte
+final verificable; este texto no es un update ya enviado a Supabase.

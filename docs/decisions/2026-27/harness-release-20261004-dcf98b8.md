@@ -351,3 +351,83 @@ sin caída; replay de un drill ya importado conserva su salida previa a los
 locks. Seis regresiones adicionales PASS; suite **2.025 passed, 1 skipped,
 79 deselected**, 37,24 s. Los nuevos drills físicos siguen pendientes del
 release final; esta suite no se presenta como evidencia de recuperación real.
+
+
+## Release final acd84a9 — en verificación
+
+PR195 integrada `2026-10-05T07:15:57Z`, SHA completo
+`acd84a9c3241bc93b9860dc732d7f57dd189484b`; CI 37276568318 PASS,
+1 min 15 s. Build `mova-fpl-build-acd84a9` terminal active/exited, exit 0.
+Engine `sha256:98a0326933097fb88a4c4d45b1c8431ed32ab51ce96ba0bba70d7602e53d2fda`;
+browser `sha256:1b41d333be3f7d845c2db3a003bfdfee77ba7fc4526fc737e0a2de09744785bf`;
+research `sha256:3cb9da6188dc7ed2f7339c561a96a5ee696abcc1fcd54ea955d953389b59c180`.
+Smoke aislado sin red/auth/datos productivos: diez checks PASS.
+
+Primer cutover: `mova-fpl-release-acd84a9` terminó exit 28. La API devolvió
+un readiness válido en el loop de arranque, pero la comprobación inmediata
+siguiente agotó 2 s. El endpoint conserva `OpsDB.quick_check()`; no se cambió
+ni se sustituyó por healthz. Rollback automático de código/configuración
+verificado: checkout y labels dcf98b8, API running/healthy, cero restarts,
+browser detenido y diez timers activos. Readiness posterior 200, 1,120 s;
+dos muestras adicionales 1,121/1,484 s. Migraciones nuevas aplicadas: cero.
+No se reemplazaron bases. El rollback pasó de disponible a ejercitado en
+esta incidencia; no demuestra reconstrucción ni reboot.
+
+Segundo intento usa un backup SQLite distinto (idempotency `release-acd84a9-backup-02`)
+y nuevo backup PG. La aceptación de arranque sigue el timeout 5 s del healthcheck
+existente, exige tres respuestas 200 consecutivas y tiene reloj global 180 s.
+No altera los 30 min predeclarados de estabilidad **posteriores al último drill
+disruptivo del SHA final**; no reutilizar la ventana de dcf98b8 ni acortarla.
+El segundo intento está en `mova-fpl-release-acd84a9-attempt2`; no se reinicia
+mientras siga activating/start. DR de los cinco escenarios e import de probe
+sobre el SHA final continúan pendientes hasta su aceptación física.
+
+
+Segundo intento terminal active/exited, exit 0: runtime **acd84a9**, status
+healthy, controles exactos shadow/A0/kill true/writes false/compliance pending.
+Tres readiness consecutivos 200: **1,331845 / 2,783886 / 1,493985 s**;
+la muestra de 2,78 s confirma el riesgo del límite de cliente anterior de 2 s.
+Override idéntico y timers restaurados. CI main 37276778873 SUCCESS.
+
+Probe final `2026-10-05T07:35:44.002910+00:00`, unidad
+`mova-fpl-browser-proof-acd84a9`, terminal exit 0. Captura privada ingested en
+`job_5d580a7464e64d958ab5da825a9f2fdc`. Todos los checks de cancha/capitanía
+PASS, GET final sin cambios. El inbox privado conserva el source; no se publica
+su contenido. Imports del ciclo real **2026-27-gw06**, R2 **2026.10.2**:
+
+| Capacidad | Rehearsal | Hash de evidencia sellada | Modo |
+| --- | --- | --- | --- |
+| captaincy | rehearsal_8af6285e4047cfa8680a7598 | 89a823b6908e0500755a7f841528f3aa939a752c53ccb4d8bee2c63852afb790 | read_only_probe |
+| lineup | rehearsal_a4e4ab3959a4ec808cca304d | c36b7918540f8c628daddd65362b7b90fc2db75f9ea3a99199f3671b37a2cf28 | read_only_probe |
+
+Cobertura **1/3 por capacidad**, no tres por repetir GW6. No Save ni cambios
+FPL; CPU restaurada a 250000000 NanoCpus y browser detenido. H11 ya tiene
+contrato DOM y lectura física válida; esta evidencia no prueba el transporte
+de escritura ni aceptación de commit/reload/post-state bajo autoridad.
+
+API recovery final 07:37:37–07:38:02 UTC: **5/5 PASS, downtime 25 s**,
+job `job_381393fac3d445ffbb632f3efbab312b`, evidencia
+`6fc9371b65cdd96cb7cdeecbb9e84dfe5ff1de7c9775dc1098d6c84b3a3a9e99`.
+PostgreSQL, browser, combined, offsite y ventana final siguen en ejecución/
+verificación secuencial; no reutilizar sus proofs de la revisión anterior.
+
+
+PostgreSQL recovery final 07:42:54–07:45:34 UTC: **8/8 PASS**, endpoint
+caído **19 s**, job `job_1dd68e3f59e44b199183194bbeda5242`, evidencia
+`bd17d7a274e4ae2caa3328fa66df353164a4795cc2cf87ab010a4102dd0464d5`.
+Browser recovery 07:48:16–07:50:34 UTC: **9/9 PASS**, endpoint caído
+**17 s**, job `job_129b6b8dfab84fd8bf62b3c31d854d57`, evidencia
+`07daa8f4776b0c61830d32fb90c9b404b9038528dd2c81a5f863be38531e5ab5`.
+Autenticación y fingerprint del equipo antes/después coinciden; controles A0
+conservados, revisión acd84a9 y browser inicial detenido restaurado.
+
+
+Combined recovery final 07:53:06–07:57:28 UTC: **13/13 PASS**, endpoint
+conjunto caído **57 s**, job `job_98dcf0cd4d964f138675aa6fa61e75f5`, evidencia
+`998568d9251d52b6038732fa6183a1378474a576bb6be08ae943471d33cb304e`.
+API/PG/browser restaurados, sesión y equipo sin cambios, browser vuelto a su
+estado inicial detenido y controles A0. Es el último drill disruptivo previsto.
+La ventana nueva exige 1.800 s posteriores, cuatro muestras programadas
+0/5/15/30 min de status/doctor/workflow/readiness/caps/restarts/OOM, y un tick
+completed con finished_at posterior al inicio. El restore externo aislado
+puede correr dentro de esa ventana: no provoca una caída de servicios.

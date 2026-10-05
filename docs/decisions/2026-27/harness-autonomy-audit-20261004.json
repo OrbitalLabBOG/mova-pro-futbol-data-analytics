@@ -97,8 +97,8 @@
   "latest_candidate_verification": {
     "observed_at": "2026-10-05T07:09:09.483920+00:00",
     "pr": 195,
-    "installed_runtime_revision": "dcf98b8",
-    "candidate_installed": false,
+    "installed_runtime_revision": "acd84a9",
+    "candidate_installed": true,
     "suite": {
       "passed": 2025,
       "skipped": 1,
@@ -113,7 +113,11 @@
     "cpu_restored_nano_after_collect": 250000000,
     "cpu_restored_nano_after_probe": 250000000,
     "save_dispatched": false,
-    "rehearsal_imported": false,
-    "final_release_and_bound_dr_proofs": "pending"
+    "rehearsal_imported": true,
+    "final_release_and_bound_dr_proofs": "verification-in-progress",
+    "final_release_status": "healthy",
+    "captaincy_rehearsals": 1,
+    "lineup_rehearsals": 1,
+    "rehearsals_required_distinct_cycles": 3
   }
 }
