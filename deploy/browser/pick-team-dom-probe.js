@@ -94,7 +94,7 @@
       positional_order_matches: slots.length === 15 && slots.every(row => row.label_matches),
     }};
   }
-  if (stage === "starter") {
+  if (stage === "open_sheet") {
     if (!Number.isInteger(expected.index) || expected.index < 0 || expected.index > 10) {
       throw new Error("FPL_STARTER_INDEX_INVALID");
     }
@@ -103,17 +103,27 @@
       throw new Error("FPL_PLAYER_CONTROLS_CHANGED");
     }
     buttons[expected.index].click();
-    try {
-      const controls = await waitFor(() => {
-        const captain = checkboxByLabel("Captain"), vice = checkboxByLabel("Vice Captain");
-        return captain && vice ? {captain,vice} : null;
-      }, "FPL_CAPTAIN_CHECKBOX_MISSING", 10000);
-      return {position: expected.index+1, element: expected.element, player_button_index: expected.index,
-        captain_checkbox: true, vice_captain_checkbox: true,
-        captain_checked: Boolean(controls.captain.checked), vice_captain_checked: Boolean(controls.vice.checked)};
-    } finally {
-      await closePlayerSheet();
-    }
+    return {opened:true};
+  }
+  if (stage === "sheet_state") {
+    const captain = checkboxByLabel("Captain"), vice = checkboxByLabel("Vice Captain");
+    if (!captain || !vice) return {available:false};
+    return {available:true,position: expected.index+1, element: expected.element,
+      player_button_index: expected.index, captain_checkbox:true, vice_captain_checkbox:true,
+      captain_checked:Boolean(captain.checked),vice_captain_checked:Boolean(vice.checked)};
+  }
+  if (stage === "close_sheet") {
+    const control = checkboxByLabel("Captain") || checkboxByLabel("Vice Captain");
+    const scope = control?.closest('[role="dialog"]') || document;
+    const buttons = [...scope.querySelectorAll("button")].filter(visible);
+    let close = buttons.filter(n => (n.getAttribute("aria-label") || "").trim() === "Dismiss");
+    if (!close.length) close = buttons.filter(n => (n.getAttribute("aria-label") || "").trim() === "Close");
+    if (close.length !== 1) throw new Error("FPL_PLAYER_SHEET_CLOSE_MISSING_OR_AMBIGUOUS");
+    close[0].click();
+    return {close_requested:true};
+  }
+  if (stage === "sheet_closed") {
+    return {closed:!checkboxByLabel("Captain") && !checkboxByLabel("Vice Captain")};
   }
   if (stage === "verify") {
     const team = await privateTeam();

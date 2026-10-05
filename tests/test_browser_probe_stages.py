@@ -23,12 +23,17 @@ class FakeBrowser:
                                          'fifteen_switch_controls','positional_order_matches'),True)}
         self.mutate_starter=None
         self.unchanged=True
+        self.deadline=90
+        self.clock=lambda:0
     def stage(self,name,expected):
         self.calls.append((name,expected))
         if name=='base':return copy.deepcopy(self.base)
         if name=='verify':return {'unchanged':self.unchanged}
+        if name=='open_sheet':return {'opened':True}
+        if name=='close_sheet':return {'close_requested':True}
+        if name=='sheet_closed':return {'closed':True}
         i=expected['index']
-        row={'position':i+1,'element':i+1,'player_button_index':i,
+        row={'available':True,'position':i+1,'element':i+1,'player_button_index':i,
              'captain_checkbox':True,'vice_captain_checkbox':True,
              'captain_checked':i==0,'vice_captain_checked':i==1}
         if self.mutate_starter:self.mutate_starter(row)
@@ -36,7 +41,7 @@ class FakeBrowser:
 
 def test_all_eleven_sheets_require_independent_stages_and_fresh_final_private_state():
     browser=FakeBrowser();result=module.probe(browser,3609854)
-    assert [name for name,_ in browser.calls]==['base',*(['starter']*11),'verify']
+    assert [name for name,_ in browser.calls]==['base',*(['open_sheet','sheet_state','close_sheet','sheet_closed']*11),'verify']
     assert result['status']=='pass'
     assert result['contract_version']=='fpl-pick-team-a11y-2026.10.1'
     assert all(result['checks'].values())
@@ -95,10 +100,12 @@ def test_cdp_error_does_not_publish_browser_text_or_private_payload():
 
 def test_staged_js_has_no_account_write_or_checkbox_toggle():
     source=(ROOT/'deploy/browser/pick-team-dom-probe.js').read_text()
-    assert '10000' in source and '5000' in source and 'AbortSignal.timeout(12000)' in source
+    assert '5000' in source and 'AbortSignal.timeout(12000)' in source
+    host=(ROOT/'deploy/bin/browser-pick-team-probe.py').read_text()
+    assert 'browser.clock()+10' in host and 'browser.clock()+5' in host
     assert '.checked =' not in source and 'method: "POST"' not in source
     assert 'Save Team' not in source and 'Confirm My Choices' not in source
-    assert 'finally' in source and 'FPL_TEAM_CHANGED_DURING_PROBE' in source
+    assert 'finally' in host and 'FPL_TEAM_CHANGED_DURING_PROBE' in source
 
 def test_sqlite_builder_base_is_bound_to_observed_digest():
     source=(ROOT/'deploy/docker/engine.Dockerfile').read_text()
@@ -146,3 +153,49 @@ def test_chromium_starts_directly_on_read_only_team_route():
     source=(ROOT/'deploy/docker/supervisord-browser.conf').read_text()
     assert 'https://fantasy.premierleague.com/en/my-team"' in source
     assert '--user-data-dir=/var/lib/mova-fpl/browser-profile' in source
+
+
+def test_sheet_read_failure_still_requests_and_verifies_local_dismissal():
+    b=FakeBrowser();original=b.stage
+    def stage(name,expected):
+        if name=='sheet_state':
+            b.calls.append((name,expected));raise module.ProbeFailed('FPL_PROBE_CDP_TIMEOUT')
+        return original(name,expected)
+    b.stage=stage
+    with pytest.raises(module.ProbeFailed,match='FPL_PROBE_CDP_TIMEOUT'):
+        module.starter_sheet(b,{'index':0,'element':1,'web_name':'Player 1'})
+    assert [n for n,_ in b.calls]==['open_sheet','sheet_state','close_sheet','sheet_closed']
+
+
+def test_missing_close_acknowledgement_cannot_return_a_passing_sheet():
+    b=FakeBrowser();original=b.stage
+    b.stage=lambda name,expected: {'close_requested':False} if name=='close_sheet' else original(name,expected)
+    with pytest.raises(module.ProbeFailed,match='FPL_PLAYER_SHEET_CLOSE_MISSING_OR_AMBIGUOUS'):
+        module.starter_sheet(b,{'index':0,'element':1,'web_name':'Player 1'})
+
+
+@pytest.mark.parametrize('stage',['sheet_state','sheet_closed','page_gate'])
+def test_one_pure_dom_read_timeout_can_be_reconciled_within_same_global_clock(stage):
+    calls=[]
+    def run(cmd,**kwargs):
+        calls.append(cmd)
+        if len(calls)==1:raise subprocess.CalledProcessError(124,cmd,stderr='CDP command timed out')
+        return subprocess.CompletedProcess(cmd,0,stdout='{"available":true}',stderr='')
+    b=module.Browser(1,9222,clock=lambda:0,run=run)
+    assert b.stage(stage,{})=={'available':True}
+    assert len(calls)==2 and b.read_timeout_reconciliations==1 and b.deadline==90
+    def failed(cmd,**kwargs):raise subprocess.CalledProcessError(124,cmd,stderr='CDP command timed out')
+    b.run=failed
+    with pytest.raises(module.ProbeFailed) as caught:b.stage(stage,{})
+    assert caught.value.stage==stage and b.read_timeout_reconciliations==1
+
+
+@pytest.mark.parametrize('stage',['open_sheet','close_sheet','base','verify'])
+def test_actions_and_authenticated_get_stages_are_never_repeated_after_timeout(stage):
+    calls=[]
+    def run(cmd,**kwargs):
+        calls.append(cmd);raise subprocess.CalledProcessError(124,cmd,stderr='CDP command timed out')
+    b=module.Browser(1,9222,clock=lambda:0,run=run)
+    with pytest.raises(module.ProbeFailed) as caught:b.stage(stage,{})
+    assert len(calls)==1 and b.read_timeout_reconciliations==0
+    assert caught.value.stage==stage

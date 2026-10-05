@@ -109,7 +109,9 @@ reserva 40 s para la inspección: no se prolonga una sola evaluación hasta
 agotar Runtime.evaluate.
 
 Se requieren 15 picks privados, 15 controles visibles y 15 switches en orden
-posicional; después se abre y cierra cada una de las 11 fichas titulares.
+posicional; después se abre, observa y cierra cada una de las 11 fichas titulares
+con llamadas separadas. Las esperas breves se hacen desde el host para evitar
+acumular apertura, render y cierre en un solo Runtime.evaluate.
 Captain y Vice Captain deben ser checkboxes nativos con labels accesibles
 exactos. La inspección no los activa ni guarda. Una nueva lectura privada al
 final debe conservar todos los jugadores, posiciones, capitán y vice.
@@ -122,3 +124,23 @@ Conservar el JSON satisfactorio sólo en el inbox protegido y usar el comando
 canónico de rehearsal con actor, razón, ciclo e idempotency key. El JSON
 contiene identificadores de jugadores para validar el contrato: no publicarlo
 en Git ni logs de consola. El error sólo contiene código y diagnóstico acotado.
+
+El host R2 reserva primero private-state.lock y capacity.lock, antes de
+claim. Usa el mismo orden que el collector privado; contención retorna 75
+sin intento ni lease. Así el collector no puede detener su navegador durante
+la ejecución. La captura privada precede al probe dentro de la secuencia real
+del host y sigue acotada a 45 s; el probe conserva sus 90 s. Una prueba aislada
+de arranque no debe presentarse como prueba del flujo completo.
+
+El préstamo temporal de CPU de collect/probe sólo se permite si el proceso
+hereda y posee los descriptores de ambos locks (privado y capacidad). Eleva
+un cap positivo inferior hasta un máximo de 0,50 CPU y restaura exactamente
+el NanoCpus previo al salir, incluyendo fallo/TERM. No edita el override de
+Compose ni se aplica al login manual. Nunca ampliar leases ni el reloj del
+probe para ocultar un timeout.
+
+Una única reconciliación por probe puede repetir una lectura DOM pura ante
+`FPL_PROBE_CDP_TIMEOUT`, dentro del mismo reloj. Sólo page_gate, sheet_state
+y sheet_closed son elegibles. Apertura, cierre, GET privado y Save nunca se
+repiten. El error conserva la etapa original aunque la limpieza posterior
+cierre correctamente la ficha.

@@ -22,6 +22,7 @@ class Browser:
         self.clock, self.run, self.team_id, self.sleep = clock, run, team_id, sleep
         self.deadline = clock() + BUDGET_SECONDS
         self.last_stage = "initializing"
+        self.read_timeout_reconciliations = 0
         self.prefix = ["docker","compose","--profile","browser","exec","-T","browser"]
         self.args = ["agent-browser","--session","mova-fpl","--cdp",str(port)]
         self.template = (Path(__file__).resolve().parents[1] / "browser/pick-team-dom-probe.js").read_text()
@@ -59,7 +60,22 @@ class Browser:
         script = (self.template.replace("__MOVA_TEAM_ID__", str(self.team_id))
                   .replace("__MOVA_PROBE_STAGE__", json.dumps(name))
                   .replace("__MOVA_PROBE_EXPECTED__", json.dumps(expected,ensure_ascii=True)))
-        raw = self.command(["eval","--stdin"],script=script)
+        try:
+            raw = self.command(["eval","--stdin"],script=script)
+        except ProbeFailed as exc:
+            # One fresh observation after a known CDP timeout is safe only for
+            # these pure DOM reads. Never repeat opening, closing, GET or Save.
+            if (str(exc)=="FPL_PROBE_CDP_TIMEOUT" and name in {"page_gate","sheet_state","sheet_closed"}
+                    and self.read_timeout_reconciliations < 1):
+                self.read_timeout_reconciliations += 1
+                try:
+                    raw = self.command(["eval","--stdin"],script=script)
+                except ProbeFailed as retry_error:
+                    retry_error.stage = name
+                    raise
+            else:
+                exc.stage = name
+                raise
         try:
             payload = json.loads(raw)
         except (ValueError, TypeError):
@@ -89,6 +105,28 @@ class Browser:
             self.sleep(min(1, max(0, page_deadline - self.clock())))
         raise ProbeFailed("FPL_PROBE_PAGE_READINESS_TIMEOUT")
 
+def starter_sheet(browser: Browser, expected: dict) -> dict:
+    if browser.stage("open_sheet",expected).get("opened") is not True:
+        raise ProbeFailed("FPL_PLAYER_CONTROLS_CHANGED")
+    try:
+        deadline = min(browser.deadline - 4, browser.clock()+10)
+        while browser.clock() < deadline:
+            response = browser.stage("sheet_state",expected)
+            if response.get("available") is True:
+                return {key:value for key,value in response.items() if key != "available"}
+            browser.sleep(min(.25,max(0,deadline-browser.clock())))
+        raise ProbeFailed("FPL_CAPTAIN_CHECKBOX_MISSING")
+    finally:
+        if browser.stage("close_sheet",{}).get("close_requested") is not True:
+            raise ProbeFailed("FPL_PLAYER_SHEET_CLOSE_MISSING_OR_AMBIGUOUS")
+        deadline = min(browser.deadline - 4,browser.clock()+5)
+        while browser.clock() < deadline:
+            if browser.stage("sheet_closed",{}).get("closed") is True:
+                break
+            browser.sleep(min(.25,max(0,deadline-browser.clock())))
+        else:
+            raise ProbeFailed("FPL_PLAYER_SHEET_DID_NOT_CLOSE")
+
 def probe(browser: Browser, team_id: int) -> dict:
     base = browser.stage("base", {})
     checks = base["checks"]
@@ -111,7 +149,7 @@ def probe(browser: Browser, team_id: int) -> dict:
         raise ProbeFailed("FPL_PICK_TEAM_BASE_INVALID")
     starters = []
     for index,row in enumerate(slots[:11]):
-        starter = browser.stage("starter", {"index":index,"element":row["element"],"web_name":row["web_name"]})
+        starter = starter_sheet(browser, {"index":index,"element":row["element"],"web_name":row["web_name"]})
         if (starter.get("position") != index+1 or starter.get("element") != row["element"]
                 or starter.get("player_button_index") != index
                 or not all(type(starter.get(k)) is bool for k in
@@ -147,7 +185,7 @@ def main() -> int:
         payload = probe(browser,args.team_id)
     except (ProbeFailed,KeyError,TypeError,ValueError) as exc:
         code = str(exc) if isinstance(exc,ProbeFailed) else "FPL_PROBE_RESPONSE_INVALID"
-        failed_stage = browser.last_stage
+        failed_stage = getattr(exc,"stage",browser.last_stage)
         diagnostic = None
         if failed_stage == "page_gate":
             try:

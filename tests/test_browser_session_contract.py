@@ -59,3 +59,36 @@ def test_collection_waits_for_startup_redirect_before_auth_check_or_private_get(
     assert "document.querySelector" not in collect
     assert "for attempt" not in collect
     assert "wait --load networkidle" not in collect
+
+
+def test_borrowed_cpu_requires_both_owned_locks_and_restores_on_probe_failure(tmp_path):
+    import os
+    import subprocess
+
+    binary=tmp_path/'bin';binary.mkdir()
+    log=tmp_path/'docker.log'
+    docker=binary/'docker'
+    docker.write_text('''#!/usr/bin/env bash
+printf '%s\\n' "$*" >>"$TEST_DOCKER_LOG"
+if [[ $1 == inspect ]]; then echo 250000000; fi
+''')
+    curl=binary/'curl';curl.write_text('#!/usr/bin/env bash\nexit 0\n')
+    docker.chmod(0o755);curl.chmod(0o755)
+    repo=tmp_path/'repo';helper=repo/'deploy/bin/browser-pick-team-probe.py';helper.parent.mkdir(parents=True)
+    helper.write_text('import os; print("{}",flush=True); raise SystemExit(int(os.environ["TEST_PROBE_EXIT"]))\n')
+    private=tmp_path/'private.lock';capacity=tmp_path/'capacity.lock'
+    script=ROOT/'deploy/bin/browser-session.sh'
+    env={**os.environ,'PATH':f'{binary}:{os.environ["PATH"]}','TEST_DOCKER_LOG':str(log),
+         'MOVA_REPO_DIR':str(repo),'MOVA_DEPLOY_ENV':'/dev/null','TEST_PROBE_EXIT':'7',
+         'MOVA_PRIVATE_STATE_LOCK_FILE':str(private),'MOVA_CAPACITY_LOCK_FILE':str(capacity)}
+    # Unowned direct read retains the provisioned cap.
+    direct=subprocess.run(['bash',str(script),'probe'],env=env,text=True,capture_output=True)
+    assert direct.returncode==7
+    assert 'update' not in log.read_text()
+    log.write_text('')
+    # Resource descriptors inherited from the host orchestrator own the same flock.
+    driver='exec 9>"$MOVA_PRIVATE_STATE_LOCK_FILE"; flock -n 9; exec 8>"$MOVA_CAPACITY_LOCK_FILE"; flock -n 8; exec bash "$1" probe'
+    owned=subprocess.run(['bash','-c',driver,'fixture',str(script)],env=env,text=True,capture_output=True)
+    assert owned.returncode==7
+    updates=[line for line in log.read_text().splitlines() if line.startswith('update')]
+    assert updates==['update --cpus 0.50 mova-fpl-browser-1','update --cpus 0.250000000 mova-fpl-browser-1']

@@ -267,3 +267,36 @@ por consultas cortas, reservando 40 s del reloj total para las fichas.
 Suite del candidato: **1.994 passed, 1 skipped, 79 deselected, 34,92 s**.
 El positivo de la cancha no sustituye la verificación completa de las 11
 fichas ni cuenta como rehearsal.
+
+PR #194 integrada como `ed39afcb4d345f92c1c89b1825a37fb6f1fc3e7c`
+(CI 37268510857 PASS, 1 min). Las tres imágenes candidatas se construyeron
+en `mova-fpl-build-ed39afc`, terminal active/exited, exit 0. Engine
+`sha256:a0739239f82474755216981977a5df8ddade3002a6b3a782f3fe483db42a59c3`;
+browser `sha256:4c10f2764f869477ed599c35cf66b0bd49e426c062e0380c990c066398280d60`;
+research reutiliza el digest 3cb9da6188dc. No se hizo cutover.
+
+La inspección de fichas aun con cancha precargada falló por CDP timeout.
+El siguiente follow-up separa apertura, lectura y cierre de cada ficha en
+llamadas breves y conserva el reloj de 90 s. El primer ensayo con arranque
+directo ed39afc todavía agotó page_gate a los 50,85 s; se restauró y comprobó
+el browser dcf98b8 detenido. Se ensaya ahora la secuencia efectiva del host,
+con captura privada de máximo 45 s antes del probe. Ningún fallo es rehearsal.
+
+Riesgo adicional de concurrencia: el host R2 no adquiría los locks compartidos
+con el collector privado. El follow-up los reserva, en orden privado/capacidad,
+antes del claim. Contención retorna 75 sin intento ni lease. Tests sintéticos
+de ambas contenciones PASS; no autoriza ejecución A0 ni altera los gates.
+
+La captura privada previa al probe agotó 45 s con el candidato a 0,25 CPU.
+Con préstamo temporal a 0,50 CPU completó, pero la lectura de la tercera
+ficha agotó CDP. A 0,75 CPU se observaron nueve fichas antes de un timeout:
+las etapas sanas de las fichas 7 y 8 tardaron 0,44–0,93 s, y sheet_state de
+la ficha 9 tardó 25,55 s. No se interpretó como checkbox inexistente ni
+como éxito. El cleanup volvió a crear el browser dcf98b8 detenido.
+
+El follow-up permite una sola relectura de DOM puro ante el timeout conocido
+CDP, nunca una segunda apertura/cierre/GET/Save. Conserva el reloj original
+y la etapa del error primario aunque la limpieza posterior termine. El
+préstamo propuesto es de máximo 0,50 CPU, requiere ambos locks heredados y
+restaura el cap anterior al salir. Ambos límites se comprueban con fixtures;
+el ensayo completo con relectura y 0,50 CPU sigue pendiente.

@@ -36,6 +36,15 @@ if [[ -z "$actor" || -z "$reason" || ! "$lease_seconds" =~ ^[0-9]+$ ]] \
 fi
 
 cd "$repo_dir"
+# Own the same host resources as the private collector before claiming a lease.
+# Contention is a defer, not an execution attempt or a reason to stop a browser.
+private_lock=${MOVA_PRIVATE_STATE_LOCK_FILE:-$run_root/lock/mova-fpl-private-state.lock}
+capacity_lock=${MOVA_CAPACITY_LOCK_FILE:-$run_root/lock/mova-fpl-capacity.lock}
+mkdir -p "$(dirname "$private_lock")" "$(dirname "$capacity_lock")"
+exec 9>"$private_lock"
+flock -n 9 || { echo "private browser resource busy; execution deferred" >&2; exit 75; }
+exec 8>"$capacity_lock"
+flock -n 8 || { echo "host capacity busy; execution deferred" >&2; exit 75; }
 work_dir=$(mktemp -d "$run_root/mova-fpl-r2.XXXXXX")
 pre_state=$work_dir/pre-state.json
 dom_probe=$work_dir/dom-probe.json

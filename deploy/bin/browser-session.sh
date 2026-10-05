@@ -16,10 +16,45 @@ fi
 compose=(docker compose --profile browser)
 cdp_port=${MOVA_BROWSER_CDP_PORT:-9222}
 
+borrowed_browser_cpu=""
+restore_browser_cpu() {
+  local result=$?
+  trap - EXIT
+  if [[ -n "$borrowed_browser_cpu" ]]; then
+    docker update --cpus "$borrowed_browser_cpu" mova-fpl-browser-1 >/dev/null 2>&1 || result=1
+  fi
+  exit "$result"
+}
+borrow_browser_cpu_if_owned() {
+  # Only automated readers owning BOTH shared resources can borrow CPU.
+  # Manual login/read sessions retain the provisioned Compose cap.
+  local private_lock=${MOVA_PRIVATE_STATE_LOCK_FILE:-/run/lock/mova-fpl-private-state.lock}
+  local capacity_lock=${MOVA_CAPACITY_LOCK_FILE:-/run/lock/mova-fpl-capacity.lock}
+  [[ $(readlink "/proc/$$/fd/9" 2>/dev/null || true) == "$private_lock" ]] || return 0
+  [[ $(readlink "/proc/$$/fd/8" 2>/dev/null || true) == "$capacity_lock" ]] || return 0
+  flock -n 9 && flock -n 8 || return 75
+  local nano_cpu
+  nano_cpu=$(docker inspect mova-fpl-browser-1 --format '{{.HostConfig.NanoCpus}}')
+  [[ "$nano_cpu" =~ ^[0-9]+$ ]] || return 1
+  if (( nano_cpu > 0 && nano_cpu < 500000000 )); then
+    borrowed_browser_cpu=$(python3 - "$nano_cpu" <<'CPU'
+import sys
+print(f"{int(sys.argv[1])/1_000_000_000:.9f}")
+CPU
+)
+    trap restore_browser_cpu EXIT
+    trap 'exit 143' TERM
+    trap 'exit 130' INT
+    trap 'exit 129' HUP
+    docker update --cpus 0.50 mova-fpl-browser-1 >/dev/null
+  fi
+}
+
 start_browser() {
   # Compose may build/pull on first start and writes progress to stdout. Keep
   # stdout reserved for the machine-readable probe/collect payload.
   "${compose[@]}" up -d browser >&2
+  if [[ "$action" == collect || "$action" == probe ]]; then borrow_browser_cpu_if_owned; fi
   for _ in $(seq 1 45); do
     if curl -fsS http://127.0.0.1:${MOVA_NOVNC_PORT:-6080}/vnc.html >/dev/null 2>&1 \
       && "${compose[@]}" exec -T browser \
