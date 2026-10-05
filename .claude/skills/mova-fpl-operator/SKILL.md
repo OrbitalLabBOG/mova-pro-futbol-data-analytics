@@ -16,6 +16,20 @@ consulta ordinaria: `mova` y `/api/v1/status` son el contrato estable.
 
 ## Orientación mínima
 
+Para operar desde Orbital OS existe un adaptador `mova-fpl-operator`; este archivo
+sigue siendo el workflow canónico. No implica integración de tools en Orbix Web.
+El mapa de preguntas, comandos y límites está en
+[cockpit.md](../../../docs/operations/cockpit.md#operar-desde-este-chat).
+Reportar siempre fecha y SHA observado; los cortes documentados no son salud viva.
+`doctor` diagnostica; los drills de disaster recovery prueban recuperación y son
+acciones distintas. Un doctor sin fallos puede tener `observability.available=false`:
+leer ese bloque antes de afirmar que la telemetría está completa.
+Tokens comprometidos y usos registrados son magnitudes distintas. Una suscripción
+con `estimated_cost_usd=null` no es gratuita ni tiene un costo API inferible.
+El feedback automático necesita cierre verificado y settlement final; no presentar
+propuestas, corridas de evaluación o contadores de proyecciones como lecciones
+validadas ni como jornadas independientes.
+
 1. Lee `AGENTS.md` del repo.
 2. Empieza por `mova cockpit --json`: es el snapshot común de funciones, autoridad, stages,
    costos, alertas y revisión desplegada. Si hay P0/P1 o `verdict=critical`, ejecuta
