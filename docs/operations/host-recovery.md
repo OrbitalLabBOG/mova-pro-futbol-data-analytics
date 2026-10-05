@@ -1,7 +1,7 @@
 ---
 type: runbook
 name: MOVA FPL — recuperación en host nuevo y objetivos DR
-updated: 2026-10-04
+updated: 2026-10-05
 status: prepared-not-proven
 ---
 
@@ -12,8 +12,8 @@ status: prepared-not-proven
 | Alcance | Objetivo | Cómo se mide | Evidencia actual |
 | --- | --- | --- | --- |
 | Datos/modelos: pérdida máxima | RPO 7 h; cadencia 6 h | Edad del inicio de ambos snapshots, máximo de SQLite/PG | Evaluación horaria de metadatos; no sustituye restore |
-| Restore externo aislado | RTO 15 min | Desde descarga hasta integridad/modelos/paridad | 504 s el 02/10 en 653051a |
-| Servicios del mismo host | Recuperación de endpoints en 5 min | Parada a endpoint disponible; API requiere medición independiente | PG 17 s, browser 33 s, combinado 49 s el 03/10 |
+| Restore externo aislado | RTO 15 min | Desde descarga hasta integridad/modelos/paridad | 380 s el 05/10 en acd84a9; 8/8 PASS |
+| Servicios del mismo host | Recuperación de endpoints en 5 min | Parada a endpoint disponible; API requiere medición independiente | API 25 s, PG 19 s, browser 17 s, combinado 57 s el 05/10 en acd84a9 |
 | Reconstrucción de host | RTO objetivo 120 min | Inicio en host vacío a aceptación completa | Pendiente; no existe medición válida |
 
 Los objetivos son la política de trabajo seleccionada para esta iteración, no SLA
@@ -22,15 +22,19 @@ una hora para jitter, ejecución y transferencia. No hay garantía si fallan cor
 `dr-status.sh` detecta el incumplimiento horario y systemd conserva el fallo.
 No acredita checksum remoto ni reemplaza el restore de ocho controles.
 
+La [acta del SHA final](../decisions/2026-27/harness-release-20261004-dcf98b8.md)
+conserva jobs, hashes y horarios originales. Estos restores y drills del host vivo
+no acreditan reboot ni el RTO desde host vacío.
+
 ## Inventario y separación del VPS vivo
 
 `deploy/bin/dr-status.sh` consulta metadatos restic, manifiestos v2, edad del snapshot,
 revisión de checkout/imágenes, nueve timers operativos, disco y API. Produce
 `/var/lib/mova-dr/status.json` con timestamps y checks; no exporta credenciales,
 contenido de bases ni perfil browser. El servicio `mova-fpl-dr-status` corre cada hora.
-Su resultado se consulta por systemd/journal y JSON; la incorporación al cockpit y
-alertas externas requiere un release del motor, no se presume activa por instalarlo.
-El cambio preparado el 4 de octubre proyecta sólo timestamp, revisión, estados
+Su resultado se consulta por systemd/journal y JSON. El motor acd84a9 desplegado
+el 5 de octubre incorpora su proyección al status/cockpit/doctor y al contrato del
+watchdog: sólo timestamp, revisión, estados
 de seis checks y edades locales/externas al host-probe. El engine extrapola esas
 edades con el tiempo transcurrido, aplica RPO 7 h y caduca el reporte tras 90 min.
 Missing/invalid/stale/future, revisión distinta y checks blocked requieren atención;
