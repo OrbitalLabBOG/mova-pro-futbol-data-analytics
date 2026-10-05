@@ -30,13 +30,17 @@ if [[ "$existing_rc" -ne 75 ]]; then
   exit "$existing_rc"
 fi
 
-# Only a new outage competes for service locks; replay/conflict is read-only.
+# Only a new outage competes for resources; replay/conflict is read-only.
+# The owned descriptors also enable the bounded CPU loan for private reads.
+exec 9>/run/lock/mova-fpl-private-state.lock
+flock -n 9 || { echo "private browser busy; combined drill deferred" >&2; exit 75; }
+exec 8>/run/lock/mova-fpl-capacity.lock
+flock -n 8 || { echo "host capacity busy; combined drill deferred" >&2; exit 75; }
 for lock_file in \
   /run/lock/mova-fpl-worker.lock \
   /run/lock/mova-fpl-collector-host.lock \
   /run/lock/mova-fpl-analytics-host.lock \
-  /run/lock/mova-fpl-research-host.lock \
-  /run/lock/mova-fpl-private-state.lock
+  /run/lock/mova-fpl-research-host.lock
 do
   exec {service_fd}>"$lock_file"
   flock -n "$service_fd" || {
@@ -156,7 +160,7 @@ postgres_ready
 /usr/local/bin/mova postgres verify >/dev/null
 "$browser_session" start >/dev/null
 browser_ready
-"$browser_session" collect >"$before_state"
+timeout --signal=TERM --kill-after=3s 45s "$browser_session" collect >"$before_state"
 private_before=$(state_fingerprint <"$before_state")
 stored_before=$(stored_team_hash)
 api_image=$(docker inspect mova-fpl-api-1 --format '{{.Image}}')
@@ -198,7 +202,7 @@ browser_ready
 downtime_seconds=$(( $(date -u +%s) - outage_started_epoch ))
 
 /usr/local/bin/mova postgres verify >/dev/null
-"$browser_session" collect >"$after_state"
+timeout --signal=TERM --kill-after=3s 45s "$browser_session" collect >"$after_state"
 private_after=$(state_fingerprint <"$after_state")
 [[ "$private_after" == "$private_before" ]]
 stored_after=$(stored_team_hash)

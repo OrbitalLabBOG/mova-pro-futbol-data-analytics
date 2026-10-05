@@ -505,3 +505,20 @@ def test_timeout_after_commit_does_not_retry_click():
     browser = Browser()
     with pytest.raises(RuntimeError, match='COMMIT_RESPONSE_TIMEOUT'): module.execute(plan, browser)
     assert browser.commits == 1
+
+
+@pytest.mark.parametrize('resource',['private-state','capacity'])
+def test_r2_host_resource_contention_defers_before_claim_or_browser_action(tmp_path,resource):
+    import fcntl
+    lock_dir=tmp_path/'lock';lock_dir.mkdir()
+    lock=lock_dir/f'mova-fpl-{resource}.lock'
+    with lock.open('w') as handle:
+        fcntl.flock(handle,fcntl.LOCK_EX|fcntl.LOCK_NB)
+        env={**os.environ,'MOVA_RUN_ROOT':str(tmp_path),'MOVA_REPO_DIR':str(ROOT),
+             'MOVA_BIN':'/definitely-missing-no-claim','MOVA_BROWSER_SESSION_BIN':'/definitely-missing-no-browser'}
+        result=subprocess.run(['bash','deploy/bin/execute-r2-browser.sh','--execution-id','execution_fixture',
+            '--actor','test','--reason','lock contention fixture'],cwd=ROOT,env=env,text=True,capture_output=True)
+    assert result.returncode==75
+    assert 'deferred' in result.stderr
+    assert 'claim' not in result.stdout and 'browser_execution' not in result.stdout
+    assert not list(tmp_path.glob('mova-fpl-r2.*'))

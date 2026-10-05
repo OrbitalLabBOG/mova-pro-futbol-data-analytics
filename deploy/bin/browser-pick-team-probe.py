@@ -7,6 +7,7 @@ import json
 import math
 from pathlib import Path
 import re
+import select
 import subprocess
 import time
 
@@ -22,6 +23,7 @@ class Browser:
         self.clock, self.run, self.team_id, self.sleep = clock, run, team_id, sleep
         self.deadline = clock() + BUDGET_SECONDS
         self.last_stage = "initializing"
+        self.read_timeout_reconciliations = 0
         self.prefix = ["docker","compose","--profile","browser","exec","-T","browser"]
         self.args = ["agent-browser","--session","mova-fpl","--cdp",str(port)]
         self.template = (Path(__file__).resolve().parents[1] / "browser/pick-team-dom-probe.js").read_text()
@@ -59,7 +61,22 @@ class Browser:
         script = (self.template.replace("__MOVA_TEAM_ID__", str(self.team_id))
                   .replace("__MOVA_PROBE_STAGE__", json.dumps(name))
                   .replace("__MOVA_PROBE_EXPECTED__", json.dumps(expected,ensure_ascii=True)))
-        raw = self.command(["eval","--stdin"],script=script)
+        try:
+            raw = self.command(["eval","--stdin"],script=script)
+        except ProbeFailed as exc:
+            # One fresh observation after a known CDP timeout is safe only for
+            # these pure DOM reads. Never repeat opening, closing, GET or Save.
+            if (str(exc)=="FPL_PROBE_CDP_TIMEOUT" and name in {"page_gate","sheet_state","sheet_closed"}
+                    and self.read_timeout_reconciliations < 1):
+                self.read_timeout_reconciliations += 1
+                try:
+                    raw = self.command(["eval","--stdin"],script=script)
+                except ProbeFailed as retry_error:
+                    retry_error.stage = name
+                    raise
+            else:
+                exc.stage = name
+                raise
         try:
             payload = json.loads(raw)
         except (ValueError, TypeError):
@@ -89,6 +106,106 @@ class Browser:
             self.sleep(min(1, max(0, page_deadline - self.clock())))
         raise ProbeFailed("FPL_PROBE_PAGE_READINESS_TIMEOUT")
 
+class NativeBrowser(Browser):
+    """One pinned CDP session for the existing fixed stages, never a writer."""
+    def __init__(self, *args, popen=subprocess.Popen, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.process = None
+        self.closed = False
+        self.popen = popen
+        self.port = args[1]
+
+    def stage(self, name: str, expected: dict) -> dict:
+        self.last_stage = name
+        if self.closed:
+            raise ProbeFailed("FPL_PROBE_CDP_FAILED")
+        remaining = self.deadline - self.clock() - 4
+        cap = min(CALL_SECONDS, math.floor(remaining))
+        if cap < 1:
+            raise ProbeFailed("FPL_PROBE_CLOCK_EXPIRED")
+        if self.process is None:
+            self.process = self.popen([*self.prefix,"timeout","--signal=TERM","--kill-after=3s",
+                f"{math.floor(remaining)}s","node","/opt/mova/pick-team-cdp-session.mjs",
+                str(self.team_id),str(self.port)], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL, text=True, bufsize=1)
+        try:
+            self.process.stdin.write(json.dumps({"stage":name,"expected":expected,"cap_ms":cap*1000})+"\n")
+            self.process.stdin.flush()
+            if not select.select([self.process.stdout],[],[],min(cap+4,remaining))[0]:
+                self.close()
+                raise ProbeFailed("FPL_PROBE_CDP_TIMEOUT")
+            raw = self.process.stdout.readline(1048577)
+            if len(raw) > 1048576 or not raw.endswith("\n"):
+                raise ProbeFailed("FPL_PROBE_RESPONSE_INVALID")
+            response = json.loads(raw)
+            if response.get("ok") is not True:
+                allowed = {"FPL_AUTH_REQUIRED","FPL_PRIVATE_API_ERROR","FPL_BOOTSTRAP_API_ERROR",
+                    "FPL_PICK_TEAM_PAGE_REQUIRED","FPL_AUTH_OR_ORIGIN_REQUIRED","FPL_STARTER_INDEX_INVALID",
+                    "FPL_PLAYER_CONTROLS_CHANGED","FPL_CAPTAIN_CHECKBOX_MISSING",
+                    "FPL_PLAYER_SHEET_CLOSE_MISSING_OR_AMBIGUOUS","FPL_PLAYER_SHEET_DID_NOT_CLOSE",
+                    "FPL_TEAM_CHANGED_DURING_PROBE","FPL_PROBE_STAGE_INVALID","FPL_PROBE_CDP_TIMEOUT",
+                    "FPL_PROBE_CDP_FAILED","FPL_PROBE_NAVIGATION_CONTEXT_LOST","FPL_PROBE_TARGET_AMBIGUOUS",
+                    "FPL_PROBE_DIALOG_BLOCKED","FPL_PROBE_CLOCK_EXPIRED","FPL_PROBE_RESPONSE_INVALID"}
+                code = response.get("error_code")
+                raise ProbeFailed(code if isinstance(code,str) and code in allowed else "FPL_PROBE_CDP_FAILED")
+            payload = response.get("payload")
+            if not isinstance(payload,dict):
+                raise ProbeFailed("FPL_PROBE_RESPONSE_INVALID")
+            return payload
+        except (OSError,ValueError,TypeError,AttributeError):
+            raise ProbeFailed("FPL_PROBE_RESPONSE_INVALID") from None
+        except ProbeFailed as exc:
+            exc.stage = name
+            raise
+
+    def close(self):
+        self.closed = True
+        if self.process is None:
+            return
+        process, self.process = self.process, None
+        try:
+            process.stdin.close()
+            process.wait(timeout=1)
+        except (OSError,subprocess.TimeoutExpired):
+            process.terminate()
+            try:
+                process.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait(timeout=1)
+        finally:
+            process.stdout.close()
+
+def starter_sheet(browser: Browser, expected: dict) -> dict:
+    if browser.stage("open_sheet",expected).get("opened") is not True:
+        raise ProbeFailed("FPL_PLAYER_CONTROLS_CHANGED")
+    primary_error = None
+    try:
+        deadline = min(browser.deadline - 4, browser.clock()+10)
+        while browser.clock() < deadline:
+            response = browser.stage("sheet_state",expected)
+            if response.get("available") is True:
+                return {key:value for key,value in response.items() if key != "available"}
+            browser.sleep(min(.25,max(0,deadline-browser.clock())))
+        raise ProbeFailed("FPL_CAPTAIN_CHECKBOX_MISSING")
+    except ProbeFailed as exc:
+        primary_error = exc
+        raise
+    finally:
+        try:
+            if browser.stage("close_sheet",{}).get("close_requested") is not True:
+                raise ProbeFailed("FPL_PLAYER_SHEET_CLOSE_MISSING_OR_AMBIGUOUS")
+            deadline = min(browser.deadline - 4,browser.clock()+5)
+            while browser.clock() < deadline:
+                if browser.stage("sheet_closed",{}).get("closed") is True:
+                    break
+                browser.sleep(min(.25,max(0,deadline-browser.clock())))
+            else:
+                raise ProbeFailed("FPL_PLAYER_SHEET_DID_NOT_CLOSE")
+        except ProbeFailed:
+            if primary_error is None:
+                raise
+
 def probe(browser: Browser, team_id: int) -> dict:
     base = browser.stage("base", {})
     checks = base["checks"]
@@ -111,7 +228,7 @@ def probe(browser: Browser, team_id: int) -> dict:
         raise ProbeFailed("FPL_PICK_TEAM_BASE_INVALID")
     starters = []
     for index,row in enumerate(slots[:11]):
-        starter = browser.stage("starter", {"index":index,"element":row["element"],"web_name":row["web_name"]})
+        starter = starter_sheet(browser, {"index":index,"element":row["element"],"web_name":row["web_name"]})
         if (starter.get("position") != index+1 or starter.get("element") != row["element"]
                 or starter.get("player_button_index") != index
                 or not all(type(starter.get(k)) is bool for k in
@@ -142,12 +259,12 @@ def main() -> int:
     if args.team_id < 1 or not 1 <= args.cdp_port <= 65535:
         parser.error("positive team ID and valid CDP port required")
     try:
-        browser = Browser(args.team_id,args.cdp_port)
+        browser = NativeBrowser(args.team_id,args.cdp_port)
         browser.navigate()
         payload = probe(browser,args.team_id)
     except (ProbeFailed,KeyError,TypeError,ValueError) as exc:
         code = str(exc) if isinstance(exc,ProbeFailed) else "FPL_PROBE_RESPONSE_INVALID"
-        failed_stage = browser.last_stage
+        failed_stage = getattr(exc,"stage",browser.last_stage)
         diagnostic = None
         if failed_stage == "page_gate":
             try:
@@ -157,6 +274,9 @@ def main() -> int:
         print(json.dumps({"schema":"mova-browser-probe-error-v1","status":"fail","error_code":code,
                           "stage":failed_stage,"page":diagnostic}))
         return 1
+    finally:
+        if "browser" in locals():
+            browser.close()
     print(json.dumps(payload,ensure_ascii=False))
     return 0 if payload["status"] == "pass" else 1
 

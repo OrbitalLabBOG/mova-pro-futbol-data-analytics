@@ -31,8 +31,11 @@ if [[ "$existing_rc" -ne 75 ]]; then
 fi
 
 # A completed replay never waits for the collector because it cannot start an outage.
-exec {private_fd}>/run/lock/mova-fpl-private-state.lock
-flock -n "$private_fd" || { echo "private-state collector is active; browser drill deferred" >&2; exit 75; }
+exec 9>/run/lock/mova-fpl-private-state.lock
+flock -n 9 || { echo "private-state collector is active; browser drill deferred" >&2; exit 75; }
+
+exec 8>/run/lock/mova-fpl-capacity.lock
+flock -n 8 || { echo "host capacity busy; browser drill deferred" >&2; exit 75; }
 
 artifact_root=${MOVA_DATA_ROOT:-/var/lib/mova-fpl}/artifacts
 inbox="$artifact_root/host-drills/inbox"
@@ -100,7 +103,7 @@ browser_running() {
 controls_before=$(controls_fingerprint)
 "$browser_session" start >/dev/null
 browser_ready
-"$browser_session" collect >"$before_state"
+timeout --signal=TERM --kill-after=3s 45s "$browser_session" collect >"$before_state"
 team_before=$(state_fingerprint <"$before_state")
 image_before=$(docker inspect mova-fpl-browser-1 --format '{{.Image}}')
 image_revision_before=$(docker inspect mova-fpl-browser-1 --format \
@@ -117,7 +120,7 @@ fi
 "$browser_session" start >/dev/null
 browser_ready
 downtime_seconds=$(( $(date -u +%s) - outage_started_epoch ))
-"$browser_session" collect >"$after_state"
+timeout --signal=TERM --kill-after=3s 45s "$browser_session" collect >"$after_state"
 team_after=$(state_fingerprint <"$after_state")
 [[ "$team_after" == "$team_before" ]]
 image_after=$(docker inspect mova-fpl-browser-1 --format '{{.Image}}')
