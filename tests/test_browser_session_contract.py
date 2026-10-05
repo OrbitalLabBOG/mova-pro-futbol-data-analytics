@@ -45,3 +45,17 @@ def test_auth_redirect_is_not_a_pitch_timeout_or_permission_to_submit_credential
     assert "exit 78" in collect
     assert "fill " not in collect
     assert "click " not in collect
+
+
+def test_collection_waits_for_startup_redirect_before_auth_check_or_private_get():
+    script = (ROOT / "deploy/bin/browser-session.sh").read_text()
+    collect = script.split("  collect)")[1].split("  probe)")[0]
+    stable_route = "location.pathname.startsWith('/en/')"
+    document_ready = "['interactive', 'complete'].includes(document.readyState)"
+    assert stable_route in collect
+    assert document_ready in collect
+    assert collect.index(stable_route) < collect.index("auth_pending=")
+    assert collect.index(document_ready) < collect.index("private-team-state.js")
+    assert "document.querySelector" not in collect
+    assert "for attempt" not in collect
+    assert "wait --load networkidle" not in collect

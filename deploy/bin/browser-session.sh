@@ -64,10 +64,13 @@ case "$action" in
     # loading. Its authenticated GET, not visual pitch buttons, proves access.
     # Chromium starts on FPL. Reuse that tab: `open` waits for navigation and
     # can time out on ad resources even when the private endpoint works.
+    # Origin alone is insufficient: startup / redirects to /en/ and destroys
+    # the evaluation context. Wait for the observed locale route and document,
+    # without requiring pitch controls or retrying an authenticated GET.
     "${compose[@]}" exec -T browser \
       agent-browser --session mova-fpl --cdp "$cdp_port" \
       wait --fn \
-      "location.origin === 'https://account.premierleague.com' || location.origin === 'https://accounts.google.com' || location.origin === 'https://fantasy.premierleague.com'" \
+      "location.origin === 'https://account.premierleague.com' || location.origin === 'https://accounts.google.com' || (location.origin === 'https://fantasy.premierleague.com' && location.pathname.startsWith('/en/') && ['interactive', 'complete'].includes(document.readyState))" \
       >/dev/null
     auth_pending=$("${compose[@]}" exec -T browser \
       agent-browser --session mova-fpl --cdp "$cdp_port" eval \
