@@ -206,6 +206,13 @@ se reconcilia mediante transiciones atómicas. Interrupción tras begin conserva
 ambigüedad y nunca repite Save. No heredar rehearsals de otro contrato ni
 habilitar lineup/R3 por actualizar código.
 
+La captura privada espera la redirección inicial `/` → `/en/` y el documento
+cargado antes del GET; el origen FPL por sí solo no evita perder el contexto CDP.
+No exige controles del pitch ni reintenta el GET por un 403. Un 403 requiere
+revisar autenticación con `fpl-web-ops`; contraseña/MFA los completa el humano.
+Al preparar ese handoff, pausa temporalmente el timer privado para que no cierre
+la ventana y reanúdalo después de verificar sesión o cancelar el handoff.
+
 Timeouts/conexión y HTTP 5xx del collector admiten dos retries programados con
 cooldown 15/30 minutos, después cadencia normal. 403/auth, 429/cuota, calidad
 inválida y errores desconocidos conservan cadencia/escalamiento. Odds conserva
