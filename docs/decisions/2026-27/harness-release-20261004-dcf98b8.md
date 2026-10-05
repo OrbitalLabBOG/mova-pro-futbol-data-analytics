@@ -342,3 +342,12 @@ prestó 0,50 CPU mientras poseía ambos locks. Cleanup terminal exit 0,
 browser instalado dcf98b8 detenido. El ensayo usó la imagen ed39afc con
 los dos archivos de transporte candidatos; aún no prueba el release final
 ni suma un rehearsal importado. No requiere promover el CLI experimental.
+
+
+Revisión previa al release: los drills browser/combined también reservan
+privado/capacidad antes de cualquier outage, heredan FD9/FD8 para el préstamo
+acotado de las lecturas y limitan cada captura a 45 s. Contención retorna 75
+sin caída; replay de un drill ya importado conserva su salida previa a los
+locks. Seis regresiones adicionales PASS; suite **2.025 passed, 1 skipped,
+79 deselected**, 37,24 s. Los nuevos drills físicos siguen pendientes del
+release final; esta suite no se presenta como evidencia de recuperación real.

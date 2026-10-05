@@ -499,3 +499,35 @@ def test_offsite_restore_status_is_independent_from_host_recovery_count(tmp_path
     assert db.offsite_restore_drill_status()["status"] == "completed"
     assert db.offsite_restore_drill_status()["passed"] == 8
     assert db.host_recovery_drill_status()["completed"] == 0
+
+
+@pytest.mark.parametrize('filename',['browser-recovery-drill.sh','combined-recovery-drill.sh'])
+def test_authenticated_recovery_reads_own_resources_and_are_bounded_before_outage(filename):
+    script=Path('deploy/bin',filename).read_text()
+    assert 'exec 9>/run/lock/mova-fpl-private-state.lock' in script
+    assert 'exec 8>/run/lock/mova-fpl-capacity.lock' in script
+    assert script.index('drill host-status') < script.index('exec 9>') < script.index('exec 8>')
+    assert script.index('exec 8>') < script.index('started_at=')
+    assert script.count('timeout --signal=TERM --kill-after=3s 45s "$browser_session" collect')==2
+
+
+@pytest.mark.parametrize('filename',['browser-recovery-drill.sh','combined-recovery-drill.sh'])
+@pytest.mark.parametrize('busy',['private-state','capacity'])
+def test_recovery_resource_contention_defers_before_browser_or_outage(tmp_path,filename,busy):
+    import fcntl
+    import os
+    import subprocess
+    locks=tmp_path/'locks';locks.mkdir()
+    mova=tmp_path/'mova';mova.write_text('#!/bin/sh\nexit 75\n');mova.chmod(0o755)
+    source=Path('deploy/bin',filename).read_text().replace('/run/lock/',str(locks)+'/')
+    source=source.replace('/usr/local/bin/mova',str(mova))
+    script=tmp_path/'drill.sh';script.write_text(source)
+    deploy_env=tmp_path/'deploy.env';deploy_env.write_text('')
+    with (locks/f'mova-fpl-{busy}.lock').open('w') as fd:
+        fcntl.flock(fd,fcntl.LOCK_EX|fcntl.LOCK_NB)
+        result=subprocess.run(['bash',str(script),'julian','test defer','fixture-key'],
+            env={**os.environ,'MOVA_REPO_DIR':str(tmp_path),'MOVA_DEPLOY_ENV':str(deploy_env)},
+            text=True,capture_output=True,timeout=5)
+    assert result.returncode==75
+    assert 'deferred' in result.stderr
+    assert not (tmp_path/'artifacts').exists()
