@@ -199,3 +199,125 @@ def test_actions_and_authenticated_get_stages_are_never_repeated_after_timeout(s
     with pytest.raises(module.ProbeFailed) as caught:b.stage(stage,{})
     assert len(calls)==1 and b.read_timeout_reconciliations==0
     assert caught.value.stage==stage
+
+
+@pytest.mark.parametrize('stage',['page_gate','sheet_state','sheet_closed','open_sheet','close_sheet','navigate'])
+def test_dom_only_stages_return_direct_values_without_promise_or_network(stage):
+    import shutil
+    node=shutil.which('node')
+    if not node:pytest.skip('Node required for DOM stage contract')
+    source=(ROOT/'deploy/browser/pick-team-dom-probe.js').read_text()
+    script=(source.replace('__MOVA_TEAM_ID__','1').replace('__MOVA_PROBE_STAGE__',json.dumps(stage))
+            .replace('__MOVA_PROBE_EXPECTED__',json.dumps({'index':0,'element':1,'web_name':'Player 1'})))
+    harness=r'''
+const fs=require('fs'),vm=require('vm');const p=JSON.parse(fs.readFileSync(0,'utf8'));
+const visible=()=>[{}];
+const players=Array.from({length:15},(_,i)=>({innerText:`Player ${i+1}`,getClientRects:visible,click:()=>{}}));
+const dismiss={getClientRects:visible,getAttribute:()=>"Dismiss",click:()=>{}};
+const checks=['Captain','Vice Captain'].map((name,i)=>({checked:i===0,labels:[{innerText:name}],
+    getClientRects:p.stage==='sheet_closed'?()=>[]:visible,closest:()=>document}));
+const document={readyState:'complete',querySelectorAll:s=>s.includes('data-pitch-element')?players:
+    s.includes('checkbox')?checks:s==='button'?[dismiss]:[]};
+const result=vm.runInNewContext(p.script,{document,location:{origin:'https://fantasy.premierleague.com',pathname:'/en/my-team'}});
+process.stdout.write(JSON.stringify({promise:typeof result?.then==='function',object:typeof result==='object'}));
+'''
+    result=subprocess.run([node,'-e',harness],input=json.dumps({'stage':stage,'script':script}),
+                          text=True,capture_output=True,check=True)
+    assert json.loads(result.stdout)=={'promise':False,'object':True}
+
+
+def test_native_transport_pins_exact_fpl_target_and_sanitizes_errors():
+    import shutil
+    node=shutil.which('node')
+    if not node:pytest.skip('Node required for transport contract')
+    transport=(ROOT/'deploy/browser/pick-team-cdp-session.mjs').as_uri()
+    harness=r'''
+const {connect,selectTarget,safeCode,STAGES}=await import(process.argv[1]);
+let calls=[];let sockets=[];
+class Socket extends EventTarget {
+ constructor(){super();sockets.push(this);queueMicrotask(()=>this.dispatchEvent(new Event('open')));}
+ close(){this.dispatchEvent(new Event('close'));}
+ send(raw){const d=JSON.parse(raw);calls.push(d);let result={};
+ if(d.method==='Target.getTargets')result={targetInfos:[{type:'page',url:'https://fantasy.premierleague.com/en/my-team',targetId:'fixed'}]};
+ if(d.method==='Target.attachToTarget')result={sessionId:'pinned'};
+ if(d.method==='Runtime.evaluate')result={result:{value:{ready:true}}};
+ queueMicrotask(()=>this.dispatchEvent(new MessageEvent('message',{data:JSON.stringify({id:d.id,result})})));
+ }
+}
+const b=await connect(9222,{Socket,fetcher:async()=>({json:async()=>({webSocketDebuggerUrl:'ws://127.0.0.1:9222/devtools/browser/test'})})});
+const result=await b.evaluate('fixed-stage',25000);
+let ambiguous=false;try{selectTarget([{type:'page',url:'https://fantasy.premierleague.com',targetId:'a'},
+ {type:'page',url:'https://fantasy.premierleague.com/en/my-team',targetId:'b'}]);}catch(e){ambiguous=e.message==='FPL_PROBE_TARGET_AMBIGUOUS';}
+let dialog=false;
+sockets[0].dispatchEvent(new MessageEvent('message',{data:JSON.stringify({method:'Page.javascriptDialogOpening'})}));
+try{await b.evaluate('never-run',25000);}catch(e){dialog=e.message==='FPL_PROBE_DIALOG_BLOCKED';}
+b.close();
+process.stdout.write(JSON.stringify({result,ambiguous,dialog,safe:safeCode(new Error('private page text')),
+ methods:calls.map(c=>c.method),pinned:calls.filter(c=>c.method==='Runtime.evaluate').every(c=>c.sessionId==='pinned'),
+ noSave:!STAGES.has('save')}));
+'''
+    result=subprocess.run([node,'--input-type=module','-e',harness,transport],capture_output=True,text=True,check=True)
+    payload=json.loads(result.stdout)
+    assert payload=={'result':{'ready':True},'ambiguous':True,'dialog':True,'safe':'FPL_PROBE_CDP_FAILED',
+                     'methods':['Target.getTargets','Target.attachToTarget','Page.enable','Runtime.evaluate'],
+                     'pinned':True,'noSave':True}
+
+
+def test_native_transport_never_exports_auth_or_closes_external_chromium():
+    source=(ROOT/'deploy/browser/pick-team-cdp-session.mjs').read_text()
+    for forbidden in ['Network.getCookies','Storage.','Browser.close','Page.close','Target.closeTarget',
+                      'Page.handleJavaScriptDialog','Target.setAutoAttach','Debugger.']:
+        assert forbidden not in source
+    assert 'Math.min(25000,cap,remaining)' in source
+    assert 'deadline=clock()+90000' in source
+    docker=(ROOT/'deploy/docker/browser.Dockerfile').read_text()
+    assert 'COPY deploy/browser/pick-team-cdp-session.mjs /opt/mova/pick-team-cdp-session.mjs' in docker
+
+
+def test_native_host_clock_expiry_prevents_starting_transport():
+    values=iter([0,87]);calls=[]
+    b=module.NativeBrowser(1,9222,clock=lambda:next(values),popen=lambda *a,**k:calls.append(a))
+    with pytest.raises(module.ProbeFailed,match='FPL_PROBE_CLOCK_EXPIRED'):b.stage('base',{})
+    assert calls==[]
+
+
+def test_native_host_timeout_closes_transport_and_never_respawns_for_cleanup(monkeypatch):
+    import io
+    class Process:
+        stdin=io.StringIO();stdout=io.StringIO();closed=False
+        def wait(self,timeout):self.closed=True
+    process=Process();calls=[]
+    def popen(*args,**kwargs):calls.append((args,kwargs));return process
+    b=module.NativeBrowser(1,9222,clock=lambda:0,popen=popen)
+    monkeypatch.setattr(module.select,'select',lambda *args:([],[],[]))
+    with pytest.raises(module.ProbeFailed,match='FPL_PROBE_CDP_TIMEOUT'):b.stage('base',{})
+    with pytest.raises(module.ProbeFailed,match='FPL_PROBE_CDP_FAILED'):b.stage('close_sheet',{})
+    assert len(calls)==1 and process.closed and b.closed
+    cmd=calls[0][0][0]
+    assert cmd[-3:]==['/opt/mova/pick-team-cdp-session.mjs','1','9222']
+    assert '86s' in cmd and calls[0][1]['stderr']==subprocess.DEVNULL
+
+
+@pytest.mark.parametrize('response',[{'ok':False,'error_code':'private secret'},
+                                    {'ok':True,'payload':'not an object'}])
+def test_native_host_sanitizes_untrusted_transport_response(monkeypatch,response):
+    import io
+    class Process:
+        stdin=io.StringIO();stdout=io.StringIO(json.dumps(response)+'\n')
+        def wait(self,timeout):pass
+    process=Process()
+    b=module.NativeBrowser(1,9222,clock=lambda:0,popen=lambda *a,**k:process)
+    monkeypatch.setattr(module.select,'select',lambda *args:([process.stdout],[],[]))
+    with pytest.raises(module.ProbeFailed,match='^FPL_PROBE_(CDP_FAILED|RESPONSE_INVALID)$'):b.stage('base',{})
+    b.close()
+
+
+def test_cleanup_failure_preserves_primary_observation_error():
+    b=FakeBrowser();original=b.stage
+    def stage(name,expected):
+        if name=='sheet_state':raise module.ProbeFailed('FPL_PROBE_CDP_TIMEOUT')
+        if name=='close_sheet':raise module.ProbeFailed('FPL_PLAYER_SHEET_CLOSE_MISSING_OR_AMBIGUOUS')
+        return original(name,expected)
+    b.stage=stage
+    with pytest.raises(module.ProbeFailed,match='^FPL_PROBE_CDP_TIMEOUT$'):
+        module.starter_sheet(b,{'index':0,'element':1,'web_name':'Player 1'})

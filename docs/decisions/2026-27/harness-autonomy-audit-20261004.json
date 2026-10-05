@@ -93,5 +93,27 @@
       "stale_daemon_files_cleaned": true
     },
     "physical_selector_fix_proven": false
+  },
+  "latest_candidate_verification": {
+    "observed_at": "2026-10-05T07:09:09.483920+00:00",
+    "pr": 195,
+    "installed_runtime_revision": "dcf98b8",
+    "candidate_installed": false,
+    "suite": {
+      "passed": 2019,
+      "skipped": 1,
+      "deselected": 79,
+      "duration_seconds": 38.02
+    },
+    "canonical_private_capture_then_probe": "pass",
+    "browser_contract": "fpl-pick-team-a11y-2026.10.1",
+    "probe_transport": "fixed-native-cdp-readonly",
+    "collector_agent_browser_version": "0.26.0",
+    "temporary_cpu_cap": 0.5,
+    "cpu_restored_nano_after_collect": 250000000,
+    "cpu_restored_nano_after_probe": 250000000,
+    "save_dispatched": false,
+    "rehearsal_imported": false,
+    "final_release_and_bound_dr_proofs": "pending"
   }
 }

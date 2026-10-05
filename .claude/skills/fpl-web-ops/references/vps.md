@@ -139,8 +139,16 @@ el NanoCpus previo al salir, incluyendo fallo/TERM. No edita el override de
 Compose ni se aplica al login manual. Nunca ampliar leases ni el reloj del
 probe para ocultar un timeout.
 
-Una única reconciliación por probe puede repetir una lectura DOM pura ante
-`FPL_PROBE_CDP_TIMEOUT`, dentro del mismo reloj. Sólo page_gate, sheet_state
-y sheet_closed son elegibles. Apertura, cierre, GET privado y Save nunca se
-repiten. El error conserva la etapa original aunque la limpieza posterior
-cierre correctamente la ficha.
+El transporte del probe mantiene una conexión CDP directa al Chromium ya
+iniciado, sin lanzar otro navegador. `pick-team-cdp-session.mjs` acepta sólo
+las etapas fijas del contrato; no admite JavaScript arbitrario por su interfaz.
+Exige exactamente una pestaña del origen oficial, fija su target y falla ante
+ambigüedad, diálogo JavaScript bloqueante o desconexión. No acepta/dismiss
+estos diálogos ni cambia de pestaña automáticamente; el cierre de una ficha
+FPL sigue siendo la acción DOM local definida arriba.
+
+Las llamadas no se repiten tras timeout en este transporte. El host conserva
+el error de la observación primaria aunque la limpieza también falle, y cierra
+la conexión sin cerrar el Chromium externo. No hay fallback automático al
+cliente CLI ni a otro target. El colector privado y el driver de escritura
+conservan sus rutas y gates; la conexión directa del probe no permite Save.

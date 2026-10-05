@@ -1,4 +1,4 @@
-(async () => {
+(() => {
   const teamId = __MOVA_TEAM_ID__;
   const stage = __MOVA_PROBE_STAGE__;
   const expected = __MOVA_PROBE_EXPECTED__;
@@ -28,7 +28,7 @@
     await waitFor(() => !checkboxByLabel("Captain") && !checkboxByLabel("Vice Captain"),
       "FPL_PLAYER_SHEET_DID_NOT_CLOSE", 5000);
   };
-  if (stage === "diagnose") {
+  if (stage === "diagnose") return (async () => {
     const fpl = location.origin === origin;
     const knownPath = ["/", "/en/", "/en/my-team"].includes(location.pathname);
     let privateStatus = null;
@@ -40,7 +40,7 @@
     return {fpl_origin:fpl,path:knownPath?location.pathname:"other",ready:document.readyState,
       pitch_controls:document.querySelectorAll('button[data-pitch-element="true"]').length,
       private_http_status:privateStatus};
-  }
+  })();
   if (stage === "page_gate") {
     return {ready: location.origin === origin && location.pathname === "/en/my-team" &&
       ["interactive", "complete"].includes(document.readyState) &&
@@ -69,7 +69,7 @@
   };
   const pickSignature = team => [...(team.picks || [])].sort((a,b) => a.position-b.position)
     .map(p => [p.element, p.position, Boolean(p.is_captain), Boolean(p.is_vice_captain)]);
-  if (stage === "base") {
+  if (stage === "base") return (async () => {
     if (checkboxByLabel("Captain") || checkboxByLabel("Vice Captain")) await closePlayerSheet();
     const [team, response] = await Promise.all([
       privateTeam(), fetch(origin + "/api/bootstrap-static/", {
@@ -93,7 +93,7 @@
       fifteen_player_controls: buttons.length === 15, fifteen_switch_controls: switches.length === 15,
       positional_order_matches: slots.length === 15 && slots.every(row => row.label_matches),
     }};
-  }
+  })();
   if (stage === "open_sheet") {
     if (!Number.isInteger(expected.index) || expected.index < 0 || expected.index > 10) {
       throw new Error("FPL_STARTER_INDEX_INVALID");
@@ -125,7 +125,7 @@
   if (stage === "sheet_closed") {
     return {closed:!checkboxByLabel("Captain") && !checkboxByLabel("Vice Captain")};
   }
-  if (stage === "verify") {
+  if (stage === "verify") return (async () => {
     const team = await privateTeam();
     if (JSON.stringify(pickSignature(team)) !== JSON.stringify(expected.signature)) {
       throw new Error("FPL_TEAM_CHANGED_DURING_PROBE");
@@ -134,6 +134,6 @@
     if (buttons.length !== 15 || !expected.slots.every((row,index) =>
       (buttons[index].innerText || "").includes(row.web_name))) throw new Error("FPL_PLAYER_CONTROLS_CHANGED");
     return {unchanged:true};
-  }
+  })();
   throw new Error("FPL_PROBE_STAGE_INVALID");
 })()
