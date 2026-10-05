@@ -28,6 +28,18 @@ y la [guía de cierre, tamaños y límites](experiments/data_ground_truth/README
 
 ## Versiones y última comprobación
 
+El **5 de octubre, 04:07 UTC / 4 de octubre, 23:07 Colombia**, se desplegó
+`dcf98b8` ([PR #191](https://github.com/OrbitalLabBOG/mova-pro-futbol-data-analytics/pull/191)):
+validación de caché WhoScored, retries acotados del collector, sensor DR ligado
+a revisión/RPO, proyección completa del cockpit y reloj/timeout del driver R2.
+Doctor posterior **25 PASS, 0 WARN, 0 FAIL**; suite **1.972 passed, 1 skipped,
+79 deselected**. Restore externo renovado **8/8 en 425 s** y API **5/5 en 23 s**.
+La [acta de release](docs/decisions/2026-27/harness-release-20261004-dcf98b8.md)
+conserva los escenarios y estabilidad aún en verificación. Continúa shadow/A0,
+kill switch activo y browser writes off; instalar estos cambios no cierra autonomía.
+
+### Antecedente — infraestructura del 4 de octubre UTC
+
 El **4 de octubre UTC / 3 de octubre Colombia**, la revisión desplegada `4917df0`
 incorporó backups cada seis horas, preflight DR horario, followups de presupuesto
 acotados y Researcher candidato 1.12.0 (activo 1.10.0). Pasó restore externo 8/8
@@ -388,8 +400,8 @@ pytest -m slow -q
 El [paquete del 04/10 UTC](experiments/research/20261004-preparation/README.md)
 fija la comparación 1.10.0/1.12.0, conserva capacidad operativa y audita los cuatro
 conflictos originales. Los tools son read-only; no encolan agentes ni conceden
-autoridad. La guía de recuperación por etapa está implementada para el siguiente
-release; el runtime verificado sigue en 4917df0.
+autoridad. La guía de recuperación por etapa y su proyección en el cockpit se
+desplegaron con dcf98b8; orientan la recuperación sin autorizar retries ni writes.
 
 ## Recuperación de bases y modelos
 

@@ -13,6 +13,15 @@ El cockpit es una vista read-only sobre el control plane vigente. No crea otro l
 FPL directamente y no concede autoridad. CLI, API y dashboard comparten
 `schema=mova-cockpit-v1`; el writer operativo continúa siendo `ops.db` hasta un cutover aprobado.
 
+## Operar desde este chat
+
+Orbital OS carga el adaptador `mova-fpl-operator` y la skill canónica del repo
+FPL. El acceso provisionado es SSH como ubuntu y `/usr/local/bin/mova`;
+no registra una tool nueva en Orbix Web. Contrasta fecha y revisión desplegada
+antes de atribuir capacidades; un checkout local antiguo no prueba el release.
+Lee el bloque observability del doctor, conserva su disponibilidad y diferencia
+salud de drills, entrega de alertas y aceptación de autonomía.
+
 ## Entrada rápida
 
 ```bash

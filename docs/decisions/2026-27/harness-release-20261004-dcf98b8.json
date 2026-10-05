@@ -1,0 +1,147 @@
+{
+  "schema": "mova-harness-release-verification-v1",
+  "status": "verification-in-progress",
+  "observed_at": "2026-10-05T04:32:51.343Z",
+  "runtime_revision": "dcf98b8555ddc848258c13bfd64db5da29c4c423",
+  "pr": 191,
+  "ci_runs": [
+    37260316950,
+    37260422288
+  ],
+  "deployed": true,
+  "controls": {
+    "mode": "shadow",
+    "action_level": "A0",
+    "kill_switch": true,
+    "browser_writes": false,
+    "compliance_gate": "pending"
+  },
+  "doctor_after_deploy": {
+    "pass": 25,
+    "warn": 0,
+    "fail": 0
+  },
+  "readiness_at_0428": {
+    "pass": 21,
+    "pending": 5,
+    "blocked": 1,
+    "total": 27
+  },
+  "suite_deployed_code": {
+    "passed": 1972,
+    "skipped": 1,
+    "deselected": 79
+  },
+  "suite_followup_local": {
+    "passed": 1973,
+    "skipped": 1,
+    "deselected": 79,
+    "duration_seconds": 35.76
+  },
+  "implemented_and_deployed_gaps": [
+    "H01",
+    "H02",
+    "H03",
+    "H04",
+    "H05",
+    "H06",
+    "H07",
+    "H13"
+  ],
+  "existing_contract_verified": [
+    "H09"
+  ],
+  "pending": [
+    "H08_owner_decision_ADR011",
+    "H10_equivalent_metered_followup_and_physical_cap_limit",
+    "H11_authenticated_DOM_probe",
+    "H12_PM_update_readonly_preview",
+    "browser_and_combined_recovery",
+    "stability_30min_after_last_disruptive_drill",
+    "reboot_separate_authorization",
+    "empty_host_reconstruction",
+    "real_gameweeks_and_controlled_execution",
+    "promotion_and_compliance"
+  ],
+  "browser_observation": {
+    "chromium": "154.0.8037.92",
+    "agent_browser": "0.26.0",
+    "startup_paths": [
+      "/",
+      "/en/"
+    ],
+    "private_get_status": 403,
+    "private_get_after_stable_route_context_error": false,
+    "read_only": true,
+    "save_dispatched": false,
+    "followup_local_commit": "f0ba402",
+    "followup_deployed": false,
+    "human_login_pending": true,
+    "followup_pr": 192,
+    "followup_merged_revision": "8820c56306f616b24e78a6e9248d3ad720ad2f07",
+    "followup_ci_runs": [
+      37264258191,
+      37264381284
+    ],
+    "followup_images": "built"
+  },
+  "pm_mutated": false,
+  "host_reconstruction_proven": false,
+  "rollback_available_not_exercised": true,
+  "override_sha256": "d0ee00f0cb50d42aafa3243fd5895fd8aab47068ab1299a1b20c82555bb110ac",
+  "drills": [
+    {
+      "scenario": "offsite_restore",
+      "revision": "dcf98b8",
+      "status": "pass",
+      "job_id": "job_700d67d31ff74d619bfb067c41492b69",
+      "artifact_sha256": "e4c617577f86def14b7cd6304c72e10c629285fe8ffdcbd239128b6fadad5e67",
+      "checks_passed": 8,
+      "downtime_seconds": 0,
+      "elapsed_seconds": 425,
+      "finished_at": "2026-10-05T04:17:37+00:00",
+      "fpl_state_mutated": false
+    },
+    {
+      "scenario": "api_recovery",
+      "revision": "dcf98b8",
+      "status": "pass",
+      "job_id": "job_c76d5f5fb07848bfb3a3120b605e5611",
+      "artifact_sha256": "08bf7f629081e3db995742522e56a6617b69e138aacc1a6a378d369eef08bd86",
+      "checks_passed": 5,
+      "downtime_seconds": 23,
+      "elapsed_seconds": null,
+      "finished_at": "2026-10-05T04:21:38+00:00",
+      "fpl_state_mutated": false
+    },
+    {
+      "scenario": "postgres_recovery",
+      "revision": "dcf98b8",
+      "status": "pass",
+      "job_id": "job_afaa9b85abb4472f9bdd8b66273afbb0",
+      "artifact_sha256": "4847c87be1ec0eb05ab5e90a103ad48941dc847e83bed8b90a874b0a25a6bf8d",
+      "checks_passed": 8,
+      "downtime_seconds": 19,
+      "elapsed_seconds": null,
+      "finished_at": "2026-10-05T04:28:57+00:00",
+      "fpl_state_mutated": false
+    }
+  ],
+  "followup_candidate": {
+    "revision": "8820c56306f616b24e78a6e9248d3ad720ad2f07",
+    "images": {
+      "engine": "sha256:204c6515d56d81be232a272fee57abbe17fce831e8f1e24eef8852406d665717",
+      "browser": "sha256:75bf9646ee21cc2c5af96c663cbd47a7aeb2c810a49db290595f29e33440ffea",
+      "research": "sha256:3cb9da6188dc7ed2f7339c561a96a5ee696abcc1fcd54ea955d953389b59c180"
+    },
+    "smoke": {
+      "checks_passed": 10,
+      "checks_total": 10,
+      "job_id": "job_b34955a675c34e92b238ddcff3880a48",
+      "ledger": "ephemeral",
+      "runtime_mutated": false,
+      "network": "none"
+    },
+    "deployed": false
+  }
+}

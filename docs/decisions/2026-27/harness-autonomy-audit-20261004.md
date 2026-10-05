@@ -150,10 +150,12 @@ acotados de cada llamada del driver y del wrapper antes del apply boundary.
 La ausencia de un control debe bloquear precommit. Timeout/crash tras aplicar
 se clasifica ambiguo y se reconcilia antes de cualquier otra confirmación.
 
-Aceptación: pre-state/preview exactos, una sola confirmación, reload y
-post-state; tres GWs por capacidad/versión según ledger, sin contar montaje
-manual ni pruebas read-only como commit real. Entry point y autoridad se
-habilitan explícitamente por capacidad después de la evidencia aplicable.
+El ledger exige tres ciclos/GWs distintos por capacidad y versión; sus probes
+browser read-only/validate-only sí cuentan para los gates de capacidad cuando
+cumplen el contrato, pero no prueban guardado. La aceptación de ejecución
+controlada exige adicionalmente pre-state/preview exactos, una sola confirmación,
+reload y post-state. El montaje manual no suma rehearsals del driver. Entry point
+y autoridad se habilitan explícitamente después de la evidencia aplicable.
 
 ### 5. Release, recuperación y skills — AC01/06/07
 

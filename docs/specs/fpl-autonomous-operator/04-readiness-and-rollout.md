@@ -11,6 +11,16 @@ status: active-shadow
 
 ## Auditoría e iteración completa — 4 de octubre de 2026
 
+Corte posterior: PR #191 integrada y `dcf98b8` desplegada el 05/10 a las
+04:07 UTC (04/10 Colombia). Doctor 25/0/0; restore externo 8/8, 425 s,
+y recuperación API 5/5, 23 s. Cockpit conserva timing/recovery de nueve
+stages, ocho recovery_contracts y calidad/antigüedad research separadas.
+[Acta de release en verificación](../../decisions/2026-27/harness-release-20261004-dcf98b8.md).
+Los demás escenarios y la ventana predeclarada de 30 minutos siguen pendientes;
+los snapshots anteriores conservan su fecha y no acreditan el SHA nuevo.
+
+### Corte anterior a la implementación
+
 [Auditoría del harness](../../decisions/2026-27/harness-autonomy-audit-20261004.md):
 código, logs, skills, VPS y updates PM contrastados; gaps H01–H13 y paquetes de
 cierre ligados a AC01–09. VPS 4917df0, 19 pass/5 pending/3 blocked en el corte
