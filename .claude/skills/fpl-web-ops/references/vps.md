@@ -132,7 +132,7 @@ la ejecución. La captura privada precede al probe dentro de la secuencia real
 del host y sigue acotada a 45 s; el probe conserva sus 90 s. Una prueba aislada
 de arranque no debe presentarse como prueba del flujo completo.
 
-El préstamo temporal de CPU de collect/probe sólo se permite si el proceso
+El préstamo temporal de CPU de collect/probe/probe-transfers sólo se permite si el proceso
 hereda y posee los descriptores de ambos locks (privado y capacidad). Eleva
 un cap positivo inferior hasta un máximo de 0,50 CPU y restaura exactamente
 el NanoCpus previo al salir, incluyendo fallo/TERM. No edita el override de
