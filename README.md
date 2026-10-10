@@ -1,7 +1,7 @@
 ---
 type: docs
 name: MOVA Fantasy Fútbol Data Analytics
-updated: 2026-10-04
+updated: 2026-10-09
 status: active
 tags: [mova, fpl, runtime, operations]
 ---
@@ -27,6 +27,17 @@ ni promueve un modelo. Empezar por el [contrato del dataset](experiments/data_gr
 y la [guía de cierre, tamaños y límites](experiments/data_ground_truth/README.md#cierre-del-gate-de-datos-g112).
 
 ## Versiones y última comprobación
+
+El **10 de octubre UTC / 9 de octubre Colombia** se desplegó `dc5a2d8` para
+corregir un fallo del worker anterior al inicio de las deliberaciones. Las dos
+solicitudes pendientes se procesaron por el harness y la cola quedó sin anomalías.
+La captura autenticada posterior confirmó 15 jugadores y el mismo fingerprint.
+Doctor: **25 PASS, 0 WARN, 0 FAIL**. Suite: **2.027 passed, 1 skipped,
+79 deselected**. Se mantienen shadow/A0 y los
+límites existentes; los bloqueos de research y promoción siguen vigentes.
+[Acta de recuperación y verificación](docs/decisions/2026-27/deadline-worker-recovery-20261009.md).
+
+### Antecedente — release del 5 de octubre UTC
 
 El **5 de octubre, 04:07 UTC / 4 de octubre, 23:07 Colombia**, se desplegó
 `dcf98b8` ([PR #191](https://github.com/OrbitalLabBOG/mova-pro-futbol-data-analytics/pull/191)):
