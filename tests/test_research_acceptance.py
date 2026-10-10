@@ -169,3 +169,14 @@ def test_new_cohort_cannot_hide_an_already_inferred_future_gw(tmp_path,monkeypat
     manifest['slots'][0]['deadline_at']=(datetime.now(timezone.utc)+timedelta(days=8)).isoformat()
     with pytest.raises(ValueError,match='deadline disagrees|previously inferred'):
         register_cohort(db,config,manifest,actor='owner',reason='new decision',idempotency_key='different')
+
+
+def test_late_import_cannot_repair_expired_slot(tmp_path,monkeypatch):
+    config,db,manifest,_,prepared=_cohort(tmp_path,monkeypatch)
+    run=_run(config,db,manifest,prepared,2)
+    _passing(db,manifest,run)
+    with db.transaction() as con:
+        con.execute('UPDATE research_runs SET imported_at=? WHERE research_run_id=?',((datetime.fromisoformat(manifest['slots'][0]['deadline_at'])+timedelta(seconds=1)).isoformat(),run))
+    report=db.research_acceptance(config)
+    assert report['status']=='failed'
+    assert 'result_imported_outside_window' in report['active']['slots'][0]['reasons']

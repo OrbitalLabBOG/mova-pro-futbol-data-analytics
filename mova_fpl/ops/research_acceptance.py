@@ -152,6 +152,8 @@ def acceptance_report(db, config=None) -> dict:
                     conflicts = con.execute("SELECT COUNT(*) FROM research_conflicts WHERE research_run_id=? AND status='unresolved'", (run["research_run_id"],)).fetchone()[0]
                     reservation = con.execute("SELECT * FROM agent_budget_reservations WHERE subject_id=?", (run["research_run_id"],)).fetchone()
                     if run["status"] == "imported":
+                        if not run["imported_at"] or not _time(row["registered_at"]) <= _time(run["imported_at"]) < _time(slot["deadline_at"]):
+                            reasons.append("result_imported_outside_window")
                         if run["result_schema"] != manifest["contract"]["release"]["output_schema"]:
                             reasons.append("result_schema_drift")
                         if run["coverage_status"] not in {"complete", "partial"} or float(run["coverage_ratio"] or 0) < .9 or float(run["evidence_ratio"] or 0) < .8 or conflicts:

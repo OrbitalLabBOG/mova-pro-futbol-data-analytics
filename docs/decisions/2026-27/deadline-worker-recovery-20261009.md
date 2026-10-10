@@ -211,8 +211,8 @@ drift, failed attempts, uncertain usage, exceeded budgets and incomplete evidenc
 fail closed. All preregistered GWs must pass 90%/80%/zero applicable conflicts.
 Readiness uses the prospective report and leaves historical failures visible.
 
-Validation before deployment: `pytest -q` — **2053 passed, 1 skipped,
+Validation before deployment: `pytest -q` — **2054 passed, 1 skipped,
 79 deselected**. Compilation, JavaScript syntax and diff whitespace checks pass.
-The 18 new acceptance regressions cover registration/idempotency/immutability,
+The 19 new acceptance regressions cover registration/idempotency/immutability,
 causality, deterministic selection, experiments, individual quality thresholds,
-failed attempts, unknown usage, material drift, expiry and worker asset hashes.
+failed attempts, unknown usage, material drift, expiry, late imports and worker asset hashes.
