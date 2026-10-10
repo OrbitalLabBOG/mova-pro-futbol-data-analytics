@@ -208,6 +208,15 @@ try {
     if (!permit || permit.authorization_id !== selectedPermit?.authorization_id) {
       throw new Error("attempt_not_authorized");
     }
+    if (isResearch && request.acceptance_contract) {
+      const contract = request.acceptance_contract;
+      if (contract.model !== model || contract.reasoning_effort !== reasoningEffort)
+        throw new Error("research_acceptance_routing_drift");
+      for (const [name, digest] of Object.entries(contract.worker_assets)) {
+        const actual = createHash("sha256").update(readFileSync(new URL(name, import.meta.url))).digest("hex");
+        if (actual !== digest) throw new Error("research_acceptance_worker_drift");
+      }
+    }
     const attemptId = `attempt_${randomUUID().replaceAll("-", "")}`;
     const researchContext = isResearch ? buildResearchContext(request) : null;
     const researchPrompt = [

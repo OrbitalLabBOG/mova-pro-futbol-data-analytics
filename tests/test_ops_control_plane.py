@@ -79,7 +79,7 @@ def test_long_horizon_uncertainty_artifact_is_optional_and_hash_bound(monkeypatc
 def test_schema_controls_jobs_y_auditoria(tmp_path):
     config = _config(tmp_path)
     db = _db(config)
-    assert db.migrate() == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]
+    assert db.migrate() == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]
     assert db.migrate() == []
     db.ensure_defaults(mode="shadow", action_level="A0", compliance_gate="pending",
                        browser_writes=False)

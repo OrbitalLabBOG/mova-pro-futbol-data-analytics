@@ -193,3 +193,26 @@ and is not implied by these service-scoped drills. Thus the five-scenario host
 recovery gate still has one unproven scenario. This record neither upgrades the
 old reboot proof nor changes research acceptance, browser rehearsal counts,
 compliance or execution authority.
+
+### ADR-011 owner approval and prospective implementation
+
+Julián explicitly approved ADR-011 in this thread on 9 October 2026 (Colombia).
+The decision was recorded at `2026-10-10T04:30:32Z`; it does not authorize a host
+reboot or change FPL write controls. The earlier `7db00f6` observations above
+remain historical facts, not acceptance evidence for the new release.
+
+The implementation separates the unchanged historical coverage report from
+immutable future cohorts. SQLite migration 022 records owner/reason/approval
+reference/manifest hash and fixes the first operational run per GW in the queue
+transaction, before inference authorization. PostgreSQL migration 025 mirrors
+those records. Experiments do not bind slots; later successful imports cannot
+replace an earlier rejected or failed run. Missing results, material contract
+drift, failed attempts, uncertain usage, exceeded budgets and incomplete evidence
+fail closed. All preregistered GWs must pass 90%/80%/zero applicable conflicts.
+Readiness uses the prospective report and leaves historical failures visible.
+
+Validation before deployment: `pytest -q` — **2053 passed, 1 skipped,
+79 deselected**. Compilation, JavaScript syntax and diff whitespace checks pass.
+The 18 new acceptance regressions cover registration/idempotency/immutability,
+causality, deterministic selection, experiments, individual quality thresholds,
+failed attempts, unknown usage, material drift, expiry and worker asset hashes.

@@ -1106,6 +1106,32 @@ MIGRATION_021 = (
     "ON agent_worker_attempt_events(authorization_id,event_type)",
 )
 
+MIGRATION_022 = (
+    """CREATE TABLE IF NOT EXISTS research_acceptance_cohorts (
+        cohort_id TEXT PRIMARY KEY,
+        idempotency_key TEXT NOT NULL UNIQUE,
+        manifest_json TEXT NOT NULL CHECK (json_valid(manifest_json)),
+        manifest_sha256 TEXT NOT NULL CHECK (length(manifest_sha256)=64),
+        registered_at TEXT NOT NULL,
+        actor TEXT NOT NULL,
+        reason TEXT NOT NULL
+    ) STRICT""",
+    """CREATE TABLE IF NOT EXISTS research_acceptance_slots (
+        cohort_id TEXT NOT NULL REFERENCES research_acceptance_cohorts(cohort_id),
+        cycle_id TEXT NOT NULL,
+        research_run_id TEXT NOT NULL UNIQUE REFERENCES research_runs(research_run_id),
+        contract_sha256 TEXT NOT NULL,
+        bound_at TEXT NOT NULL,
+        PRIMARY KEY (cohort_id,cycle_id)
+    ) STRICT""",
+    *tuple(
+        f"CREATE TRIGGER immutable_{table}_{operation.lower()} BEFORE {operation} ON {table} "
+        "BEGIN SELECT RAISE(ABORT, 'research acceptance is immutable'); END"
+        for table in ("research_acceptance_cohorts", "research_acceptance_slots")
+        for operation in ("UPDATE", "DELETE")
+    ),
+)
+
 MIGRATIONS = (
     (1, "initial_ops_schema", MIGRATION_001),
     (2, "team_state_artifact_provenance", MIGRATION_002),
@@ -1128,4 +1154,5 @@ MIGRATIONS = (
     (19, "agent_worker_attempt_ledger", MIGRATION_019),
     (20, "physical_attempt_budget_accounting", MIGRATION_020),
     (21, "pre_attempt_authorization", MIGRATION_021),
+    (22, "prospective_research_acceptance", MIGRATION_022),
 )

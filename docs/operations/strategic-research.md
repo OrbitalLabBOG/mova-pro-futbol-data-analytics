@@ -247,9 +247,33 @@ fuente única no oficial o conflicto queda `candidate`. La confianza del modelo 
 este gate. Briefs v1 históricos permanecen legibles como `legacy_unmeasured/unverified`, pero no
 cuentan para el gate de cobertura.
 
-`mova strategy research coverage` mide por GW foco revisado, evidencia sellada, conflictos y
-utilidad. La promoción continúa bloqueada hasta observar al menos tres GWs medidos con cobertura
-≥ 90 %, evidencia ≥ 80 % y cero conflictos no resueltos en la última corrida de cada ciclo.
+`mova strategy research coverage` conserva el reporte histórico por GW, incluidos fallos.
+ADR-011 separa aceptación futura: `mova strategy acceptance contract` devuelve el contrato
+actual; `mova strategy acceptance register --file MANIFEST --actor OWNER --reason MOTIVO
+--idempotency-key CLAVE` registra un manifiesto `mova-research-acceptance-manifest-v1`
+con `season`, `approval_reference`, el objeto `contract` exacto y `slots` explícitos
+(`cycle_id`, `gw`, `opens_at`, `deadline_at` con timezone). Debe registrarse antes de
+cualquier corrida de esas GWs. No admite GWs repetidas, retrospectivas ni solapadas con
+otra cohorte. Cada nueva cohorte requiere su propia aprobación trazable.
+
+`mova strategy acceptance status` y GET `/api/v1/research/acceptance` muestran todos
+los slots y el historial separado. Readiness evalúa la última preregistración aprobada,
+nunca la mejor cohorte. Se fija transaccionalmente la primera corrida operativa antes
+que el worker obtenga autorización; experimentos/replay no cuentan. Incluso una corrida
+fuera de la ventana permanece seleccionada y falla. Ningún resultado posterior la sustituye.
+Todas las GWs deben superar individualmente 90 % cobertura, 80 % evidencia y cero conflictos
+aplicables, con recibos completos, modelo/versiones/hashes iguales, consumo exacto dentro
+del presupuesto y máximo dos intentos. Un intento fallido o incierto bloquea la aceptación.
+Slots pendientes permanecen `in_progress`; al vencer sin resultado quedan fallidos.
+No existe edición o eliminación de contratos/bindings en el writer SQLite.
+
+El worker verifica sus hashes, Codex, modelo y effort antes de inferir. Los hashes del
+worker/schema/prompt/contexto se publican en `research_acceptance_assets.json`; actualizar
+ese inventario después de modificar sus fuentes y verificarlo con las pruebas. Cambios
+materiales invalidan el contrato vigente. Señales históricas sólo sirven de contexto:
+ninguna contradicción se declara resuelta y cada claim reutilizado requiere evidencia
+independiente fresca sellada por el importador para el nuevo cutoff. Registrar o pasar
+research no cambia presupuesto, compliance ni controles de ejecución FPL.
 
 ## Diagnóstico
 

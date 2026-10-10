@@ -449,6 +449,10 @@ def make_handler(db: OpsDB, config: RuntimeConfig | None = None):
                     self._send(HTTPStatus.OK, _json_bytes(payload),
                                "application/json; charset=utf-8")
                     return
+                if parsed.path == "/api/v1/research/acceptance":
+                    self._send(HTTPStatus.OK, _json_bytes(db.research_acceptance(runtime)),
+                               "application/json; charset=utf-8")
+                    return
                 if parsed.path == "/api/v1/research/coverage":
                     self._send(
                         HTTPStatus.OK, _json_bytes(db.research_coverage()),

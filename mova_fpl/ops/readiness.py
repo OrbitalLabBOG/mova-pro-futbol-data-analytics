@@ -264,7 +264,8 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
                       "passing_gameweeks": research_coverage.get("passing_gameweeks")},
             required={"status": "passed", "minimum_gameweeks": required_research},
             source="mova strategy research coverage",
-            next_action="importar briefs v2 válidos hasta completar 3 jornadas medidas",
+            next_action="registrar contrato ADR-011 antes de inferencia y completar todas sus GWs; "
+                        "consultar strategy acceptance status (historial: research coverage)",
         ),
         _gate(
             "NO_OPEN_P0_P1",
@@ -572,7 +573,7 @@ def build_readiness(config: RuntimeConfig, db: OpsDB, *,
     fingerprint = current_channel.get("destination_fingerprint")
     return evaluate_readiness(
         operator_status=status,
-        research_coverage=db.research_coverage(),
+        research_coverage=db.research_acceptance(config),
         execution_status=ExecutionService(config, db).status(),
         resilience_evidence=db.resilience_drill_status(),
         orchestration_evidence=db.orchestration_drill_status(),

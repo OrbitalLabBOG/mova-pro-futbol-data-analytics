@@ -664,6 +664,9 @@ class StrategicContextService:
         if _experiment:
             request["experiment"] = _experiment
             request["agent_version"] = _experiment["agent_version"]
+        from mova_fpl.ops.research_acceptance import current_contract
+        acceptance_contract = current_contract(self.config)
+        request["acceptance_contract"] = acceptance_contract
         request_sha = sha256_json(request)
         request["request_sha256"] = request_sha
         request_path = self.config.research_root / "inbox" / f"{run_id}.request.json"
@@ -673,6 +676,7 @@ class StrategicContextService:
             "manifest_id": prepared["manifest_id"], "provider": self.config.research_provider,
             "request_path": str(request_path), "request_sha256": request_sha,
             "experiment": _experiment,
+            "acceptance_contract": acceptance_contract,
             "budget_policy": self.config.agent_budget_policy(),
         })
         if result.get("status") == "blocked":

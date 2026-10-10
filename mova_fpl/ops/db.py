@@ -2289,6 +2289,8 @@ class OpsDB:
                 (run_id, payload.get("job_id"), payload["cycle_id"], payload["manifest_id"],
                  payload["provider"], payload["request_path"], payload["request_sha256"], now),
             )
+            from mova_fpl.ops.research_acceptance import bind_first_run
+            bind_first_run(con, payload, now=now)
             self.append_audit(
                 "research_queued", actor="mova-research", cycle_id=payload["cycle_id"],
                 job_id=payload.get("job_id"), subject_type="research_run", subject_id=run_id,
@@ -3484,6 +3486,10 @@ class OpsDB:
                 "coverage": coverage,
             },
         }
+
+    def research_acceptance(self, config=None) -> dict:
+        from mova_fpl.ops.research_acceptance import acceptance_report
+        return acceptance_report(self, config)
 
     def research_coverage(self, *, limit: int = 20) -> dict:
         """Evaluate all latest cycle results; limit controls presentation only."""
@@ -4726,6 +4732,7 @@ class OpsDB:
                    "outbox_events", "chip_strategy_runs", "gameweek_settlements",
                    "gameweek_reviews", "change_proposals", "season_plans",
                    "cycle_manifests", "research_runs", "research_documents",
+                   "research_acceptance_cohorts", "research_acceptance_slots",
                    "research_signals", "research_conflicts", "cost_ledger",
                    "agent_budget_reservations", "agent_budget_overrun_events",
                    "agent_worker_attempt_events",
@@ -4754,6 +4761,7 @@ class OpsDB:
             "change_proposals": "created_at",
             "season_plans": "created_at", "cycle_manifests": "created_at",
             "research_runs": "queued_at", "research_documents": "observed_at",
+            "research_acceptance_cohorts": "registered_at", "research_acceptance_slots": "bound_at",
             "research_signals": "observed_at", "research_conflicts": "created_at",
             "cost_ledger": "occurred_at",
             "agent_budget_reservations": "created_at",

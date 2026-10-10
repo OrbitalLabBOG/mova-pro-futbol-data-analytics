@@ -2,7 +2,9 @@
 type: adr
 name: ADR-011 — aceptación prospectiva de research por contrato
 created: 2026-10-04
-status: proposed-not-approved
+status: accepted
+approval_recorded_at: 2026-10-10T04:30:32Z
+approved_by: Julian Zuluaga
 ---
 
 # ADR-011 — Cohorte prospectiva para aceptar research
@@ -19,7 +21,7 @@ no pueden resolverse inventando fuentes ni rehaciendo hoy una GW histórica.
 La hoja de ruta AC02.3 habla de tres GWs passing. El operador debe mostrar la
 diferencia con el gate implementado hasta que exista una decisión registrada.
 
-## Propuesta para decisión del owner
+## Decisión aprobada del owner
 
 Separar el historial operacional completo de la aceptación prospectiva de un
 contrato de agente. Conservar el primero sin reetiquetar, borrar o reimportar
@@ -68,8 +70,21 @@ Decisión explícita del owner sobre esta propuesta, contrato versionado, report
 histórico/prospectivo separados, conservación de conflictos y fallos, criterios
 de selección deterministas, validación de causalidad y regresiones del gate.
 Actualizar skill, runbook, PM y `readiness.next_action` para explicar el contrato
-aprobado. Este ADR no está aprobado, no registra una cohorte y no cambia código,
-presupuesto, permisos, estados de evidencia ni niveles A1/A2/A3.
+aprobado. Julián aprobó explícitamente implementar esta propuesta mediante «apruebo»
+en el hilo `01a1236b-3a23-7493-9ff8-41461beae4df`, el 9 de octubre de 2026 en Colombia.
+La hora del frontmatter registra esta decisión en el repositorio; no pretende fechar
+retroactivamente la recepción del mensaje. La aprobación cubre implementación y
+preregistración prospectiva; no habilita escrituras FPL ni reinicio del VPS.
+
+El writer registra cohortes y bindings inmutables (SQLite migration 022) con espejo
+PostgreSQL 025. La primera corrida operativa queda vinculada en la transacción de cola;
+experimentos no cuentan, fallos/rechazos/consumo incierto no se sustituyen. El reporte
+histórico no cambia. Readiness consulta el reporte prospectivo; las GWs pendientes no
+pasan por aprobación ni por repetición. El contrato fija fuentes, assets worker,
+versión/release, routing, Codex, políticas, presupuestos y ventanas concretas.
+La aceptación requiere todos los slots y contabilización exacta antes del deadline.
+La política es `research-prospective-2026.10.1`. Ninguno de estos reportes cambia
+presupuesto, controles, conflictos históricos ni niveles A1/A2/A3.
 
 ## Consecuencias
 

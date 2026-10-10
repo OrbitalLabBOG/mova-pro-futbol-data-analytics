@@ -186,6 +186,12 @@ def parser() -> argparse.ArgumentParser:
     plan.add_argument("--file", required=True)
     plan.add_argument("--actor", required=True)
     plan.add_argument("--reason", required=True)
+    acceptance = strategy_commands.add_parser("acceptance", help="cohorte prospectiva ADR-011")
+    acceptance.add_argument("operation", choices=("contract", "register", "status"))
+    acceptance.add_argument("--file")
+    acceptance.add_argument("--actor")
+    acceptance.add_argument("--reason")
+    acceptance.add_argument("--idempotency-key")
     research = strategy_commands.add_parser("research", help="opera la cola de investigación")
     research.add_argument("operation", choices=("due", "coverage", "enqueue", "experiment", "reconcile-experiment", "import", "resolve-conflict"))
     research.add_argument("--agent-version", action="append")
@@ -684,6 +690,19 @@ def main(argv: list[str] | None = None) -> int:
                 json.loads(Path(args.file).read_text(encoding="utf-8")),
                 actor=args.actor, reason=args.reason,
             )
+        elif args.strategy_command == "acceptance":
+            from mova_fpl.ops.research_acceptance import current_contract, register_cohort
+            db.migrate()
+            if args.operation == "contract":
+                payload = current_contract(config)
+            elif args.operation == "register":
+                if not args.file:
+                    raise ValueError("acceptance register exige --file")
+                payload = register_cohort(db, config,
+                    json.loads(Path(args.file).read_text(encoding="utf-8")),
+                    actor=args.actor, reason=args.reason, idempotency_key=args.idempotency_key)
+            else:
+                payload = db.research_acceptance(config)
         elif args.strategy_command == "deliberate":
             from mova_fpl.ops.deliberation import DecisionDeliberationService
 
