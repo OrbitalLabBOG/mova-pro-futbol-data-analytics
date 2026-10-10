@@ -164,3 +164,32 @@ is proposed, awaiting the owner's explicit decision, and is not implemented or
 approved by this release. Same-revision recovery proofs, compliance, capability
 promotion and execution authority remain separate requirements. No team changes
 were saved in this follow-up.
+
+### Same-revision recovery evidence
+
+The supported host drills subsequently completed on runtime `7db00f6`:
+
+| Scenario | Checks passed | Service downtime | Durable job |
+| --- | --- | --- | --- |
+| API recovery | 5/5 | 23 s | `job_a0c962dc6c5845b883d881d34637c2c2` |
+| PostgreSQL recovery | 8/8 | 16 s | `job_f878547edc5347159f051dcfcc32aa18` |
+| Browser recovery | 9/9 | 27 s | `job_9ac7660f7fb84ef0993b7baa8169ae9a` |
+| Combined recovery | 13/13 | 50 s | `job_c8904d45675b4e44a4e1228c6adcaffe` |
+| Isolated offsite restore | 8/8 | 0 s | `job_6a58cee3294246a585755ebfba87995b` |
+
+All declare `fpl_state_mutated=false`. Combined recovery preserves the original
+private fingerprint. Offsite restore completed at 2026-10-10 04:07:08 UTC in
+345 seconds, verified SQLite and PostgreSQL content, and removed its disposable
+environment. Its artifact SHA-256 is
+`f979f664bac5864cf508c0918afac9966d124256b5ca7ee8ac1cae5b768ee43f`.
+
+The fresh private capture is `teamstate_d19e4f66197e40f19f30df63f14fff5d`,
+observed at 03:50:23 UTC. Its fingerprint still equals the pre-release state;
+there are no saved transfers or lineup changes. No full roster is included here.
+
+The reboot scenario was not run or prepared. The runbook requires separate
+explicit authorization for a real VPS reboot; it affects other hosted services
+and is not implied by these service-scoped drills. Thus the five-scenario host
+recovery gate still has one unproven scenario. This record neither upgrades the
+old reboot proof nor changes research acceptance, browser rehearsal counts,
+compliance or execution authority.
