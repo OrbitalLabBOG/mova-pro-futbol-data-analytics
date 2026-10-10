@@ -3,6 +3,7 @@ type: incident-review
 name: GW6 deadline worker recovery
 created: 2026-10-09
 status: recovered
+updated: 2026-10-09
 tags: [mova, fpl, harness, incident]
 ---
 
@@ -123,3 +124,43 @@ source freshness degradation; after capture and at completion status was healthy
 Final read at 01:58:14 UTC: healthy, no incidents, queue empty/no anomalies and
 unchanged A0 controls. Deployment is the runtime commit above; the subsequent
 documentation commit does not represent another image release.
+
+## Follow-up: transfer probe validation
+
+At the owner's request to complete execution validation, a live read-only R3
+probe timed out while loading Transfers. The host wrapper granted temporary
+CPU borrowing to `collect` and pick-team `probe`, but omitted `probe-transfers`.
+The omitted case now uses the same two owned resource locks, maximum 0.50 CPU,
+and exact restoration trap. Direct sessions without both locks retain their
+provisioned limit. This does not enable Save, transfers, chips or autonomy.
+
+The regression reproduced the missing borrowing before correction. Full suite:
+2028 passed, 1 skipped, 79 deselected. Shell syntax and diff checks passed.
+Runtime `7db00f6` was deployed with a verified PostgreSQL backup, preserved
+rollback configuration and unchanged capacity override. Images are metadata-only
+layers over the preceding deployed images; the implementation change is in the
+host wrapper. Private release artifacts are retained under
+`/opt/orbital/backups/mova-fpl/releases/7db00f6/`.
+
+The corrected live R3 probe passed and was imported as
+`rehearsal_9d62051bcc65b3742a08a986` for `2026-27-gw06`, contract
+`fpl-r3-host-driver-2026.08.1`, with no attempted writes. Its protected source is
+`/var/lib/mova-fpl/artifacts/browser-probes/gw06-r3-20261010-cpu-7db00f6.json`.
+R3 now has two distinct observed cycles; captaincy and lineup each retain one
+under their current contract. The earlier timeout was not counted as passing.
+The browser was stopped and its original 0.25 CPU limit restored after the probe.
+
+Post-deployment doctor: 25 PASS, 0 WARN, 0 FAIL. The incident caused by the
+temporary private-collector timer pause was resolved through the normal watchdog
+after timer restoration and a fresh passing DR observation. No incident was
+manually marked resolved. A separate private-state refresh handles the snapshot
+aging beyond its one-hour TTL during deployment and validation.
+
+Readiness remains insufficient for writes. Repeating the same cycle cannot
+satisfy the distinct-GW rehearsal policy. Research still has four measured cycles
+and zero passing; the implemented gate requires every historical measured cycle
+to pass. [ADR-011](../../specs/fpl-autonomous-operator/decisions/ADR-011-prospective-research-acceptance.md)
+is proposed, awaiting the owner's explicit decision, and is not implemented or
+approved by this release. Same-revision recovery proofs, compliance, capability
+promotion and execution authority remain separate requirements. No team changes
+were saved in this follow-up.
