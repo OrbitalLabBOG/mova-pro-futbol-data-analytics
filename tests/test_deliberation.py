@@ -606,3 +606,39 @@ def test_rejected_orphan_result_quarantines_matching_request_without_overwrite(
     assert not request_path.exists()
     assert db.rejected[0][0] == request_id
     assert db.audits[-1][0] == "decision_deliberation_artifacts_quarantined"
+
+@pytest.mark.parametrize("change,reason", [
+    ("none", "current_context"),
+    ("captain", "deliberation_context_changed"),
+    ("team", "deliberation_team_state_changed"),
+    ("cycle", "deliberation_context_unavailable"),
+])
+def test_dispatch_revalidates_material_context(tmp_path, monkeypatch, change, reason):
+    from types import SimpleNamespace
+    request = _request()
+    request["envelope"]["team_state"] = {"fingerprint": "team-a"}
+    current = json.loads(json.dumps(request))
+    current["envelope_id"] = "new-provenance-only"
+    if change == "captain":
+        current["envelope"]["candidates"][0]["decision"]["captain"] = 9
+    db = SimpleNamespace(
+        deliberation_source=lambda: {"cycle_id": "other" if change == "cycle"
+                                    else request["cycle_id"], "envelope_id": "latest"},
+        latest_team_state=lambda cycle: {"fingerprint": "team-b" if change == "team"
+                                        else "team-a"},
+    )
+    service = DecisionDeliberationService(RuntimeConfig(), db)
+    monkeypatch.setattr(service, "_build_request", lambda source: current)
+    result = service.dispatch_context_check(request)
+    assert result["reason"] == reason
+    assert (result["status"] == "ready") == (change == "none")
+
+
+def test_signal_expiry_is_material_for_deliberation():
+    request = _request()
+    request["cycle_context"] = {"research_summary": {"signals": [
+        {"player_element": 1, "expires_at": "2026-09-03T00:00:00Z"}
+    ]}}
+    changed = json.loads(json.dumps(request))
+    changed["cycle_context"]["research_summary"]["signals"][0]["expires_at"] = "2026-09-04T00:00:00Z"
+    assert semantic_deliberation_input(request) != semantic_deliberation_input(changed)

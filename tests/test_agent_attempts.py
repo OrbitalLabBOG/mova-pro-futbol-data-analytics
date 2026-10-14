@@ -315,3 +315,23 @@ def test_failed_experiment_is_terminal_after_one_attempt_and_keeps_charge(tmp_pa
         reservation=con.execute("SELECT status,estimated_tokens FROM agent_budget_reservations").fetchone()
         assert reservation["status"]=="charged" and reservation["estimated_tokens"]==100
     assert service.import_ready()["exhausted"]==[]
+
+
+def test_obsolete_deliberation_cannot_receive_host_permit(tmp_path, monkeypatch):
+    from mova_fpl.ops.deliberation import DecisionDeliberationService
+    config, db, run_id, request_sha, path = _runtime(tmp_path)
+    monkeypatch.setattr(db, "pending_agent_subjects", lambda: [{
+        "subject_type": "deliberation", "subject_id": run_id,
+        "request_path": str(path), "request_sha256": request_sha,
+    }])
+    monkeypatch.setattr(DecisionDeliberationService, "dispatch_context_check",
+                        lambda self, request: {"status": "blocked",
+                                               "reason": "deliberation_context_changed"})
+    def forbidden(**kwargs):
+        raise AssertionError("obsolete context must not reserve an authorization")
+    monkeypatch.setattr(db, "prepare_agent_attempt_authorization", forbidden)
+    result = AgentAttemptService(config, db).authorize_next()
+    assert result["status"] == "blocked"
+    assert result["blocked_candidates"][0]["reason"] == "deliberation_context_changed"
+    assert not list(config.research_root.glob("permits/*.json"))
+    assert path.exists()  # no unproved cancellation/refund

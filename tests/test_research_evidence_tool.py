@@ -99,7 +99,8 @@ def test_controlled_context_preserves_catalog_and_pages_memory_without_network(t
 def test_search_missing_credential_is_typed_failure_and_never_calls_provider(tmp_path, monkeypatch):
     mod=module()
     tool=mod.EvidenceTool({'research_run_id':'research_'+'a'*32,
-        'manifest':{'deadline_at':'2026-10-10T10:00:00Z'}},tmp_path)
+        'manifest':{'deadline_at':'2026-10-10T10:00:00Z'}},tmp_path,
+        clock=lambda:datetime(2026,10,9,12,tzinfo=timezone.utc))
     def missing(_path):
         raise FileNotFoundError('redacted')
     monkeypatch.setattr(mod.Path,'read_text',missing)
@@ -157,7 +158,8 @@ def test_reader_exposes_unknown_subjects_and_bounded_article_pagination(tmp_path
     def transport(url):return raw,{'content_type':'text/html','final_url':url,'http_status':200}
     tool=mod.EvidenceTool({'research_run_id':'research_'+'a'*32,
         'manifest':{'deadline_at':'2026-10-10T10:00:00Z','research_summary':{'world':{'catalog':[[1,'Saka','ARS']]}}}},
-        tmp_path,fetcher=mod.SafeEvidenceFetcher(tmp_path,transport=transport))
+        tmp_path,clock=lambda:datetime(2026,10,9,12,tzinfo=timezone.utc),
+        fetcher=mod.SafeEvidenceFetcher(tmp_path,transport=transport))
     first=tool.read_source({'source_url':'https://example.com/news','player_elements':[1]})
     assert first['article_text'].startswith('Global discovery: Dunk')
     assert len(first['article_text'])==8000 and first['next_offset']==8000

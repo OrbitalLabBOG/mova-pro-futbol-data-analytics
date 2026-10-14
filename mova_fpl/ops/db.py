@@ -3469,6 +3469,22 @@ class OpsDB:
                 else "degraded"
             )
         coverage = self.research_coverage(limit=12)
+        # Transport completion is not evidence of adequate decision coverage.
+        latest_quality = next((row for row in coverage["runs"]
+                               if latest_payload and row["research_run_id"]
+                               == latest_payload["research_run_id"]), None)
+        quality_status = "unmeasured"
+        if latest_quality and latest_quality["coverage_status"] in {"complete", "partial", "failed"}:
+            policy = coverage["policy"]
+            quality_status = "passed" if (
+                float(latest_quality["coverage_ratio"] or 0) >= policy["minimum_coverage_ratio"]
+                and float(latest_quality["evidence_ratio"] or 0) >= policy["minimum_evidence_ratio"]
+                and int(latest_quality["unresolved_conflicts"] or 0)
+                <= policy["maximum_unresolved_conflicts"]
+            ) else "failed"
+        processing_status = service_status
+        if service_status == "healthy" and quality_status != "passed":
+            service_status = "degraded"
         return {
             "status": "ready" if manifest else "not_prepared", "cycle_id": cycle_id,
             "manifest": manifest_payload,
@@ -3478,6 +3494,8 @@ class OpsDB:
             "unresolved_conflicts": conflicts,
             "service": {
                 "status": service_status,
+                "processing_status": processing_status,
+                "quality_status": quality_status,
                 "latest_run": latest_payload,
                 "run_counts": global_counts,
                 "documents": global_documents,
