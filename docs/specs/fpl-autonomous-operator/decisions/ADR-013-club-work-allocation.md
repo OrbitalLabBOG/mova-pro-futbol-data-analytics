@@ -33,3 +33,22 @@ fechas, ausencia de lesión ni disponibilidad y no ejecuta JavaScript de página
 La versión activa queda en 1.10.0. Antes de despliegue/piloto hay que verificar
 hashes de worker, presupuesto vivo y resultados; el cambio de assets invalida
 la herencia de cualquier contrato de aceptación anterior.
+
+## Sesiones seriales por club — candidato 1.16.0
+
+Los pilotos 1.14 y 1.15 agotaron el guard de tokens antes de componer un brief;
+1.15 intentó los once clubes, por lo que discovery completo no resolvía el
+crecimiento de conversación. 1.16 abre una sesión efímera por club, en serie,
+dentro de la misma request, permiso e intento. Unifica los briefs sin otro LLM
+y los entrega al normalizador e importador independientes habituales. No hay
+reintentos ocultos ni cambio de autoridad. La cuota compartida y ligada al
+request incluye ahora lecturas, verificaciones y consultas de contexto, además
+de discovery. Reiniciar el servidor MCP no reinicia esas cuotas.
+
+Suma el consumo exacto de sesiones completadas y limita cada sesión al saldo de
+la corrida. Un fallo de sesión falla el intento, sin fingir consumo cero ni
+salvarlo como aceptación. Si no se despacha otro club por saldo o tiempo, los
+sujetos restantes quedan not_checked y se declara el límite; no se ocultan los
+intentos anteriores. La salida de otro club se rechaza. Cada contexto enviado
+conserva su propio recibo/hash, y el recibo agregado declara que el contexto
+completo no fue enviado. El candidato permanece inactivo hasta su evaluación.

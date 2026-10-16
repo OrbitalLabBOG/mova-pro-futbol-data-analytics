@@ -292,7 +292,7 @@ assert.equal(missing.context.acquisition_plan.conditional_scope_shortfall,null);
 
 
 @pytest.mark.parametrize("version,drift", [("1.0.0", False), ("1.10.0", False),
-    ("1.13.0", False), ("1.14.0", False), ("1.15.0", False), ("1.14.0", True)])
+    ("1.13.0", False), ("1.14.0", False), ("1.15.0", False), ("1.16.0", False), ("1.14.0", True)])
 def test_authorized_worker_records_context_actually_sent_on_failed_attempt(tmp_path, version, drift):
     from datetime import datetime, timedelta, timezone
     import hashlib
@@ -350,7 +350,8 @@ for line in sys.stdin:
         assert not prompt_path.exists()
         assert not list((tmp_path / 'receipts').glob('*.started.json'))
         return
-    receipt = json.loads(next((tmp_path / 'logs').glob('*.context.json')).read_text())
+    receipt_glob = '*.club-0.context.json' if version == '1.16.0' else '*.context.json'
+    receipt = json.loads(next((tmp_path / 'logs').glob(receipt_glob)).read_text())
     prompt = prompt_path.read_text()
     context_json = prompt.split('REQUEST_JSON:\n', 1)[1]
     assert hashlib.sha256(context_json.encode()).hexdigest() == receipt['context_sha256']
@@ -360,7 +361,10 @@ for line in sys.stdin:
         assert "work_queue.next_club" in prompt
     assert receipt['prompt_bytes'] == len(prompt.encode())
     assert receipt['request_sha256'] == request['request_sha256']
-    assert json.loads(context_json)['acquisition_plan']['focus_subjects'] == 1
+    if version == '1.16.0':
+        assert len(json.loads(context_json)['focus']) == 1
+    else:
+        assert json.loads(context_json)['acquisition_plan']['focus_subjects'] == 1
     assert len(list((tmp_path / 'receipts').glob('*.started.json'))) == 1
     assert len(list((tmp_path / 'receipts').glob('*.finished.json'))) == 1
 

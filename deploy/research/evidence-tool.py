@@ -81,6 +81,9 @@ class ClubWorkQueue:
                 raise ValueError("invalid_work_queue_checkpoint")
             if type(self.state.get("global_searches")) is not int or not 0 <= self.state["global_searches"] <= 1:
                 raise ValueError("invalid_work_queue_checkpoint")
+            counters = self.state.get("tool_calls", {})
+            if set(counters) - {"read", "verify", "context"} or any(type(n) is not int or n < 0 for n in counters.values()):
+                raise ValueError("invalid_tool_quota_checkpoint")
         else:
             self.state = {"request_binding": self.binding, "searches": dict.fromkeys(groups, 0),
                           "global_searches": 0}
@@ -110,12 +113,23 @@ class ClubWorkQueue:
             return "unattempted_club_has_priority"
         else:
             self.state["searches"][team] += 1
+        self.save()
+        return None
+
+    def consume_tool(self, name, limit):
+        counters = self.state.setdefault("tool_calls", {})
+        if counters.get(name, 0) >= limit:
+            return False
+        counters[name] = counters.get(name, 0) + 1
+        self.save()
+        return True
+
+    def save(self):
         self.path.parent.mkdir(parents=True, exist_ok=True)
         tmp = self.path.with_suffix(".tmp")
         tmp.write_text(json.dumps(self.state, sort_keys=True) + "\n")
         tmp.chmod(0o660)
         tmp.replace(self.path)
-        return None
 
 
 class EvidenceTool:
@@ -147,6 +161,13 @@ class EvidenceTool:
         if self.work_queue:
             self.search_calls = (sum(self.work_queue.state["searches"].values())
                                  + self.work_queue.state["global_searches"])
+        self.shared_tool_quota = (self.work_queue if request.get("agent_release", {}).get("execution_profile")
+                                 == "club_sessions_v1" else None)
+        if self.shared_tool_quota:
+            counters = self.work_queue.state.get("tool_calls", {})
+            self.read_calls = counters.get("read", 0)
+            self.calls = counters.get("verify", 0)
+            self.context_calls = counters.get("context", 0)
 
     def search_schema(self):
         schema = json.loads(json.dumps(SEARCH_TOOL))
@@ -155,6 +176,8 @@ class EvidenceTool:
         return schema
 
     def context(self, args):
+        if self.shared_tool_quota and not self.shared_tool_quota.consume_tool("context", 8):
+            return {"status": "rejected", "reasons": ["context_budget_or_arguments"]}
         self.context_calls += 1
         if self.context_calls > 8 or set(args) != {"section", "query", "offset"}:
             return {"status": "rejected", "reasons": ["context_budget_or_arguments"]}
@@ -262,6 +285,8 @@ class EvidenceTool:
             return {"status": "rejected", "reasons": ["invalid_arguments"]}
         if self.read_calls >= self.max_calls or self.clock() >= self.deadline:
             return {"status": "rejected", "reasons": ["read_budget_or_deadline"]}
+        if self.shared_tool_quota and not self.shared_tool_quota.consume_tool("read", self.max_calls):
+            return {"status": "rejected", "reasons": ["read_budget_or_deadline"]}
         self.read_calls += 1
         try:
             url = canonical_public_url(args["source_url"])
@@ -307,6 +332,8 @@ class EvidenceTool:
         if observed >= self.deadline:
             return {"status": "rejected", "reasons": ["fetch_after_cutoff"], "remaining_calls": 0}
         if self.calls >= self.max_calls:
+            return {"status": "rejected", "reasons": ["verification_budget_exhausted"], "remaining_calls": 0}
+        if self.shared_tool_quota and not self.shared_tool_quota.consume_tool("verify", self.max_calls):
             return {"status": "rejected", "reasons": ["verification_budget_exhausted"], "remaining_calls": 0}
         self.calls += 1
         reasons = []

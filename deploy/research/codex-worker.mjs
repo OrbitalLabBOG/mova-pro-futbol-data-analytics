@@ -11,6 +11,7 @@ import { isDeepStrictEqual } from "node:util";
 import { runMeteredTurn } from "./codex-app-server.mjs";
 import { buildResearchContext } from "./research-context.mjs";
 import { normalizeResearchBrief } from "./research-normalize.mjs";
+import { runClubSessions } from "./research-club-sessions.mjs";
 
 const root = process.env.MOVA_RESEARCH_ROOT || "/research";
 const schemas = {
@@ -400,13 +401,28 @@ try {
           .update(readFileSync(new URL("./evidence-tool.py", import.meta.url)))
           .digest("hex"),
         prompt_bytes: Buffer.byteLength(prompt, "utf8"),
+        ...(release.execution_profile === "club_sessions_v1" ? {
+          schema:"mova-research-club-campaign-context-v1",context_sha256:null,prompt_bytes:0,
+          delivery:"per-club context receipts; aggregate context was not sent",
+        } : {}),
       });
     }
     const startedAtMs = Date.now();
     receipt(runId, attemptId, permit.authorization_id, request, "started", model);
     const metered = isResearch && release.execution === "app_server";
     if (metered) writeFileSync(eventTmp, "", {mode: 0o660});
-    const execution = metered ? await runMeteredTurn({
+    const runResearchTurn = release.execution_profile === "club_sessions_v1"
+      ? options => runClubSessions(options, request, {attemptedClubs:(() => {
+          const path=join(logs, `${runId}.work-queue.json`);
+          if(!existsSync(path)) return [];
+          if(statSync(path).size>16384) throw new Error("unsafe_work_queue_checkpoint");
+          return Object.entries(JSON.parse(readFileSync(path,"utf8")).searches||{})
+            .filter(([,count])=>Number.isInteger(count)&&count>0).map(([team])=>team);
+        })(),onContext:(index,contextReceipt) =>
+          atomicJson(join(logs, `${runId}.${attemptId}.club-${index}.context.json`),
+            {...contextReceipt,run_id:runId,attempt_id:attemptId,agent_version:agentVersion,model,reasoning_effort:reasoningEffort})})
+      : runMeteredTurn;
+    const execution = metered ? await runResearchTurn({
       requiredTools: ["verify_research_evidence", "search_research_web", "read_research_source", "research_context"],
       prompt, model, effort: reasoningEffort, schema: JSON.parse(readFileSync(outputSchema, "utf8")),
       tokenLimit: Math.min(release.logical_token_guard, request.guardrails.agent_budget.job_tokens),

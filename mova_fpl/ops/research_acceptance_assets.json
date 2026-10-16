@@ -1,10 +1,11 @@
 {
   "codex-app-server.mjs": "45bd7d325aff2e95e374c5c4f3d9e5787802f4e9fd0c547536d1b3f1b7ff599c",
-  "codex-worker.mjs": "1897c8a5520d70cbe9303164a54cc89359ad97daa06a6babf78df406211cdf66",
-  "evidence-tool.py": "680b381c24c82ef1fbe2a24eefa4a557e7844c34e2f1abf7f78d82a1b18e4e9f",
+  "codex-worker.mjs": "ec20bbe5fc6fdd671359d095ef8aa5e24c145ca59f07bfcd37fb9132e25b393d",
+  "evidence-tool.py": "30f5b9c674f001624f51f9d2a35cf63197441aedcbf6a6768916be917e9179db",
   "research-brief.schema.json": "dbdb938fa3507395890e0d9083d43ced0c0898baec8b8ff016b67fd7bac59859",
   "research-context.mjs": "3c3150dcf6adde882c3d03fc9c991023a73f1a4f97055135e9ab3076297a4349",
   "research-normalize.mjs": "7acb5c669d73ced0ed71c2952e066a2499826529accdde26e152055223616ac1",
   "research_evidence.py": "c3ca480deea05ba539a7b30295a67da1cf08472f7fed5c44de9b100bae0aedc3",
-  "research_quality.py": "702418729591e255aa9537c993c6f5e1dfe20c10468fd6349601032268e9124b"
+  "research_quality.py": "702418729591e255aa9537c993c6f5e1dfe20c10468fd6349601032268e9124b",
+  "research-club-sessions.mjs": "b284fee34b702533ffc1fa91572ebb64317cba3be8669fe2a3e74894e55e8fbd"
 }

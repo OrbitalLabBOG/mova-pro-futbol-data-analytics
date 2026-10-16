@@ -526,3 +526,11 @@ un jugador esté sano ni que no existan noticias. Tras primera pasada se compone
 el brief antes de profundizar salvo contradicción material. El propietario
 aprobó un millón adicional para GW7 mediante allowance auditado, sin borrar
 cargos previos ni elevar permisos FPL. Este candidato requiere un nuevo piloto.
+
+1.15 completó discovery de 11/11 clubes, pero también acabó sin brief por
+logical_token_guard. El candidato **1.16.0** cambia la unidad de contexto a
+club, con sesiones seriales y agregación determinista dentro de un mismo job.
+Tokens y plazo se acumulan entre sesiones y todas las cuotas de tools persisten
+por request. Un fallo de sesión falla el intento; el saldo insuficiente antes
+de despachar otro club produce un parcial explícito con not_checked. El
+normalizador y el importador conservan la autoridad de validar evidencia.

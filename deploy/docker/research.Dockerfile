@@ -12,6 +12,7 @@ COPY mova_fpl/ops/agent_releases.json /opt/mova-research/agent-releases.json
 COPY deploy/research/codex-app-server.mjs /opt/mova-research/codex-app-server.mjs
 COPY deploy/research/codex-worker.mjs /opt/mova-research/codex-worker.mjs
 COPY deploy/research/research-context.mjs /opt/mova-research/research-context.mjs
+COPY deploy/research/research-club-sessions.mjs /opt/mova-research/research-club-sessions.mjs
 COPY deploy/research/research-normalize.mjs /opt/mova-research/research-normalize.mjs
 COPY deploy/research/research-brief.schema.json /opt/mova-research/research-brief.schema.json
 COPY deploy/research/decision-deliberation.schema.json /opt/mova-research/decision-deliberation.schema.json

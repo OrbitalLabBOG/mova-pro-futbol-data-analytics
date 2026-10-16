@@ -289,3 +289,26 @@ def test_compact_reader_keeps_literal_focus_and_independent_full_body_verificati
        'evidence_text':'Haaland is available.','published_at':'2026-10-16T00:00:00Z','claim_type':'availability'})
     assert verified['status']=='supported' and verified['final_acceptance'] is False
     assert len(calls)==1
+
+
+def test_club_sessions_cannot_reset_tool_quotas_with_a_new_server(tmp_path):
+    mod=module()
+    now=datetime(2026,10,16,12,tzinfo=timezone.utc)
+    request={'research_run_id':'research_'+'f'*32,
+      'agent_release':{'coverage_allocation':'club_work_queue_v1','execution_profile':'club_sessions_v1'},
+      'scope_policy':{'max_documents':1},'manifest':{'deadline_at':'2026-10-17T10:00:00Z',
+      'research_summary':{'focus':[{'element':1,'team':'Club'}],'world':{'catalog':[[1,'Player','CLB']]}}}}
+    calls=[]
+    def transport(url):
+        calls.append(url)
+        return b'<article>Player is available. 16 October 2026.</article>',{'content_type':'text/html','final_url':url,'http_status':200}
+    def tool():return mod.EvidenceTool(request,tmp_path/'attempt',clock=lambda:now,
+        fetcher=mod.SafeEvidenceFetcher(tmp_path/'attempt',transport=transport))
+    args={'source_url':'https://example.com/news','player_elements':[1]}
+    assert tool().read_source(args)['status']=='ok'
+    assert tool().read_source(args)['status']=='ok'
+    assert tool().read_source(args)['reasons']==['read_budget_or_deadline']
+    assert len(calls)==2
+    assert tool().verify({})['reasons']==['invalid_arguments']
+    assert tool().verify({})['reasons']==['invalid_arguments']
+    assert tool().verify({})['reasons']==['verification_budget_exhausted']
