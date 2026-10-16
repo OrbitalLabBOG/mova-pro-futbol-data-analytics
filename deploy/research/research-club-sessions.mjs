@@ -8,8 +8,8 @@ export function clubPrompt(request, group) {
   const focus=request.manifest.research_summary.focus.filter(row=>allowed.has(row.element));
   const context={request_sha256:request.request_sha256, research_run_id:request.research_run_id,
     cycle_id:request.cycle_id, observed_at:request.requested_at, deadline_at:request.manifest.deadline_at,
-    assigned_club:group.team, focus, guardrails:request.guardrails,
-    shared_scope_policy:request.scope_policy};
+    assigned_club:group.team, pass_number:group.pass_number||1, focus, guardrails:request.guardrails,
+    document_budget:group.document_budget, shared_scope_policy:request.scope_policy};
   const prompt=[
     'Eres Researcher MOVA FPL. Esta sesión investiga SOLAMENTE el club asignado y sus sujetos del foco. Otras sesiones cubren los demás clubes; no amplíes este tramo.',
     'Una búsqueda search_research_web con team exacto, seguida de lectura y verificación. Prioriza fuente oficial actual de disponibilidad, minutos o rol. No repitas discovery salvo contradicción material. Entrega el JSON en cuanto cierres este club.',
@@ -21,6 +21,11 @@ export function clubPrompt(request, group) {
     'Las cuotas de tools, tokens y tiempo son COMPARTIDAS entre sesiones y no se reinician. Not_checked es correcto si falta prueba. Evita consultar el contexto global: los sujetos asignados ya están aquí.',
     'Devuelve sólo el objeto del schema, con notas breves. No necesitas gastar consultas sobrantes.',
     ...(request.agent_release?.source_navigation==='public_links_v1' ? ['Tienes una asignación de 2–3 lecturas para este club, reservada frente a los demás. Usa player_elements de este club en cada lectura. Si lees un índice, discovery_links permite localizar el artículo; esos enlaces no son evidencia. Prioriza artículo actual sobre paginar un índice.'] : []),
+    ...(request.agent_release?.completion_campaign ? [
+      'No excedas document_budget: selecciona fragmentos que cubran varios sujetos. Si no hay cupo, conserva la limitación explícita.',
+      'Primera pasada: consulta corta del club y team news; no añadas todos los nombres ni una fecha larga a la búsqueda. Segunda pasada: cambia a crónica o alineación del último partido de liga de los últimos siete días, buscando sólo los sujetos pendientes.',
+      'Distingue cobertura de estado médico: una crónica reciente puede probar contexto de un sujeto; no prueba disponibilidad actual ni titularidad futura. Nunca conviertas una alineación predicha en confirmación.',
+    ] : []),
     'REQUEST_JSON:',JSON.stringify(context),
   ].join('\n');
   return {prompt,context,receipt:{schema:'mova-research-club-context-v1',team:group.team,
@@ -30,9 +35,28 @@ export function clubPrompt(request, group) {
 }
 
 export async function runClubSessions(options, request, {runTurn=runMeteredTurn, clock=Date.now,
-    onContext=()=>{},attemptedClubs=[]}={}) {
+    onContext=()=>{},attemptedClubs=[],readVerified=()=>[],onProgress=()=>{},readRejections=()=>[]}={}) {
   const previous=new Set(attemptedClubs);
-  const groups=buildResearchContext(request).context.acquisition_plan.first_pass.filter(group=>!previous.has(group.team));
+  const campaign=request.agent_release?.completion_campaign;
+  const allGroups=buildResearchContext(request).context.acquisition_plan.first_pass;
+  const groups=allGroups.filter(group=>!previous.has(group.team)).map(group=>({...group,pass_number:1}));
+  const attempted=new Set();
+  const completed=new Set();
+  const counts=new Map();
+  let round=1;
+  const progress=(reason=null)=>{
+    const verified=new Set(readVerified());
+    const rejections=new Map(readRejections().map(row=>[row.player_element,row.reasons]));
+    const subjects=request.manifest.research_summary.focus.map(row=>({player_element:row.element,team:row.team,
+      attempts:counts.get(row.element)||0,status:verified.has(row.element)?'evidence_verified':
+        completed.has(row.element)?(reason==='source_search_exhausted'?'source_blocked':'assessed_pending'):attempted.has(row.element)?'researching':'pending',
+      last_rejection:rejections.get(row.element)||null,final_acceptance:false}));
+    const value={schema:'mova-research-campaign-progress-v1',round,reason,
+      assessed_subjects:subjects.filter(row=>completed.has(row.player_element)).length,
+      evidence_subjects:subjects.filter(row=>row.status==='evidence_verified').length,
+      required_subjects:subjects.length,subjects};
+    onProgress(value);options.onEvent({type:'campaign.progress',...value});return value;
+  };
   const began=clock(); const usage={input_tokens:0,output_tokens:0}; const parts=[];
   const schema=structuredClone(options.schema);schema.properties.documents.minItems=0;
   let stoppedReason=null;
@@ -40,8 +64,16 @@ export async function runClubSessions(options, request, {runTurn=runMeteredTurn,
     const remaining=options.tokenLimit-usage.input_tokens-usage.output_tokens;
     const timeLeft=options.timeoutMs-(clock()-began);
     // Do not dispatch a session that cannot reasonably finish inside this permit.
-    if(remaining<65000 || timeLeft<15000){stoppedReason='shared_budget_or_time_reserved';break;}
-    const group=groups[index];const built=clubPrompt(request,group);
+    if(remaining<(campaign?85000:65000) || timeLeft<15000){stoppedReason='shared_budget_or_time_reserved';break;}
+    const group=groups[index];
+    if(campaign){
+      const documentSlots=(request.scope_policy.max_documents||32)-parts.reduce((n,part)=>n+(part.documents||[]).length,0);
+      if(documentSlots<=0){stoppedReason='shared_document_budget_exhausted';break;}
+      group.document_budget=Math.min(3,documentSlots);
+    }
+    const built=clubPrompt(request,group);
+    for(const element of group.elements){attempted.add(element);counts.set(element,(counts.get(element)||0)+1);}
+    if(campaign)progress('session_dispatched');
     onContext(index,built.receipt);
     options.onEvent({type:'club_session.started',index,team:group.team,remaining_tokens:remaining});
     const result=await runTurn({...options,prompt:built.prompt,schema,
@@ -62,14 +94,27 @@ export async function runClubSessions(options, request, {runTurn=runMeteredTurn,
       || !Array.isArray(brief.signals) || brief.signals.some(row=>!allowed.has(row.player_element))) {
       return {status:1,text:null,error_code:'club_session_scope_drift',usage:{input_tokens:null,output_tokens:null}};
     }
+    if(campaign && (brief.documents||[]).length>group.document_budget)
+      return {status:1,text:null,error_code:'club_document_scope_exceeded',usage:{input_tokens:null,output_tokens:null}};
     parts.push(brief);
+    for(const element of group.elements)completed.add(element);
     options.onEvent({type:'club_session.completed',index,team:group.team,usage:result.usage,
       cumulative_usage:{...usage}});
+    if(campaign){
+      const value=progress('session_completed');
+      if(index===groups.length-1 && round<campaign.maximum_rounds){
+        const verified=new Set(readVerified());
+        const pending=allGroups.map(item=>({...item,elements:item.elements.filter(e=>!verified.has(e)),pass_number:round+1}))
+          .filter(item=>item.elements.length);
+        if(pending.length){round++;groups.push(...pending);}
+      }
+    }
   }
   const covered=new Map(parts.flatMap(part=>part.coverage.subjects).map(row=>[row.player_element,row]));
   const subjects=request.manifest.research_summary.focus.map(row=>covered.get(row.element)||{
     player_element:row.element,status:'not_checked',source_urls:[],
     note:previous.has(row.team)?'prior_attempt_not_replayed':stoppedReason||'club_output_missing_subject'});
+  if(campaign)progress(stoppedReason || (readVerified().length===request.manifest.research_summary.focus.length?'all_subjects_evidence_verified':'source_search_exhausted'));
   const brief={schema:'mova-research-brief-v2',research_run_id:request.research_run_id,
     cycle_id:request.cycle_id,request_sha256:request.request_sha256,generated_at:new Date(clock()).toISOString(),
     summary:`Investigación serial por clubes: ${parts.length}/${groups.length} sesiones completadas; cobertura pendiente según evidencia.`,

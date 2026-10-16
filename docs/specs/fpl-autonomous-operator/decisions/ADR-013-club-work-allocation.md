@@ -52,3 +52,33 @@ sujetos restantes quedan not_checked y se declara el límite; no se ocultan los
 intentos anteriores. La salida de otro club se rechaza. Cada contexto enviado
 conserva su propio recibo/hash, y el recibo agregado declara que el contexto
 completo no fue enviado. El candidato permanece inactivo hasta su evaluación.
+
+## Campaña de completitud — candidato 1.18.0
+
+Petición de Julián del 16 de octubre: iterar sobre los pendientes y hacer
+observable por qué se detiene. Los slots refresh/final anteriores limitaban las
+búsquedas a cinco/cuatro para un foco de once clubes; 1.18 sella hasta dos
+consultas por club (máximo 32) y 32 documentos en todos los slots. Conserva
+presupuesto de tokens, permisos, plazo y validación independiente.
+
+Dentro de un intento realiza hasta dos pasadas seriales. La segunda sólo recibe
+sujetos sin evidencia respaldada por checks independientes del intento actual;
+una afirmación del LLM no los elimina de la cola. Cambia de estrategia de noticia
+a crónica/alineación reciente cuando falta cobertura. Contexto histórico nunca
+se convierte en disponibilidad médica actual. La lectura conserva pistas por
+apellido que el verificador existente ya admite, sin cambiar su autoridad.
+
+Cada sesión publica progreso durable ligado a run/attempt: pendientes, en
+investigación, revisados sin evidencia, evidencia verificada y fuentes agotadas,
+con intentos y último rechazo de verificación por sujeto. Una sesión despachada
+no cuenta como revisión terminada. `mova strategy research progress` presenta
+ese trabajo separado de los ratios importados y el motivo del próximo despacho.
+Presupuesto/plazo/cupo documental y agotamiento de búsquedas son paradas
+explícitas; jamás se traducen a no_material_news o éxito de calidad.
+
+La continuación entre jobs mantiene el máximo de dos hijos por slot, con cinco
+minutos de cooldown y conservación transaccional de presupuesto futuro. Los
+fallos originales y contratos de aceptación anteriores permanecen intactos.
+100% revisado no equivale a 90% de cobertura/80% evidencia: ambos gates se
+conservan. Estado al preparar el candidato: activo 1.10, pruebas reales y
+promoción pendientes; no se aumenta autonomía FPL.

@@ -418,7 +418,23 @@ try {
           if(statSync(path).size>16384) throw new Error("unsafe_work_queue_checkpoint");
           return Object.entries(JSON.parse(readFileSync(path,"utf8")).searches||{})
             .filter(([,count])=>Number.isInteger(count)&&count>0).map(([team])=>team);
-        })(),onContext:(index,contextReceipt) =>
+        })(),readVerified:()=>{
+          const path=join(logs, `${runId}.${attemptId}.verification`, 'checks.jsonl');
+          if(!existsSync(path))return [];
+          if(statSync(path).size>5000000)throw new Error('evidence_progress_too_large');
+          const focus=new Set(request.manifest.research_summary.focus.map(row=>row.element));
+          return [...new Set(readFileSync(path,'utf8').trim().split('\n').filter(Boolean)
+            .flatMap(line=>{const row=JSON.parse(line);return row.status==='supported' && row.publication_date_verified
+              ? (row.covered_focus_elements||[]).filter(e=>focus.has(e)):[]}))];
+        },readRejections:()=>{
+          const path=join(logs, `${runId}.${attemptId}.verification`, 'checks.jsonl');
+          if(!existsSync(path))return [];
+          if(statSync(path).size>5000000)throw new Error('evidence_progress_too_large');
+          return readFileSync(path,'utf8').trim().split('\n').filter(Boolean).map(line=>JSON.parse(line))
+            .filter(row=>row.status==='rejected').slice(-64).map(row=>({player_element:row.player_element,reasons:row.reasons}));
+        },onProgress:value=>atomicJson(join(logs,`${runId}.${attemptId}.progress.json`),
+          {...value,run_id:runId,attempt_id:attemptId,updated_at:new Date().toISOString()}),
+        onContext:(index,contextReceipt) =>
           atomicJson(join(logs, `${runId}.${attemptId}.club-${index}.context.json`),
             {...contextReceipt,run_id:runId,attempt_id:attemptId,agent_version:agentVersion,model,reasoning_effort:reasoningEffort})})
       : runMeteredTurn;

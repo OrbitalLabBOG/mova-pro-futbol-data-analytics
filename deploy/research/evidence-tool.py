@@ -121,6 +121,10 @@ class ClubWorkQueue:
             reads = self.state.get("club_reads", {})
             if set(reads) - set(groups) or any(type(n) is not int or n < 0 for n in reads.values()):
                 raise ValueError("invalid_club_read_checkpoint")
+            hashes = self.state.get("query_hashes", [])
+            if (not isinstance(hashes,list) or len(hashes)>32
+                    or any(not isinstance(x,str) or not re.fullmatch(r"[0-9a-f]{64}",x) for x in hashes)):
+                raise ValueError("invalid_query_checkpoint")
             counters = self.state.get("tool_calls", {})
             if set(counters) - {"read", "verify", "context"} or any(type(n) is not int or n < 0 for n in counters.values()):
                 raise ValueError("invalid_tool_quota_checkpoint")
@@ -135,7 +139,9 @@ class ClubWorkQueue:
                 "global_searches": self.state["global_searches"],
                 "coverage_verified": False, "final_acceptance": False}
 
-    def consume(self, team, limit):
+    def consume(self, team, limit, query_key=None):
+        if query_key and query_key in self.state.get("query_hashes", []):
+            return "duplicate_query"
         count = sum(self.state["searches"].values()) + self.state["global_searches"]
         if count >= limit:
             return "search_budget_or_deadline"
@@ -153,6 +159,8 @@ class ClubWorkQueue:
             return "unattempted_club_has_priority"
         else:
             self.state["searches"][team] += 1
+        if query_key:
+            self.state.setdefault("query_hashes", []).append(query_key)
         self.save()
         return None
 
@@ -164,6 +172,8 @@ class ClubWorkQueue:
         counts = self.state.setdefault("club_reads", {})
         base, extra = divmod(limit, len(self.groups))
         allocation = base + (self.groups.index(group) < extra)
+        if self.state.get("searches") and any(n==0 for n in self.state["searches"].values()):
+            allocation = min(allocation, 3)
         if counts.get(teams[0], 0) >= allocation: return False
         counts[teams[0]] = counts.get(teams[0], 0) + 1
         self.save()
@@ -279,12 +289,14 @@ class EvidenceTool:
                 or not 3 <= len(args["query"]) <= 400
                 or ("team" in args and (not isinstance(args["team"], str) or not 1 <= len(args["team"]) <= 80))):
             return {"status": "rejected", "reasons": ["invalid_arguments"]}
-        query_ceiling = 16 if self.request.get("agent_release", {}).get("discovery_profile") == "expanded_broad_v1" else 8
+        query_ceiling = 32 if self.request.get("agent_release", {}).get("completion_campaign") else 16 if self.request.get("agent_release", {}).get("discovery_profile") == "expanded_broad_v1" else 8
         limit = min(query_ceiling, int(self.request.get("scope_policy", {}).get("max_web_queries", 4)))
         if self.search_calls >= limit or self.clock() >= self.deadline:
             return {"status": "rejected", "reasons": ["search_budget_or_deadline"]}
         if self.work_queue:
-            reason = self.work_queue.consume(args.get("team"), limit)
+            reason = self.work_queue.consume(args.get("team"), limit,
+                hashlib.sha256(" ".join(args["query"].casefold().split()).encode()).hexdigest()
+                if self.request.get("agent_release", {}).get("completion_campaign") else None)
             if reason:
                 return {"status": "rejected", "reasons": [reason],
                         "work_queue": self.work_queue.snapshot()}
@@ -356,6 +368,10 @@ class EvidenceTool:
                 name = self.catalog.get(element, "")
                 if not name: continue
                 positions = [m.start() for m in re.finditer(re.escape(name),text,re.IGNORECASE)]
+                if not positions and self.request.get("agent_release", {}).get("completion_campaign"):
+                    surname = name.split()[-1]
+                    if len(surname) >= 4:
+                        positions = [m.start() for m in re.finditer(r"\b"+re.escape(surname)+r"\b",text,re.IGNORECASE)]
                 for position in positions[:1 if self.compact else 3]:
                     snippet = text[max(0,position-100 if self.compact else position-150):position+(350 if self.compact else 600)]
                     if snippet not in snippets and sum(map(len,snippets)) + len(snippet) <= (2400 if self.compact else 6000):

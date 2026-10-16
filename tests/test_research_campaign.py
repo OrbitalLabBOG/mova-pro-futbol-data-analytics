@@ -120,3 +120,32 @@ def test_active_campaign_continues_partial_and_carries_pending_from_ledger(tmp_p
     with db.connect(readonly=True) as con:
         link=con.execute("SELECT payload_json FROM audit_events WHERE event_type='research_continuation_queued'").fetchone()
     assert json.loads(link[0])['parent_run_id']==first['research_run_id']
+
+
+def test_campaign_progress_keeps_work_separate_from_imported_quality(tmp_path):
+    import json
+    from test_strategic_context import _runtime
+    config,db,service,cycle = _runtime(tmp_path)
+    queued=service.enqueue(force=True,actor='test',reason='progress',idempotency_key='progress')
+    logs=config.research_root/'logs';logs.mkdir(parents=True,exist_ok=True)
+    run=queued['research_run_id']
+    path=logs/(run+'.attempt.progress.json')
+    path.write_text(json.dumps({'run_id':run,'assessed_subjects':25,'evidence_subjects':4,'reason':'source_search_exhausted'}))
+    result=service.campaign_progress()
+    assert result['final_acceptance'] is False
+    assert result['items'][0]['progress']['assessed_subjects']==25
+    assert result['items'][0]['coverage_ratio'] is None
+    path.write_text(json.dumps({'run_id':'research_'+'f'*32}))
+    assert service.campaign_progress()['items'][0]['progress_error']=='progress_binding_mismatch'
+
+
+def test_completion_release_scales_refresh_scope_to_every_club(tmp_path):
+    from test_strategic_context import _runtime
+    config,db,service,cycle = _runtime(tmp_path)
+    result=service.enqueue_experiment(versions=['1.18.0'],actor='test',reason='full focus',idempotency_key='campaign-scope')
+    import json
+    from pathlib import Path
+    request=json.loads(Path(result['results'][0]['request_path']).read_text())
+    clubs={row.get('team') or 'unknown:'+str(row['element']) for row in request['manifest']['research_summary']['focus']}
+    assert request['scope_policy']['max_web_queries']==min(32,2*len(clubs))
+    assert request['scope_policy']['max_documents']==32

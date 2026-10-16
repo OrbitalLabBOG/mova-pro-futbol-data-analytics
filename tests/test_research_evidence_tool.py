@@ -364,3 +364,30 @@ def test_club_read_allocation_reserves_last_club_and_survives_server_restart(tmp
     assert not queue.consume_club_read([11],32)
     assert not queue.consume_club_read([],32)
     assert not queue.consume_club_read([2,3],32)
+
+
+def test_campaign_literal_hints_find_article_alias_but_do_not_mark_verified(tmp_path):
+    mod=module()
+    request={'research_run_id':'research_'+'8'*32,
+      'agent_release':{'source_delivery':'compact_focus_v1','completion_campaign':{'maximum_rounds':2}},
+      'scope_policy':{'max_documents':3},'manifest':{'deadline_at':'2026-10-17T10:00:00Z',
+      'research_summary':{'world':{'catalog':[[1,'Bruno Borges Fernandes','MUN']]}}}}
+    body=('<article>'+ 'Navigation '*200+'Bruno Fernandes will play.</article>').encode()
+    def transport(url):return body,{'content_type':'text/html','final_url':url,'http_status':200}
+    tool=mod.EvidenceTool(request,tmp_path,clock=lambda:datetime(2026,10,16,tzinfo=timezone.utc),
+      fetcher=mod.SafeEvidenceFetcher(tmp_path,transport=transport))
+    result=tool.read_source({'source_url':'https://example.com/news','player_elements':[1]})
+    assert 'Bruno Fernandes will play.' in ''.join(result['literal_fragments'])
+    assert tool.verified_focus==set()
+
+
+def test_campaign_duplicate_search_is_not_a_new_attempt(tmp_path):
+    mod=module()
+    request={'research_run_id':'research_'+'6'*32,'manifest':{'research_summary':{
+      'focus':[{'element':1,'team':'Club'}]}}}
+    queue=mod.ClubWorkQueue(request,tmp_path/'attempt')
+    assert queue.consume('Club',4,'a'*64) is None
+    queue=mod.ClubWorkQueue(request,tmp_path/'other-attempt')
+    assert queue.consume('Club',4,'a'*64)=='duplicate_query'
+    assert queue.state['searches']['Club']==1
+    assert queue.consume('Club',4,'b'*64) is None

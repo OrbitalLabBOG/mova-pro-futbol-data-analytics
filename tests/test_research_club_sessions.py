@@ -41,3 +41,30 @@ const foreign=await runClubSessions(options,request,{runTurn:async()=>({status:0
 assert.equal(foreign.error_code,'club_session_scope_drift');
 '''
     subprocess.run(['node','--input-type=module','-e',script],cwd=ROOT,check=True)
+
+
+def test_campaign_revisits_only_independently_unverified_subjects_and_reports_stop():
+    script=r'''
+import assert from 'node:assert/strict';
+import {runClubSessions} from './deploy/research/research-club-sessions.mjs';
+const request={request_sha256:'sealed',research_run_id:'run',cycle_id:'cycle',requested_at:'2026-10-16',
+ agent_release:{coverage_allocation:'club_work_queue_v1',completion_campaign:{maximum_rounds:2}},guardrails:{},scope_policy:{max_documents:32},
+ manifest:{deadline_at:'2026-10-17',research_summary:{focus:[{element:1,team:'A',player_name:'One'},
+ {element:2,team:'B',player_name:'Two'}]}}};
+const visited=[],progress=[];const verified=new Set();
+const runTurn=async options=>{
+ const c=JSON.parse(options.prompt.split('REQUEST_JSON:\n')[1]);visited.push([c.assigned_club,c.pass_number]);
+ if(c.assigned_club==='A')verified.add(1);
+ // The LLM claims coverage for both; only independent checks may stop the loop.
+ return {status:0,usage:{input_tokens:1000,output_tokens:50},text:JSON.stringify({documents:[],signals:[],conflicts:[],
+ limitations:[],coverage:{subjects:c.focus.map(row=>({player_element:row.element,status:'no_material_news',source_urls:[],note:'claim'}))}})};
+};
+const result=await runClubSessions({schema:{properties:{documents:{minItems:1}}},tokenLimit:300000,timeoutMs:400000,onEvent:()=>{}},request,
+ {runTurn,readVerified:()=>[...verified],onProgress:value=>progress.push(value)});
+assert.equal(result.status,0);assert.deepEqual(visited,[['A',1],['B',1],['B',2]]);
+const final=progress.at(-1);assert.equal(final.evidence_subjects,1);assert.equal(final.assessed_subjects,2);
+assert.equal(final.reason,'source_search_exhausted');assert.equal(final.subjects[1].status,'source_blocked');
+assert.equal(final.subjects[1].attempts,2);assert.equal(final.subjects[1].final_acceptance,false);
+assert.deepEqual(result.usage,{input_tokens:3000,output_tokens:150});
+'''
+    subprocess.run(['node','--input-type=module','-e',script],cwd=ROOT,check=True)

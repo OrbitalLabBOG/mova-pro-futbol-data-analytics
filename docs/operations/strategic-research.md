@@ -553,3 +553,15 @@ Firecrawl v1 a v2. 1.17 reserva las lecturas por club con reparto determinista d
 persiste entre sesiones e intentos y rechaza lecturas sin sujetos o cruzadas.
 La validación real de calidad de 1.17 sigue pendiente. No gastar el saldo reservado para las ventanas finales en otro
 piloto completo: después de 1.16 quedaban 2.149.836 tokens de GW7.
+
+El candidato **1.18.0** convierte la pasada única en una campaña de dos pasadas:
+primero todos los clubes y después sólo sujetos sin check independiente. Escala
+cuotas al foco también en refresh/final y publica progreso por jugador y motivo
+de parada. Consultar `mova strategy research progress`; sus contadores de trabajo
+no sustituyen los ratios del importador. La lectura por apellido es una pista de
+navegación, nunca aceptación. El detalle y las fronteras están en ADR-013.
+Validación local de 1.18: 2.102 pruebas pasan, una omitida y 79 excluidas por la
+configuración. Se comprueba reintento sólo de sujetos no verificados, aislamiento
+de las afirmaciones del LLM, progreso ligado al run, cuotas escaladas al foco,
+búsquedas duplicadas persistentes y pistas literales sin aceptación implícita.
+Estas pruebas no acreditan cobertura real de fuentes ni promoción.
