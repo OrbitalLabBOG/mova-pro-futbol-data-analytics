@@ -291,8 +291,9 @@ assert.equal(missing.context.acquisition_plan.conditional_scope_shortfall,null);
     subprocess.run(['node', '--input-type=module', '-e', script], cwd=ROOT, check=True)
 
 
-@pytest.mark.parametrize("version", ["1.0.0", "1.10.0", "1.13.0"])
-def test_authorized_worker_records_context_actually_sent_on_failed_attempt(tmp_path, version):
+@pytest.mark.parametrize("version,drift", [("1.0.0", False), ("1.10.0", False),
+    ("1.13.0", False), ("1.14.0", False), ("1.14.0", True)])
+def test_authorized_worker_records_context_actually_sent_on_failed_attempt(tmp_path, version, drift):
     from datetime import datetime, timedelta, timezone
     import hashlib
 
@@ -303,6 +304,8 @@ def test_authorized_worker_records_context_actually_sent_on_failed_attempt(tmp_p
                'manifest':{'research_summary':{'focus':[{'element':1,'team':'Club'}],
                            'world':{'catalog':[[1,'Player','CLB']]}}}}
     request['agent_version'],request['agent_release']=researcher_release(version)
+    if drift:
+        request['agent_release']['continuation_policy']['cooldown_seconds'] += 1
     request['requested_at']=datetime.now(timezone.utc).isoformat()
     request['manifest']['deadline_at']=(datetime.now(timezone.utc)+timedelta(days=1)).isoformat()
     request['guardrails']={'agent_budget':{'job_tokens':1000000}}
@@ -342,11 +345,16 @@ for line in sys.stdin:
              'MOVA_RESEARCH_ROOT':str(tmp_path), 'MOVA_TEST_PROMPT':str(prompt_path)},
         text=True, capture_output=True)
     assert result.returncode == 1
+    if drift:
+        assert 'research_agent_release_drift' in result.stderr
+        assert not prompt_path.exists()
+        assert not list((tmp_path / 'receipts').glob('*.started.json'))
+        return
     receipt = json.loads(next((tmp_path / 'logs').glob('*.context.json')).read_text())
     prompt = prompt_path.read_text()
     context_json = prompt.split('REQUEST_JSON:\n', 1)[1]
     assert hashlib.sha256(context_json.encode()).hexdigest() == receipt['context_sha256']
-    if version == "1.13.0":
+    if version in {"1.13.0", "1.14.0"}:
         assert "2-3 dudas" not in prompt
         assert "Después elige dos dudas" not in prompt
         assert "work_queue.next_club" in prompt

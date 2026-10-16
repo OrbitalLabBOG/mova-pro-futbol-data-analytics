@@ -7,6 +7,7 @@ import { basename, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
+import { isDeepStrictEqual } from "node:util";
 import { runMeteredTurn } from "./codex-app-server.mjs";
 import { buildResearchContext } from "./research-context.mjs";
 import { normalizeResearchBrief } from "./research-normalize.mjs";
@@ -187,8 +188,7 @@ try {
     const agentVersion = request.agent_version || releases.agents.researcher.active;
     const release = releases.agents.researcher.versions[agentVersion];
     if (isResearch && !release) throw new Error("unknown_research_agent_version");
-    if (isResearch && request.agent_release && (Object.keys(release).length !== Object.keys(request.agent_release).length
-        || Object.entries(release).some(([key, value]) => request.agent_release[key] !== value))) {
+    if (isResearch && request.agent_release && !isDeepStrictEqual(release, request.agent_release)) {
       throw new Error("research_agent_release_drift");
     }
     if (isResearch && release.codex_version) {

@@ -501,3 +501,12 @@ nunca para acreditar cobertura de una nueva corrida. La activa sigue en 1.10.0.
 Validación local del paquete: 2.086 pruebas pasan, una omitida y 79 excluidas por
 la configuración de la suite. El piloto y despliegue siguen pendientes de acceso
 al VPS; estas pruebas no acreditan rendimiento real ni salud productiva.
+
+El primer preflight real de 1.14.0 falló antes de inferencia: el worker comparaba
+valores de `agent_release` por identidad y rechazaba el objeto anidado de
+`continuation_policy`. Se reemplaza por comparación estructural estricta;
+la prueba del worker incluye 1.14.0 válido y una política anidada alterada, que
+sigue fallando antes de invocar Codex. La request original se conserva como
+rechazada; una autorización emitida mantiene el cargo conservador aunque no
+haya recibo de inicio. El piloto corregido reduce su techo a 800.000 tokens
+para conservar presupuesto de las ventanas futuras, sin ampliar el cap de GW.
