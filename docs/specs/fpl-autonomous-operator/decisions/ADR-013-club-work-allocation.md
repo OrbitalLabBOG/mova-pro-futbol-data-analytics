@@ -82,3 +82,10 @@ fallos originales y contratos de aceptación anteriores permanecen intactos.
 100% revisado no equivale a 90% de cobertura/80% evidencia: ambos gates se
 conservan. Estado al preparar el candidato: activo 1.10, pruebas reales y
 promoción pendientes; no se aumenta autonomía FPL.
+
+La revisión de identidad detectó además que el nombre legal de Igor Thiago no
+coincide con su alias deportivo. 1.18 puede resolver `web_name` del foco sellado
+únicamente si su secuencia de tokens pertenece a un único ID del catálogo
+completo; usa la misma resolución en tool e importador. Alias ambiguos (p. ej.
+Gabriel/Enzo) o ausentes del nombre oficial se rechazan. Los requests anteriores
+sin completion_campaign mantienen exactamente su resolución previa.

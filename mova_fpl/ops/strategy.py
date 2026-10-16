@@ -20,7 +20,7 @@ from mova_fpl.ops.agent_releases import researcher_release
 from mova_fpl.ops.db import OpsDB, canonical_json, new_id, sha256_json, utcnow
 from mova_fpl.ops.schedule import phase_for, agent_window
 from mova_fpl.ops.research_evidence import SafeEvidenceFetcher, canonical_public_url
-from mova_fpl.ops.research_quality import claim_fresh, claim_supported, subject_in_excerpt
+from mova_fpl.ops.research_quality import claim_fresh, claim_supported, subject_in_excerpt, research_identity_catalog
 
 MAX_RESULT_BYTES = 1_048_576
 CLAIM_TYPES = {
@@ -920,8 +920,7 @@ class StrategicContextService:
         by_url = {item["source_url"]: item for item in documents}
         catalog_rows = (request.get("manifest", {}).get("research_summary", {})
                         .get("world", {}).get("catalog", []))
-        catalog = {int(row[0]): str(row[1]) for row in catalog_rows
-                   if isinstance(row, list) and len(row) >= 2}
+        catalog = research_identity_catalog(request)
         catalog_name_counts: dict[str, int] = {}
         for name in catalog.values():
             key = name.casefold()

@@ -68,3 +68,25 @@ def claim_fresh(*, claim_type: str, published_at: str, observed: datetime) -> bo
     } else 7 if claim_type in {"starting_role", "set_pieces", "manager_comment"}
         else 30 if claim_type == "transfer" else 7)
     return observed - max_age <= published <= observed
+
+
+def research_identity_catalog(request: dict) -> dict[int, str]:
+    """Only opt-in campaigns may use a sealed official alias unique in the full catalog."""
+    summary = request.get("manifest", {}).get("research_summary", {})
+    catalog = {int(row[0]): str(row[1]) for row in summary.get("world", {}).get("catalog", [])
+               if isinstance(row,list) and len(row)>=2}
+    if not request.get("agent_release", {}).get("completion_campaign"):
+        return catalog
+    originals = dict(catalog)
+    tokens = lambda value: " ".join(re.findall(r"[a-z0-9]+", _normal(value)))
+    for row in summary.get("focus", []):
+        element = row.get("element")
+        alias = str(row.get("web_name") or "").strip()
+        normalized = tokens(alias)
+        if element not in originals or len(normalized)<5:
+            continue
+        pattern = r"(?<![a-z0-9])"+re.escape(normalized)+r"(?![a-z0-9])"
+        owners = [key for key,name in originals.items() if re.search(pattern,tokens(name))]
+        if owners == [element]:
+            catalog[element] = alias
+    return catalog

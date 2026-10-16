@@ -16,7 +16,7 @@ from pathlib import Path
 
 # The image copies only these two stdlib modules, not the runtime application.
 from research_evidence import SafeEvidenceFetcher, canonical_public_url, normalize_text, ALLOWED_MIME
-from research_quality import claim_fresh, claim_supported, subject_in_excerpt, TOPIC_WORDS, _normal
+from research_quality import claim_fresh, claim_supported, subject_in_excerpt, TOPIC_WORDS, _normal, research_identity_catalog
 
 TOOL = {
     "name": "verify_research_evidence",
@@ -215,7 +215,7 @@ class EvidenceTool:
         if self.deadline.tzinfo is None:
             raise ValueError("deadline_timezone_required")
         rows = request["manifest"].get("research_summary", {}).get("world", {}).get("catalog", [])
-        self.catalog = {int(row[0]): str(row[1]) for row in rows if isinstance(row, list) and len(row) >= 2}
+        self.catalog = research_identity_catalog(request)
         self.names = Counter(name.casefold() for name in self.catalog.values())
         self.focus = {row["element"] for row in request["manifest"].get("research_summary", {}).get("focus", [])}
         self.verified_focus = set()

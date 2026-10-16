@@ -391,3 +391,18 @@ def test_campaign_duplicate_search_is_not_a_new_attempt(tmp_path):
     assert queue.consume('Club',4,'a'*64)=='duplicate_query'
     assert queue.state['searches']['Club']==1
     assert queue.consume('Club',4,'b'*64) is None
+
+
+def test_campaign_official_alias_requires_unique_owner_in_full_catalog(tmp_path):
+    from mova_fpl.ops.research_quality import research_identity_catalog
+    request={'agent_release':{'completion_campaign':{'maximum_rounds':2}},'manifest':{'research_summary':{
+      'focus':[{'element':1,'web_name':'Thiago'},{'element':2,'web_name':'Gabriel'}],
+      'world':{'catalog':[[1,'Igor Thiago Nascimento Rodrigues','BRE'],[2,'Gabriel dos Santos Magalhaes','ARS'],[3,'Gabriel Martinelli Silva','ARS']]}}}}
+    catalog=research_identity_catalog(request)
+    assert catalog[1]=='Thiago'
+    assert catalog[2]=='Gabriel dos Santos Magalhaes'
+    request['agent_release']={}
+    assert research_identity_catalog(request)[1]=='Igor Thiago Nascimento Rodrigues'
+    request['agent_release']={'completion_campaign':{'maximum_rounds':2}}
+    request['manifest']['research_summary']['world']['catalog'].append([4,'Thiago Silva','CHE'])
+    assert research_identity_catalog(request)[1]=='Igor Thiago Nascimento Rodrigues'
