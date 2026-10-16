@@ -20,6 +20,7 @@ export function clubPrompt(request, group) {
     'Official_primary sólo para fuente oficial; independent requiere dos fuentes independientes. No declares resueltos conflictos sin evidencia. Limita cobertura y señales a los IDs de este club; no controles equipo, chips ni permisos.',
     'Las cuotas de tools, tokens y tiempo son COMPARTIDAS entre sesiones y no se reinician. Not_checked es correcto si falta prueba. Evita consultar el contexto global: los sujetos asignados ya están aquí.',
     'Devuelve sólo el objeto del schema, con notas breves. No necesitas gastar consultas sobrantes.',
+    ...(request.agent_release?.source_navigation==='public_links_v1' ? ['Tienes una asignación de 2–3 lecturas para este club, reservada frente a los demás. Usa player_elements de este club en cada lectura. Si lees un índice, discovery_links permite localizar el artículo; esos enlaces no son evidencia. Prioriza artículo actual sobre paginar un índice.'] : []),
     'REQUEST_JSON:',JSON.stringify(context),
   ].join('\n');
   return {prompt,context,receipt:{schema:'mova-research-club-context-v1',team:group.team,

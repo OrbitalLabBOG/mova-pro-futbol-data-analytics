@@ -8,6 +8,8 @@ import sys
 import time
 import urllib.request
 import re
+from html.parser import HTMLParser
+from urllib.parse import urljoin
 from collections import Counter
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
@@ -49,6 +51,41 @@ CONTEXT_TOOL = {"name": "research_context", "description": "Retrieve sealed cont
  "annotations": {"readOnlyHint": True, "destructiveHint": False, "openWorldHint": False}}
 
 
+class DiscoveryLinks(HTMLParser):
+    """Bounded navigation hints only; never evidence or an automatic fetch."""
+    def __init__(self, base):
+        super().__init__(convert_charrefs=True)
+        self.base = base
+        self.links = []
+        self.current = None
+
+    def handle_starttag(self, tag, attrs):
+        if tag != "a": return
+        self.current = None
+        href = dict(attrs).get("href", "")
+        if not href or len(href) > 2048 or href.startswith(("#", "mailto:", "javascript:")): return
+        try: url = canonical_public_url(urljoin(self.base, href))
+        except Exception: return
+        if url == self.base or any(row["source_url"] == url for row in self.links): return
+        self.current = {"source_url": url, "title": ""}
+
+    def handle_data(self, data):
+        if self.current is not None:
+            self.current["title"] = (self.current["title"] + " " + data).strip()[:160]
+
+    def handle_endtag(self, tag):
+        if tag == "a" and self.current is not None:
+            self.links.append(self.current)
+            self.links.sort(key=self.priority)
+            del self.links[64:]
+            self.current = None
+
+    @staticmethod
+    def priority(row):
+        return (-bool(re.search(r"injur|team.news|press.conference|availability", row["title"], re.I)),
+                -bool(re.search(r"/detail/|/articles/|/20[0-9]{2}/|/A/[0-9]", row["source_url"])))
+
+
 class ClubWorkQueue:
     """Per-request checkpoint shared by bounded retries, never acceptance evidence."""
     def __init__(self, request, root):
@@ -81,6 +118,9 @@ class ClubWorkQueue:
                 raise ValueError("invalid_work_queue_checkpoint")
             if type(self.state.get("global_searches")) is not int or not 0 <= self.state["global_searches"] <= 1:
                 raise ValueError("invalid_work_queue_checkpoint")
+            reads = self.state.get("club_reads", {})
+            if set(reads) - set(groups) or any(type(n) is not int or n < 0 for n in reads.values()):
+                raise ValueError("invalid_club_read_checkpoint")
             counters = self.state.get("tool_calls", {})
             if set(counters) - {"read", "verify", "context"} or any(type(n) is not int or n < 0 for n in counters.values()):
                 raise ValueError("invalid_tool_quota_checkpoint")
@@ -116,6 +156,19 @@ class ClubWorkQueue:
         self.save()
         return None
 
+    def consume_club_read(self, elements, limit):
+        teams = [row["team"] for row in self.groups if set(elements) & set(row["elements"])]
+        if len(teams) != 1 or not elements: return False
+        group = next(row for row in self.groups if row["team"] == teams[0])
+        if not set(elements) <= set(group["elements"]): return False
+        counts = self.state.setdefault("club_reads", {})
+        base, extra = divmod(limit, len(self.groups))
+        allocation = base + (self.groups.index(group) < extra)
+        if counts.get(teams[0], 0) >= allocation: return False
+        counts[teams[0]] = counts.get(teams[0], 0) + 1
+        self.save()
+        return True
+
     def consume_tool(self, name, limit):
         counters = self.state.setdefault("tool_calls", {})
         if counters.get(name, 0) >= limit:
@@ -145,6 +198,7 @@ class EvidenceTool:
         self.read_calls = 0
         self.context_calls = 0
         self.controlled = request.get("agent_release", {}).get("execution") == "app_server"
+        self.navigation = request.get("agent_release", {}).get("source_navigation") == "public_links_v1"
         self.compact = request.get("agent_release", {}).get("source_delivery") == "compact_focus_v1"
         self.max_calls = min(32, max(1, int(request.get("scope_policy", {}).get("max_documents", 6))) * 2)
         self.deadline = datetime.fromisoformat(request["manifest"]["deadline_at"].replace("Z", "+00:00"))
@@ -285,6 +339,9 @@ class EvidenceTool:
             return {"status": "rejected", "reasons": ["invalid_arguments"]}
         if self.read_calls >= self.max_calls or self.clock() >= self.deadline:
             return {"status": "rejected", "reasons": ["read_budget_or_deadline"]}
+        if (self.navigation and self.shared_tool_quota
+                and not self.shared_tool_quota.consume_club_read(args["player_elements"], self.max_calls)):
+            return {"status": "rejected", "reasons": ["club_read_allocation_exhausted_or_scope_invalid"]}
         if self.shared_tool_quota and not self.shared_tool_quota.consume_tool("read", self.max_calls):
             return {"status": "rejected", "reasons": ["read_budget_or_deadline"]}
         self.read_calls += 1
@@ -318,7 +375,12 @@ class EvidenceTool:
             offset = args.get("offset",0)
             page_size = 1200 if self.compact else 8000
             dates = re.findall(r'"date(?:Published|Modified)"\s*:\s*"([^"]{1,60})"', payload.decode("utf-8", "ignore"))[:4]
-            return {"status": "ok", "source_url": url, "extraction": extraction, "publication_candidates": dates,
+            navigation = {}
+            if self.navigation and "html" in meta["content_type"].lower():
+                parser = DiscoveryLinks(canonical_public_url(meta.get("final_url", url)))
+                parser.feed(raw_text)
+                navigation = {"discovery_links": parser.links[:8], "links_are_evidence": False}
+            return {**navigation, "status": "ok", "source_url": url, "extraction": extraction, "publication_candidates": dates,
                     "literal_fragments": snippets, "article_text": article_text[offset:offset+page_size],
                     "next_offset": offset+page_size if offset+page_size<len(article_text) else None,
                     "truncated": offset+page_size<len(article_text),

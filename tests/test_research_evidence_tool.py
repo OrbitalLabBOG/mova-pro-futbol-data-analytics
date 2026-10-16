@@ -312,3 +312,55 @@ def test_club_sessions_cannot_reset_tool_quotas_with_a_new_server(tmp_path):
     assert tool().verify({})['reasons']==['invalid_arguments']
     assert tool().verify({})['reasons']==['invalid_arguments']
     assert tool().verify({})['reasons']==['verification_budget_exhausted']
+
+
+def test_navigation_links_are_bounded_public_hints_not_evidence():
+    mod = module()
+    parser = mod.DiscoveryLinks('https://example.com/news')
+    parser.feed('''<a href="/news/detail/team">Team news &amp; injuries</a>
+      <a href="https://127.0.0.1/private">private</a>
+      <a href="javascript:alert(1)">script</a><a href="#x">anchor</a>
+      <a href="https://user:password@example.com/a">credentials</a>
+      <a href="/news/detail/team">duplicate</a>''')
+    assert parser.links == [{'source_url':'https://example.com/news/detail/team',
+                             'title':'Team news & injuries'}]
+    parser.feed(''.join(f'<a href="/article/{i}">'+ 'x'*200 + '</a>' for i in range(100)))
+    assert len(parser.links)==64
+    parser.feed('<a href="/news/detail/latest">Latest team news</a>')
+    assert any(row['source_url'].endswith('/latest') for row in parser.links[:8])
+    assert all(len(row['title']) <= 160 for row in parser.links)
+
+
+def test_navigation_profile_exposes_links_without_following_or_acceptance(tmp_path):
+    mod=module()
+    request={'research_run_id':'research_'+'d'*32,
+      'agent_release':{'source_navigation':'public_links_v1'},
+      'scope_policy':{'max_documents':3},'manifest':{'deadline_at':'2026-10-17T10:00:00Z',
+      'research_summary':{'world':{'catalog':[]}}}}
+    calls=[]
+    def transport(url):
+        calls.append(url)
+        return b'<main>News index <a href="/articles/current">Current team news</a></main>', {'content_type':'text/html','final_url':url,'http_status':200}
+    tool=mod.EvidenceTool(request,tmp_path,clock=lambda:datetime(2026,10,16,tzinfo=timezone.utc),
+        fetcher=mod.SafeEvidenceFetcher(tmp_path,transport=transport))
+    result=tool.read_source({'source_url':'https://example.com/news','player_elements':[]})
+    assert result['discovery_links']==[{'source_url':'https://example.com/articles/current','title':'Current team news'}]
+    assert result['links_are_evidence'] is False
+    assert calls==['https://example.com/news']
+    assert tool.verified_focus==set()
+
+
+def test_club_read_allocation_reserves_last_club_and_survives_server_restart(tmp_path):
+    mod=module()
+    request={'research_run_id':'research_'+'9'*32,'manifest':{'research_summary':{
+      'focus':[{'element':i,'team':f'Club{i:02}'} for i in range(1,12)]}}}
+    queue=mod.ClubWorkQueue(request,tmp_path/'attempt')
+    assert all(queue.consume_club_read([1],32) for _ in range(3))
+    assert not queue.consume_club_read([1],32)
+    queue=mod.ClubWorkQueue(request,tmp_path/'another-attempt')
+    assert not queue.consume_club_read([1],32)
+    assert queue.consume_club_read([11],32)
+    assert queue.consume_club_read([11],32)
+    assert not queue.consume_club_read([11],32)
+    assert not queue.consume_club_read([],32)
+    assert not queue.consume_club_read([2,3],32)

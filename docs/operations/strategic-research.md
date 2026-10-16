@@ -534,3 +534,22 @@ Tokens y plazo se acumulan entre sesiones y todas las cuotas de tools persisten
 por request. Un fallo de sesión falla el intento; el saldo insuficiente antes
 de despachar otro club produce un parcial explícito con not_checked. El
 normalizador y el importador conservan la autoridad de validar evidencia.
+
+El piloto experimental 1.16.0 completó 11/11 sesiones en 440.988 ms y liquidó
+778.696 tokens exactos. La evaluación independiente obtuvo 5/25 sujetos (20 %),
+3/15 propios y 2/10 candidatos, sin señales aceptadas. Falló el gate de calidad;
+no se promovió. Las fuentes antiguas, índices sin artículo accesible y la cuota
+de lectura agotada para los últimos clubes siguen siendo bloqueos reales.
+No comparar causalmente con 1.10: las entradas no fueron pareadas.
+
+El candidato inactivo **1.17.0** incorpora hasta ocho enlaces públicos de
+navegación extraídos del HTML (máximo 64 candidatos, títulos acotados), prioriza
+noticias de equipo y rutas de artículo. No sigue enlaces automáticamente ni los
+considera evidencia. Fechas, texto y cobertura siguen sujetos al verificador
+independiente. El probe de cuatro consultas sin LLM encontró resultados distintos
+con consulta corta, pero no demostró mejora de calidad ni justifica migrar de
+Firecrawl v1 a v2. 1.17 reserva las lecturas por club con reparto determinista del total: con
+32 lecturas y 11 clubes, diez reciben tres y el último dos. El checkpoint
+persiste entre sesiones e intentos y rechaza lecturas sin sujetos o cruzadas.
+La validación real de calidad de 1.17 sigue pendiente. No gastar el saldo reservado para las ventanas finales en otro
+piloto completo: después de 1.16 quedaban 2.149.836 tokens de GW7.
