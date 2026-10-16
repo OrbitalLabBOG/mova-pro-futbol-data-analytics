@@ -510,3 +510,19 @@ sigue fallando antes de invocar Codex. La request original se conserva como
 rechazada; una autorización emitida mantiene el cargo conservador aunque no
 haya recibo de inicio. El piloto corregido reduce su techo a 800.000 tokens
 para conservar presupuesto de las ventanas futuras, sin ampliar el cap de GW.
+
+El piloto 1.14.0 corregido sí inició inferencia: intentó diez clubes sin repetir,
+pero terminó sin brief por `logical_token_guard` (850.116 tokens de entrada y
+2.597 de salida observados; contabilidad de intento fallido sigue incierta).
+La evidencia y el fallo se conservan. No es un éxito de cobertura ni aceptación.
+
+El candidato inactivo **1.15.0** añade entrega compacta de fuentes: página de
+1.200 caracteres y hasta 2.400 de fragmentos literales del foco; conserva
+paginación y el cuerpo íntegro para verificación independiente. Progreso bajo
+demanda usa identidad y estado, sin repetir todas las métricas. El contexto
+original permanece sellado; las omisiones de metadatos de modelo llevan hashes
+en el recibo y no alteran los gates del host. Ningún truncamiento acredita que
+un jugador esté sano ni que no existan noticias. Tras primera pasada se compone
+el brief antes de profundizar salvo contradicción material. El propietario
+aprobó un millón adicional para GW7 mediante allowance auditado, sin borrar
+cargos previos ni elevar permisos FPL. Este candidato requiere un nuevo piloto.

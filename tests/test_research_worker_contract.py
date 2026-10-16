@@ -292,7 +292,7 @@ assert.equal(missing.context.acquisition_plan.conditional_scope_shortfall,null);
 
 
 @pytest.mark.parametrize("version,drift", [("1.0.0", False), ("1.10.0", False),
-    ("1.13.0", False), ("1.14.0", False), ("1.14.0", True)])
+    ("1.13.0", False), ("1.14.0", False), ("1.15.0", False), ("1.14.0", True)])
 def test_authorized_worker_records_context_actually_sent_on_failed_attempt(tmp_path, version, drift):
     from datetime import datetime, timedelta, timezone
     import hashlib
@@ -354,7 +354,7 @@ for line in sys.stdin:
     prompt = prompt_path.read_text()
     context_json = prompt.split('REQUEST_JSON:\n', 1)[1]
     assert hashlib.sha256(context_json.encode()).hexdigest() == receipt['context_sha256']
-    if version in {"1.13.0", "1.14.0"}:
+    if version in {"1.13.0", "1.14.0", "1.15.0"}:
         assert "2-3 dudas" not in prompt
         assert "Después elige dos dudas" not in prompt
         assert "work_queue.next_club" in prompt
@@ -410,3 +410,28 @@ def test_deliberation_without_research_manifest_reaches_worker_and_records_attem
     assert terminal["authorization_id"] == authorization_id
     assert not (tmp_path / ".codex-worker.lock").exists()
     assert (tmp_path / "outbox" / f"{run_id}.result.json").exists() == (worker_exit == 0)
+
+
+def test_compact_context_retains_focus_and_guardrails_without_mutating_sealed_request():
+    script = r'''
+import assert from 'node:assert/strict';
+import {buildResearchContext} from './deploy/research/research-context.mjs';
+const request={request_sha256:'sealed',agent_release:{context_profile:'focus_on_demand',
+ coverage_allocation:'club_work_queue_v1',source_delivery:'compact_focus_v1'},
+ acceptance_contract:{implementation:{a:'x'.repeat(500)}},guardrails:{no_team_changes:true},
+ manifest:{analytics_manifest:{a:'x'.repeat(500)},team_state:{squad:[1]},
+ research_summary:{focus:[{element:1,player_name:'Player',team:'Club',xp:4.123456,
+ is_vice_captain:true,official_news:null,focus_reason:['current_squad']}],
+ world:{catalog:[[1,'Player','CLB']],fixtures:[{a:'x'.repeat(500)}]}}}};
+const original=JSON.stringify(request);
+const {context,receipt}=buildResearchContext(request);
+assert.equal(JSON.stringify(request),original);
+assert.equal(context.manifest.research_summary.focus[0].xp,4.123456);
+assert.equal(context.manifest.research_summary.focus[0].is_vice_captain,true);
+assert.equal(context.manifest.research_summary.focus[0].element,1);
+assert.equal(context.guardrails.no_team_changes,true);
+assert.equal(context.acceptance_contract,undefined);
+assert.ok(receipt.omitted_sections.some(row=>row.path==='acceptance_contract' && row.sha256));
+assert.ok(receipt.context_json_bytes<receipt.request_json_bytes);
+'''
+    subprocess.run(['node','--input-type=module','-e',script],cwd=ROOT,check=True)

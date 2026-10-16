@@ -262,3 +262,30 @@ def test_next_request_prioritizes_imported_pending_subjects_without_inheriting_e
     queue=mod.ClubWorkQueue(request,tmp_path/'attempt')
     assert queue.snapshot()['next_club']['team']=='Pending'
     assert queue.snapshot()['coverage_verified'] is False
+
+
+def test_compact_reader_keeps_literal_focus_and_independent_full_body_verification(tmp_path):
+    mod = module()
+    now = datetime(2026, 10, 16, 12, tzinfo=timezone.utc)
+    request = {'research_run_id':'research_'+'e'*32,
+      'agent_release':{'source_delivery':'compact_focus_v1'},
+      'scope_policy':{'max_documents':3},
+      'manifest':{'deadline_at':'2026-10-17T10:00:00Z','research_summary':{
+        'focus':[{'element':1,'player_name':'Haaland','team':'Man City','xp':6.123}],
+        'world':{'catalog':[[1,'Haaland','MCI']]}}}}
+    body = ('<article>16 October 2026. '+ 'Background. '*700 + 'Haaland is available.</article>').encode()
+    calls=[]
+    def transport(url):
+        calls.append(url)
+        return body, {'content_type':'text/html','final_url':url,'http_status':200}
+    tool=mod.EvidenceTool(request,tmp_path,clock=lambda:now,
+        fetcher=mod.SafeEvidenceFetcher(tmp_path,transport=transport))
+    result=tool.read_source({'source_url':'https://example.com/news','player_elements':[1]})
+    assert len(result['article_text']) == 1200
+    assert result['next_offset'] == 1200
+    assert 'Haaland is available.' in '\n'.join(result['literal_fragments'])
+    assert sum(map(len,result['literal_fragments'])) <= 2400
+    verified=tool.verify({'source_url':'https://example.com/news','player_element':1,
+       'evidence_text':'Haaland is available.','published_at':'2026-10-16T00:00:00Z','claim_type':'availability'})
+    assert verified['status']=='supported' and verified['final_acceptance'] is False
+    assert len(calls)==1

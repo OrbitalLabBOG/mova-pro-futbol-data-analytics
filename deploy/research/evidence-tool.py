@@ -131,6 +131,7 @@ class EvidenceTool:
         self.read_calls = 0
         self.context_calls = 0
         self.controlled = request.get("agent_release", {}).get("execution") == "app_server"
+        self.compact = request.get("agent_release", {}).get("source_delivery") == "compact_focus_v1"
         self.max_calls = min(32, max(1, int(request.get("scope_policy", {}).get("max_documents", 6))) * 2)
         self.deadline = datetime.fromisoformat(request["manifest"]["deadline_at"].replace("Z", "+00:00"))
         if self.deadline.tzinfo is None:
@@ -165,6 +166,9 @@ class EvidenceTool:
             rows = [{**row, "evidence_verified_in_turn": row["element"] in self.verified_focus,
                      "final_acceptance": False}
                     for row in summary.get("focus", []) if row["element"] not in self.verified_focus]
+            if self.compact:
+                rows = [{key: row[key] for key in ("element", "player_name", "team",
+                         "evidence_verified_in_turn", "final_acceptance") if key in row} for row in rows]
         elif section == "catalog":
             query = _normal(args["query"]).strip()
             catalog = summary["world"]["catalog"]
@@ -231,7 +235,7 @@ class EvidenceTool:
                 raise ValueError("search_unavailable")
             result = {"status": "ok", "remaining_queries": limit-self.search_calls,
                 "results": [{"url": row.get("url"), "title": str(row.get("title", ""))[:200],
-                             "description": str(row.get("description", ""))[:400]} for row in rows[:5]]}
+                             "description": str(row.get("description", ""))[:160 if self.compact else 400]} for row in rows[:5]]}
         except Exception:
             result = {"status": "rejected", "reasons": ["search_provider_failed"],
                       "remaining_queries": limit-self.search_calls}
@@ -270,11 +274,11 @@ class EvidenceTool:
                 name = self.catalog.get(element, "")
                 if not name: continue
                 positions = [m.start() for m in re.finditer(re.escape(name),text,re.IGNORECASE)]
-                for position in positions[:3]:
-                    snippet = text[max(0,position-150):position+600]
-                    if snippet not in snippets and sum(map(len,snippets)) + len(snippet) <= 6000:
+                for position in positions[:1 if self.compact else 3]:
+                    snippet = text[max(0,position-100 if self.compact else position-150):position+(350 if self.compact else 600)]
+                    if snippet not in snippets and sum(map(len,snippets)) + len(snippet) <= (2400 if self.compact else 6000):
                         snippets.append(snippet)
-            if not snippets: snippets = [text[:2400]]
+            if not snippets and not self.compact: snippets = [text[:2400]]
             raw_text = payload.decode("utf-8", "ignore")
             sections = [normalize_text(match.group(1).encode(), meta["content_type"])
                         for match in re.finditer(r'<(?:article|main)\b[^>]*>(.*?)</(?:article|main)\s*>', raw_text, re.I | re.S)]
@@ -287,11 +291,12 @@ class EvidenceTool:
                 return {"status": "rejected", "reasons": ["source_body_unavailable"],
                         "remaining_reads": self.max_calls-self.read_calls}
             offset = args.get("offset",0)
+            page_size = 1200 if self.compact else 8000
             dates = re.findall(r'"date(?:Published|Modified)"\s*:\s*"([^"]{1,60})"', payload.decode("utf-8", "ignore"))[:4]
             return {"status": "ok", "source_url": url, "extraction": extraction, "publication_candidates": dates,
-                    "literal_fragments": snippets, "article_text": article_text[offset:offset+8000],
-                    "next_offset": offset+8000 if offset+8000<len(article_text) else None,
-                    "truncated": offset+8000<len(article_text),
+                    "literal_fragments": snippets, "article_text": article_text[offset:offset+page_size],
+                    "next_offset": offset+page_size if offset+page_size<len(article_text) else None,
+                    "truncated": offset+page_size<len(article_text),
                     "remaining_reads": self.max_calls-self.read_calls}
         except Exception:
             return {"status": "rejected", "reasons": ["source_read_failed"]}

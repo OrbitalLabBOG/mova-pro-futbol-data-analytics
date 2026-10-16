@@ -84,12 +84,26 @@ export function buildResearchContext(request) {
     }
     context.context_on_demand = onDemand;
   }
+  const omitted = [];
+  if (request.agent_release?.source_delivery === 'compact_focus_v1') {
+    const omit = (obj, key, path) => {
+      if (!Object.hasOwn(obj, key)) return;
+      omitted.push({path, sha256:hash(obj[key]), reason:'discovery_view_only_original_request_preserved'});
+      delete obj[key];
+    };
+    omit(context, 'acceptance_contract', 'acceptance_contract');
+    for (const key of ['analytics_manifest','source_manifest','team_state']) omit(manifest,key,`manifest.${key}`);
+    if (summary.world) omit(summary.world,'fixtures','manifest.research_summary.world.fixtures');
+    summary.focus = unique.map(row=>Object.fromEntries(Object.entries(row).filter(([key,value])=>
+      value !== null && !['position','squad_position'].includes(key))));
+    context.acquisition_plan.clubs = clubs.map(({team,elements})=>({team,elements}));
+  }
   const receipt = {
     schema: 'mova-research-context-receipt-v1',
     request_sha256: request.request_sha256,
     context_sha256: hash(context),
     request_json_bytes: bytes(request), context_json_bytes: bytes(context),
-    omitted_sections: [],
+    omitted_sections: omitted,
     on_demand_sections: onDemand,
     catalog_encoding: "unchanged",
     focus_subjects: unique.length,
