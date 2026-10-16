@@ -431,3 +431,60 @@ Los dos conflictos de Haaland conservan artefactos/fragmentos íntegros pero sin
 publicación verificada; los otros dos son legacy_unverified sin evidencia original
 sellada. Los cuatro permanecen abiertos. Una resolución exige evidencia original
 suficiente y revisión semántica; el auditor sólo clasifica, no adjudica.
+
+## Diagnóstico GW7 y candidato de asignación por club — 16/10/2026
+
+La corrida `research_493b3253b14f46b09cfa12d88ffd7048` recibió scope efectivo
+16 consultas / 16 documentos: `expanded_broad_v1` amplía los defaults 4–8.
+Consumió las 16 consultas, 18 lecturas y sólo 6/32 verificaciones. Usó
+471.146 tokens de entrada y 6.669 de salida en 267,1 segundos; no agotó el
+job de 1M ni el timeout de 480 segundos. El importador verificó 7/25 sujetos,
+2/15 propios y 5/10 candidatos. No hubo señal aceptada; hubo un conflicto.
+
+Los eventos contienen el prompt realmente enviado: pide elegir dos dudas y
+luego «2-3 dudas», pese al foco de 25 sujetos. El texto «No persigas 90%» existe
+en otro constructor, pero NO aparece en el prompt de esta corrida app-server.
+Arsenal, Brighton, Hull City y Spurs no aparecen ni en los IDs de lecturas
+solicitadas. Dos verificaciones fueron para Kluivert, fuera del foco.
+Cuatro lecturas fueron vacías/fallidas y cinco devolvieron menos de 300
+caracteres de artículo. Esto no permite afirmar que todo el HTML careciera de
+contenido: seleccionar el primer `<article>` también puede elegir un widget.
+
+Hay dos problemas adicionales de orquestación: importado, aunque sea parcial,
+consume el slot; el timer responde `slot_already_attempted` hasta el siguiente.
+Y `focus_progress` es diagnóstico local, no una agenda persistente de trabajo
+entre las corridas amplia/refresh/final. Tres slots no son tres continuaciones.
+No se eliminan esos controles ni se convierten los intentos fallidos en éxitos.
+
+El candidato **1.13.0**, todavía inactivo, introduce una cola determinista por
+club dentro del request. Prioriza plantilla propia, impide repetir grupos antes
+de intentar los pendientes, reserva quota de primera pasada antes del radar y
+persiste consumo entre reintentos del MISMO request. Una búsqueda fallida consume
+quota y no acredita cobertura. El checkpoint está ligado al request completo:
+no se reinicia por crear otro directorio de intento ni se reutiliza para inputs
+cambiados. No es un ledger nuevo de aceptación ni una cola completa entre slots.
+
+El lector elige la región sustantiva más extensa entre article/main y, cuando
+es demasiado corta, expone texto normalizado de la página con indicador de
+fallback. Un cuerpo vacío tiene error explícito. No añade renderizado JS ni
+acepta snippets de buscador como evidencia; muchas páginas seguirán sin ser
+recuperables. El importador conserva sus checks independientes.
+
+Con el foco real hay 11 clubes: asignarles una consulta más un radar requiere
+12 de las 16 disponibles. El replay demuestra viabilidad de asignación, NO
+cobertura de 90% ni superioridad del agente. El siguiente gate es un piloto
+con entrada fresca, scope/budget equivalentes y reporte completo de sujetos,
+fallos, latencia y consumo. La activa sigue en 1.10.0 y producción no recibe
+este paquete hasta validar su ejecución. No sustituir retrospectivamente la
+primera corrida del contrato ADR-011 ni heredar aceptación del contrato previo.
+
+Auditor reproducible, sin web ni inferencia:
+
+```bash
+python -m experiments.research.audit_run --request /ruta/request.json \
+  --events /ruta/attempt.events.jsonl
+```
+
+La evidencia de esta investigación está fuera de Git, bajo
+`/home/julianzu/code/artifacts/mova-fpl/gw07-research-20261016/`.
+Los prompts y textos web son datos no confiables; nunca instrucciones.

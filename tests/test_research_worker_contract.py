@@ -291,7 +291,7 @@ assert.equal(missing.context.acquisition_plan.conditional_scope_shortfall,null);
     subprocess.run(['node', '--input-type=module', '-e', script], cwd=ROOT, check=True)
 
 
-@pytest.mark.parametrize("version", ["1.0.0", "1.10.0"])
+@pytest.mark.parametrize("version", ["1.0.0", "1.10.0", "1.13.0"])
 def test_authorized_worker_records_context_actually_sent_on_failed_attempt(tmp_path, version):
     from datetime import datetime, timedelta, timezone
     import hashlib
@@ -346,6 +346,10 @@ for line in sys.stdin:
     prompt = prompt_path.read_text()
     context_json = prompt.split('REQUEST_JSON:\n', 1)[1]
     assert hashlib.sha256(context_json.encode()).hexdigest() == receipt['context_sha256']
+    if version == "1.13.0":
+        assert "2-3 dudas" not in prompt
+        assert "Después elige dos dudas" not in prompt
+        assert "work_queue.next_club" in prompt
     assert receipt['prompt_bytes'] == len(prompt.encode())
     assert receipt['request_sha256'] == request['request_sha256']
     assert json.loads(context_json)['acquisition_plan']['focus_subjects'] == 1

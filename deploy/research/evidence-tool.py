@@ -49,6 +49,69 @@ CONTEXT_TOOL = {"name": "research_context", "description": "Retrieve sealed cont
  "annotations": {"readOnlyHint": True, "destructiveHint": False, "openWorldHint": False}}
 
 
+class ClubWorkQueue:
+    """Per-request checkpoint shared by bounded retries, never acceptance evidence."""
+    def __init__(self, request, root):
+        self.binding = hashlib.sha256(json.dumps(request, sort_keys=True).encode()).hexdigest()
+        run_id = request["research_run_id"]
+        if not re.fullmatch(r"research_[0-9a-f]{32}", run_id):
+            raise ValueError("invalid_work_queue_run")
+        self.path = Path(root).parent / (run_id + ".work-queue.json")
+        groups = {}
+        for row in request["manifest"]["research_summary"]["focus"]:
+            team = row.get("team") or "unknown:" + str(row["element"])
+            group = groups.setdefault(team, {"team": team, "elements": [], "own": 0})
+            group["elements"].append(row["element"])
+            group["own"] += "current_squad" in row.get("focus_reason", [])
+        self.groups = sorted(groups.values(), key=lambda row: (-row["own"], -len(row["elements"]), row["team"]))
+        if self.path.exists():
+            if self.path.is_symlink() or self.path.stat().st_size > 16384:
+                raise ValueError("unsafe_work_queue_checkpoint")
+            self.state = json.loads(self.path.read_text())
+            if self.state.get("request_binding") != self.binding:
+                raise ValueError("work_queue_request_drift")
+            counts = self.state.get("searches", {})
+            if set(counts) != set(groups) or any(type(n) is not int or n < 0 for n in counts.values()):
+                raise ValueError("invalid_work_queue_checkpoint")
+            if type(self.state.get("global_searches")) is not int or not 0 <= self.state["global_searches"] <= 1:
+                raise ValueError("invalid_work_queue_checkpoint")
+        else:
+            self.state = {"request_binding": self.binding, "searches": dict.fromkeys(groups, 0),
+                          "global_searches": 0}
+
+    def snapshot(self):
+        pending = [row for row in self.groups if not self.state["searches"][row["team"]]]
+        return {"schema": "mova-club-work-queue-v1", "next_club": pending[0] if pending else None,
+                "unattempted_clubs": len(pending), "club_searches": self.state["searches"].copy(),
+                "global_searches": self.state["global_searches"],
+                "coverage_verified": False, "final_acceptance": False}
+
+    def consume(self, team, limit):
+        count = sum(self.state["searches"].values()) + self.state["global_searches"]
+        if count >= limit:
+            return "search_budget_or_deadline"
+        pending = self.snapshot()["next_club"]
+        if team is None:
+            if self.state["global_searches"]:
+                return "global_radar_already_attempted"
+            # Do not let the optional radar consume a first-pass club reservation.
+            if limit - count <= self.snapshot()["unattempted_clubs"]:
+                return "club_first_pass_budget_reserved"
+            self.state["global_searches"] += 1
+        elif team not in self.state["searches"]:
+            return "unknown_work_item"
+        elif pending and team != pending["team"]:
+            return "unattempted_club_has_priority"
+        else:
+            self.state["searches"][team] += 1
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = self.path.with_suffix(".tmp")
+        tmp.write_text(json.dumps(self.state, sort_keys=True) + "\n")
+        tmp.chmod(0o660)
+        tmp.replace(self.path)
+        return None
+
+
 class EvidenceTool:
     def __init__(self, request, root, *, fetcher=None, clock=None):
         self.request = request
@@ -71,6 +134,18 @@ class EvidenceTool:
         self.names = Counter(name.casefold() for name in self.catalog.values())
         self.focus = {row["element"] for row in request["manifest"].get("research_summary", {}).get("focus", [])}
         self.verified_focus = set()
+        self.work_queue = (ClubWorkQueue(request, self.root)
+                           if request.get("agent_release", {}).get("coverage_allocation")
+                           == "club_work_queue_v1" else None)
+        if self.work_queue:
+            self.search_calls = (sum(self.work_queue.state["searches"].values())
+                                 + self.work_queue.state["global_searches"])
+
+    def search_schema(self):
+        schema = json.loads(json.dumps(SEARCH_TOOL))
+        if self.work_queue:
+            schema["inputSchema"]["properties"]["team"] = {"type": "string", "maxLength": 80}
+        return schema
 
     def context(self, args):
         self.context_calls += 1
@@ -112,13 +187,20 @@ class EvidenceTool:
                 "next_offset": offset+len(page) if offset+len(page) < len(rows) else None}
 
     def search(self, args):
-        if (set(args) != {"query"} or not isinstance(args["query"], str)
-                or not 3 <= len(args["query"]) <= 400):
+        if (not isinstance(args, dict) or "query" not in args
+                or set(args) - ({"query", "team"} if self.work_queue else {"query"}) or not isinstance(args["query"], str)
+                or not 3 <= len(args["query"]) <= 400
+                or ("team" in args and (not isinstance(args["team"], str) or not 1 <= len(args["team"]) <= 80))):
             return {"status": "rejected", "reasons": ["invalid_arguments"]}
         query_ceiling = 16 if self.request.get("agent_release", {}).get("discovery_profile") == "expanded_broad_v1" else 8
         limit = min(query_ceiling, int(self.request.get("scope_policy", {}).get("max_web_queries", 4)))
         if self.search_calls >= limit or self.clock() >= self.deadline:
             return {"status": "rejected", "reasons": ["search_budget_or_deadline"]}
+        if self.work_queue:
+            reason = self.work_queue.consume(args.get("team"), limit)
+            if reason:
+                return {"status": "rejected", "reasons": [reason],
+                        "work_queue": self.work_queue.snapshot()}
         self.search_calls += 1
         try:
             key = Path("/run/secrets/research_search_key").read_text().strip()
@@ -148,6 +230,8 @@ class EvidenceTool:
             result = {"status": "rejected", "reasons": ["search_provider_failed"],
                       "remaining_queries": limit-self.search_calls}
         self.root.mkdir(parents=True, exist_ok=True)
+        if self.work_queue:
+            result["work_queue"] = self.work_queue.snapshot()
         with (self.root/"search.jsonl").open("a") as stream:
             stream.write(json.dumps({"query_sha256": hashlib.sha256(args["query"].encode()).hexdigest(),
                                     "status": result["status"], "query_number": self.search_calls, "result_count": len(result.get("results", []))})+"\n")
@@ -186,13 +270,19 @@ class EvidenceTool:
                         snippets.append(snippet)
             if not snippets: snippets = [text[:2400]]
             raw_text = payload.decode("utf-8", "ignore")
-            article = re.search(r'<article\b[^>]*>(.*?)</article\s*>',raw_text,re.I|re.S)
-            if article is None:
-                article = re.search(r'<main\b[^>]*>(.*?)</main\s*>',raw_text,re.I|re.S)
-            article_text = normalize_text(article.group(1).encode(),meta["content_type"]) if article else text
+            sections = [normalize_text(match.group(1).encode(), meta["content_type"])
+                        for match in re.finditer(r'<(?:article|main)\b[^>]*>(.*?)</(?:article|main)\s*>', raw_text, re.I | re.S)]
+            article_text = max(sections, key=len, default="")
+            extraction = "substantive_region"
+            if len(article_text) < 300:
+                article_text = text
+                extraction = "full_page_fallback"
+            if not article_text.strip():
+                return {"status": "rejected", "reasons": ["source_body_unavailable"],
+                        "remaining_reads": self.max_calls-self.read_calls}
             offset = args.get("offset",0)
             dates = re.findall(r'"date(?:Published|Modified)"\s*:\s*"([^"]{1,60})"', payload.decode("utf-8", "ignore"))[:4]
-            return {"status": "ok", "source_url": url, "publication_candidates": dates,
+            return {"status": "ok", "source_url": url, "extraction": extraction, "publication_candidates": dates,
                     "literal_fragments": snippets, "article_text": article_text[offset:offset+8000],
                     "next_offset": offset+8000 if offset+8000<len(article_text) else None,
                     "truncated": offset+8000<len(article_text),
@@ -294,7 +384,7 @@ def serve(tool):
             elif method == "ping":
                 result = {}
             elif method == "tools/list":
-                result = {"tools": [TOOL, SEARCH_TOOL, READ_TOOL, CONTEXT_TOOL] if tool and tool.controlled else [TOOL]}
+                result = {"tools": [TOOL, tool.search_schema(), READ_TOOL, CONTEXT_TOOL] if tool and tool.controlled else [TOOL]}
             elif method == "tools/call" and message.get("params", {}).get("name") in ([TOOL["name"], SEARCH_TOOL["name"], READ_TOOL["name"], CONTEXT_TOOL["name"]] if tool and tool.controlled else [TOOL["name"]]):
                 # Overall per-call deadline includes DNS/read and redirects.
                 signal.alarm(25)

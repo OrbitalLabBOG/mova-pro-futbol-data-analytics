@@ -189,3 +189,65 @@ def test_focus_progress_tracks_verified_evidence_without_filling_silence(tmp_pat
     assert [r['element'] for r in remaining] == [2]
     assert remaining[0]['final_acceptance'] is False
     assert remaining[0]['evidence_verified_in_turn'] is False
+
+
+def test_club_queue_cannot_repeat_or_reset_quota_on_retry(tmp_path):
+    mod = module()
+    request = {'research_run_id':'research_'+'a'*32, 'manifest':{'research_summary':{
+        'focus':[{'element':1,'team':'Own','focus_reason':['current_squad']},
+                 {'element':2,'team':'Other','focus_reason':['top_projection_candidate']}]}}}
+    first = mod.ClubWorkQueue(request, tmp_path/'attempt1')
+    assert first.consume('Other', 3) == 'unattempted_club_has_priority'
+    assert first.consume(None, 3) is None
+    assert first.consume('Own', 3) is None
+    assert first.consume('Own', 3) == 'unattempted_club_has_priority'
+    resumed = mod.ClubWorkQueue(request, tmp_path/'attempt2')
+    assert resumed.consume(None, 3) == 'global_radar_already_attempted'
+    assert resumed.consume('Other', 3) is None
+    assert resumed.snapshot()['unattempted_clubs'] == 0
+    assert resumed.consume('Own', 3) == 'search_budget_or_deadline'
+    assert resumed.snapshot()['coverage_verified'] is False
+
+
+def test_queue_reserves_first_pass_before_optional_radar(tmp_path):
+    mod=module()
+    request={'research_run_id':'research_'+'b'*32,'manifest':{'research_summary':{
+        'focus':[{'element':1,'team':'Club'}]}}}
+    queue=mod.ClubWorkQueue(request,tmp_path/'attempt')
+    assert queue.consume(None,1) == 'club_first_pass_budget_reserved'
+    assert queue.consume('Club',1) is None
+    changed=json.loads(json.dumps(request));changed['manifest']['research_summary']['focus'][0]['team']='New'
+    import pytest
+    with pytest.raises(ValueError,match='request_drift'):
+        mod.ClubWorkQueue(changed,tmp_path/'retry')
+
+
+def test_reader_skips_empty_article_widgets_and_flags_missing_body(tmp_path):
+    mod=module()
+    body='Saka is available. '+('Relevant article text. '*50)
+    raw=('<html><article></article><main>'+body+'</main></html>').encode()
+    tool=mod.EvidenceTool({'research_run_id':'research_'+'c'*32,
+        'manifest':{'deadline_at':'2026-10-17T10:00:00Z','research_summary':{
+            'world':{'catalog':[[1,'Saka','ARS']]}}}},tmp_path,
+        clock=lambda:datetime(2026,10,16,12,tzinfo=timezone.utc),
+        fetcher=mod.SafeEvidenceFetcher(tmp_path,transport=lambda url:(raw,{'content_type':'text/html'})))
+    read=tool.read_source({'source_url':'https://example.com/news','player_elements':[1]})
+    assert read['article_text'] == body.strip()
+    tool.page_cache.clear()
+    tool.fetcher.transport=lambda url:(b'<html><script>hidden</script></html>',{'content_type':'text/html'})
+    assert tool.read_source({'source_url':'https://example.com/empty','player_elements':[1]})['reasons']==['source_body_unavailable']
+
+
+def test_candidate_search_quota_is_visible_after_worker_restart(tmp_path):
+    mod=module()
+    request={'research_run_id':'research_'+'d'*32,
+        'agent_release':{'coverage_allocation':'club_work_queue_v1'},
+        'manifest':{'deadline_at':'2026-10-17T10:00:00Z', 'research_summary':{
+            'focus':[{'element':1,'team':'Club'}]}}}
+    queue=mod.ClubWorkQueue(request,tmp_path/'first')
+    assert queue.consume('Club',2) is None
+    resumed=mod.EvidenceTool(request,tmp_path/'retry')
+    assert resumed.search_calls == 1
+    assert 'team' in resumed.search_schema()['inputSchema']['properties']
+    legacy=mod.EvidenceTool({'manifest':{'deadline_at':'2026-10-17T10:00:00Z'}},tmp_path/'legacy')
+    assert 'team' not in legacy.search_schema()['inputSchema']['properties']
