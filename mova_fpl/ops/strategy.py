@@ -211,6 +211,31 @@ class StrategicContextService:
         except Exception:
             return {"status": "degraded", "catalog": [], "alerts": []}
 
+    def _research_work_progress(self, cycle_id: str, focus: list[dict], now: datetime) -> dict:
+        """Read the last independently imported result; ordering hints are not evidence."""
+        with self.db.connect(readonly=True) as con:
+            row = con.execute(
+                "SELECT research_run_id,coverage_json,imported_at FROM research_runs r "
+                "WHERE cycle_id=? AND status='imported' AND imported_at<=? "
+                "AND NOT EXISTS (SELECT 1 FROM audit_events a WHERE a.subject_id=r.research_run_id "
+                "AND a.event_type IN ('research_experiment_enqueued','research_experiment_completed')) "
+                "ORDER BY imported_at DESC,rowid DESC LIMIT 1", (cycle_id, now.isoformat()),
+            ).fetchone()
+        elements = {int(item["element"]) for item in focus}
+        verified = set()
+        if row:
+            try:
+                subjects = json.loads(row["coverage_json"])["subjects"]
+                verified = {int(item["player_element"]) for item in subjects
+                            if item.get("evidence_verified") and item.get("status") != "unresolved"}
+            except (ValueError, TypeError, KeyError):
+                pass
+        return {"schema": "mova-research-work-progress-v1",
+                "previous_run_id": row["research_run_id"] if row else None,
+                "needs_checking_elements": sorted(elements - verified),
+                "previously_verified_elements": sorted(elements & verified),
+                "evidence_must_be_revalidated": True, "final_acceptance": False}
+
     def _recent_research_evidence(self, *, cycle_id: str, focus: list[dict],
                                   now: datetime) -> list[dict]:
         """Bounded discovery hints; prior evidence never satisfies current coverage."""
@@ -531,6 +556,7 @@ class StrategicContextService:
                 "prior_gameweek_signals": [dict(row) for row in cross_gw_signal_rows],
                 "world": research_world,
                 "reusable_evidence_hints": reusable_evidence,
+                "work_progress": self._research_work_progress(cycle_id, research_focus, current),
             },
             "memory_summary": memory_summary,
         }
@@ -575,7 +601,8 @@ class StrategicContextService:
             )
         with self.db.connect(readonly=True) as con:
             latest = con.execute(
-                "SELECT status,queued_at,imported_at FROM research_runs r WHERE cycle_id=? "
+                "SELECT research_run_id,status,queued_at,imported_at,coverage_status,coverage_ratio,evidence_ratio "
+                "FROM research_runs r WHERE cycle_id=? "
                 "AND NOT EXISTS (SELECT 1 FROM audit_events a WHERE a.subject_id=r.research_run_id "
                 "AND a.event_type IN ('research_experiment_enqueued','research_experiment_completed')) "
                 "ORDER BY queued_at DESC LIMIT 1", (cycle["cycle_id"],),
@@ -593,6 +620,26 @@ class StrategicContextService:
                 return {"due": False, "reason": "previous_run_not_terminal",
                         "latest_status": latest["status"], "deadline_seconds": seconds,
                         "run_kind": run_kind}
+        _, release = researcher_release()
+        continuation_policy = release.get("continuation_policy")
+        if attempted_in_slot and continuation_policy:
+            from mova_fpl.ops.research_campaign import continuation_gate
+            with self.db.connect(readonly=True) as con:
+                count = con.execute(
+                    "SELECT COUNT(*) FROM research_runs r WHERE cycle_id=? AND queued_at>=? "
+                    "AND NOT EXISTS (SELECT 1 FROM audit_events a WHERE a.subject_id=r.research_run_id "
+                    "AND a.event_type IN ('research_experiment_enqueued','research_experiment_completed'))",
+                    (cycle["cycle_id"], slot_start.isoformat()),
+                ).fetchone()[0]
+            budget_policy = self.config.agent_budget_policy()
+            gate = continuation_gate(
+                latest=dict(latest), slot_attempts=count, run_kind=run_kind, now=current,
+                policy=continuation_policy,
+                budget=self.db.cost_report(budget_policy, season=cycle["season"], gw=cycle["gw"]),
+                job_tokens=budget_policy["job_tokens"],
+            )
+            return {**gate, "cycle_id": cycle["cycle_id"], "run_kind": run_kind,
+                    "deadline_seconds": seconds, "slot_started_at": slot_start.isoformat()}
         if attempted_in_slot:
             return {
                 "due": False, "reason": "slot_already_attempted",
@@ -620,6 +667,13 @@ class StrategicContextService:
             if force else None
         )
         if deterministic_id:
+            existing = self.db.research_run(deterministic_id)
+            if existing:
+                return {**existing, "reused": True, "due": assessment}
+        if assessment.get("continuation_of") and deterministic_id is None:
+            deterministic_id = "research_" + hashlib.sha256(
+                ("continuation:" + assessment["continuation_of"]).encode()
+            ).hexdigest()[:32]
             existing = self.db.research_run(deterministic_id)
             if existing:
                 return {**existing, "reused": True, "due": assessment}
@@ -677,6 +731,8 @@ class StrategicContextService:
             "request_path": str(request_path), "request_sha256": request_sha,
             "experiment": _experiment,
             "acceptance_contract": acceptance_contract,
+            "continuation_of": assessment.get("continuation_of") if not force else None,
+            "continuation_future_jobs": assessment.get("future_jobs_preserved") if not force else None,
             "budget_policy": self.config.agent_budget_policy(),
         })
         if result.get("status") == "blocked":

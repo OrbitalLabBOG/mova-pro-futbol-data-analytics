@@ -19,9 +19,14 @@ bloquea, nunca reinicia cuota. El checkpoint no prueba evidencia ni aceptación.
 El ledger operativo y de presupuesto sigue en ops.db; no se amplían tokens,
 usos, deadline, permisos, número de intentos ni autoridad de intervención.
 
-El trabajo entre slots sigue pendiente: requiere una campaña con entradas,
-persistencia y criterios propios, manteniendo cada intento original y el fallo
-de la primera corrida de ADR-011. Esta etapa no cambia la cadencia productiva.
+El candidato 1.14.0 añade continuidad acotada: máximo dos continuaciones por
+slot amplio/refresh, separadas 45 minutos, sin continuación del slot final.
+Cada hijo conserva su propio request, reserva, resultado y vínculo auditado al
+padre. La creación transaccional impide duplicados y preserva presupuesto de
+peor caso para los slots futuros, incluyendo reservas en vuelo. Presupuesto
+incompleto o huérfano bloquea. Los sujetos previamente verificados sólo ordenan
+el siguiente foco: toda evidencia debe volver a validarse; no se hereda cobertura.
+Se conserva el fallo original de ADR-011. Esta política sigue inactiva y local.
 
 La extracción distingue contenido recuperable de páginas vacías; no inventa
 fechas, ausencia de lesión ni disponibilidad y no ejecuta JavaScript de páginas.

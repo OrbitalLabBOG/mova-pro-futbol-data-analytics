@@ -251,3 +251,14 @@ def test_candidate_search_quota_is_visible_after_worker_restart(tmp_path):
     assert 'team' in resumed.search_schema()['inputSchema']['properties']
     legacy=mod.EvidenceTool({'manifest':{'deadline_at':'2026-10-17T10:00:00Z'}},tmp_path/'legacy')
     assert 'team' not in legacy.search_schema()['inputSchema']['properties']
+
+
+def test_next_request_prioritizes_imported_pending_subjects_without_inheriting_evidence(tmp_path):
+    mod=module()
+    request={'research_run_id':'research_'+'e'*32,'manifest':{'research_summary':{
+        'focus':[{'element':1,'team':'Already','focus_reason':['current_squad']},
+                 {'element':2,'team':'Pending','focus_reason':['current_squad']}],
+        'work_progress':{'needs_checking_elements':[2]}}}}
+    queue=mod.ClubWorkQueue(request,tmp_path/'attempt')
+    assert queue.snapshot()['next_club']['team']=='Pending'
+    assert queue.snapshot()['coverage_verified'] is False

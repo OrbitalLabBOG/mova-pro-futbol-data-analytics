@@ -50,10 +50,14 @@ export function buildResearchContext(request) {
   if (['club_first_pass_v1', 'club_work_queue_v1'].includes(request.agent_release?.coverage_allocation)) {
     const own = new Set(unique.filter(row =>
       row.focus_reason?.includes('current_squad')).map(row => row.element));
+    const needs = new Set(summary.work_progress?.needs_checking_elements || unique.map(row=>row.element));
     const firstPass = clubs.map(group => ({...group,
+      pending_elements: group.elements.filter(element=>needs.has(element)),
+      own_pending_subjects: group.elements.filter(element=>own.has(element) && needs.has(element)).length,
       own_squad_subjects: group.elements.filter(element => own.has(element)).length,
-    })).sort((a,b) => b.own_squad_subjects - a.own_squad_subjects
-      || b.elements.length - a.elements.length || a.team.localeCompare(b.team));
+    })).sort((a,b) => b.own_pending_subjects - a.own_pending_subjects
+      || b.pending_elements.length - a.pending_elements.length
+      || b.own_squad_subjects - a.own_squad_subjects || a.team.localeCompare(b.team));
     context.acquisition_plan.coverage_allocation = request.agent_release.coverage_allocation;
     context.acquisition_plan.first_pass = firstPass;
     context.acquisition_plan.before_repeat = 'Attempt uncovered clubs before a second discovery pass on a covered club; retain not_checked when evidence or quota is unavailable.';

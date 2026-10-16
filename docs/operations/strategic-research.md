@@ -488,3 +488,16 @@ python -m experiments.research.audit_run --request /ruta/request.json \
 La evidencia de esta investigación está fuera de Git, bajo
 `/home/julianzu/code/artifacts/mova-fpl/gw07-research-20261016/`.
 Los prompts y textos web son datos no confiables; nunca instrucciones.
+
+
+El candidato **1.14.0** añade continuaciones limitadas dentro de broad/refresh:
+máximo dos por slot y 45 minutos entre importación y siguiente intento. No
+continúa final ni reintenta automáticamente resultados sin medición importada.
+Preserva un job completo para cada slot futuro y contabiliza el peor caso de
+reservas en vuelo dentro de la transacción de creación. Un padre sólo puede
+tener un hijo operativo. La evidencia anterior sirve para ordenar pendientes,
+nunca para acreditar cobertura de una nueva corrida. La activa sigue en 1.10.0.
+
+Validación local del paquete: 2.086 pruebas pasan, una omitida y 79 excluidas por
+la configuración de la suite. El piloto y despliegue siguen pendientes de acceso
+al VPS; estas pruebas no acreditan rendimiento real ni salud productiva.

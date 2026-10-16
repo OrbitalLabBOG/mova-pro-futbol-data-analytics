@@ -58,12 +58,18 @@ class ClubWorkQueue:
             raise ValueError("invalid_work_queue_run")
         self.path = Path(root).parent / (run_id + ".work-queue.json")
         groups = {}
-        for row in request["manifest"]["research_summary"]["focus"]:
+        summary = request["manifest"]["research_summary"]
+        needs = set(summary.get("work_progress", {}).get("needs_checking_elements",
+                    [row["element"] for row in summary["focus"]]))
+        for row in summary["focus"]:
             team = row.get("team") or "unknown:" + str(row["element"])
-            group = groups.setdefault(team, {"team": team, "elements": [], "own": 0})
+            group = groups.setdefault(team, {"team": team, "elements": [], "own": 0, "pending_elements": [], "own_pending": 0})
             group["elements"].append(row["element"])
             group["own"] += "current_squad" in row.get("focus_reason", [])
-        self.groups = sorted(groups.values(), key=lambda row: (-row["own"], -len(row["elements"]), row["team"]))
+            if row["element"] in needs:
+                group["pending_elements"].append(row["element"])
+                group["own_pending"] += "current_squad" in row.get("focus_reason", [])
+        self.groups = sorted(groups.values(), key=lambda row: (-row["own_pending"], -len(row["pending_elements"]), -row["own"], row["team"]))
         if self.path.exists():
             if self.path.is_symlink() or self.path.stat().st_size > 16384:
                 raise ValueError("unsafe_work_queue_checkpoint")
