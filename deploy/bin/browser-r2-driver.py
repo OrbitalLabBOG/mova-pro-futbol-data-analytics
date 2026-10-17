@@ -91,13 +91,17 @@ def _checkbox_script(name: str, *, checked: bool | None = None) -> str:
     )
 
 
-def _commit_count_script(name: str) -> str:
-    expected = json.dumps(name)
+TEAM_SAVE_NAMES = ("Save My Team", "Save Your Team", "Save Team", "Confirm My Choices")
+
+
+def _commit_count_script(name: str | list[str]) -> str:
+    expected = json.dumps([name] if isinstance(name, str) else name)
     return (
         "(function(){const visible=n=>Boolean(n&&n.getClientRects().length);"
-        "return Array.from(document.querySelectorAll('button')).filter(b=>visible(b)&&"
-        f"((b.innerText||b.textContent||'').trim()==={expected}||"
-        f"(b.getAttribute('aria-label')||'').trim()==={expected})).length;}})()"
+        f"const names={expected};"
+        "return Array.from(document.querySelectorAll('button,input[type=submit]')).filter(b=>visible(b)&&!b.disabled&&"
+        "(names.includes((b.innerText||b.textContent||b.value||'').trim())||"
+        "names.includes((b.getAttribute('aria-label')||'').trim()))).length;})()"
     )
 
 
@@ -153,6 +157,7 @@ def _sheet_closed_script() -> str:
 def execute(driver_plan: dict, browser: AgentBrowser) -> None:
     if browser.run("get", "url", capture=True).rstrip("/").endswith("/en/my-team") is False:
         raise RuntimeError("FPL_PICK_TEAM_PAGE_REQUIRED")
+    commit_name = None
     for step in driver_plan["steps"]:
         operation = step["operation"]
         sequence = int(step["sequence"])
@@ -198,24 +203,26 @@ def execute(driver_plan: dict, browser: AgentBrowser) -> None:
                 raise RuntimeError("FPL_PLAYER_SHEET_CLOSE_MISSING")
             browser.run("wait", "--fn", _sheet_closed_script())
         elif operation == "discover_commit_control":
-            browser.run('wait','--fn',f"{_commit_count_script(str(step['accessible_name']))} === {int(step['expected_matches'])}")
-            observed = int(browser.run(
-                "eval", _commit_count_script(str(step["accessible_name"])), capture=True,
-            ))
-            if observed != int(step["expected_matches"]):
+            names = list(dict.fromkeys([str(step['accessible_name']), *TEAM_SAVE_NAMES]))
+            count_script = _commit_count_script(names)
+            browser.run('wait', '--fn', f"{count_script} === 1")
+            if browser.run('eval', count_script, capture=True) != '1':
                 raise RuntimeError("FPL_COMMIT_CONTROL_UNPROVEN")
+            observed = [name for name in names if browser.run(
+                'eval', _commit_count_script(name), capture=True) == '1']
+            if len(observed) != 1:
+                raise RuntimeError("FPL_COMMIT_CONTROL_AMBIGUOUS")
+            commit_name = observed[0]
+            _emit('browser_commit_control_observed', accessible_name=commit_name)
         elif operation == "commit_once":
+            if not commit_name:
+                raise RuntimeError("FPL_COMMIT_CONTROL_UNPROVEN")
             browser.run(
-                "find", "role", "button", "click", "--name",
-                str(step["accessible_name"]), "--exact",
+                "find", "role", "button", "click", "--name", commit_name, "--exact",
             )
             _emit("browser_commit_sent", sequence=sequence, max_clicks=1)
         elif operation == "wait_commit_settled":
-            browser.run("wait", "--fn", (
-                "Array.from(document.querySelectorAll('button')).filter(b=>"
-                "b.getClientRects().length>0).every(b=>"
-                f"(b.innerText||b.textContent||'').trim()!=={json.dumps(step['accessible_name'])})"
-            ))
+            browser.run("wait", "--fn", f"{_commit_count_script(commit_name)} === 0")
         elif operation == "reload_pick_team":
             browser.run("reload")
             browser.run("wait", "--fn", (
@@ -263,7 +270,7 @@ def main() -> int:
     except (RuntimeError, subprocess.SubprocessError, OSError, ValueError, KeyError, TypeError) as exc:
         if 'browser' in locals():
             try:
-                diagnostic=browser.run('eval',"JSON.stringify({path:location.pathname,pitch_count:document.querySelectorAll('button[data-pitch-element=\"true\"]').length,switch_controls:[...document.querySelectorAll('button[aria-label]')].filter(n=>n.getClientRects().length&&/switch|swap|cancel/i.test(n.getAttribute('aria-label'))).map(n=>({label:n.getAttribute('aria-label'),disabled:n.disabled}))})",capture=True)
+                diagnostic=browser.run('eval',"JSON.stringify({path:location.pathname,pitch_count:document.querySelectorAll('button[data-pitch-element=\"true\"]').length,commit_controls:[...document.querySelectorAll('button,input[type=submit]')].filter(n=>/save|confirm|choice/i.test((n.innerText||n.textContent||n.value||'')+' '+(n.getAttribute('aria-label')||''))).map(n=>({text:(n.innerText||n.textContent||n.value||'').trim().slice(0,100),label:n.getAttribute('aria-label'),visible:!!n.getClientRects().length,disabled:n.disabled})),switch_controls:[...document.querySelectorAll('button[aria-label]')].filter(n=>n.getClientRects().length&&/switch|swap|cancel/i.test(n.getAttribute('aria-label'))).map(n=>({label:n.getAttribute('aria-label'),disabled:n.disabled}))})",capture=True)
                 _emit('browser_driver_failure_controls',observed=json.loads(diagnostic))
             except Exception:
                 pass

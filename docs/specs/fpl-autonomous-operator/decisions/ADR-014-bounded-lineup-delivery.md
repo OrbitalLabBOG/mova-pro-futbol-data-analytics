@@ -102,3 +102,10 @@ Nunca produce swaps entre dos titulares. La verificación visual compara el
 conjunto del XI y el orden exacto de banca; C/VC se resuelven por identidad tras
 el reagrupamiento de formación y se comprueban sus checkboxes en vivo. El
 fingerprint posterior ya usa conjunto para titulares y orden para suplentes.
+
+El control de guardado se descubre después de aplicar el plan y debe ser único,
+visible, habilitado y de nombre exacto en una lista acotada de nombres de equipo.
+La guía oficial usa [Save My Team](https://www.premierleague.com/en/news/2174899).
+La página también contiene un `Confirm My Choices` oculto, que nunca cuenta como
+control disponible. El nombre observado se registra y se usa para el único clic;
+tras deshabilitarse/desaparecer se recarga y verifica el estado autenticado.
