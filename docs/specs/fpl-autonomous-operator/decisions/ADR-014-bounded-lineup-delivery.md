@@ -83,3 +83,14 @@ impide incluso esta ruta. La alerta P1 de recibo ausente se mantiene visible,
 pero no bloquea su propia recuperación R0/R2 de `lineup-v1` en la misma GW
 cuando ésa es su única causa. P0, otros ciclos, causas mixtas, datos inválidos,
 revocación de autoridad y hard stop conservan bloqueo.
+
+Conciliación R2: `execute reconcile-unchanged` nunca escribe FPL ni acredita una
+entrega. Sólo concilia un intento terminal ambiguo de `lineup-v1` si dos lecturas
+autenticadas selladas, posteriores al fallo y separadas >=5 s, tienen antigüedad
+<=300 s y coinciden con el fingerprint previo completo. Valida manifests,
+cuenta/GW, orden, capitanía y economía; no admite otro intento posterior/activo.
+Conserva el evento ambiguo y su error, registra evidencia y transición a fallo
+conciliado, y resuelve sólo el incidente de ese execution_id. Otro intento
+requiere plan fresco, controles vigentes y preflight completos. El operador
+recarga la página antes de capturar ambas lecturas para descartar cambios UI
+no guardados. Una discrepancia mantiene el bloqueo y exige revisión.

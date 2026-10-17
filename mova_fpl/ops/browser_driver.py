@@ -144,6 +144,7 @@ def _lineup_steps(ui_plan: dict, *, start: int) -> list[DriverStep]:
         labels.append({"position": position, "element": element, "web_name": label})
 
     simulated = current[:]
+    labels_by_element = {row['element']: row['web_name'] for row in labels}
     steps: list[DriverStep] = []
     for expected_sequence, swap in enumerate(swaps, start=1):
         left = int(swap.get("first_index", -1))
@@ -164,6 +165,7 @@ def _lineup_steps(ui_plan: dict, *, start: int) -> list[DriverStep]:
                 "swap_sequence": expected_sequence,
                 "position": left + 1,
                 "switch_button_index": left,
+                "expected_web_name": labels_by_element[simulated[left]],
                 "selector": swap["selector"],
                 "expected_controls_before": 15,
             }),
@@ -171,6 +173,7 @@ def _lineup_steps(ui_plan: dict, *, start: int) -> list[DriverStep]:
                 "swap_sequence": expected_sequence,
                 "position": right + 1,
                 "switch_button_index": right,
+                "expected_web_name": labels_by_element[simulated[right]],
                 "selector": swap["selector"],
                 "expected_controls_before": 15,
             }),

@@ -339,3 +339,47 @@ def test_scoped_receipt_alert_replaces_duplicate_legacy_pending_alert():
               +[{'name':'execute_verify','status':'pending'}]}
     result=evaluate_workflow_deadline(workflow,seconds_to_deadline=3600,delivery_required=True)
     assert [r['code'] for r in result['reasons']]==['bounded_team_delivery_not_verified']
+
+
+def _ambiguous_with_fresh_unchanged_states(tmp_path,change=None):
+    from mova_fpl.data.private_state import seal
+    import hashlib
+    service,delivery,pre=seed(tmp_path)
+    eid=delivery.dispatch(actor='owner',reason='prepare',now=NOW)['execution_id']
+    claim=service.claim(execution_id=eid,actor='owner',reason='claim',now=NOW)
+    service.begin(execution_id=eid,claim_token=claim['claim_token'],pre_state=pre,actor='owner',reason='begin',now=NOW)
+    service.fail(execution_id=eid,claim_token=claim['claim_token'],ambiguous=True,actor='owner',reason='UI stopped',error_code='UI_STOP',error_detail='fixture',now=NOW+timedelta(seconds=1))
+    for offset in ([10,12] if change=='close_reads' else [10,20]):
+        state={**pre,'observed_at':(NOW+timedelta(seconds=offset)).isoformat()}
+        if change=='state':state={**state,'transfers':{**state['transfers'],'bank':9}}
+        path,manifest,_=seal(state,service.config.season,service.config.artifact_root/'team_state',expected_team_id=service.config.team_id)
+        quality=manifest['quality']
+        job,_=service.db.start_job('private_state',f'read:{offset}','corr_fixture',cycle_id='2026-27-gw03')
+        service.db.add_team_state(job_id=job,cycle_id='2026-27-gw03',observed_at=state['observed_at'],source_name='fpl_authenticated_api',
+            squad=state['picks'],free_transfers=quality['free_transfers'],bank_tenths=quality['bank_tenths'],chips=state['chips'],fingerprint=quality['fingerprint'],
+            artifact_path=str(path),manifest_sha256=hashlib.sha256((path/'manifest.json').read_bytes()).hexdigest())
+    return service,delivery,eid
+
+
+def test_ambiguity_reconciliation_proves_unchanged_and_never_claims_delivery(tmp_path):
+    service,delivery,eid=_ambiguous_with_fresh_unchanged_states(tmp_path)
+    result=service.reconcile_unchanged(execution_id=eid,actor='owner',reason='two post reload server reads',idempotency_key='reconcile',now=NOW+timedelta(seconds=25))
+    assert result['status']=='reconciled_unchanged'
+    row=service.db.execution_attempt(eid)
+    assert row['status']=='failed' and row['error_code']=='AMBIGUITY_RECONCILED_UNCHANGED'
+    assert [e['to_status'] for e in row['events']][-2:]==['ambiguous','failed']
+    assert service.db.latest_delivery_proof(service.config.git_sha) is None
+    assert service.reconcile_unchanged(execution_id=eid,actor='owner',reason='retry receipt',idempotency_key='reconcile')['reused']
+    assert delivery.dispatch(actor='timer',reason='fresh retry',check_only=True,now=NOW+timedelta(seconds=25))['status']=='due'
+
+
+@pytest.mark.parametrize('kind',['state','stale','artifact','close_reads'])
+def test_ambiguity_reconciliation_refuses_uncertain_observations(tmp_path,kind):
+    service,_,eid=_ambiguous_with_fresh_unchanged_states(tmp_path,change=kind)
+    if kind=='artifact':
+        row=service.db.reconciliation_states('2026-27-gw03')[0]
+        Path(row['artifact_path'],'team-state.json').write_text('{}')
+    with pytest.raises((RuntimeError,ValueError)):
+        service.reconcile_unchanged(execution_id=eid,actor='owner',reason='read evidence',idempotency_key='reconcile',
+            now=NOW+timedelta(seconds=400 if kind=='stale' else 25))
+    assert service.db.execution_attempt(eid)['status']=='ambiguous'

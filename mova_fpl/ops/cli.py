@@ -236,6 +236,11 @@ def parser() -> argparse.ArgumentParser:
     )
     execute_commands = execute.add_subparsers(dest="execute_command", required=True)
     execute_commands.add_parser("status", help="consulta planes y gates recientes")
+    reconcile_execution=execute_commands.add_parser('reconcile-unchanged',help='resuelve incertidumbre R2 con dos estados autenticados intactos; no escribe FPL')
+    reconcile_execution.add_argument('--execution-id',required=True)
+    reconcile_execution.add_argument('--actor',required=True)
+    reconcile_execution.add_argument('--reason',required=True)
+    reconcile_execution.add_argument('--idempotency-key',required=True)
     rehearsal = execute_commands.add_parser(
         "rehearsal", help="registra evidencia sellada de un ensayo browser read-only"
     )
@@ -807,6 +812,9 @@ def main(argv: list[str] | None = None) -> int:
         service = ExecutionService(config, db)
         if args.execute_command == "status":
             payload = service.status()
+        elif args.execute_command == 'reconcile-unchanged':
+            payload=service.reconcile_unchanged(execution_id=args.execution_id,actor=args.actor,
+                reason=args.reason,idempotency_key=args.idempotency_key)
         elif args.execute_command == "rehearsal":
             payload = service.record_rehearsal(
                 evidence_file=Path(args.file), actor=args.actor, reason=args.reason,

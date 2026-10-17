@@ -340,7 +340,7 @@ def test_lineup_instruction_stream_materializes_against_fake_browser():
     module.execute(plan, browser)
     eval_scripts = [args[1] for args, _ in browser.calls if args[0] == "eval"]
     assert sum('Switch player' in script for script in eval_scripts) == 2
-    assert sum('data-pitch-element' in script for script in eval_scripts) == 1
+    assert sum('data-pitch-element' in script for script in eval_scripts) == 3
     assert sum(args[0] == "reload" for args, _ in browser.calls) == 1
     assert sum(args[0] == "find" and args[-1] == "--exact"
                for args, _ in browser.calls) == 1
@@ -524,3 +524,17 @@ def test_r2_host_resource_contention_defers_before_claim_or_browser_action(tmp_p
     assert 'deferred' in result.stderr
     assert 'claim' not in result.stdout and 'browser_execution' not in result.stdout
     assert not list(tmp_path.glob('mova-fpl-r2.*'))
+
+
+@pytest.mark.parametrize('name,expected',[('Thomas',True),('Wrong player',False)])
+def test_swap_target_uses_player_card_when_origin_control_is_cancelled(name,expected):
+    module=_host_driver_module()
+    script=module._switch_control_script(13,name)
+    harness='''const vm=require('node:vm');let clicked=0;
+const players=Array.from({length:15},(_,i)=>{const button={disabled:false,getClientRects:()=>[{}],click:()=>{if(i!==13)throw Error('wrong player');clicked++}};
+const player={innerText:i===13?'Thomas':'Other',getClientRects:()=>[{}]};
+player.parentElement={querySelectorAll:s=>s.includes('data-pitch-element')?[player]:i===12?[]:[button]};return player});
+const document={querySelectorAll:s=>s.includes('data-pitch-element')?players:[]};
+const result=vm.runInNewContext(JSON.parse(process.argv[1]),{document});process.stdout.write(JSON.stringify({result,clicked}));'''
+    result=subprocess.run(['node','-e',harness,json.dumps(script)],text=True,capture_output=True,check=True)
+    assert json.loads(result.stdout)=={'result':expected,'clicked':int(expected)}
