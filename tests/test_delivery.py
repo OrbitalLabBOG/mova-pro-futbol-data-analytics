@@ -209,3 +209,53 @@ def test_scoped_readiness_preserves_research_failures_and_requires_actual_save()
     assert after['activation']['technical_eligible_level']=='A2' and after['activation']['scope_ready'] is True
     research=next(g for g in after['gates'] if g['code']=='RESEARCH_EVIDENCE_CALIBRATED')
     assert research['status']=='blocked' and research['required_for']==['A3']
+
+
+def test_live_proof_is_expiring_and_never_closes_the_gameweek(tmp_path):
+    service,delivery,pre=seed(tmp_path)
+    approval={'cycle_id':'2026-27-gw03','approved_at':NOW.isoformat(),
+              'expires_at':(NOW+timedelta(minutes=5)).isoformat()}
+    service.db.set_control('delivery_proof',approval,actor='owner',reason='bounded live proof')
+    assert delivery.dispatch(actor='timer',reason='normal',now=NOW)['reason']=='expiring_live_proof_in_progress'
+    prepared=delivery.dispatch(actor='owner',reason='proof',now=NOW,proof=True)
+    eid=prepared['execution_id']
+    claim=service.claim(execution_id=eid,actor='owner',reason='proof',now=NOW,lease_seconds=600)
+    assert claim['lease_expires_at'].startswith('2026-09-04T16:05:00')
+    service.begin(execution_id=eid,claim_token=claim['claim_token'],pre_state=pre,
+                  actor='owner',reason='proof',now=NOW)
+    post=_private_state(list(range(1,11))+[12,15,11,13,14],captain=7,vice=8,
+                        observed_at=NOW+timedelta(seconds=10))
+    result=service.finalize(execution_id=eid,claim_token=claim['claim_token'],post_state=post,
+                           actor='owner',reason='proof',now=NOW+timedelta(seconds=11))
+    assert result['status']=='verified'
+    assert service.db.latest_delivery_attempt('2026-27-gw03')['is_delivery_proof']==1
+    assert service.db.pending_autonomous_closeout_gws('2026-27')==[]
+    assert service.db.seal_verified_decision_cycle('2026-27-gw03',correlation_id='proof',job_id=prepared.get('job_id','proof')) is None
+    service.db.set_control('delivery_proof',None,actor='owner',reason='proof ended')
+    assert delivery.dispatch(actor='timer',reason='final still due',now=NOW,check_only=True)['status']=='due'
+
+
+@pytest.mark.parametrize('delta,cycle,ttl', [(-1,'2026-27-gw03',300),(301,'2026-27-gw03',300),
+    (1,'2026-27-gw04',300),(1,'2026-27-gw03',3601)])
+def test_live_proof_cannot_expand_time_or_cycle(delta,cycle,ttl):
+    from mova_fpl.ops.delivery_policy import lineup_proof
+    c={'delivery_scope':'lineup-v1','delivery_proof':{'cycle_id':cycle,'approved_at':NOW.isoformat(),
+        'expires_at':(NOW+timedelta(seconds=ttl)).isoformat()}}
+    assert lineup_proof(c,'2026-27-gw03',NOW+timedelta(seconds=delta)) is False
+
+
+def test_provisional_lineup_proof_does_not_claim_settlement_or_approved_projection():
+    from test_decision_envelope import _bundle,_manifest,_decision,CONTROLS
+    from mova_fpl.ops.decision_envelope import build_envelope
+    bundle=_bundle(preliminary=True,selected=_decision(captain=2,policy='milp'))
+    bundle['engine']['delivery_scope']='lineup-v1'
+    manifest=_manifest(phase='baseline',analytics=False)
+    controls={**CONTROLS,'delivery_scope':'lineup-v1','delivery_proof':{
+        'cycle_id':'2026-27-gw03','approved_at':'2026-09-04T15:00:00Z','expires_at':'2026-09-04T16:00:00Z'}}
+    result=build_envelope(bundle=bundle,manifest=manifest,manifest_id='manifest_test',manifest_sha256='a'*64,controls=controls)
+    assert result['status']=='staged'
+    for code in ['PRIOR_GAMEWEEK_SETTLED','ANALYTICS_APPROVED_CAUSAL']:
+        gate=next(g for g in result['validation']['checks'] if g['code']==code)
+        assert gate['passed'] is False and gate['severity']=='warning'
+    controls['delivery_proof']=None
+    assert build_envelope(bundle=bundle,manifest=manifest,manifest_id='manifest_test',manifest_sha256='a'*64,controls=controls)['status']=='blocked'

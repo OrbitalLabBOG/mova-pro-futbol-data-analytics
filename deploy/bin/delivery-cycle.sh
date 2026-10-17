@@ -12,8 +12,15 @@ exec 7>"$run_root/lock/mova-fpl-delivery.lock"
 flock -n 7 || exit 75
 actor=mova-delivery-timer
 reason='scheduled bounded lineup delivery'
+proof_args=()
+if [[ ${1:-} == --proof && $# == 1 ]]; then
+  proof_args=(--proof)
+  reason='owner-authorized expiring reversible live save proof'
+elif [[ $# != 0 ]]; then
+  echo 'usage: delivery-cycle.sh [--proof]' >&2; exit 2
+fi
 field() { python3 -c 'import json,sys; print(json.load(sys.stdin).get(sys.argv[1],""))' "$1"; }
-due=$("$mova_bin" execute dispatch --check-only --actor "$actor" --reason "$reason" | tail -n 1)
+due=$("$mova_bin" execute dispatch --check-only "${proof_args[@]}" --actor "$actor" --reason "$reason" | tail -n 1)
 printf '%s\n' "$due"
 [[ $(printf '%s' "$due" | field status) == due ]] || exit 0
 refresh_key=$(printf '%s' "$due" | field refresh_key)
@@ -27,7 +34,7 @@ trap 'rm -f "$input"' EXIT
 timeout --kill-after=5s 120s "$browser" collect > "$input"
 "$mova_bin" ingest-team-state --file - --trigger scheduled < "$input"
 "$mova_bin" tick --force --actor "$actor" --reason "$reason" --idempotency-key "$refresh_key"
-dispatch=$("$mova_bin" execute dispatch --actor "$actor" --reason "$reason" | tail -n 1)
+dispatch=$("$mova_bin" execute dispatch "${proof_args[@]}" --actor "$actor" --reason "$reason" | tail -n 1)
 printf '%s\n' "$dispatch"
 [[ $(printf '%s' "$dispatch" | field status) == prepared ]] || exit 0
 execution_id=$(printf '%s' "$dispatch" | field execution_id)

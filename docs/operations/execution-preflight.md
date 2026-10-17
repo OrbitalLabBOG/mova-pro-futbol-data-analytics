@@ -36,6 +36,13 @@ registra mediante el CLI `control` con actor/razón; no editar envs ni SQLite pa
 simular aprobación. Investigación y DR conservan su estado histórico. El criterio
 acotado de A2 y sus límites están en [ADR-014](../specs/fpl-autonomous-operator/decisions/ADR-014-bounded-lineup-delivery.md).
 
+La prueba inicial `delivery-cycle.sh --proof` exige además el control auditado
+`delivery_proof` con `cycle_id`, `approved_at` y `expires_at` (máximo una hora).
+No altera timestamps ni inventa settlement/proyección aprobada: guarda una
+alineación provisional acotada y no sella la GW como terminada. Una vez expirada
+o revocada esa aprobación, el timer retoma su ventana normal. La prueba no puede
+habilitar R3 ni extender el lease más allá del permiso o hard stop.
+
 HV1-07A/B introduce la frontera durable previa al browser. HV1-07C añade la reserva apply-once,
 lease, límite de ambigüedad y verificador post-reload. HV1-07D.3 conecta un driver host acotado a
 capitanía con fail-closed estricto. HV1-07D.4 añade el instruction stream tipado de XI/banca,

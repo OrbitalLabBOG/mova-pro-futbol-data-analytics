@@ -4,6 +4,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from mova_fpl.ops.execution import ExecutionService
+from mova_fpl.ops.delivery_policy import lineup_proof
 
 LINEUP_SCOPE = "lineup-v1"
 
@@ -13,7 +14,7 @@ class DeliveryService:
         self.config, self.db = config, db
 
     def dispatch(self, *, actor: str, reason: str, check_only: bool = False,
-                 now: datetime | None = None) -> dict:
+                 now: datetime | None = None, proof: bool = False) -> dict:
         if not actor.strip() or not reason.strip():
             raise ValueError("delivery requires actor and reason")
         current = now or datetime.now(timezone.utc)
@@ -30,21 +31,31 @@ class DeliveryService:
         if not cycle.get('deadline_at'):
             return {**result, 'reason': 'cycle_missing'}
         seconds = (datetime.fromisoformat(cycle['deadline_at'].replace('Z', '+00:00')) - current).total_seconds()
-        if not 30 * 60 < seconds <= 3 * 3600:
+        proof_allowed = proof and lineup_proof(controls, cycle['cycle_id'], current)
+        if not proof and lineup_proof(controls, cycle['cycle_id'], current):
+            return {**result, 'status': 'not_due', 'reason': 'expiring_live_proof_in_progress'}
+        if proof and not proof_allowed:
+            return {**result, 'reason': 'live_proof_not_approved_or_expired'}
+        if not (seconds > 30*60 and (seconds <= 3*3600 or proof_allowed)):
             return {**result, 'status': 'not_due', 'reason': 'outside_delivery_window'}
         previous = self.db.latest_delivery_attempt(cycle['cycle_id'])
+        if previous and previous['status'] == 'verified':
+            previous_plan = ExecutionService(self.config, self.db)._load_plan(
+                self.db.execution_claim_source(previous['plan_id'])['plan'])
+            if previous_plan.get('delivery_proof') and (not proof or previous_plan.get('controls', {}).get('delivery_proof') != controls.get('delivery_proof')):
+                previous = None
         if previous and previous['status'] in {'verified', 'applying', 'ambiguous', 'claimed'}:
             return {**result, 'status': previous['status'], 'execution_id': previous['execution_id'],
                     'reason': 'existing_attempt_no_duplicate'}
         if check_only:
             return {**result, 'status': 'due', 'refresh_key':
-                    f"delivery-refresh:{cycle['cycle_id']}:{int(current.timestamp()) // 300}"}
+                    f"delivery-refresh:{cycle['cycle_id']}:{'proof' if proof else 'final'}:{int(current.timestamp()) // 300}"}
         service = ExecutionService(self.config, self.db)
         if previous and previous['status'] == 'prepared':
             # Claim revalidates all mutable gates; never dispatch a second prepared attempt.
             return {**result, 'status': 'prepared', 'execution_id': previous['execution_id']}
         plan = service.preflight(actor=actor, reason=reason, now=current,
-                                 idempotency_key=f"delivery-preflight:{cycle['cycle_id']}:{int(current.timestamp()) // 300}")
+                                 idempotency_key=f"delivery-preflight:{cycle['cycle_id']}:{'proof' if proof else 'final'}:{int(current.timestamp()) // 300}")
         row = self.db.execution_claim_source(plan['plan_id'])['plan']
         loaded = service._load_plan(row)
         if loaded['action']['risk_class'] not in {'R0', 'R2'}:
@@ -54,10 +65,10 @@ class DeliveryService:
             failed = [c['code'] for c in loaded['authorization']['checks'] if not c['passed']]
             if failed:
                 return {**result, 'reason': 'noop_checks_failed', 'blocking_codes': failed}
-            job, reused = self.db.start_job('delivery', f"delivery-noop:{cycle['cycle_id']}:{row['expected_pre_fingerprint']}",
+            job, reused = self.db.start_job('delivery', f"delivery-noop:{cycle['cycle_id']}:{'proof' if proof else 'final'}:{row['expected_pre_fingerprint']}",
                                             'corr_delivery', cycle_id=cycle['cycle_id'])
             if not reused:
-                self.db.finish_job(job, 'completed', metrics={'status': 'unchanged_verified', 'plan_id': plan['plan_id']})
+                self.db.finish_job(job, 'completed', metrics={'status': 'unchanged_verified', 'plan_id': plan['plan_id'], 'delivery_proof': proof})
             return {**result, 'status': 'unchanged_verified', 'job_id': job}
         if row['status'] != 'authorized':
             return {**result, 'reason': 'preflight_blocked',

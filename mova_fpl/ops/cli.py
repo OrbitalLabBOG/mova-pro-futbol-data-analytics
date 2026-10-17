@@ -259,6 +259,7 @@ def parser() -> argparse.ArgumentParser:
     dispatch.add_argument("--actor", required=True)
     dispatch.add_argument("--reason", required=True)
     dispatch.add_argument("--check-only", action="store_true")
+    dispatch.add_argument("--proof", action="store_true", help="requires a cycle-bound owner approval expiring within one hour")
     prepare_execution = execute_commands.add_parser(
         "prepare", help="reserva una ejecución apply-once autorizada"
     )
@@ -811,7 +812,7 @@ def main(argv: list[str] | None = None) -> int:
         elif args.execute_command == "dispatch":
             from mova_fpl.ops.delivery import DeliveryService
             payload = DeliveryService(config, db).dispatch(
-                actor=args.actor, reason=args.reason, check_only=args.check_only)
+                actor=args.actor, reason=args.reason, check_only=args.check_only, proof=args.proof)
         elif args.execute_command == "prepare":
             payload = service.prepare(
                 plan_id=args.plan_id, adapter=args.adapter, actor=args.actor,

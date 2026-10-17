@@ -757,9 +757,12 @@ class OpsDB:
     def latest_delivery_attempt(self, cycle_id: str) -> dict | None:
         with self.connect(readonly=True) as con:
             row = con.execute(
-                "SELECT a.* FROM execution_attempts a JOIN execution_plans p ON p.plan_id=a.plan_id "
-                "WHERE p.cycle_id=? ORDER BY CASE a.status WHEN 'verified' THEN 3 WHEN 'ambiguous' THEN 2 "
-                "WHEN 'applying' THEN 1 WHEN 'claimed' THEN 1 ELSE 0 END DESC,a.created_at DESC,a.execution_id DESC LIMIT 1",
+                "SELECT a.*,COALESCE(json_extract(j.metrics_json,'$.delivery_proof'),0) AS is_delivery_proof "
+                "FROM execution_attempts a JOIN execution_plans p ON p.plan_id=a.plan_id "
+                "JOIN job_runs j ON j.job_id=a.job_id "
+                "WHERE p.cycle_id=? ORDER BY CASE WHEN a.status='verified' AND json_extract(j.metrics_json,'$.delivery_proof')=1 THEN 0 "
+                "WHEN a.status='verified' THEN 3 WHEN a.status='ambiguous' THEN 2 "
+                "WHEN a.status IN ('applying','claimed') THEN 1 ELSE 0 END DESC,a.created_at DESC,a.execution_id DESC LIMIT 1",
                 (cycle_id,),
             ).fetchone()
         return dict(row) if row else None
@@ -780,7 +783,9 @@ class OpsDB:
     def delivery_receipt(self, cycle_id: str) -> dict | None:
         with self.connect(readonly=True) as con:
             row = con.execute("SELECT * FROM job_runs WHERE job_type='delivery' AND cycle_id=? "
-                              "AND status='completed' ORDER BY finished_at DESC LIMIT 1", (cycle_id,)).fetchone()
+                              "AND status='completed' AND json_extract(metrics_json,'$.status')='unchanged_verified' "
+                              "AND COALESCE(json_extract(metrics_json,'$.delivery_proof'),0)=0 "
+                              "ORDER BY finished_at DESC LIMIT 1", (cycle_id,)).fetchone()
         return dict(row) if row else None
 
     def prepare_execution_attempt(self, *, plan: dict, job_id: str,
@@ -900,7 +905,7 @@ class OpsDB:
                                  evidence_sha256: str | None = None,
                                  result_sha256: str | None = None,
                                  error_code: str | None = None,
-                                 error_detail: str | None = None) -> dict:
+                                 error_detail: str | None = None, close_cycle: bool = True) -> dict:
         if status not in {"verified", "failed", "ambiguous", "blocked", "expired"}:
             raise ValueError(f"estado terminal inválido: {status}")
         with self.transaction() as con:
@@ -935,7 +940,7 @@ class OpsDB:
                 "SELECT cycle_id,decision_id FROM execution_plans WHERE plan_id=?",
                 (row["plan_id"],)
             ).fetchone()
-            if status == "verified":
+            if status == "verified" and close_cycle:
                 con.execute(
                     "UPDATE decision_runs SET status='executed_verified' WHERE decision_id=?",
                     (plan["decision_id"],),

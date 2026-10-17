@@ -43,6 +43,17 @@ una falla del baseline.
 
 ## Autoridad pendiente de activación
 
+La prueba viva inicial usa aprobación auditada `delivery_proof`, ligada a una
+GW y con `approved_at`/`expires_at` de máximo una hora. Sólo la invocación
+explícita `delivery-cycle.sh --proof` puede usarla. Puede guardar una alineación
+provisional antes de settlement/ventana final, conservando esos checks como
+warnings, nunca como aprobados; exige modelos sellados, los quince jugadores
+originales, estado privado recién capturado, cero transfers/hits/chips y los
+mismos controles de autoridad. El lease termina al expirar la aprobación.
+Su Save verificado acredita el driver, pero no cierra la GW ni satisface el
+receipt final. El timer regular espera mientras esté activa y después conserva
+su decisión de T−3h. Una prueba ambigua detiene también la entrega posterior.
+
 La autorización de implementar no fabrica un guardado real ni registra
 aceptación contractual. Antes de activar deben existir release comprobada,
 controles auditados del owner (`delivery_scope=lineup-v1`, `A2`, modo

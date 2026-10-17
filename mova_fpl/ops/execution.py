@@ -14,7 +14,7 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from mova_fpl.data.private_state import validate as validate_private_state
+from mova_fpl.data.private_state import validate as validate_private_state, seal as seal_private_state
 from mova_fpl.ops.browser_contract import (
     compile_browser_commands,
     compile_r2_ui_action_plan,
@@ -28,6 +28,7 @@ from mova_fpl.ops.browser_driver import (
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB, sha256_json
 from mova_fpl.ops.decision_envelope import decision_fingerprint
+from mova_fpl.ops.delivery_policy import lineup_proof
 from mova_fpl.ops.schedule import (
     phase_for, private_state_cadence_seconds, workflow_stage_timing,
 )
@@ -141,6 +142,9 @@ def build_execution_plan(*, envelope: dict, envelope_row: dict, manifest_row: di
         and ACTION_LEVELS[action_level] >= ACTION_LEVELS[required_level]
     )
     no_action = risk_class == "R0"
+    proof = risk_class in {'R0','R2'} and lineup_proof(controls, envelope['cycle_id'], now)
+    if proof:
+        freshness_limit = min(freshness_limit, 300)
     checks = [
         _check("ENVELOPE_ARTIFACT_VERIFIED", True,
                "el artifact coincide con el registro y su hash de contenido",
@@ -168,7 +172,7 @@ def build_execution_plan(*, envelope: dict, envelope_row: dict, manifest_row: di
                and age_seconds <= freshness_limit,
                "el estado autenticado cumple la cadencia de la fase",
                age_seconds=age_seconds, max_age_seconds=freshness_limit),
-        _check("EXECUTION_WINDOW", effective_phase in EXECUTION_PHASES,
+        _check("EXECUTION_WINDOW", effective_phase in EXECUTION_PHASES or proof,
                "la acción ocurre dentro de preflight, freeze o execution_window",
                phase=effective_phase, allowed=sorted(EXECUTION_PHASES)),
         _check("DEADLINE_OPEN", now < deadline,
@@ -205,6 +209,7 @@ def build_execution_plan(*, envelope: dict, envelope_row: dict, manifest_row: di
     status = "noop" if no_action else "authorized" if not blocking else "blocked"
     body = {
         "schema": SCHEMA,
+        "delivery_proof": proof,
         "policy_version": POLICY_VERSION,
         "cycle_id": envelope["cycle_id"],
         "season": envelope["season"],
@@ -727,6 +732,10 @@ class ExecutionService:
         observed = str(controls.get("action_level") or "A0")
         blockers = []
         plan = self._load_plan(row)
+        if plan.get('delivery_proof') and not lineup_proof(controls, row['cycle_id'], now):
+            blockers.append('DELIVERY_PROOF_EXPIRED_OR_REVOKED')
+        if plan.get('delivery_proof') and plan.get('controls', {}).get('delivery_proof') != controls.get('delivery_proof'):
+            blockers.append('DELIVERY_PROOF_APPROVAL_CHANGED')
         if plan.get('controls', {}).get('delivery_scope') != controls.get('delivery_scope'):
             blockers.append('DELIVERY_SCOPE_CHANGED')
         if controls.get('delivery_scope') == 'lineup-v1' and plan['action']['risk_class'] not in {'R0', 'R2'}:
@@ -860,6 +869,9 @@ class ExecutionService:
             "execute_verify", _parse_time(source["plan"]["deadline_at"]),
         )["hard_stop_at"])
         expires = min(current + timedelta(seconds=int(lease_seconds)), hard_stop)
+        plan = self._load_plan(source['plan'])
+        if plan.get('delivery_proof'):
+            expires = min(expires, _parse_time(source['controls']['delivery_proof']['expires_at']))
         result = self.db.claim_execution_attempt(
             execution_id=execution_id,
             token_sha256=hashlib.sha256(token.encode("utf-8")).hexdigest(),
@@ -1031,12 +1043,17 @@ class ExecutionService:
             checks.append({'code': 'POST_FINANCE_AND_CHIPS_UNCHANGED',
                            'passed': before == after and before_quality['fingerprint'] == attempt['expected_pre_fingerprint']})
         verified = all(row["passed"] for row in checks)
+        post_path, post_manifest, _ = seal_private_state(
+            normalized, self.config.season, self.config.artifact_root / 'team_state',
+            expected_team_id=self.config.team_id)
+        post_manifest_sha = self._file_sha(post_path / 'manifest.json')
         current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
         evidence = {
             "schema": "mova-execution-evidence-v1", "execution_id": execution_id,
             "plan_id": plan["plan_id"], "observed_at": normalized["observed_at"],
             "verification_checks": checks,
             "private_state_fingerprint": quality["fingerprint"],
+            'post_state_artifact': str(post_path), 'post_state_manifest_sha256': post_manifest_sha,
         }
         result_sha = sha256_json(evidence)
         target = self.config.artifact_root / "execution-evidence" / plan["cycle_id"] / f"{execution_id}.json"
@@ -1057,11 +1074,18 @@ class ExecutionService:
             evidence_sha256=self._file_sha(target), result_sha256=result_sha,
             error_code=None if verified else "POST_STATE_MISMATCH",
             error_detail=None if verified else "post-reload state no coincide con el plan",
+            close_cycle=not plan.get('delivery_proof', False),
         )
         if verified:
+            self.db.add_team_state(
+                job_id=attempt['job_id'], cycle_id=plan['cycle_id'], observed_at=normalized['observed_at'],
+                source_name='fpl_authenticated_api', squad=normalized['picks'], free_transfers=quality['free_transfers'],
+                bank_tenths=quality['bank_tenths'], chips=normalized['chips'], fingerprint=quality['fingerprint'],
+                artifact_path=str(post_path), manifest_sha256=post_manifest_sha)
             self.db.finish_job(attempt["job_id"], "completed", output_sha256=result_sha,
                                metrics={"status": status, "verification_checks": len(checks),
                                         'delivery_scope': plan.get('controls', {}).get('delivery_scope'),
+                                        'delivery_proof': plan.get('delivery_proof', False),
                                         'git_sha': self.config.git_sha,
                                         'driver_contract': DRIVER_CONTRACT_VERSION})
         else:
