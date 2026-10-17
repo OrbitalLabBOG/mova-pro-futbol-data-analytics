@@ -98,6 +98,7 @@ def _semantic_steps(section: dict, *, role: str, start: int) -> list[DriverStep]
     return [
         DriverStep(start, "open_player_sheet", {
             "role": role, "element": element, "player_button_index": index,
+            "expected_web_name": action.get('expected_web_name'),
             "selector": action["player_selector"],
         }),
         DriverStep(start + 1, "focus_checkbox", {
@@ -154,6 +155,7 @@ def _lineup_steps(ui_plan: dict, *, start: int) -> list[DriverStep]:
             or int(swap.get("sequence", 0)) != expected_sequence
             or swap.get("selector") != 'button[aria-label="Switch player"]'
             or not 0 <= left < 15 or not 0 <= right < 15 or left == right
+            or (left < 11 and right < 11)
             or int(swap.get("first_position", 0)) != left + 1
             or int(swap.get("second_position", 0)) != right + 1
         ):
