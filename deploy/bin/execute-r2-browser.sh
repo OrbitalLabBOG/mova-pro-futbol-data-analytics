@@ -94,6 +94,17 @@ if value is None: raise SystemExit(2)
 print(value)' "$1"
 }
 
+state_input() {
+  # /run is intentionally not mounted into the worker. Transport sanitized
+  # documents and the lease token together over stdin, never via argv/files.
+  python3 -c 'import json,sys
+kind=sys.argv[1]
+payload={"pre_state" if kind != "finalize" else "post_state":json.load(open(sys.argv[2]))}
+if kind == "ui-plan": payload["dom_probe"]=json.load(open(sys.argv[3]))
+else: payload["claim_token"]=sys.stdin.read().strip()
+print(json.dumps(payload))' "$@"
+}
+
 cleanup() {
   local status=$?
   trap - EXIT HUP INT TERM
@@ -147,8 +158,8 @@ bounded 45 "$browser_session" collect >"$pre_state"
 failure_code="DOM_PROBE_FAILED"
 bounded 90 "$browser_session" probe >"$dom_probe"
 failure_code="UI_PLAN_BLOCKED"
-bounded 30 "$mova_bin" execute ui-plan \
-  --execution-id "$execution_id" --pre-state "$pre_state" --dom-probe "$dom_probe" \
+state_input ui-plan "$pre_state" "$dom_probe" | bounded 30 "$mova_bin" execute ui-plan \
+  --execution-id "$execution_id" --input-stdin \
   | tail -n 1 >"$ui_plan"
 [[ $(json_field status <"$ui_plan") == "ready" ]]
 bounded 30 python3 "$browser_driver" --ui-plan "$ui_plan" --validate-only >/dev/null
@@ -157,9 +168,9 @@ emit browser_ui_plan_validated
 failure_code="BEGIN_FAILED"
 attempt_phase="begin_requested"
 set +e
-begin_payload=$(printf '%s' "$claim_token" | bounded 30 "$mova_bin" execute begin \
-  --execution-id "$execution_id" --pre-state "$pre_state" \
-  --actor "$actor" --reason "$reason" --claim-token-stdin | tail -n 1)
+begin_payload=$(printf '%s' "$claim_token" | state_input begin "$pre_state" | bounded 30 "$mova_bin" execute begin \
+  --execution-id "$execution_id" --input-stdin \
+  --actor "$actor" --reason "$reason" | tail -n 1)
 begin_rc=$?
 set -e
 begin_status=$(printf '%s' "$begin_payload" | json_field status)
@@ -181,9 +192,9 @@ failure_code="POST_STATE_CAPTURE_FAILED"
 bounded 30 "$browser_session" collect >"$post_state"
 failure_code="POST_STATE_VERIFICATION_FAILED"
 set +e
-final_payload=$(printf '%s' "$claim_token" | timeout --kill-after=3s 15s "$mova_bin" execute finalize \
-  --execution-id "$execution_id" --post-state "$post_state" \
-  --actor "$actor" --reason "$reason" --claim-token-stdin | tail -n 1)
+final_payload=$(printf '%s' "$claim_token" | state_input finalize "$post_state" | timeout --kill-after=3s 15s "$mova_bin" execute finalize \
+  --execution-id "$execution_id" --input-stdin \
+  --actor "$actor" --reason "$reason" | tail -n 1)
 final_rc=$?
 set -e
 final_status=$(printf '%s' "$final_payload" | json_field status)

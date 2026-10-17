@@ -382,3 +382,8 @@ entrypoint, autonomía y GWs distintas observadas/requeridas para captaincy, lin
 corte actual captaincy tiene entrypoint pero autonomía no promovida; lineup y R3 tienen contrato
 implementado, entrypoint deshabilitado y el conteo durable parte de `0/3` hasta importar evidencia
 real. Ninguno de estos contadores cambia controles ni promueve autonomía.
+
+El host conserva los temporales en `/run` sin montarlos en Docker. `ui-plan`,
+`begin` y `finalize --input-stdin` reciben documentos JSON sanitizados por pipe;
+el token de lease viaja dentro del pipe, nunca en argv ni en archivos. El worker
+limita el payload a 1 MiB y conserva los mismos checks de autoridad y estado.

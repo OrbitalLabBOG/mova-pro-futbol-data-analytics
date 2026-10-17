@@ -154,6 +154,8 @@ class Clock(datetime):
 execution.datetime=delivery.datetime=Clock
 config={replace(service.config,sqlite_min_version='3.0.0')!r}
 cli.RuntimeConfig.from_env=lambda:config
+if any(flag in sys.argv for flag in ('--pre-state','--dom-probe','--post-state')):
+ raise SystemExit('worker cannot access host temporary files; use stdin')
 if sys.argv[1]=='tick':
  print(json.dumps({{'status':'completed','fixture_source_refresh':True}}));sys.exit(0)
 sys.exit(cli.main(sys.argv[1:]))
@@ -259,3 +261,26 @@ def test_provisional_lineup_proof_does_not_claim_settlement_or_approved_projecti
         assert gate['passed'] is False and gate['severity']=='warning'
     controls['delivery_proof']=None
     assert build_envelope(bundle=bundle,manifest=manifest,manifest_id='manifest_test',manifest_sha256='a'*64,controls=controls)['status']=='blocked'
+
+
+def test_worker_state_transport_is_bounded_and_does_not_echo_payload(monkeypatch):
+    import io
+    from mova_fpl.ops.cli import execution_stdin
+    payload={'claim_token':'private-lease-fixture','pre_state':{'picks':[]}}
+    monkeypatch.setattr('sys.stdin',io.StringIO(json.dumps(payload)))
+    assert execution_stdin({'claim_token','pre_state'})==payload
+    for raw in [json.dumps({**payload,'extra':'forbidden'}), json.dumps({'claim_token':'private-lease-fixture','pre_state':[]}), 'x'*(1024*1024+1)]:
+        monkeypatch.setattr('sys.stdin',io.StringIO(raw))
+        with pytest.raises(SystemExit) as error:
+            execution_stdin({'claim_token','pre_state'})
+        assert 'private-lease-fixture' not in str(error.value)
+
+
+def test_execution_stdin_is_exclusive_with_raw_token_transport():
+    from mova_fpl.ops.cli import parser
+    args=parser().parse_args(['execute','begin','--execution-id','execution_fixture',
+        '--actor','test','--reason','host transport','--input-stdin'])
+    assert args.input_stdin and args.pre_state is None
+    with pytest.raises(SystemExit):
+        parser().parse_args(['execute','begin','--execution-id','execution_fixture',
+            '--actor','test','--reason','host transport','--input-stdin','--claim-token-stdin'])
