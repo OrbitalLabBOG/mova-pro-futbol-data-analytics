@@ -70,7 +70,7 @@ def _open_player_script(index: int) -> str:
     return (
         "(function(){const visible=n=>Boolean(n&&n.getClientRects().length);"
         "const buttons=Array.from(document.querySelectorAll("
-        "'button[data-pitch-element=\\\"true\\\"]')).filter(visible);"
+        "'button[data-pitch-element=\"true\"]')).filter(visible);"
         f"if(buttons.length!==15||!buttons[{index}])return false;"
         f"buttons[{index}].click();return true;}})()"
     )
@@ -83,7 +83,7 @@ def _checkbox_script(name: str, *, checked: bool | None = None) -> str:
     )
     return (
         "(function(){const visible=n=>Boolean(n&&n.getClientRects().length);"
-        "const node=Array.from(document.querySelectorAll('input[type=\\\"checkbox\\\"]'))"
+        "const node=Array.from(document.querySelectorAll('input[type=\"checkbox\"]'))"
         f".find(n=>visible(n)&&Array.from(n.labels||[]).some(l=>"
         f"(l.innerText||l.textContent||'').trim()==={expected}));{suffix}}})()"
     )
@@ -134,7 +134,7 @@ def _lineup_order_script(expected_slots: list[dict]) -> str:
 def _sheet_closed_script() -> str:
     return (
         "(function(){const visible=n=>Boolean(n&&n.getClientRects().length);"
-        "return !Array.from(document.querySelectorAll('input[type=\\\"checkbox\\\"]'))"
+        "return !Array.from(document.querySelectorAll('input[type=\"checkbox\"]'))"
         ".some(n=>visible(n)&&Array.from(n.labels||[]).some(l=>"
         "['Captain','Vice Captain'].includes("
         "(l.innerText||l.textContent||'').trim())));})()"
@@ -205,7 +205,7 @@ def execute(driver_plan: dict, browser: AgentBrowser) -> None:
             browser.run("reload")
             browser.run("wait", "--fn", (
                 "location.pathname === '/en/my-team' && "
-                "document.querySelectorAll('button[aria-label=\\\"Switch player\\\"]').length === 15"
+                "document.querySelectorAll('button[aria-label=\"Switch player\"]').length === 15"
             ))
         else:  # pragma: no cover - compiler owns the finite instruction set
             raise RuntimeError(f"UNKNOWN_DRIVER_OPERATION:{operation}")

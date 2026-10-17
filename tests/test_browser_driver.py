@@ -522,3 +522,29 @@ def test_r2_host_resource_contention_defers_before_claim_or_browser_action(tmp_p
     assert 'deferred' in result.stderr
     assert 'claim' not in result.stdout and 'browser_execution' not in result.stdout
     assert not list(tmp_path.glob('mova-fpl-r2.*'))
+
+
+def test_production_driver_javascript_passes_valid_css_to_dom():
+    """Execute the JS transport: string-only browser fixtures missed over-escaping."""
+    module = _host_driver_module()
+    calls = []
+    class Browser:
+        def run(self, *args, capture=False):
+            calls.append(args)
+            if args[:2] == ('get', 'url'):
+                return 'https://fantasy.premierleague.com/en/my-team'
+            if args[0] == 'eval' and ".length;})()" in args[1]:
+                return '1'
+            return 'true' if args[0] == 'eval' else ''
+    for payload in (_ui_plan(), _lineup_ui_plan()):
+        module.execute(compile_r2_driver_plan(payload, lineup_rehearsed=True), Browser())
+    scripts = [a[-1] for a in calls if a[0] == 'eval' or a[:2] == ('wait', '--fn')]
+    script = '''const vm=require('node:vm');const selectors=[];
+const context={document:{querySelectorAll(s){selectors.push(s);return []}},location:{pathname:'/en/my-team'}};
+for(const source of JSON.parse(process.argv[1]))vm.runInNewContext(source,context);
+process.stdout.write(JSON.stringify(selectors));'''
+    result = subprocess.run(['node','-e',script,json.dumps(scripts)], check=True,
+                            capture_output=True,text=True)
+    selectors = json.loads(result.stdout)
+    assert set(selectors) == {'button', 'button[data-pitch-element="true"]',
+                              'input[type="checkbox"]', 'button[aria-label="Switch player"]'}
