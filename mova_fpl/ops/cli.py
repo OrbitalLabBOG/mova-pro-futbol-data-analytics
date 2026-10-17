@@ -20,6 +20,26 @@ from mova_fpl.ops.operator import (
 from mova_fpl.ops.tick import LockBusy, TickRunner
 
 
+def execution_stdin(fields: set[str]) -> dict:
+    """Bounded host→worker transport; private state and lease token stay off argv."""
+    try:
+        raw = sys.stdin.read(1024 * 1024 + 1)
+        if len(raw) > 1024 * 1024:
+            raise ValueError()
+        body = json.loads(raw)
+        if not isinstance(body, dict) or set(body) != fields:
+            raise ValueError()
+        for key, value in body.items():
+            if key == 'claim_token':
+                if not isinstance(value, str) or not value.strip():
+                    raise ValueError()
+            elif not isinstance(value, dict):
+                raise ValueError()
+        return body
+    except (ValueError, TypeError):
+        raise SystemExit('invalid bounded execution input; contents withheld') from None
+
+
 def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(prog="mova")
     root.add_argument("--log-level", default="INFO")
@@ -280,24 +300,30 @@ def parser() -> argparse.ArgumentParser:
         "ui-plan", help="compila el plan DOM contra pre-state y probe sanitizado"
     )
     ui_plan.add_argument("--execution-id", required=True)
-    ui_plan.add_argument("--pre-state", required=True)
-    ui_plan.add_argument("--dom-probe", required=True)
+    ui_source = ui_plan.add_mutually_exclusive_group(required=True)
+    ui_source.add_argument("--pre-state")
+    ui_source.add_argument("--input-stdin", action="store_true")
+    ui_plan.add_argument("--dom-probe")
     begin_execution = execute_commands.add_parser(
         "begin", help="marca el límite de write ambiguity después de validar pre-state"
     )
     begin_execution.add_argument("--execution-id", required=True)
-    begin_execution.add_argument("--pre-state", required=True)
+    begin_execution.add_argument("--pre-state")
     begin_execution.add_argument("--actor", required=True)
     begin_execution.add_argument("--reason", required=True)
-    begin_execution.add_argument("--claim-token-stdin", action="store_true", required=True)
+    begin_input = begin_execution.add_mutually_exclusive_group(required=True)
+    begin_input.add_argument("--claim-token-stdin", action="store_true")
+    begin_input.add_argument("--input-stdin", action="store_true")
     finalize_execution = execute_commands.add_parser(
         "finalize", help="verifica el GET post-reload y sella evidencia"
     )
     finalize_execution.add_argument("--execution-id", required=True)
-    finalize_execution.add_argument("--post-state", required=True)
+    finalize_execution.add_argument("--post-state")
     finalize_execution.add_argument("--actor", required=True)
     finalize_execution.add_argument("--reason", required=True)
-    finalize_execution.add_argument("--claim-token-stdin", action="store_true", required=True)
+    finalize_input = finalize_execution.add_mutually_exclusive_group(required=True)
+    finalize_input.add_argument("--claim-token-stdin", action="store_true")
+    finalize_input.add_argument("--input-stdin", action="store_true")
     fail_execution = execute_commands.add_parser(
         "fail", help="cierra fallo pre-write o write ambiguo sin reintento"
     )
@@ -824,25 +850,44 @@ def main(argv: list[str] | None = None) -> int:
                 lease_seconds=args.lease_seconds,
             )
         elif args.execute_command == "ui-plan":
+            if args.input_stdin:
+                if args.dom_probe:
+                    raise SystemExit('input-stdin cannot be combined with file inputs')
+                state_input = execution_stdin({'pre_state', 'dom_probe'})
+            else:
+                if not args.dom_probe:
+                    raise SystemExit('--dom-probe required with --pre-state')
+                state_input = {'pre_state': json.loads(Path(args.pre_state).read_text(encoding='utf-8')),
+                               'dom_probe': json.loads(Path(args.dom_probe).read_text(encoding='utf-8'))}
             payload = service.compile_ui_plan(
                 execution_id=args.execution_id,
-                pre_state=json.loads(Path(args.pre_state).read_text(encoding="utf-8")),
-                dom_probe=json.loads(Path(args.dom_probe).read_text(encoding="utf-8")),
+                pre_state=state_input['pre_state'], dom_probe=state_input['dom_probe'],
             )
         else:
-            claim_token = sys.stdin.read().strip()
+            state_input = None
+            if getattr(args, 'input_stdin', False):
+                key = 'pre_state' if args.execute_command == 'begin' else 'post_state'
+                if getattr(args, 'pre_state', None) or getattr(args, 'post_state', None):
+                    raise SystemExit('input-stdin cannot be combined with file inputs')
+                state_input = execution_stdin({'claim_token', key})
+                claim_token = state_input['claim_token']
+            else:
+                if args.execute_command in {'begin', 'finalize'} and not (
+                    getattr(args, 'pre_state', None) or getattr(args, 'post_state', None)):
+                    raise SystemExit('state file required with claim-token-stdin')
+                claim_token = sys.stdin.read().strip()
             if not claim_token:
                 raise SystemExit("claim token requerido exclusivamente por stdin")
             if args.execute_command == "begin":
                 payload = service.begin(
                     execution_id=args.execution_id, claim_token=claim_token,
-                    pre_state=json.loads(Path(args.pre_state).read_text(encoding="utf-8")),
+                    pre_state=state_input['pre_state'] if state_input else json.loads(Path(args.pre_state).read_text(encoding="utf-8")),
                     actor=args.actor, reason=args.reason,
                 )
             elif args.execute_command == "finalize":
                 payload = service.finalize(
                     execution_id=args.execution_id, claim_token=claim_token,
-                    post_state=json.loads(Path(args.post_state).read_text(encoding="utf-8")),
+                    post_state=state_input['post_state'] if state_input else json.loads(Path(args.post_state).read_text(encoding="utf-8")),
                     actor=args.actor, reason=args.reason,
                 )
             else:

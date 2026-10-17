@@ -356,7 +356,9 @@ def test_host_orchestrator_keeps_claim_secret_in_pipe_and_cleans_up():
     assert 'mktemp -d "$run_root/mova-fpl-r2.' in script
     assert "--claim-token-stdin" in script
     assert "--claim-token " not in script
-    assert "printf '%s' \"$claim_token\" | bounded 30 \"$mova_bin\" execute begin" in script
+    assert 'state_input begin "$pre_state"' in script
+    assert 'state_input finalize "$post_state"' in script
+    assert "--input-stdin" in script
     assert "rm -f \"$pre_state\" \"$dom_probe\" \"$ui_plan\" \"$post_state\"" in script
     assert "cookies" not in script and "storage" not in script and "state save" not in script
 
@@ -387,9 +389,9 @@ printf 'mova %s\\n' "$*" >>"$TEST_CALL_LOG"
 case "$1 $2" in
   'execute claim') python3 -c 'import json; from datetime import datetime,timedelta,timezone; print(json.dumps({"status":"claimed","claim_token":"secret-once","lease_expires_at":(datetime.now(timezone.utc)+timedelta(minutes=5)).isoformat()}))' ;;
   'execute ui-plan') printf '%s\\n' '{"status":"ready"}' ;;
-  'execute begin') [[ $(cat) == secret-once ]]; [[ $TEST_BEGIN_MODE == ok ]] || exit 9; printf '%s\\n' '{"status":"applying"}' ;;
+  'execute begin') [[ $(python3 -c 'import json,sys; print(json.load(sys.stdin)["claim_token"])') == secret-once ]]; [[ $TEST_BEGIN_MODE == ok ]] || exit 9; printf '%s\\n' '{"status":"applying"}' ;;
   'execute fail') [[ $(cat) == secret-once ]]; if [[ $TEST_BEGIN_MODE == lost_claimed && $* == *ambiguous* ]]; then exit 9; fi; printf '%s\\n' '{"status":"failed"}' ;;
-  'execute finalize') [[ $(cat) == secret-once ]]; printf '%s\\n' '{"status":"verified"}' ;;
+  'execute finalize') [[ $(python3 -c 'import json,sys; print(json.load(sys.stdin)["claim_token"])') == secret-once ]]; printf '%s\\n' '{"status":"verified"}' ;;
   *) exit 9 ;;
 esac
 """,
