@@ -14,7 +14,7 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from mova_fpl.data.private_state import validate as validate_private_state, seal as seal_private_state
+from mova_fpl.data.private_state import validate as validate_private_state, seal as seal_private_state, load as load_private_state
 from mova_fpl.ops.browser_contract import (
     compile_browser_commands,
     compile_r2_ui_action_plan,
@@ -1125,6 +1125,61 @@ class ExecutionService:
                                error_code="POST_STATE_MISMATCH",
                                error_detail="estado post-reload no coincide")
         return {**result, "verification_checks": checks, "result_sha256": result_sha}
+
+    def reconcile_unchanged(self, *, execution_id: str, actor: str, reason: str,
+                            idempotency_key: str, now: datetime | None = None) -> dict:
+        """Read-only account reconciliation, never a Save or a verified delivery."""
+        if not all(v.strip() for v in (execution_id,actor,reason,idempotency_key)):
+            raise ValueError('reconciliation requires identity, actor, reason and idempotency key')
+        attempt = self.db.execution_attempt(execution_id)
+        if attempt['status'] == 'failed' and attempt.get('error_code') == 'AMBIGUITY_RECONCILED_UNCHANGED':
+            path=Path(attempt['evidence_path'])
+            if self._file_sha(path) != attempt['evidence_sha256']:
+                raise ValueError('reconciliation evidence changed')
+            evidence=json.loads(path.read_text())
+            if evidence.get('idempotency_key') != idempotency_key:
+                raise RuntimeError('attempt already reconciled with another key')
+            return {'status':'reconciled_unchanged','execution_id':execution_id,'reused':True}
+        if attempt['status'] != 'ambiguous':
+            raise RuntimeError('only ambiguous terminal attempts can be reconciled')
+        source=self.db.execution_claim_source(attempt['plan_id'])
+        plan=self._load_plan(source['plan'])
+        if plan['action']['risk_class'] != 'R2' or plan.get('controls',{}).get('delivery_scope') != 'lineup-v1':
+            raise RuntimeError('reconciliation is restricted to bounded lineup R2')
+        current=(now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+        rows=self.db.reconciliation_states(plan['cycle_id'])
+        if len(rows) != 2:
+            raise RuntimeError('two fresh authenticated observations are required')
+        times=[]
+        for row in rows:
+            path=Path(row['artifact_path']).resolve()
+            if not path.is_relative_to(self.config.artifact_root.resolve()):
+                raise ValueError('reconciliation state outside artifact root')
+            if self._file_sha(path/'manifest.json') != row['manifest_sha256']:
+                raise ValueError('reconciliation manifest changed')
+            state,manifest=load_private_state(path,expected_team_id=self.config.team_id)
+            observed=_parse_time(state['observed_at'])
+            if (row['quality_status'] != 'valid' or row['source_name'] != 'fpl_authenticated_api'
+                    or state['event']['id'] != plan['gw'] or _parse_time(row['observed_at']) != observed
+                    or not 0 <= (current-observed).total_seconds() <= 300
+                    or observed <= _parse_time(attempt['finished_at'])
+                    or row['fingerprint'] != attempt['expected_pre_fingerprint']
+                    or manifest['quality']['fingerprint'] != attempt['expected_pre_fingerprint']):
+                raise RuntimeError('fresh server state does not prove the original account state')
+            times.append(observed)
+        if (times[0]-times[1]).total_seconds() < 5:
+            raise RuntimeError('independent observations must be at least five seconds apart')
+        evidence={'schema':'mova-r2-unchanged-reconciliation-v1','execution_id':execution_id,
+                  'observed_at':current.isoformat(),'state_ids':[r['team_state_id'] for r in rows],
+                  'fingerprint':attempt['expected_pre_fingerprint'],'idempotency_key':idempotency_key,
+                  'account_write':False,'delivery_verified':False,'actor':actor,'reason':reason}
+        target=self.config.artifact_root/'execution-reconciliation'/f'{execution_id}_{sha256_json(idempotency_key)[:16]}.json'
+        target.parent.mkdir(parents=True,exist_ok=True)
+        with target.open('x',encoding='utf-8') as stream:
+            stream.write(json.dumps(evidence,sort_keys=True)+'\n')
+        return self.db.reconcile_execution_unchanged(execution_id=execution_id,
+            state_ids=evidence['state_ids'],evidence_path=str(target),evidence_sha256=self._file_sha(target),
+            actor=actor,reason=reason)
 
     def fail(self, *, execution_id: str, claim_token: str, ambiguous: bool,
              actor: str, reason: str, error_code: str, error_detail: str,

@@ -109,13 +109,19 @@ def _close_sheet_script() -> str:
     )
 
 
-def _switch_control_script(index: int) -> str:
+def _switch_control_script(index: int, expected_name: str = '', *, click: bool = True) -> str:
     return (
         "(function(){const visible=n=>Boolean(n&&n.getClientRects().length);"
         "const buttons=Array.from(document.querySelectorAll("
-        "'button[aria-label=\"Switch player\"]')).filter(visible);"
-        f"if(buttons.length!==15||!buttons[{index}])return false;"
-        f"buttons[{index}].click();return true;}})()"
+        "'button[data-pitch-element=\"true\"]')).filter(visible);"
+        f"const name={json.dumps(expected_name)};"
+        "const named=name?buttons.filter(b=>(b.innerText||b.textContent||'').includes(name)):[];"
+        f"const player=name?(named.length===1?named[0]:null):(buttons.length===15?buttons[{index}]:null);"
+        "if(!player)return false;"
+        "const card=player.parentElement;if(!card||card.querySelectorAll('button[data-pitch-element=\"true\"]').length!==1)return false;"
+        "const controls=Array.from(card.querySelectorAll('button[aria-label=\"Switch player\"]')).filter(visible);"
+        "if(controls.length!==1||controls[0].disabled)return false;"
+        + ("controls[0].click();" if click else "") + "return true;})()"
     )
 
 
@@ -149,12 +155,16 @@ def execute(driver_plan: dict, browser: AgentBrowser) -> None:
         sequence = int(step["sequence"])
         _emit("browser_driver_step_started", sequence=sequence, operation=operation)
         if operation in {"select_swap_origin", "select_swap_target"}:
+            index=int(step['switch_button_index'])
+            name=str(step.get('expected_web_name') or '')
+            browser.run('wait','--fn',_switch_control_script(index,name,click=False))
             if browser.run(
-                "eval", _switch_control_script(int(step["switch_button_index"])),
+                "eval", _switch_control_script(index,name),
                 capture=True,
             ) != "true":
                 raise RuntimeError("FPL_SWITCH_CONTROL_MISSING")
         elif operation == "verify_lineup_visual_order":
+            browser.run('wait','--fn',_lineup_order_script(list(step['expected_slots'])))
             if browser.run(
                 "eval", _lineup_order_script(list(step["expected_slots"])), capture=True,
             ) != "true":
@@ -174,6 +184,7 @@ def execute(driver_plan: dict, browser: AgentBrowser) -> None:
         elif operation == "press_space":
             browser.run("press", "Space")
         elif operation == "verify_checkbox":
+            browser.run('wait','--fn',_checkbox_script(str(step['accessible_name']),checked=True))
             if browser.run(
                 "eval", _checkbox_script(str(step["accessible_name"]), checked=True),
                 capture=True,
@@ -184,6 +195,7 @@ def execute(driver_plan: dict, browser: AgentBrowser) -> None:
                 raise RuntimeError("FPL_PLAYER_SHEET_CLOSE_MISSING")
             browser.run("wait", "--fn", _sheet_closed_script())
         elif operation == "discover_commit_control":
+            browser.run('wait','--fn',f"{_commit_count_script(str(step['accessible_name']))} === {int(step['expected_matches'])}")
             observed = int(browser.run(
                 "eval", _commit_count_script(str(step["accessible_name"])), capture=True,
             ))
@@ -246,6 +258,12 @@ def main() -> int:
         )
         execute(driver_plan, browser)
     except (RuntimeError, subprocess.SubprocessError, OSError, ValueError, KeyError, TypeError) as exc:
+        if 'browser' in locals():
+            try:
+                diagnostic=browser.run('eval',"JSON.stringify({path:location.pathname,pitch_count:document.querySelectorAll('button[data-pitch-element=\"true\"]').length,switch_controls:[...document.querySelectorAll('button[aria-label]')].filter(n=>n.getClientRects().length&&/switch|swap|cancel/i.test(n.getAttribute('aria-label'))).map(n=>({label:n.getAttribute('aria-label'),disabled:n.disabled}))})",capture=True)
+                _emit('browser_driver_failure_controls',observed=json.loads(diagnostic))
+            except Exception:
+                pass
         _emit(
             "browser_driver_failed", error_code=type(exc).__name__,
             error_detail=str(exc)[:500],

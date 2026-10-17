@@ -387,3 +387,10 @@ El host conserva los temporales en `/run` sin montarlos en Docker. `ui-plan`,
 `begin` y `finalize --input-stdin` reciben documentos JSON sanitizados por pipe;
 el token de lease viaja dentro del pipe, nunca en argv ni en archivos. El worker
 limita el payload a 1 MiB y conserva los mismos checks de autoridad y estado.
+
+Para un R2 ambiguo sin cambio confirmado: recargar `my-team`, capturar e ingerir
+dos estados privados separados >=5 s, y ejecutar `mova execute reconcile-unchanged
+--execution-id ... --actor ... --reason ... --idempotency-key ...`. La operación
+sólo acepta el estado previo intacto, demuestra cada lectura mediante su artifact
+sellado y mantiene todo el historial. No marca delivery ni realiza Save. Si
+cambió cualquier parte del estado o hay otro intento, se detiene.
