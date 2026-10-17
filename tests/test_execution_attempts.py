@@ -353,7 +353,7 @@ def test_r2_ui_plan_is_ready_when_only_lineup_changes(tmp_path: Path):
         "position": 11, "element": 12, "web_name": "Player 12",
     }
     assert result["commit"] == {
-        "selector": "button", "accessible_name": "Confirm My Choices",
+        "selector": "button", "accessible_name": "Save My Team",
         "max_clicks": 1, "enabled": True,
     }
 

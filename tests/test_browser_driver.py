@@ -57,7 +57,7 @@ def _ui_plan(*, swaps: list[dict] | None = None) -> dict:
             "from": 2, "to": 8, "action": _action("Vice Captain", 7),
         },
         "commit": {
-            "selector": "button", "accessible_name": "Confirm My Choices",
+            "selector": "button", "accessible_name": "Save My Team",
             "max_clicks": 1, "enabled": True,
         },
     }
@@ -330,8 +330,9 @@ def test_lineup_instruction_stream_materializes_against_fake_browser():
             self.calls.append((args, capture))
             if args[:2] == ("get", "url"):
                 return "https://fantasy.premierleague.com/en/my-team"
-            if args[0] == "eval" and "querySelectorAll('button')" in args[1]:
-                return "1"
+            if args[0] == "eval" and "const names=" in args[1]:
+                names=json.loads(args[1].split('const names=',1)[1].split(';',1)[0])
+                return '1' if 'Save My Team' in names else '0'
             if args[0] == "eval":
                 return "true"
             return ""
@@ -485,7 +486,7 @@ def test_lineup_failures_stop_before_commit(failure):
                 script = args[1]
                 if failure == 'missing_switch' and 'Switch player' in script: return 'false'
                 if failure == 'wrong_visual_order' and 'const expected=' in script: return 'false'
-                if "querySelectorAll('button')" in script: return '2' if failure == 'ambiguous_commit' else '1'
+                if "const names=" in script: return '2' if failure == 'ambiguous_commit' else '1'
                 if failure == 'late_response': raise RuntimeError('DOM_RESPONSE_TIMEOUT')
                 return 'true'
             return ''
@@ -503,7 +504,11 @@ def test_timeout_after_commit_does_not_retry_click():
             if args[:2] == ('get', 'url'): return 'https://fantasy.premierleague.com/en/my-team'
             if args[0] == 'find' and 'click' in args: self.commits += 1
             if args[0] == 'wait' and self.commits: raise RuntimeError('COMMIT_RESPONSE_TIMEOUT')
-            if args[0] == 'eval': return '1' if "querySelectorAll('button')" in args[1] else 'true'
+            if args[0] == 'eval':
+                if "const names=" in args[1]:
+                    names=json.loads(args[1].split('const names=',1)[1].split(';',1)[0])
+                    return '1' if 'Save My Team' in names else '0'
+                return 'true'
             return ''
     browser = Browser()
     with pytest.raises(RuntimeError, match='COMMIT_RESPONSE_TIMEOUT'): module.execute(plan, browser)
@@ -547,3 +552,24 @@ def test_driver_rejects_presentation_only_swaps_between_starters():
     payload['swaps'][0].update(first_position=1,second_position=2,first_index=0,second_index=1)
     with pytest.raises(DriverPlanBlocked,match='swap'):
         compile_r2_driver_plan(payload)
+
+
+@pytest.mark.parametrize('kind,expected', [('save',1),('hidden_confirm',1),('disabled',0),('duplicate',2),('unrelated',0),('input',1)])
+def test_save_controls_require_one_visible_enabled_exact_name(kind,expected):
+    import shutil
+    node=shutil.which('node')
+    if not node: pytest.skip('Node runtime required')
+    module=_host_driver_module()
+    rows=[{'text':'Save My Team','visible':True,'disabled':False}]
+    if kind=='hidden_confirm': rows.append({'text':'Confirm My Choices','visible':False,'disabled':False})
+    if kind=='disabled': rows[0]['disabled']=True
+    if kind=='duplicate': rows.append(dict(rows[0]))
+    if kind=='unrelated': rows[0]['text']='Make Transfers'
+    if kind=='input': rows[0]['value']=rows[0].pop('text')
+    harness="""
+const vm=require('vm'),fs=require('fs'),p=JSON.parse(fs.readFileSync(0,'utf8'));
+const nodes=p.rows.map(r=>({innerText:r.text||'',value:r.value||'',disabled:r.disabled,getAttribute:()=>null,getClientRects:()=>r.visible?[{}]:[]}));
+process.stdout.write(JSON.stringify(vm.runInNewContext(p.script,{document:{querySelectorAll:()=>nodes}},{timeout:1000})));
+"""
+    result=subprocess.run([node,'-e',harness],input=json.dumps({'rows':rows,'script':module._commit_count_script(list(module.TEAM_SAVE_NAMES))}),text=True,capture_output=True,check=True)
+    assert json.loads(result.stdout)==expected

@@ -496,7 +496,7 @@ def compile_r2_ui_action_plan(*, bundle: dict, pre_state: dict, dom_probe: dict,
         },
         "commit": {
             "selector": "button",
-            "accessible_name": "Confirm My Choices",
+            "accessible_name": "Save My Team",
             "max_clicks": 1,
             "enabled": not blockers,
         },
