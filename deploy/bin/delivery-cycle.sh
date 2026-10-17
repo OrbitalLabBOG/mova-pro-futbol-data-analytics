@@ -34,6 +34,17 @@ trap 'rm -f "$input"' EXIT
 timeout --kill-after=5s 120s "$browser" collect > "$input"
 "$mova_bin" ingest-team-state --file - --trigger scheduled < "$input"
 "$mova_bin" tick --force --actor "$actor" --reason "$reason" --idempotency-key "$refresh_key"
+# A fresh plan supersedes a pre-apply failure. Reconcile its health incident
+# before preparing another attempt; ambiguous attempts never reach this point.
+set +e
+health=$("$mova_bin" watchdog | tail -n 1)
+health_rc=$?
+set -e
+printf '%s\n' "$health"
+# A degraded missed-receipt observation is itself the reason to recover.
+# Preflight/claim still enforce every blocking incident. Unavailable health stops.
+health_status=$(printf '%s' "$health" | field status)
+[[ $health_rc -le 1 && ( "$health_status" == ok || "$health_status" == degraded ) ]] || exit 2
 dispatch=$("$mova_bin" execute dispatch "${proof_args[@]}" --actor "$actor" --reason "$reason" | tail -n 1)
 printf '%s\n' "$dispatch"
 [[ $(printf '%s' "$dispatch" | field status) == prepared ]] || exit 0

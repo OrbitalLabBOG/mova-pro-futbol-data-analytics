@@ -75,3 +75,11 @@ no autonomía demostrada.
 Para detener futuras acciones, activar kill switch o retirar delivery_scope
 y detener el timer. Conservar intentos, receipts y evidencia. Nunca repetir
 Save para resolver una respuesta perdida sin conciliar el estado real.
+
+Recuperación: después de un solve/preflight nuevo, el dispatcher reconcilia el
+watchdog antes de preparar el intento. Un fallo demostrado antes de begin no
+se borra y sólo puede reintentarse desde un plan fresco; un resultado ambiguo
+impide incluso esta ruta. La alerta P1 de recibo ausente se mantiene visible,
+pero no bloquea su propia recuperación R0/R2 de `lineup-v1` en la misma GW
+cuando ésa es su única causa. P0, otros ciclos, causas mixtas, datos inválidos,
+revocación de autoridad y hard stop conservan bloqueo.

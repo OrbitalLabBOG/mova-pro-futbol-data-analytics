@@ -129,7 +129,8 @@ def test_scoped_delivery_alerts_even_when_policy_skips_execution():
     assert evaluate_workflow_deadline(workflow,seconds_to_deadline=3600,delivery_required=True,delivery_completed=True)['healthy']
 
 
-def test_scheduled_host_runs_real_cli_lease_ui_plan_finalize_and_replay(tmp_path):
+@pytest.mark.parametrize('health', ['ok','degraded','down'])
+def test_scheduled_host_runs_real_cli_lease_ui_plan_finalize_and_replay(tmp_path,health):
     """Only source refresh and browser I/O are fixtures; both host scripts and CLI are real."""
     import os,shlex,sys
     from dataclasses import replace
@@ -156,6 +157,8 @@ config={replace(service.config,sqlite_min_version='3.0.0')!r}
 cli.RuntimeConfig.from_env=lambda:config
 if any(flag in sys.argv for flag in ('--pre-state','--dom-probe','--post-state')):
  raise SystemExit('worker cannot access host temporary files; use stdin')
+if sys.argv[1]=='watchdog':
+ print(json.dumps({{'status':{health!r},'fixture_health_refresh':True}}));sys.exit({int(health!='ok')})
 if sys.argv[1]=='tick':
  print(json.dumps({{'status':'completed','fixture_source_refresh':True}}));sys.exit(0)
 sys.exit(cli.main(sys.argv[1:]))
@@ -183,6 +186,11 @@ esac
     bounded_driver=tmp_path/'execute-r2';bounded_driver.write_text(driver_script);bounded_driver.chmod(0o700)
     env['MOVA_EXECUTE_R2_BIN']=str(bounded_driver)
     result=subprocess.run(['bash','deploy/bin/delivery-cycle.sh'],cwd=root,env=env,capture_output=True,text=True,timeout=30)
+    if health=='down':
+        assert result.returncode==2
+        assert 'browser_execution_claim_started' not in result.stdout
+        assert (tmp_path/'count').read_text().strip()=='1'
+        return
     assert result.returncode==0,result.stderr+result.stdout
     assert 'browser_execution_verified' in result.stdout
     assert (tmp_path/'count').read_text().strip()=='3'
@@ -284,3 +292,50 @@ def test_execution_stdin_is_exclusive_with_raw_token_transport():
     with pytest.raises(SystemExit):
         parser().parse_args(['execute','begin','--execution-id','execution_fixture',
             '--actor','test','--reason','host transport','--input-stdin','--claim-token-stdin'])
+
+
+def test_missing_receipt_alert_allows_bounded_recovery_but_is_not_erased(tmp_path):
+    service,delivery,_=seed(tmp_path)
+    incident=service.db.open_incident_once('P1','Autonomous cycle deadline risk',
+        cycle_id='2026-27-gw03',detail={'reasons':[{'code':'bounded_team_delivery_not_verified','severity':'P1'}]})
+    prepared=delivery.dispatch(actor='timer',reason='recover missing receipt',now=NOW)
+    assert prepared['status']=='prepared'
+    claim=service.claim(execution_id=prepared['execution_id'],actor='timer',reason='recover',now=NOW)
+    assert claim['status']=='claimed'
+    source=service.db.execution_claim_source(service.db.execution_attempt(prepared['execution_id'])['plan_id'])
+    assert source['open_high_incidents']  # Still visible, still alerts: recovery is the narrow exception.
+
+
+@pytest.mark.parametrize('change', ['p0','other_cycle','other_reason','mixed','malformed','no_scope','r3'])
+def test_receipt_recovery_exception_never_covers_other_incidents(change):
+    from mova_fpl.ops.execution import blocking_execution_incidents
+    row={'incident_id':'fixture','severity':'P1','cycle_id':'cycle','title':'Autonomous cycle deadline risk',
+         'detail_json':json.dumps({'reasons':[{'code':'bounded_team_delivery_not_verified','severity':'P1'}]})}
+    controls={'delivery_scope':'lineup-v1'};risk='R2'
+    if change=='p0':row['severity']='P0'
+    elif change=='other_cycle':row['cycle_id']='other'
+    elif change=='other_reason':row['detail_json']=json.dumps({'reasons':[{'code':'execution_terminal_failure','severity':'P1'}]})
+    elif change=='mixed':row['detail_json']=json.dumps({'reasons':[{'code':'bounded_team_delivery_not_verified','severity':'P1'},{'code':'public_data_unusable_t_minus_6h','severity':'P1'}]})
+    elif change=='malformed':row['detail_json']='[]'
+    elif change=='no_scope':controls={}
+    else:risk='R3'
+    assert blocking_execution_incidents([row],controls=controls,cycle_id='cycle',risk_class=risk)==[row]
+
+
+def test_fresh_blocked_preflight_reconciles_old_preapply_workflow_failure():
+    from test_orchestration import _base
+    from mova_fpl.ops.orchestration import evaluate_workflow
+    from mova_fpl.ops.watchdog import evaluate_workflow_deadline
+    prior=_base();prior['preflight']={'plan_id':'old','status':'authorized'}
+    prior['execution']={'execution_id':'failed','plan_id':'old','status':'failed'}
+    assert evaluate_workflow_deadline(evaluate_workflow(prior,now=NOW),seconds_to_deadline=6*86400)['severity']=='P0'
+    fresh={**prior,'preflight':{'plan_id':'fresh','status':'blocked'},'execution':{}}
+    assert evaluate_workflow_deadline(evaluate_workflow(fresh,now=NOW),seconds_to_deadline=6*86400)['healthy']
+
+
+def test_scoped_receipt_alert_replaces_duplicate_legacy_pending_alert():
+    from mova_fpl.ops.watchdog import evaluate_workflow_deadline
+    workflow={'stages':[{'name':n,'status':'complete'} for n in ['observe','contextualize','propose_validate','preflight','research','deliberate']]
+              +[{'name':'execute_verify','status':'pending'}]}
+    result=evaluate_workflow_deadline(workflow,seconds_to_deadline=3600,delivery_required=True)
+    assert [r['code'] for r in result['reasons']]==['bounded_team_delivery_not_verified']

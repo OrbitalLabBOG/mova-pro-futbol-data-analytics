@@ -593,7 +593,7 @@ class OpsDB:
                 "ORDER BY observed_at DESC LIMIT 1", (envelope["cycle_id"],),
             ).fetchone()
             incidents = con.execute(
-                "SELECT incident_id,severity,status,title,opened_at FROM incidents "
+                "SELECT incident_id,severity,status,title,opened_at,cycle_id,detail_json FROM incidents "
                 "WHERE status!='resolved' AND severity IN ('P0','P1') "
                 "ORDER BY opened_at"
             ).fetchall()
@@ -736,7 +736,7 @@ class OpsDB:
                 )
             }
             incidents = con.execute(
-                "SELECT incident_id,severity,title FROM incidents "
+                "SELECT incident_id,severity,title,cycle_id,detail_json FROM incidents "
                 "WHERE status!='resolved' AND severity IN ('P0','P1') ORDER BY opened_at"
             ).fetchall()
             team_state = con.execute(
