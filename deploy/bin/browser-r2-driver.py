@@ -163,6 +163,7 @@ def execute(driver_plan: dict, browser: AgentBrowser) -> None:
             ) != "true":
                 raise RuntimeError("FPL_SWITCH_CONTROL_MISSING")
         elif operation == "verify_lineup_visual_order":
+            browser.run('wait','--fn',_lineup_order_script(list(step['expected_slots'])))
             if browser.run(
                 "eval", _lineup_order_script(list(step["expected_slots"])), capture=True,
             ) != "true":
@@ -182,6 +183,7 @@ def execute(driver_plan: dict, browser: AgentBrowser) -> None:
         elif operation == "press_space":
             browser.run("press", "Space")
         elif operation == "verify_checkbox":
+            browser.run('wait','--fn',_checkbox_script(str(step['accessible_name']),checked=True))
             if browser.run(
                 "eval", _checkbox_script(str(step["accessible_name"]), checked=True),
                 capture=True,
@@ -192,6 +194,7 @@ def execute(driver_plan: dict, browser: AgentBrowser) -> None:
                 raise RuntimeError("FPL_PLAYER_SHEET_CLOSE_MISSING")
             browser.run("wait", "--fn", _sheet_closed_script())
         elif operation == "discover_commit_control":
+            browser.run('wait','--fn',f"{_commit_count_script(str(step['accessible_name']))} === {int(step['expected_matches'])}")
             observed = int(browser.run(
                 "eval", _commit_count_script(str(step["accessible_name"])), capture=True,
             ))
