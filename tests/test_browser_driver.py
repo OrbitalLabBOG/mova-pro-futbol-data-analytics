@@ -527,14 +527,15 @@ def test_r2_host_resource_contention_defers_before_claim_or_browser_action(tmp_p
 
 
 @pytest.mark.parametrize('name,expected',[('Thomas',True),('Wrong player',False)])
-def test_swap_target_uses_player_card_when_origin_control_is_cancelled(name,expected):
+@pytest.mark.parametrize('origin_hidden',[False,True])
+def test_swap_target_uses_player_card_when_origin_control_is_cancelled(name,expected,origin_hidden):
     module=_host_driver_module()
     script=module._switch_control_script(13,name)
     harness='''const vm=require('node:vm');let clicked=0;
 const players=Array.from({length:15},(_,i)=>{const button={disabled:false,getClientRects:()=>[{}],click:()=>{if(i!==13)throw Error('wrong player');clicked++}};
 const player={innerText:i===13?'Thomas':'Other',getClientRects:()=>[{}]};
 player.parentElement={querySelectorAll:s=>s.includes('data-pitch-element')?[player]:i===12?[]:[button]};return player});
-const document={querySelectorAll:s=>s.includes('data-pitch-element')?players:[]};
+const document={querySelectorAll:s=>s.includes('data-pitch-element')?(JSON.parse(process.argv[2])?players.filter((_,i)=>i!==12):players):[]};
 const result=vm.runInNewContext(JSON.parse(process.argv[1]),{document});process.stdout.write(JSON.stringify({result,clicked}));'''
-    result=subprocess.run(['node','-e',harness,json.dumps(script)],text=True,capture_output=True,check=True)
+    result=subprocess.run(['node','-e',harness,json.dumps(script),json.dumps(origin_hidden)],text=True,capture_output=True,check=True)
     assert json.loads(result.stdout)=={'result':expected,'clicked':int(expected)}
