@@ -94,3 +94,11 @@ conciliado, y resuelve sólo el incidente de ese execution_id. Otro intento
 requiere plan fresco, controles vigentes y preflight completos. El operador
 recarga la página antes de capturar ambas lecturas para descartar cambios UI
 no guardados. Una discrepancia mantiene el bloqueo y exige revisión.
+
+Semántica del XI: los titulares son un conjunto, no una permutación visual.
+El compilador conserva el orden de quienes siguen, busca intercambios legales
+entre titular saliente y suplente entrante, y sólo ordena estrictamente la banca.
+Nunca produce swaps entre dos titulares. La verificación visual compara el
+conjunto del XI y el orden exacto de banca; C/VC se resuelven por identidad tras
+el reagrupamiento de formación y se comprueban sus checkboxes en vivo. El
+fingerprint posterior ya usa conjunto para titulares y orden para suplentes.

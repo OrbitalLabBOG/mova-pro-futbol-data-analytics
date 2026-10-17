@@ -66,13 +66,15 @@ class AgentBrowser:
         return result.stdout.strip() if capture else ""
 
 
-def _open_player_script(index: int) -> str:
+def _open_player_script(index: int, expected_name: str = '') -> str:
     return (
         "(function(){const visible=n=>Boolean(n&&n.getClientRects().length);"
         "const buttons=Array.from(document.querySelectorAll("
         "'button[data-pitch-element=\\\"true\\\"]')).filter(visible);"
-        f"if(buttons.length!==15||!buttons[{index}])return false;"
-        f"buttons[{index}].click();return true;}})()"
+        f"const name={json.dumps(expected_name)};"
+        "const matches=name?buttons.slice(0,11).filter(b=>(b.innerText||b.textContent||'').includes(name)):[];"
+        f"const player=name?(matches.length===1?matches[0]:null):(buttons.length===15?buttons[{index}]:null);"
+        "if(!player)return false;player.click();return true;})()"
     )
 
 
@@ -132,8 +134,9 @@ def _lineup_order_script(expected_slots: list[dict]) -> str:
         "const buttons=Array.from(document.querySelectorAll("
         "'button[data-pitch-element=\"true\"]')).filter(visible);"
         f"const expected={expected};if(buttons.length!==15||expected.length!==15)return false;"
-        "return expected.every((row,index)=>{const text=(buttons[index].innerText||"
-        "buttons[index].textContent||'').trim();return text.includes(row.web_name);});})()"
+        "const text=n=>(n.innerText||n.textContent||'').trim().split('\\n')[0].trim();"
+        "return expected.slice(0,11).every(row=>buttons.slice(0,11).filter(b=>text(b)===row.web_name).length===1)"
+        "&&expected.slice(11).every((row,index)=>text(buttons[index+11])===row.web_name);})()"
     )
 
 
@@ -170,7 +173,7 @@ def execute(driver_plan: dict, browser: AgentBrowser) -> None:
             ) != "true":
                 raise RuntimeError("FPL_LINEUP_VISUAL_ORDER_MISMATCH")
         elif operation == "open_player_sheet":
-            if browser.run("eval", _open_player_script(int(step["player_button_index"])),
+            if browser.run("eval", _open_player_script(int(step["player_button_index"]),str(step.get('expected_web_name') or '')),
                            capture=True) != "true":
                 raise RuntimeError("FPL_PLAYER_CONTROL_MISSING")
             browser.run("wait", "--fn", _checkbox_script(

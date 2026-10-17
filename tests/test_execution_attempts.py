@@ -701,3 +701,44 @@ def test_stale_or_invalid_claim_never_enters_applying(tmp_path, failure):
     attempt = service.db.execution_attempt(prepared['execution_id'])
     assert attempt['status'] == 'claimed'
     assert all(e['to_status'] != 'applying' for e in attempt['events'])
+
+
+def test_semantic_lineup_ignores_optimizer_starter_permutation_and_only_orders_bench():
+    from mova_fpl.ops.browser_contract import plan_semantic_lineup_swaps
+    roles={1:1,15:1,**{n:2 for n in range(2,7)},**{n:3 for n in range(7,12)},**{n:4 for n in range(12,15)}}
+    current=[1,2,3,4,7,8,9,10,12,13,14,15,5,6,11]
+    target,swaps=plan_semantic_lineup_swaps(current,list(reversed(current[:11])),[15,6,5,11],roles)
+    assert target[:11]==current[:11]
+    assert len(swaps)==1 and swaps[0]['first_index']>=11 and swaps[0]['second_index']>=11
+
+
+def test_semantic_lineup_changes_formation_through_legal_starter_bench_exchanges():
+    from mova_fpl.ops.browser_contract import plan_semantic_lineup_swaps
+    roles={1:1,15:1,**{n:2 for n in range(2,7)},**{n:3 for n in range(7,12)},**{n:4 for n in range(12,15)}}
+    current=[1,2,3,4,7,8,9,10,12,13,14,15,5,6,11]
+    starters=[15,2,3,4,5,7,8,9,12,13,14]
+    target,swaps=plan_semantic_lineup_swaps(current,starters,[1,10,6,11],roles)
+    assert set(target[:11])==set(starters) and target[11:]==[1,10,6,11]
+    replay=current[:]
+    for row in swaps:
+        left,right=row['first_index'],row['second_index']
+        assert not(left<11 and right<11)
+        replay[left],replay[right]=replay[right],replay[left]
+        assert sum(roles[e]==1 for e in replay[:11])==1
+        assert 3<=sum(roles[e]==2 for e in replay[:11])<=5
+        assert 2<=sum(roles[e]==3 for e in replay[:11])<=5
+        assert 1<=sum(roles[e]==4 for e in replay[:11])<=3
+    assert replay==target
+
+
+def test_captain_promoted_from_bench_is_bound_by_identity_after_lineup_change(tmp_path):
+    service,plan_row,pre=_seed_authorized_service(tmp_path)
+    plan=service._load_plan(service.db.execution_claim_source(plan_row['plan_id'])['plan'])
+    bundle={**compile_browser_commands(plan),'execution_id':'execution_fixture'}
+    for command in bundle['commands']:
+        if command['operation']=='set_captain':command['element']=12
+    ui=compile_r2_ui_action_plan(bundle=bundle,pre_state=pre,
+        dom_probe=_dom_probe_with_captain_controls(list(range(1,16)),1,2),expected_team_id=3609854)
+    assert ui['status']=='ready'
+    assert ui['captain']['action']['expected_web_name']=='Player 12'
+    assert ui['captain']['action']['target_position']<=11

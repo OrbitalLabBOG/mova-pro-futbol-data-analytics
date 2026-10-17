@@ -449,7 +449,7 @@ with open(os.environ['TEST_CALL_LOG'], 'a', encoding='utf-8') as stream:
 
 
 @pytest.mark.parametrize('kind,expected', [('correct', True), ('wrong_order', False),
-                                          ('missing_player', False), ('hidden_player', False)])
+                                          ('missing_player', False), ('hidden_player', False), ('field_order', True)])
 def test_lineup_dom_order_scripts_against_sanitized_nodes(kind, expected):
     import shutil
     node = shutil.which('node')
@@ -458,6 +458,7 @@ def test_lineup_dom_order_scripts_against_sanitized_nodes(kind, expected):
     slots = [{'position': i, 'element': i, 'web_name': f'Player {i}'} for i in range(1, 16)]
     names = [s['web_name'] for s in slots]
     if kind == 'wrong_order': names[10], names[11] = names[11], names[10]
+    if kind == 'field_order': names[5], names[6] = names[6], names[5]
     if kind == 'missing_player': names.pop()
     harness = """
 const fs=require('fs'),vm=require('vm');const p=JSON.parse(fs.readFileSync(0,'utf8'));
@@ -539,3 +540,10 @@ const document={querySelectorAll:s=>s.includes('data-pitch-element')?(JSON.parse
 const result=vm.runInNewContext(JSON.parse(process.argv[1]),{document});process.stdout.write(JSON.stringify({result,clicked}));'''
     result=subprocess.run(['node','-e',harness,json.dumps(script),json.dumps(origin_hidden)],text=True,capture_output=True,check=True)
     assert json.loads(result.stdout)=={'result':expected,'clicked':int(expected)}
+
+
+def test_driver_rejects_presentation_only_swaps_between_starters():
+    payload=_lineup_ui_plan()
+    payload['swaps'][0].update(first_position=1,second_position=2,first_index=0,second_index=1)
+    with pytest.raises(DriverPlanBlocked,match='swap'):
+        compile_r2_driver_plan(payload)

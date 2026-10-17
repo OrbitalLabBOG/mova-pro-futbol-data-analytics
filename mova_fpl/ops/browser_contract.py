@@ -328,6 +328,42 @@ def plan_position_swaps(current: list[int], target: list[int]) -> list[dict]:
     return [{**row, "sequence": index} for index, row in enumerate(swaps, start=1)]
 
 
+def plan_semantic_lineup_swaps(current: list[int], starters: list[int], bench: list[int],
+                              element_types: dict[int, int]) -> tuple[list[int], list[dict]]:
+    """XI is a set; only bench priority is ordered. Never swap two starters."""
+    wanted=set(starters)
+    if len(wanted)!=11 or len(bench)!=4 or len(set(current))!=15 or set(current)!=wanted|set(bench) or wanted&set(bench):
+        raise ValueError('invalid semantic lineup target')
+    if element_types[bench[0]]!=1:
+        raise ValueError('bench goalkeeper must be first')
+    def legal(field):
+        counts={role:sum(element_types[e]==role for e in field) for role in (1,2,3,4)}
+        return counts[1]==1 and 3<=counts[2]<=5 and 2<=counts[3]<=5 and 1<=counts[4]<=3
+    def search(state):
+        leaving=[e for e in state[:11] if e not in wanted]
+        if not leaving:return state,[]
+        entering=[e for e in state[11:] if e in wanted]
+        pairs=sorted(((out,inc) for out in leaving for inc in entering),
+                     key=lambda pair:element_types[pair[0]]!=element_types[pair[1]])
+        for out,inc in pairs:
+            left,right=state.index(out),state.index(inc)
+            next_state=state[:];next_state[left],next_state[right]=inc,out
+            if not legal(next_state[:11]):continue
+            found=search(next_state)
+            if found is not None:
+                final,steps=found
+                step={'operation':'switch_slots','first_position':left+1,'second_position':right+1,
+                      'first_index':left,'second_index':right,'selector':'button[aria-label="Switch player"]'}
+                return final,[step,*steps]
+        return None
+    found=search(list(current))
+    if found is None:raise ValueError('no legal starter-bench swap sequence')
+    state,swaps=found
+    target=state[:11]+list(bench)
+    swaps += plan_position_swaps(state,target)
+    return target,[{**row,'sequence':i} for i,row in enumerate(swaps,start=1)]
+
+
 def compile_r2_ui_action_plan(*, bundle: dict, pre_state: dict, dom_probe: dict,
                               expected_team_id: int) -> dict:
     """Liga command bundle, GET autenticado y DOM observado antes de tocar UI.
@@ -355,10 +391,10 @@ def compile_r2_ui_action_plan(*, bundle: dict, pre_state: dict, dom_probe: dict,
     set_lineup = next(
         row for row in bundle.get("commands") or () if row.get("operation") == "set_lineup"
     )
-    target = [int(value) for value in set_lineup["starters"]] + [
-        int(value) for value in set_lineup["bench_order"]
-    ]
-    swaps = plan_position_swaps(current, target)
+    target,swaps=plan_semantic_lineup_swaps(current,
+        [int(value) for value in set_lineup['starters']],
+        [int(value) for value in set_lineup['bench_order']],
+        {int(row['element']):int(row['element_type']) for row in normalized['picks']})
     labels_by_element = {
         int(row["element"]): str(row.get("web_name") or "").strip()
         for row in slots
@@ -399,19 +435,22 @@ def compile_r2_ui_action_plan(*, bundle: dict, pre_state: dict, dom_probe: dict,
         if checked_captains != [captain_now] or checked_vices != [vice_now]:
             raise RuntimeError("los controles Captain/Vice no coinciden con el pre-state")
 
+    field_order=target[:11]
     def semantic_action(*, target: int, accessible_name: str) -> dict | None:
         row = controls_by_element.get(target)
-        if controls.get("status") != "pass" or not row:
+        target_element=target
+        if controls.get("status") != "pass" or target_element not in set_lineup['starters']:
             return None
-        if not row.get("captain_checkbox") or not row.get("vice_captain_checkbox"):
+        if row and (not row.get("captain_checkbox") or not row.get("vice_captain_checkbox")):
             return None
-        position = int(row["position"])
-        if position > 11:
-            return None
+        # A promoted bench player is checked live after the swaps. Binding by
+        # identity survives FPL's regrouping of the visible formation.
+        position = field_order.index(target_element)+1
         return {
             "operation": "set_player_checkbox",
             "target_position": position,
-            "player_button_index": int(row["player_button_index"]),
+            "player_button_index": position-1,
+            "expected_web_name": labels_by_element[target_element],
             "player_selector": 'button[data-pitch-element="true"]',
             "checkbox_role": "checkbox",
             "checkbox_accessible_name": accessible_name,
