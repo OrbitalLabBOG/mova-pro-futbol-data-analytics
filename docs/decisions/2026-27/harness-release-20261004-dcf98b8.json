@@ -1,12 +1,12 @@
 {
   "schema": "mova-harness-release-verification-v1",
-  "status": "verification-in-progress",
-  "observed_at": "2026-10-05T04:32:51.343Z",
-  "runtime_revision": "dcf98b8555ddc848258c13bfd64db5da29c4c423",
-  "pr": 191,
+  "status": "accepted-with-autonomy-pending",
+  "observed_at": "2026-10-05T08:35:38.538257+00:00",
+  "runtime_revision": "acd84a9c3241bc93b9860dc732d7f57dd189484b",
+  "pr": 195,
   "ci_runs": [
-    37260316950,
-    37260422288
+    37276568318,
+    37276778873
   ],
   "deployed": true,
   "controls": {
@@ -17,26 +17,17 @@
     "compliance_gate": "pending"
   },
   "doctor_after_deploy": {
+    "fail": 0,
     "pass": 25,
+    "required_failures": 0,
     "warn": 0,
-    "fail": 0
-  },
-  "readiness_at_0428": {
-    "pass": 21,
-    "pending": 5,
-    "blocked": 1,
-    "total": 27
+    "observed_at": "2026-10-05T08:35:38.535818+00:00"
   },
   "suite_deployed_code": {
-    "passed": 1972,
-    "skipped": 1,
-    "deselected": 79
-  },
-  "suite_followup_local": {
-    "passed": 1973,
+    "passed": 2025,
     "skipped": 1,
     "deselected": 79,
-    "duration_seconds": 35.76
+    "duration_seconds": 37.24
   },
   "implemented_and_deployed_gaps": [
     "H01",
@@ -46,7 +37,8 @@
     "H05",
     "H06",
     "H07",
-    "H13"
+    "H13",
+    "H11"
   ],
   "existing_contract_verified": [
     "H09"
@@ -54,114 +46,1139 @@
   "pending": [
     "H08_owner_decision_ADR011",
     "H10_equivalent_metered_followup_and_physical_cap_limit",
-    "H11_authenticated_DOM_probe",
     "H12_PM_update_readonly_preview",
-    "browser_and_combined_recovery",
-    "stability_30min_after_last_disruptive_drill",
     "reboot_separate_authorization",
     "empty_host_reconstruction",
     "real_gameweeks_and_controlled_execution",
     "promotion_and_compliance"
   ],
-  "browser_observation": {
-    "chromium": "154.0.8037.92",
-    "agent_browser": "0.26.0",
-    "startup_paths": [
-      "/",
-      "/en/"
-    ],
-    "private_get_status": 200,
-    "private_get_after_stable_route_context_error": false,
-    "read_only": true,
-    "save_dispatched": false,
-    "followup_local_commit": "f0ba402",
-    "followup_deployed": false,
-    "human_login_pending": false,
-    "followup_pr": 192,
-    "followup_merged_revision": "8820c56306f616b24e78a6e9248d3ad720ad2f07",
-    "followup_ci_runs": [
-      37264258191,
-      37264381284
-    ],
-    "followup_images": "built",
-    "private_get_verified_at": "2026-10-05T04:53:46.742Z",
-    "private_capture_job": "job_5d8642cbafba4381b52807d51801fa6e",
-    "authenticated_api_not_dom_proof": true
-  },
   "pm_mutated": false,
   "host_reconstruction_proven": false,
-  "rollback_available_not_exercised": true,
+  "rollback_available_not_exercised": false,
   "override_sha256": "d0ee00f0cb50d42aafa3243fd5895fd8aab47068ab1299a1b20c82555bb110ac",
   "drills": [
     {
-      "scenario": "offsite_restore",
-      "revision": "dcf98b8",
-      "status": "pass",
-      "job_id": "job_700d67d31ff74d619bfb067c41492b69",
-      "artifact_sha256": "e4c617577f86def14b7cd6304c72e10c629285fe8ffdcbd239128b6fadad5e67",
-      "checks_passed": 8,
-      "downtime_seconds": 0,
-      "elapsed_seconds": 425,
-      "finished_at": "2026-10-05T04:17:37+00:00",
-      "fpl_state_mutated": false
-    },
-    {
       "scenario": "api_recovery",
-      "revision": "dcf98b8",
+      "revision": "acd84a9",
       "status": "pass",
-      "job_id": "job_c76d5f5fb07848bfb3a3120b605e5611",
-      "artifact_sha256": "08bf7f629081e3db995742522e56a6617b69e138aacc1a6a378d369eef08bd86",
+      "job_id": "job_381393fac3d445ffbb632f3efbab312b",
+      "artifact_sha256": "6fc9371b65cdd96cb7cdeecbb9e84dfe5ff1de7c9775dc1098d6c84b3a3a9e99",
       "checks_passed": 5,
-      "downtime_seconds": 23,
-      "elapsed_seconds": null,
-      "finished_at": "2026-10-05T04:21:38+00:00",
+      "downtime_seconds": 25,
+      "started_at": "2026-10-05T07:37:37+00:00",
+      "finished_at": "2026-10-05T07:38:02+00:00",
       "fpl_state_mutated": false
     },
     {
       "scenario": "postgres_recovery",
-      "revision": "dcf98b8",
+      "revision": "acd84a9",
       "status": "pass",
-      "job_id": "job_afaa9b85abb4472f9bdd8b66273afbb0",
-      "artifact_sha256": "4847c87be1ec0eb05ab5e90a103ad48941dc847e83bed8b90a874b0a25a6bf8d",
+      "job_id": "job_1dd68e3f59e44b199183194bbeda5242",
+      "artifact_sha256": "bd17d7a274e4ae2caa3328fa66df353164a4795cc2cf87ab010a4102dd0464d5",
       "checks_passed": 8,
       "downtime_seconds": 19,
-      "elapsed_seconds": null,
-      "finished_at": "2026-10-05T04:28:57+00:00",
+      "started_at": "2026-10-05T07:42:54+00:00",
+      "finished_at": "2026-10-05T07:45:34+00:00",
+      "fpl_state_mutated": false
+    },
+    {
+      "scenario": "browser_recovery",
+      "revision": "acd84a9",
+      "status": "pass",
+      "job_id": "job_129b6b8dfab84fd8bf62b3c31d854d57",
+      "artifact_sha256": "07daa8f4776b0c61830d32fb90c9b404b9038528dd2c81a5f863be38531e5ab5",
+      "checks_passed": 9,
+      "downtime_seconds": 17,
+      "started_at": "2026-10-05T07:48:16+00:00",
+      "finished_at": "2026-10-05T07:50:34+00:00",
+      "fpl_state_mutated": false
+    },
+    {
+      "scenario": "combined_recovery",
+      "revision": "acd84a9",
+      "status": "pass",
+      "job_id": "job_98dcf0cd4d964f138675aa6fa61e75f5",
+      "artifact_sha256": "998568d9251d52b6038732fa6183a1378474a576bb6be08ae943471d33cb304e",
+      "checks_passed": 13,
+      "downtime_seconds": 57,
+      "started_at": "2026-10-05T07:53:06+00:00",
+      "finished_at": "2026-10-05T07:57:28+00:00",
+      "fpl_state_mutated": false
+    },
+    {
+      "scenario": "offsite_restore",
+      "revision": "acd84a9",
+      "status": "pass",
+      "job_id": "job_91b0e1143d044eba815eafe85fffa5df",
+      "artifact_sha256": "7e57eedd4703c9b9ba9bd099598bbbed05aceb6802089832b8af3df4851fb846",
+      "checks_passed": 8,
+      "downtime_seconds": 0,
+      "elapsed_seconds": 380,
+      "started_at": "2026-10-05T08:00:17+00:00",
+      "finished_at": "2026-10-05T08:06:37+00:00",
       "fpl_state_mutated": false
     }
   ],
-  "followup_candidate": {
-    "revision": "8820c56306f616b24e78a6e9248d3ad720ad2f07",
-    "images": {
-      "engine": "sha256:204c6515d56d81be232a272fee57abbe17fce831e8f1e24eef8852406d665717",
-      "browser": "sha256:75bf9646ee21cc2c5af96c663cbd47a7aeb2c810a49db290595f29e33440ffea",
-      "research": "sha256:3cb9da6188dc7ed2f7339c561a96a5ee696abcc1fcd54ea955d953389b59c180"
+  "prior_revision_verification": {
+    "observed_at": "2026-10-05T04:32:51.343Z",
+    "runtime_revision": "dcf98b8555ddc848258c13bfd64db5da29c4c423",
+    "pr": 191,
+    "ci_runs": [
+      37260316950,
+      37260422288
+    ],
+    "doctor_after_deploy": {
+      "pass": 25,
+      "warn": 0,
+      "fail": 0
     },
-    "smoke": {
-      "checks_passed": 10,
-      "checks_total": 10,
-      "job_id": "job_b34955a675c34e92b238ddcff3880a48",
-      "ledger": "ephemeral",
-      "runtime_mutated": false,
-      "network": "none"
+    "readiness_at_0428": {
+      "pass": 21,
+      "pending": 5,
+      "blocked": 1,
+      "total": 27
     },
-    "deployed": false
-  },
-  "browser_probe_followup": {
-    "status": "local-investigation",
-    "contract_version": "fpl-pick-team-a11y-2026.10.1",
-    "driver_contract_version": "fpl-r2-host-driver-2026.10.2",
-    "deployed": false,
-    "passing_live_probe": false,
-    "observations": [
+    "suite_deployed_code": {
+      "passed": 1972,
+      "skipped": 1,
+      "deselected": 79
+    },
+    "drills": [
       {
-        "stage": "page_gate",
-        "error_code": "FPL_PROBE_CDP_TIMEOUT",
-        "fpl_origin": true,
-        "path": "/en/my-team",
-        "pitch_controls": 0,
-        "private_http_status": 200
+        "scenario": "offsite_restore",
+        "revision": "dcf98b8",
+        "status": "pass",
+        "job_id": "job_700d67d31ff74d619bfb067c41492b69",
+        "artifact_sha256": "e4c617577f86def14b7cd6304c72e10c629285fe8ffdcbd239128b6fadad5e67",
+        "checks_passed": 8,
+        "downtime_seconds": 0,
+        "elapsed_seconds": 425,
+        "finished_at": "2026-10-05T04:17:37+00:00",
+        "fpl_state_mutated": false
+      },
+      {
+        "scenario": "api_recovery",
+        "revision": "dcf98b8",
+        "status": "pass",
+        "job_id": "job_c76d5f5fb07848bfb3a3120b605e5611",
+        "artifact_sha256": "08bf7f629081e3db995742522e56a6617b69e138aacc1a6a378d369eef08bd86",
+        "checks_passed": 5,
+        "downtime_seconds": 23,
+        "elapsed_seconds": null,
+        "finished_at": "2026-10-05T04:21:38+00:00",
+        "fpl_state_mutated": false
+      },
+      {
+        "scenario": "postgres_recovery",
+        "revision": "dcf98b8",
+        "status": "pass",
+        "job_id": "job_afaa9b85abb4472f9bdd8b66273afbb0",
+        "artifact_sha256": "4847c87be1ec0eb05ab5e90a103ad48941dc847e83bed8b90a874b0a25a6bf8d",
+        "checks_passed": 8,
+        "downtime_seconds": 19,
+        "elapsed_seconds": null,
+        "finished_at": "2026-10-05T04:28:57+00:00",
+        "fpl_state_mutated": false
       }
     ]
+  },
+  "doctor_final_pending": false,
+  "rollback_exercised": true,
+  "rollback_return_revision": "dcf98b8",
+  "release_attempts": [
+    {
+      "unit": "mova-fpl-release-acd84a9",
+      "status": "failed",
+      "exit_code": 28,
+      "code_and_config_rollback_verified": true,
+      "database_replaced": false
+    },
+    {
+      "unit": "mova-fpl-release-acd84a9-attempt2",
+      "status": "completed",
+      "exit_code": 0,
+      "overall_status": "healthy",
+      "ready_seconds": [
+        1.331845,
+        2.783886,
+        1.493985
+      ],
+      "ready_required_consecutive": 3,
+      "ready_call_timeout_seconds": 5,
+      "ready_global_timeout_seconds": 180
+    }
+  ],
+  "browser_final_proof": {
+    "observed_at": "2026-10-05T07:35:44.002910+00:00",
+    "revision": "acd84a9",
+    "status": "pass",
+    "cycle_id": "2026-27-gw06",
+    "dom_contract": "fpl-pick-team-a11y-2026.10.1",
+    "driver_contract": "fpl-r2-host-driver-2026.10.2",
+    "private_capture_job": "job_5d580a7464e64d958ab5da825a9f2fdc",
+    "captaincy_rehearsal_id": "rehearsal_8af6285e4047cfa8680a7598",
+    "lineup_rehearsal_id": "rehearsal_a4e4ab3959a4ec808cca304d",
+    "captaincy_coverage": 1,
+    "lineup_coverage": 1,
+    "cycles_required": 3,
+    "mode": "read_only_probe",
+    "save_dispatched": false,
+    "cpu_restored_nano": 250000000
+  },
+  "historical_followups": {
+    "readiness_at_0428": {
+      "pass": 21,
+      "pending": 5,
+      "blocked": 1,
+      "total": 27
+    },
+    "suite_followup_local": {
+      "passed": 1973,
+      "skipped": 1,
+      "deselected": 79,
+      "duration_seconds": 35.76
+    },
+    "browser_observation": {
+      "chromium": "154.0.8037.92",
+      "agent_browser": "0.26.0",
+      "startup_paths": [
+        "/",
+        "/en/"
+      ],
+      "private_get_status": 200,
+      "private_get_after_stable_route_context_error": false,
+      "read_only": true,
+      "save_dispatched": false,
+      "followup_local_commit": "f0ba402",
+      "followup_deployed": false,
+      "human_login_pending": false,
+      "followup_pr": 192,
+      "followup_merged_revision": "8820c56306f616b24e78a6e9248d3ad720ad2f07",
+      "followup_ci_runs": [
+        37264258191,
+        37264381284
+      ],
+      "followup_images": "built",
+      "private_get_verified_at": "2026-10-05T04:53:46.742Z",
+      "private_capture_job": "job_5d8642cbafba4381b52807d51801fa6e",
+      "authenticated_api_not_dom_proof": true
+    },
+    "followup_candidate": {
+      "revision": "8820c56306f616b24e78a6e9248d3ad720ad2f07",
+      "images": {
+        "engine": "sha256:204c6515d56d81be232a272fee57abbe17fce831e8f1e24eef8852406d665717",
+        "browser": "sha256:75bf9646ee21cc2c5af96c663cbd47a7aeb2c810a49db290595f29e33440ffea",
+        "research": "sha256:3cb9da6188dc7ed2f7339c561a96a5ee696abcc1fcd54ea955d953389b59c180"
+      },
+      "smoke": {
+        "checks_passed": 10,
+        "checks_total": 10,
+        "job_id": "job_b34955a675c34e92b238ddcff3880a48",
+        "ledger": "ephemeral",
+        "runtime_mutated": false,
+        "network": "none"
+      },
+      "deployed": false
+    },
+    "browser_probe_followup": {
+      "status": "local-investigation",
+      "contract_version": "fpl-pick-team-a11y-2026.10.1",
+      "driver_contract_version": "fpl-r2-host-driver-2026.10.2",
+      "deployed": false,
+      "passing_live_probe": false,
+      "observations": [
+        {
+          "stage": "page_gate",
+          "error_code": "FPL_PROBE_CDP_TIMEOUT",
+          "fpl_origin": true,
+          "path": "/en/my-team",
+          "pitch_controls": 0,
+          "private_http_status": 200
+        }
+      ]
+    }
+  },
+  "evidence_scope": "Current fields describe acd84a9; prior_revision_verification and historical_followups preserve earlier observations and are not final acceptance evidence.",
+  "latest_live_cut": {
+    "observed_at": "2026-10-05T08:17:53.195030+00:00",
+    "runtime_revision": "acd84a9",
+    "controls": {
+      "action_level": "A0",
+      "browser_writes": false,
+      "compliance_gate": "pending",
+      "kill_switch": true,
+      "mode": "shadow"
+    },
+    "overall_status": "healthy",
+    "status_reasons": [],
+    "gameweek": {
+      "cycle_id": "2026-27-gw06",
+      "deadline_at": "2026-10-10T10:00:00Z",
+      "gw": 6,
+      "phase": "baseline",
+      "readiness": "ready",
+      "seconds_to_deadline": 438177
+    },
+    "authority": {
+      "browser_writes": false,
+      "current_action_level": "A0",
+      "kill_switch": true,
+      "mode": "shadow",
+      "promotion_is_automatic": false,
+      "technical_eligible_level": "A0",
+      "writes_enabled": false
+    },
+    "quality": {
+      "analytics": "healthy",
+      "data": "healthy",
+      "operator": "healthy",
+      "postgres": "healthy",
+      "readiness": 0.7778,
+      "readiness_summary": {
+        "blocked": 1,
+        "pass": 21,
+        "pending": 5,
+        "total": 27
+      },
+      "safety": "safe_to_wait",
+      "scorecard": "blocked"
+    },
+    "economics_gameweek": {
+      "committed_tokens": 5689066,
+      "committed_uses": 16,
+      "remaining_tokens": 2310934,
+      "remaining_uses": 24,
+      "status": "within_budget",
+      "token_limit": 8000000,
+      "use_limit": 40
+    },
+    "agents": {
+      "provider": "codex_subscription",
+      "researcher": {
+        "agent_version": "1.10.0",
+        "model": "gpt-6-astra",
+        "quality_policy": "research-claim-2026.09.5",
+        "reasoning_effort": "medium"
+      },
+      "strategist_critic": {
+        "model": "gpt-5.6-terra",
+        "reasoning_effort": "high"
+      }
+    },
+    "readiness": {
+      "summary": {
+        "blocked": 1,
+        "pass": 21,
+        "pending": 5,
+        "total": 27
+      },
+      "gates": [
+        {
+          "code": "RUNTIME_HEALTHY",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "GAMEWEEK_INPUTS_READY",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "PRIVATE_TEAM_STATE_FRESH",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "DATA_SERVICE_HEALTHY",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "ANALYTICS_SERVICE_HEALTHY",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "APPROVED_CURRENT_PROJECTION",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "STRATEGIC_MANIFEST_PRESENT",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "RESEARCH_EVIDENCE_CALIBRATED",
+          "status": "blocked",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "NO_OPEN_P0_P1",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "RESILIENCE_DRILL_PROVEN",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "ORCHESTRATION_DRILL_PROVEN",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "ALERT_CHANNEL_DRILL_PROVEN",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "EXTERNAL_ALERT_CHANNEL_CONFIGURED",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "EXTERNAL_ALERT_CHANNEL_LIVE_PROVEN",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "HOST_RECOVERY_DRILLS_PROVEN",
+          "status": "pending",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "SNAPSHOT_REJECTION_PROVEN",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "BROWSER_FAILURE_DRILL_PROVEN",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "CAPTAINCY_DRIVER_PROVEN",
+          "status": "pending",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "LINEUP_DRIVER_PROVEN",
+          "status": "pending",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "R3_DRIVER_PROVEN",
+          "status": "pending",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "AUTONOMOUS_CLOSEOUT_INSTALLED",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "AUTONOMOUS_CLOSEOUT_LIVE_PROVEN",
+          "status": "pending",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "POSTGRES_SHADOW_PARITY",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "POSTGRES_ROLE_SEPARATION",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "POSTGRES_THREE_GAMEWEEK_CYCLES",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "OFF_HOST_BACKUP_CONFIGURED",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        },
+        {
+          "code": "OFF_HOST_RESTORE_PROVEN",
+          "status": "pass",
+          "reason": null,
+          "details": null
+        }
+      ]
+    },
+    "workflow": {
+      "verdict": "safe_to_wait",
+      "violations_count": 0
+    },
+    "feedback": {
+      "change_proposals": 4,
+      "evaluations": 1,
+      "lessons": 0,
+      "model_scorecards": 236
+    },
+    "operations": {
+      "open_incidents_count": 0,
+      "failed_jobs_last_24h_count": 0,
+      "latest_tick": {
+        "job_id": "job_d06ce1b924f2456d900787b117754c97",
+        "status": "completed",
+        "finished_at": "2026-10-05T08:15:10.207+00:00"
+      }
+    },
+    "dr": {
+      "status": "pass",
+      "healthy": true,
+      "report_age_seconds": 997,
+      "revision": "acd84a9c3241bc93b9860dc732d7f57dd189484b",
+      "checks": {
+        "api_ready": "pass",
+        "checkout_images_match": "pass",
+        "external_snapshot_within_rpo": "pass",
+        "local_v2_within_rpo": "pass",
+        "restore_resources": "pass",
+        "timers": "pass"
+      }
+    }
+  },
+  "latest_dependencies": {
+    "observed_at": "2026-10-05T08:20:39.945578+00:00",
+    "nonpassing_gates": [
+      {
+        "code": "RESEARCH_EVIDENCE_CALIBRATED",
+        "status": "blocked",
+        "observed": {
+          "measured_gameweeks": 4,
+          "passing_gameweeks": 0,
+          "status": "failed"
+        },
+        "required": {
+          "minimum_gameweeks": 3,
+          "status": "passed"
+        },
+        "next_action": "importar briefs v2 v\u00e1lidos hasta completar 3 jornadas medidas"
+      },
+      {
+        "code": "HOST_RECOVERY_DRILLS_PROVEN",
+        "status": "pending",
+        "observed": {
+          "completed": 5,
+          "required": 5,
+          "scenarios": {
+            "api_recovery": {
+              "checks": 5,
+              "downtime_seconds": 25,
+              "error_code": null,
+              "evidence_finished_at": "2026-10-05T07:38:02+00:00",
+              "finished_at": "2026-10-05T07:38:08.667+00:00",
+              "job_id": "job_381393fac3d445ffbb632f3efbab312b",
+              "output_sha256": "6fc9371b65cdd96cb7cdeecbb9e84dfe5ff1de7c9775dc1098d6c84b3a3a9e99",
+              "passed": 5,
+              "revision": "acd84a9",
+              "started_at": "2026-10-05T07:38:08.575+00:00",
+              "status": "completed",
+              "validity": {
+                "age_seconds": 2531.0,
+                "expected_revision": "acd84a9",
+                "max_age_seconds": 2592000,
+                "reasons": [],
+                "valid": true
+              }
+            },
+            "browser_recovery": {
+              "checks": 9,
+              "downtime_seconds": 17,
+              "error_code": null,
+              "evidence_finished_at": "2026-10-05T07:50:34+00:00",
+              "finished_at": "2026-10-05T07:50:40.360+00:00",
+              "job_id": "job_129b6b8dfab84fd8bf62b3c31d854d57",
+              "output_sha256": "07daa8f4776b0c61830d32fb90c9b404b9038528dd2c81a5f863be38531e5ab5",
+              "passed": 9,
+              "revision": "acd84a9",
+              "started_at": "2026-10-05T07:50:40.342+00:00",
+              "status": "completed",
+              "validity": {
+                "age_seconds": 1779.0,
+                "expected_revision": "acd84a9",
+                "max_age_seconds": 2592000,
+                "reasons": [],
+                "valid": true
+              }
+            },
+            "combined_recovery": {
+              "checks": 13,
+              "downtime_seconds": 57,
+              "error_code": null,
+              "evidence_finished_at": "2026-10-05T07:57:28+00:00",
+              "finished_at": "2026-10-05T07:57:33.386+00:00",
+              "job_id": "job_98dcf0cd4d964f138675aa6fa61e75f5",
+              "output_sha256": "998568d9251d52b6038732fa6183a1378474a576bb6be08ae943471d33cb304e",
+              "passed": 13,
+              "revision": "acd84a9",
+              "started_at": "2026-10-05T07:57:33.363+00:00",
+              "status": "completed",
+              "validity": {
+                "age_seconds": 1365.0,
+                "expected_revision": "acd84a9",
+                "max_age_seconds": 2592000,
+                "reasons": [],
+                "valid": true
+              }
+            },
+            "postgres_recovery": {
+              "checks": 8,
+              "downtime_seconds": 19,
+              "error_code": null,
+              "evidence_finished_at": "2026-10-05T07:45:34+00:00",
+              "finished_at": "2026-10-05T07:45:40.137+00:00",
+              "job_id": "job_1dd68e3f59e44b199183194bbeda5242",
+              "output_sha256": "bd17d7a274e4ae2caa3328fa66df353164a4795cc2cf87ab010a4102dd0464d5",
+              "passed": 8,
+              "revision": "acd84a9",
+              "started_at": "2026-10-05T07:45:40.118+00:00",
+              "status": "completed",
+              "validity": {
+                "age_seconds": 2079.0,
+                "expected_revision": "acd84a9",
+                "max_age_seconds": 2592000,
+                "reasons": [],
+                "valid": true
+              }
+            },
+            "reboot_recovery": {
+              "checks": 11,
+              "downtime_seconds": 221,
+              "error_code": null,
+              "evidence_finished_at": null,
+              "finished_at": "2026-08-31T15:11:32.492+00:00",
+              "job_id": "job_1c7cfb92a1e9466599c90cc7a9a9959f",
+              "output_sha256": "7a000fdf2d38ddb2e25d1ed07d19749d6354f632f1f654367ab7b6e9baffb2c2",
+              "passed": 11,
+              "revision": null,
+              "started_at": "2026-08-31T15:11:32.473+00:00",
+              "status": "completed",
+              "validity": {
+                "age_seconds": null,
+                "expected_revision": "acd84a9",
+                "max_age_seconds": 2592000,
+                "reasons": [
+                  "revision_mismatch_or_missing",
+                  "finished_at_missing_or_invalid"
+                ],
+                "valid": false
+              }
+            }
+          },
+          "scope": "same_host_service_recovery",
+          "status": "completed"
+        },
+        "required": {
+          "max_age_seconds": 2592000,
+          "revision": "acd84a9",
+          "scenarios": [
+            "api_recovery",
+            "postgres_recovery",
+            "browser_recovery",
+            "combined_recovery",
+            "reboot_recovery"
+          ],
+          "status": "completed"
+        },
+        "next_action": "ejecutar los drills host allowlisted pendientes; el reboot exige preparaci\u00f3n y autorizaci\u00f3n expl\u00edcita"
+      },
+      {
+        "code": "CAPTAINCY_DRIVER_PROVEN",
+        "status": "pending",
+        "observed": {
+          "contract": "implemented",
+          "host_entrypoint_enabled": true,
+          "observed_rehearsals": 1
+        },
+        "required": {
+          "contract": "implemented",
+          "host_entrypoint_enabled": true,
+          "rehearsals": 3
+        },
+        "next_action": "completar tres rehearsals R2 verificables de capitan\u00eda"
+      },
+      {
+        "code": "LINEUP_DRIVER_PROVEN",
+        "status": "pending",
+        "observed": {
+          "contract": "implemented",
+          "host_entrypoint_enabled": false,
+          "observed_rehearsals": 1
+        },
+        "required": {
+          "contract": "implemented",
+          "host_entrypoint_enabled": true,
+          "rehearsals": 3
+        },
+        "next_action": "completar tres rehearsals R2 y promover el entrypoint de lineup"
+      },
+      {
+        "code": "R3_DRIVER_PROVEN",
+        "status": "pending",
+        "observed": {
+          "autonomy_promoted": false,
+          "contract": "implemented",
+          "host_entrypoint_enabled": false,
+          "observed_rehearsals": 1,
+          "required_rehearsals": 3
+        },
+        "required": {
+          "contract": "implemented",
+          "host_entrypoint_enabled": true,
+          "rehearsals": 3
+        },
+        "next_action": "completar tres rehearsals R3 y habilitar el entrypoint de forma expl\u00edcita"
+      },
+      {
+        "code": "AUTONOMOUS_CLOSEOUT_LIVE_PROVEN",
+        "status": "pending",
+        "observed": {
+          "completed": 0,
+          "latest": null
+        },
+        "required": {
+          "completed": 1
+        },
+        "next_action": "ejercer una ejecuci\u00f3n A2/A3 elegible hasta settlement y review oficiales"
+      }
+    ],
+    "overruns": {
+      "status": "reviewed_pending",
+      "gameweek": {
+        "status": "reviewed_pending",
+        "uses": 2,
+        "excess_tokens": 548912,
+        "max_actual_tokens": 615333,
+        "states": {
+          "open": 0,
+          "reviewed": 2,
+          "resolved": 0,
+          "waived": 0
+        }
+      },
+      "month": {
+        "month": "2026-10",
+        "status": "none",
+        "uses": 0,
+        "excess_tokens": 0,
+        "max_actual_tokens": 0,
+        "states": {
+          "open": 0,
+          "reviewed": 0,
+          "resolved": 0,
+          "waived": 0
+        }
+      },
+      "items": [
+        {
+          "reservation_id": "budget_ba17f01c9a662539cdf53390",
+          "cycle_id": "2026-27-gw06",
+          "subject_type": "research",
+          "subject_id": "research_ea67ccd903c89e2f1bd0a4a609f459ca",
+          "provider": "codex_subscription",
+          "actual_tokens": 615333,
+          "created_at": "2026-09-22T17:27:00.724+00:00",
+          "job_limit": 160000,
+          "excess_tokens": 455333,
+          "review_status": "reviewed",
+          "review_action": "reduce_scope",
+          "reviewed_at": "2026-09-22T17:54:28.266+00:00"
+        },
+        {
+          "reservation_id": "budget_84eab76009624c2ddda2b674",
+          "cycle_id": "2026-27-gw06",
+          "subject_type": "research",
+          "subject_id": "research_73c7968ad6c2c3c71c4fc22fc7515a6d",
+          "provider": "codex_subscription",
+          "actual_tokens": 253579,
+          "created_at": "2026-09-20T23:26:50.252+00:00",
+          "job_limit": 160000,
+          "excess_tokens": 93579,
+          "review_status": "reviewed",
+          "review_action": "optimize_prompt",
+          "reviewed_at": "2026-09-20T23:40:00.477+00:00"
+        }
+      ]
+    },
+    "research": {
+      "status": "failed",
+      "policy": {
+        "version": "research-coverage-2026.08.1",
+        "minimum_measured_gameweeks": 3,
+        "minimum_coverage_ratio": 0.9,
+        "minimum_evidence_ratio": 0.8,
+        "maximum_unresolved_conflicts": 0
+      },
+      "measured_gameweeks": 4,
+      "passing_gameweeks": 0
+    },
+    "orphaned_reservations": {
+      "status": "none",
+      "gameweek": {
+        "uses": 0,
+        "tokens": 0
+      },
+      "month": {
+        "month": "2026-10",
+        "uses": 0,
+        "tokens": 0
+      }
+    }
+  },
+  "stability": {
+    "schema": "mova-release-stability-v1",
+    "status": "pass",
+    "runtime_revision": "acd84a9",
+    "started_at": "2026-10-05T08:04:28.050055+00:00",
+    "finished_at": "2026-10-05T08:35:38.538257+00:00",
+    "required_seconds": 1800,
+    "elapsed_seconds": 1870.49,
+    "new_completed_tick": true,
+    "observations": [
+      {
+        "observed_at": "2026-10-05T08:05:41.828444+00:00",
+        "elapsed_seconds": 73.78,
+        "runtime_revision": "acd84a9",
+        "controls": {
+          "action_level": "A0",
+          "browser_writes": false,
+          "compliance_gate": "pending",
+          "kill_switch": true,
+          "mode": "shadow"
+        },
+        "overall_status": "healthy",
+        "status_reasons": [],
+        "doctor": {
+          "fail": 0,
+          "pass": 25,
+          "required_failures": 0,
+          "warn": 0
+        },
+        "workflow_status": "safe_to_wait",
+        "workflow_violations_count": 0,
+        "open_incidents_count": 0,
+        "failed_job_ids": [],
+        "tick": {
+          "job_id": "job_d94e7ed3abd549beaf1aad2cf6c22337",
+          "status": "completed",
+          "finished_at": "2026-10-05T08:00:14.965+00:00"
+        },
+        "tick_age_seconds": 261,
+        "containers": {
+          "mova-fpl-api-1": {
+            "running": true,
+            "oom_killed": false,
+            "restarts": 0,
+            "started_at": "2026-10-05T07:55:28.896355004Z",
+            "health": "healthy",
+            "revision": "acd84a9",
+            "cpu_nano": 150000000
+          },
+          "mova-fpl-postgres-1": {
+            "running": true,
+            "oom_killed": false,
+            "restarts": 0,
+            "started_at": "2026-10-05T07:55:21.305039501Z",
+            "health": "healthy",
+            "revision": null,
+            "cpu_nano": 100000000
+          },
+          "mova-fpl-browser-1": {
+            "running": false,
+            "oom_killed": false,
+            "restarts": 0,
+            "started_at": "2026-10-05T07:55:46.687541943Z",
+            "health": "unhealthy",
+            "revision": "acd84a9",
+            "cpu_nano": 250000000
+          }
+        },
+        "ready_passed": true,
+        "ready_seconds": 1.166219,
+        "checks": {
+          "revision": true,
+          "controls": true,
+          "runtime_healthy": true,
+          "doctor": true,
+          "workflow": true,
+          "incidents": true,
+          "no_new_failed_jobs": true,
+          "ready": true,
+          "container_continuity": true,
+          "services_running": true,
+          "browser_stopped": true,
+          "image_revisions": true,
+          "caps_preserved": true
+        },
+        "status": "pass"
+      },
+      {
+        "observed_at": "2026-10-05T08:10:27.626772+00:00",
+        "elapsed_seconds": 359.58,
+        "runtime_revision": "acd84a9",
+        "controls": {
+          "action_level": "A0",
+          "browser_writes": false,
+          "compliance_gate": "pending",
+          "kill_switch": true,
+          "mode": "shadow"
+        },
+        "overall_status": "healthy",
+        "status_reasons": [],
+        "doctor": {
+          "fail": 0,
+          "pass": 25,
+          "required_failures": 0,
+          "warn": 0
+        },
+        "workflow_status": "safe_to_wait",
+        "workflow_violations_count": 0,
+        "open_incidents_count": 0,
+        "failed_job_ids": [],
+        "tick": {
+          "job_id": "job_4aaf6d69d56f4d44bc8c5935f3994818",
+          "status": "completed",
+          "finished_at": "2026-10-05T08:05:12.805+00:00"
+        },
+        "tick_age_seconds": 262,
+        "containers": {
+          "mova-fpl-api-1": {
+            "running": true,
+            "oom_killed": false,
+            "restarts": 0,
+            "started_at": "2026-10-05T07:55:28.896355004Z",
+            "health": "healthy",
+            "revision": "acd84a9",
+            "cpu_nano": 150000000
+          },
+          "mova-fpl-postgres-1": {
+            "running": true,
+            "oom_killed": false,
+            "restarts": 0,
+            "started_at": "2026-10-05T07:55:21.305039501Z",
+            "health": "healthy",
+            "revision": null,
+            "cpu_nano": 100000000
+          },
+          "mova-fpl-browser-1": {
+            "running": false,
+            "oom_killed": false,
+            "restarts": 0,
+            "started_at": "2026-10-05T07:55:46.687541943Z",
+            "health": "unhealthy",
+            "revision": "acd84a9",
+            "cpu_nano": 250000000
+          }
+        },
+        "ready_passed": true,
+        "ready_seconds": 1.251193,
+        "checks": {
+          "revision": true,
+          "controls": true,
+          "runtime_healthy": true,
+          "doctor": true,
+          "workflow": true,
+          "incidents": true,
+          "no_new_failed_jobs": true,
+          "ready": true,
+          "container_continuity": true,
+          "services_running": true,
+          "browser_stopped": true,
+          "image_revisions": true,
+          "caps_preserved": true
+        },
+        "status": "pass"
+      },
+      {
+        "observed_at": "2026-10-05T08:20:34.475758+00:00",
+        "elapsed_seconds": 966.43,
+        "runtime_revision": "acd84a9",
+        "controls": {
+          "action_level": "A0",
+          "browser_writes": false,
+          "compliance_gate": "pending",
+          "kill_switch": true,
+          "mode": "shadow"
+        },
+        "overall_status": "healthy",
+        "status_reasons": [],
+        "doctor": {
+          "fail": 0,
+          "pass": 25,
+          "required_failures": 0,
+          "warn": 0
+        },
+        "workflow_status": "safe_to_wait",
+        "workflow_violations_count": 0,
+        "open_incidents_count": 0,
+        "failed_job_ids": [],
+        "tick": {
+          "job_id": "job_d06ce1b924f2456d900787b117754c97",
+          "status": "completed",
+          "finished_at": "2026-10-05T08:15:10.207+00:00"
+        },
+        "tick_age_seconds": 265,
+        "containers": {
+          "mova-fpl-api-1": {
+            "running": true,
+            "oom_killed": false,
+            "restarts": 0,
+            "started_at": "2026-10-05T07:55:28.896355004Z",
+            "health": "healthy",
+            "revision": "acd84a9",
+            "cpu_nano": 150000000
+          },
+          "mova-fpl-postgres-1": {
+            "running": true,
+            "oom_killed": false,
+            "restarts": 0,
+            "started_at": "2026-10-05T07:55:21.305039501Z",
+            "health": "healthy",
+            "revision": null,
+            "cpu_nano": 100000000
+          },
+          "mova-fpl-browser-1": {
+            "running": false,
+            "oom_killed": false,
+            "restarts": 0,
+            "started_at": "2026-10-05T07:55:46.687541943Z",
+            "health": "unhealthy",
+            "revision": "acd84a9",
+            "cpu_nano": 250000000
+          }
+        },
+        "ready_passed": true,
+        "ready_seconds": 1.715071,
+        "checks": {
+          "revision": true,
+          "controls": true,
+          "runtime_healthy": true,
+          "doctor": true,
+          "workflow": true,
+          "incidents": true,
+          "no_new_failed_jobs": true,
+          "ready": true,
+          "container_continuity": true,
+          "services_running": true,
+          "browser_stopped": true,
+          "image_revisions": true,
+          "caps_preserved": true
+        },
+        "status": "pass"
+      },
+      {
+        "observed_at": "2026-10-05T08:35:38.535818+00:00",
+        "elapsed_seconds": 1870.49,
+        "runtime_revision": "acd84a9",
+        "controls": {
+          "action_level": "A0",
+          "browser_writes": false,
+          "compliance_gate": "pending",
+          "kill_switch": true,
+          "mode": "shadow"
+        },
+        "overall_status": "healthy",
+        "status_reasons": [],
+        "doctor": {
+          "fail": 0,
+          "pass": 25,
+          "required_failures": 0,
+          "warn": 0
+        },
+        "workflow_status": "safe_to_wait",
+        "workflow_violations_count": 0,
+        "open_incidents_count": 0,
+        "failed_job_ids": [],
+        "tick": {
+          "job_id": "job_1721c100964243e1a2229a5905a5861b",
+          "status": "completed",
+          "finished_at": "2026-10-05T08:30:11.806+00:00"
+        },
+        "tick_age_seconds": 264,
+        "containers": {
+          "mova-fpl-api-1": {
+            "running": true,
+            "oom_killed": false,
+            "restarts": 0,
+            "started_at": "2026-10-05T07:55:28.896355004Z",
+            "health": "healthy",
+            "revision": "acd84a9",
+            "cpu_nano": 150000000
+          },
+          "mova-fpl-postgres-1": {
+            "running": true,
+            "oom_killed": false,
+            "restarts": 0,
+            "started_at": "2026-10-05T07:55:21.305039501Z",
+            "health": "healthy",
+            "revision": null,
+            "cpu_nano": 100000000
+          },
+          "mova-fpl-browser-1": {
+            "running": false,
+            "oom_killed": false,
+            "restarts": 0,
+            "started_at": "2026-10-05T07:55:46.687541943Z",
+            "health": "unhealthy",
+            "revision": "acd84a9",
+            "cpu_nano": 250000000
+          }
+        },
+        "ready_passed": true,
+        "ready_seconds": 1.979529,
+        "checks": {
+          "revision": true,
+          "controls": true,
+          "runtime_healthy": true,
+          "doctor": true,
+          "workflow": true,
+          "incidents": true,
+          "no_new_failed_jobs": true,
+          "ready": true,
+          "container_continuity": true,
+          "services_running": true,
+          "browser_stopped": true,
+          "image_revisions": true,
+          "caps_preserved": true
+        },
+        "status": "pass"
+      }
+    ],
+    "artifact_sha256": "692363eb7e0a1ccbb4a78d3ef1f91fdda4663de5f569a923488f6d91a09a92af",
+    "artifact_path": "/opt/orbital/backups/mova-fpl/releases/acd84a9/stability.json"
   }
 }

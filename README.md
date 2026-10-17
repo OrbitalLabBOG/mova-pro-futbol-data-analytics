@@ -50,9 +50,26 @@ y arranca Chromium directamente en My Team. Los contratos nuevos DOM .10.1
 y R2 .10.2 requieren evidencia propia; no heredan pruebas de versiones
 anteriores. Consultar el acta para distinguir código candidato y SHA desplegado.
 
+### Antecedente — verificación física del 5 de octubre
+
+El **5 de octubre UTC / Colombia** se desplegó `acd84a9`
+([PR #195](https://github.com/OrbitalLabBOG/mova-pro-futbol-data-analytics/pull/195)),
+con los cambios de datos/observabilidad/recovery de PR191, startup de PR192/194
+y probe read-only de una sesión CDP fija, locks antes del claim y préstamo CPU
+acotado de PR195. Suite **2.025 passed, 1 skipped, 79 deselected**; CI main
+37276778873 SUCCESS y smoke aislado 10/10. El primer cutover falló por un
+readiness de más de 2 s y ejercitó rollback; el segundo pasó tres respuestas
+consecutivas dentro del healthcheck vigente de 5 s, conservando el override.
+
+Probe físico final de cancha y once fichas PASS; capitanía y lineup tienen
+**1/3 ciclos independientes** para R2 .10.2, modo read-only. No hubo Save.
+El CLI agent-browser permanece 0.26.0 para captura/driver; la conexión CDP
+directa está acotada exclusivamente al probe y no concede autoridad de escritura.
+
 La [acta de release](docs/decisions/2026-27/harness-release-20261004-dcf98b8.md)
-conserva los escenarios y estabilidad aún en verificación. Continúa shadow/A0,
-kill switch activo y browser writes off; instalar estos cambios no cierra autonomía.
+conserva cinco escenarios DR PASS y la estabilidad completa de 30 min, cuatro
+muestras y tick nuevo PASS contra acd84a9. Continúa shadow/A0, kill switch activo y browser writes off;
+instalar estos cambios no cierra autonomía ni hereda pruebas de otra versión.
 
 ### Antecedente — infraestructura del 4 de octubre UTC
 

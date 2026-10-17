@@ -2,11 +2,18 @@
 type: audit-and-iteration
 name: MOVA FPL — auditoría del harness y programa de cierre
 created: 2026-10-04
-status: implementation-in-progress
+status: iteration-accepted-autonomy-pending
 owner: julian
 ---
 
 # Auditoría e iteración de cierre
+
+## Resultado de la iteración
+
+La aceptación física final terminó: nueve gaps desplegados, H09 verificado,
+cinco DR del mismo SHA y estabilidad completa PASS. El [acta final](harness-release-20261004-dcf98b8.md)
+conserva pruebas y límites. Los pendientes de autonomía requieren jornadas
+reales, decisiones o autorización separada; no se declaran cerrados.
 
 ## Goal y alcance
 
@@ -27,7 +34,7 @@ explícitos. La skill resumida dice “tres GWs” pero el runbook/código exige
 todas las históricas medidas passing; el expediente de H08 debe reconciliar
 esa explicación antes de anunciar una ruta de aceptación viable.
 
-## Corte vivo
+## Corte inicial histórico — antes de la iteración
 
 Cockpit generado `2026-10-05T02:58:24+00:00` (4 de octubre, 21:58 Bogotá):
 
@@ -181,7 +188,7 @@ y acción de desbloqueo. Compliance, A1/A2/A3 y límites deportivos son decision
 explícitas registradas. AC08 exige una GW posterior a promoción hasta review y
 siguiente ciclo sin comandos de rescate. No puede cerrarse antes de esa GW.
 
-## Implementación y verificación local
+## Primer corte histórico — implementación local previa al release
 
 H01/02/03/04/05/06/07/13 implementados en la rama de esta iteración.
 Validación final completa: **1.972 passed, 1 skipped, 79 deselected** en
@@ -218,3 +225,106 @@ promoción y cambiar software no equivalen a promover. El objetivo es eliminar
 dependencia humana rutinaria, manteniendo escalamiento real para auth,
 proveedores, ambigüedad y autoridad. Toda aceptación pendiente debe conservar
 causa, evidencia y próximo evento verificable; no se rellena con documentación.
+
+
+## Corte técnico posterior — 5 de octubre de 2026
+
+La continuidad detallada se conserva en [acta de release](harness-release-20261004-dcf98b8.md).
+PR191 instaló los ocho cambios de datos/observabilidad/recovery/clock en dcf98b8;
+PR192/194/195 incorporan estabilización de startup, stages, locks y transporte
+read-only. PR195, acd84a9, pasó suite 2.025/1 skipped/79 deselected y CI.
+Captura privada → probe física candidata PASS a 07:09 UTC, sin Save, con CPU
+restaurada a 0,25. La revisión final acd84a9 está instalada. Los cinco drills originales del SHA
+final y la estabilidad de 1.800 s con cuatro muestras pasaron. Los párrafos anteriores conservan cortes históricos,
+no el estado actual del despliegue.
+
+PM consultado de nuevo por conector Supabase el 5 de octubre: proyecto
+`cbd36dc4-0c1a-45ad-9134-1019e99639e4`, current_status continúa fechado
+29/09 y describe 7144cdd. Epic `632a0e4c-e44e-4f98-b3ee-a1e2e357b63f`
+sigue in_progress. R2 `e716c251-bdd3-4ee4-957a-e553d300104f` conserva blocked
+por checkbox missing; research `b14c9d93-5175-4645-b6ed-328dc2d34f1f`,
+continuidad `7a0397a3-56c5-46da-9567-db28007a113a`, release
+`6aea32b2-b1d7-4dfb-9b80-fc92352da8af` y jornada completa
+`7dca6314-9b77-460e-a126-11b852e86ef4` siguen in_progress; promoción
+`4a5e96b3-c7a9-4d8b-979a-0ce3ca65643b` todo. No hubo escritura PM.
+
+Preview del próximo update: sustituir el motivo DOM ausente por el corte
+físico final y su cobertura real, sin cerrar R2 ni tareas longitudinales.
+Conservar responsables, colas, fechas y porcentaje; enlazar acta/SHA/CI/DR.
+El transporte read-only satisfactorio no prueba el cliente de escritura,
+Save/recarga/post-state ni promoción. Preparar publicación sólo con el corte
+final verificable; este texto no es un update ya enviado a Supabase.
+
+
+### Preview PM preparado — sin escritura externa
+
+Cuando se autorice publicar el corte final:
+
+- Proyecto `cbd36dc4-0c1a-45ad-9134-1019e99639e4`: actualizar únicamente
+  current_status con release acd84a9, suite/CI, rollback real, pruebas DR del
+  mismo SHA, estabilidad aceptada y cobertura read-only 1/3 de capitanía/lineup.
+  El texto definitivo debe incluir los resultados pendientes de esta acta.
+- R2 `e716c251-bdd3-4ee4-957a-e553d300104f`: proponer **in_progress**, retirar
+  el motivo checkbox missing ya superado y agregar evidencia/progreso. Mantener
+  pendiente tres ciclos distintos y Save/reload/post-state bajo autoridad.
+- Epic, research, closeout, jornada completa y promoción: conservar estados
+  abiertos. No alterar responsables, colas, fechas, porcentaje ni notas históricas.
+- Antes de aplicar: releer updated_at/revisión, contrato de tareas y acceso vivo;
+  si cambió el objeto, reconciliar el preview. Esta auditoría no concede acceso.
+
+La skill proyecto mantiene PM en solo lectura para este modo técnico. No se
+publicó este preview en project_updates ni se transformaron tests en cierres de ACs.
+
+
+## Matriz de cierre de la iteración — runtime acd84a9
+
+| Gaps | Resultado actual | Evidencia / próximo requisito |
+| --- | --- | --- |
+| H01–H07 | Implementados y desplegados | Validación antes de caché, retry acotado, sensor DR y proyección cockpit/research; suite y runtime final. |
+| H09 | Contrato existente auditado y verificado | Intentos físicos, reserva/permiso, cutoff, recibos y quarantine; no nuevo scheduler paralelo. |
+| H11 | Contrato DOM corregido y lectura física importada | Capitanía/lineup 1/3 ciclos para R2 .10.2; no Save. Dos ciclos distintos adicionales y ejecución controlada siguen pendientes. |
+| H13 | Implementado y desplegado | Deadline compartido, timeout de llamada/host, reserva post-state; begin ambiguo no despacha ni repite Save. |
+| H08 | Propuesta preparada; decisión pendiente | ADR-011 requiere decisión de Julián antes de preregistrar cohorte prospectiva. Gate histórico intacto. |
+| H10 | Limitación y follow-up documentados | Guard reactivo no garantiza hard cap físico; follow-up metered equivalente dentro del límite original y admisión con capacidad real. |
+| H12 | Skills reconciliadas y preview PM preparado | No se publicó en Supabase; releer acceso y versiones antes de aplicar una autorización posterior. |
+
+Se cerraron nueve gaps mediante código desplegado y se verificó H09. La
+aceptación técnica incluye estabilidad física completa PASS;
+esta matriz no promueve nivel ni cierra las tareas longitudinales de autonomía.
+
+
+### Dependencias reconsultadas — 5 de octubre, 08:17–08:20 UTC
+
+Runtime acd84a9, data/analytics/PostgreSQL/operator healthy; workflow safe_to_wait,
+cero violaciones, cero incidentes y cero jobs fallidos de ops en 24 h.
+Readiness **21 pass / 5 pending / 1 blocked**, nivel técnico y autoridad **A0**.
+
+- Research histórico: **4 jornadas medidas / 0 passing**, política
+  research-coverage-2026.08.1. Tres nuevas buenas no neutralizan las históricas
+  bajo el código vigente. ADR-011 continúa propuesta sin aprobación.
+- Gates pendientes: host recovery (reboot antiguo sin revisión/fecha de evidencia
+  válidas), capitanía, lineup, R3 y closeout real. Cuatro drills de servicios
+  vigentes y un restore externo pasan; el gate host no acepta el reboot viejo.
+- Capitanía y lineup **1/3** ensayos del driver vigente; R3 **1/3**, entrypoints
+  lineup/R3 apagados. La prueba read-only no acredita Save/reload/post-state.
+- Researcher activo **1.10.0 / Astra medium**; Strategist/Critic Terra high.
+  El candidato registrado 1.12.0 no fue activado por esta iteración.
+- Presupuesto GW6: **2.310.934 tokens y 24 usos disponibles**; sin reserva
+  huérfana. El experimento pareado que requiere 3.000.000 incluyendo reserva
+  operacional sigue corto por **689.066**. No se aumentó ni se encoló.
+- Dos overruns GW6 permanecen **reviewed_pending**: 615.333 y 253.579 tokens
+  frente al límite original **160.000**, exceso total 548.912. Necesitan un
+  follow-up equivalente medido, posterior y settled dentro del límite original;
+  ejecutar con 1.000.000 no resuelve ese criterio. El guard sigue reactivo.
+- Closeout vivo: **0** y lessons **0**; la aceptación necesita settlement/review
+  de una jornada y ejecución elegibles reales. El deadline de GW6 es
+  **10 de octubre, 05:00 Bogotá** (10:00 UTC).
+- Reboot requiere autorización explícita nueva. Host vacío conserva RTO objetivo
+  120 min sin ensayo válido y requiere destino aislado autorizado.
+
+No se publicaron cambios PM, nuevos jobs LLM, allowances ni promociones.
+Estos son pendientes de evidencia/autoridad, no fallos que una fixture pueda cerrar.
+
+
+El [preview PM concreto](harness-pm-update-preview-20261005.md) conserva texto
+propuesto, objetos y límites; sigue draft-not-published.

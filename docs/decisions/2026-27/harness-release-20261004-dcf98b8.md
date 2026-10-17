@@ -1,14 +1,48 @@
 ---
 type: release-verification
-name: MOVA FPL — cierre de iteración dcf98b8
+name: MOVA FPL — cierre de iteración y aceptación acd84a9
 created: 2026-10-04
-status: verification-in-progress
+status: accepted-with-autonomy-pending
 owner: julian
 ---
 
 # Release y expediente de cierre
 
-## Identidad y aceptación
+## Aceptación final — 5 de octubre de 2026
+
+Runtime **acd84a9**, [PR195](https://github.com/OrbitalLabBOG/mova-pro-futbol-data-analytics/pull/195)
+instalado; CI de PR/main SUCCESS, suite **2.025 passed / 1 skipped / 79 deselected**.
+Nueve gaps implementados/desplegados (H01–H07, H11, H13), H09 existente
+verificado; H08/H10/H12 conservan decisión, evidencia o publicación pendientes.
+
+Los cinco escenarios DR originales de este SHA pasaron: API **5/5, 25 s**;
+PostgreSQL **8/8, 19 s**; browser **9/9, 17 s**; combinado **13/13, 57 s**
+de downtime; restore externo **8/8, 380 s**, sin caída. Rollback real de
+código/configuración ejercitado, sin reemplazar bases.
+
+Estabilidad posterior al último drill disruptivo: **PASS**, desde
+`2026-10-05T08:04:28.050055+00:00` hasta `2026-10-05T08:35:38.538257+00:00` (UTC),
+**1870.49 s**, cuatro observaciones programadas 0/5/15/30 min
+y tick nuevo completed. Todas: doctor **25 PASS / 0 WARN / 0 FAIL**, runtime
+healthy, workflow sin violaciones, cero incidentes/nuevos jobs fallidos,
+readiness 200 y sin reinicios/OOM ni cambio de caps/StartedAt.
+Hash SHA256 del archivo protegido de estabilidad: `692363eb7e0a1ccbb4a78d3ef1f91fdda4663de5f569a923488f6d91a09a92af`.
+La API conserva cap 150000000 NanoCpus, PG
+100000000, browser
+250000000; browser detenido.
+
+Se mantiene **shadow/A0**, kill switch true, browser writes false, compliance
+pending. Capitanía/lineup tienen lectura real **1/3 ciclos** para R2 .10.2,
+no Save. Readiness de autonomía **21 pass / 5 pending / 1 blocked**:
+research histórico bloqueado, reboot vigente, drivers y closeout real pendientes.
+Host vacío sigue sin ensayo; no se publicó el preview PM ni se activaron
+Researcher candidato, nuevos jobs LLM, allowances o promociones.
+
+Los cortes siguientes son historia fechada de diagnóstico y aceptación; sus
+estados pendientes locales no sustituyen este corte final. El nombre del archivo
+conserva dcf98b8 como origen de la iteración, no como revisión actualmente instalada.
+
+## Primer release histórico — identidad y aceptación
 
 PR #191 integrada: `dcf98b8555ddc848258c13bfd64db5da29c4c423`.
 CI de PR: run `37260316950`, pass. CI de main: run `37260422288`, success
@@ -351,3 +385,113 @@ sin caída; replay de un drill ya importado conserva su salida previa a los
 locks. Seis regresiones adicionales PASS; suite **2.025 passed, 1 skipped,
 79 deselected**, 37,24 s. Los nuevos drills físicos siguen pendientes del
 release final; esta suite no se presenta como evidencia de recuperación real.
+
+
+## Secuencia de aceptación del release final acd84a9
+
+PR195 integrada `2026-10-05T07:15:57Z`, SHA completo
+`acd84a9c3241bc93b9860dc732d7f57dd189484b`; CI 37276568318 PASS,
+1 min 15 s. Build `mova-fpl-build-acd84a9` terminal active/exited, exit 0.
+Engine `sha256:98a0326933097fb88a4c4d45b1c8431ed32ab51ce96ba0bba70d7602e53d2fda`;
+browser `sha256:1b41d333be3f7d845c2db3a003bfdfee77ba7fc4526fc737e0a2de09744785bf`;
+research `sha256:3cb9da6188dc7ed2f7339c561a96a5ee696abcc1fcd54ea955d953389b59c180`.
+Smoke aislado sin red/auth/datos productivos: diez checks PASS.
+
+Primer cutover: `mova-fpl-release-acd84a9` terminó exit 28. La API devolvió
+un readiness válido en el loop de arranque, pero la comprobación inmediata
+siguiente agotó 2 s. El endpoint conserva `OpsDB.quick_check()`; no se cambió
+ni se sustituyó por healthz. Rollback automático de código/configuración
+verificado: checkout y labels dcf98b8, API running/healthy, cero restarts,
+browser detenido y diez timers activos. Readiness posterior 200, 1,120 s;
+dos muestras adicionales 1,121/1,484 s. Migraciones nuevas aplicadas: cero.
+No se reemplazaron bases. El rollback pasó de disponible a ejercitado en
+esta incidencia; no demuestra reconstrucción ni reboot.
+
+Segundo intento usa un backup SQLite distinto (idempotency `release-acd84a9-backup-02`)
+y nuevo backup PG. La aceptación de arranque sigue el timeout 5 s del healthcheck
+existente, exige tres respuestas 200 consecutivas y tiene reloj global 180 s.
+No altera los 30 min predeclarados de estabilidad **posteriores al último drill
+disruptivo del SHA final**; no reutilizar la ventana de dcf98b8 ni acortarla.
+El segundo intento está en `mova-fpl-release-acd84a9-attempt2`; no se reinicia
+mientras siga activating/start. DR de los cinco escenarios e import de probe
+sobre el SHA final continúan pendientes hasta su aceptación física.
+
+
+Segundo intento terminal active/exited, exit 0: runtime **acd84a9**, status
+healthy, controles exactos shadow/A0/kill true/writes false/compliance pending.
+Tres readiness consecutivos 200: **1,331845 / 2,783886 / 1,493985 s**;
+la muestra de 2,78 s confirma el riesgo del límite de cliente anterior de 2 s.
+Override idéntico y timers restaurados. CI main 37276778873 SUCCESS.
+
+Probe final `2026-10-05T07:35:44.002910+00:00`, unidad
+`mova-fpl-browser-proof-acd84a9`, terminal exit 0. Captura privada ingested en
+`job_5d580a7464e64d958ab5da825a9f2fdc`. Todos los checks de cancha/capitanía
+PASS, GET final sin cambios. El inbox privado conserva el source; no se publica
+su contenido. Imports del ciclo real **2026-27-gw06**, R2 **2026.10.2**:
+
+| Capacidad | Rehearsal | Hash de evidencia sellada | Modo |
+| --- | --- | --- | --- |
+| captaincy | rehearsal_8af6285e4047cfa8680a7598 | 89a823b6908e0500755a7f841528f3aa939a752c53ccb4d8bee2c63852afb790 | read_only_probe |
+| lineup | rehearsal_a4e4ab3959a4ec808cca304d | c36b7918540f8c628daddd65362b7b90fc2db75f9ea3a99199f3671b37a2cf28 | read_only_probe |
+
+Cobertura **1/3 por capacidad**, no tres por repetir GW6. No Save ni cambios
+FPL; CPU restaurada a 250000000 NanoCpus y browser detenido. H11 ya tiene
+contrato DOM y lectura física válida; esta evidencia no prueba el transporte
+de escritura ni aceptación de commit/reload/post-state bajo autoridad.
+
+API recovery final 07:37:37–07:38:02 UTC: **5/5 PASS, downtime 25 s**,
+job `job_381393fac3d445ffbb632f3efbab312b`, evidencia
+`6fc9371b65cdd96cb7cdeecbb9e84dfe5ff1de7c9775dc1098d6c84b3a3a9e99`.
+PostgreSQL, browser, combined, offsite y ventana final siguen en ejecución/
+verificación secuencial; no reutilizar sus proofs de la revisión anterior.
+
+
+PostgreSQL recovery final 07:42:54–07:45:34 UTC: **8/8 PASS**, endpoint
+caído **19 s**, job `job_1dd68e3f59e44b199183194bbeda5242`, evidencia
+`bd17d7a274e4ae2caa3328fa66df353164a4795cc2cf87ab010a4102dd0464d5`.
+Browser recovery 07:48:16–07:50:34 UTC: **9/9 PASS**, endpoint caído
+**17 s**, job `job_129b6b8dfab84fd8bf62b3c31d854d57`, evidencia
+`07daa8f4776b0c61830d32fb90c9b404b9038528dd2c81a5f863be38531e5ab5`.
+Autenticación y fingerprint del equipo antes/después coinciden; controles A0
+conservados, revisión acd84a9 y browser inicial detenido restaurado.
+
+
+Combined recovery final 07:53:06–07:57:28 UTC: **13/13 PASS**, endpoint
+conjunto caído **57 s**, job `job_98dcf0cd4d964f138675aa6fa61e75f5`, evidencia
+`998568d9251d52b6038732fa6183a1378474a576bb6be08ae943471d33cb304e`.
+API/PG/browser restaurados, sesión y equipo sin cambios, browser vuelto a su
+estado inicial detenido y controles A0. Es el último drill disruptivo previsto.
+La ventana nueva exige 1.800 s posteriores, cuatro muestras programadas
+0/5/15/30 min de status/doctor/workflow/readiness/caps/restarts/OOM, y un tick
+completed con finished_at posterior al inicio. El restore externo aislado
+puede correr dentro de esa ventana: no provoca una caída de servicios.
+
+
+La primera muestra de estabilidad marcó doctor 24 PASS/1 WARN/0 FAIL porque
+el procedimiento invocó `--no-network`: ese modo produce WARN por omitir
+`fpl_public_api`. Runtime healthy, sin status_reasons y workflow safe_to_wait,
+tick completed 08:00:14 UTC. No se convirtió el WARN en PASS ni se rebajó
+la exigencia. Se canceló únicamente el observador propio tras diagnosticar
+la omisión, conservando `stability-offline-doctor-attempt1.json`; no se reinició
+un servicio productivo ni un job por un timeout de observación.
+
+El observador corregido `mova-fpl-stability-acd84a9-network` usa doctor completo
+(con GET público acotado), exige cero WARN/FAIL y comienza otros 1.800 s
+íntegros. El intento anterior no cuenta como aceptación. Continúa ligado a
+acd84a9 y posterior al último drill disruptivo; el restore externo permanece
+independiente y aislado.
+
+
+Offsite restore final 08:00:17–08:06:37 UTC: **8/8 PASS**, **380 s**,
+downtime **0 s**, job `job_91b0e1143d044eba815eafe85fffa5df`, evidencia
+`7e57eedd4703c9b9ba9bd099598bbbed05aceb6802089832b8af3df4851fb846`.
+Download/manifest/hashes, restore SQLite/modelos y restore/paridad PostgreSQL
+verificados en destino aislado de disco, runtime sin cambios. No demuestra
+reboot ni reconstrucción desde host vacío. Restic avisó que no tenía HOME/
+XDG_CACHE_HOME para caché; no impidió descarga ni verificaciones.
+
+La primera muestra del observador completo a 08:05:41 UTC PASS:
+**doctor 25 PASS/0 WARN/0 FAIL**, workflow safe_to_wait, runtime healthy.
+Ventana iniciada `2026-10-05T08:04:28.050055+00:00`; los 30 min completos
+y sus muestras posteriores aún están pendientes. Las cinco pruebas DR ya
+son originales de acd84a9, sin reinterpretar evidencia antigua.
