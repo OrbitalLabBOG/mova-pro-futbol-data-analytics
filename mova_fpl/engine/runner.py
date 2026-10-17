@@ -29,6 +29,7 @@ class Config:
     bench_weight: float = 0.12        # valor del banquillo en el objetivo
     top_k: int = 30                   # recorte de mercado por posicion (0 = sin recorte)
     max_hits: int = 2                 # tope de transferencias pagadas por jornada
+    current_transfer_limit: int | None = None
     time_limit: int = 30              # segundos por jornada antes de rendirse
     transfer_penalty: float = 0.0     # valor de opcion de conservar un cambio
     terminal_free_transfer_value: float = 0.0  # valor de continuación al truncar horizonte

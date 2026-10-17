@@ -28,10 +28,15 @@ ACTIVE_DELIBERATION_STATUSES = {"queued", "running"}
 MAX_PERMIT_BYTES = 65_536
 
 
-def evaluate_workflow_deadline(workflow: dict, *, seconds_to_deadline: int | None) -> dict:
+def evaluate_workflow_deadline(workflow: dict, *, seconds_to_deadline: int | None,
+                               delivery_required: bool = False, delivery_completed: bool = False) -> dict:
     """Evalúa hitos del negocio sin convertir espera normal en incidente."""
     stages = {str(row.get("name")): row for row in workflow.get("stages") or []}
     reasons: list[dict] = []
+    if delivery_required and not delivery_completed and seconds_to_deadline is not None and seconds_to_deadline <= 2*3600:
+        reasons.append({'code': 'bounded_team_delivery_not_verified',
+                        'severity': 'P0' if seconds_to_deadline <= 30*60 else 'P1',
+                        'stage': 'execute_verify', 'outcome': 'saved_or_unchanged_receipt_required'})
     if (workflow.get("violations") and seconds_to_deadline is not None
             and seconds_to_deadline <= WORKFLOW_MILESTONES["research"][0]):
         reasons.append({
@@ -63,7 +68,7 @@ def evaluate_workflow_deadline(workflow: dict, *, seconds_to_deadline: int | Non
                 "stage": "contextualize", "outcome": "stale_team_state",
             })
         budget = workflow.get("budget") or {}
-        agent_incomplete = any(
+        agent_incomplete = not delivery_required and any(
             (stages.get(name) or {}).get("status") != "complete"
             for name in ("research", "deliberate")
         )
@@ -76,6 +81,8 @@ def evaluate_workflow_deadline(workflow: dict, *, seconds_to_deadline: int | Non
                 "stage": "research", "outcome": "budget_exhausted",
             })
         for name in ("research", "deliberate"):
+            if delivery_required:
+                continue
             row = stages.get(name) or {}
             if row.get("status") != "complete":
                 reasons.append({
@@ -138,9 +145,13 @@ def assess_workflow_deadline(config: RuntimeConfig, db: OpsDB, *,
         deadline = datetime.fromisoformat(str(deadline_raw).replace("Z", "+00:00"))
         seconds = int((deadline - current).total_seconds())
     from mova_fpl.ops.orchestration import build_workflow
-
+    scope = (db.controls().get('delivery_scope') or {}).get('value')
+    attempt = db.latest_delivery_attempt(cycle.get('cycle_id') or '')
+    receipt = db.delivery_receipt(cycle.get('cycle_id') or '')
+    complete = bool(attempt and attempt['status'] == 'verified') or bool(receipt)
     report = evaluate_workflow_deadline(
         build_workflow(config, db, now=current), seconds_to_deadline=seconds,
+        delivery_required=scope == 'lineup-v1', delivery_completed=complete,
     )
     return {**report, "cycle_id": cycle.get("cycle_id"), "gw": cycle.get("gw")}
 

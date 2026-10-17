@@ -198,6 +198,9 @@ def build_execution_plan(*, envelope: dict, envelope_row: dict, manifest_row: di
                execution_id=(prior_execution or {}).get("execution_id"),
                status=(prior_execution or {}).get("status")),
     ]
+    if controls.get('delivery_scope') == 'lineup-v1':
+        checks.append(_check('DELIVERY_SCOPE', risk_class in {'R0', 'R2'},
+                             'lineup delivery forbids transfers, hits and chips'))
     blocking = [] if no_action else [row["code"] for row in checks if not row["passed"]]
     status = "noop" if no_action else "authorized" if not blocking else "blocked"
     body = {
@@ -349,6 +352,10 @@ class ExecutionService:
             "schema": "mova-execution-status-v1",
             "policy_version": POLICY_VERSION,
             "browser_driver": driver_capabilities(rehearsals),
+            "delivery": {'scope': (self.db.controls().get('delivery_scope') or {}).get('value'),
+                         'live_proof': self.db.latest_delivery_proof(self.config.git_sha),
+                         'target_seconds_before_deadline': 10800, 'escalate_seconds_before_deadline': 7200,
+                         'last_dispatch_seconds_before_deadline': 1800},
             "autonomous_closeout": self.db.autonomous_closeout_summary(
                 self.config.season
             ),
@@ -719,6 +726,11 @@ class ExecutionService:
         required = str(row["required_action_level"])
         observed = str(controls.get("action_level") or "A0")
         blockers = []
+        plan = self._load_plan(row)
+        if plan.get('controls', {}).get('delivery_scope') != controls.get('delivery_scope'):
+            blockers.append('DELIVERY_SCOPE_CHANGED')
+        if controls.get('delivery_scope') == 'lineup-v1' and plan['action']['risk_class'] not in {'R0', 'R2'}:
+            blockers.append('DELIVERY_SCOPE_REQUIRES_R2')
         if row["status"] != "authorized":
             blockers.append("PLAN_NOT_AUTHORIZED")
         if now >= _parse_time(row["deadline_at"]):
@@ -949,6 +961,13 @@ class ExecutionService:
                                error_code="RUNTIME_GATES_CHANGED",
                                error_detail=",".join(blockers))
             return {**result, "blocking_codes": blockers}
+        # Preserve independently observed R2 invariants before the apply boundary.
+        invariants = normalized
+        invariant_path = self.config.artifact_root / 'execution-invariants' / f'{execution_id}.json'
+        invariant_path.parent.mkdir(parents=True, exist_ok=True)
+        temporary = invariant_path.with_suffix('.tmp')
+        temporary.write_text(json.dumps(invariants, sort_keys=True), encoding='utf-8')
+        os.replace(temporary, invariant_path)
         return self.db.begin_execution_attempt(
             execution_id=execution_id, token_sha256=token_sha,
             observed_pre_fingerprint=quality["fingerprint"], actor=actor, reason=reason,
@@ -999,6 +1018,18 @@ class ExecutionService:
              "expected": f"> {attempt['started_at']}",
              "observed": normalized["observed_at"]},
         ]
+        if plan['action']['risk_class'] == 'R2':
+            invariant_path = self.config.artifact_root / 'execution-invariants' / f'{execution_id}.json'
+            if invariant_path.stat().st_size > 1048576:
+                raise ValueError('pre-state invariant artifact too large')
+            before_state, before_quality = validate_private_state(
+                json.loads(invariant_path.read_text(encoding='utf-8')), expected_team_id=self.config.team_id)
+            before = {'transfers': {k: before_state['transfers'][k] for k in ('bank','made','cost')},
+                      'chips': before_state['chips']}
+            after = {'transfers': {k: normalized['transfers'][k] for k in ('bank','made','cost')},
+                     'chips': normalized['chips']}
+            checks.append({'code': 'POST_FINANCE_AND_CHIPS_UNCHANGED',
+                           'passed': before == after and before_quality['fingerprint'] == attempt['expected_pre_fingerprint']})
         verified = all(row["passed"] for row in checks)
         current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
         evidence = {
@@ -1029,7 +1060,10 @@ class ExecutionService:
         )
         if verified:
             self.db.finish_job(attempt["job_id"], "completed", output_sha256=result_sha,
-                               metrics={"status": status, "verification_checks": len(checks)})
+                               metrics={"status": status, "verification_checks": len(checks),
+                                        'delivery_scope': plan.get('controls', {}).get('delivery_scope'),
+                                        'git_sha': self.config.git_sha,
+                                        'driver_contract': DRIVER_CONTRACT_VERSION})
         else:
             self.db.open_incident_once(
                 "P0", "Ejecución FPL ambigua", correlation_id=None,

@@ -416,7 +416,7 @@ def test_execution_status_exposes_browser_driver_capabilities(tmp_path: Path):
     assert capabilities["captaincy"]["host_entrypoint_enabled"] is True
     assert capabilities["captaincy"]["autonomy_promoted"] is False
     assert capabilities["lineup"]["contract"] == "implemented"
-    assert capabilities["lineup"]["host_entrypoint_enabled"] is False
+    assert capabilities["lineup"]["host_entrypoint_enabled"] is True
     assert capabilities["r3"]["host_entrypoint_enabled"] is False
 
 

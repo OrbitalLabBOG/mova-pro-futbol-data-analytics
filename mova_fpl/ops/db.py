@@ -754,6 +754,35 @@ class OpsDB:
             "attempt": dict(attempt) if attempt else None,
         }
 
+    def latest_delivery_attempt(self, cycle_id: str) -> dict | None:
+        with self.connect(readonly=True) as con:
+            row = con.execute(
+                "SELECT a.* FROM execution_attempts a JOIN execution_plans p ON p.plan_id=a.plan_id "
+                "WHERE p.cycle_id=? ORDER BY CASE a.status WHEN 'verified' THEN 3 WHEN 'ambiguous' THEN 2 "
+                "WHEN 'applying' THEN 1 WHEN 'claimed' THEN 1 ELSE 0 END DESC,a.created_at DESC,a.execution_id DESC LIMIT 1",
+                (cycle_id,),
+            ).fetchone()
+        return dict(row) if row else None
+
+    def latest_delivery_proof(self, revision: str) -> dict | None:
+        if not revision or revision == 'unknown':
+            return None
+        with self.connect(readonly=True) as con:
+            row = con.execute(
+                "SELECT a.execution_id,a.finished_at,j.metrics_json FROM execution_attempts a "
+                "JOIN job_runs j ON j.job_id=a.job_id WHERE a.status='verified' "
+                "AND json_extract(j.metrics_json,'$.delivery_scope')='lineup-v1' "
+                "AND json_extract(j.metrics_json,'$.git_sha')=? ORDER BY a.finished_at DESC LIMIT 1",
+                (revision,),
+            ).fetchone()
+        return dict(row) if row else None
+
+    def delivery_receipt(self, cycle_id: str) -> dict | None:
+        with self.connect(readonly=True) as con:
+            row = con.execute("SELECT * FROM job_runs WHERE job_type='delivery' AND cycle_id=? "
+                              "AND status='completed' ORDER BY finished_at DESC LIMIT 1", (cycle_id,)).fetchone()
+        return dict(row) if row else None
+
     def prepare_execution_attempt(self, *, plan: dict, job_id: str,
                                   execution_id: str, idempotency_key: str,
                                   adapter: str, command_path: str,

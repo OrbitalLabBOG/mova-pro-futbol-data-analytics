@@ -19,6 +19,8 @@ UNITS = (
     "mova-fpl-stack.service",
     "mova-fpl-tick.service",
     "mova-fpl-tick.timer",
+    "mova-fpl-delivery.service",
+    "mova-fpl-delivery.timer",
     "mova-fpl-private-state.service",
     "mova-fpl-private-state.timer",
     "mova-fpl-backup.service",

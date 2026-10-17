@@ -403,6 +403,7 @@ def main() -> None:
         "--private-team-state",
         help="directorio de snapshot autenticado sanitizado; prevalece sobre reconstrucción pública",
     )
+    ap.add_argument("--delivery-scope", choices=("lineup-v1",))
     ap.add_argument("--chips", action="store_true",
                     help="deja que el planificador proponga chips (exige --team-id)")
     ap.add_argument("--lookahead", type=int, default=6,
@@ -445,6 +446,8 @@ def main() -> None:
         help="timestamp UTC sellado para replay; por defecto usa el reloj actual",
     )
     args = ap.parse_args()
+    if args.delivery_scope and args.chips:
+        ap.error('bounded lineup delivery cannot enable chips')
 
     t0 = time.time()
     emitida = (
@@ -521,7 +524,9 @@ def main() -> None:
     cfg = Config(policy=args.policy, projector="points", model_version=args.version,
                  horizon=args.horizon, top_k=args.top_k, time_limit=600,
                  chip_policy="planner" if args.chips else "none",
-                 structure_lookahead=args.lookahead)
+                 structure_lookahead=args.lookahead,
+                 max_hits=0 if args.delivery_scope else 2,
+                 current_transfer_limit=0 if args.delivery_scope else None)
 
     equipo = _estado_equipo(args, boot, roster, rules_mod.SQUAD)
     base_state = State(
@@ -611,6 +616,7 @@ def main() -> None:
             },
             "event_context": event,
             "engine": {
+                "delivery_scope": args.delivery_scope,
                 "policy": args.policy,
                 "horizon": args.horizon,
                 "points_model_version": args.version,

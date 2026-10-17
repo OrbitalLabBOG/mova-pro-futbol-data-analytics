@@ -255,6 +255,10 @@ def parser() -> argparse.ArgumentParser:
     preflight.add_argument("--actor", required=True)
     preflight.add_argument("--reason", required=True)
     preflight.add_argument("--idempotency-key", required=True)
+    dispatch = execute_commands.add_parser("dispatch", help="prepare a bounded scheduled delivery")
+    dispatch.add_argument("--actor", required=True)
+    dispatch.add_argument("--reason", required=True)
+    dispatch.add_argument("--check-only", action="store_true")
     prepare_execution = execute_commands.add_parser(
         "prepare", help="reserva una ejecución apply-once autorizada"
     )
@@ -804,6 +808,10 @@ def main(argv: list[str] | None = None) -> int:
                 actor=args.actor, reason=args.reason,
                 idempotency_key=args.idempotency_key,
             )
+        elif args.execute_command == "dispatch":
+            from mova_fpl.ops.delivery import DeliveryService
+            payload = DeliveryService(config, db).dispatch(
+                actor=args.actor, reason=args.reason, check_only=args.check_only)
         elif args.execute_command == "prepare":
             payload = service.prepare(
                 plan_id=args.plan_id, adapter=args.adapter, actor=args.actor,
@@ -844,6 +852,9 @@ def main(argv: list[str] | None = None) -> int:
                     error_detail=args.error_detail,
                 )
         print(json.dumps(payload, ensure_ascii=False, default=str))
+        if args.execute_command == 'dispatch':
+            # Blocked/not-due is an expected scheduled observation, not a failed unit.
+            return 0
         return 2 if payload.get("status") in {"ambiguous", "failed", "blocked"} else 0
 
     db = OpsDB(config.ops_db, minimum_version=config.sqlite_min_version)

@@ -329,8 +329,15 @@ def build_envelope(*, bundle: dict, manifest: dict, manifest_id: str,
 
     research = dict(manifest.get("research_summary") or {})
     conflicts = int(research.get("unresolved_conflicts") or 0)
+    scoped_baseline = (controls.get('delivery_scope') == 'lineup-v1'
+                       and bundle.get('engine', {}).get('delivery_scope') == 'lineup-v1'
+                       and not decision.get('transfers_in') and not decision.get('transfers_out')
+                       and not decision.get('hits') and not decision.get('chip'))
+    if controls.get('delivery_scope') == 'lineup-v1':
+        checks.append(_check('DELIVERY_BASELINE_SCOPE', scoped_baseline, 'block',
+                             'bounded official baseline is sealed without LLM interventions or R3 changes'))
     checks.append(_check(
-        "RESEARCH_CONFLICTS_CLEAR", conflicts == 0, "block",
+        "RESEARCH_CONFLICTS_CLEAR", conflicts == 0, "warn" if scoped_baseline else "block",
         "no quedan conflictos materiales de research sin resolver",
         unresolved_conflicts=conflicts,
     ))

@@ -72,6 +72,7 @@ class OptimizerConfig:
     top_k: int = DEFAULT_TOP_K
     cheapest: int = DEFAULT_CHEAPEST
     max_hits_per_gw: int = 2
+    current_transfer_limit: int | None = None
     time_limit: int = 30
     risk_lambda: float = 0.0          # Q-02: 0 = rank global, neutral al riesgo
     #: valor futuro de conservar una transferencia. Cero reproduce produccion.
@@ -197,6 +198,12 @@ def solve(state, xp_matrix: dict, config: OptimizerConfig | None = None, *,
         prob += bank[g] == anterior + ingreso - gasto, f"caja_{g}"
 
         usadas = pulp.lpSum(buy[i, g] for i in ids)
+        if idx == 0 and config.current_transfer_limit is not None:
+            if type(config.current_transfer_limit) is not int or not 0 <= config.current_transfer_limit <= rules['size']:
+                raise ValueError("current_transfer_limit must be an integer within squad size")
+            if frio:
+                raise ValueError("bounded delivery requires the authenticated existing squad")
+            prob += usadas <= config.current_transfer_limit, 'delivery_current_transfer_limit'
         libres = libres_hoy if idx == 0 else ft[g]
         # Con wildcard las transferencias son gratis e ilimitadas: la cota de hits
         # deja de restringir cuantas se pueden hacer.

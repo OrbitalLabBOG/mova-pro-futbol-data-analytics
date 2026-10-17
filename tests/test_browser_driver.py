@@ -107,12 +107,12 @@ def test_captaincy_driver_plan_is_ordered_and_apply_once():
     assert plan["failure_policy"]["retry_after_commit"] is False
 
 
-def test_driver_capability_ledger_keeps_lineup_and_r3_unpromoted():
+def test_driver_capability_ledger_enables_lineup_but_keeps_r3_closed():
     capabilities = driver_capabilities()
     assert capabilities["captaincy"]["host_entrypoint_enabled"] is True
     assert capabilities["captaincy"]["autonomy_promoted"] is False
     assert capabilities["lineup"] == {
-        "contract": "implemented", "host_entrypoint_enabled": False,
+        "contract": "implemented", "host_entrypoint_enabled": True,
         "autonomy_promoted": False, "observed_rehearsals": 0,
         "required_rehearsals": 3,
     }
@@ -198,7 +198,7 @@ def test_r3_driver_contract_rejects_tampering(tamper):
 
 def test_driver_rejects_lineup_swaps_until_live_rehearsal():
     with pytest.raises(DriverPlanBlocked) as caught:
-        compile_r2_driver_plan(_ui_plan(swaps=[{"operation": "switch_slots"}]))
+        compile_r2_driver_plan(_ui_plan(swaps=[{"operation": "switch_slots"}]), lineup_rehearsed=False)
     assert caught.value.code == "LINEUP_DRIVER_UNPROVEN"
 
 
@@ -276,8 +276,8 @@ def test_host_driver_lineup_contract_mode_never_starts_browser(tmp_path: Path):
         ["python3", "deploy/bin/browser-r2-driver.py", "--ui-plan", str(path),
          "--validate-only"], cwd=ROOT, text=True, capture_output=True,
     )
-    assert blocked.returncode == 2
-    assert "LINEUP_DRIVER_UNPROVEN" in blocked.stdout
+    assert blocked.returncode == 0
+    assert json.loads(blocked.stdout)['scope'] == 'lineup_and_captaincy'
     validated = subprocess.run(
         ["python3", "deploy/bin/browser-r2-driver.py", "--ui-plan", str(path),
          "--validate-lineup-contract-only"], cwd=ROOT, text=True,

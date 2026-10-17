@@ -9,6 +9,33 @@ status: active
 
 # Policy de autonomía y preflight
 
+## Entrega programada de alineación — lineup-v1
+
+`mova-fpl-delivery.timer` llama cada cinco minutos a `deploy/bin/delivery-cycle.sh`.
+Sin scope o autoridad válida observa el bloqueo y termina sin abrir el navegador.
+Con `delivery_scope=lineup-v1`, A2, modo autónomo, compliance aprobado, writes
+habilitados y kill switch off, opera entre T−3h y T−30m. La última ventana de
+verificación conserva el hard stop T−15m. No necesita que el collector esté due.
+
+El host captura e ingresa estado privado, fuerza un tick con clave por ventana,
+ejecuta `mova execute dispatch` y llama al wrapper R2 sobre el intento preparado.
+No transmite auth ni claim tokens por argumentos. Los locks del browser/capacidad
+se reclaman antes del lease; un 75 difiere al próximo timer. El optimizer mantiene
+los quince jugadores, sin chips/hits/transferencias, y preflight revalida el scope.
+El CLI `execute status` expone scope, relojes y prueba real por revisión.
+
+El resultado verificado compara también banco, transferencias realizadas, coste
+y estado de poderes con el pre-state sellado. Una pérdida de respuesta después
+de begin queda ambigua y requiere conciliación; el timer no repite Save.
+Un equipo deliberadamente conservado genera receipt `unchanged_verified` después
+de los checks completos. Sin receipt o save verificado, watchdog escala antes del
+deadline aunque el workflow indique `skipped_policy`.
+
+Esta implementación no promueve automáticamente la cuenta. La activación se
+registra mediante el CLI `control` con actor/razón; no editar envs ni SQLite para
+simular aprobación. Investigación y DR conservan su estado histórico. El criterio
+acotado de A2 y sus límites están en [ADR-014](../specs/fpl-autonomous-operator/decisions/ADR-014-bounded-lineup-delivery.md).
+
 HV1-07A/B introduce la frontera durable previa al browser. HV1-07C añade la reserva apply-once,
 lease, límite de ambigüedad y verificador post-reload. HV1-07D.3 conecta un driver host acotado a
 capitanía con fail-closed estricto. HV1-07D.4 añade el instruction stream tipado de XI/banca,

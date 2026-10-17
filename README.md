@@ -28,6 +28,13 @@ y la [guía de cierre, tamaños y límites](experiments/data_ground_truth/README
 
 ## Versiones y última comprobación
 
+Implementación candidata del 17 de octubre: dispatcher host `mova-fpl-delivery.timer`
+y scope `lineup-v1` conectan decisión y guardado R2 completo, independientes de la
+cadencia del collector. El scope conserva los quince jugadores y prohíbe
+transferencias, hits y chips. La prueba de CLI/host con browser fixture no
+equivale a Save real ni activa permisos. Ver [ADR-014](docs/specs/fpl-autonomous-operator/decisions/ADR-014-bounded-lineup-delivery.md)
+y el [runbook de ejecución](docs/operations/execution-preflight.md).
+
 El **10 de octubre UTC / 9 de octubre Colombia** se desplegó `dc5a2d8` para
 corregir un fallo del worker anterior al inicio de las deliberaciones. Las dos
 solicitudes pendientes se procesaron por el harness y la cola quedó sin anomalías.

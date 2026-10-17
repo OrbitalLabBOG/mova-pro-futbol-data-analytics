@@ -369,6 +369,12 @@ class TickRunner:
                     "age_seconds": age,
                     "max_age_seconds": max_age,
                 }
+        delivery_scope = (self.db.controls().get('delivery_scope') or {}).get('value')
+        if delivery_scope == 'lineup-v1':
+            if private_state_used is None:
+                return {'status': 'blocked', 'reason': 'delivery_requires_fresh_private_state'}
+            argv.remove('--chips')
+            argv.extend(['--delivery-scope', delivery_scope])
         result = harness.command(
             "shadow_decision", argv, timeout=self.config.decision_timeout_seconds,
             env=env, cwd=ROOT,
