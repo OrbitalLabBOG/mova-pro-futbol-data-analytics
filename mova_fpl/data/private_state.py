@@ -147,6 +147,10 @@ def seal(payload: dict, season: str, out_root: Path, *, expected_team_id: int) -
         "quality": quality,
     }
     manifest_raw = (json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode()
+    if dest.exists():
+        if (dest / 'team-state.json').read_bytes() == raw and (dest / 'manifest.json').read_bytes() == manifest_raw:
+            return dest, manifest, normalized
+        raise ValueError('private snapshot observation already sealed with different content')
     tmp = dest.with_name(dest.name + ".tmp")
     tmp.mkdir(parents=True, exist_ok=False)
     (tmp / "team-state.json").write_bytes(raw)

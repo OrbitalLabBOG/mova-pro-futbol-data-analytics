@@ -18,7 +18,7 @@ DRIVER_PLAN_SCHEMA = "mova-browser-r2-driver-plan-v1"
 DRIVER_CONTRACT_VERSION = "fpl-r2-host-driver-2026.10.2"
 R3_DRIVER_PLAN_SCHEMA = "mova-browser-r3-driver-plan-v1"
 R3_DRIVER_CONTRACT_VERSION = "fpl-r3-host-driver-2026.08.1"
-LINEUP_EXECUTION_PROMOTED = False
+LINEUP_EXECUTION_PROMOTED = True
 
 
 def driver_capabilities(rehearsals: dict | None = None) -> dict:
@@ -187,12 +187,11 @@ def _lineup_steps(ui_plan: dict, *, start: int) -> list[DriverStep]:
     return steps
 
 
-def compile_r2_driver_plan(ui_plan: dict, *, lineup_rehearsed: bool = False) -> dict:
+def compile_r2_driver_plan(ui_plan: dict, *, lineup_rehearsed: bool | None = None) -> dict:
     """Compile the promoted R2 subset into host instructions.
 
-    The compiler rejects any uncertainty before the host claims that the plan
-    is executable. Lineup support can be compiled for contract testing, but the
-    production caller cannot enable it until a separate rehearsal promotes it.
+    The host still requires an authorized plan, live lease and a matching private
+    state before dispatch. Compiling instructions never grants account authority.
     """
     if ui_plan.get("schema") != UI_ACTION_PLAN_SCHEMA:
         raise DriverPlanBlocked("UI_PLAN_SCHEMA_INVALID", "UI action plan incompatible")
@@ -200,6 +199,8 @@ def compile_r2_driver_plan(ui_plan: dict, *, lineup_rehearsed: bool = False) -> 
         raise DriverPlanBlocked("UI_PLAN_NOT_READY", "UI action plan no está ready")
     if not str(ui_plan.get("execution_id") or "").startswith("execution_"):
         raise DriverPlanBlocked("EXECUTION_ID_INVALID", "execution_id ausente o inválido")
+    if lineup_rehearsed is None:
+        lineup_rehearsed = LINEUP_EXECUTION_PROMOTED
     if ui_plan.get("swaps") and not lineup_rehearsed:
         raise DriverPlanBlocked(
             "LINEUP_DRIVER_UNPROVEN",

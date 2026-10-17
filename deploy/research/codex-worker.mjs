@@ -208,6 +208,15 @@ try {
     if (!permit || permit.authorization_id !== selectedPermit?.authorization_id) {
       throw new Error("attempt_not_authorized");
     }
+    if (isResearch && request.acceptance_contract) {
+      const contract = request.acceptance_contract;
+      if (contract.model !== model || contract.reasoning_effort !== reasoningEffort)
+        throw new Error("research_acceptance_routing_drift");
+      for (const [name, digest] of Object.entries(contract.worker_assets)) {
+        const actual = createHash("sha256").update(readFileSync(new URL(name, import.meta.url))).digest("hex");
+        if (actual !== digest) throw new Error("research_acceptance_worker_drift");
+      }
+    }
     const attemptId = `attempt_${randomUUID().replaceAll("-", "")}`;
     const researchContext = isResearch ? buildResearchContext(request) : null;
     const researchPrompt = [
@@ -315,7 +324,8 @@ try {
       "REQUEST_JSON:",
       JSON.stringify(request),
     ].join("\n");
-    const meteredPrompt = [
+    // Deliberation requests have an envelope, not a research manifest.
+    const meteredPrompt = isResearch ? [
       "Eres Researcher MOVA FPL: descubre cambios actuales de disponibilidad, minutos, rol y estrategia, incluyendo sorpresas fuera del foco.",
       `Faltan ${Math.max(0,Math.floor((Date.parse(request.manifest.deadline_at)-Date.parse(request.requested_at))/86400000))} días para el deadline. Si faltan más de 7, prioriza cambios estructurales tras la última GW: titularidad/banca, nuevos roles, balón parado, rotación, entrenador, fichajes y calendario; las noticias de aptitud de hoy no predicen disponibilidad en el deadline.`,
       "Reserva una rama de descubrimiento abierta sobre cambios de la liga que NO sean repetir las alertas de lesiones del manifiesto. Después elige dos dudas de alto impacto. Busca fuentes oficiales recientes y contrasta los hallazgos globales con el catálogo y memoria antes de concluir.",
@@ -347,7 +357,7 @@ try {
       "El objetivo 90/80 no autoriza exceder presupuesto: entrega evidencia útil parcial, conflictos y limitaciones honestas. Compara deltas con historia relevante.",
       "Devuelve solo el objeto del schema. Mantén notas breves y diferencia observaciones, hipótesis y limitaciones.",
       "REQUEST_JSON:", JSON.stringify(researchContext?.context),
-    ].join("\n");
+    ].join("\n") : null;
     const prompt = isResearch ? (release.execution === "app_server" ? meteredPrompt : researchPrompt) : deliberationPrompt;
     const finalTmp = join(outbox, `${runId}.final.tmp-${process.pid}.json`);
     const eventTmp = join(logs, `${runId}.${attemptId}.events.tmp-${process.pid}.jsonl`);

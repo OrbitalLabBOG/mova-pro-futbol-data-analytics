@@ -1,7 +1,7 @@
 ---
 type: docs
 name: MOVA Fantasy Fútbol Data Analytics
-updated: 2026-10-04
+updated: 2026-10-09
 status: active
 tags: [mova, fpl, runtime, operations]
 ---
@@ -27,6 +27,37 @@ ni promueve un modelo. Empezar por el [contrato del dataset](experiments/data_gr
 y la [guía de cierre, tamaños y límites](experiments/data_ground_truth/README.md#cierre-del-gate-de-datos-g112).
 
 ## Versiones y última comprobación
+
+Implementación candidata del 17 de octubre: dispatcher host `mova-fpl-delivery.timer`
+y scope `lineup-v1` conectan decisión y guardado R2 completo, independientes de la
+cadencia del collector. El scope conserva los quince jugadores y prohíbe
+transferencias, hits y chips. La prueba de CLI/host con browser fixture no
+equivale a Save real ni activa permisos. Ver [ADR-014](docs/specs/fpl-autonomous-operator/decisions/ADR-014-bounded-lineup-delivery.md)
+y el [runbook de ejecución](docs/operations/execution-preflight.md).
+
+El **10 de octubre UTC / 9 de octubre Colombia** se desplegó `dc5a2d8` para
+corregir un fallo del worker anterior al inicio de las deliberaciones. Las dos
+solicitudes pendientes se procesaron por el harness y la cola quedó sin anomalías.
+La captura autenticada posterior confirmó 15 jugadores y el mismo fingerprint.
+Doctor: **25 PASS, 0 WARN, 0 FAIL**. Suite: **2.027 passed, 1 skipped,
+79 deselected**. Se mantienen shadow/A0 y los
+límites existentes; los bloqueos de research y promoción siguen vigentes.
+[Acta de recuperación y verificación](docs/decisions/2026-27/deadline-worker-recovery-20261009.md).
+
+### Antecedente — release del 5 de octubre UTC
+
+El **5 de octubre, 04:07 UTC / 4 de octubre, 23:07 Colombia**, se desplegó
+`dcf98b8` ([PR #191](https://github.com/OrbitalLabBOG/mova-pro-futbol-data-analytics/pull/191)):
+validación de caché WhoScored, retries acotados del collector, sensor DR ligado
+a revisión/RPO, proyección completa del cockpit y reloj/timeout del driver R2.
+Doctor posterior **25 PASS, 0 WARN, 0 FAIL**; suite **1.972 passed, 1 skipped,
+79 deselected**. Restore externo renovado **8/8 en 425 s** y API **5/5 en 23 s**.
+El follow-up del probe de cancha divide la inspección en etapas CDP acotadas
+y arranca Chromium directamente en My Team. Los contratos nuevos DOM .10.1
+y R2 .10.2 requieren evidencia propia; no heredan pruebas de versiones
+anteriores. Consultar el acta para distinguir código candidato y SHA desplegado.
+
+### Antecedente — verificación física del 5 de octubre
 
 El **5 de octubre UTC / Colombia** se desplegó `acd84a9`
 ([PR #195](https://github.com/OrbitalLabBOG/mova-pro-futbol-data-analytics/pull/195)),

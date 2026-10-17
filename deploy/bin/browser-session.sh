@@ -54,7 +54,9 @@ start_browser() {
   # Compose may build/pull on first start and writes progress to stdout. Keep
   # stdout reserved for the machine-readable probe/collect payload.
   "${compose[@]}" up -d browser >&2
-  if [[ "$action" == collect || "$action" == probe ]]; then borrow_browser_cpu_if_owned; fi
+  if [[ "$action" == collect || "$action" == probe || "$action" == probe-transfers ]]; then
+    borrow_browser_cpu_if_owned
+  fi
   for _ in $(seq 1 45); do
     if curl -fsS http://127.0.0.1:${MOVA_NOVNC_PORT:-6080}/vnc.html >/dev/null 2>&1 \
       && "${compose[@]}" exec -T browser \

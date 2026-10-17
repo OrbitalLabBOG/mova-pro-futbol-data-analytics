@@ -238,9 +238,14 @@ cooldown 15/30 minutos, después cadencia normal. 403/auth, 429/cuota, calidad
 inválida y errores desconocidos conservan cadencia/escalamiento. Odds conserva
 su planner de cuota. No fuerces retries repetidos ni declares datos viejos frescos.
 
-El gate research sigue evaluando todas las GWs históricas medidas. ADR-011 es
-propuesta de cohorte prospectiva, no aprobada ni aplicada; tres nuevas GWs
-passing no satisfacen por sí solas la policy actual.
+ADR-011 fue aprobado por Julián el 9 de octubre de 2026 (Colombia).
+`mova strategy research coverage` conserva la auditoría histórica sin borrar fallos.
+Readiness usa `mova strategy acceptance status`: contrato inmutable registrado
+antes de inferencia, al menos tres GWs futuras concretas, primera corrida operativa
+por slot, 90 % cobertura, 80 % evidencia, cero conflictos aplicables y consumo exacto.
+Un fallo de intento o slot no se reemplaza por un éxito posterior. Experimentos no
+cuentan; deriva material requiere nueva aprobación y cohorte futura sin solapamiento.
+Registrar aceptación no promueve permisos ni concede escrituras.
 
 ## Fuentes de verdad
 

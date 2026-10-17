@@ -754,6 +754,40 @@ class OpsDB:
             "attempt": dict(attempt) if attempt else None,
         }
 
+    def latest_delivery_attempt(self, cycle_id: str) -> dict | None:
+        with self.connect(readonly=True) as con:
+            row = con.execute(
+                "SELECT a.*,COALESCE(json_extract(j.metrics_json,'$.delivery_proof'),0) AS is_delivery_proof "
+                "FROM execution_attempts a JOIN execution_plans p ON p.plan_id=a.plan_id "
+                "JOIN job_runs j ON j.job_id=a.job_id "
+                "WHERE p.cycle_id=? ORDER BY CASE WHEN a.status='verified' AND json_extract(j.metrics_json,'$.delivery_proof')=1 THEN 0 "
+                "WHEN a.status='verified' THEN 3 WHEN a.status='ambiguous' THEN 2 "
+                "WHEN a.status IN ('applying','claimed') THEN 1 ELSE 0 END DESC,a.created_at DESC,a.execution_id DESC LIMIT 1",
+                (cycle_id,),
+            ).fetchone()
+        return dict(row) if row else None
+
+    def latest_delivery_proof(self, revision: str) -> dict | None:
+        if not revision or revision == 'unknown':
+            return None
+        with self.connect(readonly=True) as con:
+            row = con.execute(
+                "SELECT a.execution_id,a.finished_at,j.metrics_json FROM execution_attempts a "
+                "JOIN job_runs j ON j.job_id=a.job_id WHERE a.status='verified' "
+                "AND json_extract(j.metrics_json,'$.delivery_scope')='lineup-v1' "
+                "AND json_extract(j.metrics_json,'$.git_sha')=? ORDER BY a.finished_at DESC LIMIT 1",
+                (revision,),
+            ).fetchone()
+        return dict(row) if row else None
+
+    def delivery_receipt(self, cycle_id: str) -> dict | None:
+        with self.connect(readonly=True) as con:
+            row = con.execute("SELECT * FROM job_runs WHERE job_type='delivery' AND cycle_id=? "
+                              "AND status='completed' AND json_extract(metrics_json,'$.status')='unchanged_verified' "
+                              "AND COALESCE(json_extract(metrics_json,'$.delivery_proof'),0)=0 "
+                              "ORDER BY finished_at DESC LIMIT 1", (cycle_id,)).fetchone()
+        return dict(row) if row else None
+
     def prepare_execution_attempt(self, *, plan: dict, job_id: str,
                                   execution_id: str, idempotency_key: str,
                                   adapter: str, command_path: str,
@@ -871,7 +905,7 @@ class OpsDB:
                                  evidence_sha256: str | None = None,
                                  result_sha256: str | None = None,
                                  error_code: str | None = None,
-                                 error_detail: str | None = None) -> dict:
+                                 error_detail: str | None = None, close_cycle: bool = True) -> dict:
         if status not in {"verified", "failed", "ambiguous", "blocked", "expired"}:
             raise ValueError(f"estado terminal inválido: {status}")
         with self.transaction() as con:
@@ -906,7 +940,7 @@ class OpsDB:
                 "SELECT cycle_id,decision_id FROM execution_plans WHERE plan_id=?",
                 (row["plan_id"],)
             ).fetchone()
-            if status == "verified":
+            if status == "verified" and close_cycle:
                 con.execute(
                     "UPDATE decision_runs SET status='executed_verified' WHERE decision_id=?",
                     (plan["decision_id"],),
@@ -2289,6 +2323,8 @@ class OpsDB:
                 (run_id, payload.get("job_id"), payload["cycle_id"], payload["manifest_id"],
                  payload["provider"], payload["request_path"], payload["request_sha256"], now),
             )
+            from mova_fpl.ops.research_acceptance import bind_first_run
+            bind_first_run(con, payload, now=now)
             self.append_audit(
                 "research_queued", actor="mova-research", cycle_id=payload["cycle_id"],
                 job_id=payload.get("job_id"), subject_type="research_run", subject_id=run_id,
@@ -3484,6 +3520,10 @@ class OpsDB:
                 "coverage": coverage,
             },
         }
+
+    def research_acceptance(self, config=None) -> dict:
+        from mova_fpl.ops.research_acceptance import acceptance_report
+        return acceptance_report(self, config)
 
     def research_coverage(self, *, limit: int = 20) -> dict:
         """Evaluate all latest cycle results; limit controls presentation only."""
@@ -4726,6 +4766,7 @@ class OpsDB:
                    "outbox_events", "chip_strategy_runs", "gameweek_settlements",
                    "gameweek_reviews", "change_proposals", "season_plans",
                    "cycle_manifests", "research_runs", "research_documents",
+                   "research_acceptance_cohorts", "research_acceptance_slots",
                    "research_signals", "research_conflicts", "cost_ledger",
                    "agent_budget_reservations", "agent_budget_overrun_events",
                    "agent_worker_attempt_events",
@@ -4754,6 +4795,7 @@ class OpsDB:
             "change_proposals": "created_at",
             "season_plans": "created_at", "cycle_manifests": "created_at",
             "research_runs": "queued_at", "research_documents": "observed_at",
+            "research_acceptance_cohorts": "registered_at", "research_acceptance_slots": "bound_at",
             "research_signals": "observed_at", "research_conflicts": "created_at",
             "cost_ledger": "occurred_at",
             "agent_budget_reservations": "created_at",

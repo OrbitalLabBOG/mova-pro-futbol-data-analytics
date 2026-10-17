@@ -815,6 +815,8 @@ def build_doctor(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
             "mova-fpl-research.timer",
             "mova-fpl-postgres-sync.timer",
         )
+        if (db.controls().get('delivery_scope') or {}).get('value') == 'lineup-v1':
+            expected_units += ('mova-fpl-delivery.timer',)
         bad_units = [name for name in expected_units
                      if (units.get(name) or {}).get("active_state") != "active"]
         host_fresh = host.get("age_seconds") is not None and host["age_seconds"] <= 600

@@ -264,7 +264,8 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
                       "passing_gameweeks": research_coverage.get("passing_gameweeks")},
             required={"status": "passed", "minimum_gameweeks": required_research},
             source="mova strategy research coverage",
-            next_action="importar briefs v2 válidos hasta completar 3 jornadas medidas",
+            next_action="registrar contrato ADR-011 antes de inferencia y completar todas sus GWs; "
+                        "consultar strategy acceptance status (historial: research coverage)",
         ),
         _gate(
             "NO_OPEN_P0_P1",
@@ -515,6 +516,19 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
         ),
     ]
 
+    if controls.get('delivery_scope') == 'lineup-v1':
+        # ADR-014: retain all historical diagnostics, but qualify the bounded
+        # baseline/save path by its own physical proof, not LLM acceptance.
+        for gate in gates:
+            if gate['code'] in {'RESEARCH_EVIDENCE_CALIBRATED', 'HOST_RECOVERY_DRILLS_PROVEN',
+                                'CAPTAINCY_DRIVER_PROVEN', 'LINEUP_DRIVER_PROVEN'}:
+                gate['required_for'] = [x for x in gate['required_for'] if x == 'A3']
+        proof = (execution_status.get('delivery') or {}).get('live_proof')
+        gates.append(_gate('BOUNDED_LINEUP_SAVE_PROVEN', 'pass' if proof else 'pending',
+                           'guardado R2 real verificado en la revisión vigente', levels=('A2',),
+                           observed=proof, required='verified post-reload including finance/chips',
+                           source='execution_attempts + execution_prepare job metrics',
+                           next_action='completar el primer guardado acotado y verificar estado privado'))
     eligible = "A0"
     for candidate in LEVELS[1:]:
         required = [gate for gate in gates if candidate in gate["required_for"]]
@@ -524,8 +538,13 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
             break
     counts = {state: sum(gate["status"] == state for gate in gates)
               for state in ("pass", "pending", "blocked")}
+    scoped_delivery = controls.get('delivery_scope') == 'lineup-v1'
+    if scoped_delivery and eligible == 'A3':
+        eligible = 'A2'
     current_level = str(controls.get("action_level") or "A0")
     activation = {
+        'delivery_scope': controls.get('delivery_scope'),
+        'scope_ready': scoped_delivery and eligible == 'A2',
         "current_action_level": current_level,
         "technical_eligible_level": eligible,
         "promotion_is_automatic": False,
@@ -572,7 +591,7 @@ def build_readiness(config: RuntimeConfig, db: OpsDB, *,
     fingerprint = current_channel.get("destination_fingerprint")
     return evaluate_readiness(
         operator_status=status,
-        research_coverage=db.research_coverage(),
+        research_coverage=db.research_acceptance(config),
         execution_status=ExecutionService(config, db).status(),
         resilience_evidence=db.resilience_drill_status(),
         orchestration_evidence=db.orchestration_drill_status(),

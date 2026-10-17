@@ -351,3 +351,50 @@ for line in sys.stdin:
     assert json.loads(context_json)['acquisition_plan']['focus_subjects'] == 1
     assert len(list((tmp_path / 'receipts').glob('*.started.json'))) == 1
     assert len(list((tmp_path / 'receipts').glob('*.finished.json'))) == 1
+
+
+@pytest.mark.parametrize("worker_exit", [0, 1])
+def test_deliberation_without_research_manifest_reaches_worker_and_records_attempt(tmp_path, worker_exit):
+    """A valid deliberation has an envelope, never a research manifest."""
+    from datetime import datetime, timedelta, timezone
+
+    run_id = "deliberation_" + "a" * 32
+    authorization_id = "agentauth_" + "c" * 32
+    request = {"schema": "mova-decision-deliberation-request-v1",
+               "deliberation_id": run_id, "request_sha256": "b" * 64,
+               "cycle_id": "2026-27-gw06", "envelope_id": "envelope_test",
+               "envelope": {"blocking_codes": ["POLICY_BLOCKED"]}}
+    expiry = (datetime.now(timezone.utc) + timedelta(minutes=5)).isoformat()
+    permit = {"schema": "mova-agent-attempt-permit-v1",
+              "authorization_id": authorization_id, "subject_type": "deliberation",
+              "subject_id": run_id, "request_sha256": "b" * 64,
+              "attempt_number": 1, "deadline_at": expiry, "expires_at": expiry,
+              "budget_snapshot_sha256": "d" * 64}
+    for name in ("inbox", "permits", "bin"):
+        (tmp_path / name).mkdir()
+    (tmp_path / "inbox" / f"{run_id}.request.json").write_text(json.dumps(request))
+    (tmp_path / "permits" / f"{run_id}.{authorization_id}.permit.json").write_text(json.dumps(permit))
+    fake = tmp_path / "bin" / "codex"
+    fake.write_text("#!/usr/bin/env python3\n"
+                    "import sys, json, os\n"
+                    "from pathlib import Path\n"
+                    "Path(os.environ['MOVA_TEST_PROMPT']).write_text(sys.stdin.read())\n"
+                    "if os.environ['MOVA_TEST_EXIT'] == '0':\n"
+                    " Path(sys.argv[sys.argv.index('--output-last-message')+1]).write_text('{}')\n"
+                    "sys.exit(int(os.environ['MOVA_TEST_EXIT']))\n")
+    fake.chmod(0o755)
+    prompt_path = tmp_path / "prompt"
+    result = subprocess.run(["node", str(ROOT / "deploy/research/codex-worker.mjs")],
+        env={**os.environ, "PATH": str(tmp_path / "bin") + ":" + os.environ["PATH"],
+             "MOVA_RESEARCH_ROOT": str(tmp_path), "MOVA_TEST_PROMPT": str(prompt_path),
+             "MOVA_TEST_EXIT": str(worker_exit)}, text=True, capture_output=True)
+    assert result.returncode == worker_exit, result.stderr
+    prompt = prompt_path.read_text()
+    assert "Strategist y Critic" in prompt
+    assert json.loads(prompt.split("REQUEST_JSON:\n", 1)[1]) == request
+    assert len(list((tmp_path / "receipts").glob("*.started.json"))) == 1
+    terminal = json.loads(next((tmp_path / "receipts").glob("*.finished.json")).read_text())
+    assert terminal["status"] == ("succeeded" if worker_exit == 0 else "failed")
+    assert terminal["authorization_id"] == authorization_id
+    assert not (tmp_path / ".codex-worker.lock").exists()
+    assert (tmp_path / "outbox" / f"{run_id}.result.json").exists() == (worker_exit == 0)

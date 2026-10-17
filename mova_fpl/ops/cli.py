@@ -186,6 +186,12 @@ def parser() -> argparse.ArgumentParser:
     plan.add_argument("--file", required=True)
     plan.add_argument("--actor", required=True)
     plan.add_argument("--reason", required=True)
+    acceptance = strategy_commands.add_parser("acceptance", help="cohorte prospectiva ADR-011")
+    acceptance.add_argument("operation", choices=("contract", "register", "status"))
+    acceptance.add_argument("--file")
+    acceptance.add_argument("--actor")
+    acceptance.add_argument("--reason")
+    acceptance.add_argument("--idempotency-key")
     research = strategy_commands.add_parser("research", help="opera la cola de investigación")
     research.add_argument("operation", choices=("due", "coverage", "enqueue", "experiment", "reconcile-experiment", "import", "resolve-conflict"))
     research.add_argument("--agent-version", action="append")
@@ -249,6 +255,11 @@ def parser() -> argparse.ArgumentParser:
     preflight.add_argument("--actor", required=True)
     preflight.add_argument("--reason", required=True)
     preflight.add_argument("--idempotency-key", required=True)
+    dispatch = execute_commands.add_parser("dispatch", help="prepare a bounded scheduled delivery")
+    dispatch.add_argument("--actor", required=True)
+    dispatch.add_argument("--reason", required=True)
+    dispatch.add_argument("--check-only", action="store_true")
+    dispatch.add_argument("--proof", action="store_true", help="requires a cycle-bound owner approval expiring within one hour")
     prepare_execution = execute_commands.add_parser(
         "prepare", help="reserva una ejecución apply-once autorizada"
     )
@@ -684,6 +695,19 @@ def main(argv: list[str] | None = None) -> int:
                 json.loads(Path(args.file).read_text(encoding="utf-8")),
                 actor=args.actor, reason=args.reason,
             )
+        elif args.strategy_command == "acceptance":
+            from mova_fpl.ops.research_acceptance import current_contract, register_cohort
+            db.migrate()
+            if args.operation == "contract":
+                payload = current_contract(config)
+            elif args.operation == "register":
+                if not args.file:
+                    raise ValueError("acceptance register exige --file")
+                payload = register_cohort(db, config,
+                    json.loads(Path(args.file).read_text(encoding="utf-8")),
+                    actor=args.actor, reason=args.reason, idempotency_key=args.idempotency_key)
+            else:
+                payload = db.research_acceptance(config)
         elif args.strategy_command == "deliberate":
             from mova_fpl.ops.deliberation import DecisionDeliberationService
 
@@ -785,6 +809,10 @@ def main(argv: list[str] | None = None) -> int:
                 actor=args.actor, reason=args.reason,
                 idempotency_key=args.idempotency_key,
             )
+        elif args.execute_command == "dispatch":
+            from mova_fpl.ops.delivery import DeliveryService
+            payload = DeliveryService(config, db).dispatch(
+                actor=args.actor, reason=args.reason, check_only=args.check_only, proof=args.proof)
         elif args.execute_command == "prepare":
             payload = service.prepare(
                 plan_id=args.plan_id, adapter=args.adapter, actor=args.actor,
@@ -825,6 +853,9 @@ def main(argv: list[str] | None = None) -> int:
                     error_detail=args.error_detail,
                 )
         print(json.dumps(payload, ensure_ascii=False, default=str))
+        if args.execute_command == 'dispatch':
+            # Blocked/not-due is an expected scheduled observation, not a failed unit.
+            return 0
         return 2 if payload.get("status") in {"ambiguous", "failed", "blocked"} else 0
 
     db = OpsDB(config.ops_db, minimum_version=config.sqlite_min_version)

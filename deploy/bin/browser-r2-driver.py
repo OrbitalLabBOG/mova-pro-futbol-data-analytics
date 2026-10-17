@@ -226,7 +226,7 @@ def main() -> int:
     try:
         ui_plan = json.loads(Path(args.ui_plan).read_text(encoding="utf-8"))
         driver_plan = compile_r2_driver_plan(
-            ui_plan, lineup_rehearsed=args.validate_lineup_contract_only,
+            ui_plan, lineup_rehearsed=True if args.validate_lineup_contract_only else None,
         )
     except (OSError, ValueError, TypeError, KeyError, DriverPlanBlocked) as exc:
         _emit(

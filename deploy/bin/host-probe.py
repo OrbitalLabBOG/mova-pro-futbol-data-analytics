@@ -19,6 +19,8 @@ UNITS = (
     "mova-fpl-stack.service",
     "mova-fpl-tick.service",
     "mova-fpl-tick.timer",
+    "mova-fpl-delivery.service",
+    "mova-fpl-delivery.timer",
     "mova-fpl-private-state.service",
     "mova-fpl-private-state.timer",
     "mova-fpl-backup.service",
@@ -99,7 +101,10 @@ def compose_services(repo: Path) -> dict:
 def api_ready(port: int) -> bool:
     try:
         request = urllib.request.Request(f"http://127.0.0.1:{port}/readyz", method="GET")
-        with urllib.request.urlopen(request, timeout=3) as response:
+        # /readyz performs database integrity checks; observed healthy responses
+        # take 2-4s under normal worker load. Keep the wait bounded without
+        # replacing the integrity result with container liveness.
+        with urllib.request.urlopen(request, timeout=8) as response:
             return response.status == 200
     except (OSError, urllib.error.URLError):
         return False

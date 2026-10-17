@@ -13,6 +13,7 @@ import math
 from datetime import datetime, timezone
 
 from mova_fpl.ops.schedule import private_state_cadence_seconds
+from mova_fpl.ops.delivery_policy import lineup_proof
 
 SCHEMA = "mova-decision-envelope-v1"
 POLICY_VERSION = "decision-envelope-1.0.0"
@@ -238,6 +239,12 @@ def build_envelope(*, bundle: dict, manifest: dict, manifest_id: str,
         raise ValueError("bundle de candidatos ausente o incompatible")
     selected = _selected(bundle)
     decision = selected["decision"]
+    scoped_baseline = (controls.get('delivery_scope') == 'lineup-v1'
+                       and bundle.get('engine', {}).get('delivery_scope') == 'lineup-v1'
+                       and not decision.get('transfers_in') and not decision.get('transfers_out')
+                       and not decision.get('hits') and not decision.get('chip'))
+    proof = scoped_baseline and lineup_proof(controls, str(manifest.get('cycle_id')),
+                                             _parse_time(manifest['as_of_at']))
     candidates = list(bundle.get("candidates") or [])
     keys = {str(item.get("candidate_key")) for item in candidates}
     checks: list[dict] = []
@@ -286,7 +293,7 @@ def build_envelope(*, bundle: dict, manifest: dict, manifest_id: str,
     event_context = dict(bundle.get("event_context") or {})
     prior_ready = not bool(event_context.get("preliminary"))
     checks.append(_check(
-        "PRIOR_GAMEWEEK_SETTLED", prior_ready, "block",
+        "PRIOR_GAMEWEEK_SETTLED", prior_ready, "warning" if proof else "block",
         "la jornada previa está finished y data_checked",
         reasons=event_context.get("readiness_reasons") or [],
         prior_gw=event_context.get("prior_gw"),
@@ -321,7 +328,7 @@ def build_envelope(*, bundle: dict, manifest: dict, manifest_id: str,
         and int(analytics.get("player_count") or 0) > 0
     )
     checks.append(_check(
-        "ANALYTICS_APPROVED_CAUSAL", analytics_ready, "block",
+        "ANALYTICS_APPROVED_CAUSAL", analytics_ready, "warning" if proof else "block",
         "hay una proyección aprobada y causal para la jornada",
         batch_id=analytics.get("batch_id"), status=analytics.get("status"),
         target_gw=analytics.get("target_gw"), cutoff_at=analytics.get("cutoff_at"),
@@ -329,8 +336,16 @@ def build_envelope(*, bundle: dict, manifest: dict, manifest_id: str,
 
     research = dict(manifest.get("research_summary") or {})
     conflicts = int(research.get("unresolved_conflicts") or 0)
+    if proof:
+        engine = bundle.get('engine') or {}
+        checks.append(_check('PROVISIONAL_LINEUP_MODELS_PRESENT',
+                             bool(engine.get('points_model_version')) and bool(engine.get('minutes_model_version')),
+                             'block', 'provisional R2 proof uses the sealed baseline models; not a settled projection'))
+    if controls.get('delivery_scope') == 'lineup-v1':
+        checks.append(_check('DELIVERY_BASELINE_SCOPE', scoped_baseline, 'block',
+                             'bounded official baseline is sealed without LLM interventions or R3 changes'))
     checks.append(_check(
-        "RESEARCH_CONFLICTS_CLEAR", conflicts == 0, "block",
+        "RESEARCH_CONFLICTS_CLEAR", conflicts == 0, "warning" if scoped_baseline else "block",
         "no quedan conflictos materiales de research sin resolver",
         unresolved_conflicts=conflicts,
     ))
