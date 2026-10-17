@@ -102,7 +102,7 @@ def evaluate_workflow_deadline(workflow: dict, *, seconds_to_deadline: int | Non
                     "stage": name, "status": row.get("status"),
                     "outcome": row.get("outcome"),
                 })
-    if seconds_to_deadline is not None and execution.get("status") == "pending":
+    if not delivery_required and seconds_to_deadline is not None and execution.get("status") == "pending":
         target, _, hard_stop = WORKFLOW_MILESTONES["execute_verify"]
         if seconds_to_deadline <= hard_stop:
             reasons.append({

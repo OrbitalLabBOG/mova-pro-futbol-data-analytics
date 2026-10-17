@@ -116,6 +116,27 @@ def _risk_and_diff(envelope: dict) -> tuple[str, dict]:
     return ("R3" if irreversible else "R2" if reversible else "R0"), diff
 
 
+def blocking_execution_incidents(incidents: list[dict], *, controls: dict,
+                                cycle_id: str, risk_class: str) -> list[dict]:
+    """Keep the missed-receipt P1 visible without blocking its bounded recovery."""
+    blocking = []
+    for row in incidents:
+        recoverable = False
+        if (controls.get('delivery_scope') == 'lineup-v1' and risk_class in {'R0', 'R2'}
+                and row.get('cycle_id') == cycle_id and row.get('severity') == 'P1'
+                and row.get('title') == 'Autonomous cycle deadline risk'):
+            try:
+                reasons = json.loads(row.get('detail_json') or '{}').get('reasons')
+                recoverable = isinstance(reasons, list) and bool(reasons) and all(
+                    isinstance(reason, dict) and reason.get('code') == 'bounded_team_delivery_not_verified'
+                    and reason.get('severity') == 'P1' for reason in reasons)
+            except (ValueError, TypeError, AttributeError):
+                pass
+        if not recoverable:
+            blocking.append(row)
+    return blocking
+
+
 def build_execution_plan(*, envelope: dict, envelope_row: dict, manifest_row: dict,
                          team_state: dict | None, controls: dict,
                          open_high_incidents: list[dict], prior_execution: dict | None,
@@ -145,6 +166,8 @@ def build_execution_plan(*, envelope: dict, envelope_row: dict, manifest_row: di
     proof = risk_class in {'R0','R2'} and lineup_proof(controls, envelope['cycle_id'], now)
     if proof:
         freshness_limit = min(freshness_limit, 300)
+    blocking_incidents = blocking_execution_incidents(open_high_incidents, controls=controls,
+        cycle_id=envelope['cycle_id'], risk_class=risk_class)
     checks = [
         _check("ENVELOPE_ARTIFACT_VERIFIED", True,
                "el artifact coincide con el registro y su hash de contenido",
@@ -181,9 +204,11 @@ def build_execution_plan(*, envelope: dict, envelope_row: dict, manifest_row: di
             "execute_verify", deadline,
         )["hard_stop_at"]), "la ejecución conserva el margen de hard stop del workflow",
                hard_stop_at=workflow_stage_timing("execute_verify", deadline)["hard_stop_at"]),
-        _check("NO_OPEN_P0_P1", not open_high_incidents,
-               "no existen incidentes P0/P1 abiertos",
-               incidents=[row.get("incident_id") for row in open_high_incidents]),
+        _check("NO_OPEN_P0_P1", not blocking_incidents,
+               "no existen incidentes P0/P1 que impidan esta ejecución",
+               incidents=[row.get("incident_id") for row in blocking_incidents],
+               recoverable_delivery_alerts=[row.get('incident_id') for row in open_high_incidents
+                                           if row not in blocking_incidents]),
         _check("KILL_SWITCH_OFF", controls.get("kill_switch") is False,
                "el kill switch permite ejecución"),
         _check("BROWSER_WRITES_ENABLED", controls.get("browser_writes") is True,
@@ -759,7 +784,8 @@ class ExecutionService:
             blockers.append("MODE_NOT_AUTONOMOUS")
         if observed not in ACTION_LEVELS or ACTION_LEVELS[observed] < ACTION_LEVELS[required]:
             blockers.append("ACTION_LEVEL_INSUFFICIENT")
-        if source.get("open_high_incidents"):
+        if blocking_execution_incidents(source.get('open_high_incidents') or [], controls=controls,
+                                        cycle_id=row['cycle_id'], risk_class=plan['action']['risk_class']):
             blockers.append("OPEN_P0_P1")
         state = source.get("team_state")
         if not state or state.get("quality_status") != "valid":
