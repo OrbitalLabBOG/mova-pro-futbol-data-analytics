@@ -213,7 +213,7 @@ def parser() -> argparse.ArgumentParser:
     acceptance.add_argument("--reason")
     acceptance.add_argument("--idempotency-key")
     research = strategy_commands.add_parser("research", help="opera la cola de investigación")
-    research.add_argument("operation", choices=("due", "coverage", "enqueue", "experiment", "reconcile-experiment", "import", "resolve-conflict"))
+    research.add_argument("operation", choices=("due", "coverage", "progress", "enqueue", "experiment", "reconcile-experiment", "import", "resolve-conflict"))
     research.add_argument("--agent-version", action="append")
     research.add_argument("--run-id")
     research.add_argument("--conflict-id")
@@ -779,6 +779,8 @@ def main(argv: list[str] | None = None) -> int:
         elif args.operation == "experiment":
             payload = service.enqueue_experiment(versions=args.agent_version or ["1.0.0", "1.1.0"],
                 actor=args.actor, reason=args.reason, idempotency_key=args.idempotency_key)
+        elif args.operation == "progress":
+            payload = service.campaign_progress()
         elif args.operation == "coverage":
             payload = db.research_coverage()
         elif args.operation == "resolve-conflict":

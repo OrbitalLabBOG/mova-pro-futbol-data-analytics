@@ -20,7 +20,7 @@ from mova_fpl.ops.agent_releases import researcher_release
 from mova_fpl.ops.db import OpsDB, canonical_json, new_id, sha256_json, utcnow
 from mova_fpl.ops.schedule import phase_for, agent_window
 from mova_fpl.ops.research_evidence import SafeEvidenceFetcher, canonical_public_url
-from mova_fpl.ops.research_quality import claim_fresh, claim_supported, subject_in_excerpt
+from mova_fpl.ops.research_quality import claim_fresh, claim_supported, subject_in_excerpt, research_identity_catalog
 
 MAX_RESULT_BYTES = 1_048_576
 CLAIM_TYPES = {
@@ -210,6 +210,31 @@ class StrategicContextService:
             )
         except Exception:
             return {"status": "degraded", "catalog": [], "alerts": []}
+
+    def _research_work_progress(self, cycle_id: str, focus: list[dict], now: datetime) -> dict:
+        """Read the last independently imported result; ordering hints are not evidence."""
+        with self.db.connect(readonly=True) as con:
+            row = con.execute(
+                "SELECT research_run_id,coverage_json,imported_at FROM research_runs r "
+                "WHERE cycle_id=? AND status='imported' AND imported_at<=? "
+                "AND NOT EXISTS (SELECT 1 FROM audit_events a WHERE a.subject_id=r.research_run_id "
+                "AND a.event_type IN ('research_experiment_enqueued','research_experiment_completed')) "
+                "ORDER BY imported_at DESC,rowid DESC LIMIT 1", (cycle_id, now.isoformat()),
+            ).fetchone()
+        elements = {int(item["element"]) for item in focus}
+        verified = set()
+        if row:
+            try:
+                subjects = json.loads(row["coverage_json"])["subjects"]
+                verified = {int(item["player_element"]) for item in subjects
+                            if item.get("evidence_verified") and item.get("status") != "unresolved"}
+            except (ValueError, TypeError, KeyError):
+                pass
+        return {"schema": "mova-research-work-progress-v1",
+                "previous_run_id": row["research_run_id"] if row else None,
+                "needs_checking_elements": sorted(elements - verified),
+                "previously_verified_elements": sorted(elements & verified),
+                "evidence_must_be_revalidated": True, "final_acceptance": False}
 
     def _recent_research_evidence(self, *, cycle_id: str, focus: list[dict],
                                   now: datetime) -> list[dict]:
@@ -531,6 +556,7 @@ class StrategicContextService:
                 "prior_gameweek_signals": [dict(row) for row in cross_gw_signal_rows],
                 "world": research_world,
                 "reusable_evidence_hints": reusable_evidence,
+                "work_progress": self._research_work_progress(cycle_id, research_focus, current),
             },
             "memory_summary": memory_summary,
         }
@@ -575,7 +601,8 @@ class StrategicContextService:
             )
         with self.db.connect(readonly=True) as con:
             latest = con.execute(
-                "SELECT status,queued_at,imported_at FROM research_runs r WHERE cycle_id=? "
+                "SELECT research_run_id,status,queued_at,imported_at,coverage_status,coverage_ratio,evidence_ratio "
+                "FROM research_runs r WHERE cycle_id=? "
                 "AND NOT EXISTS (SELECT 1 FROM audit_events a WHERE a.subject_id=r.research_run_id "
                 "AND a.event_type IN ('research_experiment_enqueued','research_experiment_completed')) "
                 "ORDER BY queued_at DESC LIMIT 1", (cycle["cycle_id"],),
@@ -593,6 +620,26 @@ class StrategicContextService:
                 return {"due": False, "reason": "previous_run_not_terminal",
                         "latest_status": latest["status"], "deadline_seconds": seconds,
                         "run_kind": run_kind}
+        _, release = researcher_release()
+        continuation_policy = release.get("continuation_policy")
+        if attempted_in_slot and continuation_policy:
+            from mova_fpl.ops.research_campaign import continuation_gate
+            with self.db.connect(readonly=True) as con:
+                count = con.execute(
+                    "SELECT COUNT(*) FROM research_runs r WHERE cycle_id=? AND queued_at>=? "
+                    "AND NOT EXISTS (SELECT 1 FROM audit_events a WHERE a.subject_id=r.research_run_id "
+                    "AND a.event_type IN ('research_experiment_enqueued','research_experiment_completed'))",
+                    (cycle["cycle_id"], slot_start.isoformat()),
+                ).fetchone()[0]
+            budget_policy = self.config.agent_budget_policy()
+            gate = continuation_gate(
+                latest=dict(latest), slot_attempts=count, run_kind=run_kind, now=current,
+                policy=continuation_policy,
+                budget=self.db.cost_report(budget_policy, season=cycle["season"], gw=cycle["gw"]),
+                job_tokens=budget_policy["job_tokens"],
+            )
+            return {**gate, "cycle_id": cycle["cycle_id"], "run_kind": run_kind,
+                    "deadline_seconds": seconds, "slot_started_at": slot_start.isoformat()}
         if attempted_in_slot:
             return {
                 "due": False, "reason": "slot_already_attempted",
@@ -607,6 +654,42 @@ class StrategicContextService:
             "slot_started_at": slot_start.isoformat(),
         }
 
+    def campaign_progress(self) -> dict:
+        """Expose work and evidence separately; experiments never replace operational quality."""
+        cycle = self.db.status().get("cycle")
+        if not cycle:
+            return {"schema":"mova-research-campaign-status-v1","items":[],
+                    "next_dispatch":{"due":False,"reason":"no_cycle"},"final_acceptance":False}
+        with self.db.connect(readonly=True) as con:
+            runs = con.execute(
+                "SELECT research_run_id,status,queued_at,imported_at,coverage_ratio,evidence_ratio "
+                "FROM research_runs WHERE cycle_id=? ORDER BY queued_at DESC LIMIT 8",
+                (cycle["cycle_id"],),
+            ).fetchall()
+        items = []
+        logs = self.config.research_root / "logs"
+        for run in runs:
+            row = dict(run)
+            run_id = row["research_run_id"]
+            if not re.fullmatch(r"research_[0-9a-f]{32}", run_id):
+                continue
+            candidates = sorted(logs.glob(run_id+".*.progress.json"), key=lambda p:p.stat().st_mtime, reverse=True)
+            row["progress"] = None
+            if candidates:
+                path = candidates[0]
+                if path.is_symlink() or path.stat().st_size > 262144:
+                    row["progress_error"] = "unsafe_progress_artifact"
+                else:
+                    value = json.loads(path.read_text())
+                    if value.get("run_id") != run_id:
+                        row["progress_error"] = "progress_binding_mismatch"
+                    else:
+                        row["progress"] = value
+            items.append(row)
+        return {"schema":"mova-research-campaign-status-v1", "cycle_id":cycle["cycle_id"],
+                "items":items, "next_dispatch":self.due(), "final_acceptance":False,
+                "note":"assessed subjects are work performed; only importer quality counts as accepted coverage"}
+
     def enqueue(self, *, force: bool = False, actor: str = "mova-research",
                 reason: str | None = None, idempotency_key: str | None = None,
                 _experiment: dict | None = None, _prepared: dict | None = None) -> dict:
@@ -620,6 +703,13 @@ class StrategicContextService:
             if force else None
         )
         if deterministic_id:
+            existing = self.db.research_run(deterministic_id)
+            if existing:
+                return {**existing, "reused": True, "due": assessment}
+        if assessment.get("continuation_of") and deterministic_id is None:
+            deterministic_id = "research_" + hashlib.sha256(
+                ("continuation:" + assessment["continuation_of"]).encode()
+            ).hexdigest()[:32]
             existing = self.db.research_run(deterministic_id)
             if existing:
                 return {**existing, "reused": True, "due": assessment}
@@ -661,6 +751,12 @@ class StrategicContextService:
         request["quality_policy"] = definition["quality_policy"]
         if definition.get("discovery_profile") == "expanded_broad_v1" and run_kind in {"broad", "forced"}:
             request["scope_policy"] |= {"max_web_queries": 16, "max_documents": 16}
+        if definition.get("completion_campaign"):
+            clubs = {row.get("team") or "unknown:"+str(row["element"])
+                     for row in manifest["research_summary"]["focus"]}
+            # A delta slot still has to inspect every club in its sealed focus.
+            request["scope_policy"] |= {"max_web_queries": min(32, len(clubs)*2),
+                                        "max_documents": 32}
         if _experiment:
             request["experiment"] = _experiment
             request["agent_version"] = _experiment["agent_version"]
@@ -677,6 +773,8 @@ class StrategicContextService:
             "request_path": str(request_path), "request_sha256": request_sha,
             "experiment": _experiment,
             "acceptance_contract": acceptance_contract,
+            "continuation_of": assessment.get("continuation_of") if not force else None,
+            "continuation_future_jobs": assessment.get("future_jobs_preserved") if not force else None,
             "budget_policy": self.config.agent_budget_policy(),
         })
         if result.get("status") == "blocked":
@@ -822,8 +920,7 @@ class StrategicContextService:
         by_url = {item["source_url"]: item for item in documents}
         catalog_rows = (request.get("manifest", {}).get("research_summary", {})
                         .get("world", {}).get("catalog", []))
-        catalog = {int(row[0]): str(row[1]) for row in catalog_rows
-                   if isinstance(row, list) and len(row) >= 2}
+        catalog = research_identity_catalog(request)
         catalog_name_counts: dict[str, int] = {}
         for name in catalog.values():
             key = name.casefold()

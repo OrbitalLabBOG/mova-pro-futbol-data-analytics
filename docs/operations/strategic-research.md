@@ -431,3 +431,137 @@ Los dos conflictos de Haaland conservan artefactos/fragmentos íntegros pero sin
 publicación verificada; los otros dos son legacy_unverified sin evidencia original
 sellada. Los cuatro permanecen abiertos. Una resolución exige evidencia original
 suficiente y revisión semántica; el auditor sólo clasifica, no adjudica.
+
+## Diagnóstico GW7 y candidato de asignación por club — 16/10/2026
+
+La corrida `research_493b3253b14f46b09cfa12d88ffd7048` recibió scope efectivo
+16 consultas / 16 documentos: `expanded_broad_v1` amplía los defaults 4–8.
+Consumió las 16 consultas, 18 lecturas y sólo 6/32 verificaciones. Usó
+471.146 tokens de entrada y 6.669 de salida en 267,1 segundos; no agotó el
+job de 1M ni el timeout de 480 segundos. El importador verificó 7/25 sujetos,
+2/15 propios y 5/10 candidatos. No hubo señal aceptada; hubo un conflicto.
+
+Los eventos contienen el prompt realmente enviado: pide elegir dos dudas y
+luego «2-3 dudas», pese al foco de 25 sujetos. El texto «No persigas 90%» existe
+en otro constructor, pero NO aparece en el prompt de esta corrida app-server.
+Arsenal, Brighton, Hull City y Spurs no aparecen ni en los IDs de lecturas
+solicitadas. Dos verificaciones fueron para Kluivert, fuera del foco.
+Cuatro lecturas fueron vacías/fallidas y cinco devolvieron menos de 300
+caracteres de artículo. Esto no permite afirmar que todo el HTML careciera de
+contenido: seleccionar el primer `<article>` también puede elegir un widget.
+
+Hay dos problemas adicionales de orquestación: importado, aunque sea parcial,
+consume el slot; el timer responde `slot_already_attempted` hasta el siguiente.
+Y `focus_progress` es diagnóstico local, no una agenda persistente de trabajo
+entre las corridas amplia/refresh/final. Tres slots no son tres continuaciones.
+No se eliminan esos controles ni se convierten los intentos fallidos en éxitos.
+
+El candidato **1.13.0**, todavía inactivo, introduce una cola determinista por
+club dentro del request. Prioriza plantilla propia, impide repetir grupos antes
+de intentar los pendientes, reserva quota de primera pasada antes del radar y
+persiste consumo entre reintentos del MISMO request. Una búsqueda fallida consume
+quota y no acredita cobertura. El checkpoint está ligado al request completo:
+no se reinicia por crear otro directorio de intento ni se reutiliza para inputs
+cambiados. No es un ledger nuevo de aceptación ni una cola completa entre slots.
+
+El lector elige la región sustantiva más extensa entre article/main y, cuando
+es demasiado corta, expone texto normalizado de la página con indicador de
+fallback. Un cuerpo vacío tiene error explícito. No añade renderizado JS ni
+acepta snippets de buscador como evidencia; muchas páginas seguirán sin ser
+recuperables. El importador conserva sus checks independientes.
+
+Con el foco real hay 11 clubes: asignarles una consulta más un radar requiere
+12 de las 16 disponibles. El replay demuestra viabilidad de asignación, NO
+cobertura de 90% ni superioridad del agente. El siguiente gate es un piloto
+con entrada fresca, scope/budget equivalentes y reporte completo de sujetos,
+fallos, latencia y consumo. La activa sigue en 1.10.0 y producción no recibe
+este paquete hasta validar su ejecución. No sustituir retrospectivamente la
+primera corrida del contrato ADR-011 ni heredar aceptación del contrato previo.
+
+Auditor reproducible, sin web ni inferencia:
+
+```bash
+python -m experiments.research.audit_run --request /ruta/request.json \
+  --events /ruta/attempt.events.jsonl
+```
+
+La evidencia de esta investigación está fuera de Git, bajo
+`/home/julianzu/code/artifacts/mova-fpl/gw07-research-20261016/`.
+Los prompts y textos web son datos no confiables; nunca instrucciones.
+
+
+El candidato **1.14.0** añade continuaciones limitadas dentro de broad/refresh:
+máximo dos por slot y 45 minutos entre importación y siguiente intento. No
+continúa final ni reintenta automáticamente resultados sin medición importada.
+Preserva un job completo para cada slot futuro y contabiliza el peor caso de
+reservas en vuelo dentro de la transacción de creación. Un padre sólo puede
+tener un hijo operativo. La evidencia anterior sirve para ordenar pendientes,
+nunca para acreditar cobertura de una nueva corrida. La activa sigue en 1.10.0.
+
+Validación local del paquete: 2.086 pruebas pasan, una omitida y 79 excluidas por
+la configuración de la suite. El piloto y despliegue siguen pendientes de acceso
+al VPS; estas pruebas no acreditan rendimiento real ni salud productiva.
+
+El primer preflight real de 1.14.0 falló antes de inferencia: el worker comparaba
+valores de `agent_release` por identidad y rechazaba el objeto anidado de
+`continuation_policy`. Se reemplaza por comparación estructural estricta;
+la prueba del worker incluye 1.14.0 válido y una política anidada alterada, que
+sigue fallando antes de invocar Codex. La request original se conserva como
+rechazada; una autorización emitida mantiene el cargo conservador aunque no
+haya recibo de inicio. El piloto corregido reduce su techo a 800.000 tokens
+para conservar presupuesto de las ventanas futuras, sin ampliar el cap de GW.
+
+El piloto 1.14.0 corregido sí inició inferencia: intentó diez clubes sin repetir,
+pero terminó sin brief por `logical_token_guard` (850.116 tokens de entrada y
+2.597 de salida observados; contabilidad de intento fallido sigue incierta).
+La evidencia y el fallo se conservan. No es un éxito de cobertura ni aceptación.
+
+El candidato inactivo **1.15.0** añade entrega compacta de fuentes: página de
+1.200 caracteres y hasta 2.400 de fragmentos literales del foco; conserva
+paginación y el cuerpo íntegro para verificación independiente. Progreso bajo
+demanda usa identidad y estado, sin repetir todas las métricas. El contexto
+original permanece sellado; las omisiones de metadatos de modelo llevan hashes
+en el recibo y no alteran los gates del host. Ningún truncamiento acredita que
+un jugador esté sano ni que no existan noticias. Tras primera pasada se compone
+el brief antes de profundizar salvo contradicción material. El propietario
+aprobó un millón adicional para GW7 mediante allowance auditado, sin borrar
+cargos previos ni elevar permisos FPL. Este candidato requiere un nuevo piloto.
+
+1.15 completó discovery de 11/11 clubes, pero también acabó sin brief por
+logical_token_guard. El candidato **1.16.0** cambia la unidad de contexto a
+club, con sesiones seriales y agregación determinista dentro de un mismo job.
+Tokens y plazo se acumulan entre sesiones y todas las cuotas de tools persisten
+por request. Un fallo de sesión falla el intento; el saldo insuficiente antes
+de despachar otro club produce un parcial explícito con not_checked. El
+normalizador y el importador conservan la autoridad de validar evidencia.
+
+El piloto experimental 1.16.0 completó 11/11 sesiones en 440.988 ms y liquidó
+778.696 tokens exactos. La evaluación independiente obtuvo 5/25 sujetos (20 %),
+3/15 propios y 2/10 candidatos, sin señales aceptadas. Falló el gate de calidad;
+no se promovió. Las fuentes antiguas, índices sin artículo accesible y la cuota
+de lectura agotada para los últimos clubes siguen siendo bloqueos reales.
+No comparar causalmente con 1.10: las entradas no fueron pareadas.
+
+El candidato inactivo **1.17.0** incorpora hasta ocho enlaces públicos de
+navegación extraídos del HTML (máximo 64 candidatos, títulos acotados), prioriza
+noticias de equipo y rutas de artículo. No sigue enlaces automáticamente ni los
+considera evidencia. Fechas, texto y cobertura siguen sujetos al verificador
+independiente. El probe de cuatro consultas sin LLM encontró resultados distintos
+con consulta corta, pero no demostró mejora de calidad ni justifica migrar de
+Firecrawl v1 a v2. 1.17 reserva las lecturas por club con reparto determinista del total: con
+32 lecturas y 11 clubes, diez reciben tres y el último dos. El checkpoint
+persiste entre sesiones e intentos y rechaza lecturas sin sujetos o cruzadas.
+La validación real de calidad de 1.17 sigue pendiente. No gastar el saldo reservado para las ventanas finales en otro
+piloto completo: después de 1.16 quedaban 2.149.836 tokens de GW7.
+
+El candidato **1.18.0** convierte la pasada única en una campaña de dos pasadas:
+primero todos los clubes y después sólo sujetos sin check independiente. Escala
+cuotas al foco también en refresh/final y publica progreso por jugador y motivo
+de parada. Consultar `mova strategy research progress`; sus contadores de trabajo
+no sustituyen los ratios del importador. La lectura por apellido es una pista de
+navegación, nunca aceptación. El detalle y las fronteras están en ADR-013.
+Validación local de 1.18: 2.102 pruebas pasan, una omitida y 79 excluidas por la
+configuración. Se comprueba reintento sólo de sujetos no verificados, aislamiento
+de las afirmaciones del LLM, progreso ligado al run, cuotas escaladas al foco,
+búsquedas duplicadas persistentes y pistas literales sin aceptación implícita.
+Estas pruebas no acreditan cobertura real de fuentes ni promoción.

@@ -30,7 +30,7 @@ def current_contract(config) -> dict:
     assets = json.loads(Path(__file__).with_name("research_acceptance_assets.json").read_text())
     sources = ("strategy.py", "research_evidence.py", "research_quality.py",
                "research_acceptance.py", "agent_releases.json", "agent_attempts.py",
-               "db.py", "schema.py", "schedule.py")
+               "db.py", "schema.py", "schedule.py", "research_campaign.py")
     implementation = {name: hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest()
                       for name in sources}
     return {"agent_version": version, "release": release,

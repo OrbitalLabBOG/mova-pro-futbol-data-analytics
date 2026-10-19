@@ -47,14 +47,18 @@ export function buildResearchContext(request) {
       'candidate decision uncertainty', 'uncovered club groups'],
     on_shortfall: 'Keep budgets unchanged; report not_checked and explain missing evidence.',
   };
-  if (request.agent_release?.coverage_allocation === 'club_first_pass_v1') {
+  if (['club_first_pass_v1', 'club_work_queue_v1'].includes(request.agent_release?.coverage_allocation)) {
     const own = new Set(unique.filter(row =>
       row.focus_reason?.includes('current_squad')).map(row => row.element));
+    const needs = new Set(summary.work_progress?.needs_checking_elements || unique.map(row=>row.element));
     const firstPass = clubs.map(group => ({...group,
+      pending_elements: group.elements.filter(element=>needs.has(element)),
+      own_pending_subjects: group.elements.filter(element=>own.has(element) && needs.has(element)).length,
       own_squad_subjects: group.elements.filter(element => own.has(element)).length,
-    })).sort((a,b) => b.own_squad_subjects - a.own_squad_subjects
-      || b.elements.length - a.elements.length || a.team.localeCompare(b.team));
-    context.acquisition_plan.coverage_allocation = 'club_first_pass_v1';
+    })).sort((a,b) => b.own_pending_subjects - a.own_pending_subjects
+      || b.pending_elements.length - a.pending_elements.length
+      || b.own_squad_subjects - a.own_squad_subjects || a.team.localeCompare(b.team));
+    context.acquisition_plan.coverage_allocation = request.agent_release.coverage_allocation;
     context.acquisition_plan.first_pass = firstPass;
     context.acquisition_plan.before_repeat = 'Attempt uncovered clubs before a second discovery pass on a covered club; retain not_checked when evidence or quota is unavailable.';
   }
@@ -80,12 +84,26 @@ export function buildResearchContext(request) {
     }
     context.context_on_demand = onDemand;
   }
+  const omitted = [];
+  if (request.agent_release?.source_delivery === 'compact_focus_v1') {
+    const omit = (obj, key, path) => {
+      if (!Object.hasOwn(obj, key)) return;
+      omitted.push({path, sha256:hash(obj[key]), reason:'discovery_view_only_original_request_preserved'});
+      delete obj[key];
+    };
+    omit(context, 'acceptance_contract', 'acceptance_contract');
+    for (const key of ['analytics_manifest','source_manifest','team_state']) omit(manifest,key,`manifest.${key}`);
+    if (summary.world) omit(summary.world,'fixtures','manifest.research_summary.world.fixtures');
+    summary.focus = unique.map(row=>Object.fromEntries(Object.entries(row).filter(([key,value])=>
+      value !== null && !['position','squad_position'].includes(key))));
+    context.acquisition_plan.clubs = clubs.map(({team,elements})=>({team,elements}));
+  }
   const receipt = {
     schema: 'mova-research-context-receipt-v1',
     request_sha256: request.request_sha256,
     context_sha256: hash(context),
     request_json_bytes: bytes(request), context_json_bytes: bytes(context),
-    omitted_sections: [],
+    omitted_sections: omitted,
     on_demand_sections: onDemand,
     catalog_encoding: "unchanged",
     focus_subjects: unique.length,

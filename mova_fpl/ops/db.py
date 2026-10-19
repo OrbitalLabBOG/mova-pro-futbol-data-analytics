@@ -2339,6 +2339,45 @@ class OpsDB:
             ).fetchone()
             if existing:
                 return {**dict(existing), "reused": True}
+            parent_id = payload.get("continuation_of")
+            if parent_id:
+                # Idempotent parent->child linkage and reservation share the writer transaction.
+                child = con.execute(
+                    "SELECT r.* FROM research_runs r JOIN audit_events a ON a.subject_id=r.research_run_id "
+                    "WHERE a.event_type='research_continuation_queued' "
+                    "AND json_extract(a.payload_json,'$.parent_run_id')=? LIMIT 1", (parent_id,),
+                ).fetchone()
+                if child:
+                    return {**dict(child), "reused": True}
+                parent = con.execute(
+                    "SELECT research_run_id,status FROM research_runs WHERE cycle_id=? "
+                    "AND NOT EXISTS (SELECT 1 FROM audit_events a WHERE a.subject_id=research_runs.research_run_id "
+                    "AND a.event_type IN ('research_experiment_enqueued','research_experiment_completed')) "
+                    "ORDER BY queued_at DESC,rowid DESC LIMIT 1", (payload["cycle_id"],),
+                ).fetchone()
+                if not parent or parent["research_run_id"] != parent_id or parent["status"] != "imported":
+                    return {"status": "blocked", "reason": "continuation_parent_changed",
+                            "research_run_id": payload["research_run_id"], "reused": False}
+            if parent_id:
+                future = payload.get("continuation_future_jobs")
+                if type(future) is not int or future not in {1, 2}:
+                    raise ValueError("invalid continuation budget holdback")
+                policy, _ = self._budget_with_allowances(
+                    con, payload["budget_policy"], cycle_id=payload["cycle_id"], month=now[:7])
+                for scope, identity in (("gw", payload["cycle_id"]), ("month", now[:7])):
+                    aggregate = self._agent_budget_aggregates(
+                        con, **({"cycle_id": identity} if scope == "gw" else {"month": identity}))
+                    where = "cycle_id=?" if scope == "gw" else "substr(created_at,1,7)=?"
+                    exposure = int(con.execute(
+                        "SELECT COALESCE(SUM(MAX(CAST(json_extract(policy_json,'$.job_tokens') AS INTEGER)"
+                        "-reserved_tokens,0)),0) FROM agent_budget_reservations "
+                        f"WHERE status='reserved' AND {where}", (identity,),
+                    ).fetchone()[0])
+                    tokens = exposure + sum(int(aggregate[k]["tokens"]) for k in ("settled", "charged", "reserved"))
+                    uses = sum(int(aggregate[k]["uses"]) for k in ("settled", "charged", "reserved"))
+                    if tokens + (1 + future) * policy["job_tokens"] > policy[f"{scope}_tokens"] or uses + 1 + future > policy[f"{scope}_uses"]:
+                        return {"status": "blocked", "reason": "continuation_preserve_future_budget",
+                                "research_run_id": payload["research_run_id"], "reused": False}
             run_id = payload["research_run_id"]
             budget = self._reserve_agent_budget(
                 con, cycle_id=payload["cycle_id"], subject_type="research",
@@ -2358,6 +2397,10 @@ class OpsDB:
                 (run_id, payload.get("job_id"), payload["cycle_id"], payload["manifest_id"],
                  payload["provider"], payload["request_path"], payload["request_sha256"], now),
             )
+            if parent_id:
+                self.append_audit("research_continuation_queued", actor="mova-research",
+                                  cycle_id=payload["cycle_id"], subject_type="research_run",
+                                  subject_id=run_id, payload={"parent_run_id": parent_id}, con=con)
             from mova_fpl.ops.research_acceptance import bind_first_run
             bind_first_run(con, payload, now=now)
             self.append_audit(
@@ -3538,6 +3581,22 @@ class OpsDB:
                 else "degraded"
             )
         coverage = self.research_coverage(limit=12)
+        # Transport completion is not evidence of adequate decision coverage.
+        latest_quality = next((row for row in coverage["runs"]
+                               if latest_payload and row["research_run_id"]
+                               == latest_payload["research_run_id"]), None)
+        quality_status = "unmeasured"
+        if latest_quality and latest_quality["coverage_status"] in {"complete", "partial", "failed"}:
+            policy = coverage["policy"]
+            quality_status = "passed" if (
+                float(latest_quality["coverage_ratio"] or 0) >= policy["minimum_coverage_ratio"]
+                and float(latest_quality["evidence_ratio"] or 0) >= policy["minimum_evidence_ratio"]
+                and int(latest_quality["unresolved_conflicts"] or 0)
+                <= policy["maximum_unresolved_conflicts"]
+            ) else "failed"
+        processing_status = service_status
+        if service_status == "healthy" and quality_status != "passed":
+            service_status = "degraded"
         return {
             "status": "ready" if manifest else "not_prepared", "cycle_id": cycle_id,
             "manifest": manifest_payload,
@@ -3547,6 +3606,8 @@ class OpsDB:
             "unresolved_conflicts": conflicts,
             "service": {
                 "status": service_status,
+                "processing_status": processing_status,
+                "quality_status": quality_status,
                 "latest_run": latest_payload,
                 "run_counts": global_counts,
                 "documents": global_documents,

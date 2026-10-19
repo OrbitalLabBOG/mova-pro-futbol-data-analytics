@@ -291,8 +291,9 @@ assert.equal(missing.context.acquisition_plan.conditional_scope_shortfall,null);
     subprocess.run(['node', '--input-type=module', '-e', script], cwd=ROOT, check=True)
 
 
-@pytest.mark.parametrize("version", ["1.0.0", "1.10.0"])
-def test_authorized_worker_records_context_actually_sent_on_failed_attempt(tmp_path, version):
+@pytest.mark.parametrize("version,drift", [("1.0.0", False), ("1.10.0", False),
+    ("1.13.0", False), ("1.14.0", False), ("1.15.0", False), ("1.16.0", False), ("1.14.0", True)])
+def test_authorized_worker_records_context_actually_sent_on_failed_attempt(tmp_path, version, drift):
     from datetime import datetime, timedelta, timezone
     import hashlib
 
@@ -303,6 +304,8 @@ def test_authorized_worker_records_context_actually_sent_on_failed_attempt(tmp_p
                'manifest':{'research_summary':{'focus':[{'element':1,'team':'Club'}],
                            'world':{'catalog':[[1,'Player','CLB']]}}}}
     request['agent_version'],request['agent_release']=researcher_release(version)
+    if drift:
+        request['agent_release']['continuation_policy']['cooldown_seconds'] += 1
     request['requested_at']=datetime.now(timezone.utc).isoformat()
     request['manifest']['deadline_at']=(datetime.now(timezone.utc)+timedelta(days=1)).isoformat()
     request['guardrails']={'agent_budget':{'job_tokens':1000000}}
@@ -342,13 +345,26 @@ for line in sys.stdin:
              'MOVA_RESEARCH_ROOT':str(tmp_path), 'MOVA_TEST_PROMPT':str(prompt_path)},
         text=True, capture_output=True)
     assert result.returncode == 1
-    receipt = json.loads(next((tmp_path / 'logs').glob('*.context.json')).read_text())
+    if drift:
+        assert 'research_agent_release_drift' in result.stderr
+        assert not prompt_path.exists()
+        assert not list((tmp_path / 'receipts').glob('*.started.json'))
+        return
+    receipt_glob = '*.club-0.context.json' if version == '1.16.0' else '*.context.json'
+    receipt = json.loads(next((tmp_path / 'logs').glob(receipt_glob)).read_text())
     prompt = prompt_path.read_text()
     context_json = prompt.split('REQUEST_JSON:\n', 1)[1]
     assert hashlib.sha256(context_json.encode()).hexdigest() == receipt['context_sha256']
+    if version in {"1.13.0", "1.14.0", "1.15.0"}:
+        assert "2-3 dudas" not in prompt
+        assert "Después elige dos dudas" not in prompt
+        assert "work_queue.next_club" in prompt
     assert receipt['prompt_bytes'] == len(prompt.encode())
     assert receipt['request_sha256'] == request['request_sha256']
-    assert json.loads(context_json)['acquisition_plan']['focus_subjects'] == 1
+    if version == '1.16.0':
+        assert len(json.loads(context_json)['focus']) == 1
+    else:
+        assert json.loads(context_json)['acquisition_plan']['focus_subjects'] == 1
     assert len(list((tmp_path / 'receipts').glob('*.started.json'))) == 1
     assert len(list((tmp_path / 'receipts').glob('*.finished.json'))) == 1
 
@@ -398,3 +414,28 @@ def test_deliberation_without_research_manifest_reaches_worker_and_records_attem
     assert terminal["authorization_id"] == authorization_id
     assert not (tmp_path / ".codex-worker.lock").exists()
     assert (tmp_path / "outbox" / f"{run_id}.result.json").exists() == (worker_exit == 0)
+
+
+def test_compact_context_retains_focus_and_guardrails_without_mutating_sealed_request():
+    script = r'''
+import assert from 'node:assert/strict';
+import {buildResearchContext} from './deploy/research/research-context.mjs';
+const request={request_sha256:'sealed',agent_release:{context_profile:'focus_on_demand',
+ coverage_allocation:'club_work_queue_v1',source_delivery:'compact_focus_v1'},
+ acceptance_contract:{implementation:{a:'x'.repeat(500)}},guardrails:{no_team_changes:true},
+ manifest:{analytics_manifest:{a:'x'.repeat(500)},team_state:{squad:[1]},
+ research_summary:{focus:[{element:1,player_name:'Player',team:'Club',xp:4.123456,
+ is_vice_captain:true,official_news:null,focus_reason:['current_squad']}],
+ world:{catalog:[[1,'Player','CLB']],fixtures:[{a:'x'.repeat(500)}]}}}};
+const original=JSON.stringify(request);
+const {context,receipt}=buildResearchContext(request);
+assert.equal(JSON.stringify(request),original);
+assert.equal(context.manifest.research_summary.focus[0].xp,4.123456);
+assert.equal(context.manifest.research_summary.focus[0].is_vice_captain,true);
+assert.equal(context.manifest.research_summary.focus[0].element,1);
+assert.equal(context.guardrails.no_team_changes,true);
+assert.equal(context.acceptance_contract,undefined);
+assert.ok(receipt.omitted_sections.some(row=>row.path==='acceptance_contract' && row.sha256));
+assert.ok(receipt.context_json_bytes<receipt.request_json_bytes);
+'''
+    subprocess.run(['node','--input-type=module','-e',script],cwd=ROOT,check=True)

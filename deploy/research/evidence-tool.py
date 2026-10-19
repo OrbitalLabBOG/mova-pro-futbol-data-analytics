@@ -8,13 +8,15 @@ import sys
 import time
 import urllib.request
 import re
+from html.parser import HTMLParser
+from urllib.parse import urljoin
 from collections import Counter
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 # The image copies only these two stdlib modules, not the runtime application.
 from research_evidence import SafeEvidenceFetcher, canonical_public_url, normalize_text, ALLOWED_MIME
-from research_quality import claim_fresh, claim_supported, subject_in_excerpt, TOPIC_WORDS, _normal
+from research_quality import claim_fresh, claim_supported, subject_in_excerpt, TOPIC_WORDS, _normal, research_identity_catalog
 
 TOOL = {
     "name": "verify_research_evidence",
@@ -49,6 +51,150 @@ CONTEXT_TOOL = {"name": "research_context", "description": "Retrieve sealed cont
  "annotations": {"readOnlyHint": True, "destructiveHint": False, "openWorldHint": False}}
 
 
+class DiscoveryLinks(HTMLParser):
+    """Bounded navigation hints only; never evidence or an automatic fetch."""
+    def __init__(self, base):
+        super().__init__(convert_charrefs=True)
+        self.base = base
+        self.links = []
+        self.current = None
+
+    def handle_starttag(self, tag, attrs):
+        if tag != "a": return
+        self.current = None
+        href = dict(attrs).get("href", "")
+        if not href or len(href) > 2048 or href.startswith(("#", "mailto:", "javascript:")): return
+        try: url = canonical_public_url(urljoin(self.base, href))
+        except Exception: return
+        if url == self.base or any(row["source_url"] == url for row in self.links): return
+        self.current = {"source_url": url, "title": ""}
+
+    def handle_data(self, data):
+        if self.current is not None:
+            self.current["title"] = (self.current["title"] + " " + data).strip()[:160]
+
+    def handle_endtag(self, tag):
+        if tag == "a" and self.current is not None:
+            self.links.append(self.current)
+            self.links.sort(key=self.priority)
+            del self.links[64:]
+            self.current = None
+
+    @staticmethod
+    def priority(row):
+        return (-bool(re.search(r"injur|team.news|press.conference|availability", row["title"], re.I)),
+                -bool(re.search(r"/detail/|/articles/|/20[0-9]{2}/|/A/[0-9]", row["source_url"])))
+
+
+class ClubWorkQueue:
+    """Per-request checkpoint shared by bounded retries, never acceptance evidence."""
+    def __init__(self, request, root):
+        self.binding = hashlib.sha256(json.dumps(request, sort_keys=True).encode()).hexdigest()
+        run_id = request["research_run_id"]
+        if not re.fullmatch(r"research_[0-9a-f]{32}", run_id):
+            raise ValueError("invalid_work_queue_run")
+        self.path = Path(root).parent / (run_id + ".work-queue.json")
+        groups = {}
+        summary = request["manifest"]["research_summary"]
+        needs = set(summary.get("work_progress", {}).get("needs_checking_elements",
+                    [row["element"] for row in summary["focus"]]))
+        for row in summary["focus"]:
+            team = row.get("team") or "unknown:" + str(row["element"])
+            group = groups.setdefault(team, {"team": team, "elements": [], "own": 0, "pending_elements": [], "own_pending": 0})
+            group["elements"].append(row["element"])
+            group["own"] += "current_squad" in row.get("focus_reason", [])
+            if row["element"] in needs:
+                group["pending_elements"].append(row["element"])
+                group["own_pending"] += "current_squad" in row.get("focus_reason", [])
+        self.groups = sorted(groups.values(), key=lambda row: (-row["own_pending"], -len(row["pending_elements"]), -row["own"], row["team"]))
+        if self.path.exists():
+            if self.path.is_symlink() or self.path.stat().st_size > 16384:
+                raise ValueError("unsafe_work_queue_checkpoint")
+            self.state = json.loads(self.path.read_text())
+            if self.state.get("request_binding") != self.binding:
+                raise ValueError("work_queue_request_drift")
+            counts = self.state.get("searches", {})
+            if set(counts) != set(groups) or any(type(n) is not int or n < 0 for n in counts.values()):
+                raise ValueError("invalid_work_queue_checkpoint")
+            if type(self.state.get("global_searches")) is not int or not 0 <= self.state["global_searches"] <= 1:
+                raise ValueError("invalid_work_queue_checkpoint")
+            reads = self.state.get("club_reads", {})
+            if set(reads) - set(groups) or any(type(n) is not int or n < 0 for n in reads.values()):
+                raise ValueError("invalid_club_read_checkpoint")
+            hashes = self.state.get("query_hashes", [])
+            if (not isinstance(hashes,list) or len(hashes)>32
+                    or any(not isinstance(x,str) or not re.fullmatch(r"[0-9a-f]{64}",x) for x in hashes)):
+                raise ValueError("invalid_query_checkpoint")
+            counters = self.state.get("tool_calls", {})
+            if set(counters) - {"read", "verify", "context"} or any(type(n) is not int or n < 0 for n in counters.values()):
+                raise ValueError("invalid_tool_quota_checkpoint")
+        else:
+            self.state = {"request_binding": self.binding, "searches": dict.fromkeys(groups, 0),
+                          "global_searches": 0}
+
+    def snapshot(self):
+        pending = [row for row in self.groups if not self.state["searches"][row["team"]]]
+        return {"schema": "mova-club-work-queue-v1", "next_club": pending[0] if pending else None,
+                "unattempted_clubs": len(pending), "club_searches": self.state["searches"].copy(),
+                "global_searches": self.state["global_searches"],
+                "coverage_verified": False, "final_acceptance": False}
+
+    def consume(self, team, limit, query_key=None):
+        if query_key and query_key in self.state.get("query_hashes", []):
+            return "duplicate_query"
+        count = sum(self.state["searches"].values()) + self.state["global_searches"]
+        if count >= limit:
+            return "search_budget_or_deadline"
+        pending = self.snapshot()["next_club"]
+        if team is None:
+            if self.state["global_searches"]:
+                return "global_radar_already_attempted"
+            # Do not let the optional radar consume a first-pass club reservation.
+            if limit - count <= self.snapshot()["unattempted_clubs"]:
+                return "club_first_pass_budget_reserved"
+            self.state["global_searches"] += 1
+        elif team not in self.state["searches"]:
+            return "unknown_work_item"
+        elif pending and team != pending["team"]:
+            return "unattempted_club_has_priority"
+        else:
+            self.state["searches"][team] += 1
+        if query_key:
+            self.state.setdefault("query_hashes", []).append(query_key)
+        self.save()
+        return None
+
+    def consume_club_read(self, elements, limit):
+        teams = [row["team"] for row in self.groups if set(elements) & set(row["elements"])]
+        if len(teams) != 1 or not elements: return False
+        group = next(row for row in self.groups if row["team"] == teams[0])
+        if not set(elements) <= set(group["elements"]): return False
+        counts = self.state.setdefault("club_reads", {})
+        base, extra = divmod(limit, len(self.groups))
+        allocation = base + (self.groups.index(group) < extra)
+        if self.state.get("searches") and any(n==0 for n in self.state["searches"].values()):
+            allocation = min(allocation, 3)
+        if counts.get(teams[0], 0) >= allocation: return False
+        counts[teams[0]] = counts.get(teams[0], 0) + 1
+        self.save()
+        return True
+
+    def consume_tool(self, name, limit):
+        counters = self.state.setdefault("tool_calls", {})
+        if counters.get(name, 0) >= limit:
+            return False
+        counters[name] = counters.get(name, 0) + 1
+        self.save()
+        return True
+
+    def save(self):
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = self.path.with_suffix(".tmp")
+        tmp.write_text(json.dumps(self.state, sort_keys=True) + "\n")
+        tmp.chmod(0o660)
+        tmp.replace(self.path)
+
+
 class EvidenceTool:
     def __init__(self, request, root, *, fetcher=None, clock=None):
         self.request = request
@@ -62,17 +208,40 @@ class EvidenceTool:
         self.read_calls = 0
         self.context_calls = 0
         self.controlled = request.get("agent_release", {}).get("execution") == "app_server"
+        self.navigation = request.get("agent_release", {}).get("source_navigation") == "public_links_v1"
+        self.compact = request.get("agent_release", {}).get("source_delivery") == "compact_focus_v1"
         self.max_calls = min(32, max(1, int(request.get("scope_policy", {}).get("max_documents", 6))) * 2)
         self.deadline = datetime.fromisoformat(request["manifest"]["deadline_at"].replace("Z", "+00:00"))
         if self.deadline.tzinfo is None:
             raise ValueError("deadline_timezone_required")
         rows = request["manifest"].get("research_summary", {}).get("world", {}).get("catalog", [])
-        self.catalog = {int(row[0]): str(row[1]) for row in rows if isinstance(row, list) and len(row) >= 2}
+        self.catalog = research_identity_catalog(request)
         self.names = Counter(name.casefold() for name in self.catalog.values())
         self.focus = {row["element"] for row in request["manifest"].get("research_summary", {}).get("focus", [])}
         self.verified_focus = set()
+        self.work_queue = (ClubWorkQueue(request, self.root)
+                           if request.get("agent_release", {}).get("coverage_allocation")
+                           == "club_work_queue_v1" else None)
+        if self.work_queue:
+            self.search_calls = (sum(self.work_queue.state["searches"].values())
+                                 + self.work_queue.state["global_searches"])
+        self.shared_tool_quota = (self.work_queue if request.get("agent_release", {}).get("execution_profile")
+                                 == "club_sessions_v1" else None)
+        if self.shared_tool_quota:
+            counters = self.work_queue.state.get("tool_calls", {})
+            self.read_calls = counters.get("read", 0)
+            self.calls = counters.get("verify", 0)
+            self.context_calls = counters.get("context", 0)
+
+    def search_schema(self):
+        schema = json.loads(json.dumps(SEARCH_TOOL))
+        if self.work_queue:
+            schema["inputSchema"]["properties"]["team"] = {"type": "string", "maxLength": 80}
+        return schema
 
     def context(self, args):
+        if self.shared_tool_quota and not self.shared_tool_quota.consume_tool("context", 8):
+            return {"status": "rejected", "reasons": ["context_budget_or_arguments"]}
         self.context_calls += 1
         if self.context_calls > 8 or set(args) != {"section", "query", "offset"}:
             return {"status": "rejected", "reasons": ["context_budget_or_arguments"]}
@@ -84,6 +253,9 @@ class EvidenceTool:
             rows = [{**row, "evidence_verified_in_turn": row["element"] in self.verified_focus,
                      "final_acceptance": False}
                     for row in summary.get("focus", []) if row["element"] not in self.verified_focus]
+            if self.compact:
+                rows = [{key: row[key] for key in ("element", "player_name", "team",
+                         "evidence_verified_in_turn", "final_acceptance") if key in row} for row in rows]
         elif section == "catalog":
             query = _normal(args["query"]).strip()
             catalog = summary["world"]["catalog"]
@@ -112,13 +284,22 @@ class EvidenceTool:
                 "next_offset": offset+len(page) if offset+len(page) < len(rows) else None}
 
     def search(self, args):
-        if (set(args) != {"query"} or not isinstance(args["query"], str)
-                or not 3 <= len(args["query"]) <= 400):
+        if (not isinstance(args, dict) or "query" not in args
+                or set(args) - ({"query", "team"} if self.work_queue else {"query"}) or not isinstance(args["query"], str)
+                or not 3 <= len(args["query"]) <= 400
+                or ("team" in args and (not isinstance(args["team"], str) or not 1 <= len(args["team"]) <= 80))):
             return {"status": "rejected", "reasons": ["invalid_arguments"]}
-        query_ceiling = 16 if self.request.get("agent_release", {}).get("discovery_profile") == "expanded_broad_v1" else 8
+        query_ceiling = 32 if self.request.get("agent_release", {}).get("completion_campaign") else 16 if self.request.get("agent_release", {}).get("discovery_profile") == "expanded_broad_v1" else 8
         limit = min(query_ceiling, int(self.request.get("scope_policy", {}).get("max_web_queries", 4)))
         if self.search_calls >= limit or self.clock() >= self.deadline:
             return {"status": "rejected", "reasons": ["search_budget_or_deadline"]}
+        if self.work_queue:
+            reason = self.work_queue.consume(args.get("team"), limit,
+                hashlib.sha256(" ".join(args["query"].casefold().split()).encode()).hexdigest()
+                if self.request.get("agent_release", {}).get("completion_campaign") else None)
+            if reason:
+                return {"status": "rejected", "reasons": [reason],
+                        "work_queue": self.work_queue.snapshot()}
         self.search_calls += 1
         try:
             key = Path("/run/secrets/research_search_key").read_text().strip()
@@ -143,11 +324,13 @@ class EvidenceTool:
                 raise ValueError("search_unavailable")
             result = {"status": "ok", "remaining_queries": limit-self.search_calls,
                 "results": [{"url": row.get("url"), "title": str(row.get("title", ""))[:200],
-                             "description": str(row.get("description", ""))[:400]} for row in rows[:5]]}
+                             "description": str(row.get("description", ""))[:160 if self.compact else 400]} for row in rows[:5]]}
         except Exception:
             result = {"status": "rejected", "reasons": ["search_provider_failed"],
                       "remaining_queries": limit-self.search_calls}
         self.root.mkdir(parents=True, exist_ok=True)
+        if self.work_queue:
+            result["work_queue"] = self.work_queue.snapshot()
         with (self.root/"search.jsonl").open("a") as stream:
             stream.write(json.dumps({"query_sha256": hashlib.sha256(args["query"].encode()).hexdigest(),
                                     "status": result["status"], "query_number": self.search_calls, "result_count": len(result.get("results", []))})+"\n")
@@ -168,6 +351,11 @@ class EvidenceTool:
             return {"status": "rejected", "reasons": ["invalid_arguments"]}
         if self.read_calls >= self.max_calls or self.clock() >= self.deadline:
             return {"status": "rejected", "reasons": ["read_budget_or_deadline"]}
+        if (self.navigation and self.shared_tool_quota
+                and not self.shared_tool_quota.consume_club_read(args["player_elements"], self.max_calls)):
+            return {"status": "rejected", "reasons": ["club_read_allocation_exhausted_or_scope_invalid"]}
+        if self.shared_tool_quota and not self.shared_tool_quota.consume_tool("read", self.max_calls):
+            return {"status": "rejected", "reasons": ["read_budget_or_deadline"]}
         self.read_calls += 1
         try:
             url = canonical_public_url(args["source_url"])
@@ -180,22 +368,38 @@ class EvidenceTool:
                 name = self.catalog.get(element, "")
                 if not name: continue
                 positions = [m.start() for m in re.finditer(re.escape(name),text,re.IGNORECASE)]
-                for position in positions[:3]:
-                    snippet = text[max(0,position-150):position+600]
-                    if snippet not in snippets and sum(map(len,snippets)) + len(snippet) <= 6000:
+                if not positions and self.request.get("agent_release", {}).get("completion_campaign"):
+                    surname = name.split()[-1]
+                    if len(surname) >= 4:
+                        positions = [m.start() for m in re.finditer(r"\b"+re.escape(surname)+r"\b",text,re.IGNORECASE)]
+                for position in positions[:1 if self.compact else 3]:
+                    snippet = text[max(0,position-100 if self.compact else position-150):position+(350 if self.compact else 600)]
+                    if snippet not in snippets and sum(map(len,snippets)) + len(snippet) <= (2400 if self.compact else 6000):
                         snippets.append(snippet)
-            if not snippets: snippets = [text[:2400]]
+            if not snippets and not self.compact: snippets = [text[:2400]]
             raw_text = payload.decode("utf-8", "ignore")
-            article = re.search(r'<article\b[^>]*>(.*?)</article\s*>',raw_text,re.I|re.S)
-            if article is None:
-                article = re.search(r'<main\b[^>]*>(.*?)</main\s*>',raw_text,re.I|re.S)
-            article_text = normalize_text(article.group(1).encode(),meta["content_type"]) if article else text
+            sections = [normalize_text(match.group(1).encode(), meta["content_type"])
+                        for match in re.finditer(r'<(?:article|main)\b[^>]*>(.*?)</(?:article|main)\s*>', raw_text, re.I | re.S)]
+            article_text = max(sections, key=len, default="")
+            extraction = "substantive_region"
+            if len(article_text) < 300:
+                article_text = text
+                extraction = "full_page_fallback"
+            if not article_text.strip():
+                return {"status": "rejected", "reasons": ["source_body_unavailable"],
+                        "remaining_reads": self.max_calls-self.read_calls}
             offset = args.get("offset",0)
+            page_size = 1200 if self.compact else 8000
             dates = re.findall(r'"date(?:Published|Modified)"\s*:\s*"([^"]{1,60})"', payload.decode("utf-8", "ignore"))[:4]
-            return {"status": "ok", "source_url": url, "publication_candidates": dates,
-                    "literal_fragments": snippets, "article_text": article_text[offset:offset+8000],
-                    "next_offset": offset+8000 if offset+8000<len(article_text) else None,
-                    "truncated": offset+8000<len(article_text),
+            navigation = {}
+            if self.navigation and "html" in meta["content_type"].lower():
+                parser = DiscoveryLinks(canonical_public_url(meta.get("final_url", url)))
+                parser.feed(raw_text)
+                navigation = {"discovery_links": parser.links[:8], "links_are_evidence": False}
+            return {**navigation, "status": "ok", "source_url": url, "extraction": extraction, "publication_candidates": dates,
+                    "literal_fragments": snippets, "article_text": article_text[offset:offset+page_size],
+                    "next_offset": offset+page_size if offset+page_size<len(article_text) else None,
+                    "truncated": offset+page_size<len(article_text),
                     "remaining_reads": self.max_calls-self.read_calls}
         except Exception:
             return {"status": "rejected", "reasons": ["source_read_failed"]}
@@ -206,6 +410,8 @@ class EvidenceTool:
         if observed >= self.deadline:
             return {"status": "rejected", "reasons": ["fetch_after_cutoff"], "remaining_calls": 0}
         if self.calls >= self.max_calls:
+            return {"status": "rejected", "reasons": ["verification_budget_exhausted"], "remaining_calls": 0}
+        if self.shared_tool_quota and not self.shared_tool_quota.consume_tool("verify", self.max_calls):
             return {"status": "rejected", "reasons": ["verification_budget_exhausted"], "remaining_calls": 0}
         self.calls += 1
         reasons = []
@@ -294,7 +500,7 @@ def serve(tool):
             elif method == "ping":
                 result = {}
             elif method == "tools/list":
-                result = {"tools": [TOOL, SEARCH_TOOL, READ_TOOL, CONTEXT_TOOL] if tool and tool.controlled else [TOOL]}
+                result = {"tools": [TOOL, tool.search_schema(), READ_TOOL, CONTEXT_TOOL] if tool and tool.controlled else [TOOL]}
             elif method == "tools/call" and message.get("params", {}).get("name") in ([TOOL["name"], SEARCH_TOOL["name"], READ_TOOL["name"], CONTEXT_TOOL["name"]] if tool and tool.controlled else [TOOL["name"]]):
                 # Overall per-call deadline includes DNS/read and redirects.
                 signal.alarm(25)

@@ -189,3 +189,220 @@ def test_focus_progress_tracks_verified_evidence_without_filling_silence(tmp_pat
     assert [r['element'] for r in remaining] == [2]
     assert remaining[0]['final_acceptance'] is False
     assert remaining[0]['evidence_verified_in_turn'] is False
+
+
+def test_club_queue_cannot_repeat_or_reset_quota_on_retry(tmp_path):
+    mod = module()
+    request = {'research_run_id':'research_'+'a'*32, 'manifest':{'research_summary':{
+        'focus':[{'element':1,'team':'Own','focus_reason':['current_squad']},
+                 {'element':2,'team':'Other','focus_reason':['top_projection_candidate']}]}}}
+    first = mod.ClubWorkQueue(request, tmp_path/'attempt1')
+    assert first.consume('Other', 3) == 'unattempted_club_has_priority'
+    assert first.consume(None, 3) is None
+    assert first.consume('Own', 3) is None
+    assert first.consume('Own', 3) == 'unattempted_club_has_priority'
+    resumed = mod.ClubWorkQueue(request, tmp_path/'attempt2')
+    assert resumed.consume(None, 3) == 'global_radar_already_attempted'
+    assert resumed.consume('Other', 3) is None
+    assert resumed.snapshot()['unattempted_clubs'] == 0
+    assert resumed.consume('Own', 3) == 'search_budget_or_deadline'
+    assert resumed.snapshot()['coverage_verified'] is False
+
+
+def test_queue_reserves_first_pass_before_optional_radar(tmp_path):
+    mod=module()
+    request={'research_run_id':'research_'+'b'*32,'manifest':{'research_summary':{
+        'focus':[{'element':1,'team':'Club'}]}}}
+    queue=mod.ClubWorkQueue(request,tmp_path/'attempt')
+    assert queue.consume(None,1) == 'club_first_pass_budget_reserved'
+    assert queue.consume('Club',1) is None
+    changed=json.loads(json.dumps(request));changed['manifest']['research_summary']['focus'][0]['team']='New'
+    import pytest
+    with pytest.raises(ValueError,match='request_drift'):
+        mod.ClubWorkQueue(changed,tmp_path/'retry')
+
+
+def test_reader_skips_empty_article_widgets_and_flags_missing_body(tmp_path):
+    mod=module()
+    body='Saka is available. '+('Relevant article text. '*50)
+    raw=('<html><article></article><main>'+body+'</main></html>').encode()
+    tool=mod.EvidenceTool({'research_run_id':'research_'+'c'*32,
+        'manifest':{'deadline_at':'2026-10-17T10:00:00Z','research_summary':{
+            'world':{'catalog':[[1,'Saka','ARS']]}}}},tmp_path,
+        clock=lambda:datetime(2026,10,16,12,tzinfo=timezone.utc),
+        fetcher=mod.SafeEvidenceFetcher(tmp_path,transport=lambda url:(raw,{'content_type':'text/html'})))
+    read=tool.read_source({'source_url':'https://example.com/news','player_elements':[1]})
+    assert read['article_text'] == body.strip()
+    tool.page_cache.clear()
+    tool.fetcher.transport=lambda url:(b'<html><script>hidden</script></html>',{'content_type':'text/html'})
+    assert tool.read_source({'source_url':'https://example.com/empty','player_elements':[1]})['reasons']==['source_body_unavailable']
+
+
+def test_candidate_search_quota_is_visible_after_worker_restart(tmp_path):
+    mod=module()
+    request={'research_run_id':'research_'+'d'*32,
+        'agent_release':{'coverage_allocation':'club_work_queue_v1'},
+        'manifest':{'deadline_at':'2026-10-17T10:00:00Z', 'research_summary':{
+            'focus':[{'element':1,'team':'Club'}]}}}
+    queue=mod.ClubWorkQueue(request,tmp_path/'first')
+    assert queue.consume('Club',2) is None
+    resumed=mod.EvidenceTool(request,tmp_path/'retry')
+    assert resumed.search_calls == 1
+    assert 'team' in resumed.search_schema()['inputSchema']['properties']
+    legacy=mod.EvidenceTool({'manifest':{'deadline_at':'2026-10-17T10:00:00Z'}},tmp_path/'legacy')
+    assert 'team' not in legacy.search_schema()['inputSchema']['properties']
+
+
+def test_next_request_prioritizes_imported_pending_subjects_without_inheriting_evidence(tmp_path):
+    mod=module()
+    request={'research_run_id':'research_'+'e'*32,'manifest':{'research_summary':{
+        'focus':[{'element':1,'team':'Already','focus_reason':['current_squad']},
+                 {'element':2,'team':'Pending','focus_reason':['current_squad']}],
+        'work_progress':{'needs_checking_elements':[2]}}}}
+    queue=mod.ClubWorkQueue(request,tmp_path/'attempt')
+    assert queue.snapshot()['next_club']['team']=='Pending'
+    assert queue.snapshot()['coverage_verified'] is False
+
+
+def test_compact_reader_keeps_literal_focus_and_independent_full_body_verification(tmp_path):
+    mod = module()
+    now = datetime(2026, 10, 16, 12, tzinfo=timezone.utc)
+    request = {'research_run_id':'research_'+'e'*32,
+      'agent_release':{'source_delivery':'compact_focus_v1'},
+      'scope_policy':{'max_documents':3},
+      'manifest':{'deadline_at':'2026-10-17T10:00:00Z','research_summary':{
+        'focus':[{'element':1,'player_name':'Haaland','team':'Man City','xp':6.123}],
+        'world':{'catalog':[[1,'Haaland','MCI']]}}}}
+    body = ('<article>16 October 2026. '+ 'Background. '*700 + 'Haaland is available.</article>').encode()
+    calls=[]
+    def transport(url):
+        calls.append(url)
+        return body, {'content_type':'text/html','final_url':url,'http_status':200}
+    tool=mod.EvidenceTool(request,tmp_path,clock=lambda:now,
+        fetcher=mod.SafeEvidenceFetcher(tmp_path,transport=transport))
+    result=tool.read_source({'source_url':'https://example.com/news','player_elements':[1]})
+    assert len(result['article_text']) == 1200
+    assert result['next_offset'] == 1200
+    assert 'Haaland is available.' in '\n'.join(result['literal_fragments'])
+    assert sum(map(len,result['literal_fragments'])) <= 2400
+    verified=tool.verify({'source_url':'https://example.com/news','player_element':1,
+       'evidence_text':'Haaland is available.','published_at':'2026-10-16T00:00:00Z','claim_type':'availability'})
+    assert verified['status']=='supported' and verified['final_acceptance'] is False
+    assert len(calls)==1
+
+
+def test_club_sessions_cannot_reset_tool_quotas_with_a_new_server(tmp_path):
+    mod=module()
+    now=datetime(2026,10,16,12,tzinfo=timezone.utc)
+    request={'research_run_id':'research_'+'f'*32,
+      'agent_release':{'coverage_allocation':'club_work_queue_v1','execution_profile':'club_sessions_v1'},
+      'scope_policy':{'max_documents':1},'manifest':{'deadline_at':'2026-10-17T10:00:00Z',
+      'research_summary':{'focus':[{'element':1,'team':'Club'}],'world':{'catalog':[[1,'Player','CLB']]}}}}
+    calls=[]
+    def transport(url):
+        calls.append(url)
+        return b'<article>Player is available. 16 October 2026.</article>',{'content_type':'text/html','final_url':url,'http_status':200}
+    def tool():return mod.EvidenceTool(request,tmp_path/'attempt',clock=lambda:now,
+        fetcher=mod.SafeEvidenceFetcher(tmp_path/'attempt',transport=transport))
+    args={'source_url':'https://example.com/news','player_elements':[1]}
+    assert tool().read_source(args)['status']=='ok'
+    assert tool().read_source(args)['status']=='ok'
+    assert tool().read_source(args)['reasons']==['read_budget_or_deadline']
+    assert len(calls)==2
+    assert tool().verify({})['reasons']==['invalid_arguments']
+    assert tool().verify({})['reasons']==['invalid_arguments']
+    assert tool().verify({})['reasons']==['verification_budget_exhausted']
+
+
+def test_navigation_links_are_bounded_public_hints_not_evidence():
+    mod = module()
+    parser = mod.DiscoveryLinks('https://example.com/news')
+    parser.feed('''<a href="/news/detail/team">Team news &amp; injuries</a>
+      <a href="https://127.0.0.1/private">private</a>
+      <a href="javascript:alert(1)">script</a><a href="#x">anchor</a>
+      <a href="https://user:password@example.com/a">credentials</a>
+      <a href="/news/detail/team">duplicate</a>''')
+    assert parser.links == [{'source_url':'https://example.com/news/detail/team',
+                             'title':'Team news & injuries'}]
+    parser.feed(''.join(f'<a href="/article/{i}">'+ 'x'*200 + '</a>' for i in range(100)))
+    assert len(parser.links)==64
+    parser.feed('<a href="/news/detail/latest">Latest team news</a>')
+    assert any(row['source_url'].endswith('/latest') for row in parser.links[:8])
+    assert all(len(row['title']) <= 160 for row in parser.links)
+
+
+def test_navigation_profile_exposes_links_without_following_or_acceptance(tmp_path):
+    mod=module()
+    request={'research_run_id':'research_'+'d'*32,
+      'agent_release':{'source_navigation':'public_links_v1'},
+      'scope_policy':{'max_documents':3},'manifest':{'deadline_at':'2026-10-17T10:00:00Z',
+      'research_summary':{'world':{'catalog':[]}}}}
+    calls=[]
+    def transport(url):
+        calls.append(url)
+        return b'<main>News index <a href="/articles/current">Current team news</a></main>', {'content_type':'text/html','final_url':url,'http_status':200}
+    tool=mod.EvidenceTool(request,tmp_path,clock=lambda:datetime(2026,10,16,tzinfo=timezone.utc),
+        fetcher=mod.SafeEvidenceFetcher(tmp_path,transport=transport))
+    result=tool.read_source({'source_url':'https://example.com/news','player_elements':[]})
+    assert result['discovery_links']==[{'source_url':'https://example.com/articles/current','title':'Current team news'}]
+    assert result['links_are_evidence'] is False
+    assert calls==['https://example.com/news']
+    assert tool.verified_focus==set()
+
+
+def test_club_read_allocation_reserves_last_club_and_survives_server_restart(tmp_path):
+    mod=module()
+    request={'research_run_id':'research_'+'9'*32,'manifest':{'research_summary':{
+      'focus':[{'element':i,'team':f'Club{i:02}'} for i in range(1,12)]}}}
+    queue=mod.ClubWorkQueue(request,tmp_path/'attempt')
+    assert all(queue.consume_club_read([1],32) for _ in range(3))
+    assert not queue.consume_club_read([1],32)
+    queue=mod.ClubWorkQueue(request,tmp_path/'another-attempt')
+    assert not queue.consume_club_read([1],32)
+    assert queue.consume_club_read([11],32)
+    assert queue.consume_club_read([11],32)
+    assert not queue.consume_club_read([11],32)
+    assert not queue.consume_club_read([],32)
+    assert not queue.consume_club_read([2,3],32)
+
+
+def test_campaign_literal_hints_find_article_alias_but_do_not_mark_verified(tmp_path):
+    mod=module()
+    request={'research_run_id':'research_'+'8'*32,
+      'agent_release':{'source_delivery':'compact_focus_v1','completion_campaign':{'maximum_rounds':2}},
+      'scope_policy':{'max_documents':3},'manifest':{'deadline_at':'2026-10-17T10:00:00Z',
+      'research_summary':{'world':{'catalog':[[1,'Bruno Borges Fernandes','MUN']]}}}}
+    body=('<article>'+ 'Navigation '*200+'Bruno Fernandes will play.</article>').encode()
+    def transport(url):return body,{'content_type':'text/html','final_url':url,'http_status':200}
+    tool=mod.EvidenceTool(request,tmp_path,clock=lambda:datetime(2026,10,16,tzinfo=timezone.utc),
+      fetcher=mod.SafeEvidenceFetcher(tmp_path,transport=transport))
+    result=tool.read_source({'source_url':'https://example.com/news','player_elements':[1]})
+    assert 'Bruno Fernandes will play.' in ''.join(result['literal_fragments'])
+    assert tool.verified_focus==set()
+
+
+def test_campaign_duplicate_search_is_not_a_new_attempt(tmp_path):
+    mod=module()
+    request={'research_run_id':'research_'+'6'*32,'manifest':{'research_summary':{
+      'focus':[{'element':1,'team':'Club'}]}}}
+    queue=mod.ClubWorkQueue(request,tmp_path/'attempt')
+    assert queue.consume('Club',4,'a'*64) is None
+    queue=mod.ClubWorkQueue(request,tmp_path/'other-attempt')
+    assert queue.consume('Club',4,'a'*64)=='duplicate_query'
+    assert queue.state['searches']['Club']==1
+    assert queue.consume('Club',4,'b'*64) is None
+
+
+def test_campaign_official_alias_requires_unique_owner_in_full_catalog(tmp_path):
+    from mova_fpl.ops.research_quality import research_identity_catalog
+    request={'agent_release':{'completion_campaign':{'maximum_rounds':2}},'manifest':{'research_summary':{
+      'focus':[{'element':1,'web_name':'Thiago'},{'element':2,'web_name':'Gabriel'}],
+      'world':{'catalog':[[1,'Igor Thiago Nascimento Rodrigues','BRE'],[2,'Gabriel dos Santos Magalhaes','ARS'],[3,'Gabriel Martinelli Silva','ARS']]}}}}
+    catalog=research_identity_catalog(request)
+    assert catalog[1]=='Thiago'
+    assert catalog[2]=='Gabriel dos Santos Magalhaes'
+    request['agent_release']={}
+    assert research_identity_catalog(request)[1]=='Igor Thiago Nascimento Rodrigues'
+    request['agent_release']={'completion_campaign':{'maximum_rounds':2}}
+    request['manifest']['research_summary']['world']['catalog'].append([4,'Thiago Silva','CHE'])
+    assert research_identity_catalog(request)[1]=='Igor Thiago Nascimento Rodrigues'

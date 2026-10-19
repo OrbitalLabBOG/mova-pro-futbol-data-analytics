@@ -195,3 +195,19 @@ def test_football_role_phrases_do_not_require_one_exact_spelling():
         assert claim_supported(**args,quality_policy='research-claim-2026.09.5')
         assert not claim_supported(**{**args,'name':'Dunk'},quality_policy='research-claim-2026.09.5')
     assert not claim_supported(name='Saka',claim_type='set_pieces',excerpt='Saka wears a PK shirt.',quality_policy='research-claim-2026.09.5')
+
+
+def test_imported_low_coverage_is_not_reported_as_healthy(tmp_path):
+    _config, db, service, cycle = _runtime(tmp_path)
+    service.prepare()
+    with db.transaction() as con:
+        con.execute("""INSERT INTO research_runs(
+            research_run_id,cycle_id,manifest_id,provider,status,request_path,
+            request_sha256,queued_at,imported_at,coverage_status,coverage_ratio,evidence_ratio)
+            SELECT 'quality_fixture',?,manifest_id,'fixture','imported','request.json',
+            ?,created_at,created_at,'partial',0.12,0.12 FROM cycle_manifests
+            WHERE cycle_id=? LIMIT 1""", (cycle, 'a' * 64, cycle))
+    status = db.strategic_status(cycle)["service"]
+    assert status["processing_status"] == "healthy"
+    assert status["quality_status"] == "failed"
+    assert status["status"] == "degraded"

@@ -56,6 +56,15 @@ class AgentAttemptService:
                 if (embedded_sha != subject["request_sha256"]
                         or sha256_json(request) != subject["request_sha256"]):
                     raise ValueError("request pendiente no coincide con hash durable")
+                if subject["subject_type"] == "deliberation":
+                    from mova_fpl.ops.deliberation import DecisionDeliberationService
+                    context = DecisionDeliberationService(
+                        self.config, self.db
+                    ).dispatch_context_check(request)
+                    if context["status"] != "ready":
+                        blocked.append({**context, "subject_type": "deliberation",
+                                        "subject_id": subject["subject_id"]})
+                        continue
                 prepared = self.db.prepare_agent_attempt_authorization(
                     subject_type=subject["subject_type"], subject_id=subject["subject_id"],
                     permit_dir=str(self.permits), now=current, permit_ttl_seconds=600,

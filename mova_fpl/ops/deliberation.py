@@ -35,7 +35,7 @@ def _research_signal_semantics(item: object) -> dict:
     return {
         key: raw.get(key) for key in (
             "player_element", "claim_type", "claim_text", "source_url", "source_tier",
-            "published_at", "confidence", "conflict_status", "content_sha256",
+            "published_at", "expires_at", "confidence", "conflict_status", "content_sha256",
         ) if raw.get(key) is not None
     }
 
@@ -402,14 +402,30 @@ class DecisionDeliberationService:
         self.config = config
         self.db = db
 
-    def enqueue(self, *, now: datetime | None = None) -> dict:
-        self.db.migrate()
+    def dispatch_context_check(self, request: dict) -> dict:
+        """Revalidate material context immediately before granting a host permit.
+
+        Provenance-only envelope refreshes may reuse work. Changed decisions,
+        evidence, plan or squad must never spend a call on the obsolete request.
+        This gate neither resolves conflicts nor refunds possible dispatched work.
+        """
         source = self.db.deliberation_source()
-        if not source:
-            return {"status": "skipped", "reason": "no_current_decision_envelope"}
-        existing = self.db.decision_deliberation_for_envelope(source["envelope_id"])
-        if existing:
-            return {**existing, "reused": True}
+        if not source or source["cycle_id"] != request["cycle_id"]:
+            return {"status": "blocked", "reason": "deliberation_context_unavailable"}
+        current = self._build_request(source)
+        team = self.db.latest_team_state(source["cycle_id"])
+        sealed_fingerprint = (current["envelope"].get("team_state") or {}).get("fingerprint")
+        if not team or not sealed_fingerprint or team["fingerprint"] != sealed_fingerprint:
+            return {"status": "blocked", "reason": "deliberation_team_state_changed"}
+
+        matches = sha256_json(semantic_deliberation_input(request)) == sha256_json(
+            semantic_deliberation_input(current)
+        )
+        return {"status": "ready" if matches else "blocked",
+                "reason": "current_context" if matches else "deliberation_context_changed",
+                "current_envelope_id": source["envelope_id"]}
+
+    def _build_request(self, source: dict) -> dict:
         artifact = Path(source["artifact_path"])
         if not artifact.is_file() or artifact.stat().st_size > MAX_RESULT_BYTES:
             raise ValueError("artefacto DecisionEnvelope ausente o demasiado grande")
@@ -479,6 +495,19 @@ class DecisionDeliberationService:
                 "agent_budget": self.config.agent_budget_policy(),
             },
         }
+        return request
+
+    def enqueue(self, *, now: datetime | None = None) -> dict:
+        self.db.migrate()
+        source = self.db.deliberation_source()
+        if not source:
+            return {"status": "skipped", "reason": "no_current_decision_envelope"}
+        existing = self.db.decision_deliberation_for_envelope(source["envelope_id"])
+        if existing:
+            return {**existing, "reused": True}
+        request = self._build_request(source)
+        manifest = self.db.cycle_manifest(source["manifest_id"])
+        deliberation_id = request["deliberation_id"]
         request_sha = sha256_json(request)
         request["request_sha256"] = request_sha
         semantic_sha = sha256_json(semantic_deliberation_input(request))

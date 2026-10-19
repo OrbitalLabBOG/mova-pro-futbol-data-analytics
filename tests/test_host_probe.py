@@ -151,3 +151,27 @@ def test_dr_report_projects_only_allowlisted_metadata(tmp_path):
     assert module.dr_observation(path) == {}
     path.write_text("[]")
     assert module.dr_observation(path) == {}
+
+
+def test_ready_probe_allows_integrity_check_latency_and_fails_closed(monkeypatch):
+    module = _module()
+    calls = []
+    class Response:
+        status = 200
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            return False
+    def respond(request, timeout):
+        calls.append((request.full_url, timeout))
+        return Response()
+    monkeypatch.setattr(module.urllib.request, "urlopen", respond)
+    assert module.api_ready(8787) is True
+    assert calls == [("http://127.0.0.1:8787/readyz", 8)]
+    def timeout(request, timeout):
+        raise TimeoutError("bounded timeout")
+    monkeypatch.setattr(module.urllib.request, "urlopen", timeout)
+    assert module.api_ready(8787) is False
+    monkeypatch.setattr(module.urllib.request, "urlopen", respond)
+    Response.status = 503
+    assert module.api_ready(8787) is False
