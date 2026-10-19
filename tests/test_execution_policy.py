@@ -228,32 +228,3 @@ def test_preflight_service_persists_artifact_checks_and_reuses_key(tmp_path: Pat
         assert con.execute(
             "SELECT COUNT(*) FROM execution_preflight_checks"
         ).fetchone()[0] == 17
-
-
-def test_explicit_repeat_save_proof_requires_r2_authority_and_one_physical_commit():
-    from datetime import timedelta
-    from mova_fpl.ops.browser_contract import compile_browser_commands
-    controls = {**AUTONOMOUS_A3, 'action_level':'A2', 'delivery_scope':'lineup-v1',
-        'delivery_proof': {'cycle_id':'2026-27-gw03', 'approved_at':NOW.isoformat(),
-                           'expires_at':(NOW+timedelta(minutes=30)).isoformat()}}
-    inputs = _inputs(_decision(), controls=controls)
-    plan = build_execution_plan(**inputs)
-    assert plan['repeat_save_proof'] is True
-    assert plan['action']['risk_class'] == 'R2'
-    assert plan['action']['required_action_level'] == 'A2'
-    assert plan['authorization']['status'] == 'authorized'
-    commands = compile_browser_commands(plan)['commands']
-    assert [c['operation'] for c in commands].count('commit_team_once') == 1
-    assert not any(c['operation'] == 'stage_exact_transfers' for c in commands)
-    assert plan['action']['expected_pre_decision_fingerprint'] == plan['action']['expected_post_decision_fingerprint']
-    for key, value, code in [('action_level','A0','AUTONOMY_LEVEL_SUFFICIENT'),
-                             ('kill_switch',True,'KILL_SWITCH_OFF'),
-                             ('browser_writes',False,'BROWSER_WRITES_ENABLED')]:
-        blocked = build_execution_plan(**{**inputs,'controls':{**controls,key:value}})
-        assert blocked['authorization']['status'] == 'blocked'
-        assert code in blocked['authorization']['blocking_codes']
-    ordinary = build_execution_plan(**{**inputs,'controls':{**controls,'delivery_proof':None}})
-    assert ordinary['action']['risk_class'] == 'R0'
-    assert ordinary['authorization']['status'] == 'noop'
-    expired = build_execution_plan(**{**inputs,'now':NOW+timedelta(minutes=31)})
-    assert expired['repeat_save_proof'] is False and expired['action']['risk_class'] == 'R0'

@@ -145,12 +145,6 @@ def build_execution_plan(*, envelope: dict, envelope_row: dict, manifest_row: di
     """Construye un plan inmutable y fail-closed sin realizar IO."""
     now = now.astimezone(timezone.utc)
     risk_class, exact_diff = _risk_and_diff(envelope)
-    # An explicitly approved physical Save is R2 even when every target is
-    # already selected. It must cross the same claim/begin/verify boundary;
-    # a read-only/no-op receipt must never qualify the physical driver.
-    repeat_save_proof = risk_class == 'R0' and lineup_proof(controls, envelope['cycle_id'], now)
-    if repeat_save_proof:
-        risk_class = 'R2'
     required_level = RISK_REQUIREMENTS[risk_class]
     selected = _candidate(envelope, str(envelope["selected_candidate_key"]))
     deadline = _parse_time(manifest_row["deadline_at"])
@@ -241,7 +235,6 @@ def build_execution_plan(*, envelope: dict, envelope_row: dict, manifest_row: di
     body = {
         "schema": SCHEMA,
         "delivery_proof": proof,
-        "repeat_save_proof": repeat_save_proof,
         "policy_version": POLICY_VERSION,
         "cycle_id": envelope["cycle_id"],
         "season": envelope["season"],
