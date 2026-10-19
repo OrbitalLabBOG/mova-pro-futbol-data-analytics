@@ -31,13 +31,16 @@ y la [guía de cierre, tamaños y límites](experiments/data_ground_truth/README
 
 ## Versiones y última comprobación
 
-Recuperación candidata del 19 de octubre: retención local acotada por capas y
+Recuperación verificada del 19 de octubre en `9ac2882`: retención local acotada por capas y
 presupuesto, ejecutada por timer horario independiente; alerta de disco antes
 del hard gate, incidentes de tick deduplicados, triage por ID sin límite temporal
 y proyección de `delivery_scope` en readiness. La limpieza exige dos sets
 recientes verificados por hash en cada familia, conserva evidencia y rollback,
 y deja recibo idempotente fuera del árbol de snapshots. Ver el [runbook](docs/operations/vps.md#retencion-local-acotada).
-La implementación y sus pruebas no sustituyen la aceptación viva posterior.
+La aceptación viva recuperó 27,3 GiB de copias redundantes; doctor 25 PASS,
+cero incidentes abiertos, timer horario y replay idempotente de retención.
+La restauración SQLite y sus dos modelos pasó. El follow-up de restauración
+PostgreSQL ajusta únicamente el sandbox que agotó su antiguo límite de RAM.
 
 Implementación candidata del 17 de octubre: dispatcher host `mova-fpl-delivery.timer`
 y scope `lineup-v1` conectan decisión y guardado R2 completo, independientes de la

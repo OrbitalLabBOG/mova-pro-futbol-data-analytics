@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — operación del stack VPS"
 created: 2026-08-22
-updated: 2026-10-02
+updated: 2026-10-19
 tags: [mova, fpl, vps, docker, systemd, observability]
 status: active
 ---
@@ -605,3 +605,13 @@ el incidente y genera una sola notificación nueva; nunca rebaja la severidad.
 Tras un tick recuperado se
 resuelven los anteriores sin borrar historia. Readiness conserva el alcance
 activo y sus gates reales; corregir el panel no autoriza escrituras nuevas.
+
+
+La restauración PostgreSQL aislada usa disco efímero de 4 GiB, CPU <=0,5,
+RAM <=1,5 GiB y exige al menos 4 GiB disponibles antes de empezar. Desactiva
+JIT, paralelismo y autovacuum sólo en ese contenedor estático; conserva la
+comparación de tablas, columnas, filas y hashes. La producción no cambia.
+Un OOM de prueba conserva el diagnóstico de cgroup antes de eliminar el sandbox.
+Durante despliegues, esperar hasta 180 s al estado healthy: el perfil de
+capacidad tiene intervalos de healthcheck de 120 s después del período inicial.
+La aceptación sigue exigiendo respuestas reales de `/readyz` y rollback disponible.

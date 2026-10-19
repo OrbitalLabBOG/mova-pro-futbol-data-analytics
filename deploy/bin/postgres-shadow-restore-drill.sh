@@ -9,6 +9,11 @@ image=postgres:17.11-bookworm@sha256:07edf880f0cf3f742c990d23faf92cb19e84923a8bc
 container="mova-dr-postgres-$(date -u +%Y%m%d%H%M%S)-$$"
 scratch=''
 cleanup() {
+  restore_result=$?
+  if [[ $restore_result != 0 ]]; then
+    docker inspect "$container" --format 'restore_oom={{.State.OOMKilled}} exit={{.State.ExitCode}}' 2>/dev/null || true
+    docker exec "$container" cat /sys/fs/cgroup/memory.events 2>/dev/null || true
+  fi
   docker rm -f "$container" >/dev/null 2>&1 || true
   if [[ -n "$scratch" ]]; then
     if mountpoint -q "$scratch/data"; then
@@ -37,12 +42,19 @@ if digest != m['dump']['sha256'] or dump.stat().st_size != m['dump']['bytes']:
 PY
 [[ $(id -u) -eq 0 ]] || { echo 'bounded disk restore requires root' >&2; exit 2; }
 # tmpfs data counts against the container's memory cap. A real 1.3 GiB
-# database cannot fit inside 768 MiB RAM, even with a 2 GiB tmpfs limit.
-# Use a fresh, hard-bounded disk filesystem and keep the RAM cap unchanged.
+# database cannot fit in a small tmpfs. Use a hard-bounded disk filesystem.
+# The complete content inventory outgrew the old 768 MiB restore cap (OOM
+# observed 2026-10-19). Keep a 1.5 GiB cap and reserve 2.5 GiB for live work.
 restore_parent=/opt/orbital/restore-drills
 install -d -m 0700 -o root -g root "$restore_parent"
 available=$(df -B1 --output=avail "$restore_parent" | tail -n 1 | tr -d ' ')
 (( available >= 5 * 1024 * 1024 * 1024 )) || { echo 'insufficient restore disk budget' >&2; exit 3; }
+available_memory=$(awk '/MemAvailable:/ {print $2 * 1024}' /proc/meminfo)
+python3 - "$available_memory" <<'PYMEM'
+import sys
+if float(sys.argv[1]) < 4 * 1024**3:
+    raise SystemExit('insufficient restore RAM headroom; retry when capacity is available')
+PYMEM
 scratch=$(mktemp -d "$restore_parent/postgres.XXXXXXXX")
 mkdir "$scratch/data"
 fallocate -l 4G "$scratch/data.ext4"
@@ -51,13 +63,16 @@ mount -o loop,nosuid,nodev,noexec "$scratch/data.ext4" "$scratch/data"
 chown 999:999 "$scratch/data"
 docker run -d --name "$container" --network none --user postgres \
   --read-only --cap-drop ALL --security-opt no-new-privileges:true \
-  --memory 768m --cpus 0.50 --pids-limit 128 \
+  --memory 1536m --cpus 0.50 --pids-limit 128 \
   --mount "type=bind,src=$scratch/data,dst=/var/lib/postgresql/data" \
   --tmpfs /var/run/postgresql:rw,size=16m,uid=999,gid=999 \
   --tmpfs /tmp:rw,size=64m,mode=1777 \
   -e POSTGRES_HOST_AUTH_METHOD=trust -e POSTGRES_DB=mova_restore \
   -e PGDATA=/var/lib/postgresql/data/pgdata "$image" \
-  postgres -c max_wal_size=128MB -c min_wal_size=80MB >/dev/null
+  postgres -c max_wal_size=128MB -c min_wal_size=80MB \
+  -c shared_buffers=64MB -c work_mem=4MB -c jit=off \
+  -c max_parallel_workers_per_gather=0 -c max_parallel_workers=0 \
+  -c autovacuum=off >/dev/null
 # initdb uses a temporary socket-only server; TCP readiness waits for the final server.
 ready=false
 for _ in $(seq 1 60); do
