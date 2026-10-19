@@ -260,7 +260,29 @@ def test_live_control_scope_reaches_bounded_readiness(tmp_path):
         snapshot_rejection_evidence=_snapshot_rejection(),browser_failure_evidence=_browser_failure())
     assert report['activation']['delivery_scope']=='lineup-v1'
     assert report['activation']['scope_ready'] is True
+    assert report['overall_status'] == 'ready'
+    assert report['delivery_readiness']['driver_live_proven'] is True
     assert 'EXPLICIT_PROMOTION_REQUIRED' not in report['activation']['activation_blockers']
     proof=next(g for g in report['gates'] if g['code']=='BOUNDED_LINEUP_SAVE_PROVEN')
     assert proof['status']=='pass'
     assert next(g for g in report['gates'] if g['code']=='RESEARCH_EVIDENCE_CALIBRATED')['status']=='blocked'
+
+
+def test_scoped_readiness_separates_real_blockers_from_a3_history():
+    operator = _operator()
+    operator['runtime']['controls'].update(delivery_scope='lineup-v1', action_level='A2',
+        mode='autonomous', browser_writes=True, kill_switch=False, compliance_gate='approved')
+    operator['gameweek'].update(readiness='preliminary', deadline_at='2026-10-23T17:30:00Z')
+    report = evaluate_readiness(operator_status=operator, research_coverage={'status':'failed'},
+        execution_status=_execution(), generated_at='2026-10-19T17:30:00+00:00')
+    assert report['target_level'] == 'A2'
+    assert report['activation']['activation_blockers'] == []
+    state = report['delivery_readiness']
+    assert state['authority_enabled'] is True and state['runtime_healthy'] is True
+    assert state['driver_live_proven'] is False and state['cycle_ready'] is False
+    assert 'BOUNDED_LINEUP_SAVE_PROVEN' in state['blocking_gates']
+    assert 'GAMEWEEK_INPUTS_READY' in state['blocking_gates']
+    assert 'RESEARCH_EVIDENCE_CALIBRATED' not in state['blocking_gates']
+    assert 'RESEARCH_EVIDENCE_CALIBRATED' in report['historical_diagnostics']
+    assert state['window']['opens_at'] == '2026-10-23T14:30:00+00:00'
+    assert state['final_receipt'] is None

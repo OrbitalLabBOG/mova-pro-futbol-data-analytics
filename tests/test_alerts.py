@@ -149,7 +149,8 @@ def test_slack_sink_uses_fixed_user_and_redacted_message(tmp_path):
           "payload_json": json.dumps({"incident_id": "i", "title": "runtime down",
                                       "secret": "never"})})
     assert bodies == [{"channel": "U08GJTQDZ2T",
-                       "text": "MOVA FPL P0: runtime down\nEvento: incident:i"}]
+                       "text": "MOVA FPL P0: runtime down\nEvento: incident:i",
+                       "unfurl_links": False, "unfurl_media": False}]
 
 
 def test_alert_channel_drill_is_hermetic_and_complete():
@@ -287,3 +288,136 @@ def test_compose_api_uses_observation_and_worker_retains_delivery_config():
     assert 'secrets:' not in api
     assert '- alert_webhook_config' in worker
     assert 'MOVA_ALERT_CHANNEL_STATUS_FILE' not in worker
+
+
+def test_resolved_unsent_alert_is_superseded_without_a_recovery_spam(tmp_path):
+    import pytest
+    db = _db(tmp_path)
+    db.open_incident('P1', 'disk full')
+    opening = db.outbox_status()['latest'][0]['outbox_id']
+    assert db.resolve_incidents('disk full', resolution='disk recovered') == 1
+    assert db.resolve_incidents('disk full', resolution='repeat') == 0
+    assert db.outbox_event_status(opening)['status'] == 'superseded'
+    assert db.outbox_event_status(opening)['sent_at'] is None
+    assert dispatch(db, sink=lambda _: pytest.fail('obsolete message sent'))['claimed'] == 0
+    with pytest.raises(ValueError):
+        db.retry_outbox(opening, actor='test', reason='must not resurrect')
+
+
+def test_many_notified_incidents_close_with_one_recovery_and_no_raw_detail(tmp_path):
+    db = _db(tmp_path)
+    for _ in range(3):
+        db.open_incident('P1', 'disk full', detail={'error': 'secret'})
+    dispatch(db, sink=lambda _: None)
+    assert db.resolve_incidents('disk full', resolution='secret resolution') == 3
+    delivered = []
+    assert dispatch(db, sink=delivered.append)['delivered'] == 1
+    event = delivered[0]
+    assert event['event_type'] == 'incident_recovered'
+    assert json.loads(event['payload_json'])['resolved_count'] == 3
+    assert 'secret' not in event['payload_json']
+    assert dispatch(db, sink=delivered.append)['claimed'] == 0
+
+
+def test_resolution_between_batch_claim_and_send_suppresses_obsolete_opening(tmp_path):
+    db = _db(tmp_path)
+    db.open_incident('P1', 'first')
+    db.open_incident('P1', 'second')
+    delivered = []
+    def sink(event):
+        delivered.append(event)
+        if len(delivered) == 1:
+            db.resolve_incidents('second', resolution='recovered during batch')
+    result = dispatch(db, sink=sink)
+    assert result['delivered'] == 1 and result['suppressed'] == 1
+    assert all(json.loads(e['payload_json'])['title'] != 'second' for e in delivered)
+
+
+def test_slack_opening_contains_safe_cause_and_recovery_has_duration(tmp_path):
+    db = _db(tmp_path)
+    db.open_incident('P1', 'Tick MOVA falló', detail={
+        'error': 'disk gate: 18413924352 < 21474836480', 'secret': 'do-not-print'})
+    bodies = []
+    sink = slack_sink(SlackSettings('xoxb-unused', 'U08GJTQDZ2T', 'julian'),
+                      transport=lambda _, body: bodies.append(json.loads(body)) or 200)
+    dispatch(db, sink=sink)
+    assert '17.1 GiB; mínimo 20.0 GiB' in bodies[0]['text']
+    assert 'Inicio:' in bodies[0]['text'] and 'do-not-print' not in str(bodies)
+    db.resolve_incidents('Tick MOVA falló', resolution='recovered')
+    dispatch(db, sink=sink)
+    assert 'RECUPERADO' in bodies[1]['text'] and 'Duración:' in bodies[1]['text']
+
+
+def test_slack_failure_code_is_sanitized_and_rate_limit_defers_retry(tmp_path):
+    from mova_fpl.ops.alerts import SlackDeliveryError
+    db = _db(tmp_path)
+    db.open_incident('P1', 'down')
+    result = dispatch(db, sink=lambda _: (_ for _ in ()).throw(
+        SlackDeliveryError('slack_rate_limited', 900)))
+    assert result['failed'] == 1
+    row = db.outbox_status()['latest'][0]
+    assert row['last_error'] == 'slack_rate_limited'
+    from datetime import datetime
+    assert (datetime.fromisoformat(row['available_at']) - datetime.fromisoformat(row['created_at'])).total_seconds() >= 900
+    assert dispatch(db, sink=lambda _: None)['claimed'] == 0
+
+
+def test_alert_schema_upgrade_preserves_history_and_admits_supersession(tmp_path):
+    from mova_fpl.ops.schema import MIGRATIONS
+    import sqlite3
+    db = OpsDB(tmp_path / 'old.db', enforce_version=False)
+    # Build the previous schema through the same migration contract.
+    import mova_fpl.ops.db as db_module
+    from unittest.mock import patch
+    with patch.object(db_module, 'MIGRATIONS', MIGRATIONS[:-1]):
+        db.migrate()
+    incident = db.open_incident('P1', 'preserved')
+    dispatch(db, sink=lambda _: None)
+    db.migrate()
+    assert db.incident(incident)['title'] == 'preserved'
+    assert db.outbox_status()['counts']['sent']['P1'] == 1
+    assert db.quick_check() == 'ok'
+
+
+def test_slack_transport_records_only_allowlisted_errors(monkeypatch):
+    import mova_fpl.ops.alerts as alerts
+    import pytest
+    monkeypatch.setattr(alerts, '_public_addresses', lambda _: ('8.8.8.8',))
+    class Response:
+        status = 200
+        body = b'{"ok":false,"error":"missing_scope","needed":"secret"}'
+        def read(self, _): return self.body
+        def getheader(self, _): return '900'
+    response = Response()
+    class Connection:
+        def __init__(self, *a, **kw): pass
+        def request(self, *a, **kw): pass
+        def getresponse(self): return response
+        def close(self): pass
+    monkeypatch.setattr(alerts.http.client, 'HTTPSConnection', Connection)
+    settings = SlackSettings('xoxb-unused', 'U08GJTQDZ2T', 'test')
+    for status, body, expected in [
+        (200, b'{"ok":false,"error":"missing_scope","private":"secret"}', 'slack_missing_scope'),
+        (200, b'{"ok":false,"error":"invalid_auth"}', 'slack_authentication_failed'),
+        (200, b'{"ok":false,"error":"unexpected-secret"}', 'slack_delivery_rejected'),
+        (200, b'[]', 'slack_invalid_response'),
+        (503, b'secret', 'slack_unavailable'),
+        (429, b'secret', 'slack_rate_limited'),
+    ]:
+        response.status, response.body = status, body
+        with pytest.raises(alerts.SlackDeliveryError) as caught:
+            alerts._slack_post(settings, b'{}')
+        assert str(caught.value) == expected
+        assert 'secret' not in str(caught.value)
+        if status == 429: assert caught.value.retry_seconds == 900
+
+
+def test_superseded_retry_failure_never_resurrects_a_resolved_incident(tmp_path):
+    db = _db(tmp_path)
+    db.open_incident('P1', 'recovery during network failure')
+    event = db.claim_outbox()[0]
+    db.resolve_incidents('recovery during network failure', resolution='restored')
+    # The sending event is suppressed at the last state check.
+    assert db.alert_delivery_context(event) is None
+    assert db.finish_outbox(event['outbox_id'], delivered=False) == 'superseded'
+    assert db.outbox_event_status(event['outbox_id'])['status'] == 'superseded'

@@ -391,3 +391,23 @@ calidad y autoridad separados de estas esperas.
 La revisión causal puede terminar con `no_hypothesis` o `proposals_rejected` cuando no
 quedan propuestas abiertas. Un review retrospectivo o una evaluación pendiente no
 satisfacen ese resultado. No exigir una lección positiva para completar el proceso.
+
+## Alertas y readiness de la entrega acotada
+
+Las aperturas y escalamientos pendientes se vuelven `superseded` cuando el incidente
+ya está resuelto; conservan fila y auditoría, no se declaran enviados ni reconocidos
+por una persona. El dispatcher comprueba de nuevo el estado antes de cada envío.
+Si el fallo llegó al canal, el cierre encola una recuperación por dominio, incluso
+si había muchos incidentes duplicados históricos. Las recuperaciones que incluyen
+un envío en curso esperan su lease; el transporte sigue siendo at-least-once.
+Slack muestra hora, causa de una lista sanitizada y estado; nunca detalle libre,
+credenciales ni cuerpos de respuesta del proveedor. Los errores de transporte
+distinguen autenticación, permisos, destino, cuota y disponibilidad. Un 429 aplaza
+el siguiente intento según Retry-After; no se reintenta dentro del envío.
+
+Readiness expone `target_level=A2` para `lineup-v1`, sus `blocking_gates` y los
+diagnósticos históricos de A3 por separado. `delivery_readiness` distingue salud,
+autoridad, prueba física de la revisión, settlement, ventana y recibo final.
+`overall_status=ready` califica el alcance solicitado, no la autonomía A3; la
+elegibilidad técnica no concede autoridad. Una prueba anticipada verificada no
+produce recibo final. Los gates de datos, settlement y guardado real no se rebajan.

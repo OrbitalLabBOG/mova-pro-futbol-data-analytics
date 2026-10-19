@@ -615,6 +615,7 @@ def resilience_drill() -> dict:
         "duplicate_is_deduplicated": duplicate["alerts"]["claimed"] == 0,
         "single_incident": incident_rows == 1,
         "recovery_resolves_incident": recovered["status"] == "ok" and open_rows == 0,
+        "recovery_notification_delivered": recovered['alerts']['delivered'] == 1,
         "audit_continuity": {"alert_delivery_succeeded", "incident_resolved"} <= audit_events,
         "orphan_request_opens_p1": (
             queue_failure["status"] == "degraded"
@@ -627,6 +628,7 @@ def resilience_drill() -> dict:
         "queue_recovery_resolves_incident": (
             queue_recovered["status"] == "ok" and queue_open_rows == 0
         ),
+        "queue_recovery_notification_delivered": queue_recovered['alerts']['delivered'] == 1,
     }
     return {
         "schema": "mova-resilience-drill-v1",

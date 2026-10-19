@@ -378,12 +378,22 @@ class ExecutionService:
 
     def status(self, *, limit: int = 20) -> dict:
         rehearsals = self.db.browser_rehearsal_summary(REHEARSAL_CONTRACTS)
+        cycle = self.db.status().get('cycle') or {}
+        attempt = self.db.latest_delivery_attempt(cycle.get('cycle_id', ''))
+        final_receipt = None
+        if attempt and attempt['status'] == 'verified' and not attempt['is_delivery_proof']:
+            final_receipt = {'execution_id': attempt['execution_id'], 'status': 'saved_verified',
+                             'finished_at': attempt['finished_at']}
+        elif receipt := self.db.delivery_receipt(cycle.get('cycle_id', '')):
+            final_receipt = {'job_id': receipt['job_id'], 'status': 'unchanged_verified',
+                             'finished_at': receipt['finished_at']}
         return {
             "schema": "mova-execution-status-v1",
             "policy_version": POLICY_VERSION,
             "browser_driver": driver_capabilities(rehearsals),
             "delivery": {'scope': (self.db.controls().get('delivery_scope') or {}).get('value'),
                          'live_proof': self.db.latest_delivery_proof(self.config.git_sha),
+                         'final_receipt': final_receipt,
                          'target_seconds_before_deadline': 10800, 'escalate_seconds_before_deadline': 7200,
                          'last_dispatch_seconds_before_deadline': 1800},
             "autonomous_closeout": self.db.autonomous_closeout_summary(

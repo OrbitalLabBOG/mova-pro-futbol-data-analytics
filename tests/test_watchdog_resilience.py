@@ -225,7 +225,8 @@ def test_watchdog_opens_single_p0_delivers_and_resolves(tmp_path):
             "SELECT severity,status FROM incidents WHERE title=?", (INCIDENT_TITLE,),
         ).fetchall()
     assert [(row["severity"], row["status"]) for row in rows] == [("P0", "resolved")]
-    assert len(delivered) == 1
+    assert len(delivered) == 2
+    assert delivered[1] == delivered[0] + ':recovered'
 
 
 def test_watchdog_marks_stale_completed_tick_as_down(tmp_path):
@@ -335,7 +336,8 @@ def test_watchdog_detects_deduplicates_and_resolves_orphan_agent_request(tmp_pat
             (AGENT_QUEUE_INCIDENT_TITLE,),
         ).fetchall()
     assert [(row["severity"], row["status"]) for row in rows] == [("P1", "resolved")]
-    assert len(delivered) == 1
+    assert len(delivered) == 2
+    assert delivered[1] == delivered[0] + ':recovered'
 
 
 def test_agent_queue_allows_fresh_enqueue_but_rejects_quarantine_tombstone(tmp_path):

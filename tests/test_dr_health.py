@@ -83,4 +83,5 @@ def test_watchdog_dr_failure_is_deduplicated_then_resolved_only_by_fresh_report(
     with db.connect(readonly=True) as con:
         rows = con.execute("SELECT severity,status FROM incidents WHERE title=?", (DR_INCIDENT_TITLE,)).fetchall()
     assert [(r["severity"], r["status"]) for r in rows] == [("P1", "resolved")]
-    assert len(sent) == 1
+    assert len(sent) == 2
+    assert sent[1] == sent[0] + ':recovered'

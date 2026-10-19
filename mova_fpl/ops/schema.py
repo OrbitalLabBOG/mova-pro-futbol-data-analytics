@@ -1132,6 +1132,21 @@ MIGRATION_022 = (
     ),
 )
 
+MIGRATION_023 = (
+    "ALTER TABLE outbox_events RENAME TO outbox_events_v22",
+    """CREATE TABLE outbox_events (
+        outbox_id TEXT PRIMARY KEY, event_key TEXT NOT NULL UNIQUE,
+        created_at TEXT NOT NULL, available_at TEXT NOT NULL,
+        event_type TEXT NOT NULL, severity TEXT NOT NULL,
+        status TEXT NOT NULL CHECK (status IN ('pending','sending','sent','acknowledged','dead','superseded')),
+        attempts INTEGER NOT NULL DEFAULT 0,
+        payload_json TEXT NOT NULL CHECK (json_valid(payload_json)),
+        sent_at TEXT, acknowledged_at TEXT, last_error TEXT
+    ) STRICT""",
+    "INSERT INTO outbox_events SELECT * FROM outbox_events_v22",
+    "DROP TABLE outbox_events_v22",
+)
+
 MIGRATIONS = (
     (1, "initial_ops_schema", MIGRATION_001),
     (2, "team_state_artifact_provenance", MIGRATION_002),
@@ -1155,4 +1170,5 @@ MIGRATIONS = (
     (20, "physical_attempt_budget_accounting", MIGRATION_020),
     (21, "pre_attempt_authorization", MIGRATION_021),
     (22, "prospective_research_acceptance", MIGRATION_022),
+    (23, "alert_lifecycle_supersession", MIGRATION_023),
 )
