@@ -55,7 +55,7 @@ def test_blocked_check_never_passes_with_fresh_timestamps():
 
 def test_watchdog_dr_failure_is_deduplicated_then_resolved_only_by_fresh_report(tmp_path):
     config = RuntimeConfig(host_probe_path=tmp_path / "host.json", git_sha=SHA,
-                           research_root=tmp_path / "research")
+                           research_root=tmp_path / "research", disk_gate_bytes=1)
     db = OpsDB(tmp_path / "ops.db", enforce_version=False)
     db.migrate()
     job, _ = db.start_job("tick", "tick:dr-fixture", "corr-dr")

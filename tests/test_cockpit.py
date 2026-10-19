@@ -313,3 +313,17 @@ def test_cli_exposes_cockpit_watch_and_incident_triage():
     ])
     assert triage.command == "triage"
     assert triage.incident_id == "incident_test"
+
+
+def test_triage_reads_exact_old_incident_beyond_recent_window(tmp_path,monkeypatch):
+    from mova_fpl.ops.db import OpsDB
+    from mova_fpl.ops.config import RuntimeConfig
+    from mova_fpl.ops.cockpit import build_triage
+    db=OpsDB(tmp_path/'ops.db',enforce_version=False);db.migrate()
+    old=db.open_incident('P0','old heartbeat')
+    for i in range(105):db.open_incident('P2',f'new-{i}')
+    fixture={'generated_at':'now','verdict':'critical','headline':'fixture','gameweek':{},'runtime':{},'workflow':{},'quality':{},'alerts':{'items':[]}}
+    monkeypatch.setattr('mova_fpl.ops.cockpit.build_cockpit',lambda *args,**kwargs:fixture)
+    result=build_triage(RuntimeConfig(),db,incident_id=old)
+    assert result['incidents'][0]['incident_id']==old
+    assert len(result['incidents'])==1 and result['runtime_mutated'] is False

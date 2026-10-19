@@ -124,7 +124,7 @@ class TickRunner:
                     job_id, "failed", error_code=type(exc).__name__,
                     error_detail=str(exc)[:2000],
                 )
-                self.db.open_incident(
+                self.db.open_incident_once(
                     "P1", "Tick MOVA falló", correlation_id=correlation_id, job_id=job_id,
                     detail={"error_code": type(exc).__name__, "error": str(exc)[:1000]},
                 )

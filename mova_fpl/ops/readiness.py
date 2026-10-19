@@ -554,7 +554,7 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
         "mode": controls.get("mode"),
         "activation_blockers": [
             code for code, passed in (
-                ("EXPLICIT_PROMOTION_REQUIRED", False),
+                ("EXPLICIT_PROMOTION_REQUIRED", current_level in LEVELS[1:]),
                 ("COMPLIANCE_NOT_APPROVED", controls.get("compliance_gate") == "approved"),
                 ("KILL_SWITCH_ON", controls.get("kill_switch") is False),
                 ("BROWSER_WRITES_DISABLED", controls.get("browser_writes") is True),

@@ -1390,47 +1390,62 @@ class OpsDB:
             )
         return sample_id
 
+    def _insert_incident(self, con, severity: str, title: str, *,
+                         correlation_id=None, cycle_id=None, job_id=None, detail=None) -> str:
+        incident_id = new_id("incident")
+        payload = detail or {}
+        con.execute(
+            "INSERT INTO incidents(incident_id,opened_at,severity,status,title,correlation_id,"
+            "cycle_id,job_id,detail_json) VALUES(?,?,?,'open',?,?,?,?,?)",
+            (incident_id, utcnow(), severity, title, correlation_id, cycle_id, job_id, canonical_json(payload)),
+        )
+        con.execute(
+            "INSERT INTO outbox_events(outbox_id,event_key,created_at,available_at,event_type,"
+            "severity,status,payload_json) VALUES(?,?,?,?,?,?,'pending',?)",
+            (new_id("outbox"), f"incident:{incident_id}", utcnow(), utcnow(), "incident_opened", severity,
+             canonical_json({"incident_id": incident_id, "title": title, **payload})),
+        )
+        return incident_id
+
     def open_incident(self, severity: str, title: str, *, correlation_id: str | None = None,
                       cycle_id: str | None = None, job_id: str | None = None,
                       detail: dict | None = None) -> str:
-        incident_id = new_id("incident")
-        payload = detail or {}
         with self.transaction() as con:
-            con.execute(
-                """
-                INSERT INTO incidents(incident_id,opened_at,severity,status,title,correlation_id,
-                  cycle_id,job_id,detail_json) VALUES(?,? ,?,'open',?,?,?,?,?)
-                """,
-                (incident_id, utcnow(), severity, title, correlation_id, cycle_id, job_id,
-                 canonical_json(payload)),
-            )
-            event_key = f"incident:{incident_id}"
-            con.execute(
-                """
-                INSERT INTO outbox_events(outbox_id,event_key,created_at,available_at,event_type,
-                  severity,status,payload_json) VALUES(?,?,?,?,?,?,'pending',?)
-                """,
-                (new_id("outbox"), event_key, utcnow(), utcnow(), "incident_opened", severity,
-                 canonical_json({"incident_id": incident_id, "title": title, **payload})),
-            )
-        return incident_id
+            return self._insert_incident(con, severity, title, correlation_id=correlation_id,
+                                         cycle_id=cycle_id, job_id=job_id, detail=detail)
 
     def open_incident_once(self, severity: str, title: str, *,
                            correlation_id: str | None = None,
                            cycle_id: str | None = None, job_id: str | None = None,
                            detail: dict | None = None) -> str:
-        """Abre como máximo un incidente activo por título."""
-        with self.connect(readonly=True) as con:
+        """Atomically admit one active incident and one outbox event per title."""
+        with self.transaction() as con:
             row = con.execute(
-                "SELECT incident_id FROM incidents WHERE title=? AND status!='resolved' "
+                "SELECT incident_id,severity FROM incidents WHERE title=? AND status!='resolved' "
                 "ORDER BY opened_at DESC LIMIT 1", (title,),
             ).fetchone()
-        if row:
-            return str(row["incident_id"])
-        return self.open_incident(
-            severity, title, correlation_id=correlation_id, cycle_id=cycle_id,
-            job_id=job_id, detail=detail,
-        )
+            if row:
+                if severity in {'P0','P1','P2','P3'} and severity < row['severity']:
+                    payload={'incident_id':row['incident_id'],'title':title,
+                             'previous_severity':row['severity'],**(detail or {})}
+                    con.execute("UPDATE incidents SET severity=?,detail_json=? WHERE incident_id=?",
+                                (severity,canonical_json(detail or {}),row['incident_id']))
+                    con.execute(
+                        "INSERT INTO outbox_events(outbox_id,event_key,created_at,available_at,event_type,"
+                        "severity,status,payload_json) VALUES(?,?,?,?,?,?,'pending',?) ON CONFLICT(event_key) DO NOTHING",
+                        (new_id('outbox'),f"incident:{row['incident_id']}:escalated:{severity}",utcnow(),utcnow(),
+                         'incident_escalated',severity,canonical_json(payload)))
+                    self.append_audit('incident_escalated',actor='mova-ops',severity='warning',
+                        subject_type='incident',subject_id=row['incident_id'],payload=payload,con=con)
+                return str(row["incident_id"])
+            return self._insert_incident(con, severity, title, correlation_id=correlation_id,
+                                         cycle_id=cycle_id, job_id=job_id, detail=detail)
+
+    def incident(self, incident_id: str) -> dict | None:
+        """Lookup an exact incident regardless of recency or status."""
+        with self.connect(readonly=True) as con:
+            row = con.execute("SELECT * FROM incidents WHERE incident_id=?", (incident_id,)).fetchone()
+        return dict(row) if row else None
 
     def outbox_status(self) -> dict:
         """Resumen sanitizado del canal de alertas, sin exponer payloads."""

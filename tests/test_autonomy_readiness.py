@@ -241,3 +241,26 @@ def test_readiness_cli_can_be_used_as_a_level_gate_and_metrics_are_bounded() -> 
     metrics = prometheus(report)
     assert 'mova_autonomy_technical_eligible_level{level="A3"} 1' in metrics
     assert 'mova_autonomy_readiness_gates{status="pass"} 27' in metrics
+
+
+def test_live_control_scope_reaches_bounded_readiness(tmp_path):
+    from mova_fpl.ops.operator import _controls
+    from mova_fpl.ops.config import RuntimeConfig
+    from mova_fpl.ops.db import OpsDB
+    db=OpsDB(tmp_path/'ops.db',enforce_version=False);db.migrate()
+    for key,value in {'delivery_scope':'lineup-v1','mode':'autonomous','action_level':'A2','browser_writes':True,'kill_switch':False,'compliance_gate':'approved'}.items():
+        db.set_control(key,value,actor='test',reason='live scope fixture')
+    operator=_operator();operator['runtime']['controls']=_controls(db.controls(),RuntimeConfig())
+    execution=_execution();execution['delivery']={'scope':'lineup-v1','live_proof':{'execution_id':'execution_verified'}}
+    research={'status':'failed','measured_gameweeks':1,'passing_gameweeks':0}
+    report=evaluate_readiness(operator_status=operator,research_coverage=research,execution_status=execution,
+        resilience_evidence=_resilience(),orchestration_evidence=_orchestration(),alert_channel=_alert_channel(),
+        alert_channel_evidence=_alert_channel_drill(),alert_channel_live_evidence=_alert_channel_live(),
+        host_recovery_evidence=_host_recovery(),offsite_restore_evidence=_offsite_restore(),
+        snapshot_rejection_evidence=_snapshot_rejection(),browser_failure_evidence=_browser_failure())
+    assert report['activation']['delivery_scope']=='lineup-v1'
+    assert report['activation']['scope_ready'] is True
+    assert 'EXPLICIT_PROMOTION_REQUIRED' not in report['activation']['activation_blockers']
+    proof=next(g for g in report['gates'] if g['code']=='BOUNDED_LINEUP_SAVE_PROVEN')
+    assert proof['status']=='pass'
+    assert next(g for g in report['gates'] if g['code']=='RESEARCH_EVIDENCE_CALIBRATED')['status']=='blocked'

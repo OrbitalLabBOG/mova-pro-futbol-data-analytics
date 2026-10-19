@@ -1,0 +1,11 @@
+[Unit]
+Description=Check MOVA FPL local backup bounds hourly
+
+[Timer]
+OnCalendar=*-*-* *:35:00 UTC
+RandomizedDelaySec=120s
+Persistent=true
+Unit=mova-fpl-backup-retention.service
+
+[Install]
+WantedBy=timers.target

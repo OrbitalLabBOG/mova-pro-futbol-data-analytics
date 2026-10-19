@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import re
+import shutil
 from collections.abc import Callable
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -21,6 +22,7 @@ INCIDENT_TITLE = "Scheduler heartbeat unhealthy"
 AGENT_QUEUE_INCIDENT_TITLE = "Agent queue integrity unhealthy"
 WORKFLOW_INCIDENT_TITLE = "Autonomous cycle deadline risk"
 DR_INCIDENT_TITLE = "Backup recovery observation unhealthy"
+DISK_INCIDENT_TITLE = "Local storage headroom low"
 MAX_REQUEST_BYTES = 1_048_576
 REQUEST_ID = re.compile(r"(?:research|deliberation)_[0-9a-f]{32}")
 ACTIVE_RESEARCH_STATUSES = {"queued", "running", "completed"}
@@ -407,6 +409,13 @@ def agent_queue_prometheus(state: dict) -> str:
     ))
 
 
+def assess_disk_headroom(free_bytes: int, gate_bytes: int) -> dict:
+    warning_bytes = gate_bytes + 8 * 1024**3
+    return {'healthy': free_bytes >= warning_bytes, 'free_bytes': free_bytes,
+            'warning_bytes': warning_bytes, 'hard_gate_bytes': gate_bytes,
+            'hard_gate_passed': free_bytes >= gate_bytes}
+
+
 def run(db: OpsDB, *, max_age_seconds: int = 1200,
         now: datetime | None = None,
         sink: Callable[[dict], None] | None = None,
@@ -424,6 +433,13 @@ def run(db: OpsDB, *, max_age_seconds: int = 1200,
         _load_host_probe(effective_config.host_probe_path, current),
         revision=effective_config.git_sha, now=current,
     )
+    resource_path = effective_config.artifact_root if effective_config.artifact_root.is_dir() else db.path.parent
+    disk = assess_disk_headroom(shutil.disk_usage(resource_path).free, effective_config.disk_gate_bytes)
+    if disk['healthy']:
+        disk_resolved = db.resolve_incidents(DISK_INCIDENT_TITLE, resolution='local storage headroom recovered', actor='mova-watchdog')
+    else:
+        db.open_incident_once('P1', DISK_INCIDENT_TITLE, detail=disk)
+        disk_resolved = 0
     if dr["healthy"]:
         dr_resolved = db.resolve_incidents(
             DR_INCIDENT_TITLE, resolution="fresh DR observation recovered",
@@ -481,7 +497,7 @@ def run(db: OpsDB, *, max_age_seconds: int = 1200,
     operational_status = (
         "down" if not state["healthy"] else
         "degraded" if (not agent_queue["healthy"] or not workflow["healthy"]
-                       or not dr["healthy"] or alerts["failed"] or dead) else "ok"
+                       or not dr["healthy"] or not disk["healthy"] or alerts["failed"] or dead) else "ok"
     )
     return {
         "schema": "mova-watchdog-v2",
@@ -489,19 +505,21 @@ def run(db: OpsDB, *, max_age_seconds: int = 1200,
         "reason": state["reason"] or (
             "agent_queue_unhealthy" if not agent_queue["healthy"] else
             "workflow_deadline_risk" if not workflow["healthy"] else
-            "backup_recovery_observation_unhealthy" if not dr["healthy"] else None
+            "backup_recovery_observation_unhealthy" if not dr["healthy"] else
+            "local_storage_headroom_low" if not disk["healthy"] else None
         ),
         "tick_age_seconds": state["tick_age_seconds"],
         "latest_tick_status": state["latest_tick_status"],
-        "incidents_resolved": scheduler_resolved + queue_resolved + workflow_resolved + dr_resolved,
+        "incidents_resolved": scheduler_resolved + queue_resolved + workflow_resolved + dr_resolved + disk_resolved,
         "resolved_by_domain": {
             "scheduler": scheduler_resolved, "agent_queue": queue_resolved,
             "workflow": workflow_resolved,
-            "disaster_recovery": dr_resolved,
+            "disaster_recovery": dr_resolved, "disk_headroom": disk_resolved,
         },
         "agent_queue": agent_queue,
         "workflow": workflow,
         "disaster_recovery": dr,
+        "disk_headroom": disk,
         "expired_authorizations": expired_authorizations,
         "alerts": alerts,
         "outbox_dead": dead,
@@ -516,7 +534,7 @@ def resilience_drill() -> dict:
         db = OpsDB(root / "ops.db", enforce_version=False)
         db.migrate()
         config = RuntimeConfig(research_root=root / "research",
-                               host_probe_path=root / "host.json", git_sha="f" * 40)
+                               host_probe_path=root / "host.json", git_sha="f" * 40, disk_gate_bytes=1)
         current = datetime.now(timezone.utc)
         # All healthy domains are explicit hermetic inputs. This synthetic
         # observation is scoped to the ephemeral drill, never host DR evidence.
