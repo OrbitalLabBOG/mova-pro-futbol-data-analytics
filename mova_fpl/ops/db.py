@@ -1421,10 +1421,22 @@ class OpsDB:
         """Atomically admit one active incident and one outbox event per title."""
         with self.transaction() as con:
             row = con.execute(
-                "SELECT incident_id FROM incidents WHERE title=? AND status!='resolved' "
+                "SELECT incident_id,severity FROM incidents WHERE title=? AND status!='resolved' "
                 "ORDER BY opened_at DESC LIMIT 1", (title,),
             ).fetchone()
             if row:
+                if severity in {'P0','P1','P2','P3'} and severity < row['severity']:
+                    payload={'incident_id':row['incident_id'],'title':title,
+                             'previous_severity':row['severity'],**(detail or {})}
+                    con.execute("UPDATE incidents SET severity=?,detail_json=? WHERE incident_id=?",
+                                (severity,canonical_json(detail or {}),row['incident_id']))
+                    con.execute(
+                        "INSERT INTO outbox_events(outbox_id,event_key,created_at,available_at,event_type,"
+                        "severity,status,payload_json) VALUES(?,?,?,?,?,?,'pending',?) ON CONFLICT(event_key) DO NOTHING",
+                        (new_id('outbox'),f"incident:{row['incident_id']}:escalated:{severity}",utcnow(),utcnow(),
+                         'incident_escalated',severity,canonical_json(payload)))
+                    self.append_audit('incident_escalated',actor='mova-ops',severity='warning',
+                        subject_type='incident',subject_id=row['incident_id'],payload=payload,con=con)
                 return str(row["incident_id"])
             return self._insert_incident(con, severity, title, correlation_id=correlation_id,
                                          cycle_id=cycle_id, job_id=job_id, detail=detail)

@@ -449,3 +449,15 @@ def test_incident_dedup_is_atomic_and_old_incident_lookup_has_no_window(tmp_path
     for i in range(105):db.open_incident('P2',f'other-{i}')
     assert db.incident(ids[0])['title']=='persistent'
     assert db.incident('missing') is None
+
+
+def test_persistent_incident_escalates_once_and_never_downgrades(tmp_path):
+    db=_db(_config(tmp_path));db.migrate()
+    incident=db.open_incident_once('P1','deadline risk',detail={'stage':'pending'})
+    for _ in range(3):
+        assert db.open_incident_once('P0','deadline risk',detail={'stage':'missed'})==incident
+    db.open_incident_once('P1','deadline risk')
+    assert db.incident(incident)['severity']=='P0'
+    assert len(db.recent('incidents'))==1
+    assert db.outbox_status()['due']==2
+    assert len([r for r in db.recent('audit_events') if r['event_type']=='incident_escalated'])==1

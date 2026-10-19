@@ -600,6 +600,8 @@ copias locales redundantes. La creación SQLite/PG ya no elimina backups por eda
 el único eliminador local es esta política. El watchdog abre un único P1 cuando
 el espacio libre baja de hard gate +8 GiB (28 GiB con la configuración actual),
 antes del mínimo de decisión de 20 GiB. Cada intento de tick queda registrado,
-pero su fallo persistente genera un solo incidente; tras un tick recuperado se
+pero su fallo persistente genera un solo incidente. Una escalada P1→P0 actualiza
+el incidente y genera una sola notificación nueva; nunca rebaja la severidad.
+Tras un tick recuperado se
 resuelven los anteriores sin borrar historia. Readiness conserva el alcance
 activo y sus gates reales; corregir el panel no autoriza escrituras nuevas.
