@@ -422,7 +422,8 @@ def build_triage(config: RuntimeConfig, db: OpsDB, *,
     cockpit = build_cockpit(config, db, now=now)
     incidents = db.recent("incidents", 100)
     if incident_id:
-        incidents = [row for row in incidents if row.get("incident_id") == incident_id]
+        incident = db.incident(incident_id)
+        incidents = [incident] if incident else []
         if not incidents:
             raise ValueError("incident not found")
     else:

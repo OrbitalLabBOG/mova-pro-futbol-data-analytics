@@ -221,6 +221,7 @@ def _controls(raw: dict, config: RuntimeConfig) -> dict:
         "compliance_gate": config.compliance_gate,
         "kill_switch": True,
         "browser_writes": config.enable_browser_writes,
+        "delivery_scope": None,
     }
     return {key: (raw.get(key) or {}).get("value", default)
             for key, default in defaults.items()}
@@ -816,7 +817,7 @@ def build_doctor(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
             "mova-fpl-postgres-sync.timer",
         )
         if (db.controls().get('delivery_scope') or {}).get('value') == 'lineup-v1':
-            expected_units += ('mova-fpl-delivery.timer',)
+            expected_units += ('mova-fpl-delivery.timer', 'mova-fpl-backup-retention.timer')
         bad_units = [name for name in expected_units
                      if (units.get(name) or {}).get("active_state") != "active"]
         host_fresh = host.get("age_seconds") is not None and host["age_seconds"] <= 600

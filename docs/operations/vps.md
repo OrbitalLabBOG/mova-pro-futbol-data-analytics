@@ -572,3 +572,34 @@ channel`, `/api/v1/readiness` y cockpit tras recrear el API. Si discrepan, compr
 la ejecución del watchdog, frescura del archivo y fingerprint del live ping.
 La [decisión de observabilidad](../decisions/2026-27/alert-channel-observation-20260922.md)
 conserva el contrato y sus límites. Publicar esta observación no envía un mensaje.
+
+## Retencion local acotada
+
+`mova maintenance backups` es una ruta root del wrapper host. No abre SQLite
+con el Python del host ni cambia controles FPL. Dry-run por defecto; para aplicar:
+
+```bash
+sudo mova maintenance backups --apply --actor julian --reason "retencion local autorizada" --idempotency-key "retention:fecha:revision"
+```
+
+El timer `mova-fpl-backup-retention.timer` ejecuta la política cada hora bajo el
+mismo lock host de backups/offsite, aunque el tick esté bloqueado. Conserva los
+dos sets más recientes, un punto por bloque de seis horas durante 48 h, uno
+diario durante siete días y uno semanal durante 28 días. Presupuesto máximo:
+6 GiB por familia (SQLite y PostgreSQL); los dos protegidos nunca se eliminan
+para cumplirlo. Si éstos exceden el presupuesto, la operación falla y exige
+revisión. Antes de borrar se verifican hashes de los dos sets protegidos; el
+más reciente debe tener <=7 h. Directorios desconocidos, symlinks, parciales,
+backups futuros o inventarios inválidos se conservan y se reportan. El WAL
+vacío y SHM SQLite reconstruible son auxiliares conocidos; un WAL con contenido
+no se considera descartable. Recibos root-only idempotentes:
+`/opt/orbital/backups/.mova-fpl-retention/`.
+
+La copia externa mantiene su propia retención cifrada; este cambio sólo limita
+copias locales redundantes. La creación SQLite/PG ya no elimina backups por edad:
+el único eliminador local es esta política. El watchdog abre un único P1 cuando
+el espacio libre baja de hard gate +8 GiB (28 GiB con la configuración actual),
+antes del mínimo de decisión de 20 GiB. Cada intento de tick queda registrado,
+pero su fallo persistente genera un solo incidente; tras un tick recuperado se
+resuelven los anteriores sin borrar historia. Readiness conserva el alcance
+activo y sus gates reales; corregir el panel no autoriza escrituras nuevas.

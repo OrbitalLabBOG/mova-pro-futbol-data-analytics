@@ -96,16 +96,7 @@ def create_backup(config: RuntimeConfig, db: OpsDB, *, retention_days: int = 35)
         shutil.rmtree(tmp, ignore_errors=True)
         raise
 
-    cutoff = now.timestamp() - retention_days * 86400
-    removed: list[str] = []
-    for candidate in config.backup_root.iterdir():
-        if candidate == root or not candidate.is_dir() or candidate.name.startswith("."):
-            continue
-        try:
-            parsed = datetime.strptime(candidate.name, "%Y%m%dT%H%M%SZ").replace(tzinfo=timezone.utc)
-        except ValueError:
-            continue
-        if parsed.timestamp() < cutoff:
-            shutil.rmtree(candidate)
-            removed.append(candidate.name)
-    return {"status": "completed", "path": str(root), "files": files, "removed": removed}
+    # Local retention is handled by the independent, audited host retention timer.
+    # Backup creation never deletes older sets or depends on a healthy tick.
+    return {"status": "completed", "path": str(root), "files": files, "removed": [],
+            "retention": "mova-fpl-backup-retention.timer"}

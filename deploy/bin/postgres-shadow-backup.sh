@@ -4,7 +4,6 @@ set -euo pipefail
 repo_dir=${MOVA_REPO_DIR:-/opt/orbital/services/mova-fpl}
 deploy_env=${MOVA_DEPLOY_ENV:-/etc/mova-fpl/deploy.env}
 backup_root=${MOVA_BACKUP_ROOT:-/opt/orbital/backups/mova-fpl}
-retention_days=${MOVA_POSTGRES_BACKUP_RETENTION_DAYS:-35}
 
 if [[ -r "$deploy_env" ]]; then
   set -a
@@ -64,9 +63,5 @@ docker compose exec -T postgres pg_restore --list < "$partial/postgres-shadow.du
 chmod 0640 "$partial/postgres-shadow.dump" "$partial/manifest.json"
 mv "$partial" "$destination"
 
-while IFS= read -r expired; do
-  [[ "$expired" == "$backup_root"/20??????T??????Z ]]
-  rm -rf -- "$expired"
-done < <(find "$backup_root" -mindepth 1 -maxdepth 1 -type d \
-  -name '20??????T??????Z' -mtime "+$retention_days" -print)
+# Deletion belongs to the independent bounded-retention host service.
 echo "$destination"

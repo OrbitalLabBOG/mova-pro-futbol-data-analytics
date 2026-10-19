@@ -24,7 +24,7 @@ def run(db, **kwargs):
     from mova_fpl.ops.dr_health import REQUIRED_CHECKS
     current = kwargs.get("now") or datetime.now(timezone.utc)
     config = replace(kwargs.get("config") or RuntimeConfig(),
-                     host_probe_path=db.path.parent / "watchdog-host.json", git_sha="f" * 40)
+                     host_probe_path=db.path.parent / "watchdog-host.json", git_sha="f" * 40, disk_gate_bytes=1)
     config.host_probe_path.write_text(json.dumps({
         "schema": "mova-host-probe-v1", "observed_at": current.isoformat(),
         "dr_observation": {
@@ -456,3 +456,22 @@ def test_watchdog_detects_orphan_permit_file_after_grace(tmp_path):
     assert state["healthy"] is False
     assert state["permits"] == 1
     assert state["anomalies"][0]["reason"] == "orphan_permit"
+
+
+def test_storage_warning_precedes_hard_gate_and_is_deduplicated(tmp_path,monkeypatch):
+    from types import SimpleNamespace
+    from mova_fpl.ops.watchdog import assess_disk_headroom,DISK_INCIDENT_TITLE
+    gib=1024**3
+    assert assess_disk_headroom(29*gib,20*gib)['healthy']
+    assert not assess_disk_headroom(27*gib,20*gib)['healthy']
+    assert assess_disk_headroom(27*gib,20*gib)['hard_gate_passed']
+    db=OpsDB(tmp_path/'ops.db',enforce_version=False);db.migrate()
+    job,_=db.start_job('tick','disk','corr');db.finish_job(job,'completed')
+    monkeypatch.setattr('mova_fpl.ops.watchdog.shutil.disk_usage',lambda _:SimpleNamespace(free=7*gib))
+    first=run(db,sink=lambda _:None);second=run(db,sink=lambda _:None)
+    assert first['disk_headroom']['hard_gate_passed'] is True
+    assert not first['disk_headroom']['healthy']
+    assert sum(r['title']==DISK_INCIDENT_TITLE for r in db.recent('incidents'))==1
+    assert second['alerts']['claimed']==0
+    monkeypatch.setattr('mova_fpl.ops.watchdog.shutil.disk_usage',lambda _:SimpleNamespace(free=30*gib))
+    assert run(db,sink=lambda _:None)['resolved_by_domain']['disk_headroom']==1

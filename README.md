@@ -1,7 +1,7 @@
 ---
 type: docs
 name: MOVA Fantasy Fútbol Data Analytics
-updated: 2026-10-09
+updated: 2026-10-19
 status: active
 tags: [mova, fpl, runtime, operations]
 ---
@@ -13,8 +13,11 @@ Fantasy Premier League 2026/27. El repositorio contiene únicamente el producto 
 collector, almacén causal, modelos de minutos y puntos, optimizador MILP, control plane del
 VPS y contratos de operación segura.
 
-El stack autónomo está desplegado en modo `shadow / A0`: puede recolectar, modelar, decidir
-y auditar, pero los cambios en la cuenta continúan bloqueados por controles explícitos.
+El corte verificado del 17 de octubre dejó `lineup-v1` en `autonomous / A2`, con
+guardado real verificado: mismos quince jugadores, XI, banca y C/VC; cero transfers,
+hits o chips. El 19 de octubre se detectó bloqueo por espacio; el estado vivo se
+consulta en `mova doctor`, no en este antecedente. Los controles siguen siendo
+explícitos y los datos preliminares conservan sus gates.
 El cockpit read-only comparte un único contrato entre CLI y API. Su dashboard ejecutivo público
 sólo expone tres indicadores humanos; diagnóstico, métricas y JSON permanecen en loopback.
 Supabase sólo refleja seguimiento PM y nunca recibe estado operativo.
@@ -27,6 +30,14 @@ ni promueve un modelo. Empezar por el [contrato del dataset](experiments/data_gr
 y la [guía de cierre, tamaños y límites](experiments/data_ground_truth/README.md#cierre-del-gate-de-datos-g112).
 
 ## Versiones y última comprobación
+
+Recuperación candidata del 19 de octubre: retención local acotada por capas y
+presupuesto, ejecutada por timer horario independiente; alerta de disco antes
+del hard gate, incidentes de tick deduplicados, triage por ID sin límite temporal
+y proyección de `delivery_scope` en readiness. La limpieza exige dos sets
+recientes verificados por hash en cada familia, conserva evidencia y rollback,
+y deja recibo idempotente fuera del árbol de snapshots. Ver el [runbook](docs/operations/vps.md#retencion-local-acotada).
+La implementación y sus pruebas no sustituyen la aceptación viva posterior.
 
 Implementación candidata del 17 de octubre: dispatcher host `mova-fpl-delivery.timer`
 y scope `lineup-v1` conectan decisión y guardado R2 completo, independientes de la

@@ -388,6 +388,11 @@ def parser() -> argparse.ArgumentParser:
     cleanup.add_argument("--actor")
     cleanup.add_argument("--reason")
     cleanup.add_argument("--idempotency-key")
+    backup_cleanup = maintenance_commands.add_parser("backups", help="host-only bounded local backup retention")
+    backup_cleanup.add_argument("--apply", action="store_true")
+    backup_cleanup.add_argument("--actor")
+    backup_cleanup.add_argument("--reason")
+    backup_cleanup.add_argument("--idempotency-key")
     readiness = commands.add_parser(
         "readiness", help="gate consolidado de promoción de autonomía"
     )
@@ -468,7 +473,7 @@ def parser() -> argparse.ArgumentParser:
     host_status.add_argument("--actor")
     host_status.add_argument("--reason")
     backup = commands.add_parser("backup")
-    backup.add_argument("--retention-days", type=int, default=35)
+    backup.add_argument("--retention-days", type=int, default=35, help="compatibility only; local deletion belongs to the bounded retention timer")
     backup.add_argument("--force", action="store_true",
                         help="crea captura adicional aunque exista backup en la hora")
     backup.add_argument("--actor")
@@ -1007,6 +1012,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.alerts_command == "test":
             return 0 if payload.get("status") in {"pass", "reused"} else 2
     elif args.command == "maintenance":
+        if args.maintenance_command == "backups":
+            raise SystemExit("Use the root host mova facade for backup retention")
         from mova_fpl.ops.maintenance import cleanup
 
         if args.apply and not all((args.actor, args.reason, args.idempotency_key)):

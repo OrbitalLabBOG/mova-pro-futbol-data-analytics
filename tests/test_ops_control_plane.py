@@ -427,3 +427,25 @@ def test_backup_missing_required_database_fails_without_publishing(tmp_path, mis
     with pytest.raises(FileNotFoundError):
         create_backup(config, db)
     assert not list(config.backup_root.iterdir())
+
+
+def test_repeated_resource_failures_keep_all_jobs_but_one_incident(tmp_path):
+    config=replace(_config(tmp_path),disk_gate_bytes=10**30)
+    db=_db(config);db.migrate()
+    for index in range(3):
+        with pytest.raises(RuntimeError,match='disk gate'):
+            TickRunner(config,db).run(force=True,actor='test',reason='disk exhaustion',idempotency_key=f'disk-{index}')
+    assert len(db.recent('job_runs'))==3
+    assert len(db.recent('incidents'))==1
+    assert db.outbox_status()['due']==1
+
+
+def test_incident_dedup_is_atomic_and_old_incident_lookup_has_no_window(tmp_path):
+    from concurrent.futures import ThreadPoolExecutor
+    config=_config(tmp_path);db=_db(config);db.migrate()
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        ids=list(pool.map(lambda _:db.open_incident_once('P1','persistent'),range(8)))
+    assert len(set(ids))==1
+    for i in range(105):db.open_incident('P2',f'other-{i}')
+    assert db.incident(ids[0])['title']=='persistent'
+    assert db.incident('missing') is None

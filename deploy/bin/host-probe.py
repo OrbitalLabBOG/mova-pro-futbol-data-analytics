@@ -25,6 +25,8 @@ UNITS = (
     "mova-fpl-private-state.timer",
     "mova-fpl-backup.service",
     "mova-fpl-backup.timer",
+    "mova-fpl-backup-retention.service",
+    "mova-fpl-backup-retention.timer",
     "mova-fpl-watchdog.service",
     "mova-fpl-watchdog.timer",
     "mova-fpl-collector.service",

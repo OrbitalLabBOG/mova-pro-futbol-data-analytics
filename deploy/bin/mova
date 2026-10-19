@@ -16,6 +16,12 @@ if [[ -r "$deploy_env" ]]; then
 fi
 
 cd "$repo_dir"
+if [[ "${1:-}" == maintenance && "${2:-}" == backups ]]; then
+  [[ $(id -u) == 0 ]] || { echo "backup retention requires the root host facade" >&2; exit 2; }
+  exec flock -n -E 75 /run/lock/mova-fpl-worker.lock python3 -m mova_fpl.ops.backup_retention \
+    "${@:3}" --root "${MOVA_BACKUP_ROOT:-/opt/orbital/backups/mova-fpl}" \
+    --receipt-root /opt/orbital/backups/.mova-fpl-retention
+fi
 if [[ "${1:-}" == "status" || "${1:-}" == "doctor" || "${1:-}" == "watchdog" ]]; then
   install -d -m 0750 -o 10001 -g 10001 "$data_root/runtime"
   python3 deploy/bin/host-probe.py \
