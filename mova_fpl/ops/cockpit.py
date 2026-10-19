@@ -340,6 +340,10 @@ def evaluate_cockpit(*, operator_status: dict, safety: dict, readiness: dict,
             "external_alerts": gate_contract("EXTERNAL_ALERT_CHANNEL_LIVE_PROVEN"),
         },
         "exit_shadow": {
+            "delivery_scope": activation.get('delivery_scope'),
+            "scope_ready": activation.get('scope_ready'),
+            "target_level": readiness.get('target_level'),
+            "delivery_readiness": readiness.get('delivery_readiness'),
             "status": "eligible" if (
                 activation.get("technical_eligible_level") != "A0"
             ) else "evidence_pending",
@@ -347,7 +351,9 @@ def evaluate_cockpit(*, operator_status: dict, safety: dict, readiness: dict,
             "technical_eligible_level": activation.get("technical_eligible_level"),
             "promotion_is_automatic": False,
             "activation_blockers": activation.get("activation_blockers") or [],
-            "next_actions": scorecard.get("next_actions") or [],
+            "next_actions": ((readiness.get('next_actions') or [])
+                             if activation.get('delivery_scope') == 'lineup-v1'
+                             else scorecard.get("next_actions") or []),
         },
         "quality": {
             "operator": operator_status.get("overall_status"),

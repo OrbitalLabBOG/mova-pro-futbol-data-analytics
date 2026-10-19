@@ -10,6 +10,7 @@ import ipaddress
 import socket
 import ssl
 import re
+from html import escape
 from collections.abc import Callable
 from dataclasses import dataclass, replace
 from datetime import datetime, timezone
@@ -40,6 +41,28 @@ class SlackSettings:
 
 
 AlertSettings = WebhookSettings | SlackSettings
+
+
+class SlackDeliveryError(RuntimeError):
+    """Only fixed public diagnostics may enter the ledger; never Slack response bodies."""
+    def __init__(self, code: str, retry_seconds: int = 300):
+        super().__init__(code)
+        self.code, self.retry_seconds = code, retry_seconds
+
+
+def _safe_cause(event: dict) -> str:
+    detail = (event.get('incident_observation') or {}).get('detail') or {}
+    error = str(detail.get('error') or '')
+    disk = re.fullmatch(r'disk gate: (\d+) < (\d+)', error)
+    if disk:
+        free, minimum = (int(v) / 1024**3 for v in disk.groups())
+        return f'espacio libre {free:.1f} GiB; mínimo {minimum:.1f} GiB'
+    codes = {'RuntimeError': 'fallo operativo; revisar el incidente',
+             'TimeoutError': 'tiempo de espera agotado',
+             'ConnectionError': 'conexión no disponible',
+             'PermissionError': 'permisos insuficientes',
+             'ValueError': 'validación de datos fallida'}
+    return codes.get(detail.get('error_code'), 'revisar diagnóstico del incidente')
 
 
 def _load_settings(config: RuntimeConfig) -> AlertSettings | None:
@@ -165,9 +188,31 @@ def _slack_post(settings: SlackSettings, body: bytes) -> int:
                      "User-Agent": "mova-fpl/1"},
         )
         response = connection.getresponse()
-        payload = json.loads(response.read(4096))
+        raw = response.read(4096)
+        if response.status == 429:
+            try:
+                delay = min(3600, max(1, int(response.getheader('Retry-After') or 300)))
+            except ValueError:
+                delay = 300
+            raise SlackDeliveryError('slack_rate_limited', delay)
+        if response.status >= 500:
+            raise SlackDeliveryError('slack_unavailable')
+        try:
+            payload = json.loads(raw)
+        except (ValueError, UnicodeError):
+            raise SlackDeliveryError('slack_invalid_response') from None
+        if not isinstance(payload, dict):
+            raise SlackDeliveryError('slack_invalid_response')
         if response.status != 200 or payload.get("ok") is not True:
-            raise RuntimeError("Slack alert delivery failed")
+            codes = {'invalid_auth': 'slack_authentication_failed',
+                     'token_revoked': 'slack_authentication_failed',
+                     'account_inactive': 'slack_authentication_failed',
+                     'missing_scope': 'slack_missing_scope',
+                     'not_in_channel': 'slack_not_in_channel',
+                     'channel_not_found': 'slack_recipient_unavailable',
+                     'user_not_found': 'slack_recipient_unavailable',
+                     'ratelimited': 'slack_rate_limited'}
+            raise SlackDeliveryError(codes.get(payload.get('error'), 'slack_delivery_rejected'))
         return response.status
     finally:
         connection.close()
@@ -181,10 +226,26 @@ def slack_sink(settings: SlackSettings, *,
         content = _payload(event, settings)
         severity = content["severity"]
         title = str(content.get("title") or content["event_type"])[:180]
+        recovered = event['event_type'] == 'incident_recovered'
+        source = json.loads(event.get('payload_json') or '{}')
+        observation = event.get('incident_observation') or {}
+        if recovered:
+            text = (f'MOVA FPL RECUPERADO: {escape(title)}\n'
+                    f"Estado: resuelto · {source.get('closed_at', content['created_at'])} UTC\n"
+                    f"Duración: {int(source.get('duration_seconds') or 0) // 60} min · "
+                    f"incidentes cerrados: {int(source.get('resolved_count') or 1)}")
+        elif event['event_type'] in {'incident_opened', 'incident_escalated'}:
+            text = (f'MOVA FPL {severity}: {escape(title)}\n'
+                    f"Estado: {observation.get('status', 'open')} · "
+                    f"Inicio: {observation.get('opened_at', content['created_at'])} UTC\n"
+                    f'Causa: {_safe_cause(event)}\nAcción: revisar mova triage por el ID del evento')
+        else:
+            text = f'MOVA FPL {severity}: {escape(title)}'
         # Keep the destination message redacted and bounded; never include detail JSON.
         body = json.dumps({
             "channel": settings.recipient_user_id,
-            "text": f"MOVA FPL {severity}: {title}\nEvento: {content['event_key']}",
+            "text": f"{text}\nEvento: {content['event_key']}",
+            "unfurl_links": False, "unfurl_media": False,
         }, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
         transport(settings, body)
     return sink
@@ -355,21 +416,30 @@ def dispatch(db: OpsDB, *, limit: int = 20, outbox_id: str | None = None,
              sink: Callable[[dict], None] = journal_sink) -> dict:
     claimed = ([event] if (outbox_id and (event := db.claim_outbox_by_id(outbox_id)))
                else [] if outbox_id else db.claim_outbox(limit=limit))
-    delivered = failed = dead = 0
+    delivered = failed = dead = suppressed = 0
     for event in claimed:
+        event = db.alert_delivery_context(event)
+        if event is None:
+            suppressed += 1
+            continue
         try:
             sink(event)
         except Exception as exc:  # noqa: BLE001 - el outbox debe sobrevivir al sink
             status = db.finish_outbox(
-                event["outbox_id"], delivered=False, error=type(exc).__name__,
+                event["outbox_id"], delivered=False,
+                error=exc.code if isinstance(exc, SlackDeliveryError) else type(exc).__name__,
+                retry_seconds=exc.retry_seconds if isinstance(exc, SlackDeliveryError) else 300,
             )
             failed += 1
             dead += int(status == "dead")
         else:
             db.finish_outbox(event["outbox_id"], delivered=True)
             delivered += 1
-    return {"schema": "mova-alert-dispatch-v1", "claimed": len(claimed),
-            "delivered": delivered, "failed": failed, "dead": dead}
+    result = {"schema": "mova-alert-dispatch-v1", "claimed": len(claimed),
+              "delivered": delivered, "failed": failed, "dead": dead}
+    if suppressed:
+        result['suppressed'] = suppressed
+    return result
 
 
 def live_ping(config: RuntimeConfig, db: OpsDB, *, actor: str, reason: str,

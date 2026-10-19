@@ -1566,6 +1566,8 @@ class OpsDB:
             ).fetchone()
             if not row:
                 raise ValueError("outbox event not found")
+            if row['status'] == 'superseded' and not delivered:
+                return 'superseded'
             if delivered:
                 status = "sent"
                 con.execute(
@@ -1598,7 +1600,7 @@ class OpsDB:
             ).fetchone()
             if not row:
                 raise ValueError("outbox event not found")
-            if row["status"] in {"sent", "acknowledged"}:
+            if row["status"] in {"sent", "acknowledged", "superseded"}:
                 raise ValueError("delivered outbox event cannot be retried")
             reused = row["status"] in {"pending", "sending"}
             if not reused:
@@ -1645,7 +1647,7 @@ class OpsDB:
                           actor: str = "mova-ops") -> int:
         with self.transaction() as con:
             incidents = con.execute(
-                "SELECT incident_id,severity FROM incidents "
+                "SELECT incident_id,severity,opened_at FROM incidents "
                 "WHERE title=? AND status!='resolved'", (title,),
             ).fetchall()
             cur = con.execute(
@@ -1659,7 +1661,62 @@ class OpsDB:
                     subject_type="incident", subject_id=incident["incident_id"],
                     payload={"title": title, "resolution": resolution}, con=con,
                 )
+            if incidents:
+                ids = [row['incident_id'] for row in incidents]
+                marks = ','.join('?' for _ in ids)
+                events = con.execute(
+                    f"SELECT * FROM outbox_events WHERE json_extract(payload_json,'$.incident_id') IN ({marks}) "
+                    "AND event_type IN ('incident_opened','incident_escalated')", ids,
+                ).fetchall()
+                # One recovery for the affected domain, including legacy duplicate incidents.
+                # An in-flight/expired lease may have reached Slack without a local receipt.
+                notified = any(row['status'] == 'sent' or int(row['attempts']) > 0 for row in events)
+                for event in events:
+                    if event['status'] in {'pending', 'dead'}:
+                        self._supersede_alert(con, event['outbox_id'])
+                if notified:
+                    latest = max(incidents, key=lambda row: row['opened_at'])
+                    opened = min(row['opened_at'] for row in incidents)
+                    ended = utcnow()
+                    duration = max(0, int((datetime.fromisoformat(ended) - datetime.fromisoformat(opened)).total_seconds()))
+                    payload = {'incident_id': latest['incident_id'], 'title': title,
+                               'incident_status': 'resolved', 'opened_at': opened, 'closed_at': ended,
+                               'duration_seconds': duration, 'resolved_count': len(incidents)}
+                    available = max([ended] + [row['available_at'] for row in events if row['status'] == 'sending'])
+                    con.execute(
+                        "INSERT INTO outbox_events(outbox_id,event_key,created_at,available_at,event_type,severity,status,payload_json) "
+                        "VALUES(?,?,?,?,?,?,'pending',?) ON CONFLICT(event_key) DO NOTHING",
+                        (new_id('outbox'), f"incident:{latest['incident_id']}:recovered", ended, available,
+                         'incident_recovered', 'P2', canonical_json(payload)),
+                    )
         return int(cur.rowcount)
+
+    def _supersede_alert(self, con, outbox_id: str) -> None:
+        con.execute("UPDATE outbox_events SET status='superseded',last_error='incident_resolved_before_delivery' "
+                    "WHERE outbox_id=?", (outbox_id,))
+        self.append_audit('alert_obsolete_suppressed', actor='mova-alert-dispatcher',
+                          subject_type='outbox_event', subject_id=outbox_id,
+                          payload={'reason': 'incident_resolved_before_delivery'}, con=con)
+
+    def alert_delivery_context(self, event: dict) -> dict | None:
+        """Recheck immediately before I/O; never replay an obsolete opening alert."""
+        if event['event_type'] not in {'incident_opened', 'incident_escalated'}:
+            return event
+        incident_id = json.loads(event['payload_json']).get('incident_id')
+        with self.transaction() as con:
+            row = con.execute('SELECT * FROM incidents WHERE incident_id=?', (incident_id,)).fetchone()
+            state = con.execute('SELECT status FROM outbox_events WHERE outbox_id=?', (event['outbox_id'],)).fetchone()
+            if not state or state['status'] != 'sending':
+                return None
+            if row and row['status'] == 'resolved':
+                self._supersede_alert(con, event['outbox_id'])
+                return None
+            if row:
+                return {**event, 'incident_observation': {
+                    'status': row['status'], 'opened_at': row['opened_at'],
+                    'detail': json.loads(row['detail_json']),
+                }}
+        return event
 
     def status(self) -> dict:
         with self.connect(readonly=True) as con:

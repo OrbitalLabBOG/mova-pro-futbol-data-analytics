@@ -109,3 +109,14 @@ La guía oficial usa [Save My Team](https://www.premierleague.com/en/news/217489
 La página también contiene un `Confirm My Choices` oculto, que nunca cuenta como
 control disponible. El nombre observado se registra y se usa para el único clic;
 tras deshabilitarse/desaparecer se recarga y verifica el estado autenticado.
+
+## Prueba física sin cambios deportivos — 19 de octubre
+
+Por petición de Julián de corregir alertas/readiness y verificar el guardado antes
+del deadline, la prueba temporal también admite guardar exactamente la propuesta
+ya persistida. Ese Save se clasifica R2/A2 aunque el diff deportivo esté vacío:
+exige todos los gates, aprobación explícita vigente de máximo una hora, lease,
+un único clic, recarga y verificación de economía/chips. No se fabrica un cambio
+de jugador o capitanía para hacer la prueba. La ruta normal sin esa aprobación
+continúa R0/unchanged_verified y no acredita prueba física. El guardado anticipado
+sigue sin cerrar la GW ni sustituir la entrega final del scheduler.

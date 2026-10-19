@@ -145,6 +145,12 @@ def build_execution_plan(*, envelope: dict, envelope_row: dict, manifest_row: di
     """Construye un plan inmutable y fail-closed sin realizar IO."""
     now = now.astimezone(timezone.utc)
     risk_class, exact_diff = _risk_and_diff(envelope)
+    # An explicitly approved physical Save is R2 even when every target is
+    # already selected. It must cross the same claim/begin/verify boundary;
+    # a read-only/no-op receipt must never qualify the physical driver.
+    repeat_save_proof = risk_class == 'R0' and lineup_proof(controls, envelope['cycle_id'], now)
+    if repeat_save_proof:
+        risk_class = 'R2'
     required_level = RISK_REQUIREMENTS[risk_class]
     selected = _candidate(envelope, str(envelope["selected_candidate_key"]))
     deadline = _parse_time(manifest_row["deadline_at"])
@@ -235,6 +241,7 @@ def build_execution_plan(*, envelope: dict, envelope_row: dict, manifest_row: di
     body = {
         "schema": SCHEMA,
         "delivery_proof": proof,
+        "repeat_save_proof": repeat_save_proof,
         "policy_version": POLICY_VERSION,
         "cycle_id": envelope["cycle_id"],
         "season": envelope["season"],
@@ -378,12 +385,22 @@ class ExecutionService:
 
     def status(self, *, limit: int = 20) -> dict:
         rehearsals = self.db.browser_rehearsal_summary(REHEARSAL_CONTRACTS)
+        cycle = self.db.status().get('cycle') or {}
+        attempt = self.db.latest_delivery_attempt(cycle.get('cycle_id', ''))
+        final_receipt = None
+        if attempt and attempt['status'] == 'verified' and not attempt['is_delivery_proof']:
+            final_receipt = {'execution_id': attempt['execution_id'], 'status': 'saved_verified',
+                             'finished_at': attempt['finished_at']}
+        elif receipt := self.db.delivery_receipt(cycle.get('cycle_id', '')):
+            final_receipt = {'job_id': receipt['job_id'], 'status': 'unchanged_verified',
+                             'finished_at': receipt['finished_at']}
         return {
             "schema": "mova-execution-status-v1",
             "policy_version": POLICY_VERSION,
             "browser_driver": driver_capabilities(rehearsals),
             "delivery": {'scope': (self.db.controls().get('delivery_scope') or {}).get('value'),
                          'live_proof': self.db.latest_delivery_proof(self.config.git_sha),
+                         'final_receipt': final_receipt,
                          'target_seconds_before_deadline': 10800, 'escalate_seconds_before_deadline': 7200,
                          'last_dispatch_seconds_before_deadline': 1800},
             "autonomous_closeout": self.db.autonomous_closeout_summary(

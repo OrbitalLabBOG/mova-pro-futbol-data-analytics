@@ -7,7 +7,7 @@ controles ni concede autoridad por sí mismo.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB
@@ -563,20 +563,44 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
         ],
     }
     unmet = [gate for gate in gates if gate["status"] != "pass"]
+    target_level = 'A2' if scoped_delivery else 'A3'
+    applicable_unmet = [gate for gate in unmet if target_level in gate['required_for']]
+    historical = [gate for gate in unmet if target_level not in gate['required_for']]
+    delivery = execution_status.get('delivery') or {}
+    delivery_window = {'status': 'unknown', 'opens_at': None, 'closes_at': None}
+    try:
+        deadline = datetime.fromisoformat(str(gameweek.get('deadline_at') or '').replace('Z', '+00:00'))
+        opens, closes = deadline - timedelta(hours=3), deadline - timedelta(minutes=30)
+        delivery_window = {'status': 'waiting' if now < opens else 'open' if now < closes else 'closed',
+                           'opens_at': opens.isoformat(), 'closes_at': closes.isoformat()}
+    except (KeyError, ValueError, TypeError):
+        pass
     return {
         "schema": SCHEMA,
         "generated_at": generated_at or datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "season": runtime.get("season"),
         "cycle_id": gameweek.get("cycle_id"),
         "gw": target_gw,
-        "overall_status": "ready" if eligible == "A3" and not unmet else "not_ready",
+        "overall_status": "ready" if (not applicable_unmet if scoped_delivery else eligible == 'A3' and not unmet) else "not_ready",
+        "target_level": target_level,
+        "delivery_readiness": {
+            'scope': controls.get('delivery_scope'),
+            'runtime_healthy': operator_status.get('overall_status') == 'healthy',
+            'authority_enabled': not activation['activation_blockers'] and current_level == 'A2' and scoped_delivery,
+            'driver_live_proven': bool(delivery.get('live_proof')),
+            'cycle_ready': gameweek.get('readiness') == 'ready',
+            'window': delivery_window,
+            'final_receipt': delivery.get('final_receipt'),
+            'blocking_gates': [gate['code'] for gate in applicable_unmet],
+        },
+        "historical_diagnostics": [gate['code'] for gate in historical],
         "summary": {**counts, "total": len(gates)},
         "activation": activation,
         "gates": gates,
         "next_actions": [
             {"code": gate["code"], "status": gate["status"],
              "next_action": gate["next_action"]}
-            for gate in unmet
+            for gate in (applicable_unmet if scoped_delivery else unmet)
         ],
     }
 
