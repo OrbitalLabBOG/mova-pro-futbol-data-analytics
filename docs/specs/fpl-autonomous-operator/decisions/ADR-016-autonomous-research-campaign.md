@@ -58,6 +58,11 @@ calcula la meta de adquisición sobre pendientes, no sobre todo el foco previo.
 La continuación no hace radar global ni carga memoria/catálogo por rutina; entrega
 al cubrir objetivos y conserva not_checked/uncertainty cuando faltan fuentes.
 La prueba captura turn/start.input del proceso real con un servidor RPC simulado,
-verifica los IDs y ausencia del antiguo mandato de radar. El timer puede reanudar
-el intento físico admisible de una request existente usando la implementación
-corregida, registrando su hash real; no se edita request ni se borra el fallo.
+verifica los IDs y ausencia del antiguo mandato de radar. El worker rechaza correctamente una request cuyo contrato sella assets anteriores.
+Para una continuación queued de release anterior que ya tuvo logical_token_guard,
+el encolador normal retira la request incompatible, conserva su cargo conservador
+y receipts, vence permisos no iniciados y crea una nueva ligada al padre importado
+válido. El ID incluye la request retirada para no reutilizar el hijo incompatible.
+No se reemplazan intentos en curso, hashes alterados, experimentos ni fallos de la
+misma release. La falta de cuota/cutoff conserva el bloqueo y no genera inferencia.
+No se edita request ni se borra el fallo; aceptación histórica permanece intacta.

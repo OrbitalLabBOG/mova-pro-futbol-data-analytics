@@ -544,6 +544,56 @@ class StrategicContextService:
         return {**recorded, "cycle_id": cycle_id, "artifact_path": str(artifact),
                 "artifact_sha256": artifact_sha, "manifest": body}
 
+    def _supersede_failed_old_release(self) -> None:
+        """Retire a guarded failure after a corrected release; never edit its request."""
+        cycle = self.db.status().get('cycle') or {}
+        with self.db.connect(readonly=True) as con:
+            row = con.execute("SELECT * FROM research_runs r WHERE cycle_id=? AND NOT EXISTS "
+                "(SELECT 1 FROM audit_events a WHERE a.subject_id=r.research_run_id AND a.event_type IN "
+                "('research_experiment_enqueued','research_experiment_completed')) ORDER BY queued_at DESC LIMIT 1",
+                              (cycle.get('cycle_id'),)).fetchone()
+            if not row or row['status'] != 'queued':
+                return
+            failed = con.execute("SELECT 1 FROM agent_worker_attempt_events WHERE subject_id=? "
+                "AND event_type='finished' AND status='failed' AND error_code='logical_token_guard' LIMIT 1",
+                (row['research_run_id'],)).fetchone()
+            running = con.execute("SELECT 1 FROM agent_worker_attempt_events s WHERE subject_id=? "
+                "AND event_type='started' AND NOT EXISTS (SELECT 1 FROM agent_worker_attempt_events f "
+                "WHERE f.attempt_id=s.attempt_id AND f.event_type='finished') LIMIT 1",
+                (row['research_run_id'],)).fetchone()
+        if not failed or running:
+            return
+        request_path = Path(row['request_path'])
+        if not request_path.is_file() or not request_path.resolve().is_relative_to(self.config.research_root.resolve()):
+            return
+        try:
+            if request_path.stat().st_size > MAX_RESULT_BYTES:
+                return
+            request = json.loads(request_path.read_text())
+        except (OSError,ValueError):
+            return
+        if request.get('request_sha256') != row['request_sha256'] or sha256_json({k:v for k,v in request.items() if k!='request_sha256'}) != row['request_sha256']:
+            return
+        version, _ = researcher_release()
+        if request.get('experiment') or request.get('agent_version') == version:
+            return
+        parent_id = (request.get('continuation') or {}).get('parent_run_id')
+        parent = self.db.research_run(parent_id) if parent_id else None
+        if not parent or parent['status'] != 'imported' or parent['cycle_id'] != row['cycle_id']:
+            return
+        detail = canonical_json({'parent_run_id':parent_id, 'old_version':request['agent_version'],
+                                 'replacement_version':version})
+        self.db.reject_research_run(row['research_run_id'], error_code='research_release_superseded', error_detail=detail)
+        self._quarantine_request(row['research_run_id'])
+        with self.db.transaction() as con:
+            con.execute("UPDATE agent_attempt_authorizations SET status='expired' WHERE subject_id=? "
+                        "AND status IN ('preparing','authorized')", (row['research_run_id'],))
+            self.db.append_audit('research_failed_release_superseded', actor='mova-research-scheduler',
+                subject_type='research_run',subject_id=row['research_run_id'],cycle_id=row['cycle_id'],
+                payload={'reason':'corrected release replaces incompatible failed request',
+                         'parent_run_id':parent_id,'replacement_version':version,
+                         'idempotency_key':f"research-release:{row['research_run_id']}:{version}"},con=con)
+
     def due(self, *, now: datetime | None = None) -> dict:
         self.db.migrate()
         current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
@@ -595,6 +645,16 @@ class StrategicContextService:
                 return {"due": False, "reason": "previous_run_not_terminal",
                         "latest_status": latest["status"], "deadline_seconds": seconds,
                         "run_kind": run_kind}
+        if attempted_in_slot and attempted_in_slot['error_code'] == 'research_release_superseded':
+            from mova_fpl.ops.research_continuation import assess
+            detail = json.loads(attempted_in_slot['error_detail'])
+            parent = self.db.research_run(detail['parent_run_id'])
+            replacement = assess(self.config,self.db,parent,count=0,run_kind=run_kind,seconds=seconds)
+            if replacement:
+                if replacement.get('continuation'):
+                    replacement['continuation']['replaces_run_id'] = attempted_in_slot['research_run_id']
+                return {**replacement,'cycle_id':cycle['cycle_id'],'run_kind':run_kind,
+                        'deadline_seconds':seconds,'replaces_run_id':attempted_in_slot['research_run_id']}
         if attempted_in_slot:
             from mova_fpl.ops.research_continuation import assess
             with self.db.connect(readonly=True) as con:
@@ -636,6 +696,9 @@ class StrategicContextService:
                 resume_run_id: str | None = None) -> dict:
         if resume_run_id and not force:
             raise ValueError('manual continuation requires audited --force')
+        self.db.migrate()
+        if not force and not _experiment:
+            self._supersede_failed_old_release()
         assessment = self.due()
         if not force and not assessment["due"]:
             return {"status": "skipped", **assessment}
@@ -652,7 +715,8 @@ class StrategicContextService:
         if not force and assessment.get('continuation'):
             parent = assessment['continuation']['parent_run_id']
             deterministic_id = 'research_' + hashlib.sha256(
-                f"completion:{parent}:{assessment['run_kind']}".encode()).hexdigest()[:32]
+                (f"completion:{parent}:{assessment['run_kind']}" +
+                 (":"+assessment["replaces_run_id"] if assessment.get("replaces_run_id") else "")).encode()).hexdigest()[:32]
             existing = self.db.research_run(deterministic_id)
             if existing:
                 return {**existing, 'reused': True, 'due': assessment}

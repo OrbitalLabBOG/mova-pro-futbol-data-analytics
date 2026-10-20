@@ -231,3 +231,49 @@ def test_real_token_or_use_exhaustion_still_blocks_new_inference(tmp_path,monkey
         'month':{'remaining_tokens':1000000,'remaining_uses':1}})
     due=assess(config,db,run,count=7,run_kind='broad',seconds=40000)
     assert not due['due'] and due['reason']=='completion_budget_exhausted'
+
+
+@pytest.mark.parametrize('condition',['replace','same_release','running','tampered','budget'])
+def test_corrected_release_replaces_failed_request_without_rewriting_it_or_its_charge(tmp_path,monkeypatch,condition):
+    from mova_fpl.ops.agent_releases import researcher_release
+    config,db,service,cycle=setup(tmp_path)
+    parent=service.enqueue();finish(config,db,service,cycle,parent,{1,2,3})
+    if condition!='same_release':
+        monkeypatch.setattr('mova_fpl.ops.strategy.researcher_release',lambda *a:researcher_release('1.15.0'))
+    old=service.enqueue();old_run=db.research_run(old['research_run_id'])
+    original=Path(old_run['request_path']).read_bytes()
+    base={'schema':'mova-agent-attempt-v1','attempt_id':'attempt_fixture_rollover',
+        'subject_type':'research','subject_id':old['research_run_id'],'request_sha256':old_run['request_sha256'],
+        'model':'mock','occurred_at':datetime.now(timezone.utc).isoformat()}
+    db.record_agent_worker_attempt_event({**base,'event_type':'started','status':'running'},receipt_path='fixture-start',receipt_sha256='a'*64)
+    if condition!='running':
+        db.record_agent_worker_attempt_event({**base,'event_type':'finished','status':'failed','error_code':'logical_token_guard'},
+            receipt_path='fixture-finish',receipt_sha256='b'*64)
+    monkeypatch.undo()
+    if condition=='tampered':Path(old_run['request_path']).write_text('{}')
+    if condition=='budget':monkeypatch.setattr(db,'cost_report',lambda *a,**k:{'status':'blocked'})
+    replacement=service.enqueue()
+    if condition in {'same_release','running','tampered'}:
+        assert replacement['reason']=='previous_run_not_terminal'
+        assert db.research_run(old['research_run_id'])['status']=='queued'
+        return
+    rejected=db.research_run(old['research_run_id'])
+    assert rejected['status']=='rejected' and rejected['error_code']=='research_release_superseded'
+    assert rejected['request_sha256']==old_run['request_sha256']
+    assert (config.research_root/'quarantine'/Path(old_run['request_path']).name).read_bytes()==original
+    if condition=='budget':
+        assert replacement['reason']=='completion_budget_exhausted'
+        return
+    assert replacement['status']=='queued' and replacement['research_run_id']!=old['research_run_id']
+    request=json.loads(Path(replacement['request_path']).read_text())
+    assert request['agent_version']=='1.16.0'
+    assert request['continuation']['parent_run_id']==parent['research_run_id']
+    assert replacement['due']['replaces_run_id']==old['research_run_id']
+    assert request['continuation']['replaces_run_id']==old['research_run_id']
+    assert service.enqueue()['reason']=='previous_run_not_terminal'
+    finish(config,db,service,cycle,replacement,set(range(4,16)))
+    assert progress(config,db,cycle)['status']=='complete'
+    with db.connect(readonly=True) as con:
+        assert con.execute('SELECT COUNT(*) FROM agent_worker_attempt_events WHERE subject_id=?',(old['research_run_id'],)).fetchone()[0]==2
+        budget=con.execute('SELECT status,accounting_mode FROM agent_budget_reservations WHERE subject_id=?',(old['research_run_id'],)).fetchone()
+        assert budget['status']=='charged' and budget['accounting_mode']=='conservative'
