@@ -148,7 +148,7 @@ La cobertura v2 incluye `teams` con sujetos requeridos, revisados y con evidenci
 por club. El total y el gate 90/80 siguen calculándose sobre los sujetos individuales; este
 desglose diagnostica dónde se agota discovery y no concede cobertura adicional.
 
-## Continuación autónoma de pendientes (1.15.0)
+## Continuación autónoma de pendientes (1.16.0)
 
 El timer conserva cada resultado parcial y puede encolar un hijo en el mismo slot.
 `mova strategy research due` distingue `completion_pending`, `research_focus_complete`,

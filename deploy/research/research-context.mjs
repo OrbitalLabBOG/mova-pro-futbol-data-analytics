@@ -27,16 +27,17 @@ export function buildResearchContext(request) {
   })).filter(group => group.elements.length);
   const documentBudget = request.scope_policy?.max_documents;
   const knownBudget = Number.isInteger(documentBudget) && documentBudget >= 0;
-  const target = Math.ceil(unique.length * 0.9);
+  const acquisitionGroups = request.continuation ? pendingClubs : clubs;
+  const target = Math.ceil((request.continuation ? pendingIds.size : unique.length) * 0.9);
   let covered = 0;
   let needed = 0;
-  for (const group of clubs) {
+  for (const group of acquisitionGroups) {
     if (covered >= target) break;
     covered += group.elements.length;
     needed++;
   }
   const capacity = knownBudget
-    ? clubs.slice(0, documentBudget).reduce((sum, group) => sum + group.elements.length, 0)
+    ? acquisitionGroups.slice(0, documentBudget).reduce((sum, group) => sum + group.elements.length, 0)
     : null;
   context.acquisition_plan = {
     schema: 'mova-research-acquisition-plan-v1',
@@ -48,8 +49,9 @@ export function buildResearchContext(request) {
     conditional_documents_for_target: needed,
     conditional_scope_shortfall: knownBudget ? capacity < target : null,
     assumption: 'One fresh document per club explicitly names every focus member; multi-club sources can exceed this estimate. Hints are not verified coverage.',
-    priorities: ['global radar within scope_policy', 'own squad risk and captain uncertainty',
-      'candidate decision uncertainty', 'uncovered club groups'],
+    priorities: request.continuation ? ['unverified pending subjects only', 'document open questions without repeating covered clubs'] :
+      ['global radar within scope_policy', 'own squad risk and captain uncertainty',
+       'candidate decision uncertainty', 'uncovered club groups'],
     on_shortfall: 'Keep budgets unchanged; report not_checked and explain missing evidence.',
   };
   if (request.agent_release?.coverage_allocation === 'club_first_pass_v1') {
@@ -100,4 +102,21 @@ export function buildResearchContext(request) {
     acquisition_plan: context.acquisition_plan,
   };
   return {context, receipt};
+}
+
+
+// Shared by the prompt actually sent to app-server and the legacy exec path.
+export function researchTaskInstructions(request) {
+  const c=request.continuation;
+  if (!c) return [
+    "Haz una primera pasada por TODOS los clubes del foco antes de profundizar. La rama global es acotada; no termines tras 2-3 dudas.",
+  ];
+  return [
+    `CONTINUACION SELLADA: objetivos prioritarios ${JSON.stringify(c.unverified_subjects?.length ? c.unverified_subjects : c.pending_subjects)}; preguntas secundarias ${JSON.stringify(c.unresolved_subjects || [])}.`,
+    "Investiga únicamente esos objetivos. No hagas radar global, ni repitas clubes/jugadores ya verificados. No consultes memoria o catálogo por rutina; usa catálogo sólo si falta un ID de estos objetivos.",
+    "continuation.prior_brief contiene pistas; relee y verifica sólo fuentes que ayuden a los objetivos. Los otros sujetos conservan su evidencia original en el acumulado del host.",
+    "Cuando cubras los objetivos, entrega el JSON inmediatamente. Las preguntas secundarias pueden quedar unresolved con evidencia; no intentes demostrar certeza absoluta ni reabras otros sujetos.",
+    "Entrega las filas del foco completo: sujetos no revisados en ESTA corrida van not_checked, sin fuentes heredadas. No rellenes cobertura con evidencia débil ni rebajes identidad/fecha.",
+    "Si falla una URL o identidad, busca una alternativa con nombre completo y club. Tras dos alternativas sin evidencia conserva not_checked y explica la limitación; entrega antes del guard de tokens.",
+  ];
 }

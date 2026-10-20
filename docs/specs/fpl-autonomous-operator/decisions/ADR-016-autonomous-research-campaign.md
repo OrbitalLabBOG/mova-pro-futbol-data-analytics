@@ -45,3 +45,19 @@ presupuesto, bloqueo al faltar un job de cuota, fuentes viejas/alteradas y padre
 v1 inmutables. Probar fin con cobertura completa y dudas visibles, y reanudación
 de dudas en refresh. Suite completa, imágenes, doctor y timer real en VPS.
 Rollback por checkout/imagen previo, sin migraciones ni borrado del ledger.
+
+## Corrección de la ruta activa (1.16)
+
+La primera prueba1.15 en systemd detectó que app-server recibía el prompt de radar
+anterior, no las instrucciones de continuación añadidas a la rama legacy exec.
+Reinvestigó sujetos ya cubiertos y se interrumpió por logical_token_guard sin JSON;
+el intento, cargo conservador y telemetría se conservan. No acredita éxito.
+
+1.16 inyecta objetivos cerrados en el prompt realmente enviado a app-server y
+calcula la meta de adquisición sobre pendientes, no sobre todo el foco previo.
+La continuación no hace radar global ni carga memoria/catálogo por rutina; entrega
+al cubrir objetivos y conserva not_checked/uncertainty cuando faltan fuentes.
+La prueba captura turn/start.input del proceso real con un servidor RPC simulado,
+verifica los IDs y ausencia del antiguo mandato de radar. El timer puede reanudar
+el intento físico admisible de una request existente usando la implementación
+corregida, registrando su hash real; no se edita request ni se borra el fallo.

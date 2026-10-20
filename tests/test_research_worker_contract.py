@@ -291,8 +291,8 @@ assert.equal(missing.context.acquisition_plan.conditional_scope_shortfall,null);
     subprocess.run(['node', '--input-type=module', '-e', script], cwd=ROOT, check=True)
 
 
-@pytest.mark.parametrize("version", ["1.0.0", "1.10.0"])
-def test_authorized_worker_records_context_actually_sent_on_failed_attempt(tmp_path, version):
+@pytest.mark.parametrize("version,refresh", [("1.0.0",False), ("1.10.0",False), ("1.16.0",False), ("1.16.0",True)])
+def test_authorized_worker_records_context_actually_sent_on_failed_attempt(tmp_path, version, refresh):
     from datetime import datetime, timedelta, timezone
     import hashlib
 
@@ -303,6 +303,9 @@ def test_authorized_worker_records_context_actually_sent_on_failed_attempt(tmp_p
                'manifest':{'research_summary':{'focus':[{'element':1,'team':'Club'}],
                            'world':{'catalog':[[1,'Player','CLB']]}}}}
     request['agent_version'],request['agent_release']=researcher_release(version)
+    if version == '1.16.0':
+        request['manifest']['research_summary']['focus'] += [{'element':2,'team':'Other'}, {'element':3,'team':'Other'}]
+        request['continuation']={'pending_subjects':[1], 'unverified_subjects':[] if refresh else [1], 'unresolved_subjects':[1] if refresh else [], 'round':3}
     request['requested_at']=datetime.now(timezone.utc).isoformat()
     request['manifest']['deadline_at']=(datetime.now(timezone.utc)+timedelta(days=1)).isoformat()
     request['guardrails']={'agent_budget':{'job_tokens':1000000}}
@@ -347,8 +350,13 @@ for line in sys.stdin:
     context_json = prompt.split('REQUEST_JSON:\n', 1)[1]
     assert hashlib.sha256(context_json.encode()).hexdigest() == receipt['context_sha256']
     assert receipt['prompt_bytes'] == len(prompt.encode())
+    if version == '1.16.0':
+        assert 'CONTINUACION SELLADA: objetivos prioritarios [1]' in prompt
+        assert 'Reserva una rama de descubrimiento abierta' not in prompt
+        assert 'Empieza con una consulta global y luego 2-3 dudas' not in prompt
+        assert json.loads(context_json)['acquisition_plan']['target_checked_subjects'] == 1
     assert receipt['request_sha256'] == request['request_sha256']
-    assert json.loads(context_json)['acquisition_plan']['focus_subjects'] == 1
+    assert json.loads(context_json)['acquisition_plan']['focus_subjects'] == (3 if version == '1.16.0' else 1)
     assert len(list((tmp_path / 'receipts').glob('*.started.json'))) == 1
     assert len(list((tmp_path / 'receipts').glob('*.finished.json'))) == 1
 

@@ -186,7 +186,7 @@ def test_regular_scheduler_starts_at_72h_without_force_or_owner_validation(tmp_p
     assert due['due'] and due['run_kind']=='broad'
     request=service.enqueue()
     assert request['status']=='queued'
-    assert json.loads(Path(request['request_path']).read_text())['agent_version']=='1.15.0'
+    assert json.loads(Path(request['request_path']).read_text())['agent_version']=='1.16.0'
     assert service.due()['reason']=='previous_run_not_terminal'
 
 
