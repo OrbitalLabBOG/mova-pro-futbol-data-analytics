@@ -801,6 +801,7 @@ def main(argv: list[str] | None = None) -> int:
             payload = service.enqueue(
                 force=args.force, actor=args.actor or "mova-research",
                 reason=args.reason, idempotency_key=args.idempotency_key,
+                resume_run_id=args.run_id,
             )
             print(json.dumps(payload, ensure_ascii=False, default=str))
             return 75 if payload.get("status") == "skipped" else 0

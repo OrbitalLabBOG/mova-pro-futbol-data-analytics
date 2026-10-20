@@ -161,6 +161,12 @@ La selección prospectiva sigue siendo el primer run y no se registra otra cohor
 Los antecedentes de un intento por slot descritos abajo corresponden al contrato
 anterior; no implican que un parcial 1.13.0 haya completado el foco.
 
+Para una continuación manual ya autorizada, usar `strategy research enqueue
+--force --run-id research_PARENT --actor ... --reason ... --idempotency-key ...`.
+Exige padre importado del ciclo vigente, hash íntegro y los mismos límites;
+reutiliza un hijo ya existente en vez de duplicarlo. No abre ventanas de guardado
+ni altera la aceptación prospectiva. El timer normal no necesita esta excepción.
+
 ## Operación
 
 El entrypoint host `deploy/bin/research-cycle.sh` carga `/etc/mova-fpl/deploy.env`

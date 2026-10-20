@@ -76,3 +76,26 @@ def test_resume_rejects_modified_parent_request(tmp_path):
     request=json.loads(path.read_text());request['completion_policy']['max_runs_per_slot']=100
     path.write_text(json.dumps(request))
     assert service.due()['reason']=='completion_parent_request_invalid'
+
+
+def test_manual_resume_uses_same_parent_outside_regular_window_and_cannot_duplicate_child(tmp_path):
+    from datetime import timedelta
+    config,db,service,cycle=setup(tmp_path)
+    first=service.enqueue();finish(config,db,service,cycle,first,{1,2,3})
+    with db.transaction() as con:
+        con.execute('UPDATE gameweek_cycles SET deadline_at=? WHERE cycle_id=?',
+                    ((datetime.now(timezone.utc)+timedelta(days=3)).isoformat(),cycle))
+    assert service.due()['reason']=='outside_research_window'
+    child=service.enqueue(force=True,actor='owner',reason='authorized completion test',
+                          idempotency_key='manual-child',resume_run_id=first['research_run_id'])
+    request=json.loads(Path(child['request_path']).read_text())
+    assert request['continuation']['parent_run_id']==first['research_run_id']
+    assert request['continuation']['round']==2
+    assert set(request['continuation']['pending_subjects'])==set(range(4,16))
+    replay=service.enqueue(force=True,actor='owner',reason='replay',idempotency_key='another-key',
+                           resume_run_id=first['research_run_id'])
+    assert replay['reused'] and replay['research_run_id']==child['research_run_id']
+    with pytest.raises(ValueError,match='audited --force'):
+        service.enqueue(resume_run_id=first['research_run_id'])
+    with pytest.raises(ValueError,match='current cycle'):
+        service.enqueue(force=True,actor='owner',reason='bad parent',idempotency_key='wrong',resume_run_id='missing')

@@ -48,6 +48,11 @@ reserva de presupuesto, deadline o evidencia padre inválida son estados distint
 y observables en research due; sólo el primero acredita completar el foco.
 La falta de cobertura sigue bloqueando las acciones que dependan de ella.
 
+Una continuación manual de prueba requiere la excepción auditada `enqueue --force`
+con `--run-id` del padre importado, actor, razón y clave. Conserva cutoff,
+integridad, presupuesto/reserva y límite de rondas, y no duplica un hijo existente.
+No mueve la ventana normal del timer ni concede escrituras en FPL.
+
 ## Verificación y rollback
 
 Probar dispatch no-op → recibo durable → package financiero y rechazo de

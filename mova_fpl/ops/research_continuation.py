@@ -29,6 +29,8 @@ def assess(config, db, run, *, count, run_kind, seconds):
         return {'due': False, 'reason': 'completion_parent_request_invalid'}
     if request.get('completion_policy') != POLICY:
         return None
+    if count == 0:
+        count = int((request.get('continuation') or {}).get('round', 1))
     coverage = json.loads(run.get('coverage_json') or '{}')
     subjects = coverage.get('subjects', [])
     pending = [int(row['player_element']) for row in subjects

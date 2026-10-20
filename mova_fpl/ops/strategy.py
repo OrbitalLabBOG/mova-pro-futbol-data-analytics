@@ -622,7 +622,10 @@ class StrategicContextService:
 
     def enqueue(self, *, force: bool = False, actor: str = "mova-research",
                 reason: str | None = None, idempotency_key: str | None = None,
-                _experiment: dict | None = None, _prepared: dict | None = None) -> dict:
+                _experiment: dict | None = None, _prepared: dict | None = None,
+                resume_run_id: str | None = None) -> dict:
+        if resume_run_id and not force:
+            raise ValueError('manual continuation requires audited --force')
         assessment = self.due()
         if not force and not assessment["due"]:
             return {"status": "skipped", **assessment}
@@ -643,6 +646,32 @@ class StrategicContextService:
             existing = self.db.research_run(deterministic_id)
             if existing:
                 return {**existing, 'reused': True, 'due': assessment}
+        if resume_run_id:
+            if not force or _experiment:
+                raise ValueError('manual continuation requires audited --force, not an experiment')
+            parent = self.db.research_run(resume_run_id)
+            cycle = self.db.status().get('cycle') or {}
+            if not parent or parent['cycle_id'] != cycle.get('cycle_id'):
+                raise ValueError('continuation parent must belong to the current cycle')
+            with self.db.connect(readonly=True) as con:
+                child = con.execute(
+                    "SELECT r.* FROM research_runs r JOIN audit_events a ON a.subject_id=r.research_run_id "
+                    "WHERE a.event_type='research_continuation_queued' "
+                    "AND json_extract(a.payload_json,'$.parent_run_id')=? LIMIT 1",
+                    (resume_run_id,),
+                ).fetchone()
+            if child:
+                return {**dict(child), 'reused': True, 'reason': 'continuation_already_exists'}
+            current = datetime.now(timezone.utc)
+            seconds = (_parse_time(cycle['deadline_at'], field='deadline_at')-current).total_seconds()
+            kind = 'final' if seconds <= self.config.research_final_window_seconds else (
+                'refresh' if seconds <= 6*3600 else 'broad')
+            from mova_fpl.ops.research_continuation import assess
+            continuation = assess(self.config, self.db, parent, count=0, run_kind=kind, seconds=seconds)
+            if not continuation or not continuation.get('due'):
+                return {'status': 'blocked', **(continuation or {'reason': 'parent_not_resumable'})}
+            assessment = {**continuation, 'run_kind': 'forced', 'cycle_id': cycle['cycle_id'],
+                          'deadline_seconds': seconds}
         prepared = _prepared or self.prepare()
         manifest = prepared["manifest"]
         run_id = deterministic_id or new_id("research")
@@ -681,7 +710,7 @@ class StrategicContextService:
         if definition.get('completion_policy') == 'research-completion-v1':
             from mova_fpl.ops.research_continuation import POLICY
             request['completion_policy'] = POLICY
-            if not force and assessment.get('continuation'):
+            if assessment.get('continuation'):
                 request['continuation'] = assessment['continuation']
         request["quality_policy"] = definition["quality_policy"]
         if definition.get("discovery_profile") == "expanded_broad_v1" and run_kind in {"broad", "forced"}:
