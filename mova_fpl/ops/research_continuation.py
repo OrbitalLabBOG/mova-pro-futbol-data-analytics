@@ -7,12 +7,14 @@ from mova_fpl.ops.db import sha256_json
 
 LEGACY_POLICY = {'version': 'research-completion-v1', 'max_runs_per_slot': 3,
                  'target_coverage': 1.0, 'minimum_seconds_remaining': 600}
-POLICY = {'version': 'research-completion-v2', 'target_coverage': 1.0,
+PREVIOUS_POLICY = {'version': 'research-completion-v2', 'target_coverage': 1.0,
           'minimum_seconds_remaining': 600, 'budget_policy': 'shared_hard_limits'}
+
+POLICY = {**PREVIOUS_POLICY, 'version':'research-completion-v3', 'completion_basis':'verified_or_proven_source_limit'}
 
 
 def supported_policy(policy):
-    return policy == POLICY or policy == LEGACY_POLICY
+    return policy == POLICY or policy == PREVIOUS_POLICY or policy == LEGACY_POLICY
 
 
 def assess(config, db, run, *, count, run_kind, seconds, new_slot=False):
@@ -44,11 +46,11 @@ def assess(config, db, run, *, count, run_kind, seconds, new_slot=False):
     # Research may finish with documented uncertainty. Unknown is never an
     # accepted signal, and the next mandatory refresh revisits open questions.
     pending = campaign['pending_subjects'] if new_slot else campaign.get(
-        'pending_evidence_subjects', campaign['pending_subjects'])
+        'retry_subjects', campaign['pending_subjects'])
     if not subjects:
         return None
     if not pending:
-        return {'due': False, 'reason': 'research_focus_investigated_with_uncertainty' if campaign.get('open_questions') or campaign.get('unresolved_conflicts') else 'research_focus_complete'}
+        return {'due': False, 'reason': 'research_focus_investigated_with_limits' if campaign.get('source_limited_subjects') else 'research_focus_investigated_with_uncertainty' if campaign.get('open_questions') or campaign.get('unresolved_conflicts') else 'research_focus_complete'}
     if seconds <= config.research_final_cutoff_seconds + POLICY['minimum_seconds_remaining']:
         return {'due': False, 'reason': 'completion_deadline_reserve', 'pending_subjects': pending}
     budget = db.cost_report(config.agent_budget_policy(), season=config.season,
@@ -73,7 +75,7 @@ def assess(config, db, run, *, count, run_kind, seconds, new_slot=False):
     return {'due': True, 'reason': 'completion_pending', 'continuation': {
         'parent_run_id': run['research_run_id'], 'parent_result_sha256': run['result_sha256'],
         'round': 1 if new_slot else count+1, 'pending_subjects': pending,
-        'unverified_subjects': [r['player_element'] for r in campaign['subjects'] if not r['evidence_verified']],
+        'unverified_subjects': [r['player_element'] for r in campaign['subjects'] if not r['evidence_verified'] and r['player_element'] in pending],
         'unresolved_subjects': [r['player_element'] for r in campaign['subjects'] if r['evidence_verified'] and not r['resolved']],
         'prior_brief': {key: result.get(key, []) for key in ['documents', 'signals', 'conflicts']},
         'prior_verified_subjects': [int(row['player_element']) for row in subjects

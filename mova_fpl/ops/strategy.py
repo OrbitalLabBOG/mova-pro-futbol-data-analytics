@@ -20,7 +20,7 @@ from mova_fpl.ops.agent_releases import researcher_release
 from mova_fpl.ops.db import OpsDB, canonical_json, new_id, sha256_json, utcnow
 from mova_fpl.ops.schedule import phase_for, agent_window
 from mova_fpl.ops.research_evidence import SafeEvidenceFetcher, canonical_public_url
-from mova_fpl.ops.research_quality import claim_fresh, claim_supported, subject_in_excerpt
+from mova_fpl.ops.research_quality import claim_fresh, claim_supported, subject_in_excerpt, identity_catalog
 
 MAX_RESULT_BYTES = 1_048_576
 CLAIM_TYPES = {
@@ -781,7 +781,7 @@ class StrategicContextService:
         version, definition = researcher_release(_experiment["agent_version"] if _experiment else None)
         request["agent_version"] = version
         request["agent_release"] = definition
-        if definition.get('completion_policy') in {'research-completion-v1', 'research-completion-v2'}:
+        if definition.get('completion_policy') in {'research-completion-v1', 'research-completion-v2', 'research-completion-v3'}:
             from mova_fpl.ops.research_continuation import POLICY
             request['completion_policy'] = POLICY
             if assessment.get('continuation'):
@@ -956,8 +956,7 @@ class StrategicContextService:
         by_url = {item["source_url"]: item for item in documents}
         catalog_rows = (request.get("manifest", {}).get("research_summary", {})
                         .get("world", {}).get("catalog", []))
-        catalog = {int(row[0]): str(row[1]) for row in catalog_rows
-                   if isinstance(row, list) and len(row) >= 2}
+        catalog,strict_names,ambiguous_names = identity_catalog(catalog_rows, request.get('manifest',{}).get('research_summary',{}).get('focus',[]))
         catalog_name_counts: dict[str, int] = {}
         for name in catalog.values():
             key = name.casefold()
@@ -973,7 +972,7 @@ class StrategicContextService:
             payload.get("signals"), by_url, conflict_keys, observed,
             require_verified=result_schema == "mova-research-brief-v2",
             catalog=catalog if strict_quality else None, cutoff=deadline,
-            catalog_name_counts=catalog_name_counts,
+            catalog_name_counts=catalog_name_counts, strict_names=strict_names, ambiguous_names=ambiguous_names,
             quality_policy=quality_policy,
             require_freshness=quality_policy in {"research-claim-2026.09.2", "research-claim-2026.09.3", "research-claim-2026.09.4", "research-claim-2026.09.5"},
         )
@@ -981,7 +980,7 @@ class StrategicContextService:
             payload.get("coverage"),
             request.get("manifest", {}).get("research_summary", {}).get("focus", []),
             by_url, signals, legacy=result_schema == "mova-research-brief-v1",
-            catalog=catalog if strict_quality else None,
+            catalog=catalog if strict_quality else None, strict_names=strict_names, ambiguous_names=ambiguous_names,
             fetched_at=observed, cutoff=deadline,
             require_freshness=quality_policy in {"research-claim-2026.09.2", "research-claim-2026.09.3", "research-claim-2026.09.4", "research-claim-2026.09.5"},
         )
@@ -1145,7 +1144,7 @@ class StrategicContextService:
                           observed: datetime, *, require_verified: bool = False,
                           catalog: dict[int, str] | None = None,
                           cutoff: datetime | None = None,
-                          catalog_name_counts: dict[str, int] | None = None,
+                          catalog_name_counts: dict[str, int] | None = None, strict_names: set[int] | None = None, ambiguous_names: set[int] | None = None,
                           require_freshness: bool = False, quality_policy: str | None = None) -> list[dict]:
         if not isinstance(value, list) or len(value) > 120:
             raise ValueError("signals inválido")
@@ -1197,6 +1196,7 @@ class StrategicContextService:
                 if not any(doc["source_tier"] == "official" for doc in relevant):
                     has_strong_evidence = len(independent_hosts) >= 2
                 matching = [doc for doc in relevant if catalog_name and
+                            subject_in_excerpt(catalog_name,str(doc.get("excerpt") or ""), require_full=element in (strict_names or set())) and
                             claim_supported(name=catalog_name, claim_type=claim_type,
                                             excerpt=str(doc.get("excerpt") or ""),
                                             quality_policy=quality_policy)]
@@ -1230,7 +1230,7 @@ class StrategicContextService:
                         has_strong_evidence = has_strong_evidence and corroboration == "independent"
                 as_of_safe = cutoff is None or observed <= cutoff
                 reason = ("unknown_element" if not catalog_name else
-                          "ambiguous_identity" if (
+                          "ambiguous_identity" if element in (ambiguous_names or set()) or (
                               catalog_name_counts or {}).get(catalog_name.casefold(), 1) > 1 else
                           "identity_or_claim_unsupported" if not supported else
                           "publication_unknown" if not dated else
@@ -1265,7 +1265,7 @@ class StrategicContextService:
     @staticmethod
     def _validate_coverage(value: object, focus: object, by_url: dict[str, dict],
                            signals: list[dict], *, legacy: bool,
-                           catalog: dict[int, str] | None = None,
+                           catalog: dict[int, str] | None = None, strict_names: set[int] | None = None, ambiguous_names: set[int] | None = None,
                            fetched_at: datetime | None = None,
                            cutoff: datetime | None = None,
                            require_freshness: bool = False) -> dict:
@@ -1311,10 +1311,10 @@ class StrategicContextService:
                 raise ValueError("coverage referencia documento inexistente")
             if catalog is not None:
                 name = catalog.get(element, "")
-                urls = [url for url in urls if
+                urls = [url for url in urls if element not in (ambiguous_names or set()) and
                         (fetched_at is None or cutoff is None or fetched_at <= cutoff) and
                         by_url[url].get("fetch_status") == "verified" and
-                        subject_in_excerpt(name, str(by_url[url].get("excerpt") or "")) and
+                        subject_in_excerpt(name, str(by_url[url].get("excerpt") or ""), require_full=element in (strict_names or set())) and
                         by_url[url].get("publication_date_verified") and
                         (not require_freshness or fetched_at is None or claim_fresh(
                             claim_type="fixture_context",

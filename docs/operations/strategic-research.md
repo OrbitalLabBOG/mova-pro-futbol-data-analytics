@@ -148,7 +148,7 @@ La cobertura v2 incluye `teams` con sujetos requeridos, revisados y con evidenci
 por club. El total y el gate 90/80 siguen calculándose sobre los sujetos individuales; este
 desglose diagnostica dónde se agota discovery y no concede cobertura adicional.
 
-## Continuación autónoma de pendientes (1.16.0)
+## Continuación autónoma de pendientes (1.17.0)
 
 El timer conserva cada resultado parcial y puede encolar un hijo en el mismo slot.
 `mova strategy research due` distingue `completion_pending`, `research_focus_complete`,
@@ -182,6 +182,24 @@ Para una continuación manual ya autorizada, usar `strategy research enqueue
 Exige padre importado del ciclo vigente, hash íntegro y los mismos límites;
 reutiliza un hijo ya existente en vez de duplicarlo. No abre ventanas de guardado
 ni altera la aceptación prospectiva. El timer normal no necesita esta excepción.
+
+### Cierre con límites de fuentes (1.17)
+
+Investigar todo el foco no implica que exista una noticia reciente verificable
+para cada jugador. `processed_subjects` separa trabajo terminado de evidencia:
+`source_limited_subjects` exige dos URLs públicas distintas leídas por las tools,
+en una corrida importada del slot vigente, con receipt físico válido y log RPC.
+Una nota del modelo, un receipt alterado o dos variantes query de una URL no bastan.
+`complete_with_limits` conserva cobertura verificada, `not_checked`, dudas y límites
+exactos; no afirma disponibilidad ni concede autoridad/aceptación. Un supported
+que no llegó al brief sigue pendiente: no se oculta como ausencia de fuentes.
+El próximo refresh reabre los límites. No se gasta indefinidamente repitiendo el
+mismo dato que las fuentes no publican. Las búsquedas fallidas no son evidencia.
+
+Los nombres cortos duplicados del catálogo, por ejemplo Palmer, se desambiguan
+con el nombre completo del foco sellado. Exigen ese nombre completo en el fragmento,
+tanto en la tool como en el importador; el apellido solo y el otro homónimo no pasan.
+Una limitación antigua causada por ese bug sigue en retry hasta probar la corrección.
 
 ## Operación
 

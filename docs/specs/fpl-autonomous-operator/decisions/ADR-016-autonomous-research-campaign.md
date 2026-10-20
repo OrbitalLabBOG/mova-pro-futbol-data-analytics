@@ -66,3 +66,22 @@ válido. El ID incluye la request retirada para no reutilizar el hijo incompatib
 No se reemplazan intentos en curso, hashes alterados, experimentos ni fallos de la
 misma release. La falta de cuota/cutoff conserva el bloqueo y no genera inferencia.
 No se edita request ni se borra el fallo; aceptación histórica permanece intacta.
+
+## Investigación terminada frente a evidencia disponible (1.17)
+
+La continuación real1.16 bajó de más de900k observados a358404 tokens y se importó,
+pero expuso un falso bloqueo: el catálogo tiene Palmer para CHE e IPS y la tool
+rechazaba incluso Cole Palmer explícito.1.17 usa la identidad completa del foco
+sellado para desambiguar, exigiéndola íntegra en fragmentos tanto en tool como
+importador. Los homónimos sin identidad completa y fuentes del otro jugador
+siguen bloqueados. No se rebajan fechas, fetch independiente ni respaldo de claims.
+
+La finalización operativa admite límites de fuentes acreditados: dos URLs públicas
+distintas intentadas en el slot actual, probadas por eventos MCP y receipt succeeded
+íntegro de una corrida importada. Mantiene evidencia y resolved separados: añade
+processed_subjects, source_limitations y retry_subjects; complete_with_limits no
+promueve señales, cubre fuentes faltantes ni acepta A3. Notas sin actividad, receipt
+alterado y variantes query de una URL no cierran trabajo. Un documento supported
+omitido por el modelo sigue pendiente. Los bugs de alias antiguos se reintentan.
+Las limitaciones se reabren en cada refresh; no requieren validación humana por GW.
+La cobertura histórica y los fallos siguen intactos; presupuestos no aumentan.
