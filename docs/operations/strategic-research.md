@@ -148,13 +148,21 @@ La cobertura v2 incluye `teams` con sujetos requeridos, revisados y con evidenci
 por club. El total y el gate 90/80 siguen calculándose sobre los sujetos individuales; este
 desglose diagnostica dónde se agota discovery y no concede cobertura adicional.
 
-## Continuación de pendientes (1.13.0)
+## Continuación de pendientes (1.14.0)
 
 El timer conserva cada resultado parcial y puede encolar un hijo en el mismo slot.
 `mova strategy research due` distingue `completion_pending`, `research_focus_complete`,
 `completion_slot_limit`, `completion_budget_reserved`, `completion_deadline_reserve`
 y `completion_parent_artifact_invalid`. El hijo recibe IDs pendientes y fuentes
-previas como pistas; todo lo acreditado vuelve a pasar por el fetch independiente.
+previas como pistas. Cada documento acreditado por la corrida pasa por el fetch
+independiente. `coverage.campaign` muestra el progreso acumulado por jugador:
+conserva la verificación en su corrida original, revalida sus hashes y vigencia,
+y la invalida ante cambio de club/posición/noticias/status/chance oficiales,
+fuente vencida/alterada o incertidumbre posterior. Las señales materiales además
+conservan su TTL por tema. La acumulación no acredita una nueva verificación,
+no altera el resultado por corrida ni la aceptación prospectiva; declara
+`acceptance_eligible=false` y `permits_execution=false`. Un refresh de otra
+ventana conserva los pendientes y sigue ejecutando su cadencia normal.
 Hasta tres runs por slot, sin elevar GW/mes/job ni consumir la reserva del techo
 por job para slots futuros. Un fallo terminal no se reetiqueta ni genera un hijo.
 La selección prospectiva sigue siendo el primer run y no se registra otra cohorte.

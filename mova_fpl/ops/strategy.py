@@ -614,10 +614,18 @@ class StrategicContextService:
                 "deadline_seconds": seconds, "run_kind": run_kind,
                 "slot_started_at": slot_start.isoformat(),
             }
+        continuation = None
+        if latest:
+            from mova_fpl.ops.research_continuation import assess
+            carry = assess(self.config, self.db, dict(latest), count=0,
+                           run_kind=run_kind, seconds=seconds, new_slot=True)
+            if carry and carry.get('due'):
+                continuation = carry['continuation']
         return {
             "due": True, "reason": "cadence_slot_due", "deadline_seconds": seconds,
             "cycle_id": cycle["cycle_id"], "run_kind": run_kind,
             "slot_started_at": slot_start.isoformat(),
+            **({'continuation': continuation} if continuation else {}),
         }
 
     def enqueue(self, *, force: bool = False, actor: str = "mova-research",

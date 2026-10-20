@@ -29,7 +29,7 @@ requisitos; no se rellena retrospectivamente evidencia inexistente.
 
 ## Investigación con continuación
 
-Researcher 1.13.0 conserva modelo, permisos, herramientas, timeout y cuotas de
+Researcher 1.14.0 conserva modelo, permisos, herramientas, timeout y cuotas de
 1.12.0. Elimina la instrucción contradictoria de atender sólo 2–3 dudas y dejar
 sin cubrir el resto. El objetivo de trabajo es todo el foco, sin convertir
 falta de evidencia en una conclusión de ausencia de novedades.
@@ -61,3 +61,21 @@ completo, sin borrar el padre; límites y fallos sin nueva inferencia. Conservar
 las pruebas host/CLI de guardado A2. Ejecutar suite, Docker smoke, doctor y
 verificación viva después del deploy. El rollback es el checkout/imagen previo;
 no hay migraciones nuevas ni cambios a los controles de GW8.
+
+## Progreso acumulado independiente
+
+El importador continúa verificando exactamente el foco completo de cada run;
+`not_checked` nunca se convierte en una verificación nueva por haber evidencia
+anterior. El reporte operativo `mova-research-campaign-v1` reconstruye qué sujetos
+ya tienen evidencia independiente aún vigente, identificando corrida/documentos
+originales. Verifica hashes físicos, publicación/fetch predeadline, calidad de
+origen, identidad y contexto oficial sin cambios. Incertidumbre posterior,
+expiración, cambio de club/posición/noticias/status/chance o archivo alterado
+vuelven a poner el sujeto en pendientes. Las señales materiales conservan su TTL.
+El reporte separa sujetos con fuente verificada de sujetos con dudas resueltas.
+
+Esta lectura acumulada no participa en ADR-011 ni en la promoción A3: la primera
+corrida operativa y todos sus fallos permanecen intactos. Tampoco concede writes.
+Permite usar las llamadas siguientes para lo pendiente, sin repetir el trabajo
+válido ni inflar la calidad de una corrida. Las ventanas de refresh/final siguen
+siendo obligatorias y conservan el avance vigente de las anteriores.
