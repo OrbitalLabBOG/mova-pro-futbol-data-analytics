@@ -95,3 +95,13 @@ def test_noop_builds_financed_package_with_duplicate_equal_candidates(tmp_path,m
     assert result['selected']['captain']==7
     assert result['selected']['financing']['bank_after_tenths']==10
     assert result['selected']['financing']['after']==result['comparator']['financing']['before']
+
+
+def test_interrupted_noop_job_cannot_be_reported_as_verified(tmp_path):
+    service,delivery,result,_=noop(tmp_path)
+    with service.db.transaction() as con:
+        con.execute("UPDATE job_runs SET status='running',finished_at=NULL WHERE job_id=?",(result['job_id'],))
+    retry=delivery.dispatch(actor='test',reason='restart after interruption',now=NOW)
+    assert retry['status']=='blocked' and retry['reason']=='previous_noop_job_not_completed'
+    assert service.db.delivery_receipt('2026-27-gw03') is None
+    assert service.db.latest_delivery_attempt('2026-27-gw03') is None

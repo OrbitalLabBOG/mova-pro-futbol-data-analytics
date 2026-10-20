@@ -69,6 +69,11 @@ class DeliveryService:
             receipt = seal_receipt(self.config, self.db, loaded, now=current, proof=proof)
             job, reused = self.db.start_job('delivery', f"delivery-noop:{cycle['cycle_id']}:{'proof' if proof else 'final'}:{row['expected_pre_fingerprint']}",
                                             'corr_delivery', cycle_id=cycle['cycle_id'])
+            if reused:
+                existing = self.db.get_job_by_key(
+                    f"delivery-noop:{cycle['cycle_id']}:{'proof' if proof else 'final'}:{row['expected_pre_fingerprint']}")
+                if not existing or existing['status'] != 'completed':
+                    return {**result, 'reason': 'previous_noop_job_not_completed', 'job_id': job}
             if not reused:
                 self.db.finish_job(job, 'completed', output_sha256=receipt['evidence_sha256'],
                                    metrics={'status': 'unchanged_verified', 'plan_id': plan['plan_id'],

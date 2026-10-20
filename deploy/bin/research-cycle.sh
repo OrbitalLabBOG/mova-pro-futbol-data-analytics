@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# The entrypoint must behave identically under systemd and an authorized manual run.
+# Load interpolation variables before Compose; worker env_file does not set its image tag.
+deploy_env=${MOVA_DEPLOY_ENV:-/etc/mova-fpl/deploy.env}
+if [[ -r "$deploy_env" ]]; then
+  set -a
+  source "$deploy_env"
+  set +a
+fi
+
 repo_dir=${MOVA_REPO_DIR:-/opt/orbital/services/mova-fpl}
 research_root=${MOVA_RESEARCH_ROOT:-/var/lib/mova-fpl/artifacts/research}
 research_uid=${MOVA_RESEARCH_UID:-10002}

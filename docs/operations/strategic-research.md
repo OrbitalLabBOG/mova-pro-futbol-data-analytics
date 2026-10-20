@@ -163,6 +163,11 @@ anterior; no implican que un parcial 1.13.0 haya completado el foco.
 
 ## Operación
 
+El entrypoint host `deploy/bin/research-cycle.sh` carga `/etc/mova-fpl/deploy.env`
+antes de interpolar Compose, tanto manualmente como desde systemd. Un `env_file`
+del contenedor no selecciona la etiqueta de imagen del proceso Compose.
+
+
 ~~~bash
 # consulta
 mova strategy status
