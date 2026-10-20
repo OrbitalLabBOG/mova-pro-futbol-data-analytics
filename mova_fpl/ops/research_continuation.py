@@ -9,7 +9,7 @@ POLICY = {'version': 'research-completion-v1', 'max_runs_per_slot': 3,
           'target_coverage': 1.0, 'minimum_seconds_remaining': 600}
 
 
-def assess(config, db, run, *, count, run_kind, seconds):
+def assess(config, db, run, *, count, run_kind, seconds, new_slot=False):
     if run['status'] != 'imported':
         return None
     request_path = Path(run['request_path'])
@@ -29,15 +29,18 @@ def assess(config, db, run, *, count, run_kind, seconds):
         return {'due': False, 'reason': 'completion_parent_request_invalid'}
     if request.get('completion_policy') != POLICY:
         return None
+    if count == 0 and not new_slot:
+        count = int((request.get('continuation') or {}).get('round', 1))
     coverage = json.loads(run.get('coverage_json') or '{}')
     subjects = coverage.get('subjects', [])
-    pending = [int(row['player_element']) for row in subjects
-               if row.get('evidence_verified') is not True or row.get('status') == 'unresolved']
+    from mova_fpl.ops.research_campaign import progress
+    campaign = progress(config, db, run['cycle_id'])
+    pending = campaign['pending_subjects']
     if not subjects:
         return None
     if not pending:
-        return {'due': False, 'reason': 'research_focus_complete'}
-    if count >= POLICY['max_runs_per_slot']:
+        return {'due': False, 'reason': 'research_conflicts_require_resolution' if campaign.get('unresolved_conflicts') else 'research_focus_complete'}
+    if not new_slot and count >= POLICY['max_runs_per_slot']:
         return {'due': False, 'reason': 'completion_slot_limit', 'pending_subjects': pending}
     if seconds <= config.research_final_cutoff_seconds + POLICY['minimum_seconds_remaining']:
         return {'due': False, 'reason': 'completion_deadline_reserve', 'pending_subjects': pending}
@@ -47,7 +50,7 @@ def assess(config, db, run, *, count, run_kind, seconds):
     # GW/month authorizations remain mandatory in queue/attempt transactions.
     future_slots = {'broad': 2, 'refresh': 1, 'final': 0}[run_kind]
     needed = config.agent_budget_policy()['job_tokens'] * (future_slots+1)
-    if (budget['status'] != 'within_budget'
+    if not new_slot and (budget['status'] != 'within_budget'
             or budget['gameweek']['remaining_tokens'] < needed
             or budget['month']['remaining_tokens'] < needed):
         return {'due': False, 'reason': 'completion_budget_reserved', 'pending_subjects': pending}
@@ -61,6 +64,8 @@ def assess(config, db, run, *, count, run_kind, seconds):
     # goes through the normal independent fetch and importer again.
     return {'due': True, 'reason': 'completion_pending', 'continuation': {
         'parent_run_id': run['research_run_id'], 'parent_result_sha256': run['result_sha256'],
-        'round': count+1, 'pending_subjects': pending,
-        'prior_brief': {key: result.get(key, []) for key in ['documents', 'signals', 'conflicts', 'coverage']},
+        'round': 1 if new_slot else count+1, 'pending_subjects': pending,
+        'prior_brief': {key: result.get(key, []) for key in ['documents', 'signals', 'conflicts']},
+        'prior_verified_subjects': [int(row['player_element']) for row in subjects
+                                    if row.get('evidence_verified') is True],
         'prior_evidence_is_context_only': True}}

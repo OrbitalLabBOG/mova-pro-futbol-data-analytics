@@ -785,7 +785,8 @@ def main(argv: list[str] | None = None) -> int:
             payload = service.enqueue_experiment(versions=args.agent_version or ["1.0.0", "1.1.0"],
                 actor=args.actor, reason=args.reason, idempotency_key=args.idempotency_key)
         elif args.operation == "coverage":
-            payload = db.research_coverage()
+            from mova_fpl.ops.research_campaign import progress
+            payload = {**db.research_coverage(), "campaign": progress(config, db)}
         elif args.operation == "resolve-conflict":
             payload = db.resolve_research_conflict(
                 args.conflict_id, cycle_id=args.cycle_id,
@@ -801,6 +802,7 @@ def main(argv: list[str] | None = None) -> int:
             payload = service.enqueue(
                 force=args.force, actor=args.actor or "mova-research",
                 reason=args.reason, idempotency_key=args.idempotency_key,
+                resume_run_id=args.run_id,
             )
             print(json.dumps(payload, ensure_ascii=False, default=str))
             return 75 if payload.get("status") == "skipped" else 0
