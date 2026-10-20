@@ -309,12 +309,18 @@ class GameweekReviewService:
                     de.content_sha256 AS envelope_sha256,a.started_at,a.finished_at,
                     a.evidence_path,a.evidence_sha256,a.observed_post_fingerprint
                     FROM execution_attempts a JOIN execution_plans p ON p.plan_id=a.plan_id
+                    JOIN job_runs j ON j.job_id=a.job_id
                     JOIN decision_runs d ON d.decision_id=p.decision_id
                     JOIN decision_envelopes de ON de.envelope_id=p.envelope_id
                     WHERE p.cycle_id=? AND d.status='executed_verified' AND a.status='verified'
+                    AND COALESCE(json_extract(j.metrics_json,'$.delivery_proof'),0)=0
                     ORDER BY a.finished_at DESC,a.rowid DESC LIMIT 1""", (cycle_id,),
                 ).fetchone()
                 source_type = "execution_attempt"
+            if not executed:
+                from mova_fpl.ops.unchanged_delivery import closeout_source
+                executed = closeout_source(self.config, self.db, cycle_id)
+                source_type = "unchanged_delivery"
             checks = [] if not executed or source_type != "web_execution" else con.execute(
                 "SELECT * FROM verification_checks WHERE execution_id=? ORDER BY checked_at,check_id",
                 (executed["execution_id"],),
@@ -377,7 +383,9 @@ class GameweekReviewService:
             team_fingerprint = str(executed["fingerprint"])
         else:
             native_checks = list(evidence_payload.get("verification_checks") or [])
-            if (evidence_payload.get("schema") != "mova-execution-evidence-v1"
+            if (evidence_payload.get("schema") != (
+                    "mova-unchanged-delivery-v1" if source_type == "unchanged_delivery"
+                    else "mova-execution-evidence-v1")
                     or len(native_checks) < 4
                     or not all(check.get("passed") is True for check in native_checks)
                     or str(executed["observed_post_fingerprint"])
@@ -395,6 +403,12 @@ class GameweekReviewService:
                 ORDER BY observed_at DESC LIMIT 1""",
                 (cycle_id, team_fingerprint, executed["finished_at"]),
             ).fetchone()
+        if source_type == "unchanged_delivery":
+            with self.db.connect(readonly=True) as con:
+                verified_team_state = con.execute(
+                    "SELECT * FROM team_state_snapshots WHERE team_state_id=? AND cycle_id=?",
+                    (executed["receipt_team_state_id"], cycle_id),
+                ).fetchone()
         if not verified_team_state:
             raise RuntimeError("sin team-state durable posterior que reproduzca la ejecución")
         team_state_path = Path(str(verified_team_state["artifact_path"]))
@@ -409,8 +423,10 @@ class GameweekReviewService:
         )
         private_quality = dict(private_manifest.get("quality") or {})
         if (private_quality.get("fingerprint") != team_fingerprint
-                or [int(row["element"]) for row in normalized_team_state["picks"]]
-                != [int(row["element"]) for row in executed_players]
+                or {int(row["element"]) for row in normalized_team_state["picks"][:11]}
+                != {int(row["element"]) for row in executed_players if row['role'] == 'starter'}
+                or [int(row["element"]) for row in normalized_team_state["picks"][11:]]
+                != [int(row["element"]) for row in executed_players if row['role'] == 'bench']
                 or int(private_quality.get("bank_tenths", -1))
                 != int(verified_team_state["bank_tenths"])
                 or int(private_quality.get("free_transfers", -1))
@@ -425,7 +441,10 @@ class GameweekReviewService:
                 WHERE de.cycle_id=? ORDER BY de.created_at DESC""", (cycle_id,),
             ).fetchall()
         matches = [row for row in candidates
-                   if str(row["fingerprint"]) == executed_decision_fingerprint]
+                   if str(row["fingerprint"]) == executed_decision_fingerprint
+                   and (source_type != "unchanged_delivery" or (
+                       row["envelope_id"] == executed["receipt_envelope_id"]
+                       and row["candidate_key"] == executed["receipt_candidate_key"]))]
         if not matches:
             raise RuntimeError(
                 "la ejecución verificada no corresponde inequívocamente a un candidato sellado"

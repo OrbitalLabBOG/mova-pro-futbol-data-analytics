@@ -148,6 +148,19 @@ La cobertura v2 incluye `teams` con sujetos requeridos, revisados y con evidenci
 por club. El total y el gate 90/80 siguen calculándose sobre los sujetos individuales; este
 desglose diagnostica dónde se agota discovery y no concede cobertura adicional.
 
+## Continuación de pendientes (1.13.0)
+
+El timer conserva cada resultado parcial y puede encolar un hijo en el mismo slot.
+`mova strategy research due` distingue `completion_pending`, `research_focus_complete`,
+`completion_slot_limit`, `completion_budget_reserved`, `completion_deadline_reserve`
+y `completion_parent_artifact_invalid`. El hijo recibe IDs pendientes y fuentes
+previas como pistas; todo lo acreditado vuelve a pasar por el fetch independiente.
+Hasta tres runs por slot, sin elevar GW/mes/job ni consumir la reserva del techo
+por job para slots futuros. Un fallo terminal no se reetiqueta ni genera un hijo.
+La selección prospectiva sigue siendo el primer run y no se registra otra cohorte.
+Los antecedentes de un intento por slot descritos abajo corresponden al contrato
+anterior; no implican que un parcial 1.13.0 haya completado el foco.
+
 ## Operación
 
 ~~~bash

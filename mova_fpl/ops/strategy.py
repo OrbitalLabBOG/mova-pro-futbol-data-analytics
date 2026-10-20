@@ -575,13 +575,13 @@ class StrategicContextService:
             )
         with self.db.connect(readonly=True) as con:
             latest = con.execute(
-                "SELECT status,queued_at,imported_at FROM research_runs r WHERE cycle_id=? "
+                "SELECT * FROM research_runs r WHERE cycle_id=? "
                 "AND NOT EXISTS (SELECT 1 FROM audit_events a WHERE a.subject_id=r.research_run_id "
                 "AND a.event_type IN ('research_experiment_enqueued','research_experiment_completed')) "
                 "ORDER BY queued_at DESC LIMIT 1", (cycle["cycle_id"],),
             ).fetchone()
             attempted_in_slot = con.execute(
-                "SELECT status,queued_at,imported_at FROM research_runs r WHERE cycle_id=? "
+                "SELECT * FROM research_runs r WHERE cycle_id=? "
                 "AND queued_at>=? AND NOT EXISTS (SELECT 1 FROM audit_events a "
                 "WHERE a.subject_id=r.research_run_id AND a.event_type IN "
                 "('research_experiment_enqueued','research_experiment_completed')) "
@@ -594,6 +594,19 @@ class StrategicContextService:
                         "latest_status": latest["status"], "deadline_seconds": seconds,
                         "run_kind": run_kind}
         if attempted_in_slot:
+            from mova_fpl.ops.research_continuation import assess
+            with self.db.connect(readonly=True) as con:
+                count = con.execute(
+                    "SELECT COUNT(*) FROM research_runs r WHERE cycle_id=? AND queued_at>=? "
+                    "AND NOT EXISTS (SELECT 1 FROM audit_events a WHERE a.subject_id=r.research_run_id "
+                    "AND a.event_type IN ('research_experiment_enqueued','research_experiment_completed'))",
+                    (cycle['cycle_id'], slot_start.isoformat()),
+                ).fetchone()[0]
+            continuation = assess(self.config, self.db, dict(attempted_in_slot),
+                                  count=count, run_kind=run_kind, seconds=seconds)
+            if continuation:
+                return {**continuation, 'cycle_id': cycle['cycle_id'], 'run_kind': run_kind,
+                        'deadline_seconds': seconds, 'slot_started_at': slot_start.isoformat()}
             return {
                 "due": False, "reason": "slot_already_attempted",
                 "latest_status": attempted_in_slot["status"],
@@ -623,6 +636,13 @@ class StrategicContextService:
             existing = self.db.research_run(deterministic_id)
             if existing:
                 return {**existing, "reused": True, "due": assessment}
+        if not force and assessment.get('continuation'):
+            parent = assessment['continuation']['parent_run_id']
+            deterministic_id = 'research_' + hashlib.sha256(
+                f"completion:{parent}:{assessment['run_kind']}".encode()).hexdigest()[:32]
+            existing = self.db.research_run(deterministic_id)
+            if existing:
+                return {**existing, 'reused': True, 'due': assessment}
         prepared = _prepared or self.prepare()
         manifest = prepared["manifest"]
         run_id = deterministic_id or new_id("research")
@@ -658,6 +678,11 @@ class StrategicContextService:
         version, definition = researcher_release(_experiment["agent_version"] if _experiment else None)
         request["agent_version"] = version
         request["agent_release"] = definition
+        if definition.get('completion_policy') == 'research-completion-v1':
+            from mova_fpl.ops.research_continuation import POLICY
+            request['completion_policy'] = POLICY
+            if not force and assessment.get('continuation'):
+                request['continuation'] = assessment['continuation']
         request["quality_policy"] = definition["quality_policy"]
         if definition.get("discovery_profile") == "expanded_broad_v1" and run_kind in {"broad", "forced"}:
             request["scope_policy"] |= {"max_web_queries": 16, "max_documents": 16}
@@ -685,6 +710,12 @@ class StrategicContextService:
                     "due": assessment}
         if result.get("reused") and result["research_run_id"] != run_id:
             request_path.unlink(missing_ok=True)
+        if request.get('continuation') and result.get('status') != 'blocked' and not result.get('reused'):
+            continuation = request['continuation']
+            self.db.append_audit('research_continuation_queued', actor=actor,
+                cycle_id=prepared['cycle_id'], subject_type='research_run', subject_id=run_id,
+                payload={key: continuation[key] for key in
+                         ['parent_run_id','parent_result_sha256','round','pending_subjects']})
         if force and not result.get("reused"):
             self.db.append_audit(
                 "forced_research_requested", actor=actor,

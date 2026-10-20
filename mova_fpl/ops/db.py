@@ -1336,9 +1336,15 @@ class OpsDB:
                     ON e.decision_id=d.decision_id WHERE d.cycle_id=c.cycle_id
                     AND d.status='executed_verified' AND e.status='verified')
                   OR EXISTS(SELECT 1 FROM execution_attempts a JOIN execution_plans p
-                    ON p.plan_id=a.plan_id JOIN decision_runs d ON d.decision_id=p.decision_id
+                    ON p.plan_id=a.plan_id JOIN job_runs j ON j.job_id=a.job_id
+                    JOIN decision_runs d ON d.decision_id=p.decision_id
                     WHERE p.cycle_id=c.cycle_id AND d.status='executed_verified'
-                    AND a.status='verified')
+                    AND a.status='verified' AND COALESCE(json_extract(j.metrics_json,'$.delivery_proof'),0)=0)
+                  OR EXISTS(SELECT 1 FROM job_runs j WHERE j.cycle_id=c.cycle_id
+                    AND j.job_type='delivery' AND j.status='completed'
+                    AND json_extract(j.metrics_json,'$.status')='unchanged_verified'
+                    AND json_extract(j.metrics_json,'$.receipt_contract')='mova-unchanged-delivery-v1'
+                    AND COALESCE(json_extract(j.metrics_json,'$.delivery_proof'),0)=0)
                 )
                 ORDER BY c.gw""", (season,),
             ).fetchall()

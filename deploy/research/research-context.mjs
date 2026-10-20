@@ -21,6 +21,10 @@ export function buildResearchContext(request) {
   }
   const clubs = [...groups].map(([team, elements]) => ({team, elements}))
     .sort((a, b) => b.elements.length - a.elements.length || a.team.localeCompare(b.team));
+  const pendingIds = new Set(request.continuation?.pending_subjects || unique.map(row => row.element));
+  const pendingClubs = clubs.map(group => ({...group,
+    elements: group.elements.filter(element => pendingIds.has(element)),
+  })).filter(group => group.elements.length);
   const documentBudget = request.scope_policy?.max_documents;
   const knownBudget = Number.isInteger(documentBudget) && documentBudget >= 0;
   const target = Math.ceil(unique.length * 0.9);
@@ -36,7 +40,8 @@ export function buildResearchContext(request) {
     : null;
   context.acquisition_plan = {
     schema: 'mova-research-acquisition-plan-v1',
-    focus_subjects: unique.length, clubs,
+    focus_subjects: unique.length, clubs, pending_clubs: pendingClubs,
+    pending_subjects: [...pendingIds], continuation_round: request.continuation?.round || 1,
     target_checked_subjects: target,
     reusable_hints: (summary.reusable_evidence_hints || []).length,
     conditional_club_source_capacity: capacity,
@@ -50,7 +55,7 @@ export function buildResearchContext(request) {
   if (request.agent_release?.coverage_allocation === 'club_first_pass_v1') {
     const own = new Set(unique.filter(row =>
       row.focus_reason?.includes('current_squad')).map(row => row.element));
-    const firstPass = clubs.map(group => ({...group,
+    const firstPass = pendingClubs.map(group => ({...group,
       own_squad_subjects: group.elements.filter(element => own.has(element)).length,
     })).sort((a,b) => b.own_squad_subjects - a.own_squad_subjects
       || b.elements.length - a.elements.length || a.team.localeCompare(b.team));
