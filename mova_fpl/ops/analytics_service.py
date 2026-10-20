@@ -89,7 +89,6 @@ class AnalyticsService:
                     )
                 state = self.store.status()
                 state["last_run"] = result
-                publish_status(self.config, state)
                 if action in {"run", "reconcile"}:
                     from mova_fpl.ops.review import GameweekReviewService
 
@@ -154,6 +153,8 @@ class AnalyticsService:
                                         "retry_exhausted": causal.get("retry_exhausted", False)},
                             )
                         result["causal_reviews"].append(causal)
+                state['last_run'] = result
+                publish_status(self.config, state)
                 result["analytics_status"] = state["status"]
                 self.db.finish_job(job_id, "completed", output_sha256=sha256_json(result),
                                    metrics=result)

@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 
 from mova_fpl.ops.execution import ExecutionService
 from mova_fpl.ops.delivery_policy import lineup_proof
+from mova_fpl.ops.unchanged_delivery import seal_receipt
 
 LINEUP_SCOPE = "lineup-v1"
 
@@ -65,10 +66,13 @@ class DeliveryService:
             failed = [c['code'] for c in loaded['authorization']['checks'] if not c['passed']]
             if failed:
                 return {**result, 'reason': 'noop_checks_failed', 'blocking_codes': failed}
+            receipt = seal_receipt(self.config, self.db, loaded, now=current, proof=proof)
             job, reused = self.db.start_job('delivery', f"delivery-noop:{cycle['cycle_id']}:{'proof' if proof else 'final'}:{row['expected_pre_fingerprint']}",
                                             'corr_delivery', cycle_id=cycle['cycle_id'])
             if not reused:
-                self.db.finish_job(job, 'completed', metrics={'status': 'unchanged_verified', 'plan_id': plan['plan_id'], 'delivery_proof': proof})
+                self.db.finish_job(job, 'completed', output_sha256=receipt['evidence_sha256'],
+                                   metrics={'status': 'unchanged_verified', 'plan_id': plan['plan_id'],
+                                            'delivery_proof': proof, **receipt})
             return {**result, 'status': 'unchanged_verified', 'job_id': job}
         if row['status'] != 'authorized':
             return {**result, 'reason': 'preflight_blocked',

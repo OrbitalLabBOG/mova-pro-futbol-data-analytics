@@ -244,6 +244,14 @@ La traza vive en `data/processed/trace.db`. Cada decisión guarda su huella
 
 ### Financiación y atribución del cierre autónomo v2
 
+Una entrega regular sin cambios puede cerrar desde un recibo
+`mova-unchanged-delivery-v1`: captura privada exacta <=300 s, plan/candidato ligados,
+hashes verificados y preflight completo en la ventana regular. El cierre etiqueta
+`verified_execution_source=unchanged_delivery`, conserva financiación y comparador
+y nunca acredita un Save físico. No sirven jobs legacy sin este recibo ni pruebas
+`delivery_proof`. Si falta evidencia histórica, no se fabrica una ejecución.
+
+
 `mova-fpl-autonomous-closeout-v2` requiere `mova-closeout-financing-v1` en ambos
 escenarios. El estado inicial proviene del team-state vinculado al manifest del envelope;
 el seleccionado también exige el estado posterior durable de la ejecución. Se verifican
