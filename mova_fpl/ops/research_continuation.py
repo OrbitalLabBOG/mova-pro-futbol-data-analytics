@@ -64,5 +64,7 @@ def assess(config, db, run, *, count, run_kind, seconds):
     return {'due': True, 'reason': 'completion_pending', 'continuation': {
         'parent_run_id': run['research_run_id'], 'parent_result_sha256': run['result_sha256'],
         'round': count+1, 'pending_subjects': pending,
-        'prior_brief': {key: result.get(key, []) for key in ['documents', 'signals', 'conflicts', 'coverage']},
+        'prior_brief': {key: result.get(key, []) for key in ['documents', 'signals', 'conflicts']},
+        'prior_verified_subjects': [int(row['player_element']) for row in subjects
+                                    if row.get('evidence_verified') is True],
         'prior_evidence_is_context_only': True}}
