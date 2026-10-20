@@ -79,3 +79,9 @@ corrida operativa y todos sus fallos permanecen intactos. Tampoco concede writes
 Permite usar las llamadas siguientes para lo pendiente, sin repetir el trabajo
 válido ni inflar la calidad de una corrida. Las ventanas de refresh/final siguen
 siendo obligatorias y conservan el avance vigente de las anteriores.
+
+## Revisión operativa posterior
+
+ADR-016 sustituye las restricciones de continuación por slot, reserva futura y
+apertura T−24h por operación desde T−72h bajo los límites económicos reales.
+Mantiene intactos los recibos, calidad, aceptación histórica y autoridad A2.

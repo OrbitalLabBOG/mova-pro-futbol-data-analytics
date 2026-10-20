@@ -22,7 +22,7 @@ def _identity(row):
 
 
 def progress(config, db, cycle_id=None, *, now=None):
-    from mova_fpl.ops.research_continuation import POLICY
+    from mova_fpl.ops.research_continuation import supported_policy
     current = now or datetime.now(timezone.utc)
     cycle_id = cycle_id or (db.status().get('cycle') or {}).get('cycle_id')
     manifest = db.latest_cycle_manifest(cycle_id) if cycle_id else None
@@ -82,7 +82,7 @@ def progress(config, db, cycle_id=None, *, now=None):
             if not path.resolve().is_relative_to(config.research_root.resolve()) or path.stat().st_size>1_048_576:continue
             request=json.loads(path.read_text())
             unsigned={k:v for k,v in request.items() if k!='request_sha256'}
-            if (request.get('completion_policy')!=POLICY or request.get('experiment')
+            if (not supported_policy(request.get('completion_policy')) or request.get('experiment')
                     or sha256_json(unsigned)!=run['request_sha256']
                     or request.get('request_sha256')!=run['request_sha256']
                     or _time(request['manifest']['deadline_at'])!=deadline):continue
@@ -110,6 +110,10 @@ def progress(config, db, cycle_id=None, *, now=None):
         except (OSError,ValueError,TypeError,KeyError):continue
     report['subjects']=[selected.get(e,{'player_element':e,'evidence_verified':False,'resolved':False,'status':'not_checked'}) for e in sorted(focus)]
     report['pending_subjects']=[r['player_element'] for r in report['subjects'] if not r['resolved']]
+    report['pending_evidence_subjects']=[r['player_element'] for r in report['subjects'] if not r['evidence_verified']]
+    report['open_questions']=[r['player_element'] for r in report['subjects'] if r['evidence_verified'] and not r['resolved']]
+    report['investigation_status']=('partial' if report['pending_evidence_subjects'] else
+        ('complete_with_uncertainty' if report['open_questions'] or conflicts else 'complete'))
     report['completed_subjects']=len(focus)-len(report['pending_subjects'])
     report['verified_subjects']=sum(r['evidence_verified'] for r in report['subjects'])
     report['coverage_ratio']=report['verified_subjects']/len(focus)
