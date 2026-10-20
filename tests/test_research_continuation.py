@@ -69,13 +69,13 @@ def test_scheduler_resumes_exact_pending_focus_and_stops_after_verified_completi
     with db.connect(readonly=True) as con:assert con.execute('SELECT COUNT(*) FROM research_runs').fetchone()[0]==2
 
 
-@pytest.mark.parametrize('condition,reason',[('budget','completion_budget_reserved'),('limit','completion_slot_limit'),('deadline','completion_deadline_reserve'),('artifact','completion_parent_artifact_invalid')])
+@pytest.mark.parametrize('condition,reason',[('budget','completion_budget_exhausted'),('deadline','completion_deadline_reserve'),('artifact','completion_parent_artifact_invalid')])
 def test_resume_stops_with_real_reason_and_preserves_pending(tmp_path,monkeypatch,condition,reason):
     config,db,service,cycle=setup(tmp_path)
     first=service.enqueue();run=finish(config,db,service,cycle,first,{1})
     if condition=='budget':monkeypatch.setattr(db,'cost_report',lambda *a,**k:{'status':'blocked'})
     if condition=='artifact':Path(run['result_path']).write_text('{}')
-    decision=assess(config,db,run,count=3 if condition=='limit' else 1,run_kind='broad',
+    decision=assess(config,db,run,count=4,run_kind='broad',
                     seconds=config.research_final_cutoff_seconds+10 if condition=='deadline' else 40000)
     assert decision['due'] is False and decision['reason']==reason
     assert db.research_run(run['research_run_id'])['status']=='imported'
@@ -104,7 +104,7 @@ def test_manual_resume_uses_same_parent_outside_regular_window_and_cannot_duplic
     first=service.enqueue();finish(config,db,service,cycle,first,{1,2,3})
     with db.transaction() as con:
         con.execute('UPDATE gameweek_cycles SET deadline_at=? WHERE cycle_id=?',
-                    ((datetime.now(timezone.utc)+timedelta(days=3)).isoformat(),cycle))
+                    ((datetime.now(timezone.utc)+timedelta(days=4)).isoformat(),cycle))
     assert service.due()['reason']=='outside_research_window'
     child=service.enqueue(force=True,actor='owner',reason='authorized completion test',
                           idempotency_key='manual-child',resume_run_id=first['research_run_id'])
@@ -160,3 +160,74 @@ def test_next_regular_slot_keeps_partial_work_and_still_runs_its_refresh(tmp_pat
     assert due['continuation']['parent_run_id']==first['research_run_id']
     assert due['continuation']['round']==1
     assert due['continuation']['pending_subjects']==list(range(4,16))
+
+
+def test_continuation_can_use_remaining_budget_without_three_run_or_future_reserve_gate(tmp_path,monkeypatch):
+    config,db,service,cycle=setup(tmp_path)
+    first=service.enqueue();run=finish(config,db,service,cycle,first,{1,2,3})
+    ceiling=config.agent_budget_policy()['job_tokens']
+    monkeypatch.setattr(db,'cost_report',lambda *a,**k:{'status':'within_budget',
+        'gameweek':{'remaining_tokens':ceiling+1},'month':{'remaining_tokens':ceiling+1}})
+    due=assess(config,db,run,count=7,run_kind='broad',seconds=40000)
+    assert due['due'] and due['continuation']['round']==8
+    assert due['continuation']['unverified_subjects']==list(range(4,16))
+    assert due['continuation']['unresolved_subjects']==[]
+    assert db.research_run(run['research_run_id'])['status']=='imported'
+
+
+def test_regular_scheduler_starts_at_72h_without_force_or_owner_validation(tmp_path):
+    from datetime import timedelta
+    config,db,service,cycle=setup(tmp_path)
+    current=datetime.now(timezone.utc)
+    with db.transaction() as con:
+        con.execute('UPDATE gameweek_cycles SET deadline_at=? WHERE cycle_id=?',
+                    ((current+timedelta(hours=70)).isoformat(),cycle))
+    due=service.due(now=current)
+    assert due['due'] and due['run_kind']=='broad'
+    request=service.enqueue()
+    assert request['status']=='queued'
+    assert json.loads(Path(request['request_path']).read_text())['agent_version']=='1.15.0'
+    assert service.due()['reason']=='previous_run_not_terminal'
+
+
+def test_v1_immutable_parent_can_continue_under_owner_authorized_v2_policy(tmp_path):
+    from mova_fpl.ops.research_continuation import LEGACY_POLICY
+    config,db,service,cycle=setup(tmp_path)
+    first=service.enqueue();run=db.research_run(first['research_run_id'])
+    request=json.loads(Path(run['request_path']).read_text());request['completion_policy']=LEGACY_POLICY
+    from mova_fpl.ops.db import sha256_json
+    request['request_sha256']=sha256_json({k:v for k,v in request.items() if k!='request_sha256'})
+    Path(run['request_path']).write_text(json.dumps(request))
+    with db.transaction() as con:
+        con.execute('UPDATE research_runs SET request_sha256=? WHERE research_run_id=?',
+                    (request['request_sha256'],run['research_run_id']))
+    run=finish(config,db,service,cycle,first,{1,2,3})
+    assert progress(config,db,cycle)['verified_subjects']==3
+    assert assess(config,db,run,count=4,run_kind='broad',seconds=40000)['due']
+
+
+def test_verified_unknown_finishes_investigation_without_claiming_resolution_or_authority(tmp_path):
+    from datetime import timedelta
+    config,db,service,cycle=setup(tmp_path)
+    first=service.enqueue();finish(config,db,service,cycle,first,set(range(1,16)),uncertain={1})
+    campaign=progress(config,db,cycle)
+    assert campaign['investigation_status']=='complete_with_uncertainty'
+    assert campaign['pending_subjects']==[1] and campaign['open_questions']==[1]
+    assert campaign['pending_evidence_subjects']==[]
+    assert campaign['status']=='partial' and campaign['completed_subjects']==14
+    assert campaign['acceptance_eligible'] is False and campaign['permits_execution'] is False
+    assert service.due()['reason']=='research_focus_investigated_with_uncertainty'
+    refresh=service.due(now=datetime.now(timezone.utc)+timedelta(hours=7))
+    assert refresh['due'] and refresh['run_kind']=='refresh'
+    assert refresh['continuation']['pending_subjects']==[1]
+
+
+@pytest.mark.parametrize('remaining,uses',[(159999,1),(160000,0)])
+def test_real_token_or_use_exhaustion_still_blocks_new_inference(tmp_path,monkeypatch,remaining,uses):
+    config,db,service,cycle=setup(tmp_path)
+    first=service.enqueue();run=finish(config,db,service,cycle,first,{1})
+    monkeypatch.setattr(db,'cost_report',lambda *a,**k:{'status':'within_budget',
+        'gameweek':{'remaining_tokens':remaining,'remaining_uses':uses},
+        'month':{'remaining_tokens':1000000,'remaining_uses':1}})
+    due=assess(config,db,run,count=7,run_kind='broad',seconds=40000)
+    assert not due['due'] and due['reason']=='completion_budget_exhausted'

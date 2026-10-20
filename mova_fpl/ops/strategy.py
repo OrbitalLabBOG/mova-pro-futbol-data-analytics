@@ -553,7 +553,8 @@ class StrategicContextService:
             return {"due": False, "reason": "no_cycle"}
         deadline = _parse_time(cycle["deadline_at"], field="deadline_at")
         window = agent_window(deadline, current,
-                              window_seconds=self.config.research_deadline_window_seconds,
+                              window_seconds=max(self.config.research_deadline_window_seconds,
+                                  researcher_release()[1].get('completion_window_seconds', 0)),
                               cutoff_seconds=self.config.research_final_cutoff_seconds)
         seconds = window["deadline_seconds"]
         if not window["due"]:
@@ -571,7 +572,8 @@ class StrategicContextService:
         else:
             run_kind = "broad"
             slot_start = deadline - timedelta(
-                seconds=self.config.research_deadline_window_seconds
+                seconds=max(self.config.research_deadline_window_seconds,
+                            researcher_release()[1].get('completion_window_seconds', 0))
             )
         with self.db.connect(readonly=True) as con:
             latest = con.execute(
@@ -715,7 +717,7 @@ class StrategicContextService:
         version, definition = researcher_release(_experiment["agent_version"] if _experiment else None)
         request["agent_version"] = version
         request["agent_release"] = definition
-        if definition.get('completion_policy') == 'research-completion-v1':
+        if definition.get('completion_policy') in {'research-completion-v1', 'research-completion-v2'}:
             from mova_fpl.ops.research_continuation import POLICY
             request['completion_policy'] = POLICY
             if assessment.get('continuation'):

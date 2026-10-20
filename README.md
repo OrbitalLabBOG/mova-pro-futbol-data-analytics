@@ -32,11 +32,12 @@ y la [guía de cierre, tamaños y límites](experiments/data_ground_truth/README
 ## Versiones y última comprobación
 
 La corrección del 20 de octubre añade recibos sellados de `unchanged_verified`
-para el cierre financiero v2 y Researcher 1.14.0 con progreso acumulado independiente y continuación de pendientes
-por slot, revalidación independiente y reserva de presupuesto para las ventanas
-restantes. Conserva A2 `lineup-v1`; no habilita fichajes, chips ni modelos nuevos.
+para el cierre financiero v2 y Researcher 1.15.0 con progreso acumulado independiente y continuación automática
+desde T−72h, sin tope artificial por slot ni reserva especulativa para slots futuros.
+Conserva los límites económicos reales y la verificación independiente. Conserva A2 `lineup-v1`; no habilita fichajes, chips ni modelos nuevos.
 Implementación no equivale a cobertura o Save físico probado. Ver
-[ADR-015](docs/specs/fpl-autonomous-operator/decisions/ADR-015-unchanged-closeout-research-continuation.md).
+[ADR-015](docs/specs/fpl-autonomous-operator/decisions/ADR-015-unchanged-closeout-research-continuation.md) y
+[ADR-016](docs/specs/fpl-autonomous-operator/decisions/ADR-016-autonomous-research-campaign.md).
 
 Recuperación verificada del 19 de octubre en `9ac2882`: retención local acotada por capas y
 presupuesto, ejecutada por timer horario independiente; alerta de disco antes

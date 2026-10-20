@@ -240,7 +240,7 @@ try {
         "Hay un freno de tokens durante el turno; termina con el JSON antes de agotarlo. No recopiles narrativas ni repitas búsquedas fallidas.",
       ] : []),
       ...(request.continuation ? [
-        "Esta corrida continúa el trabajo pendiente de continuation.pending_subjects. No reinicies discovery de sujetos cubiertos.",
+        "Esta corrida continúa continuation.pending_subjects: cubre primero continuation.unverified_subjects y después continuation.unresolved_subjects. No reinicies discovery de sujetos cubiertos. Si una URL falla o la identidad es ambigua busca otra fuente o un fragmento con nombre completo y club; no relajes la identidad.",
         ...(release.progress_policy === "independent_campaign_v1" ? [
           "continuation.prior_brief son pistas. El resumen acumulado conserva verificaciones anteriores vigentes por su corrida original; no necesitas volver a investigarlas si no cambiaron. Si citas una fuente en ESTA corrida, reléela y verifícala de nuevo.",
           "Entrega filas para TODO el foco original; para sujetos verificados antes que no revisaste ahora usa not_checked sin fuentes. No inventes nueva cobertura: el host calcula el acumulado por sujeto, fecha, fuente y cambios oficiales. Concentra discovery en continuation.pending_subjects.",
