@@ -189,3 +189,30 @@ def test_focus_progress_tracks_verified_evidence_without_filling_silence(tmp_pat
     assert [r['element'] for r in remaining] == [2]
     assert remaining[0]['final_acceptance'] is False
     assert remaining[0]['evidence_verified_in_turn'] is False
+
+
+def test_duplicate_display_name_requires_the_sealed_full_name_without_cross_player_coverage(tmp_path):
+    mod=module();now=datetime(2026,9,22,12,tzinfo=timezone.utc)
+    request={'research_run_id':'research_'+'a'*32,'scope_policy':{'max_documents':8},
+      'manifest':{'deadline_at':'2026-09-23T12:00:00Z','research_summary':{
+        'world':{'catalog':[[154,'Palmer','CHE'],[301,'Palmer','IPS']]},
+        'focus':[{'element':154,'player_name':'Cole Palmer'},{'element':301,'player_name':'Palmer'}]}}}
+    body=b'<html>22 September 2026. Cole Palmer is fit. Kasey Palmer is fit. Palmer is fit.</html>'
+    tool=mod.EvidenceTool(request,tmp_path,clock=lambda:now,fetcher=mod.SafeEvidenceFetcher(tmp_path,
+        transport=lambda url:(body,{'content_type':'text/html','http_status':200,'final_url':url})))
+    args={'source_url':'https://example.com/news','evidence_text':'Cole Palmer is fit.',
+          'published_at':'2026-09-22T00:00:00Z','player_element':154,'claim_type':'coverage'}
+    valid=tool.verify(args)
+    assert valid['status']=='supported' and valid['covered_focus_elements']==[154]
+    assert tool.verify({**args,'player_element':301})['reasons']==['ambiguous_identity']
+    assert tool.verify({**args,'evidence_text':'Kasey Palmer is fit.'})['status']=='rejected'
+    assert tool.verify({**args,'evidence_text':'Palmer is fit.'})['status']=='rejected'
+    from mova_fpl.ops.strategy import StrategicContextService
+    from mova_fpl.ops.research_quality import identity_catalog
+    catalog,strict,ambiguous=identity_catalog(request['manifest']['research_summary']['world']['catalog'],request['manifest']['research_summary']['focus'])
+    for text,expected in [('Cole Palmer is fit.',1),('Palmer is fit.',0),('Kasey Palmer is fit.',0)]:
+        by_url={args['source_url']:{'fetch_status':'verified','publication_date_verified':True,'excerpt':text,'published_at':args['published_at']}}
+        report=StrategicContextService._validate_coverage({'subjects':[{'player_element':154,'status':'no_material_update',
+            'source_urls':[args['source_url']],'note':'fixture'}]},[{'element':154,'player_name':'Cole Palmer'}],by_url,[],legacy=False,
+            catalog=catalog,strict_names=strict,ambiguous_names=ambiguous,fetched_at=now,cutoff=now,require_freshness=True)
+        assert report['evidence_verified_subjects']==expected

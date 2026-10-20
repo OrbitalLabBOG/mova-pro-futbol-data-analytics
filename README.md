@@ -32,7 +32,7 @@ y la [guía de cierre, tamaños y límites](experiments/data_ground_truth/README
 ## Versiones y última comprobación
 
 La corrección del 20 de octubre añade recibos sellados de `unchanged_verified`
-para el cierre financiero v2 y Researcher 1.16.0 con progreso acumulado independiente y continuación automática
+para el cierre financiero v2 y Researcher 1.17.0 con progreso acumulado independiente y continuación automática
 desde T−72h, sin tope artificial por slot ni reserva especulativa para slots futuros.
 Conserva los límites económicos reales y la verificación independiente. Conserva A2 `lineup-v1`; no habilita fichajes, chips ni modelos nuevos.
 Implementación no equivale a cobertura o Save físico probado. Ver

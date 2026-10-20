@@ -186,7 +186,7 @@ def test_regular_scheduler_starts_at_72h_without_force_or_owner_validation(tmp_p
     assert due['due'] and due['run_kind']=='broad'
     request=service.enqueue()
     assert request['status']=='queued'
-    assert json.loads(Path(request['request_path']).read_text())['agent_version']=='1.16.0'
+    assert json.loads(Path(request['request_path']).read_text())['agent_version']=='1.17.0'
     assert service.due()['reason']=='previous_run_not_terminal'
 
 
@@ -266,7 +266,7 @@ def test_corrected_release_replaces_failed_request_without_rewriting_it_or_its_c
         return
     assert replacement['status']=='queued' and replacement['research_run_id']!=old['research_run_id']
     request=json.loads(Path(replacement['request_path']).read_text())
-    assert request['agent_version']=='1.16.0'
+    assert request['agent_version']=='1.17.0'
     assert request['continuation']['parent_run_id']==parent['research_run_id']
     assert replacement['due']['replaces_run_id']==old['research_run_id']
     assert request['continuation']['replaces_run_id']==old['research_run_id']
@@ -277,3 +277,75 @@ def test_corrected_release_replaces_failed_request_without_rewriting_it_or_its_c
         assert con.execute('SELECT COUNT(*) FROM agent_worker_attempt_events WHERE subject_id=?',(old['research_run_id'],)).fetchone()[0]==2
         budget=con.execute('SELECT status,accounting_mode FROM agent_budget_reservations WHERE subject_id=?',(old['research_run_id'],)).fetchone()
         assert budget['status']=='charged' and budget['accounting_mode']=='conservative'
+
+
+def source_activity(config,db,run,element,urls,*,tamper=False,supported=False,ambiguous=False):
+    import hashlib
+    attempt='attempt_'+'f'*32
+    payload={'schema':'mova-agent-attempt-v1','attempt_id':attempt,'subject_type':'research',
+        'subject_id':run['research_run_id'],'request_sha256':run['request_sha256'],'event_type':'finished',
+        'status':'succeeded','model':'mock','input_tokens':10,'output_tokens':10,
+        'occurred_at':datetime.now(timezone.utc).isoformat()}
+    path=config.research_root/'receipts'/f"{run['research_run_id']}.{attempt}.finished.json"
+    path.parent.mkdir(parents=True,exist_ok=True);path.write_text(json.dumps(payload))
+    digest=hashlib.sha256(path.read_bytes()).hexdigest()
+    db.record_agent_worker_attempt_event(payload,receipt_path=str(path),receipt_sha256=digest)
+    if tamper:path.write_text('{}')
+    log=config.research_root/'logs'/f"{run['research_run_id']}.{attempt}.events.jsonl"
+    log.parent.mkdir(parents=True,exist_ok=True)
+    events=[{'method':'item/completed','params':{'item':{'type':'mcpToolCall','tool':'read_research_source',
+        'status':'failed','arguments':{'source_url':url,'player_elements':[element]},
+        'result':{'content':[{'type':'text','text':json.dumps({'status':'rejected','reasons':['source_read_failed']})}]}}}} for url in urls]
+    if supported or ambiguous:
+        result={'status':'supported','covered_focus_elements':[element]} if supported else {'status':'rejected','reasons':['ambiguous_identity']}
+        events.append({'method':'item/completed','params':{'item':{'type':'mcpToolCall','tool':'verify_research_evidence',
+            'status':'completed' if supported else 'failed','arguments':{'player_element':element},
+            'result':{'content':[{'type':'text','text':json.dumps(result)}]}}}})
+    log.write_text(''.join(json.dumps(event)+'\n' for event in events))
+
+
+@pytest.mark.parametrize('condition',['two_sources','note_only','same_source','tampered_receipt','supported_dropped'])
+def test_research_can_finish_with_proven_source_limits_without_manufacturing_coverage(tmp_path,condition):
+    from datetime import timedelta
+    config,db,service,cycle=setup(tmp_path)
+    first=service.enqueue();run=finish(config,db,service,cycle,first,set(range(1,15)))
+    if condition!='note_only':
+        urls=['https://example.com/report-a','https://example.com/report-b'] if condition!='same_source' else [
+            'https://example.com/report?utm=a','https://example.com/report?utm=b']
+        source_activity(config,db,run,15,urls,tamper=condition=='tampered_receipt',supported=condition=='supported_dropped')
+    report=progress(config,db,cycle)
+    assert report['verified_subjects']==14 and report['completed_subjects']==14
+    assert report['pending_evidence_subjects']==[15]
+    assert report['acceptance_eligible'] is False and report['permits_execution'] is False
+    if condition=='two_sources':
+        assert report['investigation_status']=='complete_with_limits' and report['processed_subjects']==15
+        assert report['source_limited_subjects']==[15] and report['retry_subjects']==[]
+        assert service.due()['reason']=='research_focus_investigated_with_limits'
+        refreshed=progress(config,db,cycle,now=datetime.now(timezone.utc)+timedelta(hours=7))
+        assert refreshed['source_limited_subjects']==[] and refreshed['retry_subjects']==[15]
+    else:
+        assert report['investigation_status']=='partial' and report['retry_subjects']==[15]
+
+
+def test_old_duplicate_alias_failure_is_retried_with_corrected_full_identity(tmp_path,monkeypatch):
+    from mova_fpl.ops.agent_releases import researcher_release
+    config,db,service,cycle=setup(tmp_path)
+    service._test_focus[-1]['player_name']='Cole Palmer'
+    service._research_world=lambda **k:{'status':'ready','catalog':[[i,'Player '+str(i),'Club'] for i in range(1,15)]+[[15,'Palmer','CHE'],[16,'Palmer','IPS']]}
+    monkeypatch.setattr('mova_fpl.ops.strategy.researcher_release',lambda *a:researcher_release('1.16.0'))
+    first=service.enqueue();run=finish(config,db,service,cycle,first,set(range(1,15)))
+    monkeypatch.undo()
+    source_activity(config,db,run,15,['https://example.com/a','https://example.com/b'],ambiguous=True)
+    report=progress(config,db,cycle)
+    assert report['source_limited_subjects']==[] and report['retry_subjects']==[15]
+
+
+def test_continuation_does_not_reopen_attested_source_limits_in_the_same_slot(tmp_path):
+    config,db,service,cycle=setup(tmp_path)
+    first=service.enqueue();run=finish(config,db,service,cycle,first,set(range(1,14)))
+    source_activity(config,db,run,14,['https://example.com/a','https://example.com/b'])
+    report=progress(config,db,cycle)
+    assert report['source_limited_subjects']==[14] and report['retry_subjects']==[15]
+    due=service.due()
+    assert due['continuation']['pending_subjects']==[15]
+    assert due['continuation']['unverified_subjects']==[15]

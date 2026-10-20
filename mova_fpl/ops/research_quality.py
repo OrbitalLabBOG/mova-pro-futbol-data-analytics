@@ -25,12 +25,12 @@ def _normal(value: str) -> str:
     return "".join(char for char in value if not unicodedata.combining(char))
 
 
-def subject_in_excerpt(name: str, excerpt: str) -> bool:
+def subject_in_excerpt(name: str, excerpt: str, *, require_full: bool = False) -> bool:
     """Require an explicit player name; a generic team article is not coverage."""
     text = _normal(excerpt)
     tokens = re.findall(r"[a-z0-9]+", _normal(name))
     candidates = [" ".join(tokens)] if len(tokens) > 1 else []
-    if tokens and len(tokens[-1]) >= 4:
+    if not require_full and tokens and len(tokens[-1]) >= 4:
         candidates.append(tokens[-1])
     return any(re.search(r"(?<![a-z0-9])" + re.escape(token) + r"(?![a-z0-9])", text)
                for token in candidates)
@@ -68,3 +68,17 @@ def claim_fresh(*, claim_type: str, published_at: str, observed: datetime) -> bo
     } else 7 if claim_type in {"starting_role", "set_pieces", "manager_comment"}
         else 30 if claim_type == "transfer" else 7)
     return observed - max_age <= published <= observed
+
+
+def identity_catalog(rows, focus):
+    """Disambiguate duplicate display names with sealed full focus identities."""
+    from collections import Counter
+    catalog={int(r[0]):str(r[1]) for r in rows if isinstance(r,list) and len(r)>=2}
+    counts=Counter(_normal(n) for n in catalog.values())
+    full_names={int(r['element']):str(r.get('player_name') or '') for r in focus}
+    strict=set();ambiguous={e for e,n in catalog.items() if counts[_normal(n)]>1}
+    for element,name in list(catalog.items()):
+        full=full_names.get(element,'')
+        if counts[_normal(name)]>1 and len(re.findall(r'[a-z0-9]+',_normal(full)))>1 and _normal(full)!=_normal(name):
+            catalog[element]=full;strict.add(element);ambiguous.discard(element)
+    return catalog,strict,ambiguous

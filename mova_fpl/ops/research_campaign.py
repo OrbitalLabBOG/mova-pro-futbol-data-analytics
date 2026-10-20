@@ -2,11 +2,13 @@
 from __future__ import annotations
 import hashlib
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 from mova_fpl.ops.db import sha256_json
-from mova_fpl.ops.research_quality import claim_fresh
+from mova_fpl.ops.research_quality import claim_fresh, identity_catalog
+from mova_fpl.ops.agent_releases import researcher_release
+from urllib.parse import urlsplit, urlunsplit
 
 
 def _time(value):
@@ -19,6 +21,46 @@ def _time(value):
 def _identity(row):
     return tuple(row.get(k) for k in ('player_name','team','position','official_status',
                                       'official_chance_next','official_news'))
+
+
+def _attempted_sources(config, events, request_sha):
+    """Host-recorded MCP reads, not a model assertion that it searched."""
+    sources={}; ambiguous=set(); supported=set()
+    from mova_fpl.ops.research_evidence import canonical_public_url
+    for event in events:
+        try:
+            receipt=Path(event['receipt_path'])
+            if (not receipt.resolve().is_relative_to(config.research_root.resolve())
+                    or hashlib.sha256(receipt.read_bytes()).hexdigest()!=event['receipt_sha256']):continue
+            body=json.loads(receipt.read_text())
+            if body.get('request_sha256')!=request_sha or body.get('status')!='succeeded':continue
+            path=config.research_root/'logs'/f"{event['subject_id']}.{event['attempt_id']}.events.jsonl"
+            if not path.resolve().is_relative_to(config.research_root.resolve()) or not path.is_file() or path.stat().st_size>17*1024*1024:continue
+            for line in path.read_text().splitlines():
+                try:
+                    value=json.loads(line);item=value.get('params',{}).get('item',{})
+                    if value.get('method')!='item/completed' or item.get('type')!='mcpToolCall':continue
+                    args=item.get('arguments') or {}
+                    if isinstance(args,str):args=json.loads(args)
+                    result=item.get('result') or {};result_body={}
+                    for block in result.get('content',[]):
+                        if block.get('type')=='text':
+                            try:result_body=json.loads(block['text']);break
+                            except ValueError:pass
+                    if item.get('tool')=='verify_research_evidence' and result_body.get('status')=='supported':
+                        supported.update(result_body.get('covered_focus_elements',[]))
+                    if item.get('tool')=='verify_research_evidence' and 'ambiguous_identity' in result_body.get('reasons',[]):
+                        ambiguous.add(args.get('player_element'))
+                    if item.get('tool')!='read_research_source' or item.get('status') not in {'completed','failed'}:continue
+                    if result_body.get('status') not in {'ok','rejected'}:continue
+                    if set(result_body.get('reasons',[])) & {'invalid_arguments','read_budget_or_deadline'}:continue
+                    url=canonical_public_url(args['source_url']);parts=urlsplit(url)
+                    url=urlunsplit((parts.scheme,parts.netloc,parts.path,'',''))
+                    for element in args.get('player_elements',[]):
+                        if type(element) is int:sources.setdefault(element,set()).add(url)
+                except (ValueError,KeyError,TypeError,AttributeError):continue
+        except (OSError,ValueError,KeyError,TypeError):continue
+    return sources,ambiguous,supported
 
 
 def progress(config, db, cycle_id=None, *, now=None):
@@ -51,6 +93,16 @@ def progress(config, db, cycle_id=None, *, now=None):
             (cycle_id,))]
         conflicts=con.execute("SELECT COUNT(*) FROM research_conflicts WHERE cycle_id=? AND status='unresolved'",
                               (cycle_id,)).fetchone()[0]
+    with db.connect(readonly=True) as con:
+        attempts=[dict(r) for r in con.execute("SELECT e.* FROM agent_worker_attempt_events e JOIN research_runs r "
+            "ON r.research_run_id=e.subject_id WHERE r.cycle_id=? AND r.status='imported' "
+            "AND e.event_type='finished' AND e.status='succeeded'",(cycle_id,))]
+    seconds=(deadline-current).total_seconds()
+    slot_seconds=(config.research_final_window_seconds if seconds<=config.research_final_window_seconds
+                  else 6*3600 if seconds<=6*3600 else max(config.research_deadline_window_seconds,72*3600))
+    slot_start=deadline-timedelta(seconds=slot_seconds)
+    source_attempts={};alias_pending={};supported_pending={};seen_targets=set()
+    current_version=researcher_release()[0]
     documents = {(d['research_run_id'],d['source_url']):d for d in docs}
     sealed = {}
     def valid_document(row):
@@ -88,6 +140,16 @@ def progress(config, db, cycle_id=None, *, now=None):
                     or _time(request['manifest']['deadline_at'])!=deadline):continue
             original={int(r['element']):r for r in request['manifest']['research_summary']['focus']}
             coverage=json.loads(run['coverage_json'])
+            if _time(run['imported_at'])>=slot_start:
+                activity,ambiguous,supported=_attempted_sources(config,[e for e in attempts if e['subject_id']==run['research_run_id'] and _time(e['occurred_at'])<=min(current,deadline)],run['request_sha256'])
+                targets=set((request.get('continuation') or {}).get('pending_subjects',original))
+                for element,urls in activity.items():
+                    if element not in targets or element not in focus or _identity(original.get(element,{}))!=_identity(focus[element]):continue
+                    source_attempts.setdefault(element,set()).update(urls)
+                    if element not in seen_targets:
+                        alias_pending[element]=element in ambiguous and request.get('agent_version')!=current_version
+                        supported_pending[element]=element in supported
+                        seen_targets.add(element)
             report['runs'].append(run['research_run_id'])
             for row in coverage.get('subjects',[]):
                 element=int(row['player_element'])
@@ -112,8 +174,17 @@ def progress(config, db, cycle_id=None, *, now=None):
     report['pending_subjects']=[r['player_element'] for r in report['subjects'] if not r['resolved']]
     report['pending_evidence_subjects']=[r['player_element'] for r in report['subjects'] if not r['evidence_verified']]
     report['open_questions']=[r['player_element'] for r in report['subjects'] if r['evidence_verified'] and not r['resolved']]
-    report['investigation_status']=('partial' if report['pending_evidence_subjects'] else
-        ('complete_with_uncertainty' if report['open_questions'] or conflicts else 'complete'))
+    _,strict_names,_=identity_catalog((manifest.get('research_summary',{}).get('world') or {}).get('catalog',[]),list(focus.values()))
+    report['source_limited_subjects']=[e for e in report['pending_evidence_subjects']
+        if len(source_attempts.get(e,set()))>=2 and not supported_pending.get(e) and not (e in strict_names and alias_pending.get(e))]
+    report['source_limitations']=[{'player_element':e,'attempted_source_count':len(source_attempts[e]),
+        'reason':'two_public_sources_attempted_without_valid_evidence','evidence_verified':False}
+        for e in report['source_limited_subjects']]
+    report['retry_subjects']=[e for e in report['pending_evidence_subjects'] if e not in report['source_limited_subjects']]
+    report['processed_subjects']=len(focus)-len(report['retry_subjects'])
+    report['investigation_status']=('partial' if report['retry_subjects'] else
+        ('complete_with_limits' if report['source_limited_subjects'] else
+         'complete_with_uncertainty' if report['open_questions'] or conflicts else 'complete'))
     report['completed_subjects']=len(focus)-len(report['pending_subjects'])
     report['verified_subjects']=sum(r['evidence_verified'] for r in report['subjects'])
     report['coverage_ratio']=report['verified_subjects']/len(focus)
@@ -123,6 +194,7 @@ def progress(config, db, cycle_id=None, *, now=None):
     for label,reason in [('current_squad','current_squad'),('model_candidates','top_projection_candidate')]:
         ids={e for e,r in focus.items() if reason in r.get('focus_reason',[])}
         report['groups'][label]={'required':len(ids),'verified':sum(r['evidence_verified'] for r in report['subjects'] if r['player_element'] in ids),
-                                'completed':sum(r['resolved'] for r in report['subjects'] if r['player_element'] in ids)}
+                                'completed':sum(r['resolved'] for r in report['subjects'] if r['player_element'] in ids),
+                                'processed':sum(r['evidence_verified'] or r['player_element'] in report['source_limited_subjects'] for r in report['subjects'] if r['player_element'] in ids)}
     report['content_sha256']=sha256_json(report)
     return report

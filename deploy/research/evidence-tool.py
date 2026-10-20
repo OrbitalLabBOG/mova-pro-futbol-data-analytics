@@ -14,7 +14,7 @@ from pathlib import Path
 
 # The image copies only these two stdlib modules, not the runtime application.
 from research_evidence import SafeEvidenceFetcher, canonical_public_url, normalize_text, ALLOWED_MIME
-from research_quality import claim_fresh, claim_supported, subject_in_excerpt, TOPIC_WORDS, _normal
+from research_quality import claim_fresh, claim_supported, subject_in_excerpt, TOPIC_WORDS, _normal, identity_catalog
 
 TOOL = {
     "name": "verify_research_evidence",
@@ -67,7 +67,7 @@ class EvidenceTool:
         if self.deadline.tzinfo is None:
             raise ValueError("deadline_timezone_required")
         rows = request["manifest"].get("research_summary", {}).get("world", {}).get("catalog", [])
-        self.catalog = {int(row[0]): str(row[1]) for row in rows if isinstance(row, list) and len(row) >= 2}
+        self.catalog,self.strict_names,self.ambiguous_names = identity_catalog(rows,request['manifest'].get('research_summary',{}).get('focus',[]))
         self.names = Counter(name.casefold() for name in self.catalog.values())
         self.focus = {row["element"] for row in request["manifest"].get("research_summary", {}).get("focus", [])}
         self.verified_focus = set()
@@ -223,7 +223,7 @@ class EvidenceTool:
         name = self.catalog.get(args["player_element"])
         if not name:
             reasons.append("unknown_element")
-        elif self.names[name.casefold()] > 1:
+        elif args["player_element"] in self.ambiguous_names or self.names[name.casefold()] > 1:
             reasons.append("ambiguous_identity")
         try:
             url = canonical_public_url(args["source_url"])
@@ -242,10 +242,10 @@ class EvidenceTool:
                 reasons.append(document.get("error_code") or "fetch_failed")
             else:
                 excerpt = document.get("excerpt") or ""
-                supported = (subject_in_excerpt(name, excerpt) if args["claim_type"] == "coverage"
+                supported = (subject_in_excerpt(name, excerpt, require_full=args["player_element"] in self.strict_names) if args["claim_type"] == "coverage"
                     else claim_supported(name=name, claim_type=args["claim_type"], excerpt=excerpt,
                         quality_policy=self.request.get("quality_policy")))
-                if not supported:
+                if not supported or (args["player_element"] in self.strict_names and not subject_in_excerpt(name, excerpt, require_full=True)):
                     reasons.append("identity_or_claim_unsupported")
                 if not document.get("publication_date_verified"):
                     reasons.append("publication_unknown")
@@ -262,8 +262,8 @@ class EvidenceTool:
             "covered_focus_elements": [element for element in sorted(self.focus)
                 if document.get("fetch_status") == "verified" and document.get("publication_date_verified")
                 and claim_fresh(claim_type="coverage", published_at=args["published_at"], observed=observed)
-                and self.catalog.get(element) and self.names[self.catalog[element].casefold()] == 1
-                and subject_in_excerpt(self.catalog[element], document.get("excerpt") or "")],
+                and self.catalog.get(element) and element not in self.ambiguous_names and self.names[self.catalog[element].casefold()] == 1
+                and subject_in_excerpt(self.catalog[element], document.get("excerpt") or "", require_full=element in self.strict_names)],
             "final_acceptance": False,
             "support_scope": "single source only; final signal acceptance requires an official source or two independent hosts supporting the SAME named claim",
             "observed_at": observed.isoformat(),
