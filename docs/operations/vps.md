@@ -2,14 +2,24 @@
 type: runbook
 name: "MOVA FPL — operación del stack VPS"
 created: 2026-08-22
-updated: 2026-10-19
+updated: 2026-10-21
 tags: [mova, fpl, vps, docker, systemd, observability]
 status: active
 ---
 
 # MOVA FPL — operación del stack VPS
 
-## Release verificada — 2 de octubre
+## Corte operativo — 21 de octubre
+
+El [corte consolidado](../decisions/2026-27/operator-sync-20261021.md) verifica
+`a6966aa`, Researcher 1.17 y A2/autonomous con scope `lineup-v1`. Browser persistente
+activo, collectors frescos, backups con RPO vigente y cero incidentes/outbox.
+`readiness.delivery_readiness` conserva `BOUNDED_LINEUP_SAVE_PROVEN` pendiente:
+ni una lectura válida ni un no-op prueban Save físico de la revisión actual.
+La activación acotada no habilita R3, transfers, hits o chips. Los defaults seguros
+siguientes describen instalación nueva y los antecedentes mantienen su fecha.
+
+## Antecedente de release — 2 de octubre
 
 La revisión `653051a` despliega DR v2 y pasó la recuperación de la copia cifrada externa:
 80 tablas PostgreSQL, tres SQLite y dos modelos. Doctor 24 PASS; nueve timers activos y
@@ -66,6 +76,13 @@ sobre el override horario de recuperación: evalúa cada 15 minutos. La admisió
 compartido se conserva; exit 75 difiere hasta la siguiente oportunidad y nunca crea una cola
 adicional de workers. No aumentar la cadencia de descarga de las fuentes ni sus TTLs para
 corregir un desajuste del timer.
+
+Para research se conserva `90-capacity.conf` y se añade
+`/etc/systemd/system/mova-fpl-research.timer.d/95-autonomous-research.conf`:
+`OnCalendar=` vacío seguido de `OnCalendar=*-*-* *:07/15:00`, `Persistent=true`,
+jitter de 10 s y accuracy de 10 s. Comprobar configuración efectiva, no sólo unidad del repo:
+el override antiguo imponía 30 min. Esta corrección no elimina capacity locks/caps,
+no aumenta cuotas y no fuerza una inferencia cuando due termina el slot.
 
 ## Build e instalación inicial
 
@@ -507,8 +524,9 @@ El import y la verificación PostgreSQL se describen en el
 
 ## Browser y login humano
 
-La imagen browser está aislada de API/DB, tiene un perfil exclusivo y no se inicia con el
-stack normal. Cuando llegue el rollout supervisado:
+La imagen browser está aislada de API/DB y tiene un perfil exclusivo. El perfil
+Compose es opt-in en instalación nueva; el VPS vigente lo mantiene activo con
+keep-running. Para un login humano requerido por el proveedor:
 
 ```bash
 sudo deploy/bin/browser-login.sh

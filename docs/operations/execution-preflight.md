@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — policy de autonomía y preflight"
 created: 2026-08-30
-updated: 2026-09-14
+updated: 2026-10-21
 tags: [mova, fpl, execution, preflight, autonomy, guardrails]
 status: active
 ---
@@ -47,8 +47,9 @@ HV1-07A/B introduce la frontera durable previa al browser. HV1-07C añade la res
 lease, límite de ambigüedad y verificador post-reload. HV1-07D.3 conecta un driver host acotado a
 capitanía con fail-closed estricto. HV1-07D.4 añade el instruction stream tipado de XI/banca,
 todavía detrás de un gate físico de rehearsal. HV1-07F hace ese gate durable y resistente a
-reintentos. Los controles A0 y el contenedor browser conservan
-las escrituras apagadas; instalar el driver no concede autoridad.
+reintentos. Esos antecedentes no describen la autoridad viva: el scope acotado
+`lineup-v1` de ADR-014 usa controles A2 explícitos. Los defaults de instalación
+A0/shadow mantienen writes off; instalar el driver no concede autoridad.
 
 ## Ejecución supervisada observada y registro verificable
 

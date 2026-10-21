@@ -1,7 +1,7 @@
 ---
 type: docs
 name: MOVA Fantasy Fútbol Data Analytics
-updated: 2026-10-19
+updated: 2026-10-21
 status: active
 tags: [mova, fpl, runtime, operations]
 ---
@@ -13,11 +13,11 @@ Fantasy Premier League 2026/27. El repositorio contiene únicamente el producto 
 collector, almacén causal, modelos de minutos y puntos, optimizador MILP, control plane del
 VPS y contratos de operación segura.
 
-El corte verificado del 17 de octubre dejó `lineup-v1` en `autonomous / A2`, con
-guardado real verificado: mismos quince jugadores, XI, banca y C/VC; cero transfers,
-hits o chips. El 19 de octubre se detectó bloqueo por espacio; el estado vivo se
-consulta en `mova doctor`, no en este antecedente. Los controles siguen siendo
-explícitos y los datos preliminares conservan sus gates.
+El corte vivo del 21 de octubre mantiene `lineup-v1` en `autonomous / A2`: mismos
+quince jugadores, XI, banca y C/VC; cero transferencias, hits o chips. Checkout e
+imágenes corresponden a `a6966aa`. La prueba física de Save de esa revisión y el
+recibo final de GW8 siguen pendientes; el antecedente del 17/10 no los acredita.
+Consultar controles y salud vivos, no inferirlos desde esta documentación.
 El cockpit read-only comparte un único contrato entre CLI y API. Su dashboard ejecutivo público
 sólo expone tres indicadores humanos; diagnóstico, métricas y JSON permanecen en loopback.
 Supabase sólo refleja seguimiento PM y nunca recibe estado operativo.
@@ -30,6 +30,29 @@ ni promueve un modelo. Empezar por el [contrato del dataset](experiments/data_gr
 y la [guía de cierre, tamaños y límites](experiments/data_ground_truth/README.md#cierre-del-gate-de-datos-g112).
 
 ## Versiones y última comprobación
+
+Corte vivo del **21/10/2026, 15:10 Colombia**: release operativa `a6966aa`,
+Researcher **1.17.0**, PR209–215 fusionadas. CI39535006246: **2213 passed,
+79 deselected**, imagen smoke pass; doctor posterior al despliegue **25/0/0**.
+La revisión de hoy conserva salud `healthy`, cero incidentes/outbox, cola íntegra,
+fuentes frescas y backups dentro del RPO. No es una nueva prueba de restauración.
+
+Research reanudó por el timer normal sin force ni aprobación por corrida. El slot
+amplio terminó `complete_with_limits`: **25 procesados, 22 con evidencia válida,
+21 resueltos**; Palmer, Bobby Thomas y Egan con límites de fuentes; Sangaré conserva
+una pregunta abierta. No son 25 fuentes verificadas ni aceptación A3. Se conservan
+el fallo por logical token guard y su cargo; los refresh T−6h/T−2h quedan pendientes.
+Quedan 1.015.629 tokens de 4M GW8 en este corte; no se amplió la cuota.
+
+El browser usa perfil persistente protegido, `MOVA_BROWSER_KEEP_RUNNING=1` y
+`restart: unless-stopped`. Sobrevive a recreaciones, pero expiración/revocación,
+contraseña, MFA o CAPTCHA no tienen reautenticación desatendida. La última lectura
+privada comprobó 15 jugadores; leer no prueba guardar. Entrega regular T−3h…T−30m,
+con hard stop T−15m; GW8 deadline oficial **23/10 17:30 UTC (12:30 Colombia)**.
+La [verificación consolidada](docs/decisions/2026-27/operator-sync-20261021.md)
+identifica implementación, resultados vivos y límites.
+
+### Antecedentes de implementación — 17 a 20 de octubre
 
 La corrección del 20 de octubre añade recibos sellados de `unchanged_verified`
 para el cierre financiero v2 y Researcher 1.17.0 con progreso acumulado independiente y continuación automática
@@ -56,6 +79,11 @@ cadencia del collector. El scope conserva los quince jugadores y prohíbe
 transferencias, hits y chips. La prueba de CLI/host con browser fixture no
 equivale a Save real ni activa permisos. Ver [ADR-014](docs/specs/fpl-autonomous-operator/decisions/ADR-014-bounded-lineup-delivery.md)
 y el [runbook de ejecución](docs/operations/execution-preflight.md).
+
+### Antecedente — 10 de octubre UTC
+
+Los cortes siguientes conservan su autoridad y sus pendientes de la fecha indicada;
+no describen los controles actuales ni reemplazan el corte del 21/10.
 
 El **10 de octubre UTC / 9 de octubre Colombia** se desplegó `dc5a2d8` para
 corregir un fallo del worker anterior al inicio de las deliberaciones. Las dos
@@ -148,7 +176,7 @@ El **18 de septiembre de 2026**, GW5 quedó registrada antes del deadline median
 una operación supervisada en el Chrome personal de Julián: Van Hecke y Thiago
 entraron por Calafiori y João Pedro usando dos transferencias libres, sin hit ni
 chip; Haaland quedó capitán y Calvert-Lewin vice. La confirmación visual y una
-recarga posterior coincidieron. La [traza GW5](docs/decisions/2026-27/gw05-preparation.md)
+recarga posterior coincidieron. La [cierre retrospectivo GW5](docs/decisions/2026-27/gw05-closeout.md)
 conserva el detalle. Esta operación no usó el executor del VPS, no suma rehearsals
 R2/R3 y no promueve la autoridad autónoma, que continúa en `shadow/A0`.
 
@@ -591,8 +619,10 @@ CycleManifest + memoria estratégica durable → modelos causales → matriz xP 
   queda `blocked`; solo una que supera todos los hard gates queda `staged`.
 - Strategist y Critic consumen el envelope sellado en un worker one-shot sin DB, browser ni
   secretos. Su `Intervention` es solo evidencia `shadow_only`; no modifica el envelope ni el MILP.
-- El worker enruta Researcher a `gpt-5.6-luna` con razonamiento `medium` y Strategist/Critic a
-  `gpt-5.6-terra` con razonamiento `high`; ambos usan la suscripción Codex, sin fallback a API.
+- El registry activo de Researcher 1.17 declara `gpt-6-astra`/`medium`, app-server
+  y tools de evidencia interactiva. Strategist/Critic conserva el routing configurado
+  (default `gpt-5.6-terra`/`high`); contrastar cockpit y contrato sellado, no asumir
+  que un default antiguo describe la corrida. Usa suscripción Codex, sin fallback API.
 - `mova_fpl` solo hace HTTP `GET`; no escribe en FPL.
 - `mova strategy research resolve-conflict` permite adjudicar claims no
   contradictorios con evidencia original verificada, hashes y auditoría

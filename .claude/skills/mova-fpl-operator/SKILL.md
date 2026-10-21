@@ -5,7 +5,7 @@ metadata:
   vertical: mova
   type: skill
   repo: mova-pro-futbol-data-analytics
-  updated: 2026-10-05
+  updated: 2026-10-21
 ---
 
 # MOVA FPL Operator
@@ -79,9 +79,15 @@ validadas ni como jornadas independientes.
 10. Para clasificar riesgo, sellar un diff o diagnosticar un bloqueo previo al browser, lee
    [docs/operations/execution-preflight.md](../../../docs/operations/execution-preflight.md).
    `mova execute` conserva preflight, lease apply-once y verifier; `execute ui-plan` sólo compila
-   DOM después del claim. Consulta `mova execute status.browser_driver`: capitanía tiene entrypoint
-   pero no autonomía promovida; XI/banca tiene contrato tipado con entrypoint deshabilitado hasta
-   rehearsals; R3 y controles DOM no probados permanecen fail-closed.
+   DOM después del claim. Lee `mova execute status.delivery` y
+   `readiness.delivery_readiness`: `lineup-v1` es el scope A2 acotado de ADR-014,
+   independiente de la promoción general de los drivers. Los contadores históricos
+   de `browser_driver` no revocan ni amplían ese scope. `live_proof` acredita Save
+   físico de revisión vigente; `final_receipt` puede ser `saved_verified` o
+   `unchanged_verified`. El segundo acredita coincidencia fresca, no un clic Save.
+   Entry point instalado no prueba guardado ni habilita R3. No crear ventanas
+   `delivery_proof`, forzar cambios deportivos ni duplicar un intento verificado;
+   un Save ambiguo requiere conciliación sin nuevo clic.
    Para registrar cobertura browser viva de XI/R3 usa `mova execute rehearsal-capability-probe`
    únicamente sobre probes sanitizados generados por el host. Esto no prueba el commit ni promueve
    entrypoints, autonomía o controles.
@@ -246,6 +252,27 @@ por slot, 90 % cobertura, 80 % evidencia, cero conflictos aplicables y consumo e
 Un fallo de intento o slot no se reemplaza por un éxito posterior. Experimentos no
 cuentan; deriva material requiere nueva aprobación y cohorte futura sin solapamiento.
 Registrar aceptación no promueve permisos ni concede escrituras.
+
+## Investigación y sesión persistente
+
+Para pendientes research usa `mova strategy research due`, `coverage`, `cost report`
+y `/api/v1/agent-queue`. Researcher 1.17 continúa el foco desde T−72h por el timer,
+sin aprobación humana por corrida, máximo artificial de tres runs ni reserva futura
+especulativa. Conserva cuotas reales, locks, hashes, identidad/publicación/TTL y
+cutoff T−80min para continuaciones; refresh T−6h/T−2h reabre dudas/límites.
+`processed_subjects`, `verified_subjects` y `completed_subjects` son distintos.
+`complete_with_limits` requiere lecturas públicas atestadas; no acredita fuentes
+válidas ni aceptación A3. `complete_with_uncertainty` mantiene preguntas abiertas.
+No reencolar un slot terminado para gastar su cuota; no ocultar fallos/charges ni
+reescribir cohortes ADR-011. Contrato completo en strategic-research y ADR-016.
+
+Comprueba perfil montado, keep-running, salud del browser y última lectura privada
+sanitizada. Sesión persistente no implica login Google/FPL desatendido. Ante redirect,
+403 o `FPL_AUTH_INTERACTION_REQUIRED`, inspeccionar antes de atribuir expiración;
+contraseña/MFA/CAPTCHA/consentimiento nuevo requieren al humano. No copiar cookies,
+perfil ni auth Codex. No detener Chromium de rutina si keep-running está activo.
+El dispatcher regular refresca estado autenticado antes de intentar guardar; una
+lectura antigua o un browser healthy no prueban autenticación actual ni Save.
 
 ## Fuentes de verdad
 

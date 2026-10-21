@@ -29,8 +29,11 @@ su propia evidencia; no se sustituyen por un visto bueno personal.
   resto del harness sin los gates de HV1-02.
 - API loopback, timers systemd, backups, collector público y collector privado
   autenticado de solo lectura.
-- Browser separado con perfil persistente. Por defecto está detenido y sin
-  escrituras: `shadow`, `A0`, `kill_switch=true`, `browser_writes=false`.
+- Browser separado con perfil persistente. A0/shadow y writes off son los defaults
+  de instalación, no una descripción del VPS vivo. Consultar controles en `mova status`:
+  el corte del 21/10/2026 tiene A2/autonomous, scope `lineup-v1`, mismos 15,
+  XI/banca/C/VC y cero transferencias/hits/chips (ADR-014). La sesión se conserva
+  con Chromium activo y volumen protegido; contraseña/MFA requieren al humano.
 - Equipo real: `losmillosFPL`, `team_id=3609854`.
 
 La hoja de ruta migra gradualmente los datos analíticos y operativos a
@@ -54,8 +57,10 @@ mova analytics status
 mova analytics run
 ```
 
-Consultar primero `docs/operations/operator.md` y la skill
-`.agents/skills/mova-fpl-operator/SKILL.md`. Para Docker Compose manual, cargar
+Consultar primero `docs/operations/operator.md` y la skill canónica
+`.claude/skills/mova-fpl-operator/SKILL.md`; `.agents/skills/mova-fpl-operator/SKILL.md`
+es su adaptador nativo. Los cortes antiguos del README son antecedentes fechados.
+Para Docker Compose manual, cargar
 `/etc/mova-fpl/deploy.env`; el runbook exacto está en
 `docs/operations/vps.md`.
 
@@ -72,8 +77,10 @@ MILP → `Decision` → acta y traza.
 - El planificador autoriza chips; el optimizador decide si los ejecuta.
 - El agente solo modifica entradas acotadas mediante `Intervention`; nunca
   fuerza plantilla, once o capitán.
-- La salida automática hacia FPL permanece prohibida hasta superar los gates de
-  cumplimiento y autonomía. El paquete solo realiza GET.
+- La primitiva HTTP del motor solo realiza GET. Las escrituras FPL ocurren en el
+  browser aislado, mediante dispatcher/driver y autoridad efectiva auditada.
+  `lineup-v1` no habilita R3, transferencias ni chips; salud, cobertura research
+  o una actualización documental nunca conceden autoridad.
 - Una propuesta para la GW siguiente es preliminar mientras la GW actual no
   esté `finished` y `data_checked`. No promover chips ni transferencias en ese
   estado.

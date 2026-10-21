@@ -81,10 +81,19 @@ curl -fsS http://127.0.0.1:8787/api/v1/status
 ```
 
 Detente si `kill_switch` es verdadero, `browser_writes` es falso, compliance no está en
-`passed`, el action level no permite la operación o no hay decisión aprobada para esa GW.
-El estado actual `shadow A0` autoriza únicamente login y lectura.
+`approved`, el action level no permite la operación o no hay decisión aprobada para esa GW.
+A0/shadow autoriza sólo login/lectura; no asumir ese modo desde un corte antiguo.
+Consultar scope y controles efectivos: `lineup-v1` usa A2 acotado según ADR-014.
 
-## Cierre
+## Persistencia y cierre
+
+El VPS conserva `MOVA_BROWSER_KEEP_RUNNING=1`, perfil montado con permisos `0700`
+y `restart: unless-stopped`; consultar los valores vivos sin volcar envs ni secretos.
+Chromium queda activo entre capturas y recrear el contenedor conserva el perfil.
+Esto no garantiza vigencia del login ni implementa reautenticación desatendida.
+En ese modo no detener el browser al terminar una lectura o ejecución normal.
+El bloque siguiente sólo aplica a una parada autorizada o modo on-demand:
+
 
 ```bash
 cd /opt/orbital/services/mova-fpl

@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — contrato del operador"
 created: 2026-08-23
-updated: 2026-09-01
+updated: 2026-10-21
 tags: [mova, fpl, operator, cli, observability, contract]
 status: active
 ---
@@ -12,6 +12,10 @@ status: active
 HV1-01 expone el runtime mediante comandos versionados. La salida JSON usa
 `schema=mova-fpl-operator-v1` y `schema_version=1.0`; los consumidores deben rechazar una major
 desconocida y tolerar campos adicionales dentro de la misma versión.
+
+La [verificación del 21/10](../decisions/2026-27/operator-sync-20261021.md) separa
+A2 `lineup-v1`, investigación procesada/evidencia y persistencia de autenticación.
+Los valores de este runbook no reemplazan controles ni recibos vivos.
 
 ## Ejecución
 

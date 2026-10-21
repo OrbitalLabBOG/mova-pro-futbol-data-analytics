@@ -1,7 +1,7 @@
 ---
 type: runbook
 name: MOVA FPL — operar y cerrar una jornada
-updated: 2026-09-29
+updated: 2026-10-21
 status: active
 ---
 
@@ -11,20 +11,37 @@ Para la persona que tiene que emitir el acta antes del cierre, incluso si algo s
 
 ---
 
+## Ruta operativa vigente
+
+En el VPS usar el wrapper `mova`, los timers y [execution-preflight](execution-preflight.md).
+El scope `lineup-v1` conecta lectura autenticada → decisión → driver con lease →
+verifier; conserva los mismos 15, cero transfers/hits/chips y autoridad A2 auditada.
+El resultado final es `saved_verified` o `unchanged_verified` con estado fresco;
+el no-op no demuestra Save físico. No forzar otra propuesta para fabricar un Save.
+Después de settlement final, el cierre financiero v2 puede consumir el recibo
+sellado del no-op y publicar evaluación; sin recibo no inventar cierres GW6/7.
+Research continúa pendientes automáticamente y refresca dudas/límites en T−6h/T−2h.
+Véase [corte del 21/10](../decisions/2026-27/operator-sync-20261021.md).
+
+Los comandos directos del motor que siguen son utilidades manuales/de investigación;
+no son el entrypoint del scheduler ni sustituyen sus gates. Sus deadlines, cifras y
+estados fechados son antecedentes. Una rutina de operación no reentrena producción:
+para candidatos usar [mova model](analytics-service.md) y el release gate.
+
 ## 0. Lo que hay que saber antes de tocar nada
 
 - **El motor de decisión no escribe en FPL.** Su única primitiva de red es un `GET`
   (`data/sources.py`), verificado por `tests/test_readonly_http.py`. El browser del stack VPS
-  es otro runtime y permanece cerrado en `shadow/A0`; ver `runbook-fpl-vps.md`.
+  es otro runtime con autoridad y scope auditados; ver [VPS](vps.md).
 - **La única acta que cuenta es la última.** Los precios se mueven a diario y el parte
   médico cambia hasta minutos antes del cierre. Un acta emitida con más de dos días de
   antelación se marca sola como borrador.
-- **El deadline no se mueve.** GW1 de 2026/27: `2026-08-21T17:30:00Z` = 12:30 en Bogotá.
+- **El deadline se consulta en el ciclo y la API oficial.** Antecedente GW1 de 2026/27: `2026-08-21T17:30:00Z` = 12:30 en Bogotá.
 
 ## 1. Correr una jornada
 
 ```bash
-cd ~/code/orbital-lab/mova-pro-futbol-data-analytics
+cd "/home/julianzu/code/orbital lab/mova-pro-futbol-data-analytics"
 
 # ensayo: escribe el acta pero no toca la traza
 python -m mova_fpl.cli.live --season 2026-27 --gw 1 --horizon 3 --top-k 0 --dry-run
