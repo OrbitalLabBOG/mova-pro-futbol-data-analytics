@@ -5,7 +5,7 @@ metadata:
   vertical: mova
   type: skill
   repo: mova-pro-futbol-data-analytics
-  updated: 2026-08-22
+  updated: 2026-10-21
 ---
 
 # FPL Web Ops
@@ -16,6 +16,21 @@ leer estado privado y, cuando exista autorización, ejecutar una spec o acta apr
 improvisar y demostrar que quedó persistida.
 
 Cuenta conocida: `losmillosFPL`, `entry_id=3609854`.
+
+## Entrega autónoma acotada
+
+La ruta normal de `lineup-v1` es `mova-fpl-delivery.timer` → `delivery-cycle.sh`
+→ estado privado fresco → tick → dispatch → driver R2 con lease → verifier.
+No usar clicks manuales para sustituirla ni crear otra ventana de prueba.
+A2 permite los mismos 15, XI/banca/C/VC, cero transfers/hits/chips, sólo con controles
+vivos y ventana T−3h…T−30m; hard stop T−15m. `delivery_proof` exige autorización
+expresa y vigente adicional, no se renueva por leer esta skill.
+
+Consultar `mova execute status.delivery`: `unchanged_verified` acredita estado
+coincidente y fresco; sólo evidencia física de Save/reload acredita `live_proof`.
+No reintentar Save ambiguo ni repetir entrega ya verificada. Los pasos visuales
+siguientes son procedimientos para operación manual expresamente autorizada;
+no amplían el scope automático ni habilitan R3.
 
 ## Carga y autorización
 
@@ -50,7 +65,7 @@ salvo que todos los controles permitan exactamente la acción:
 
 - `kill_switch=false`;
 - `browser_writes=true`;
-- `compliance_gate=passed`;
+- `compliance_gate=approved`;
 - `action_level` suficiente para la operación;
 - decisión aprobada, vigente para la GW y aún no ejecutada.
 
@@ -128,8 +143,10 @@ docker compose --profile browser exec -T browser \
 ```
 
 Copia únicamente la captura aprobada fuera del contenedor y calcula SHA-256. No vuelques el
-DOM autenticado, cookies, storage o perfil como evidencia. Al terminar, ejecuta
-`deploy/bin/browser-session.sh stop`.
+DOM autenticado, cookies, storage o perfil como evidencia. Con
+`MOVA_BROWSER_KEEP_RUNNING=1`, conserva Chromium y su perfil; cerrar el browser
+no es el final rutinario del flujo. `stop` se reserva para una parada autorizada
+o el modo on-demand expresamente configurado.
 
 La recarga debe mostrar:
 

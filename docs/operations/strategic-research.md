@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — contexto estratégico e investigación"
 created: 2026-08-27
-updated: 2026-10-04
+updated: 2026-10-21
 tags: [mova, fpl, strategy, research, codex, evidence]
 status: active
 ---
@@ -37,7 +37,16 @@ campo oficial `news`, `status` y `chance_of_playing_next_round`; el worker Codex
 investigación web profunda únicamente en ventanas de decisión. No existe un scraper de prensa
 residente ni una llamada LLM por tick.
 
-### Contexto y alcance trazables (22 de septiembre)
+## Contrato vigente y antecedentes
+
+Researcher activo 1.17: registry `agent_releases.json`, app-server, modelo
+`gpt-6-astra`/medium; el contrato sellado y routing vivo prevalecen sobre defaults.
+La continuación trabaja IDs pendientes, sin reabrir radar global por rutina.
+La política vigente es `research-claim-2026.09.5`; los requests antiguos conservan
+su política inmutable. Las secciones fechadas explican antecedentes, no overrides.
+Ver [continuación autónoma](#continuación-autónoma-de-pendientes-1170) y ADR-016.
+
+### Antecedente — contexto y alcance trazables (22 de septiembre)
 
 El worker conserva íntegro el request sellado y añade `acquisition_plan` al contexto
 entregado a Researcher. Agrupa sujetos únicos por club, calcula el objetivo 90% y
@@ -60,7 +69,7 @@ historial**, independientemente del `limit` de presentación. Conserva mínimo t
 encolado e ID. Reintentos no deben ocultar GWs fallidas. Esto corrige paginación, no
 introduce una ventana de tres GWs recientes ni reetiqueta resultados históricos.
 
-### Refactor de contexto y calidad en A0/shadow
+### Antecedente — refactor de contexto y calidad en A0/shadow
 
 El checkout actual prepara `research_summary.plan` con horizonte, supuestos, ventanas de chips y
 guardrails del plan activo. `research_summary.world` añade el catálogo oficial de IDs,
@@ -188,7 +197,7 @@ ni altera la aceptación prospectiva. El timer normal no necesita esta excepció
 Investigar todo el foco no implica que exista una noticia reciente verificable
 para cada jugador. `processed_subjects` separa trabajo terminado de evidencia:
 `source_limited_subjects` exige dos URLs públicas distintas leídas por las tools,
-en una corrida importada del slot vigente, con receipt físico válido y log RPC.
+en corridas importadas del slot vigente, con receipts físicos válidos y logs RPC.
 Una nota del modelo, un receipt alterado o dos variantes query de una URL no bastan.
 `complete_with_limits` conserva cobertura verificada, `not_checked`, dudas y límites
 exactos; no afirma disponibilidad ni concede autoridad/aceptación. Un supported
@@ -199,7 +208,10 @@ mismo dato que las fuentes no publican. Las búsquedas fallidas no son evidencia
 Los nombres cortos duplicados del catálogo, por ejemplo Palmer, se desambiguan
 con el nombre completo del foco sellado. Exigen ese nombre completo en el fragmento,
 tanto en la tool como en el importador; el apellido solo y el otro homónimo no pasan.
-Una limitación antigua causada por ese bug sigue en retry hasta probar la corrección.
+Una limitación antigua causada por ese bug sigue en retry hasta una lectura
+atestada con 1.17+. Una corrida legacy posterior que busque pero omita verificar
+no borra la ambigüedad anterior. Se conservan requests/resultados inmutables;
+la corrección no convierte una lectura sin fecha válida en evidencia.
 
 ## Operación
 
