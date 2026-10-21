@@ -7,7 +7,6 @@ from pathlib import Path
 
 from mova_fpl.ops.db import sha256_json
 from mova_fpl.ops.research_quality import claim_fresh, identity_catalog
-from mova_fpl.ops.agent_releases import researcher_release
 from urllib.parse import urlsplit, urlunsplit
 
 
@@ -101,8 +100,7 @@ def progress(config, db, cycle_id=None, *, now=None):
     slot_seconds=(config.research_final_window_seconds if seconds<=config.research_final_window_seconds
                   else 6*3600 if seconds<=6*3600 else max(config.research_deadline_window_seconds,72*3600))
     slot_start=deadline-timedelta(seconds=slot_seconds)
-    source_attempts={};alias_pending={};supported_pending={};seen_targets=set()
-    current_version=researcher_release()[0]
+    source_attempts={};old_alias_failures=set();fixed_identity_reads=set();supported_pending={};seen_targets=set()
     documents = {(d['research_run_id'],d['source_url']):d for d in docs}
     sealed = {}
     def valid_document(row):
@@ -143,11 +141,16 @@ def progress(config, db, cycle_id=None, *, now=None):
             if _time(run['imported_at'])>=slot_start:
                 activity,ambiguous,supported=_attempted_sources(config,[e for e in attempts if e['subject_id']==run['research_run_id'] and _time(e['occurred_at'])<=min(current,deadline)],run['request_sha256'])
                 targets=set((request.get('continuation') or {}).get('pending_subjects',original))
+                # Full-name disambiguation first shipped in 1.17. A later legacy
+                # search cannot clear an earlier identity failure without trying
+                # the corrected reader. Keep this threshold stable on upgrades.
+                version=tuple(int(part) for part in request.get('agent_version','0').split('.'))
                 for element,urls in activity.items():
                     if element not in targets or element not in focus or _identity(original.get(element,{}))!=_identity(focus[element]):continue
                     source_attempts.setdefault(element,set()).update(urls)
+                    if version>=(1,17,0):fixed_identity_reads.add(element)
+                    elif element in ambiguous:old_alias_failures.add(element)
                     if element not in seen_targets:
-                        alias_pending[element]=element in ambiguous and request.get('agent_version')!=current_version
                         supported_pending[element]=element in supported
                         seen_targets.add(element)
             report['runs'].append(run['research_run_id'])
@@ -176,7 +179,8 @@ def progress(config, db, cycle_id=None, *, now=None):
     report['open_questions']=[r['player_element'] for r in report['subjects'] if r['evidence_verified'] and not r['resolved']]
     _,strict_names,_=identity_catalog((manifest.get('research_summary',{}).get('world') or {}).get('catalog',[]),list(focus.values()))
     report['source_limited_subjects']=[e for e in report['pending_evidence_subjects']
-        if len(source_attempts.get(e,set()))>=2 and not supported_pending.get(e) and not (e in strict_names and alias_pending.get(e))]
+        if len(source_attempts.get(e,set()))>=2 and not supported_pending.get(e)
+        and not (e in strict_names and e in old_alias_failures and e not in fixed_identity_reads)]
     report['source_limitations']=[{'player_element':e,'attempted_source_count':len(source_attempts[e]),
         'reason':'two_public_sources_attempted_without_valid_evidence','evidence_verified':False}
         for e in report['source_limited_subjects']]

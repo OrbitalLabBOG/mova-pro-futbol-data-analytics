@@ -281,7 +281,7 @@ def test_corrected_release_replaces_failed_request_without_rewriting_it_or_its_c
 
 def source_activity(config,db,run,element,urls,*,tamper=False,supported=False,ambiguous=False):
     import hashlib
-    attempt='attempt_'+'f'*32
+    attempt='attempt_'+hashlib.sha256(run['research_run_id'].encode()).hexdigest()[:32]
     payload={'schema':'mova-agent-attempt-v1','attempt_id':attempt,'subject_type':'research',
         'subject_id':run['research_run_id'],'request_sha256':run['request_sha256'],'event_type':'finished',
         'status':'succeeded','model':'mock','input_tokens':10,'output_tokens':10,
@@ -338,6 +338,21 @@ def test_old_duplicate_alias_failure_is_retried_with_corrected_full_identity(tmp
     source_activity(config,db,run,15,['https://example.com/a','https://example.com/b'],ambiguous=True)
     report=progress(config,db,cycle)
     assert report['source_limited_subjects']==[] and report['retry_subjects']==[15]
+
+    # A second legacy run searches but skips verification after seeing the old
+    # ambiguity. That newer omission must not hide the original reader defect.
+    monkeypatch.setattr('mova_fpl.ops.strategy.researcher_release',lambda *a:researcher_release('1.16.0'))
+    second=service.enqueue();second_run=finish(config,db,service,cycle,second,set())
+    source_activity(config,db,second_run,15,['https://example.com/c','https://example.com/d'])
+    monkeypatch.undo()
+    report=progress(config,db,cycle)
+    assert report['source_limited_subjects']==[] and report['retry_subjects']==[15]
+
+    # Only a real read with the corrected implementation can end that retry.
+    third=service.enqueue();third_run=finish(config,db,service,cycle,third,set())
+    source_activity(config,db,third_run,15,['https://example.com/e','https://example.com/f'])
+    report=progress(config,db,cycle)
+    assert report['source_limited_subjects']==[15] and report['retry_subjects']==[]
 
 
 def test_continuation_does_not_reopen_attested_source_limits_in_the_same_slot(tmp_path):
