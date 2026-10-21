@@ -176,7 +176,7 @@ El **18 de septiembre de 2026**, GW5 quedó registrada antes del deadline median
 una operación supervisada en el Chrome personal de Julián: Van Hecke y Thiago
 entraron por Calafiori y João Pedro usando dos transferencias libres, sin hit ni
 chip; Haaland quedó capitán y Calvert-Lewin vice. La confirmación visual y una
-recarga posterior coincidieron. La [traza GW5](docs/decisions/2026-27/gw05-preparation.md)
+recarga posterior coincidieron. La [cierre retrospectivo GW5](docs/decisions/2026-27/gw05-closeout.md)
 conserva el detalle. Esta operación no usó el executor del VPS, no suma rehearsals
 R2/R3 y no promueve la autoridad autónoma, que continúa en `shadow/A0`.
 
