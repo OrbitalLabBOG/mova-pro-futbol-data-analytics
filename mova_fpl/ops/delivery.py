@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from mova_fpl.ops.execution import ExecutionService
 from mova_fpl.ops.delivery_policy import lineup_proof
 from mova_fpl.ops.unchanged_delivery import seal_receipt
+from mova_fpl.ops.progressive_delivery import enabled, stage, cadence
 
 LINEUP_SCOPE = "lineup-v1"
 
@@ -37,7 +38,9 @@ class DeliveryService:
             return {**result, 'status': 'not_due', 'reason': 'expiring_live_proof_in_progress'}
         if proof and not proof_allowed:
             return {**result, 'reason': 'live_proof_not_approved_or_expired'}
-        if not (seconds > 30*60 and (seconds <= 3*3600 or proof_allowed)):
+        progressive = enabled(controls) and not proof
+        weekly_stage = stage(controls, cycle['deadline_at'], current) if progressive else None
+        if not (seconds > 30*60 and (seconds <= 3*3600 or proof_allowed or weekly_stage)):
             return {**result, 'status': 'not_due', 'reason': 'outside_delivery_window'}
         previous = self.db.latest_delivery_attempt(cycle['cycle_id'])
         if previous and previous['status'] == 'verified':
@@ -45,18 +48,25 @@ class DeliveryService:
                 self.db.execution_claim_source(previous['plan_id'])['plan'])
             if previous_plan.get('delivery_proof') and (not proof or previous_plan.get('controls', {}).get('delivery_proof') != controls.get('delivery_proof')):
                 previous = None
+        if progressive and previous and previous['status'] == 'verified':
+            previous = None
         if previous and previous['status'] in {'verified', 'applying', 'ambiguous', 'claimed'}:
             return {**result, 'status': previous['status'], 'execution_id': previous['execution_id'],
                     'reason': 'existing_attempt_no_duplicate'}
+        last = self.db.latest_delivery_verification(cycle['cycle_id']) if progressive else None
+        if last and last['stage'] == weekly_stage and (not previous or previous['status'] != 'prepared'):
+            age = (current - datetime.fromisoformat(last['observed_at'].replace('Z', '+00:00'))).total_seconds()
+            if 0 <= age < cadence(seconds):
+                return {**result, 'status': 'not_due', 'reason': 'delivery_review_cadence', 'latest_verification': last}
         if check_only:
             return {**result, 'status': 'due', 'refresh_key':
-                    f"delivery-refresh:{cycle['cycle_id']}:{'proof' if proof else 'final'}:{int(current.timestamp()) // 300}"}
+                    f"delivery-refresh:{cycle['cycle_id']}:{weekly_stage or ('proof' if proof else 'final')}:{int(current.timestamp()) // 300}"}
         service = ExecutionService(self.config, self.db)
         if previous and previous['status'] == 'prepared':
             # Claim revalidates all mutable gates; never dispatch a second prepared attempt.
             return {**result, 'status': 'prepared', 'execution_id': previous['execution_id']}
         plan = service.preflight(actor=actor, reason=reason, now=current,
-                                 idempotency_key=f"delivery-preflight:{cycle['cycle_id']}:{'proof' if proof else 'final'}:{int(current.timestamp()) // 300}")
+                                 idempotency_key=f"delivery-preflight:{cycle['cycle_id']}:{weekly_stage or ('proof' if proof else 'final')}:{int(current.timestamp()) // 300}")
         row = self.db.execution_claim_source(plan['plan_id'])['plan']
         loaded = service._load_plan(row)
         if loaded['action']['risk_class'] not in {'R0', 'R2'}:
@@ -67,17 +77,18 @@ class DeliveryService:
             if failed:
                 return {**result, 'reason': 'noop_checks_failed', 'blocking_codes': failed}
             receipt = seal_receipt(self.config, self.db, loaded, now=current, proof=proof)
-            job, reused = self.db.start_job('delivery', f"delivery-noop:{cycle['cycle_id']}:{'proof' if proof else 'final'}:{row['expected_pre_fingerprint']}",
-                                            'corr_delivery', cycle_id=cycle['cycle_id'])
+            noop_key = (f"delivery-noop:{cycle['cycle_id']}:{weekly_stage}:{plan['plan_id']}" if progressive else
+                        f"delivery-noop:{cycle['cycle_id']}:{'proof' if proof else 'final'}:{row['expected_pre_fingerprint']}")
+            job, reused = self.db.start_job('delivery', noop_key, 'corr_delivery', cycle_id=cycle['cycle_id'])
             if reused:
-                existing = self.db.get_job_by_key(
-                    f"delivery-noop:{cycle['cycle_id']}:{'proof' if proof else 'final'}:{row['expected_pre_fingerprint']}")
+                existing = self.db.get_job_by_key(noop_key)
                 if not existing or existing['status'] != 'completed':
                     return {**result, 'reason': 'previous_noop_job_not_completed', 'job_id': job}
             if not reused:
                 self.db.finish_job(job, 'completed', output_sha256=receipt['evidence_sha256'],
                                    metrics={'status': 'unchanged_verified', 'plan_id': plan['plan_id'],
-                                            'delivery_proof': proof, **receipt})
+                                            'delivery_proof': proof,
+                                            **({'delivery_stage': weekly_stage, 'delivery_observed_at': current.isoformat()} if progressive else {}), **receipt})
             return {**result, 'status': 'unchanged_verified', 'job_id': job}
         if row['status'] != 'authorized':
             return {**result, 'reason': 'preflight_blocked',

@@ -314,12 +314,14 @@ class GameweekReviewService:
                     JOIN decision_envelopes de ON de.envelope_id=p.envelope_id
                     WHERE p.cycle_id=? AND d.status='executed_verified' AND a.status='verified'
                     AND COALESCE(json_extract(j.metrics_json,'$.delivery_proof'),0)=0
+                    AND COALESCE(json_extract(j.metrics_json,'$.delivery_stage'),'final')!='provisional'
                     ORDER BY a.finished_at DESC,a.rowid DESC LIMIT 1""", (cycle_id,),
                 ).fetchone()
                 source_type = "execution_attempt"
-            if not executed:
-                from mova_fpl.ops.unchanged_delivery import closeout_source
-                executed = closeout_source(self.config, self.db, cycle_id)
+            from mova_fpl.ops.unchanged_delivery import closeout_source
+            unchanged = closeout_source(self.config, self.db, cycle_id)
+            if unchanged and (not executed or unchanged['finished_at'] > executed['finished_at']):
+                executed = unchanged
                 source_type = "unchanged_delivery"
             checks = [] if not executed or source_type != "web_execution" else con.execute(
                 "SELECT * FROM verification_checks WHERE execution_id=? ORDER BY checked_at,check_id",

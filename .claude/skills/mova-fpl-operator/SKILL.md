@@ -336,3 +336,14 @@ exportar ops/trace a PostgreSQL shadow mediante el import auditado, fuera del de
 
 Después de un cambio ejecuta la prueba cercana, `pytest -q`, smoke de Docker y nuevamente
 `mova doctor --json`. Actualiza Supabase solo con evidencia ya verificada.
+
+## Entrega semanal progresiva
+
+ADR-017 añade el control opt-in auditado `delivery_policy="progressive-lineup-v1"`.
+Con `lineup-v1` conserva A2 y cero transfers/hits/chips, pero permite revisiones
+desde T−72h hasta T−30m. Consultar `execute status.delivery.latest_verification`
+(fase/hora/resultado), `final_receipt` y `live_proof` por separado. Provisional no
+cierra GW ni satisface cierre/evaluación final. No repetir el mismo plan ni operar
+tras ambigüedad; el siguiente ajuste requiere estado/solve/preflight nuevos. La
+petición expresa de Julián del22/10 autoriza implementar y activar esta política,
+no una cuota mayor ni otra autoridad. Sin ese control continúa la ventana antigua.

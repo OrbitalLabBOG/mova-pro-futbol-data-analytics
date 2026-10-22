@@ -49,6 +49,7 @@ def seal_receipt(config, db, plan, *, now, proof):
             'private_state_fingerprint': state['fingerprint'],
             'decision_fingerprint': plan['action']['expected_post_decision_fingerprint'],
             'delivery_proof': proof, 'physical_save': False,
+            **({'delivery_stage': plan['delivery_stage']} if plan.get('delivery_stage') else {}),
             'verification_checks': plan['authorization']['checks']}
     payload = canonical_bytes(body)
     digest = hashlib.sha256(payload).hexdigest()
@@ -72,6 +73,8 @@ def closeout_source(config, db, cycle_id):
     controls = plan['controls']
     if (receipt['schema'] != CONTRACT or receipt['cycle_id'] != cycle_id
             or receipt['delivery_proof'] is not False or plan.get('delivery_proof')
+            or receipt.get('delivery_stage') == 'provisional' or plan.get('delivery_stage') == 'provisional'
+            or receipt.get('delivery_stage') != plan.get('delivery_stage')
             or receipt['physical_save'] is not False or plan['action']['risk_class'] != 'R0'
             or plan['authorization']['status'] != 'noop'
             or not all(c['passed'] for c in plan['authorization']['checks'])

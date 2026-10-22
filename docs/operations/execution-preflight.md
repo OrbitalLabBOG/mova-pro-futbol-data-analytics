@@ -395,3 +395,18 @@ dos estados privados separados >=5 s, y ejecutar `mova execute reconcile-unchang
 sólo acepta el estado previo intacto, demuestra cada lectura mediante su artifact
 sellado y mantiene todo el historial. No marca delivery ni realiza Save. Si
 cambió cualquier parte del estado o hay otro intento, se detiene.
+
+## Entrega semanal progresiva — ADR-017
+
+La política opt-in `delivery_policy="progressive-lineup-v1"` conserva el scope
+`lineup-v1` y habilita preparación/revisión desde T−72h hasta T−30m, sin ampliar
+transferencias, hits, chips o autoridad. El timer existente refresca la cuenta y
+resuelve de nuevo antes de cada revisión admitida. Una revisión confirmada permite
+la siguiente; un intento activo/ambiguo la bloquea. La fase provisional no cierra
+la GW ni satisface el recibo final. Ver [ADR-017](../specs/fpl-autonomous-operator/decisions/ADR-017-progressive-lineup-delivery.md).
+
+`execute status.delivery.latest_verification` muestra fase, hora y resultado;
+`final_receipt` y `live_proof` conservan significados separados. Cadencia efectiva:
+1h hasta T−6h, 15min hasta T−3h y 5min hasta T−30m. Sin el control se mantiene
+la política anterior. Activar o revocar exclusivamente con `mova control`, actor
+y razón, tras verificar release y autoridad; nunca editando SQLite/env.

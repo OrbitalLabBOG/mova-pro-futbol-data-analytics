@@ -754,18 +754,50 @@ class OpsDB:
             "attempt": dict(attempt) if attempt else None,
         }
 
-    def latest_delivery_attempt(self, cycle_id: str) -> dict | None:
+    def latest_delivery_attempt(self, cycle_id: str, *, final_only: bool = False) -> dict | None:
         with self.connect(readonly=True) as con:
             row = con.execute(
                 "SELECT a.*,COALESCE(json_extract(j.metrics_json,'$.delivery_proof'),0) AS is_delivery_proof "
                 "FROM execution_attempts a JOIN execution_plans p ON p.plan_id=a.plan_id "
                 "JOIN job_runs j ON j.job_id=a.job_id "
-                "WHERE p.cycle_id=? ORDER BY CASE WHEN a.status='verified' AND json_extract(j.metrics_json,'$.delivery_proof')=1 THEN 0 "
+                "WHERE p.cycle_id=? AND (?=0 OR COALESCE(json_extract(j.metrics_json,'$.delivery_stage'),'final')!='provisional') "
+                "ORDER BY CASE WHEN a.status='ambiguous' THEN 5 WHEN a.status IN ('applying','claimed','prepared') THEN 4 "
+                "WHEN a.status='verified' AND json_extract(j.metrics_json,'$.delivery_proof')=1 THEN 0 "
                 "WHEN a.status='verified' THEN 3 WHEN a.status='ambiguous' THEN 2 "
                 "WHEN a.status IN ('applying','claimed') THEN 1 ELSE 0 END DESC,a.created_at DESC,a.execution_id DESC LIMIT 1",
-                (cycle_id,),
+                (cycle_id, int(final_only)),
             ).fetchone()
         return dict(row) if row else None
+
+    def latest_delivery_verification(self, cycle_id: str) -> dict | None:
+        """Newest durable confirmation, including provisional and authenticated no-ops."""
+        with self.connect(readonly=True) as con:
+            row = con.execute("""
+                SELECT * FROM (
+                  SELECT a.execution_id AS reference_id,
+                    a.finished_at AS observed_at,
+                    COALESCE(json_extract(j.metrics_json,'$.delivery_stage'),'final') AS stage,
+                    'saved_verified' AS status
+                  FROM execution_attempts a JOIN execution_plans p ON p.plan_id=a.plan_id
+                  JOIN job_runs j ON j.job_id=a.job_id
+                  WHERE p.cycle_id=? AND a.status='verified' AND j.status='completed'
+                    AND COALESCE(json_extract(j.metrics_json,'$.delivery_proof'),0)=0
+                  UNION ALL
+                  SELECT job_id,COALESCE(json_extract(metrics_json,'$.delivery_observed_at'),finished_at),
+                    COALESCE(json_extract(metrics_json,'$.delivery_stage'),'final'),'unchanged_verified'
+                  FROM job_runs WHERE cycle_id=? AND job_type='delivery' AND status='completed'
+                    AND json_extract(metrics_json,'$.status')='unchanged_verified'
+                    AND COALESCE(json_extract(metrics_json,'$.delivery_proof'),0)=0
+                ) ORDER BY observed_at DESC,reference_id DESC LIMIT 1
+                """, (cycle_id, cycle_id)).fetchone()
+        return dict(row) if row else None
+
+    def final_delivery_verification(self, cycle_id: str) -> dict | None:
+        attempt = self.latest_delivery_attempt(cycle_id)
+        if attempt and attempt['status'] in {'ambiguous', 'applying', 'claimed', 'prepared'}:
+            return None
+        last = self.latest_delivery_verification(cycle_id)
+        return last if last and last['stage'] == 'final' else None
 
     def latest_delivery_proof(self, revision: str) -> dict | None:
         if not revision or revision == 'unknown':
@@ -785,6 +817,7 @@ class OpsDB:
             row = con.execute("SELECT * FROM job_runs WHERE job_type='delivery' AND cycle_id=? "
                               "AND status='completed' AND json_extract(metrics_json,'$.status')='unchanged_verified' "
                               "AND COALESCE(json_extract(metrics_json,'$.delivery_proof'),0)=0 "
+                              "AND COALESCE(json_extract(metrics_json,'$.delivery_stage'),'final')!='provisional' "
                               "ORDER BY finished_at DESC LIMIT 1", (cycle_id,)).fetchone()
         return dict(row) if row else None
 
@@ -805,6 +838,14 @@ class OpsDB:
                         f"plan ya reservado por execution attempt {existing['execution_id']}"
                     )
                 return {**dict(existing), "reused": True}
+            active = con.execute(
+                "SELECT a.execution_id FROM execution_attempts a JOIN execution_plans p "
+                "ON p.plan_id=a.plan_id WHERE p.cycle_id=? "
+                "AND a.status IN ('prepared','claimed','applying','ambiguous') LIMIT 1",
+                (plan['cycle_id'],),
+            ).fetchone()
+            if active:
+                raise RuntimeError('cycle has an active or ambiguous execution: '+active['execution_id'])
             con.execute(
                 """INSERT INTO execution_attempts(
                 execution_id,plan_id,job_id,idempotency_key,adapter,command_path,
@@ -1060,6 +1101,11 @@ class OpsDB:
     def seal_verified_decision_cycle(self, cycle_id: str, *, correlation_id: str,
                                      job_id: str) -> dict | None:
         """Cierra propuestas tardías cuando el ciclo ya fue ejecutado y verificado."""
+        from mova_fpl.ops.progressive_delivery import enabled
+        if enabled({k: row['value'] for k, row in self.controls().items()}):
+            # Weekly delivery must continue solving after any verified revision.
+            # Settlement/review still requires a separate final confirmation.
+            return None
         with self.transaction() as con:
             verified = con.execute(
                 """SELECT execution_id,decision_id,finished_at FROM (
@@ -1339,12 +1385,14 @@ class OpsDB:
                     ON p.plan_id=a.plan_id JOIN job_runs j ON j.job_id=a.job_id
                     JOIN decision_runs d ON d.decision_id=p.decision_id
                     WHERE p.cycle_id=c.cycle_id AND d.status='executed_verified'
-                    AND a.status='verified' AND COALESCE(json_extract(j.metrics_json,'$.delivery_proof'),0)=0)
+                    AND a.status='verified' AND COALESCE(json_extract(j.metrics_json,'$.delivery_proof'),0)=0
+                    AND COALESCE(json_extract(j.metrics_json,'$.delivery_stage'),'final')!='provisional')
                   OR EXISTS(SELECT 1 FROM job_runs j WHERE j.cycle_id=c.cycle_id
                     AND j.job_type='delivery' AND j.status='completed'
                     AND json_extract(j.metrics_json,'$.status')='unchanged_verified'
                     AND json_extract(j.metrics_json,'$.receipt_contract')='mova-unchanged-delivery-v1'
-                    AND COALESCE(json_extract(j.metrics_json,'$.delivery_proof'),0)=0)
+                    AND COALESCE(json_extract(j.metrics_json,'$.delivery_proof'),0)=0
+                    AND COALESCE(json_extract(j.metrics_json,'$.delivery_stage'),'final')!='provisional')
                 )
                 ORDER BY c.gw""", (season,),
             ).fetchall()

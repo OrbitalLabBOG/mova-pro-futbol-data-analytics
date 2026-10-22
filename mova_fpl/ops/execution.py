@@ -163,8 +163,10 @@ def build_execution_plan(*, envelope: dict, envelope_row: dict, manifest_row: di
         and ACTION_LEVELS[action_level] >= ACTION_LEVELS[required_level]
     )
     no_action = risk_class == "R0"
+    from mova_fpl.ops.progressive_delivery import stage as delivery_stage
+    weekly_stage = delivery_stage(controls, manifest_row['deadline_at'], now) if risk_class in {'R0','R2'} else None
     proof = risk_class in {'R0','R2'} and lineup_proof(controls, envelope['cycle_id'], now)
-    if proof:
+    if proof or weekly_stage:
         freshness_limit = min(freshness_limit, 300)
     blocking_incidents = blocking_execution_incidents(open_high_incidents, controls=controls,
         cycle_id=envelope['cycle_id'], risk_class=risk_class)
@@ -195,7 +197,7 @@ def build_execution_plan(*, envelope: dict, envelope_row: dict, manifest_row: di
                and age_seconds <= freshness_limit,
                "el estado autenticado cumple la cadencia de la fase",
                age_seconds=age_seconds, max_age_seconds=freshness_limit),
-        _check("EXECUTION_WINDOW", effective_phase in EXECUTION_PHASES or proof,
+        _check("EXECUTION_WINDOW", effective_phase in EXECUTION_PHASES or proof or bool(weekly_stage),
                "la acción ocurre dentro de preflight, freeze o execution_window",
                phase=effective_phase, allowed=sorted(EXECUTION_PHASES)),
         _check("DEADLINE_OPEN", now < deadline,
@@ -235,6 +237,7 @@ def build_execution_plan(*, envelope: dict, envelope_row: dict, manifest_row: di
     body = {
         "schema": SCHEMA,
         "delivery_proof": proof,
+        **({"delivery_stage": weekly_stage} if weekly_stage and not proof else {}),
         "policy_version": POLICY_VERSION,
         "cycle_id": envelope["cycle_id"],
         "season": envelope["season"],
@@ -379,14 +382,10 @@ class ExecutionService:
     def status(self, *, limit: int = 20) -> dict:
         rehearsals = self.db.browser_rehearsal_summary(REHEARSAL_CONTRACTS)
         cycle = self.db.status().get('cycle') or {}
-        attempt = self.db.latest_delivery_attempt(cycle.get('cycle_id', ''))
-        final_receipt = None
-        if attempt and attempt['status'] == 'verified' and not attempt['is_delivery_proof']:
-            final_receipt = {'execution_id': attempt['execution_id'], 'status': 'saved_verified',
-                             'finished_at': attempt['finished_at']}
-        elif receipt := self.db.delivery_receipt(cycle.get('cycle_id', '')):
-            final_receipt = {'job_id': receipt['job_id'], 'status': 'unchanged_verified',
-                             'finished_at': receipt['finished_at']}
+        last_final = self.db.final_delivery_verification(cycle.get('cycle_id', ''))
+        final_receipt = None if not last_final else {
+            'execution_id' if last_final['status'] == 'saved_verified' else 'job_id': last_final['reference_id'],
+            'status': last_final['status'], 'finished_at': last_final['observed_at']}
         return {
             "schema": "mova-execution-status-v1",
             "policy_version": POLICY_VERSION,
@@ -394,6 +393,8 @@ class ExecutionService:
             "delivery": {'scope': (self.db.controls().get('delivery_scope') or {}).get('value'),
                          'live_proof': self.db.latest_delivery_proof(self.config.git_sha),
                          'final_receipt': final_receipt,
+                         'policy': (self.db.controls().get('delivery_policy') or {}).get('value'),
+                         'latest_verification': self.db.latest_delivery_verification(cycle.get('cycle_id', '')),
                          'target_seconds_before_deadline': 10800, 'escalate_seconds_before_deadline': 7200,
                          'last_dispatch_seconds_before_deadline': 1800},
             "autonomous_closeout": self.db.autonomous_closeout_summary(
@@ -767,6 +768,15 @@ class ExecutionService:
         observed = str(controls.get("action_level") or "A0")
         blockers = []
         plan = self._load_plan(row)
+        if plan.get('delivery_stage'):
+            from mova_fpl.ops.progressive_delivery import stage as delivery_stage
+            latest = self.db.latest_decision_envelope(row['cycle_id'])
+            if not latest or latest['envelope_id'] != plan['envelope']['envelope_id']:
+                blockers.append('DELIVERY_DECISION_SUPERSEDED')
+            if controls.get('delivery_policy') != plan.get('controls', {}).get('delivery_policy'):
+                blockers.append('DELIVERY_POLICY_CHANGED')
+            if delivery_stage(controls, row['deadline_at'], now) != plan['delivery_stage']:
+                blockers.append('DELIVERY_STAGE_CHANGED')
         if plan.get('delivery_proof') and not lineup_proof(controls, row['cycle_id'], now):
             blockers.append('DELIVERY_PROOF_EXPIRED_OR_REVOKED')
         if plan.get('delivery_proof') and plan.get('controls', {}).get('delivery_proof') != controls.get('delivery_proof'):
@@ -804,7 +814,7 @@ class ExecutionService:
             blockers.append("TEAM_STATE_CHANGED")
         else:
             age = max(0, int((now - _parse_time(state["observed_at"])).total_seconds()))
-            limit = private_state_cadence_seconds(row["deadline_at"], now)
+            limit = min(300, private_state_cadence_seconds(row["deadline_at"], now)) if plan.get("delivery_stage") else private_state_cadence_seconds(row["deadline_at"], now)
             if age > limit:
                 blockers.append("TEAM_STATE_STALE")
         return blockers
@@ -1110,7 +1120,7 @@ class ExecutionService:
             evidence_sha256=self._file_sha(target), result_sha256=result_sha,
             error_code=None if verified else "POST_STATE_MISMATCH",
             error_detail=None if verified else "post-reload state no coincide con el plan",
-            close_cycle=not plan.get('delivery_proof', False),
+            close_cycle=not plan.get('delivery_proof', False) and plan.get('delivery_stage') != 'provisional',
         )
         if verified:
             self.db.add_team_state(
@@ -1121,6 +1131,7 @@ class ExecutionService:
             self.db.finish_job(attempt["job_id"], "completed", output_sha256=result_sha,
                                metrics={"status": status, "verification_checks": len(checks),
                                         'delivery_scope': plan.get('controls', {}).get('delivery_scope'),
+                                        **({'delivery_stage': plan['delivery_stage']} if plan.get('delivery_stage') else {}),
                                         'delivery_proof': plan.get('delivery_proof', False),
                                         'git_sha': self.config.git_sha,
                                         'driver_contract': DRIVER_CONTRACT_VERSION})
