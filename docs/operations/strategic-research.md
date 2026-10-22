@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — contexto estratégico e investigación"
 created: 2026-08-27
-updated: 2026-10-21
+updated: 2026-10-22
 tags: [mova, fpl, strategy, research, codex, evidence]
 status: active
 ---
@@ -38,6 +38,13 @@ investigación web profunda únicamente en ventanas de decisión. No existe un s
 residente ni una llamada LLM por tick.
 
 ## Contrato vigente y antecedentes
+
+Al abrir un refresh T−6h/T−2h, un bloqueo de continuación por cuota,
+cutoff o integridad del padre conserva su motivo y pendientes. El scheduler no
+puede convertirlo en una investigación nueva para eludir la admisión. Una
+reserva de 500k no sustituye el margen de un job completo que exige la
+continuación; sin ese margen el refresh queda bloqueado y la cobertura anterior
+se conserva, sin declarar fuentes frescas ni ampliar cuotas automáticamente.
 
 Researcher activo 1.17: registry `agent_releases.json`, app-server, modelo
 `gpt-6-astra`/medium; el contrato sellado y routing vivo prevalecen sobre defaults.

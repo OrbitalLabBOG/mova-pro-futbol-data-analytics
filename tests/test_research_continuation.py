@@ -233,6 +233,27 @@ def test_real_token_or_use_exhaustion_still_blocks_new_inference(tmp_path,monkey
     assert not due['due'] and due['reason']=='completion_budget_exhausted'
 
 
+@pytest.mark.parametrize('hours', [7, 10.25])
+def test_new_refresh_slot_cannot_replace_budget_blocked_continuation(tmp_path,monkeypatch,hours):
+    from datetime import timedelta
+    config,db,service,cycle=setup(tmp_path)
+    first=service.enqueue()
+    finish(config,db,service,cycle,first,set(range(1,16)),uncertain={1})
+    # Enough for the ordinary reservation, but not a complete physical job.
+    policy=config.agent_budget_policy()
+    monkeypatch.setattr(db,'cost_report',lambda *a,**k:{'status':'within_budget',
+        'gameweek':{'remaining_tokens':policy['job_tokens']-1,'remaining_uses':1},
+        'month':{'remaining_tokens':1000000,'remaining_uses':1}})
+    future=datetime.now(timezone.utc)+timedelta(hours=hours)
+    due=service.due(now=future)
+    assert not due['due'] and due['reason']=='completion_budget_exhausted'
+    assert due['pending_subjects']==[1]
+    monkeypatch.setattr(service,'due',lambda:due)
+    assert service.enqueue()['status']=='skipped'
+    with db.connect(readonly=True) as con:
+        assert con.execute('SELECT COUNT(*) FROM research_runs').fetchone()[0]==1
+
+
 @pytest.mark.parametrize('condition',['replace','same_release','running','tampered','budget'])
 def test_corrected_release_replaces_failed_request_without_rewriting_it_or_its_charge(tmp_path,monkeypatch,condition):
     from mova_fpl.ops.agent_releases import researcher_release

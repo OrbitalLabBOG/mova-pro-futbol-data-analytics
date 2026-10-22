@@ -681,6 +681,11 @@ class StrategicContextService:
             from mova_fpl.ops.research_continuation import assess
             carry = assess(self.config, self.db, dict(latest), count=0,
                            run_kind=run_kind, seconds=seconds, new_slot=True)
+            if carry and not carry.get('due') and carry['reason'].startswith('completion_'):
+                # A new slot must preserve admission failures rather than silently
+                # replacing a blocked continuation with an unrestricted fresh run.
+                return {**carry, 'cycle_id': cycle['cycle_id'], 'run_kind': run_kind,
+                        'deadline_seconds': seconds, 'slot_started_at': slot_start.isoformat()}
             if carry and carry.get('due'):
                 continuation = carry['continuation']
         return {
