@@ -637,3 +637,32 @@ def test_driver_reopens_auto_closed_sheet_to_verify_without_repeating_assignment
     assert browser.presses==1
     assert browser.opens==2
     assert browser.saves==int(assignment_applied)
+
+
+@pytest.mark.parametrize('fresh_document',[True,False])
+def test_reload_timeout_requires_new_fpl_document_without_repeating_navigation(fresh_document):
+    module=_host_driver_module()
+    class Navigation:
+        calls=[]
+        def run(self,*args,capture=False):
+            self.calls.append(args)
+            if args[0]=='reload':raise subprocess.CalledProcessError(1,args,stderr='Operation timed out')
+            if args[0]=='eval':
+                assert "performance.timeOrigin >= " in args[1]
+                assert "'/en/my-team'" in args[1]
+                return str(fresh_document).lower()
+            raise AssertionError(args)
+    browser=Navigation();browser.calls=[]
+    if fresh_document:module._reload_observed(browser)
+    else:
+        with pytest.raises(RuntimeError,match='FPL_RELOAD_NOT_OBSERVED'):module._reload_observed(browser)
+    assert [a[0] for a in browser.calls]==['reload','eval']
+
+
+def test_non_timeout_navigation_failure_is_not_accepted():
+    module=_host_driver_module()
+    class Navigation:
+        def run(self,*args,**kwargs):
+            assert args[0]=='reload'
+            raise subprocess.CalledProcessError(1,args,stderr='page closed')
+    with pytest.raises(subprocess.CalledProcessError):module._reload_observed(Navigation())

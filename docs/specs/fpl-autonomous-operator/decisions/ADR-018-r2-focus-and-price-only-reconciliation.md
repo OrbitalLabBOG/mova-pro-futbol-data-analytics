@@ -78,3 +78,12 @@ click de asignación. Si el valor no está marcado, conserva el fallo y no llega
 a Save. Después cierra la ficha como antes. Las pruebas simulan tanto selección
 aplicada con cierre automático como selección no aplicada; verifican exactamente
 un gesto de asignación y cero Save en el caso negativo.
+
+Las lecturas de recuperación también observaron timeouts de navegación con el
+nuevo documento FPL ya cargado. Tras Save, un timeout de reload sólo se acepta
+si se observa `/en/my-team` en origen FPL, documento interactive/complete y
+`performance.timeOrigin` posterior al comienzo de esa navegación (host y browser
+comparten reloj del host). Nunca se repite reload ni Save. Luego se exige pitch
+válido y GET privado posterior con el verifier normal; sin ese documento nuevo
+o ante un error no temporal se conserva la ambigüedad. Esto no acredita por sí
+solo guardado ni permite usar el DOM pendiente como evidencia de persistencia.

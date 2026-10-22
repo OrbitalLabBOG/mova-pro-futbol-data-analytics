@@ -157,6 +157,26 @@ def _sheet_closed_script() -> str:
     )
 
 
+def _reload_observed(browser: AgentBrowser) -> None:
+    started_ms = int(time.time() * 1000)
+    try:
+        browser.run('reload', capture=True)
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
+        detail = str(getattr(exc, 'stderr', '') or '').lower()
+        if (isinstance(exc, subprocess.CalledProcessError) and exc.returncode != 124
+                and 'timeout' not in detail and 'timed out' not in detail):
+            raise
+        # Ads may keep the navigation command waiting after the new document
+        # loaded. Prove that document; never repeat navigation or Save.
+        observed = ("location.origin === 'https://fantasy.premierleague.com' && "
+                    "location.pathname === '/en/my-team' && "
+                    "['interactive','complete'].includes(document.readyState) && "
+                    f"performance.timeOrigin >= {started_ms}")
+        if browser.run('eval', observed, capture=True) != 'true':
+            raise RuntimeError('FPL_RELOAD_NOT_OBSERVED') from exc
+        _emit('browser_reload_observed_after_timeout', account_write=False)
+
+
 def execute(driver_plan: dict, browser: AgentBrowser) -> None:
     if browser.run("get", "url", capture=True).rstrip("/").endswith("/en/my-team") is False:
         raise RuntimeError("FPL_PICK_TEAM_PAGE_REQUIRED")
@@ -238,7 +258,7 @@ def execute(driver_plan: dict, browser: AgentBrowser) -> None:
         elif operation == "wait_commit_settled":
             browser.run("wait", "--fn", f"{_commit_count_script(commit_name)} === 0")
         elif operation == "reload_pick_team":
-            browser.run("reload")
+            _reload_observed(browser)
             browser.run("wait", "--fn", (
                 "location.pathname === '/en/my-team' && "
                 "document.querySelectorAll('button[aria-label=\\\"Switch player\\\"]').length === 15"
