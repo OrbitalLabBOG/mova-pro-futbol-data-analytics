@@ -157,10 +157,31 @@ def _sheet_closed_script() -> str:
     )
 
 
+def _reload_observed(browser: AgentBrowser) -> None:
+    started_ms = int(time.time() * 1000)
+    try:
+        browser.run('reload', capture=True)
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
+        detail = str(getattr(exc, 'stderr', '') or '').lower()
+        if (isinstance(exc, subprocess.CalledProcessError) and exc.returncode != 124
+                and 'timeout' not in detail and 'timed out' not in detail):
+            raise
+        # Ads may keep the navigation command waiting after the new document
+        # loaded. Prove that document; never repeat navigation or Save.
+        observed = ("location.origin === 'https://fantasy.premierleague.com' && "
+                    "location.pathname === '/en/my-team' && "
+                    "['interactive','complete'].includes(document.readyState) && "
+                    f"performance.timeOrigin >= {started_ms}")
+        if browser.run('eval', observed, capture=True) != 'true':
+            raise RuntimeError('FPL_RELOAD_NOT_OBSERVED') from exc
+        _emit('browser_reload_observed_after_timeout', account_write=False)
+
+
 def execute(driver_plan: dict, browser: AgentBrowser) -> None:
     if browser.run("get", "url", capture=True).rstrip("/").endswith("/en/my-team") is False:
         raise RuntimeError("FPL_PICK_TEAM_PAGE_REQUIRED")
     commit_name = None
+    player_sheet = None
     for step in driver_plan["steps"]:
         operation = step["operation"]
         sequence = int(step["sequence"])
@@ -181,6 +202,7 @@ def execute(driver_plan: dict, browser: AgentBrowser) -> None:
             ) != "true":
                 raise RuntimeError("FPL_LINEUP_VISUAL_ORDER_MISMATCH")
         elif operation == "open_player_sheet":
+            player_sheet = dict(step)
             if browser.run("eval", _open_player_script(int(step["player_button_index"]),str(step.get('expected_web_name') or '')),
                            capture=True) != "true":
                 raise RuntimeError("FPL_PLAYER_CONTROL_MISSING")
@@ -196,6 +218,14 @@ def execute(driver_plan: dict, browser: AgentBrowser) -> None:
         elif operation == "press_space":
             browser.run("press", "Space")
         elif operation == "verify_checkbox":
+            # FPL closes the sheet after a successful C/VC selection. Reopen
+            # that same player's sheet only to read the updated checkbox.
+            if browser.run('eval', _sheet_closed_script(), capture=True) == 'true':
+                if not player_sheet or player_sheet['role'] != step['role']:
+                    raise RuntimeError('FPL_CHECKBOX_PLAYER_UNBOUND')
+                if browser.run('eval', _open_player_script(int(player_sheet['player_button_index']),
+                        str(player_sheet.get('expected_web_name') or '')), capture=True) != 'true':
+                    raise RuntimeError('FPL_CHECKBOX_REOPEN_FAILED')
             browser.run('wait','--fn',_checkbox_script(str(step['accessible_name']),checked=True))
             if browser.run(
                 "eval", _checkbox_script(str(step["accessible_name"]), checked=True),
@@ -228,7 +258,7 @@ def execute(driver_plan: dict, browser: AgentBrowser) -> None:
         elif operation == "wait_commit_settled":
             browser.run("wait", "--fn", f"{_commit_count_script(commit_name)} === 0")
         elif operation == "reload_pick_team":
-            browser.run("reload")
+            _reload_observed(browser)
             browser.run("wait", "--fn", (
                 "location.pathname === '/en/my-team' && "
                 "document.querySelectorAll('button[aria-label=\\\"Switch player\\\"]').length === 15"

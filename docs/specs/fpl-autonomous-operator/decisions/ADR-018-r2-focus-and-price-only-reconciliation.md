@@ -62,3 +62,28 @@ por compra/capitanía/banco cambiado, cotizaciones discrepantes, evidencia alter
 lecturas viejas o demasiado cercanas. Suite completa e imagen antes de despliegue.
 La aceptación viva exige dos lecturas nuevas, conciliación auditada y una nueva
 entrega normal del scheduler verificada. El fallo inicial nunca se borra.
+
+## Observación viva posterior — cierre automático de ficha
+
+El segundo intento `execution_081b35f9063d2aa7f1eac896` pudo enfocar y asignar
+Vice Captain con Space; FPL cerró la ficha automáticamente. El verifier de UI
+esperaba un checkbox en esa ficha ya cerrada y detuvo el flujo antes de Save.
+Una reapertura sólo de lectura de Haaland mostró Vice Captain marcado: la
+asignación local sí funcionó. El fallo se conserva y se concilia por dos GET
+posteriores antes de cualquier nuevo plan.
+
+`verify_checkbox` detecta la ficha cerrada y reabre una sola vez el mismo jugador
+ligado por identidad en el paso original. Sólo lee checked, sin otro Space ni
+click de asignación. Si el valor no está marcado, conserva el fallo y no llega
+a Save. Después cierra la ficha como antes. Las pruebas simulan tanto selección
+aplicada con cierre automático como selección no aplicada; verifican exactamente
+un gesto de asignación y cero Save en el caso negativo.
+
+Las lecturas de recuperación también observaron timeouts de navegación con el
+nuevo documento FPL ya cargado. Tras Save, un timeout de reload sólo se acepta
+si se observa `/en/my-team` en origen FPL, documento interactive/complete y
+`performance.timeOrigin` posterior al comienzo de esa navegación (host y browser
+comparten reloj del host). Nunca se repite reload ni Save. Luego se exige pitch
+válido y GET privado posterior con el verifier normal; sin ese documento nuevo
+o ante un error no temporal se conserva la ambigüedad. Esto no acredita por sí
+solo guardado ni permite usar el DOM pendiente como evidencia de persistencia.

@@ -596,3 +596,73 @@ process.stdout.write(JSON.stringify({result,focusCalls,checked:checks.some(n=>n.
     result=subprocess.run([node,'-e',harness],input=json.dumps({'script':script,'count':count,'disabled':disabled}),text=True,capture_output=True,check=True)
     observed=json.loads(result.stdout)
     assert observed=={'result':count==1 and not disabled,'focusCalls':int(count==1 and not disabled),'checked':False}
+
+
+@pytest.mark.parametrize('assignment_applied',[True,False])
+def test_driver_reopens_auto_closed_sheet_to_verify_without_repeating_assignment(assignment_applied):
+    module=_host_driver_module()
+    ui=_ui_plan();ui['captain']={'from':1,'to':1,'action':None}
+    plan=compile_r2_driver_plan(ui)
+    class AutoClosingFPL:
+        def __init__(self):
+            self.open=False;self.checked=False;self.opens=0;self.presses=0;self.saves=0
+        def run(self,*args,capture=False):
+            if args[:2]==('get','url'):return 'https://fantasy.premierleague.com/en/my-team'
+            if args[0]=='eval':
+                script=args[1]
+                if script==module._sheet_closed_script():return str(not self.open).lower()
+                if script==module._open_player_script(7,''):
+                    self.open=True;self.opens+=1;return 'true'
+                if script==module._checkbox_script('Vice Captain',focus=True):
+                    return str(self.open).lower()
+                if script==module._checkbox_script('Vice Captain',checked=True):
+                    return str(self.open and self.checked).lower()
+                if script==module._close_sheet_script():self.open=False;return 'true'
+                if 'const names=' in script:
+                    names=json.loads(script.split('const names=',1)[1].split(';',1)[0])
+                    return '1' if 'Save My Team' in names else '0'
+                raise AssertionError(script)
+            if args[:2]==('press','Space'):
+                assert self.open
+                self.presses+=1;self.checked=assignment_applied;self.open=False
+            if args[0]=='wait' and args[1]=='--fn':
+                if args[2]==module._checkbox_script('Vice Captain',checked=True):
+                    if not self.open or not self.checked:raise RuntimeError('CHECKBOX_NOT_UPDATED')
+            if args[0]=='find':self.saves+=1
+            return ''
+    browser=AutoClosingFPL()
+    if assignment_applied:module.execute(plan,browser)
+    else:
+        with pytest.raises(RuntimeError,match='CHECKBOX_NOT_UPDATED'):module.execute(plan,browser)
+    assert browser.presses==1
+    assert browser.opens==2
+    assert browser.saves==int(assignment_applied)
+
+
+@pytest.mark.parametrize('fresh_document',[True,False])
+def test_reload_timeout_requires_new_fpl_document_without_repeating_navigation(fresh_document):
+    module=_host_driver_module()
+    class Navigation:
+        calls=[]
+        def run(self,*args,capture=False):
+            self.calls.append(args)
+            if args[0]=='reload':raise subprocess.CalledProcessError(1,args,stderr='Operation timed out')
+            if args[0]=='eval':
+                assert "performance.timeOrigin >= " in args[1]
+                assert "'/en/my-team'" in args[1]
+                return str(fresh_document).lower()
+            raise AssertionError(args)
+    browser=Navigation();browser.calls=[]
+    if fresh_document:module._reload_observed(browser)
+    else:
+        with pytest.raises(RuntimeError,match='FPL_RELOAD_NOT_OBSERVED'):module._reload_observed(browser)
+    assert [a[0] for a in browser.calls]==['reload','eval']
+
+
+def test_non_timeout_navigation_failure_is_not_accepted():
+    module=_host_driver_module()
+    class Navigation:
+        def run(self,*args,**kwargs):
+            assert args[0]=='reload'
+            raise subprocess.CalledProcessError(1,args,stderr='page closed')
+    with pytest.raises(subprocess.CalledProcessError):module._reload_observed(Navigation())
