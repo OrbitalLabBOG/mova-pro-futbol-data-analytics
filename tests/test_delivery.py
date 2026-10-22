@@ -129,13 +129,15 @@ def test_scoped_delivery_alerts_even_when_policy_skips_execution():
     assert evaluate_workflow_deadline(workflow,seconds_to_deadline=3600,delivery_required=True,delivery_completed=True)['healthy']
 
 
-@pytest.mark.parametrize('progressive', [False, True])
-@pytest.mark.parametrize('health', ['ok','degraded','down'])
+@pytest.mark.parametrize('progressive,health', [(False,'ok'),(True,'ok'),(False,'degraded'),(True,'degraded'),(False,'down'),(True,'down'),(True,'driver_failure')])
 def test_scheduled_host_runs_real_cli_lease_ui_plan_finalize_and_replay(tmp_path,health,progressive):
     """Only source refresh and browser I/O are fixtures; both host scripts and CLI are real."""
     import os,shlex,sys
     from dataclasses import replace
     from test_execution_attempts import _dom_probe_with_captain_controls
+    driver_failure = health == 'driver_failure'
+    if driver_failure:
+        health = 'ok'
     service,_,pre=seed(tmp_path)
     if progressive:
         service.db.set_control('delivery_policy','progressive-lineup-v1',actor='owner',reason='weekly fixture')
@@ -175,11 +177,11 @@ case "$1" in
  n=$((n+1)); echo "$n" > {shlex.quote(str(tmp_path/'count'))}
  if [ "$n" -ge 3 ]; then cat {shlex.quote(str(tmp_path/'post.json'))}; else cat {shlex.quote(str(tmp_path/'pre.json'))}; fi ;;
  probe) cat {shlex.quote(str(tmp_path/'probe.json'))} ;;
- stop) exit 0 ;;
+ stop) echo stopped > {shlex.quote(str(tmp_path/'browser-stopped'))}; exit 0 ;;
  *) exit 2 ;;
 esac
 ''');browser.chmod(0o700)
-    driver=tmp_path/'driver.py';driver.write_text('import sys\n# Fixture browser applies once; production driver is separately exercised against DOM fixtures.\n')
+    driver=tmp_path/'driver.py';driver.write_text('import sys\n# Fixture browser I/O; host failure accounting remains real.\n'+('if "--validate-only" not in sys.argv:raise SystemExit(23)\n' if driver_failure else ''))
     env={**os.environ,'MOVA_REPO_DIR':str(root),'MOVA_RUN_ROOT':str(run),'MOVA_BIN':str(mova),
          'MOVA_BROWSER_SESSION_BIN':str(browser),'MOVA_BROWSER_R2_DRIVER':str(driver),
          'MOVA_EXECUTE_R2_BIN':str(root/'deploy/bin/execute-r2-browser.sh')}
@@ -188,13 +190,20 @@ esac
     driver_script=driver_script.replace('datetime.now(timezone.utc)',"datetime(2026,9,4,16,tzinfo=timezone.utc)")
     bounded_driver=tmp_path/'execute-r2';bounded_driver.write_text(driver_script);bounded_driver.chmod(0o700)
     env['MOVA_EXECUTE_R2_BIN']=str(bounded_driver)
+    env['MOVA_BROWSER_KEEP_RUNNING']='1' if progressive else '0'
     result=subprocess.run(['bash','deploy/bin/delivery-cycle.sh'],cwd=root,env=env,capture_output=True,text=True,timeout=30)
     if health=='down':
         assert result.returncode==2
         assert 'browser_execution_claim_started' not in result.stdout
         assert (tmp_path/'count').read_text().strip()=='1'
         return
+    if driver_failure:
+        assert result.returncode != 0
+        assert service.db.latest_delivery_attempt('2026-27-gw03')['status']=='ambiguous'
+        assert not (tmp_path/'browser-stopped').exists()
+        return
     assert result.returncode==0,result.stderr+result.stdout
+    assert (tmp_path/'browser-stopped').exists() is (not progressive)
     assert 'browser_execution_verified' in result.stdout
     assert (tmp_path/'count').read_text().strip()=='3'
 
@@ -355,6 +364,14 @@ def _ambiguous_with_fresh_unchanged_states(tmp_path,change=None):
     for offset in ([10,12] if change=='close_reads' else [10,20]):
         state={**pre,'observed_at':(NOW+timedelta(seconds=offset)).isoformat()}
         if change=='state':state={**state,'transfers':{**state['transfers'],'bank':9}}
+        if change in {'quote','quote_unstable','purchase','captain'}:
+            state={**state,'picks':[dict(r) for r in state['picks']]}
+            if change in {'quote','quote_unstable'}:state['picks'][0]['selling_price']+=1 if change=='quote' or offset==10 else 2
+            if change=='purchase':state['picks'][0]['purchase_price']+=1
+            if change=='captain':
+                state['picks'][0].update(is_captain=False,multiplier=1)
+                state['picks'][2].update(is_captain=True,multiplier=2)
+
         path,manifest,_=seal(state,service.config.season,service.config.artifact_root/'team_state',expected_team_id=service.config.team_id)
         quality=manifest['quality']
         job,_=service.db.start_job('private_state',f'read:{offset}','corr_fixture',cycle_id='2026-27-gw03')
@@ -376,7 +393,7 @@ def test_ambiguity_reconciliation_proves_unchanged_and_never_claims_delivery(tmp
     assert delivery.dispatch(actor='timer',reason='fresh retry',check_only=True,now=NOW+timedelta(seconds=25))['status']=='due'
 
 
-@pytest.mark.parametrize('kind',['state','stale','artifact','close_reads'])
+@pytest.mark.parametrize('kind',['state','stale','artifact','close_reads','purchase','captain','quote_unstable'])
 def test_ambiguity_reconciliation_refuses_uncertain_observations(tmp_path,kind):
     service,_,eid=_ambiguous_with_fresh_unchanged_states(tmp_path,change=kind)
     if kind=='artifact':
@@ -386,3 +403,17 @@ def test_ambiguity_reconciliation_refuses_uncertain_observations(tmp_path,kind):
         service.reconcile_unchanged(execution_id=eid,actor='owner',reason='read evidence',idempotency_key='reconcile',
             now=NOW+timedelta(seconds=400 if kind=='stale' else 25))
     assert service.db.execution_attempt(eid)['status']=='ambiguous'
+
+
+def test_reconciliation_accepts_only_market_quote_drift_and_preserves_both_fingerprints(tmp_path):
+    service,_,eid=_ambiguous_with_fresh_unchanged_states(tmp_path,change='quote')
+    original=service.db.execution_attempt(eid)['expected_pre_fingerprint']
+    result=service.reconcile_unchanged(execution_id=eid,actor='owner',reason='same account, changed quote',idempotency_key='quote-reconcile',now=NOW+timedelta(seconds=25))
+    evidence=json.loads(Path(result['evidence_path']).read_text())
+    assert evidence['market_sale_quote_drift'] is True
+    assert evidence['fingerprint']==original
+    assert len(set(evidence['observed_fingerprints']))==1
+    assert evidence['observed_fingerprints'][0]!=original
+    row=service.db.execution_attempt(eid)
+    assert row['status']=='failed' and row['observed_post_fingerprint']==evidence['observed_fingerprints'][0]
+    assert service.db.latest_delivery_proof(service.config.git_sha) is None

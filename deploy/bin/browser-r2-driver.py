@@ -78,16 +78,19 @@ def _open_player_script(index: int, expected_name: str = '') -> str:
     )
 
 
-def _checkbox_script(name: str, *, checked: bool | None = None) -> str:
+def _checkbox_script(name: str, *, checked: bool | None = None, focus: bool = False) -> str:
     expected = json.dumps(name)
     suffix = "return Boolean(node);" if checked is None else (
         f"return Boolean(node&&node.checked==={str(checked).lower()});"
     )
+    if focus:
+        suffix = "if(!node||node.disabled)return false;node.focus();return document.activeElement===node;"
     return (
         "(function(){const visible=n=>Boolean(n&&n.getClientRects().length);"
-        "const node=Array.from(document.querySelectorAll('input[type=\\\"checkbox\\\"]'))"
-        f".find(n=>visible(n)&&Array.from(n.labels||[]).some(l=>"
-        f"(l.innerText||l.textContent||'').trim()==={expected}));{suffix}}})()"
+        "const nodes=Array.from(document.querySelectorAll('input[type=\\\"checkbox\\\"]'))"
+        f".filter(n=>visible(n)&&Array.from(n.labels||[]).some(l=>"
+        f"(l.innerText||l.textContent||'').trim()==={expected}));"
+        f"const node=nodes.length===1?nodes[0]:null;{suffix}}})()"
     )
 
 
@@ -185,10 +188,11 @@ def execute(driver_plan: dict, browser: AgentBrowser) -> None:
                 "Captain" if step["role"] == "captain" else "Vice Captain"
             ))
         elif operation == "focus_checkbox":
-            browser.run(
-                "find", "role", "checkbox", "focus", "--name",
-                str(step["accessible_name"]), "--exact",
-            )
+            # Bind focus to the same unique native input that the probe and
+            # verifier identify. The accessibility name can include help text.
+            if browser.run('eval', _checkbox_script(str(step['accessible_name']), focus=True),
+                           capture=True) != 'true':
+                raise RuntimeError('FPL_CHECKBOX_FOCUS_UNPROVEN')
         elif operation == "press_space":
             browser.run("press", "Space")
         elif operation == "verify_checkbox":

@@ -573,3 +573,26 @@ process.stdout.write(JSON.stringify(vm.runInNewContext(p.script,{document:{query
 """
     result=subprocess.run([node,'-e',harness],input=json.dumps({'rows':rows,'script':module._commit_count_script(list(module.TEAM_SAVE_NAMES))}),text=True,capture_output=True,check=True)
     assert json.loads(result.stdout)==expected
+
+
+@pytest.mark.parametrize('count,disabled',[(1,False),(2,False),(1,True),(0,False)])
+def test_native_checkbox_focus_is_unique_enabled_and_does_not_toggle(count,disabled):
+    import shutil
+    node=shutil.which('node')
+    if not node:pytest.skip('node required for DOM focus contract')
+    module=_host_driver_module()
+    script=module._checkbox_script('Vice Captain',focus=True)
+    harness=r'''
+const vm=require('vm');const p=JSON.parse(require('fs').readFileSync(0,'utf8'));
+const document={activeElement:null,querySelectorAll:()=>checks};
+let focusCalls=0;
+const checks=Array.from({length:p.count},()=>({checked:false,disabled:p.disabled,
+ labels:[{innerText:'Vice Captain'}],getClientRects:()=>[{}],
+ getAttribute:()=> 'Vice Captain Help with vice captain',
+ focus(){focusCalls++;document.activeElement=this;}}));
+const result=vm.runInNewContext(p.script,{document});
+process.stdout.write(JSON.stringify({result,focusCalls,checked:checks.some(n=>n.checked)}));
+'''
+    result=subprocess.run([node,'-e',harness],input=json.dumps({'script':script,'count':count,'disabled':disabled}),text=True,capture_output=True,check=True)
+    observed=json.loads(result.stdout)
+    assert observed=={'result':count==1 and not disabled,'focusCalls':int(count==1 and not disabled),'checked':False}
