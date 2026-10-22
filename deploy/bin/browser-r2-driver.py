@@ -161,6 +161,7 @@ def execute(driver_plan: dict, browser: AgentBrowser) -> None:
     if browser.run("get", "url", capture=True).rstrip("/").endswith("/en/my-team") is False:
         raise RuntimeError("FPL_PICK_TEAM_PAGE_REQUIRED")
     commit_name = None
+    player_sheet = None
     for step in driver_plan["steps"]:
         operation = step["operation"]
         sequence = int(step["sequence"])
@@ -181,6 +182,7 @@ def execute(driver_plan: dict, browser: AgentBrowser) -> None:
             ) != "true":
                 raise RuntimeError("FPL_LINEUP_VISUAL_ORDER_MISMATCH")
         elif operation == "open_player_sheet":
+            player_sheet = dict(step)
             if browser.run("eval", _open_player_script(int(step["player_button_index"]),str(step.get('expected_web_name') or '')),
                            capture=True) != "true":
                 raise RuntimeError("FPL_PLAYER_CONTROL_MISSING")
@@ -196,6 +198,14 @@ def execute(driver_plan: dict, browser: AgentBrowser) -> None:
         elif operation == "press_space":
             browser.run("press", "Space")
         elif operation == "verify_checkbox":
+            # FPL closes the sheet after a successful C/VC selection. Reopen
+            # that same player's sheet only to read the updated checkbox.
+            if browser.run('eval', _sheet_closed_script(), capture=True) == 'true':
+                if not player_sheet or player_sheet['role'] != step['role']:
+                    raise RuntimeError('FPL_CHECKBOX_PLAYER_UNBOUND')
+                if browser.run('eval', _open_player_script(int(player_sheet['player_button_index']),
+                        str(player_sheet.get('expected_web_name') or '')), capture=True) != 'true':
+                    raise RuntimeError('FPL_CHECKBOX_REOPEN_FAILED')
             browser.run('wait','--fn',_checkbox_script(str(step['accessible_name']),checked=True))
             if browser.run(
                 "eval", _checkbox_script(str(step["accessible_name"]), checked=True),
