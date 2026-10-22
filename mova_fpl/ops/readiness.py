@@ -570,7 +570,8 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
     delivery_window = {'status': 'unknown', 'opens_at': None, 'closes_at': None}
     try:
         deadline = datetime.fromisoformat(str(gameweek.get('deadline_at') or '').replace('Z', '+00:00'))
-        opens, closes = deadline - timedelta(hours=3), deadline - timedelta(minutes=30)
+        from mova_fpl.ops.progressive_delivery import enabled
+        opens, closes = deadline - timedelta(hours=72 if enabled(controls) else 3), deadline - timedelta(minutes=30)
         delivery_window = {'status': 'waiting' if now < opens else 'open' if now < closes else 'closed',
                            'opens_at': opens.isoformat(), 'closes_at': closes.isoformat()}
     except (KeyError, ValueError, TypeError):
@@ -585,6 +586,8 @@ def evaluate_readiness(*, operator_status: dict, research_coverage: dict,
         "target_level": target_level,
         "delivery_readiness": {
             'scope': controls.get('delivery_scope'),
+            'policy': delivery.get('policy'),
+            'latest_verification': delivery.get('latest_verification'),
             'runtime_healthy': operator_status.get('overall_status') == 'healthy',
             'authority_enabled': not activation['activation_blockers'] and current_level == 'A2' and scoped_delivery,
             'driver_live_proven': bool(delivery.get('live_proof')),

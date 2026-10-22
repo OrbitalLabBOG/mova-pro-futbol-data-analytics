@@ -341,6 +341,7 @@ def evaluate_cockpit(*, operator_status: dict, safety: dict, readiness: dict,
         },
         "exit_shadow": {
             "delivery_scope": activation.get('delivery_scope'),
+            "lineup_delivery": readiness.get("delivery_readiness", {}),
             "scope_ready": activation.get('scope_ready'),
             "target_level": readiness.get('target_level'),
             "delivery_readiness": readiness.get('delivery_readiness'),

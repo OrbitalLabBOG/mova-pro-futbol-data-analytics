@@ -222,6 +222,7 @@ def _controls(raw: dict, config: RuntimeConfig) -> dict:
         "kill_switch": True,
         "browser_writes": config.enable_browser_writes,
         "delivery_scope": None,
+        "delivery_policy": None,
     }
     return {key: (raw.get(key) or {}).get("value", default)
             for key, default in defaults.items()}

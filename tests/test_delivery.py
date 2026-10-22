@@ -129,13 +129,16 @@ def test_scoped_delivery_alerts_even_when_policy_skips_execution():
     assert evaluate_workflow_deadline(workflow,seconds_to_deadline=3600,delivery_required=True,delivery_completed=True)['healthy']
 
 
+@pytest.mark.parametrize('progressive', [False, True])
 @pytest.mark.parametrize('health', ['ok','degraded','down'])
-def test_scheduled_host_runs_real_cli_lease_ui_plan_finalize_and_replay(tmp_path,health):
+def test_scheduled_host_runs_real_cli_lease_ui_plan_finalize_and_replay(tmp_path,health,progressive):
     """Only source refresh and browser I/O are fixtures; both host scripts and CLI are real."""
     import os,shlex,sys
     from dataclasses import replace
     from test_execution_attempts import _dom_probe_with_captain_controls
     service,_,pre=seed(tmp_path)
+    if progressive:
+        service.db.set_control('delivery_policy','progressive-lineup-v1',actor='owner',reason='weekly fixture')
     root=Path(__file__).resolve().parents[1]
     run=tmp_path/'run';(run/'lock').mkdir(parents=True)
     post=_private_state(list(range(1,11))+[12,15,11,13,14],captain=7,vice=8,
@@ -196,7 +199,7 @@ esac
     assert (tmp_path/'count').read_text().strip()=='3'
 
     again=subprocess.run(['bash','deploy/bin/delivery-cycle.sh'],cwd=root,env=env,capture_output=True,text=True,timeout=10)
-    assert again.returncode==0 and 'existing_attempt_no_duplicate' in again.stdout
+    assert again.returncode==0 and ('delivery_review_cadence' if progressive else 'existing_attempt_no_duplicate') in again.stdout
     assert (tmp_path/'count').read_text().strip()=='3'
 
 

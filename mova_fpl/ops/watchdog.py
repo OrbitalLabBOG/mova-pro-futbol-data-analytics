@@ -148,9 +148,7 @@ def assess_workflow_deadline(config: RuntimeConfig, db: OpsDB, *,
         seconds = int((deadline - current).total_seconds())
     from mova_fpl.ops.orchestration import build_workflow
     scope = (db.controls().get('delivery_scope') or {}).get('value')
-    attempt = db.latest_delivery_attempt(cycle.get('cycle_id') or '')
-    receipt = db.delivery_receipt(cycle.get('cycle_id') or '')
-    complete = bool(attempt and attempt['status'] == 'verified' and not attempt.get('is_delivery_proof')) or bool(receipt)
+    complete = bool(db.final_delivery_verification(cycle.get('cycle_id') or ''))
     report = evaluate_workflow_deadline(
         build_workflow(config, db, now=current), seconds_to_deadline=seconds,
         delivery_required=scope == 'lineup-v1', delivery_completed=complete,
