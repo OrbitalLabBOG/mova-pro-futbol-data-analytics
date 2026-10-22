@@ -1171,7 +1171,13 @@ class ExecutionService:
         rows=self.db.reconciliation_states(plan['cycle_id'])
         if len(rows) != 2:
             raise RuntimeError('two fresh authenticated observations are required')
+        from mova_fpl.ops.r2_account_invariants import account_owned_state
+        invariant_path = self.config.artifact_root/'execution-invariants'/f'{execution_id}.json'
+        original, original_quality = validate_private_state(json.loads(invariant_path.read_text()), expected_team_id=self.config.team_id)
+        if original_quality['fingerprint'] != attempt['expected_pre_fingerprint']:
+            raise RuntimeError('original pre-state invariant changed')
         times=[]
+        states=[]
         for row in rows:
             path=Path(row['artifact_path']).resolve()
             if not path.is_relative_to(self.config.artifact_root.resolve()):
@@ -1184,15 +1190,21 @@ class ExecutionService:
                     or state['event']['id'] != plan['gw'] or _parse_time(row['observed_at']) != observed
                     or not 0 <= (current-observed).total_seconds() <= 300
                     or observed <= _parse_time(attempt['finished_at'])
-                    or row['fingerprint'] != attempt['expected_pre_fingerprint']
-                    or manifest['quality']['fingerprint'] != attempt['expected_pre_fingerprint']):
+                    or manifest['quality']['fingerprint'] != row['fingerprint']
+                    or account_owned_state(state) != account_owned_state(original)):
                 raise RuntimeError('fresh server state does not prove the original account state')
             times.append(observed)
+            states.append(state)
+        if rows[0]['fingerprint'] != rows[1]['fingerprint']:
+            raise RuntimeError('post-failure observations disagree, including market quotes')
         if (times[0]-times[1]).total_seconds() < 5:
             raise RuntimeError('independent observations must be at least five seconds apart')
         evidence={'schema':'mova-r2-unchanged-reconciliation-v1','execution_id':execution_id,
                   'observed_at':current.isoformat(),'state_ids':[r['team_state_id'] for r in rows],
                   'fingerprint':attempt['expected_pre_fingerprint'],'idempotency_key':idempotency_key,
+                  'observed_fingerprints':[r['fingerprint'] for r in rows],
+                  'market_sale_quote_drift': rows[0]['fingerprint'] != attempt['expected_pre_fingerprint'],
+                  'account_owned_state_sha256': sha256_json(account_owned_state(original)),
                   'account_write':False,'delivery_verified':False,'actor':actor,'reason':reason}
         target=self.config.artifact_root/'execution-reconciliation'/f'{execution_id}_{sha256_json(idempotency_key)[:16]}.json'
         target.parent.mkdir(parents=True,exist_ok=True)
@@ -1200,7 +1212,7 @@ class ExecutionService:
             stream.write(json.dumps(evidence,sort_keys=True)+'\n')
         return self.db.reconcile_execution_unchanged(execution_id=execution_id,
             state_ids=evidence['state_ids'],evidence_path=str(target),evidence_sha256=self._file_sha(target),
-            actor=actor,reason=reason)
+            actor=actor,reason=reason, state_fingerprints=evidence['observed_fingerprints'])
 
     def fail(self, *, execution_id: str, claim_token: str, ambiguous: bool,
              actor: str, reason: str, error_code: str, error_detail: str,

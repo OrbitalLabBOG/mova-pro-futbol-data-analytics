@@ -1028,7 +1028,7 @@ class OpsDB:
 
     def reconcile_execution_unchanged(self, *, execution_id: str, state_ids: list[str],
                                       evidence_path: str, evidence_sha256: str,
-                                      actor: str, reason: str) -> dict:
+                                      actor: str, reason: str, state_fingerprints: list[str] | None = None) -> dict:
         with self.transaction() as con:
             row = con.execute('SELECT * FROM execution_attempts WHERE execution_id=?', (execution_id,)).fetchone()
             if not row or row['status'] != 'ambiguous':
@@ -1036,15 +1036,18 @@ class OpsDB:
             plan = con.execute('SELECT * FROM execution_plans WHERE plan_id=?',(row['plan_id'],)).fetchone()
             latest = con.execute('SELECT team_state_id,fingerprint FROM team_state_snapshots WHERE cycle_id=? ORDER BY observed_at DESC LIMIT 2',
                                  (plan['cycle_id'],)).fetchall()
-            if [s['team_state_id'] for s in latest] != state_ids or any(s['fingerprint'] != row['expected_pre_fingerprint'] for s in latest):
+            if ([s['team_state_id'] for s in latest] != state_ids
+                    or [s['fingerprint'] for s in latest] != (state_fingerprints or [row['expected_pre_fingerprint']]*2)):
                 raise RuntimeError('reconciliation observations changed')
             if con.execute("SELECT 1 FROM execution_attempts a JOIN execution_plans p ON p.plan_id=a.plan_id WHERE p.cycle_id=? AND a.execution_id<>? AND (a.created_at>? OR a.status IN ('claimed','applying')) LIMIT 1",
                            (plan['cycle_id'],execution_id,row['created_at'])).fetchone():
                 raise RuntimeError('another attempt prevents reconciliation')
             detail={'state_ids':state_ids,'evidence_sha256':evidence_sha256,'prior_error_code':row['error_code'],
+                    'original_pre_fingerprint':row['expected_pre_fingerprint'],
+                    'observed_fingerprints':[s['fingerprint'] for s in latest],
                     'prior_result_sha256':row['result_sha256']}
             con.execute("UPDATE execution_attempts SET status='failed',observed_post_fingerprint=?,evidence_path=?,evidence_sha256=?,result_sha256=?,error_code='AMBIGUITY_RECONCILED_UNCHANGED',error_detail=? WHERE execution_id=?",
-                        (row['expected_pre_fingerprint'],evidence_path,evidence_sha256,sha256_json(detail),reason,execution_id))
+                        (latest[0]['fingerprint'],evidence_path,evidence_sha256,sha256_json(detail),reason,execution_id))
             self._append_attempt_event(con,execution_id=execution_id,from_status='ambiguous',to_status='failed',
                                        actor=actor,reason=reason,detail=detail,occurred_at=utcnow())
             con.execute("UPDATE incidents SET status='resolved',closed_at=?,resolution=? WHERE title='Ejecución FPL ambigua' AND status!='resolved' AND json_extract(detail_json,'$.execution_id')=?",

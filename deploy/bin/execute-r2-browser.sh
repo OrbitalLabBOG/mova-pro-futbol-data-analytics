@@ -36,6 +36,16 @@ if [[ -z "$actor" || -z "$reason" || ! "$lease_seconds" =~ ^[0-9]+$ ]] \
 fi
 
 cd "$repo_dir"
+# Keep the provisioned persistent session on both success and failure. Load
+# host interpolation last, matching the private collector's environment order.
+for env_file in "${MOVA_ENV_FILE:-/etc/mova-fpl/runtime.env}" "${MOVA_DEPLOY_ENV:-/etc/mova-fpl/deploy.env}"; do
+  if [[ -r "$env_file" ]]; then
+    set -a
+    source "$env_file"
+    set +a
+  fi
+done
+keep_browser=${MOVA_BROWSER_KEEP_RUNNING:-0}
 # Own the same host resources as the private collector before claiming a lease.
 # Contention is a defer, not an execution attempt or a reason to stop a browser.
 private_lock=${MOVA_PRIVATE_STATE_LOCK_FILE:-$run_root/lock/mova-fpl-private-state.lock}
@@ -130,7 +140,9 @@ cleanup() {
       fi
     fi
   fi
-  timeout --kill-after=3s 15s "$browser_session" stop >/dev/null 2>&1 || true
+  if [[ "$keep_browser" != 1 ]]; then
+    timeout --kill-after=3s 15s "$browser_session" stop >/dev/null 2>&1 || true
+  fi
   rm -f "$pre_state" "$dom_probe" "$ui_plan" "$post_state"
   rmdir "$work_dir" >/dev/null 2>&1 || true
   claim_token=""
