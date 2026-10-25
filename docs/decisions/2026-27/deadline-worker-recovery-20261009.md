@@ -216,3 +216,65 @@ Validation before deployment: `pytest -q` — **2054 passed, 1 skipped,
 The 19 new acceptance regressions cover registration/idempotency/immutability,
 causality, deterministic selection, experiments, individual quality thresholds,
 failed attempts, unknown usage, material drift, expiry, late imports and worker asset hashes.
+
+#### Deployed release and immutable registration
+
+Runtime `9e1ff83` was deployed after the sealed backup
+`/opt/orbital/backups/mova-fpl/postgres/20261010T043304Z`. Rollback code/env/image
+references and smoke/migration/asset checks are protected under
+`/opt/orbital/backups/mova-fpl/releases/9e1ff83/`. The existing capacity override
+was preserved. Engine source was copied over the exact previous immutable base;
+worker asset hashes were independently checked against the deployed research
+image. The stopped browser container was recreated with the new image revision
+before regenerating the DR observation. No host reboot occurred.
+
+Registered before any inference in the target GWs:
+
+- Cohort: `acceptance_ad819280f850fd432ba3dbef662d2379`.
+- Registration: `2026-10-10T04:41:38.545Z`.
+- Manifest SHA-256: `7b7f5989ae56832c3fc14ec463c032fc2b7be17db3f053b557b4e0178dc4fb3b`.
+- Protected immutable manifest:
+  `/var/lib/mova-fpl/artifacts/research/acceptance/adr011-2026-27-gw07-gw09.json`.
+- Approval reference: this thread's explicit ADR-011 owner decision.
+- Status: `in_progress`, zero measured/passing GWs. Historical report remains
+  four measured/zero passing. GW6 is excluded because it already has inference.
+
+| Target | Opens (UTC) | Deadline (UTC) |
+| --- | --- | --- |
+| 2026-27 GW7 | 2026-10-10 10:00 | 2026-10-17 10:00 |
+| 2026-27 GW8 | 2026-10-17 10:00 | 2026-10-23 17:30 |
+| 2026-27 GW9 | 2026-10-23 17:30 | 2026-10-31 11:00 |
+
+Dates were verified against the official bootstrap API. The existing research
+scheduler attaches the sealed contract and binds the first operational request
+when each target GW becomes eligible; no separate manual enrollment is needed.
+An automatic GW6 research run started during rollout, so deployment waited for
+its capacity lock instead of interrupting inference. It is historical evidence,
+not a member of this future cohort.
+
+PostgreSQL import `pgimport_71b15befe4494e4c84aa431b47cbd06e` and independent
+verification passed: **59 tables**, 58 exact comparisons and one aggregate
+canonical comparison, zero failed tables. Parity digest:
+`22151c50fcf3274b737ae3f41cd429c11a60b451abe2ded6db0dc92ee0d0d623`.
+SQLite cohort backup completed as `job_ba5992dc3dda480382266c2f51512854`.
+Temporary PostgreSQL borrowing remained at most 0.50 CPU and restored the exact
+original 100,000,000 NanoCpus (0.10 CPU).
+
+The watchdog correctly detected stale predeadline public inputs. Official FPL
+collection `job_03318c73f3f34becbc9c82426dfabd8f` completed, followed by supported
+shadow tick `job_51fa0c096ce240509814d7261f1576f9`. The tick sealed a real fresh
+observation at `2026-10-10T04:49:05Z`; no artifact timestamp was edited. Its
+execution preflight remained blocked by the existing authority controls.
+Private refresh `job_f6540de924b045a1ac248a73219168b0` completed with snapshot
+`teamstate_065d63cd8da9428589fd898052c471fc`, observed
+`2026-10-10T04:51:40.351Z`. Its fingerprint exactly matches the pre-rollout team.
+Normal watchdog recovery cleared the deadline-risk incident after fresh data;
+no incident was manually marked resolved.
+
+Final doctor: **25 PASS, 0 WARN, 0 FAIL**, no open incidents. Controls remain
+A0/shadow, kill switch enabled, browser writes disabled, compliance pending.
+Readiness: **20 pass, 0 blocked, 7 pending**, technically eligible only for A0.
+Pending are prospective research, same-revision host recovery, off-host restore,
+three independent captaincy/lineup/R3 rehearsals, and live autonomous closeout.
+Old recovery proofs retain their original revisions and are not relabeled as
+valid for `9e1ff83`. No official GW6 team changes were saved.
