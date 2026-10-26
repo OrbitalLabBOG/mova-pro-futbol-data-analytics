@@ -62,11 +62,18 @@ def _attempted_sources(config, events, request_sha):
     return sources,ambiguous,supported
 
 
-def progress(config, db, cycle_id=None, *, now=None):
+def progress(config, db, cycle_id=None, *, now=None, manifest_as_of=False):
     from mova_fpl.ops.research_continuation import supported_policy
     current = now or datetime.now(timezone.utc)
     cycle_id = cycle_id or (db.status().get('cycle') or {}).get('cycle_id')
     manifest = db.latest_cycle_manifest(cycle_id) if cycle_id else None
+    if manifest_as_of and cycle_id:
+        with db.connect(readonly=True) as con:
+            row = con.execute('SELECT * FROM cycle_manifests WHERE cycle_id=? '
+                              'AND julianday(as_of_at)<=julianday(?) '
+                              'ORDER BY revision DESC LIMIT 1',
+                              (cycle_id, current.isoformat())).fetchone()
+        manifest = db._cycle_manifest_payload(row)
     focus = {int(r['element']): r for r in (manifest or {}).get('research_summary',{}).get('focus',[])}
     report = {'schema':'mova-research-campaign-v1','cycle_id':cycle_id,'generated_at':current.isoformat(),
               'status':'pending','required_subjects':len(focus),'verified_subjects':0,

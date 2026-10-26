@@ -227,4 +227,4 @@ def test_preflight_service_persists_artifact_checks_and_reuses_key(tmp_path: Pat
         assert con.execute("SELECT COUNT(*) FROM execution_plans").fetchone()[0] == 1
         assert con.execute(
             "SELECT COUNT(*) FROM execution_preflight_checks"
-        ).fetchone()[0] == 17
+        ).fetchone()[0] == 18

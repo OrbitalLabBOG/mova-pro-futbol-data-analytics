@@ -212,6 +212,7 @@ def parser() -> argparse.ArgumentParser:
     acceptance.add_argument("--actor")
     acceptance.add_argument("--reason")
     acceptance.add_argument("--idempotency-key")
+    acceptance.add_argument("--campaign", action="store_true", help="contrato prospectivo de campaña v2")
     research = strategy_commands.add_parser("research", help="opera la cola de investigación")
     research.add_argument("operation", choices=("due", "coverage", "enqueue", "experiment", "reconcile-experiment", "import", "resolve-conflict"))
     research.add_argument("--agent-version", action="append")
@@ -735,7 +736,7 @@ def main(argv: list[str] | None = None) -> int:
             from mova_fpl.ops.research_acceptance import current_contract, register_cohort
             db.migrate()
             if args.operation == "contract":
-                payload = current_contract(config)
+                payload = current_contract(config, campaign=args.campaign)
             elif args.operation == "register":
                 if not args.file:
                     raise ValueError("acceptance register exige --file")

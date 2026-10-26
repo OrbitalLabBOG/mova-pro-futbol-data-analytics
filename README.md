@@ -8,6 +8,19 @@ tags: [mova, fpl, runtime, operations]
 
 # MOVA Fantasy Fútbol Data Analytics
 
+## Continuidad semanal — 23 de octubre
+
+El [ADR-019](docs/specs/fpl-autonomous-operator/decisions/ADR-019-weekly-continuity-campaign-acceptance.md)
+añade protección manual por ciclo sin apagar la autorización semanal y aceptación
+prospectiva opt-in de campañas research con continuaciones. Mantiene A2, mismos
+quince y cero transferencias/hits/chips. La aceptación antigua y sus fallos quedan
+intactos; instalar esta versión no registra una nueva cohorte ni promueve R3.
+
+GW8 tuvo un Save autónomo preliminar comprobado en `6f8d994`, seguido por el
+equipo manual solicitado por Julián y confirmado por picks oficiales al cierre.
+Ese resultado manual no es un recibo final del scheduler. Los cortes siguientes
+son antecedentes fechados; consultar la revisión y controles vivos.
+
 Motor operativo y analítico para gestionar el equipo `losmillosFPL` durante la temporada
 Fantasy Premier League 2026/27. El repositorio contiene únicamente el producto FPL vigente:
 collector, almacén causal, modelos de minutos y puntos, optimizador MILP, control plane del

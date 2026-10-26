@@ -9,6 +9,18 @@ status: active
 
 # Policy de autonomía y preflight
 
+## Protección manual por jornada
+
+Un paquete manual v2 importado conserva su GW mediante `manual_cycle_hold`, sin
+apagar el scope semanal. Tick conserva esa decisión y dispatcher/preflight/claim/
+begin impiden otro Save. En la próxima GW el hold anterior no aplica; no necesita
+un mensaje del chat para restaurar controles. `delivery_scope=null` sigue siendo
+una revocación explícita, sin restauración automática. Durante la operación manual
+usar guarded y la autorización concreta; al terminar restaurar A2/autonomous.
+`execute status.delivery.manual_receipt` y watchdog reconocen la evidencia íntegra
+separadamente del recibo nativo. Evidencia dañada o Save ambiguo no acreditan éxito.
+Ver [ADR-019](../specs/fpl-autonomous-operator/decisions/ADR-019-weekly-continuity-campaign-acceptance.md).
+
 ## Entrega programada de alineación — lineup-v1
 
 `mova-fpl-delivery.timer` llama cada cinco minutos a `deploy/bin/delivery-cycle.sh`.

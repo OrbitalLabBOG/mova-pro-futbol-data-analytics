@@ -354,6 +354,10 @@ def record(package_path: Path, *, actor: str = "codex", reason: str = "legacy im
                 raise RuntimeError(
                     "el ciclo ya tiene una ejecución verificada; usar el replay idempotente"
                 )
+            if con.execute("SELECT 1 FROM execution_attempts a JOIN execution_plans p ON p.plan_id=a.plan_id "
+                           "WHERE p.cycle_id=? AND a.status IN ('claimed','applying','ambiguous') LIMIT 1",
+                           (cycle_id,)).fetchone():
+                raise RuntimeError('manual import blocked by active or ambiguous native execution')
             revision = int(
                 con.execute(
                     "SELECT COALESCE(MAX(revision),0)+1 FROM decision_runs WHERE cycle_id=?",

@@ -339,6 +339,16 @@ Después de un cambio ejecuta la prueba cercana, `pytest -q`, smoke de Docker y 
 
 ## Entrega semanal progresiva
 
+ADR-019: un manual v2 importado protege sólo su ciclo, sin deshabilitar el scope
+permanente. No apagar delivery_scope para ese hold: usar guarded durante la
+operación aprobada y restaurar A2/autonomous después. manual_receipt es distinto
+del recibo nativo; evidencia alterada conserva el bloqueo y no prueba entrega.
+La GW siguiente no hereda ese hold. Scope=null continúa siendo una revocación.
+Aceptación research v2 es opt-in por campaña completa; el contrato se obtiene
+con `strategy acceptance contract --campaign`. Todas las corridas y fallos cuentan;
+las cohortes v1 no se reescriben. Registrar una nueva exige aprobación trazable
+para sus GWs futuras concretas, nunca permisos por cada corrida ni promoción A3.
+
 ADR-017 añade el control opt-in auditado `delivery_policy="progressive-lineup-v1"`.
 Con `lineup-v1` conserva A2 y cero transfers/hits/chips, pero permite revisiones
 desde T−72h hasta T−30m. Consultar `execute status.delivery.latest_verification`

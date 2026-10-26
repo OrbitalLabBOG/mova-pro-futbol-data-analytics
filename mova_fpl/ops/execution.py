@@ -141,7 +141,7 @@ def build_execution_plan(*, envelope: dict, envelope_row: dict, manifest_row: di
                          team_state: dict | None, controls: dict,
                          open_high_incidents: list[dict], prior_execution: dict | None,
                          now: datetime, idempotency_key: str, actor: str,
-                         reason: str) -> dict:
+                         reason: str, manual_hold: bool = False) -> dict:
     """Construye un plan inmutable y fail-closed sin realizar IO."""
     now = now.astimezone(timezone.utc)
     risk_class, exact_diff = _risk_and_diff(envelope)
@@ -171,6 +171,8 @@ def build_execution_plan(*, envelope: dict, envelope_row: dict, manifest_row: di
     blocking_incidents = blocking_execution_incidents(open_high_incidents, controls=controls,
         cycle_id=envelope['cycle_id'], risk_class=risk_class)
     checks = [
+        _check('NO_MANUAL_CYCLE_HOLD', not manual_hold,
+               'una operación manual verificada conserva su jornada'),
         _check("ENVELOPE_ARTIFACT_VERIFIED", True,
                "el artifact coincide con el registro y su hash de contenido",
                envelope_sha256=envelope_row["content_sha256"]),
@@ -348,6 +350,7 @@ class ExecutionService:
             ):
                 raise ValueError("identidad del DecisionEnvelope no coincide con el ledger")
             controls = {key: row["value"] for key, row in self.db.controls().items()}
+            from mova_fpl.ops.manual_delivery import hold
             plan = build_execution_plan(
                 envelope=envelope, envelope_row=envelope_row,
                 manifest_row=source["manifest"], team_state=source["team_state"],
@@ -355,6 +358,7 @@ class ExecutionService:
                 prior_execution=source["prior_execution"],
                 now=now or datetime.now(timezone.utc), idempotency_key=idempotency_key,
                 actor=actor, reason=reason,
+                manual_hold=bool(hold(self.db, envelope['cycle_id'])),
             )
             target = (self.config.artifact_root / "execution-plans" / plan["cycle_id"]
                       / f"{plan['plan_id']}.json")
@@ -380,6 +384,7 @@ class ExecutionService:
             raise
 
     def status(self, *, limit: int = 20) -> dict:
+        from mova_fpl.ops.manual_delivery import receipt
         rehearsals = self.db.browser_rehearsal_summary(REHEARSAL_CONTRACTS)
         cycle = self.db.status().get('cycle') or {}
         last_final = self.db.final_delivery_verification(cycle.get('cycle_id', ''))
@@ -393,6 +398,7 @@ class ExecutionService:
             "delivery": {'scope': (self.db.controls().get('delivery_scope') or {}).get('value'),
                          'live_proof': self.db.latest_delivery_proof(self.config.git_sha),
                          'final_receipt': final_receipt,
+                         'manual_receipt': receipt(self.config, self.db, cycle.get('cycle_id')),
                          'policy': (self.db.controls().get('delivery_policy') or {}).get('value'),
                          'latest_verification': self.db.latest_delivery_verification(cycle.get('cycle_id', '')),
                          'target_seconds_before_deadline': 10800, 'escalate_seconds_before_deadline': 7200,
@@ -768,6 +774,9 @@ class ExecutionService:
         observed = str(controls.get("action_level") or "A0")
         blockers = []
         plan = self._load_plan(row)
+        from mova_fpl.ops.manual_delivery import hold
+        if hold(self.db, row['cycle_id']):
+            blockers.append('MANUAL_CYCLE_HOLD')
         if plan.get('delivery_stage'):
             from mova_fpl.ops.progressive_delivery import stage as delivery_stage
             latest = self.db.latest_decision_envelope(row['cycle_id'])

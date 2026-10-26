@@ -9,6 +9,18 @@ status: active
 
 # Contexto estratégico e investigación
 
+## Campaña prospectiva v2 — 23 de octubre
+
+[ADR-019](../specs/fpl-autonomous-operator/decisions/ADR-019-weekly-continuity-campaign-acceptance.md)
+añade aceptación opt-in por campaña completa. `mova strategy acceptance contract
+--campaign` emite el contrato; registrar exige un manifest v2 aprobado con tres
+GWs futuras no inferidas ni ya inscritas. v1 y cohortes fallidas no cambian.
+Todas las corridas cuentan: parcial válido queda pending hasta cutoff; cualquier
+fallo/consumo incierto sigue bloqueando. Exige broad/refresh/final, 90% procesado,
+80% evidencia y cero conflictos a tiempo. No promueve A3 ni aumenta cuotas.
+Las continuaciones envían pistas sólo de pendientes, sin cuerpos duplicados;
+el original queda sellado y cada fuente reutilizada debe verificarse de nuevo.
+
 ## Qué resuelve
 
 Esta vertical conecta el estado real del ciclo con investigación web sin conceder autoridad

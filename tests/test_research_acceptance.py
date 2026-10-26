@@ -11,7 +11,7 @@ from mova_fpl.ops.research_acceptance import current_contract, register_cohort
 from test_strategic_context import _runtime
 
 
-def _cohort(tmp_path, monkeypatch):
+def _cohort(tmp_path, monkeypatch, *, campaign=False):
     config, db, service, cycle = _runtime(tmp_path)
     now = datetime.now(timezone.utc)
     slots = []
@@ -22,8 +22,8 @@ def _cohort(tmp_path, monkeypatch):
                 deadline = datetime.fromisoformat(con.execute('SELECT deadline_at FROM gameweek_cycles WHERE cycle_id=?', (cycle,)).fetchone()[0])
         slots.append({'gw': gw, 'cycle_id': f'{config.season}-gw{gw:02d}',
                       'opens_at': (now-timedelta(minutes=5)).isoformat(), 'deadline_at': deadline.isoformat()})
-    manifest = {'schema': 'mova-research-acceptance-manifest-v1', 'season': config.season,
-                'approval_reference': 'test-owner-approval', 'contract': current_contract(config), 'slots': slots}
+    manifest = {'schema': 'mova-research-acceptance-manifest-v2' if campaign else 'mova-research-acceptance-manifest-v1', 'season': config.season,
+                'approval_reference': 'test-owner-approval', 'contract': current_contract(config, campaign=campaign), 'slots': slots}
     monkeypatch.setattr('mova_fpl.ops.research_acceptance.utcnow', lambda: (now-timedelta(minutes=6)).isoformat())
     registration = register_cohort(db, config, manifest, actor='owner', reason='prospective test', idempotency_key='test-cohort')
     prepared = service.prepare()

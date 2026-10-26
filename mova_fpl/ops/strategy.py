@@ -797,8 +797,8 @@ class StrategicContextService:
         if _experiment:
             request["experiment"] = _experiment
             request["agent_version"] = _experiment["agent_version"]
-        from mova_fpl.ops.research_acceptance import current_contract
-        acceptance_contract = current_contract(self.config)
+        from mova_fpl.ops.research_acceptance import contract_for_cycle
+        acceptance_contract = contract_for_cycle(self.config, self.db, prepared['cycle_id'])
         request["acceptance_contract"] = acceptance_contract
         request_sha = sha256_json(request)
         request["request_sha256"] = request_sha

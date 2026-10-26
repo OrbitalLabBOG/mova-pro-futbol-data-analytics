@@ -32,6 +32,11 @@ class DeliveryService:
             return {**result, 'reason': 'authority_not_enabled'}
         if not cycle.get('deadline_at'):
             return {**result, 'reason': 'cycle_missing'}
+        from mova_fpl.ops.manual_delivery import hold
+        manual = hold(self.db, cycle.get('cycle_id'))
+        if manual:
+            return {**result, 'reason': 'manual_cycle_hold',
+                    'execution_id': manual['execution_id']}
         seconds = (datetime.fromisoformat(cycle['deadline_at'].replace('Z', '+00:00')) - current).total_seconds()
         proof_allowed = proof and lineup_proof(controls, cycle['cycle_id'], current)
         if not proof and lineup_proof(controls, cycle['cycle_id'], current):

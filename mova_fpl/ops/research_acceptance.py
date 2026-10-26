@@ -24,7 +24,7 @@ def _time(value):
     return parsed.astimezone(timezone.utc)
 
 
-def current_contract(config) -> dict:
+def current_contract(config, *, campaign=False) -> dict:
     """Pin runtime behavior, not a Git SHA that changes on documentation edits."""
     version, release = researcher_release()
     assets = json.loads(Path(__file__).with_name("research_acceptance_assets.json").read_text())
@@ -33,7 +33,7 @@ def current_contract(config) -> dict:
                "db.py", "schema.py", "schedule.py", "research_continuation.py", "research_campaign.py")
     implementation = {name: hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest()
                       for name in sources}
-    return {"agent_version": version, "release": release,
+    contract = {"agent_version": version, "release": release,
             "provider": config.research_provider, "model": config.research_model,
             "reasoning_effort": config.research_reasoning_effort,
             "implementation": implementation, "worker_assets": assets,
@@ -42,14 +42,35 @@ def current_contract(config) -> dict:
             "max_attempts": 2, "abandonment": "any_failed_or_uncertain_attempt_blocks",
             "historical_signals": "context_only_require_fresh_independent_evidence",
             "policy": POLICY}
+    if campaign:
+        contract.update(selection='all_operational_runs_until_deadline',
+                        policy={**POLICY, 'version': 'research-campaign-prospective-v2'},
+                        completion='accumulated_verified_evidence_at_deadline',
+                        quality_before_deadline='pending_not_failed',
+                        refreshes='broad_refresh6h_refresh2h_required',
+                        failure_history='every_failed_or_uncertain_attempt_blocks')
+        contract['implementation']['research_campaign_acceptance.py'] = hashlib.sha256(
+            Path(__file__).with_name('research_campaign_acceptance.py').read_bytes()).hexdigest()
+    return contract
+
+
+def contract_for_cycle(config, db, cycle_id):
+    with db.connect(readonly=True) as con:
+        rows = con.execute('SELECT manifest_json FROM research_acceptance_cohorts '
+                           'ORDER BY registered_at DESC,cohort_id DESC').fetchall()
+    for row in rows:
+        manifest = json.loads(row['manifest_json'])
+        if any(s['cycle_id'] == cycle_id for s in manifest['slots']):
+            return current_contract(config, campaign=manifest['schema'].endswith('-v2'))
+    return current_contract(config)
 
 
 def register_cohort(db, config, manifest, *, actor, reason, idempotency_key) -> dict:
     if not all(isinstance(v, str) and v.strip() for v in (actor, reason, idempotency_key)):
         raise ValueError("acceptance requires actor, reason, idempotency_key")
-    if manifest.get("schema") != "mova-research-acceptance-manifest-v1":
+    if manifest.get("schema") not in {"mova-research-acceptance-manifest-v1", "mova-research-acceptance-manifest-v2"}:
         raise ValueError("invalid acceptance manifest schema")
-    if manifest.get("contract") != current_contract(config):
+    if manifest.get("contract") != current_contract(config, campaign=manifest['schema'].endswith('-v2')):
         raise ValueError("acceptance contract drift")
     slots = manifest.get("slots")
     if not isinstance(slots, list) or len(slots) < 3 or len(slots) > 38:
@@ -119,6 +140,10 @@ def acceptance_report(db, config=None) -> dict:
     with db.connect(readonly=True) as con:
         for row in con.execute("SELECT * FROM research_acceptance_cohorts ORDER BY registered_at,cohort_id"):
             manifest = json.loads(row["manifest_json"])
+            if manifest['schema'] == 'mova-research-acceptance-manifest-v2':
+                from mova_fpl.ops.research_campaign_acceptance import cohort_report
+                cohorts.append(cohort_report(db, config, dict(row), manifest, now=now))
+                continue
             slots = []
             drift = config is None or manifest["contract"] != current_contract(config)
             for slot in manifest["slots"]:
