@@ -17,6 +17,24 @@ def supported_policy(policy):
     return policy == POLICY or policy == PREVIOUS_POLICY or policy == LEGACY_POLICY
 
 
+def pending_brief(result, pending):
+    """Discovery hints for pending subjects, not a copy of the previous narrative.
+
+    Originals and their charges stay sealed. Previously verified subjects remain
+    in campaign progress; they need not be sent repeatedly to the model.
+    """
+    elements = set(pending)
+    urls = {url for row in (result.get('coverage') or {}).get('subjects', [])
+            if row.get('player_element') in elements for url in row.get('source_urls', [])}
+    return {
+        'documents': [{k: d[k] for k in ('document_id','source_url','title','publisher','published_at','source_tier') if k in d}
+                      for d in result.get('documents', []) if d.get('source_url') in urls],
+        'signals': [s for s in result.get('signals', []) if s.get('player_element') in elements],
+        'conflicts': result.get('conflicts', []),
+        'evidence_requires_new_read': True,
+    }
+
+
 def assess(config, db, run, *, count, run_kind, seconds, new_slot=False):
     if run['status'] != 'imported':
         return None
@@ -77,7 +95,7 @@ def assess(config, db, run, *, count, run_kind, seconds, new_slot=False):
         'round': 1 if new_slot else count+1, 'pending_subjects': pending,
         'unverified_subjects': [r['player_element'] for r in campaign['subjects'] if not r['evidence_verified'] and r['player_element'] in pending],
         'unresolved_subjects': [r['player_element'] for r in campaign['subjects'] if r['evidence_verified'] and not r['resolved']],
-        'prior_brief': {key: result.get(key, []) for key in ['documents', 'signals', 'conflicts']},
+        'prior_brief': pending_brief(result, pending),
         'prior_verified_subjects': [int(row['player_element']) for row in subjects
                                     if row.get('evidence_verified') is True],
         'prior_evidence_is_context_only': True}}

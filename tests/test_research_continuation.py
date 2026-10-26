@@ -69,6 +69,37 @@ def test_scheduler_resumes_exact_pending_focus_and_stops_after_verified_completi
     with db.connect(readonly=True) as con:assert con.execute('SELECT COUNT(*) FROM research_runs').fetchone()[0]==2
 
 
+def test_completion_context_keeps_only_pending_hints_without_copying_bodies():
+    from mova_fpl.ops.research_continuation import pending_brief
+    body={'documents':[{'source_url':'https://club.test/done','evidence_text':'x'*10000},
+                       {'source_url':'https://club.test/pending','title':'Update','evidence_text':'y'*10000}],
+          'coverage':{'subjects':[{'player_element':1,'source_urls':['https://club.test/done']},
+                                  {'player_element':2,'source_urls':['https://club.test/pending']}]},
+          'signals':[{'player_element':1},{'player_element':2}], 'conflicts':[]}
+    hints=pending_brief(body,[2])
+    assert hints['documents']==[{'source_url':'https://club.test/pending','title':'Update'}]
+    assert hints['signals']==[{'player_element':2}]
+    assert hints['evidence_requires_new_read'] is True
+    assert len(body['documents'][0]['evidence_text'])==10000
+
+
+def test_as_of_campaign_does_not_use_post_cutoff_manifest_or_import(tmp_path):
+    from datetime import timedelta
+    config,db,service,cycle=setup(tmp_path)
+    first=service.enqueue();finish(config,db,service,cycle,first,set(range(1,16)))
+    cutoff=datetime.now(timezone.utc)
+    manifest=db.latest_cycle_manifest(cycle)
+    manifest['as_of_at']=(cutoff+timedelta(hours=1)).isoformat()
+    manifest['research_summary']['focus'] += [{'element':99,'player_name':'New after cutoff'}]
+    db.add_cycle_manifest(manifest)
+    report=progress(config,db,cycle,now=cutoff,manifest_as_of=True)
+    assert report['required_subjects']==15 and report['verified_subjects']==15
+    with db.transaction() as con:
+        con.execute('UPDATE research_runs SET imported_at=? WHERE research_run_id=?',
+                    ((cutoff+timedelta(seconds=1)).isoformat(),first['research_run_id']))
+    assert progress(config,db,cycle,now=cutoff,manifest_as_of=True)['verified_subjects']==0
+
+
 @pytest.mark.parametrize('condition,reason',[('budget','completion_budget_exhausted'),('deadline','completion_deadline_reserve'),('artifact','completion_parent_artifact_invalid')])
 def test_resume_stops_with_real_reason_and_preserves_pending(tmp_path,monkeypatch,condition,reason):
     config,db,service,cycle=setup(tmp_path)

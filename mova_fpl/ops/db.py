@@ -881,6 +881,16 @@ class OpsDB:
             "command_sha256": command_sha256, "status": "prepared", "reused": False,
         }
 
+    @staticmethod
+    def _assert_no_manual_cycle_hold(con, plan_id):
+        if con.execute("SELECT 1 FROM execution_plans p JOIN decision_runs d ON d.cycle_id=p.cycle_id "
+                       "JOIN web_executions e ON e.decision_id=d.decision_id "
+                       "JOIN audit_events a ON a.subject_id=e.execution_id "
+                       "AND a.event_type='manual_verified_execution_recorded' "
+                       "AND a.subject_type='web_execution' "
+                       "WHERE p.plan_id=? AND e.status='verified' LIMIT 1", (plan_id,)).fetchone():
+            raise RuntimeError('MANUAL_CYCLE_HOLD')
+
     def claim_execution_attempt(self, *, execution_id: str, token_sha256: str,
                                 claimant: str, reason: str, claimed_at: str,
                                 lease_expires_at: str) -> dict:
@@ -893,6 +903,7 @@ class OpsDB:
                 raise ValueError(f"execution attempt inexistente: {execution_id}")
             if row["status"] != "prepared":
                 raise RuntimeError(f"execution attempt no reclamable: {row['status']}")
+            self._assert_no_manual_cycle_hold(con, row['plan_id'])
             changed = con.execute(
                 """UPDATE execution_attempts SET status='claimed',claim_token_sha256=?,
                 claimed_by=?,claimed_at=?,lease_expires_at=?
@@ -921,6 +932,7 @@ class OpsDB:
                 raise PermissionError("claim token inválido")
             if row["status"] != "claimed":
                 raise RuntimeError(f"execution attempt no iniciable: {row['status']}")
+            self._assert_no_manual_cycle_hold(con, row['plan_id'])
             if str(row["lease_expires_at"]) <= started_at:
                 raise RuntimeError("execution lease expirado")
             if row["expected_pre_fingerprint"] != observed_pre_fingerprint:
@@ -1105,7 +1117,8 @@ class OpsDB:
                                      job_id: str) -> dict | None:
         """Cierra propuestas tardías cuando el ciclo ya fue ejecutado y verificado."""
         from mova_fpl.ops.progressive_delivery import enabled
-        if enabled({k: row['value'] for k, row in self.controls().items()}):
+        from mova_fpl.ops.manual_delivery import hold
+        if enabled({k: row['value'] for k, row in self.controls().items()}) and not hold(self, cycle_id):
             # Weekly delivery must continue solving after any verified revision.
             # Settlement/review still requires a separate final confirmation.
             return None
