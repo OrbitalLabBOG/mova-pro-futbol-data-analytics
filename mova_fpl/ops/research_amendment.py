@@ -34,7 +34,9 @@ def _validate_experiment(con, config, run_id, contract, target_cycles):
     request = _sealed_request(config, dict(run))
     execution_keys = ('agent_version', 'release', 'provider', 'model', 'reasoning_effort',
                       'worker_assets', 'budget')
-    if (not request.get('experiment') or any(
+    if (not request.get('experiment')
+            or request.get('agent_version') != contract['agent_version']
+            or request.get('agent_release') != contract['release'] or any(
             (request.get('acceptance_contract') or {}).get(k) != contract[k] for k in execution_keys)):
         raise ValueError('validation experiment contract mismatch')
     observed_implementation = (request.get('acceptance_contract') or {}).get('implementation', {})
@@ -47,6 +49,7 @@ def _validate_experiment(con, config, run_id, contract, target_cycles):
     starts = {e['attempt_id'] for e in events if e['event_type'] == 'started'}
     ends = [e for e in events if e['event_type'] == 'finished']
     if (not starts or starts != {e['attempt_id'] for e in ends}
+            or any(e['model'] != contract['model'] or e['request_sha256'] != run['request_sha256'] for e in events)
             or any(e['status'] != 'succeeded' or e['input_tokens'] is None or e['output_tokens'] is None for e in ends)
             or not reservation or reservation['status'] != 'settled'
             or reservation['accounting_mode'] != 'exact' or reservation['actual_tokens'] is None

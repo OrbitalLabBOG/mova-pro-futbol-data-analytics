@@ -30,7 +30,7 @@ def setup_amendment(tmp_path, monkeypatch):
     prepared = service.prepare()
     run_id = 'research_'+'1'*32
     request = {'research_run_id':run_id, 'cycle_id':cycle, 'experiment':{'operational_import':False},
-               'acceptance_contract':new}
+               'acceptance_contract':new, 'agent_version':new['agent_version'], 'agent_release':new['release']}
     request['request_sha256'] = sha256_json(request)
     config.research_root.mkdir(parents=True,exist_ok=True)
     path = config.research_root/'experiment.request.json'
@@ -105,3 +105,17 @@ def test_no_second_revision_and_replay_conflicts(tmp_path,monkeypatch):
     with pytest.raises(ValueError,match='already amended'): apply(config,db,request,key='second')
     request['approval_reference']='changed'
     with pytest.raises(ValueError,match='idempotency conflict'): apply(config,db,request)
+
+
+def test_validation_cannot_use_different_agent_even_with_matching_contract(tmp_path,monkeypatch):
+    config,db,_,request=setup_amendment(tmp_path,monkeypatch)
+    path=config.research_root/'experiment.request.json'
+    body=json.loads(path.read_text())
+    body['agent_version']='1.17.0'
+    body.pop('request_sha256')
+    body['request_sha256']=sha256_json(body)
+    path.write_text(json.dumps(body))
+    with db.transaction() as con:
+        con.execute('UPDATE research_runs SET request_sha256=?',(body['request_sha256'],))
+    with pytest.raises(ValueError,match='contract mismatch'):
+        apply(config,db,request)
