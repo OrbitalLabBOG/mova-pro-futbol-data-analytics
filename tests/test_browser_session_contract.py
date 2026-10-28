@@ -58,7 +58,7 @@ def test_collection_waits_for_startup_redirect_before_auth_check_or_private_get(
     assert document_ready in collect
     assert collect.index(stable_route) < collect.index("auth_pending=")
     assert collect.index(document_ready) < collect.index("private-team-state.js")
-    assert "document.querySelector" not in collect
+    assert "document.querySelector" not in collect.split("capture_private()", 1)[0]
     assert "for attempt" not in collect
     assert "wait --load networkidle" not in collect
 

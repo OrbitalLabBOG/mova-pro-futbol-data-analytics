@@ -259,6 +259,18 @@ SQLite soportado dentro del contenedor. No abrir `ops.db` con el `sqlite3` del h
 La traza vive en `data/processed/trace.db`. Cada decisión guarda su huella
 (`fingerprint`), que permite comprobar si dos corridas decidieron lo mismo.
 
+### Cierre automático de una intervención manual verificada
+
+El scheduler también procesa recibos manuales v2 íntegros. El paquete resultante usa
+`mova-fpl-manual-closeout-v2`, `verified_execution_source=manual_verified` y
+`scheduler_save=false`: automatizar el cierre no convierte el montaje en autónomo.
+El seleccionado proviene de las quince posiciones y audit sellados; el comparador
+es el estado privado anterior identificado por el fingerprint auditado. No exige ni
+fabrica un candidato MILP coincidente. Conserva financiación, hashes y conciliación
+con picks/puntos oficiales. Las expectativas se atribuyen retrospectivamente desde
+un batch aprobado generado antes del deadline. No se registra un scorecard causal
+nuevo ni se incrementa `observed_closeouts` del contrato autónomo.
+
 ### Financiación y atribución del cierre autónomo v2
 
 Una entrega regular sin cambios puede cerrar desde un recibo

@@ -335,6 +335,12 @@ Compose necesita rutas host como `/etc/mova-fpl/alert-webhook.json`, mientras el
 rutas bajo `/run/secrets`. Invertir la precedencia puede convertir una ruta interna en la fuente de
 un bind mount y hacer fallar el collector antes de abrir Chromium.
 
+Ante un 403 privado, el collector permite una sola recarga GET de la pestaña
+persistente y espera controles de cancha o login antes de repetir una vez la lectura.
+La recuperación usa la sesión del sitio; no presenta credenciales, exporta cookies
+ni pulsa Save. Redirect a identidad, timeout o segundo 403 conservan el fallo y
+requieren diagnóstico. El presupuesto exterior de 120 s y los locks siguen vigentes.
+
 El collector reconoce un redirect a Premier League Account/Google como
 `FPL_AUTH_INTERACTION_REQUIRED`, no como prueba de cookies vencidas. El operador
 inspecciona la página y puede seleccionar una cuenta ya autenticada; contraseña,

@@ -207,8 +207,9 @@ def test_decision_builder_preserves_r3_effects_and_hit_cost(tmp_path: Path):
     assert result["ledger"]["settlement"]["hit_cost"] == 4
 
 
-def test_autonomous_closeout_package_uses_sealed_execution_and_causal_batch(
-    tmp_path: Path, monkeypatch,
+@pytest.mark.parametrize("candidate_present", [True, False])
+def test_manual_closeout_uses_verified_owner_evidence_without_claiming_autonomy(
+    tmp_path: Path, monkeypatch, candidate_present,
 ):
     _, documented = _package()
     config = RuntimeConfig(
@@ -349,7 +350,9 @@ def test_autonomous_closeout_package_uses_sealed_execution_and_causal_batch(
         db.append_audit(
             "manual_verified_execution_recorded", actor="test", cycle_id=cycle_id,
             job_id=job_id, subject_type="web_execution", subject_id="execution_auto",
-            payload={"transfers_in": [], "transfers_out": [], "hits": 0, "chip": None},
+            payload={"transfers_in": [], "transfers_out": [], "hits": 0, "chip": None,
+                     "decision_id": "decision_auto", "pre_fingerprint": team_fingerprint,
+                     "post_fingerprint": team_fingerprint},
             con=con,
         )
     db.add_team_state(
@@ -363,12 +366,17 @@ def test_autonomous_closeout_package_uses_sealed_execution_and_causal_batch(
                     "FROM team_state_snapshots WHERE cycle_id=? LIMIT 1) "
                     "WHERE manifest_id='manifest_auto'", (cycle_id,))
 
+    with db.transaction() as con:
+        con.execute("UPDATE decision_runs SET manifest_sha256=? WHERE decision_id='decision_auto'", (physical_sha,))
+        if not candidate_present:
+            con.execute("DELETE FROM decision_candidates")
+
     players = {}
     for scenario in (documented["selected"], documented["comparator"]):
         for row in scenario["players"]:
             players[int(row["element"])] = {
-                "element": int(row["element"]), "player_name": row["name"],
-                "team": row["team"], "position": row["position"],
+                "element": int(row["element"]), "player_name": "Full name " + row["name"],
+                "source_web_name": row["name"], "team": row["team"], "position": row["position"],
                 "xp": float(row["expected_points"]), "p_60": row["p60"],
                 "now_cost": int(float(row["price"]) * 10),
             }
@@ -389,10 +397,13 @@ def test_autonomous_closeout_package_uses_sealed_execution_and_causal_batch(
     monkeypatch.setattr("mova_fpl.ops.review.connect", lambda *a, **k: FakeConnection())
     path = GameweekReviewService(config, db)._autonomous_package(gw=1)
     package = load_closeout_package(path)
-    assert package["schema"] == "mova-fpl-autonomous-closeout-v2"
+    assert package["schema"] == "mova-fpl-manual-closeout-v2"
+    assert package["verified_execution_source"] == "manual_verified"
+    assert package["scheduler_save"] is False
+    assert package["intervention"]["payload"]["envelope_id"] is None
     assert package["intervention"]["payload"]["projection_batch_id"] == "projection_auto"
     assert package["selected"]["captain"] == documented["selected"]["captain"]
-    assert package["comparator"]["captain"] == selected["vice_captain"]
+    assert package["comparator"]["captain"] == selected["captain"]
     assert package["verified_team_state"]["bank_tenths"] == 5
     service = GameweekReviewService(config, db)
     service._verify_financing_artifacts(package)
@@ -401,6 +412,11 @@ def test_autonomous_closeout_package_uses_sealed_execution_and_causal_batch(
         get_rules(package["season"]).SQUAD)
     assert score["points"] == 50
     assert db.pending_autonomous_closeout_gws(documented["season"]) == [1]
+    # The historical record cannot be used after its physical proof changes.
+    evidence_path.write_text("tampered")
+    with pytest.raises(RuntimeError, match="evidencia de ejecución"):
+        service._autonomous_package(gw=1)
+
 
 
 def test_closeout_package_rejects_missing_mount_verification(tmp_path: Path):

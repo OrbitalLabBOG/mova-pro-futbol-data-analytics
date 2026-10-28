@@ -136,3 +136,15 @@ def test_manual_legacy_closeout_is_not_counted_as_financed_autonomous_evidence(t
     summary = db.autonomous_closeout_summary('2026-27')
     assert summary['observed_closeouts'] == 1
     assert summary['autonomy_promoted'] is False
+
+
+def test_financed_manual_closeout_never_counts_as_autonomous_delivery(tmp_path):
+    from mova_fpl.ops.db import OpsDB
+    db = OpsDB(tmp_path/'ops.db', enforce_version=False); db.migrate()
+    cycle = db.upsert_cycle('2026-27', 8, '2026-10-23T17:30:00Z', phase='settlement')
+    job, _ = db.start_job('gameweek_review', 'autonomous-closeout:2026-27:gw8:v1', 'corr', cycle_id=cycle)
+    db.finish_job(job, 'completed', metrics={'closeout_contract': 'mova-fpl-manual-closeout-v2',
+                                            'verified_execution_source': 'manual_verified'})
+    summary = db.autonomous_closeout_summary('2026-27')
+    assert summary['observed_closeouts'] == 0
+    assert summary['latest'] is None
