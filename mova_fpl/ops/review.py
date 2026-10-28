@@ -6,7 +6,7 @@ import hashlib
 import json
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from mova_fpl.analytics.closeout_financing import build_financing, digest
@@ -136,6 +136,13 @@ class GameweekReviewService:
             )
             if reused:
                 existing = self.db.get_job_by_key(idempotency_key) or {}
+                if existing.get("status") != "completed":
+                    raise RuntimeError(
+                        f"settlement previo {job_id} sigue {existing.get('status')}"
+                    )
+                settlement = self.db.gameweek_review_status(package["season"], int(package["gw"]))
+                if settlement["status"] != "closed":
+                    raise RuntimeError("job completado sin settlement durable")
                 if existing.get("status") == "completed":
                     self.db.resolve_incidents(
                         f"Settlement GW{package['gw']} falló",
@@ -236,6 +243,18 @@ class GameweekReviewService:
         La ruta falla cerrada si la ejecución verificada no reproduce exactamente un
         candidato del DecisionEnvelope o si falta el batch causal predeadline.
         """
+        # Keep failed jobs immutable; at most three attempts, five minutes apart.
+        base_key = idempotency_key
+        for attempt in range(1, 4):
+            idempotency_key = base_key if attempt == 1 else f"{base_key}:retry:{attempt}"
+            previous = self.db.get_job_by_key(idempotency_key)
+            if not previous or previous["status"] != "failed":
+                break
+            finished = datetime.fromisoformat(previous["finished_at"].replace("Z", "+00:00"))
+            if datetime.fromisoformat(utcnow()) - finished < timedelta(minutes=5):
+                raise RuntimeError("settlement en cooldown de recuperación (5 minutos)")
+        else:
+            raise RuntimeError("settlement agotó tres intentos; requiere corrección verificada")
         package_path = self._autonomous_package(gw=gw)
         return self.run(
             package_path=package_path, actor=actor, reason=reason,

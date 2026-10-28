@@ -7,6 +7,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
+from mova_fpl.data.closeout import load_closeout_package
 from mova_fpl.agent.attribution import Attribution
 from mova_fpl.engine.state import Decision, GwOutcome
 from mova_fpl.trace import TraceWriter
@@ -24,10 +25,7 @@ class ManualOverride:
 
 
 def _package(path: Path) -> dict:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    if payload.get("schema") != "mova-fpl-manual-closeout-v1":
-        raise ValueError("package de cierre inválido")
-    return payload
+    return load_closeout_package(path)
 
 
 def _decision(spec: dict, season: str, gw: int) -> Decision:
@@ -65,9 +63,13 @@ def export(package_path: Path, review_path: Path, trace_db: Path) -> dict:
     comparator_label = str(package["comparator"].get("label") or "package_comparator")
     run_id = package["trace_run_id"]
     writer = TraceWriter(trace_db)
-    writer.start_run(run_id, package["season"], "named", "human-reviewed", 3, 0, {
+    policy = ("human-reviewed" if "manual-closeout" in package["schema"]
+              else "autonomous-reviewed")
+    writer.start_run(run_id, package["season"], "named", policy, 3, 0, {
         "schema": package["schema"], "review": "retrospective", "causal_scorecard": False,
         "comparator_label": comparator_label, "intervention_author": author,
+        "verified_execution_source": package.get("verified_execution_source"),
+        "scheduler_save": package.get("scheduler_save", False),
     })
     writer.record_gw(run_id, selected, outcome, state="reconciled")
     writer.record_baselines(run_id, int(package["gw"]), {

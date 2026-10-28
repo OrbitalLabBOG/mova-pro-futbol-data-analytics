@@ -347,3 +347,14 @@ Lo que el motor deriva de ahí, todo con GET públicos:
 **Limitación declarada (H-LIVE-01):** el precio de *compra* solo lo da el endpoint
 autenticado, que no tocamos. Se asume el precio corriente, así que el presupuesto de venta
 queda algo sobreestimado para jugadores que subieron de precio.
+
+### Recuperación del export y reintentos de cierre (28/10/2026)
+
+El exportador de trace consume el mismo contrato validado que el cálculo:
+manual/autonomous v1 y v2. Conserva el origen manual y `scheduler_save=false`;
+liquidar automáticamente una ejecución manual no acredita un Save autónomo.
+El scheduler usa la revisión de cierre `v2`, conservando los jobs fallidos `v1`.
+Una corrida fallida puede recuperarse en hasta tres jobs independientes, con cinco
+minutos de espera entre intentos. No borra errores ni reinicia contadores. Un replay
+fallido, en ejecución o sin settlement durable no resuelve incidentes. Agotar los
+intentos exige diagnóstico y una corrección verificada.
