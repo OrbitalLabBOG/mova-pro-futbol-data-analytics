@@ -209,6 +209,7 @@ class GameweekReviewService:
                 "comparator_points": result["comparator_score"]["points"],
                 "causal_scorecard_created": False,
                 "closeout_contract": package["schema"],
+                "verified_execution_source": package.get("verified_execution_source"),
                 "financing_status": result["selected_score"].get("financing_status"),
             }
             if result.get("strategy_shadow"):
@@ -447,52 +448,72 @@ class GameweekReviewService:
                    and (source_type != "unchanged_delivery" or (
                        row["envelope_id"] == executed["receipt_envelope_id"]
                        and row["candidate_key"] == executed["receipt_candidate_key"]))]
-        if not matches:
-            raise RuntimeError(
-                "la ejecución verificada no corresponde inequívocamente a un candidato sellado"
-            )
-        matched = matches[0]
-        latest_matches = [row for row in matches
-                          if row["envelope_id"] == matched["envelope_id"]]
-        if len(latest_matches) != 1:
-            raise RuntimeError("fingerprint ambiguo dentro del DecisionEnvelope más reciente")
-        envelope_path = Path(str(matched["artifact_path"]))
-        if (not envelope_path.is_file()
-                or not envelope_path.resolve().is_relative_to(self.config.artifact_root.resolve())
-                or hashlib.sha256(envelope_path.read_bytes()).hexdigest()
-                != str(matched["artifact_sha256"])):
-            raise RuntimeError("DecisionEnvelope ausente, externo o alterado")
-        envelope = json.loads(envelope_path.read_text(encoding="utf-8"))
-        body = dict(envelope)
-        content_sha = str(body.pop("content_sha256", ""))
-        envelope_id = str(body.pop("envelope_id", ""))
-        if (envelope_id != str(matched["envelope_id"])
-                or content_sha != str(matched["content_sha256"])
-                or sha256_json(body) != content_sha):
-            raise RuntimeError("contenido del DecisionEnvelope no reproduce su hash")
-        by_key = {str(row["candidate_key"]): row for row in envelope["candidates"]}
-        selected_row = by_key.get(str(matched["candidate_key"]))
-        if not selected_row:
-            raise RuntimeError("candidato ejecutado ausente del DecisionEnvelope físico")
-        selected = dict(selected_row["decision"])
-        stored_selected = json.loads(str(matched["decision_json"]))
-        if sha256_json(selected) != sha256_json(stored_selected):
-            raise RuntimeError("candidato persistido difiere del DecisionEnvelope físico")
-        comparator_row = by_key.get("do_nothing")
-        if not comparator_row:
-            raise RuntimeError("DecisionEnvelope sin comparador do_nothing")
-        comparator = dict(comparator_row["decision"])
-        if (decision_fingerprint(selected) != executed_decision_fingerprint
-                or decision_fingerprint(comparator) != str(comparator.get("fingerprint"))):
-            raise RuntimeError("fingerprint de candidato no reproduce el envelope")
+        manual = source_type == "web_execution"
+        if manual:
+            from mova_fpl.ops.manual_delivery import receipt
+            manual_receipt = receipt(self.config, self.db, cycle_id)
+            if not manual_receipt or manual_receipt["execution_id"] != executed["execution_id"]:
+                raise RuntimeError("recibo manual íntegro requerido para cierre atribuido")
+            # The owner decision is a separate authority, never a fabricated MILP candidate.
+            envelope_path = Path(str(executed["artifact_path"]))
+            matched = {"envelope_id": None}
+            selected = dict(executed_decision)
+            selected_row = {"label": "Equipo manual verificado"}
+            comparator_row = {"label": "Estado anterior a la intervención manual"}
+            with self.db.connect(readonly=True) as con:
+                pre_state = con.execute(
+                    "SELECT * FROM team_state_snapshots WHERE cycle_id=? AND fingerprint=? "
+                    "AND quality_status='valid' AND observed_at<=? "
+                    "ORDER BY observed_at DESC LIMIT 1",
+                    (cycle_id, audit_payload.get("pre_fingerprint"), executed["started_at"]),
+                ).fetchone()
+        else:
+            if not matches:
+                raise RuntimeError(
+                    "la ejecución verificada no corresponde inequívocamente a un candidato sellado"
+                )
+            matched = matches[0]
+            latest_matches = [row for row in matches
+                              if row["envelope_id"] == matched["envelope_id"]]
+            if len(latest_matches) != 1:
+                raise RuntimeError("fingerprint ambiguo dentro del DecisionEnvelope más reciente")
+            envelope_path = Path(str(matched["artifact_path"]))
+            if (not envelope_path.is_file()
+                    or not envelope_path.resolve().is_relative_to(self.config.artifact_root.resolve())
+                    or hashlib.sha256(envelope_path.read_bytes()).hexdigest()
+                    != str(matched["artifact_sha256"])):
+                raise RuntimeError("DecisionEnvelope ausente, externo o alterado")
+            envelope = json.loads(envelope_path.read_text(encoding="utf-8"))
+            body = dict(envelope)
+            content_sha = str(body.pop("content_sha256", ""))
+            envelope_id = str(body.pop("envelope_id", ""))
+            if (envelope_id != str(matched["envelope_id"])
+                    or content_sha != str(matched["content_sha256"])
+                    or sha256_json(body) != content_sha):
+                raise RuntimeError("contenido del DecisionEnvelope no reproduce su hash")
+            by_key = {str(row["candidate_key"]): row for row in envelope["candidates"]}
+            selected_row = by_key.get(str(matched["candidate_key"]))
+            if not selected_row:
+                raise RuntimeError("candidato ejecutado ausente del DecisionEnvelope físico")
+            selected = dict(selected_row["decision"])
+            stored_selected = json.loads(str(matched["decision_json"]))
+            if sha256_json(selected) != sha256_json(stored_selected):
+                raise RuntimeError("candidato persistido difiere del DecisionEnvelope físico")
+            comparator_row = by_key.get("do_nothing")
+            if not comparator_row:
+                raise RuntimeError("DecisionEnvelope sin comparador do_nothing")
+            comparator = dict(comparator_row["decision"])
+            if (decision_fingerprint(selected) != executed_decision_fingerprint
+                    or decision_fingerprint(comparator) != str(comparator.get("fingerprint"))):
+                raise RuntimeError("fingerprint de candidato no reproduce el envelope")
 
-        with self.db.connect(readonly=True) as con:
-            pre_state = con.execute(
-                """SELECT t.* FROM cycle_manifests m JOIN team_state_snapshots t
-                ON t.team_state_id=m.team_state_id WHERE m.manifest_id=?
-                AND t.cycle_id=? AND t.quality_status='valid'""",
-                (matched["manifest_id"], cycle_id),
-            ).fetchone()
+            with self.db.connect(readonly=True) as con:
+                pre_state = con.execute(
+                    """SELECT t.* FROM cycle_manifests m JOIN team_state_snapshots t
+                    ON t.team_state_id=m.team_state_id WHERE m.manifest_id=?
+                    AND t.cycle_id=? AND t.quality_status='valid'""",
+                    (matched["manifest_id"], cycle_id),
+                ).fetchone()
         if (not pre_state or
                 datetime.fromisoformat(str(pre_state["observed_at"]).replace("Z", "+00:00")) >
                 datetime.fromisoformat(str(executed["started_at"]).replace("Z", "+00:00"))):
@@ -508,14 +529,28 @@ class GameweekReviewService:
         if before_manifest["quality"]["fingerprint"] != str(pre_state["fingerprint"]):
             raise RuntimeError("team-state inicial no reproduce su ledger")
 
+        if manual:
+            picks = sorted(before["picks"], key=lambda row: int(row["position"]))
+            comparator = {
+                "season": self.config.season, "gw": int(gw),
+                "squad_15": [int(r["element"]) for r in picks],
+                "starters": [int(r["element"]) for r in picks[:11]],
+                "bench_order": [int(r["element"]) for r in picks[11:]],
+                "captain": next(int(r["element"]) for r in picks if r["is_captain"]),
+                "vice_captain": next(int(r["element"]) for r in picks if r["is_vice_captain"]),
+                "transfers_in": [], "transfers_out": [], "hits": 0,
+                "chip": before.get("active_chip"),
+            }
+
         deadline = str(cycle["deadline_at"])
         required = sorted({int(value) for value in selected["squad_15"]}
                           | {int(value) for value in comparator["squad_15"]})
         with connect(self.config, autocommit=True) as con:
             batches = con.execute(
                 """select * from analytics.model_projection_batches
-                where season=%s and target_gw=%s and status='approved' and cutoff_at<=%s
-                order by generated_at desc""", (self.config.season, int(gw), deadline),
+                where season=%s and target_gw=%s and status='approved'
+                and cutoff_at<=%s and generated_at<=%s
+                order by generated_at desc""", (self.config.season, int(gw), deadline, deadline),
             ).fetchall()
             projection_rows = None
             batch = None
@@ -535,6 +570,20 @@ class GameweekReviewService:
         if not batch or projection_rows is None:
             raise RuntimeError("sin batch approved predeadline que cubra ambos escenarios")
         projections = {int(row["element"]): row for row in projection_rows}
+        if manual:
+            for decision, state, policy in (
+                (selected, normalized_team_state, "verified-owner-decision"),
+                (comparator, before, "pre-owner-do-nothing"),
+            ):
+                decision["bank_after"] = int(state["transfers"]["bank"]) / 10
+                decision["total_cost"] = sum(int(projections[e]["now_cost"])
+                                             for e in decision["squad_15"]) / 10
+                # Retrospective attribution from an immutable predeadline batch;
+                # not a claim that these expectations drove the owner's decision.
+                scoring = decision["squad_15"] if decision.get("chip") in {"bboost", "bench_boost"} else decision["starters"]
+                captain_extra = 2 if decision.get("chip") in {"3xc", "triple_captain"} else 1
+                decision["expected_points"] = sum(float(projections[e]["xp"]) for e in scoring) + captain_extra * float(projections[decision["captain"]]["xp"])
+                decision["policy"] = policy
 
         def scenario(decision: dict, *, label: str) -> dict:
             starters = {int(value) for value in decision["starters"]}
@@ -592,7 +641,7 @@ class GameweekReviewService:
             **financing_inputs, decision=build_decision(comparator_spec, self.config.season, int(gw)),
         )
         package = {
-            "schema": "mova-fpl-autonomous-closeout-v2",
+            "schema": "mova-fpl-manual-closeout-v2" if manual else "mova-fpl-autonomous-closeout-v2",
             "season": self.config.season, "gw": int(gw), "entry_id": self.config.team_id,
             "deadline_at": deadline, "reviewed_at": utcnow(),
             "mounted_at": str(executed["finished_at"]),
@@ -600,7 +649,9 @@ class GameweekReviewService:
             "decision_acta_path": str(envelope_path),
             "mount_evidence_path": str(evidence_path),
             "mount_evidence_sha256": str(executed["evidence_sha256"]),
-            "verified_execution_source": source_type,
+            "verified_execution_source": "manual_verified" if manual else source_type,
+            "scheduler_save": source_type == "execution_attempt",
+            "expectation_attribution": "retrospective_predeadline_batch" if manual else "sealed_candidate",
             "chip_inventory": json.loads(strategy["inventory_json"]) if strategy else [],
             "verified_team_state": dict(verified_team_state),
             "selected": selected_spec, "comparator": comparator_spec,

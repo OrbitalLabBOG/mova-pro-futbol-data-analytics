@@ -8,6 +8,14 @@ tags: [mova, fpl, runtime, operations]
 
 # MOVA Fantasy Fútbol Data Analytics
 
+## Recuperación de sesión y cierre atribuido — 28 de octubre
+
+La corrección en desarrollo incorpora una recarga acotada de la sesión FPL tras un
+403 privado y cierre automático con atribución manual para recibos verificados que
+no coinciden con una propuesta MILP. El contrato manual financiado no acredita Save
+ni cierre autónomo. La autoridad conserva A2 y los límites de `lineup-v1`.
+Consultar controles y revisión desplegados; este apartado no prueba el rollout.
+
 ## Continuidad semanal — 23 de octubre
 
 El [ADR-019](docs/specs/fpl-autonomous-operator/decisions/ADR-019-weekly-continuity-campaign-acceptance.md)

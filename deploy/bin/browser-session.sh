@@ -119,9 +119,41 @@ case "$action" in
     "${compose[@]}" exec -T browser \
       agent-browser --session mova-fpl --cdp "$cdp_port" \
       wait --fn "location.origin === 'https://fantasy.premierleague.com'" >/dev/null
-    "${compose[@]}" exec -T browser sh -c \
-      "sed 's/__MOVA_TEAM_ID__/$team_id/' /opt/mova/private-team-state.js | \
-       agent-browser --session mova-fpl --cdp '$cdp_port' eval --stdin"
+    capture_private() {
+      "${compose[@]}" exec -T browser sh -c \
+        "sed 's/__MOVA_TEAM_ID__/$team_id/' /opt/mova/private-team-state.js | \
+         agent-browser --session mova-fpl --cdp '$cdp_port' eval --stdin"
+    }
+    # A long-lived SPA can retain stale authentication while the protected
+    # browser profile still has a valid SSO session. One read-only reload lets
+    # the site's own session lifecycle recover. No login submission or token copying.
+    capture_error=$(mktemp)
+    if capture_private 2>"$capture_error"; then
+      rm -f "$capture_error"
+    else
+      capture_status=$?
+      if grep -q 'Error: FPL_AUTH_REQUIRED' "$capture_error"; then
+        rm -f "$capture_error"
+        echo 'FPL_SESSION_REFRESH: one read-only reload after private API 403' >&2
+        "${compose[@]}" exec -T browser \
+          agent-browser --session mova-fpl --cdp "$cdp_port" reload >/dev/null
+        "${compose[@]}" exec -T browser \
+          agent-browser --session mova-fpl --cdp "$cdp_port" wait --fn \
+          "location.origin !== 'https://fantasy.premierleague.com' || !!document.querySelector('button[data-pitch-element=true]') || [...document.querySelectorAll('a,button')].some(e => /^(sign in|log in)$/i.test(e.textContent.trim()))" >/dev/null
+        refreshed_origin=$("${compose[@]}" exec -T browser \
+          agent-browser --session mova-fpl --cdp "$cdp_port" eval \
+          "location.origin === 'https://fantasy.premierleague.com'")
+        if [[ "$refreshed_origin" != "true" ]]; then
+          echo 'FPL_AUTH_INTERACTION_REQUIRED: session refresh needs human login' >&2
+          exit 78
+        fi
+        capture_private
+      else
+        cat "$capture_error" >&2
+        rm -f "$capture_error"
+        exit "$capture_status"
+      fi
+    fi
     ;;
   probe)
     team_id=${MOVA_TEAM_ID:-3609854}

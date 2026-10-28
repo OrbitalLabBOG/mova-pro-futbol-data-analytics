@@ -21,6 +21,7 @@ def load_closeout_package(path: Path) -> dict:
     payload = json.loads(path.read_text(encoding="utf-8"))
     accepted = {
         "mova-fpl-manual-closeout-v1",
+        "mova-fpl-manual-closeout-v2",
         "mova-fpl-autonomous-closeout-v1",
         "mova-fpl-autonomous-closeout-v2",
     }
@@ -35,7 +36,7 @@ def load_closeout_package(path: Path) -> dict:
         if key not in payload:
             raise ValueError(f"package de cierre sin {key}")
     verification = payload["mount_verification"]
-    if payload["schema"] == "mova-fpl-autonomous-closeout-v2":
+    if payload["schema"] in {"mova-fpl-autonomous-closeout-v2", "mova-fpl-manual-closeout-v2"}:
         for name in ("selected", "comparator"):
             if not payload[name].get("financing"):
                 raise ValueError(f"{name} sin financiación sellada")
