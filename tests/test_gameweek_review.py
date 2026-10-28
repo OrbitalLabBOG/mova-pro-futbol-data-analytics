@@ -375,8 +375,8 @@ def test_manual_closeout_uses_verified_owner_evidence_without_claiming_autonomy(
     for scenario in (documented["selected"], documented["comparator"]):
         for row in scenario["players"]:
             players[int(row["element"])] = {
-                "element": int(row["element"]), "player_name": row["name"],
-                "team": row["team"], "position": row["position"],
+                "element": int(row["element"]), "player_name": "Full name " + row["name"],
+                "source_web_name": row["name"], "team": row["team"], "position": row["position"],
                 "xp": float(row["expected_points"]), "p_60": row["p60"],
                 "now_cost": int(float(row["price"]) * 10),
             }

@@ -556,7 +556,7 @@ class GameweekReviewService:
             batch = None
             for candidate_batch in batches:
                 rows = con.execute(
-                    """select p.*,o.now_cost from analytics.player_projections p
+                    """select p.*,o.now_cost,o.web_name AS source_web_name from analytics.player_projections p
                     left join analytics.fpl_player_observations o
                       on o.artifact_id=%s and o.element=p.element
                     where p.batch_id=%s and p.element=any(%s) order by p.element""",
@@ -594,7 +594,7 @@ class GameweekReviewService:
             for element in order:
                 row = projections[element]
                 players.append({
-                    "element": element, "name": row["player_name"], "team": row["team"],
+                    "element": element, "name": row.get("source_web_name") or row["player_name"], "team": row["team"],
                     "position": row["position"], "price": float(row["now_cost"]) / 10,
                     "role": "starter" if element in starters else "bench",
                     "expected_points": float(row["xp"]),
