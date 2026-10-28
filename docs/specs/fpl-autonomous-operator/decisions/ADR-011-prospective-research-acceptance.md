@@ -92,3 +92,26 @@ Se obtiene una ruta futura evaluable sin borrar la calidad histórica del
 sistema. No se acelera el calendario ni se sustituye la prueba de utilidad
 causal o ejecución browser. La promoción conserva compliance y autoridad
 explícitos después de los gates aplicables.
+
+## Excepción prospectiva aprobada el 28 de octubre de 2026
+
+Julián autorizó expresamente «Autorizar enmienda prospectiva auditada» en el chat
+operador para reparar research y el límite de tokens sin perder GW10–12.
+Esta excepción permite una sola enmienda de campaña v2 antes de la apertura de
+cualquier ventana y antes de cualquier corrida, incluso experimental, en sus GWs.
+No es una regla general de reemplazo de cohortes ni permite corregir resultados.
+
+`strategy acceptance amend --file ... --actor ... --reason ... --idempotency-key ...`
+conserva la fila original y agrega un registro inmutable con hash original, contrato
+nuevo, aprobación y experimento independiente de validación. La implementación
+admite únicamente Researcher 1.17 → 1.18 con aviso de cierre al 50% del límite;
+model/effort, cuotas, hard stop, calidad, selección, ventanas y jornadas permanecen.
+Exige experimento completed del mismo código/routing, consumo exacto bajo el límite
+y ningún intento fallido. Rechaza segunda enmienda, ventana abierta, corrida previa,
+cambio de criterios y conflictos de idempotencia.
+
+El reporte conserva `manifest_sha256` original y expone `amendment` con hash efectivo,
+actor, razón, aprobación y corrida probatoria. Evalúa los resultados futuros bajo el
+contrato efectivo; conserva la totalidad del historial anterior. Un rollback a código
+anterior no borra esta revisión y requiere volver a verificar el contrato antes de
+permitir nuevas inferencias de la cohorte.

@@ -30,7 +30,7 @@ def current_contract(config, *, campaign=False) -> dict:
     assets = json.loads(Path(__file__).with_name("research_acceptance_assets.json").read_text())
     sources = ("strategy.py", "research_evidence.py", "research_quality.py",
                "research_acceptance.py", "agent_releases.json", "agent_attempts.py",
-               "db.py", "schema.py", "schedule.py", "research_continuation.py", "research_campaign.py")
+               "db.py", "schema.py", "schedule.py", "research_amendment.py", "research_continuation.py", "research_campaign.py")
     implementation = {name: hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest()
                       for name in sources}
     contract = {"agent_version": version, "release": release,
@@ -142,7 +142,12 @@ def acceptance_report(db, config=None) -> dict:
             manifest = json.loads(row["manifest_json"])
             if manifest['schema'] == 'mova-research-acceptance-manifest-v2':
                 from mova_fpl.ops.research_campaign_acceptance import cohort_report
-                cohorts.append(cohort_report(db, config, dict(row), manifest, now=now))
+                from mova_fpl.ops.research_amendment import effective_manifest
+                manifest, revision = effective_manifest(con, dict(row))
+                report = cohort_report(db, config, dict(row), manifest, now=now)
+                if revision:
+                    report['amendment'] = revision
+                cohorts.append(report)
                 continue
             slots = []
             drift = config is None or manifest["contract"] != current_contract(config)

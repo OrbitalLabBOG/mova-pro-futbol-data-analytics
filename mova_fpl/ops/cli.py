@@ -207,7 +207,7 @@ def parser() -> argparse.ArgumentParser:
     plan.add_argument("--actor", required=True)
     plan.add_argument("--reason", required=True)
     acceptance = strategy_commands.add_parser("acceptance", help="cohorte prospectiva ADR-011")
-    acceptance.add_argument("operation", choices=("contract", "register", "status"))
+    acceptance.add_argument("operation", choices=("contract", "register", "amend", "status"))
     acceptance.add_argument("--file")
     acceptance.add_argument("--actor")
     acceptance.add_argument("--reason")
@@ -737,6 +737,12 @@ def main(argv: list[str] | None = None) -> int:
             db.migrate()
             if args.operation == "contract":
                 payload = current_contract(config, campaign=args.campaign)
+            elif args.operation == "amend":
+                from mova_fpl.ops.research_amendment import amend_cohort
+                if not args.file:
+                    raise ValueError("acceptance amend exige --file")
+                payload = amend_cohort(db, config, json.loads(Path(args.file).read_text()),
+                    actor=args.actor, reason=args.reason, idempotency_key=args.idempotency_key)
             elif args.operation == "register":
                 if not args.file:
                     raise ValueError("acceptance register exige --file")
