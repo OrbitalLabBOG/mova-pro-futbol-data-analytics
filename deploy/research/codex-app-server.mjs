@@ -3,7 +3,7 @@ import {spawn} from 'node:child_process';
 import {createInterface} from 'node:readline';
 
 export async function runMeteredTurn({command='codex', args=[], prompt, model, effort,
-    schema, config={}, cwd='/tmp/mova-research', tokenLimit=80000, timeoutMs=240000, preflightOnly=false, requiredTools=[], onEvent=()=>{}}) {
+    schema, closeAtFraction=null, config={}, cwd='/tmp/mova-research', tokenLimit=80000, timeoutMs=240000, preflightOnly=false, requiredTools=[], onEvent=()=>{}}) {
   const child=spawn(command,['app-server',...args],{cwd,
     stdio:['pipe','pipe','pipe'],detached:true});
   const pending=new Map();
@@ -12,6 +12,7 @@ export async function runMeteredTurn({command='codex', args=[], prompt, model, e
     pending.clear();
   };
   let nextId=1; let threadId,turnId; let inferenceDispatched=false;
+  let closingRequested=false, completed=false;
   let usage=null, finalText='', stopped=false, failure=null, doneResolve;
   const done=new Promise(resolve=>{doneResolve=resolve;});
   let eventBytes=0;
@@ -57,12 +58,33 @@ export async function runMeteredTurn({command='codex', args=[], prompt, model, e
         usage={input_tokens:total.inputTokens,output_tokens:total.outputTokens,
           cached_input_tokens:total.cachedInputTokens};
         emit({type:'meter.usage',usage});
-        if(usage.input_tokens+usage.output_tokens>=tokenLimit)stop('logical_token_guard');
+        const consumed=usage.input_tokens+usage.output_tokens;
+        if(consumed>=tokenLimit)stop('logical_token_guard');
+        else if(closeAtFraction===0.5 && !closingRequested && !stopped && consumed>=Math.floor(tokenLimit*closeAtFraction)){
+          closingRequested=true;
+          // Defer until turn/start's response has populated its identity.
+          setImmediate(()=>{
+            if(stopped || completed)return;
+            if(!threadId || !turnId){stop('budget_close_identity_missing');return;}
+            emit({type:'meter.close_requested',observed_usage:usage,token_limit:tokenLimit});
+            request('turn/steer',{threadId,expectedTurnId:turnId,input:[{
+              type:'text',text_elements:[],text:
+              'Presupuesto de esta corrida: se consumió al menos el 50% del límite total, incluido contexto reutilizado. '
+              +'Cierra ahora con el JSON del esquema requerido. No inicies búsquedas ni lecturas nuevas. '
+              +'Conserva solamente evidencia ya verificada; marca el resto not_checked y registra pendientes para la continuación. '
+              +'No inventes cobertura, fuentes, fechas ni finalización. El límite duro y los criterios de calidad no cambian.'
+            }]}).then(result=>{
+              if(completed || stopped)return;
+              if(result.turnId!==turnId)stop('budget_close_turn_mismatch');
+              else emit({type:'meter.close_acknowledged'});
+            }).catch(()=>{if(!stopped && !completed)stop('budget_close_failed');});
+          });
+        }
       }
     }
     if(event.method==='item/completed' && p.item?.type==='agentMessage'
         && p.item.phase!=='commentary') finalText=p.item.text||finalText;
-    if(event.method==='turn/completed')doneResolve(p.turn||{status:'failed'});
+    if(event.method==='turn/completed'){completed=true;doneResolve(p.turn||{status:'failed'});}
   });
   // Drain stderr without persisting arbitrary credential/provider diagnostics.
   child.stderr.on('data',()=>{});

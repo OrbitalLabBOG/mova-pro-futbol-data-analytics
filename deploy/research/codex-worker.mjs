@@ -412,6 +412,7 @@ try {
       requiredTools: ["verify_research_evidence", "search_research_web", "read_research_source", "research_context"],
       prompt, model, effort: reasoningEffort, schema: JSON.parse(readFileSync(outputSchema, "utf8")),
       tokenLimit: Math.min(release.logical_token_guard, request.guardrails.agent_budget.job_tokens),
+      closeAtFraction: release.budget_close_fraction ?? null,
       timeoutMs: Math.min(release.execution_timeout_ms || 240000, Number(process.env.MOVA_RESEARCH_TIMEOUT_MS || 480000)),
       args: ["--disable", "shell_tool", "--disable", "computer_use", "--disable", "browser_use",
              "--disable", "apps", "--disable", "multi_agent", "--disable", "plugins"],

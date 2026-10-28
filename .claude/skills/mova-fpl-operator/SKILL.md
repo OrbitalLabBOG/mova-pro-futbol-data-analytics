@@ -357,3 +357,13 @@ cierra GW ni satisface cierre/evaluación final. No repetir el mismo plan ni ope
 tras ambigüedad; el siguiente ajuste requiere estado/solve/preflight nuevos. La
 petición expresa de Julián del22/10 autoriza implementar y activar esta política,
 no una cuota mayor ni otra autoridad. Sin ese control continúa la ventana antigua.
+
+### Excepción de presupuesto aprobada el 28/10/2026
+
+ADR-011 contiene la excepción explícita del owner para una única enmienda
+prospectiva de GW10–12 por el paso Researcher 1.17 → 1.18. Usar únicamente
+`strategy acceptance amend` con manifiesto original, contrato vigente, aprobación
+y experimento independiente completed/exacto. Nunca modificar la fila original.
+El comando bloquea ventanas abiertas, cualquier corrida previa, cuotas/criterios
+alterados y segundas enmiendas. Leer `active.amendment` además del hash original;
+esta excepción no autoriza otras cohortes, A3, transferencias ni chips.
