@@ -411,6 +411,21 @@ def test_manual_closeout_uses_verified_owner_evidence_without_claiming_autonomy(
         package["selected"], package["season"], 1), _official(documented),
         get_rules(package["season"]).SQUAD)
     assert score["points"] == 50
+    # Exercise the real export boundary for both financed v2 schemas; previously
+    # the isolated calculator passed while the subprocess rejected the package.
+    for schema in ("mova-fpl-manual-closeout-v2", "mova-fpl-autonomous-closeout-v2"):
+        export_package = dict(package, schema=schema)
+        export_path = tmp_path / f"{schema}.json"
+        export_path.write_text(json.dumps(export_package))
+        review = service._build(export_package, _official(documented), export_path,
+                                "job_export", cycle_id, "corr_export", "test",
+                                "verify exporter", "export:v2")
+        trace = tmp_path / f"{schema}.db"
+        assert export_trace(export_path, Path(review["ledger"]["review"]["artifact_path"]), trace)["points"] == 50
+        import sqlite3
+        with sqlite3.connect(trace) as con:
+            policy = con.execute("SELECT policy FROM agent_runs").fetchone()[0]
+        assert policy == ("human-reviewed" if "manual" in schema else "autonomous-reviewed")
     assert db.pending_autonomous_closeout_gws(documented["season"]) == [1]
     # The historical record cannot be used after its physical proof changes.
     evidence_path.write_text("tampered")
@@ -504,6 +519,10 @@ def test_successful_closeout_replay_resolves_prior_failure_incident(tmp_path: Pa
     )
     key = "gw1:recovered-closeout"
     job_id, _ = db.start_job("gameweek_review", key, "corr_recovered", cycle_id=cycle_id)
+    ledger = GameweekReviewService(config, db)._build(
+        package, _official(package), path, job_id, cycle_id, "corr_recovered",
+        "test", "recover", key)["ledger"]
+    db.record_gameweek_closeout(ledger)
     db.finish_job(job_id, "completed")
     db.open_incident_once("P2", "Settlement GW1 falló")
 
@@ -1057,3 +1076,45 @@ def test_causal_policy_blocks_are_not_optimizer_defects(tmp_path):
     context['failed_validation_check_codes'].append('SELECTED_DECISION_LEGAL')
     findings = service.classify(source, {'drift_status': 'ok'}, context)
     assert any(f['code'] == 'DECISION_LEGALITY_FAILURES' and f['actionable'] for f in findings)
+
+
+@pytest.mark.parametrize("state", ["failed", "running", "completed"])
+def test_closeout_replay_cannot_hide_missing_settlement(tmp_path, state):
+    path, package = _package()
+    config = RuntimeConfig(artifact_root=tmp_path / "artifacts", lock_path=tmp_path / "lock")
+    db = OpsDB(tmp_path / "ops.db", enforce_version=False)
+    db.migrate()
+    job, _ = db.start_job("gameweek_review", "replay", "corr")
+    if state != "running":
+        db.finish_job(job, state)
+    with pytest.raises(RuntimeError, match="settlement"):
+        GameweekReviewService(config, db).run(package_path=path, actor="test",
+            reason="verify replay", idempotency_key="replay")
+    assert db.get_job_by_key("replay")["status"] == state
+
+
+def test_autonomous_closeout_retries_preserve_failures_and_are_bounded(tmp_path, monkeypatch):
+    from datetime import datetime, timedelta, timezone
+    db = OpsDB(tmp_path / "ops.db", enforce_version=False)
+    db.migrate()
+    service = GameweekReviewService(RuntimeConfig(), db)
+    monkeypatch.setattr(service, "_autonomous_package", lambda **kw: Path("sealed.json"))
+    observed = []
+    monkeypatch.setattr(service, "run", lambda **kw: observed.append(kw["idempotency_key"]) or {"status": "completed"})
+    args = dict(gw=1, actor="test", reason="recover", idempotency_key="closeout:v2")
+    now = datetime.now(timezone.utc)
+    monkeypatch.setattr("mova_fpl.ops.review.utcnow", lambda: now.isoformat())
+    monkeypatch.setattr("mova_fpl.ops.db.utcnow", lambda: now.isoformat())
+    for attempt in range(1, 4):
+        service.run_autonomous(**args)
+        key = "closeout:v2" if attempt == 1 else f"closeout:v2:retry:{attempt}"
+        assert observed[-1] == key
+        job, _ = db.start_job("gameweek_review", key, "corr")
+        db.finish_job(job, "failed", error_code="OriginalFailure", error_detail="preserved")
+        with pytest.raises(RuntimeError, match="cooldown"):
+            service.run_autonomous(**args)
+        now += timedelta(minutes=10)
+        assert db.get_job_by_key(key)["error_detail"] == "preserved"
+
+    with pytest.raises(RuntimeError, match="agotó tres"):
+        service.run_autonomous(**args)

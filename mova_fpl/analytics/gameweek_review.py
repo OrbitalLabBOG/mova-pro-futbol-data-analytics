@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from mova_fpl.data.closeout import load_closeout_package
 from mova_fpl.engine.evaluate import collapse_results, score_decision
 from mova_fpl.engine.state import Decision
 from mova_fpl.rules import get as get_rules
@@ -15,37 +16,6 @@ from mova_fpl.rules.base import Position, Squad, SquadPlayer
 from mova_fpl.rules.squad import is_valid_formation, validate_squad
 from mova_fpl.rules.chips import effect
 from mova_fpl.analytics.closeout_financing import tenths, validate_financing
-
-
-def load_closeout_package(path: Path) -> dict:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    accepted = {
-        "mova-fpl-manual-closeout-v1",
-        "mova-fpl-manual-closeout-v2",
-        "mova-fpl-autonomous-closeout-v1",
-        "mova-fpl-autonomous-closeout-v2",
-    }
-    if payload.get("schema") not in accepted:
-        raise ValueError("package de cierre no cumple un contrato soportado")
-    for key in (
-        "season", "gw", "deadline_at", "entry_id", "reviewed_at", "mounted_at",
-        "trace_run_id", "decision_acta_path", "mount_evidence_path",
-        "mount_evidence_sha256", "chip_inventory", "selected", "comparator",
-        "intervention", "mount_verification", "proposals",
-    ):
-        if key not in payload:
-            raise ValueError(f"package de cierre sin {key}")
-    verification = payload["mount_verification"]
-    if payload["schema"] in {"mova-fpl-autonomous-closeout-v2", "mova-fpl-manual-closeout-v2"}:
-        for name in ("selected", "comparator"):
-            if not payload[name].get("financing"):
-                raise ValueError(f"{name} sin financiación sellada")
-    if not isinstance(verification, dict):
-        raise ValueError("mount_verification debe ser un objeto")
-    for key in ("squad", "xi", "captain", "vice_captain", "bench_order", "budget", "no_chip"):
-        if key not in verification:
-            raise ValueError(f"mount_verification sin {key}")
-    return payload
 
 
 def build_decision(spec: dict, season: str, gw: int) -> Decision:

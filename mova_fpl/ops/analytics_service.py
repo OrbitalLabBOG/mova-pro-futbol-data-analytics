@@ -103,9 +103,12 @@ class AnalyticsService:
                                 gw=gw, actor="mova-analytics",
                                 reason="closeout automático posterior a settlement oficial",
                                 idempotency_key=(
-                                    f"autonomous-closeout:{self.config.season}:gw{gw}:v1"
+                                    f"autonomous-closeout:{self.config.season}:gw{gw}:v2"
                                 ),
                             )
+                            if (closeout.get("status") not in {"completed", "reused"}
+                                    or self.db.gameweek_review_status(self.config.season, gw)["status"] != "closed"):
+                                raise RuntimeError("closeout sin settlement durable")
                             self.db.resolve_incidents(
                                 f"Closeout automático GW{gw} falló",
                                 resolution=(
