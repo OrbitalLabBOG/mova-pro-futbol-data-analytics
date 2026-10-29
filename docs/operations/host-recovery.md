@@ -144,3 +144,15 @@ registró respuestas 200 alrededor del evento y la ejecución programada de 05:0
 pasó, seguida del cierre automático por watchdog. La corrección reduce falsos
 bloqueos transitorios y permite diagnosticar recurrencias; no garantiza que el API
 nunca falle ni oculta fallos persistentes.
+
+Instalación verificada a las 05:16 UTC del 29/10: monitor fuente `ec295513b0557b7d9c3e8762c232d8f9c42b33ef`
+en `/opt/orbital/monitors/mova-dr/ec295513b0557b7d9c3e8762c232d8f9c42b33ef/`,
+con drop-in `95-api-probe-retry.conf`. `installation.json` conserva actor, razón,
+clave idempotente, hashes y rollback. El reporte DR pasó sus seis checks y
+registró `/readyz` en 2.920 ms, primer intento. Motor/checkout permanecieron en
+`799a2220ddb92f8342faeb09380f6c951b6b3f14`; no se recrearon contenedores.
+Los manifiestos original `1f185e5f1d76628176c8dc245a0bbc5fe56e6be4778e6d33ca15f08866605055`
+y efectivo `49ea592df53140e5305d57b093d09614c76a83d9bbcd3eecb45a4427f6626f2f`
+de GW10–12 coincidieron antes/después, sin corridas nuevas. Suite local con
+`requirements/test.lock`: 2.321 passed, 1 skipped, 79 deselected. La ejecución
+manual del monitor valida el despliegue; no cuenta como recuperación autónoma.
