@@ -7,6 +7,7 @@ import json
 import re
 import shutil
 import subprocess
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -20,6 +21,47 @@ def run(args, timeout=30):
     if p.returncode:
         raise ValueError('command_failed')  # stderr may contain credentials
     return p.stdout.strip()
+
+
+class ApiProbeError(ValueError):
+    def __init__(self, attempts):
+        super().__init__('api_probe_failed')
+        self.detail = {'attempts': attempts}
+
+
+def api_ready():
+    """Bounded transport retries; never retry or accept a bad readiness response."""
+    attempts = []
+    for number in range(1, 4):
+        started = time.monotonic()
+        try:
+            result = subprocess.run(
+                ['curl', '--noproxy', '*', '-fsS', '--connect-timeout', '2',
+                 '--max-time', '10', 'http://127.0.0.1:8787/readyz'],
+                capture_output=True, text=True, timeout=12,
+            )
+            code = result.returncode
+            error = {7: 'connection_failed', 28: 'timeout'}.get(code, 'curl_failed')
+        except subprocess.TimeoutExpired:
+            code, error = 28, 'process_timeout'
+        record = {'attempt': number, 'elapsed_ms': round((time.monotonic() - started) * 1000)}
+        if code == 0:
+            try:
+                payload = json.loads(result.stdout)
+            except (ValueError, TypeError):
+                payload = None
+            if not isinstance(payload, dict) or payload.get('status') != 'ready':
+                record.update(status='blocked', error_code='invalid_readiness_response')
+                attempts.append(record)
+                raise ApiProbeError(attempts)
+            record['status'] = 'pass'
+            attempts.append(record)
+            return {'status': 'ready', 'attempts': attempts}
+        record.update(status='blocked', error_code=error, exit_code=code)
+        attempts.append(record)
+        if code not in (7, 28) or number == 3:
+            raise ApiProbeError(attempts)
+        time.sleep(2)
 
 
 def timestamp(value):
@@ -66,6 +108,8 @@ def main():
         try:
             detail = fn()
             checks.append({'name': name, 'status': 'pass', 'detail': detail})
+        except ApiProbeError as exc:
+            checks.append({'name': name, 'status': 'blocked', 'detail': exc.detail})
         except (ValueError, OSError, KeyError, TypeError, subprocess.SubprocessError):
             checks.append({'name': name, 'status': 'blocked'})
 
@@ -145,8 +189,7 @@ def main():
     check('checkout_images_match', revision)
     check('timers', timers)
     check('restore_resources', resources)
-    check('api_ready', lambda: json.loads(run(['curl', '-fsS', '--max-time', '10',
-                                              'http://127.0.0.1:8787/readyz'])))
+    check('api_ready', api_ready)
     if args.mode == 'recovered-host':
         def distinct():
             if (not re.fullmatch(r'[0-9a-f]{64}', args.source_host_fingerprint or '')
