@@ -118,3 +118,29 @@ timers y boot ID. Después debe solicitarse autorización separada, exigida por 
 skill `mova-fpl-operator`: afecta todos los servicios del VPS. Nunca encadenar
 `reboot`, programarlo, ni añadirlo a la preparación. Al volver, verificar doctor,
 safety y evidencia original. Un reboot no prueba reconstrucción en host vacío.
+
+## Monitor API: recuperación acotada (29/10/2026)
+
+El preflight conserva `/readyz` (integridad SQLite), sin sustituirlo por liveness.
+Reintenta únicamente errores curl 7/28 o timeout del proceso: tres intentos como
+máximo, conexión 2 s, petición 10 s, proceso 12 s y pausas de 2 s. HTTP no exitoso,
+JSON inválido o `status` distinto de `ready` bloquean inmediatamente. Cada intento
+conserva duración, resultado y código sanitizado; nunca stdout/stderr arbitrario.
+No cambia research, cuotas, criterios, autoridad ni ejecución FPL.
+
+Puede instalarse exclusivamente como monitor del host en un directorio versionado
+con `dr-status.sh` y `dr-preflight.py`, usando un drop-in de
+`mova-fpl-dr-status.service` que reemplace sólo `ExecStart`. `MOVA_REPO_DIR` sigue
+apuntando al checkout productivo: la revisión comparada y los seis gates no cambian.
+Verificar hashes de ambos scripts, `systemctl cat`, reporte DR, doctor y manifiestos
+de aceptación antes/después. Rollback: retirar únicamente ese drop-in, ejecutar
+`systemctl daemon-reload` y refrescar el reporte. No restaurar bases ni reiniciar
+API/browser para instalar o revertir este monitor.
+
+El incidente `incident_5a160ad1b0a24938952f000002b60424` del 29/10 a las 04:16 UTC
+provino del check de 04:01 UTC. El monitor antiguo descartó el error concreto;
+no permite distinguir timeout de otro fallo de transporte. El API no se reinició,
+registró respuestas 200 alrededor del evento y la ejecución programada de 05:01
+pasó, seguida del cierre automático por watchdog. La corrección reduce falsos
+bloqueos transitorios y permite diagnosticar recurrencias; no garantiza que el API
+nunca falle ni oculta fallos persistentes.
