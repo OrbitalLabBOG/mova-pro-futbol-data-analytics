@@ -419,6 +419,7 @@ la operación manual validada por Julián (`fpl-web-ops`) no depende de esos con
 1. `git pull` (SHA de ADR-022), reconstruir imagen y `docker compose up -d --no-deps --force-recreate api`.
 2. `sudo deploy/bin/install-systemd.sh /opt/orbital/services/mova-fpl` (deshabilita y borra las
    unidades retiradas y hace `reset-failed`; instala los timers diario/semanal).
+   Si restic ya está configurado, deja habilitado (o habilita) `mova-fpl-offsite-backup.timer` (ahora semanal): `sudo systemctl enable --now mova-fpl-offsite-backup.timer`.
 3. Confirmar retiradas: `systemctl list-timers --all 'mova-fpl-*' --no-pager` (solo collector,
    analytics, backup y, si existe, offsite) y `systemctl --failed`. Si algo quedó:
    `sudo systemctl disable --now mova-fpl-{tick,watchdog,dr-status,private-state,postgres-sync,backup-retention}.timer; sudo systemctl reset-failed`.
