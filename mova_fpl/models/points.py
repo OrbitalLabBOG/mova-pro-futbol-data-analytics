@@ -32,8 +32,9 @@ from mova_fpl.models.bonus import BonusModel
 from mova_fpl.models.cleansheet import CleanSheetModel, esperanza_division
 from mova_fpl.models.defcon import DefConModel
 from mova_fpl.models.features.points_features import (
-    K_ATAQUE, K_BONUS, K_DEFENSA, K_DISCIPLINA, apply_priors, multiplicador_ataque,
-    lambda_conceded, normaliza_posicion, player_rates, position_priors, team_strength,
+    K_ATAQUE, K_BONUS, K_DEFENSA, K_DISCIPLINA, RecencyEBConfig, apply_eb_rates,
+    apply_priors, lambda_conceded, multiplicador_ataque, normaliza_posicion,
+    player_rates, position_priors, prepare_eb_state, team_strength,
 )
 from mova_fpl.models.goals import GoalsModel
 from mova_fpl.rules.base import Position
@@ -75,8 +76,26 @@ class PointsModel:
     #: únicamente en el estado de deadline; los priors de entrenamiento quedan
     #: congelados para que la ablation mida recencia y nada más.
     player_recency_half_life: float | None = None
+    #: Opt-in de recencia Empirical Bayes en dos etapas ("eb2"). Por defecto
+    #: None reproduce 1.1.0 bit a bit.
+    recency_mode: str | None = None
+    recency_eb: RecencyEBConfig | None = None
     priors_entrenamiento: dict = field(default_factory=dict)
     metadata: dict = field(default_factory=dict)
+
+    def active_eb_config(self) -> RecencyEBConfig | None:
+        """Devuelve la configuración EB activa, o None en modo legacy 1.1.0."""
+        mode = getattr(self, "recency_mode", None)
+        cfg = getattr(self, "recency_eb", None)
+        if cfg is not None:
+            if mode is not None and mode != "eb2":
+                raise ValueError(f"recency_mode desconocido: {mode}")
+            return cfg
+        if mode is None or mode == "legacy":
+            return None
+        if mode == "eb2":
+            return RecencyEBConfig()
+        raise ValueError(f"recency_mode desconocido: {mode}")
 
     # ------------------------------------------------------------------ ajuste
 
@@ -131,10 +150,29 @@ class PointsModel:
             return pd.DataFrame(columns=["element", "xp", "xp_sd", *COMPONENTES])
 
         pos = normaliza_posicion(roster["position"]).fillna("MID")
-        prepared = prepared or self.prepare_history(history)
-        tasas_hist = prepared["player_rates"]
-        priors = prepared["priors"]
-        estado = self._estado_jugador(roster, tasas_hist, priors, pos)
+        eb_cfg = self.active_eb_config()
+        if eb_cfg is not None:
+            target_season, target_gw = self._resolve_target_meta(roster)
+            if prepared is None:
+                prepared = self.prepare_history(
+                    history, target_season=target_season, target_gw=target_gw,
+                )
+            elif "eb_state" not in prepared or prepared["eb_state"] is None:
+                # Reutilización desde fixture_horizon_projection: fijar el estado
+                # EB en el primer deadline (gw inicial del horizonte).
+                prepared["eb_state"] = prepare_eb_state(
+                    prepared.get("_history", history), eb_cfg,
+                    target_season=target_season, target_gw=target_gw,
+                    fallback_priors=self.priors_entrenamiento,
+                )
+            estado = apply_eb_rates(roster, pos, prepared["eb_state"], eb_cfg)
+            skip_bonus_shrink = bool(eb_cfg.skip_bonus_double_shrink)
+        else:
+            prepared = prepared or self.prepare_history(history)
+            tasas_hist = prepared["player_rates"]
+            priors = prepared["priors"]
+            estado = self._estado_jugador(roster, tasas_hist, priors, pos)
+            skip_bonus_shrink = False
         fuerza = prepared["team_strength"]
 
         mult, lam_enc = self._contexto_partido(roster, fuerza, equipos)
@@ -145,7 +183,8 @@ class PointsModel:
         for nombre, minutos, completa in (("parcial", self.minutos_parcial, False),
                                           ("completo", self.minutos_completo, True)):
             ramas[nombre] = self._rama(estado, pos, minutos / 90.0, mult, lam_enc,
-                                       scoring, umbrales, completa)
+                                       scoring, umbrales, completa,
+                                       already_shrunk_bonus=skip_bonus_shrink)
 
         out = pd.DataFrame({"element": roster["element"].to_numpy()})
         for c in COMPONENTES:
@@ -170,23 +209,76 @@ class PointsModel:
         out["multiplicador_rival"] = mult
         return out
 
-    def prepare_history(self, history: pd.DataFrame) -> dict:
+    def prepare_history(self, history: pd.DataFrame, *,
+                        target_season: str | None = None,
+                        target_gw: int | None = None) -> dict:
         """Calcula una vez el estado compartido por todos los fixtures del plan.
 
         Es un snapshot puro de la información disponible en el deadline. Pasarlo
         a varias llamadas de ``project`` no adelanta datos; evita reagrupar el
         mismo histórico para cada jornada hipotética del horizonte.
         """
-        tasas_hist = player_rates(history, self.player_recency_half_life)
         # el conteo defensivo solo existe desde 2025/26: si el ajuste no lo vio,
         # la dispersion se reestima con lo que lleve la temporada en curso
         if self.defcon.sin_datos and "defensive_contribution" in history.columns:
             self.defcon.fit(history)
+        eb_cfg = self.active_eb_config()
+        if eb_cfg is not None:
+            eb_state = (
+                prepare_eb_state(
+                    history, eb_cfg,
+                    target_season=target_season, target_gw=target_gw,
+                    fallback_priors=self.priors_entrenamiento,
+                )
+                if (target_season is not None or target_gw is not None)
+                else None
+            )
+            return {
+                "eb_state": eb_state,
+                "_history": history if eb_state is None else None,
+                "team_strength": team_strength(history),
+            }
+        tasas_hist = player_rates(history, self.player_recency_half_life)
         return {
             "player_rates": tasas_hist,
             "priors": self._priors(tasas_hist),
             "team_strength": team_strength(history),
         }
+
+    def player_state(self, history: pd.DataFrame, roster: pd.DataFrame,
+                     prepared: dict | None = None) -> pd.DataFrame:
+        """Devuelve el estado de tasas posteriores por fila de `roster`."""
+        pos = normaliza_posicion(roster["position"]).fillna("MID")
+        eb_cfg = self.active_eb_config()
+        if eb_cfg is not None:
+            target_season, target_gw = self._resolve_target_meta(roster)
+            if prepared is None:
+                prepared = self.prepare_history(
+                    history, target_season=target_season, target_gw=target_gw,
+                )
+            elif "eb_state" not in prepared or prepared["eb_state"] is None:
+                prepared["eb_state"] = prepare_eb_state(
+                    prepared.get("_history", history), eb_cfg,
+                    target_season=target_season, target_gw=target_gw,
+                    fallback_priors=self.priors_entrenamiento,
+                )
+            return apply_eb_rates(roster, pos, prepared["eb_state"], eb_cfg)
+        prepared = prepared or self.prepare_history(history)
+        return self._estado_jugador(roster, prepared["player_rates"], prepared["priors"], pos)
+
+    @staticmethod
+    def _resolve_target_meta(roster: pd.DataFrame) -> tuple[str | None, int | None]:
+        target_season = None
+        if "season" in roster.columns:
+            s = roster["season"].dropna()
+            if not s.empty:
+                target_season = str(s.iloc[0])
+        target_gw = None
+        if "gw" in roster.columns:
+            g = pd.to_numeric(roster["gw"], errors="coerce").dropna()
+            if not g.empty:
+                target_gw = int(g.min())
+        return target_season, target_gw
 
     # ---------------------------------------------------------------- internos
 
@@ -228,7 +320,8 @@ class PointsModel:
             lam.append(lambda_conceded(fuerza, equipo, rival, local))
         return np.asarray(mult, dtype=float), np.asarray(lam, dtype=float)
 
-    def _rama(self, estado, pos, n90, mult, lam_enc, scoring, umbrales, completa) -> dict:
+    def _rama(self, estado, pos, n90, mult, lam_enc, scoring, umbrales, completa,
+              *, already_shrunk_bonus: bool = False) -> dict:
         """Puntos y varianza CONDICIONADOS a jugar esta cantidad de minutos."""
         cero = np.zeros(len(estado), dtype=float)
         n90v = np.full(len(estado), float(n90))
@@ -244,7 +337,8 @@ class PointsModel:
         d = self.defcon.project(estado["defcon90"].to_numpy(float), n90v, pos, umbrales,
                                 scoring.defcon_points)
         bono = self.bonus.project(estado["bps90"], estado["bonus_aparicion"],
-                                  estado["n90"], n90v)
+                                  estado["n90"], n90v,
+                                  already_shrunk=already_shrunk_bonus)
 
         amar = estado["amarillas90"].to_numpy(float) * n90v
         rojas = estado["rojas90"].to_numpy(float) * n90v

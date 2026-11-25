@@ -102,10 +102,21 @@ class BonusModel:
             np.nanmedian(b)) else 0.0), centros, self.valores)
         return np.clip(out, 0.0, None)
 
-    def project(self, bps90, bonus_observado, n90_historicos, noventas) -> dict:
-        """Combina el mapeo desde BPS con el bonus que el jugador de hecho lleva."""
+    def project(self, bps90, bonus_observado, n90_historicos, noventas,
+                *, already_shrunk: bool = False) -> dict:
+        """Combina el mapeo desde BPS con el bonus que el jugador de hecho lleva.
+
+        Cuando ``already_shrunk=True`` (modo EB en dos etapas), ``bonus_observado``
+        ya es el posterior encogido hacia el prior estratificado; repetir el
+        ``shrink`` contra ``desde_bps`` con un ``n90`` decaído provocaría doble
+        encogimiento. En ese modo se usa directamente el posterior cuando es
+        finito, y ``desde_bps`` queda solo como respaldo si falta la columna.
+        """
         desde_bps = self.bonus_por_90(bps90)
         obs = np.asarray(pd.to_numeric(pd.Series(bonus_observado), errors="coerce"), dtype=float)
-        mezcla = shrink(np.where(np.isfinite(obs), obs, desde_bps),
-                        np.where(np.isfinite(obs), n90_historicos, 0.0), desde_bps, self.k)
+        if already_shrunk:
+            mezcla = np.clip(np.where(np.isfinite(obs), obs, desde_bps), 0.0, None)
+        else:
+            mezcla = shrink(np.where(np.isfinite(obs), obs, desde_bps),
+                            np.where(np.isfinite(obs), n90_historicos, 0.0), desde_bps, self.k)
         return {"bonus_por_90": mezcla, "puntos_bonus": mezcla * np.asarray(noventas, dtype=float)}
