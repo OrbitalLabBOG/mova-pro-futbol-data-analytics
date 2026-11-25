@@ -373,7 +373,8 @@ def _build_strategy_shadow(*, season: str, gw: int, cfg: Config,
     }
 
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
+    """Parser público: `mova tools` valida sus argv contra él (anti-drift)."""
     ap = argparse.ArgumentParser(description="Decision en vivo de una gameweek FPL")
     ap.add_argument("--season", default="2026-27")
     ap.add_argument("--gw", type=int, required=True)
@@ -445,6 +446,11 @@ def main() -> None:
         "--as-of",
         help="timestamp UTC sellado para replay; por defecto usa el reloj actual",
     )
+    return ap
+
+
+def main() -> None:
+    ap = build_parser()
     args = ap.parse_args()
     if args.delivery_scope and args.chips:
         ap.error('bounded lineup delivery cannot enable chips')

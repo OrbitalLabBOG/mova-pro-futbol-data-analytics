@@ -5068,6 +5068,138 @@ class OpsDB:
                 ).fetchone()[0])
         return counts
 
+    # --- memoria del copiloto (ADR-021) -------------------------------------
+
+    @staticmethod
+    def _strategy_note_row(row) -> dict:
+        item = dict(row)
+        item["players"] = json.loads(item.pop("players_json"))
+        return item
+
+    def add_strategy_note(self, *, season: str, gw: int, kind: str, text: str,
+                          players, source: str, actor: str, reason: str,
+                          idempotency_key: str,
+                          supersedes_note_id: str | None = None) -> dict:
+        """Append-only; misma key + mismo contenido = replay, otro contenido = error."""
+        cycle_id = f"{season}-gw{int(gw):02d}"
+        request = {"season": season, "gw": int(gw), "kind": kind, "text": text,
+                   "players": players, "source": source, "actor": actor,
+                   "reason": reason, "supersedes_note_id": supersedes_note_id}
+        request_sha = sha256_json(request)
+        with self.transaction() as con:
+            prior = con.execute(
+                "SELECT * FROM strategy_notes WHERE idempotency_key=?", (idempotency_key,),
+            ).fetchone()
+            if prior:
+                if prior["request_sha256"] != request_sha:
+                    raise ValueError("idempotency_key ya usada con otro contenido")
+                return {"status": "reused", "note": self._strategy_note_row(prior)}
+            if supersedes_note_id:
+                target = con.execute(
+                    "SELECT season,gw FROM strategy_notes WHERE note_id=?",
+                    (supersedes_note_id,),
+                ).fetchone()
+                if not target:
+                    raise ValueError(f"supersedes_note_id inexistente: {supersedes_note_id}")
+            note_id = new_id("note")
+            created_at = utcnow()
+            con.execute(
+                """INSERT INTO strategy_notes(note_id,cycle_id,season,gw,kind,text,
+                players_json,source,actor,reason,idempotency_key,request_sha256,created_at,
+                supersedes_note_id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (note_id, cycle_id, season, int(gw), kind, text, canonical_json(players),
+                 source, actor, reason, idempotency_key, request_sha, created_at,
+                 supersedes_note_id),
+            )
+            self.append_audit(
+                "strategy_note_recorded", actor=actor, cycle_id=None,
+                subject_type="strategy_note", subject_id=note_id,
+                payload={"cycle_id": cycle_id, "kind": kind, "source": source,
+                         "reason": reason, "request_sha256": request_sha,
+                         "supersedes_note_id": supersedes_note_id}, con=con,
+            )
+            row = con.execute("SELECT * FROM strategy_notes WHERE note_id=?",
+                              (note_id,)).fetchone()
+        return {"status": "completed", "note": self._strategy_note_row(row)}
+
+    def strategy_notes(self, *, season: str, gw: int | None = None,
+                       through_gw: int | None = None, kinds: tuple[str, ...] = (),
+                       limit: int = 200) -> list[dict]:
+        """Notas ordenadas; marca `superseded` las reemplazadas por otra nota."""
+        filters, params = ["n.season=?"], [season]
+        if gw is not None:
+            filters.append("n.gw=?")
+            params.append(int(gw))
+        if through_gw is not None:
+            filters.append("n.gw<=?")
+            params.append(int(through_gw))
+        if kinds:
+            filters.append(f"n.kind IN ({','.join('?' for _ in kinds)})")
+            params.extend(kinds)
+        params.append(max(1, min(int(limit), 1000)))
+        with self.connect(readonly=True) as con:
+            rows = con.execute(
+                f"""SELECT n.*, EXISTS(SELECT 1 FROM strategy_notes s
+                    WHERE s.supersedes_note_id=n.note_id) AS superseded
+                FROM strategy_notes n WHERE {' AND '.join(filters)}
+                ORDER BY n.gw DESC, n.created_at DESC, n.rowid DESC LIMIT ?""", params,
+            ).fetchall()
+        out = []
+        for row in rows:
+            item = self._strategy_note_row(row)
+            item["superseded"] = bool(item["superseded"])
+            out.append(item)
+        return out
+
+    def cycle_row(self, season: str, gw: int) -> dict | None:
+        with self.connect(readonly=True) as con:
+            row = con.execute(
+                "SELECT * FROM gameweek_cycles WHERE season=? AND gw=?", (season, int(gw)),
+            ).fetchone()
+        return dict(row) if row else None
+
+    def active_research_context(self, cycle_id: str, *, now: str | None = None,
+                                limit: int = 50) -> dict:
+        """Señales no rechazadas ni expiradas y conflictos sin resolver; solo lectura."""
+        current = now or utcnow()
+        with self.connect(readonly=True) as con:
+            signals = con.execute(
+                """SELECT signal_id,player_element,subject_name,claim_type,claim_text,
+                source_tier,observed_at,expires_at,confidence,conflict_status,direction,
+                validation_status FROM research_signals
+                WHERE cycle_id=? AND expires_at>? AND COALESCE(validation_status,'accepted')
+                  !='rejected'
+                ORDER BY confidence DESC, observed_at DESC LIMIT ?""",
+                (cycle_id, current, int(limit)),
+            ).fetchall()
+            conflicts = con.execute(
+                "SELECT conflict_id,subject,claim_type,description,created_at "
+                "FROM research_conflicts WHERE cycle_id=? AND status='unresolved' "
+                "ORDER BY created_at DESC LIMIT ?", (cycle_id, int(limit)),
+            ).fetchall()
+        return {"signals": [dict(row) for row in signals],
+                "conflicts": [dict(row) for row in conflicts]}
+
+    def interventions_for_cycle(self, cycle_id: str, *, limit: int = 20) -> list[dict]:
+        with self.connect(readonly=True) as con:
+            rows = con.execute(
+                "SELECT intervention_id,policy_version,rationale,created_at "
+                "FROM intervention_runs WHERE cycle_id=? ORDER BY created_at DESC LIMIT ?",
+                (cycle_id, int(limit)),
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+    def manual_executions_for_cycle(self, cycle_id: str, *, limit: int = 10) -> list[dict]:
+        with self.connect(readonly=True) as con:
+            rows = con.execute(
+                """SELECT e.execution_id,e.decision_id,e.action_level,e.status,e.started_at,
+                e.finished_at,d.mode,d.chip,d.fingerprint FROM web_executions e
+                JOIN decision_runs d ON d.decision_id=e.decision_id
+                WHERE d.cycle_id=? ORDER BY e.finished_at DESC, e.rowid DESC LIMIT ?""",
+                (cycle_id, int(limit)),
+            ).fetchall()
+        return [dict(row) for row in rows]
+
     def prometheus(self) -> str:
         status = self.status()
         tick = status["latest_tick"] or {}

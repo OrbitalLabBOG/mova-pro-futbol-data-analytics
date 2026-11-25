@@ -218,3 +218,68 @@ pytest -q && docker compose config >/dev/null
 - `tick.py` no cambia. Su documentación queda para la Fase C junto con los runbooks, que
   todavía mencionan los timers (`README.md`, `docs/operations/{vps,execution-preflight,strategic-research}.md`,
   `.claude/skills/fpl-web-ops`).
+
+### Fase B (2026-11-25)
+
+- **Catálogo** `mova_fpl/ops/tools.py` (`mova-tools-v1`): `Tool(name, argv, summary,
+  side_effect, output_schema, needs_vps_data, inputs, entrypoint, notes)`. `argv` es un ejemplo
+  concreto; el anti-drift parsea cada uno con `ops.cli.parser()` o, para `acta.commit`
+  (`entrypoint="python -m mova_fpl.cli.live"`), con el nuevo `cli.live.build_parser()`. Ese es
+  el único cambio en `cli/live.py`: se extrajo el parser sin cambiar argumentos (`decide()`
+  intacto). `ops` no importa `cli` (frontera de arquitectura); solo el test lo hace. La única
+  tool `write-fpl` es la skill `fpl-web-ops` (`entrypoint="skill"`); el test lo impone y prohíbe
+  catalogar `execute dispatch|prepare|claim|begin|finalize|ui-plan|fail`.
+- **Brief** `mova_fpl/ops/week_brief.py` (`mova-week-brief-v1`, contrato
+  `docs/contracts/week-brief-v1.schema.json`). Si `ops.db` no existe, el CLI pasa `db=None`
+  (no se instancia ni se migra; se verificó que ni el directorio se crea). Red: un solo
+  `fetch_bootstrap` + `fetch_team_picks`/`fetch_team_history` (vía `data.sources`, solo GET).
+  Los picks públicos se piden a la última GW `finished|is_current` < N, no a N, para no
+  quemar reintentos con el 404 previo al deadline.
+  Desviaciones respecto de §(c):
+  - `strategy_reasons` usa `db.strategic_status(cycle_id)` + envelope/deliberación;
+    `lessons` usa `db.improvement_status` **directo** porque
+    `ContinuousImprovementService.status()` ejecuta `db.migrate()` (una escritura).
+  - `projections` lee `analytics_root/status.json` (`read_status`). El xP por jugador (regla
+    C vs VC < 0.5) solo se consulta en Postgres (`projection_frame`) si existe el archivo de
+    credencial. `cli.live --json-out` no expone xP por jugador, así que sin Postgres esa
+    regla no se dispara.
+  - `acta` sigue la convención del tick: versiones de `resolve_active_model_bundle` (o
+    `MOVA_*_MODEL_VERSION`, 1.1.0, no el default 1.0.0 de `cli.live`), `MOVA_MODEL_ROOT=
+    artifact_root/models`, `--private-team-state` solo si el snapshot es válido y fresco (mismo
+    criterio que el tick), `--out`/`--json-out` bajo `artifact_root/copilot/gwNN/<stamp>/` o
+    `tempfile`. Antes de lanzar el subprocess verifica prerequisitos y devuelve `missing` +
+    `needs_vps` con la lista exacta de rutas faltantes. stderr se recorta y se sanea; stdout no
+    se lee.
+  - Reglas de `open_decisions` añadidas: `bench_flagged` (info), `acta_unavailable` (info),
+    `authority_unsafe`, `deadline_passed`. El texto evita la palabra prohibida por
+    `test_readonly_http` ("reautenticar sesión FPL").
+  - `overall=ready` exige `cycle/squad/acta/flags` ok **y** estado privado fresco.
+- **Memoria**: SQLite migración 25 `copilot_strategy_notes` (append-only con triggers
+  UPDATE/DELETE, `CHECK cycle_id = season-gwNN`, **sin FK a `gameweek_cycles`** para poder
+  anotar una GW que el VPS aún no observó). Añade `request_sha256` para que reusar la key con
+  otro contenido falle. Postgres `028_strategy_notes.sql` (`agent.strategy_notes`,
+  `players jsonb`) + `TableSpec` en el importer. Kinds: los cinco del plan + `decision`.
+  `decision` valida `players_json` (xi 11, bench 4, C≠VC y titulares, transfers balanceadas,
+  hits múltiplo de 4, chip conocido). El texto, la razón y los strings del JSON se sanean:
+  email, bearer/JWT/claves con prefijo, `key=valor` de credenciales, query strings de URL,
+  opacos ≥40 caracteres. Cada nota deja un audit event `strategy_note_recorded`.
+  Tests ajustados: `latest_version()` 27→28 y la lista de migraciones SQLite →25.
+- **manual-package** `mova_fpl/ops/manual_package.py`: deriva jugadores y C/VC del post-state,
+  el diff de transferencias de pre/post, los hits de `transfers.cost` y el chip del cambio de
+  `status_for_entry`. R2/A2 si no hay diff, si no R3/A3. Escribe `decision.json` + paquete bajo
+  `MOVA_ARTIFACT_ROOT/manual/`, con ids deterministas: misma entrada da los mismos bytes, y un
+  contenido distinto exige `--overwrite`. Valida con `supervised._assert_v2_artifacts_under_root`
+  + `_validate_v2` (el mismo código que `record-manual`) y borra el `decision.json` si falla.
+  `--approved-at` es obligatorio. Por defecto `started_at=max(approved_at, pre.observed_at)`,
+  `finished_at=post.observed_at` y `expires_at=deadline`. El test registra el paquete con
+  `record()` real.
+- **Verificación local**: `pytest -q -p no:cacheprovider` → 2424 passed. Quedan las 2 fallas
+  preexistentes y una tercera distinta en cada corrida, ambas en tests de subprocess con
+  timeout (`test_research_budget_candidate::...steers_once...`, Node con 2 s, y
+  `test_browser_driver::test_host_orchestrator...[ok]`, `mova` falso en bash). Las dos pasan
+  aisladas, con y sin estos cambios, y no tocan código modificado.
+- **Acta local**: `mova week acta --gw 12` no corre en este clon. Faltan
+  `fpl_canonical.db` (`MOVA_CANONICAL_DB`; `data/processed/` solo tiene `.gitkeep`) y
+  `minutes-1.1.0.joblib`/`points-1.1.0.joblib` bajo `artifact_root/models` (`models/` solo
+  trae los sidecars JSON). Devuelve `status=missing` con esas rutas y exit 2. En el VPS
+  existen en `/var/lib/mova-fpl/db` y `/var/lib/mova-fpl/artifacts/models`.
