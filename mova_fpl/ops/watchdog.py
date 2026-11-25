@@ -154,7 +154,8 @@ def assess_workflow_deadline(config: RuntimeConfig, db: OpsDB, *,
     complete = complete or bool(manual)
     report = evaluate_workflow_deadline(
         build_workflow(config, db, now=current), seconds_to_deadline=seconds,
-        delivery_required=scope == 'lineup-v1', delivery_completed=complete,
+        delivery_required=(scope == 'lineup-v1' and config.enable_scheduled_delivery),
+        delivery_completed=complete,
     )
     return {**report, "cycle_id": cycle.get("cycle_id"), "gw": cycle.get("gw")}
 

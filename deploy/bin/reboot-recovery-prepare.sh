@@ -79,7 +79,7 @@ curl --fail --silent --show-error "$api_url" >/dev/null
 
 timers=(
   mova-fpl-tick.timer mova-fpl-watchdog.timer mova-fpl-private-state.timer
-  mova-fpl-research.timer mova-fpl-collector.timer mova-fpl-analytics.timer
+  mova-fpl-collector.timer mova-fpl-analytics.timer
   mova-fpl-backup.timer mova-fpl-postgres-sync.timer
 )
 for unit in "${timers[@]}"; do

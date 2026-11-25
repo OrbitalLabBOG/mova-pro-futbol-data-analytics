@@ -125,6 +125,25 @@ def test_offsite_service_is_opt_in_and_excludes_runtime_secrets():
     assert "MOVA_OPS_DB=" not in local_restore
 
 
+def test_install_retires_delivery_and_research_timers():
+    """ADR-021: copiloto; los timers de entrega/research se deshabilitan y no se versionan."""
+    install = Path("deploy/bin/install-systemd.sh").read_text(encoding="utf-8")
+    for unit in ("mova-fpl-delivery.timer", "mova-fpl-research.timer"):
+        assert f"enable --now {unit}" not in install
+        assert not Path("deploy/systemd", unit).exists()
+    assert "RETIRED_UNITS=(mova-fpl-delivery.timer mova-fpl-research.timer)" in install
+    assert 'systemctl disable --now "$unit"' in install
+    assert 'rm -f "/etc/systemd/system/$unit"' in install
+    assert "reset-failed 'mova-fpl-delivery-proof-*'" in install
+    assert install.index("RETIRED_UNITS=") < install.rindex("systemctl daemon-reload")
+    assert "enable --now mova-fpl-backup-retention.timer" in install
+    delivery = Path("deploy/systemd/mova-fpl-delivery.service").read_text(encoding="utf-8")
+    assert "[Install]" not in delivery
+    # La sonda sigue observando las unidades retiradas para confirmar que quedan inactivas.
+    probe = Path("deploy/bin/host-probe.py").read_text(encoding="utf-8")
+    assert '"mova-fpl-delivery.timer"' in probe and '"mova-fpl-research.timer"' in probe
+
+
 def test_dr_report_projects_only_allowlisted_metadata(tmp_path):
     import json
     from mova_fpl.ops.dr_health import REQUIRED_CHECKS

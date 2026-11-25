@@ -188,3 +188,33 @@ pytest -q && docker compose config >/dev/null
 - El reset de controles en el VPS es un cambio de autoridad: solo con OK explícito de Julián.
 - Paridad Postgres de la tabla nueva: verificar que `postgres verify` no falle por tabla no importada.
 - `cli.live` imprime progreso a stdout: el wrapper parsea solo `--json-out`, nunca stdout.
+
+## Notas de implementación
+
+### Fase A (2026-11-25)
+
+- `RuntimeConfig.operating_model` devuelve `copilot` o `scheduled_delivery` (opt-in).
+  `validate()` rechaza `MOVA_ENABLE_SCHEDULED_DELIVERY` sin `MOVA_ENABLE_BROWSER_WRITES`;
+  como este último ya exige `mode guarded/autonomous`, A1+ y compliance `approved` en el
+  env, el opt-in legacy queda coherente de punta a punta.
+- `DeliveryService.dispatch` devuelve `blocked/copilot_mode` como primer gate, también con
+  `--check-only`, así `delivery-cycle.sh` termina antes de tocar el browser. No lee controles
+  ni prepara intentos.
+- Desviación: el fixture de `tests/test_operator_contract.py` **no** pasaba sin cambios,
+  porque `mova-fpl-backup-retention.timer` ahora es siempre requerido. Se añadió al probe y
+  se quitó `mova-fpl-research.timer`.
+- `tests/test_manual_cycle_hold.py` (no estaba en la lista) usa la ruta del scheduler: ahora
+  hace opt-in explícito vía env (`monkeypatch.setenv`). `test_delivery.seed()` usa
+  `legacy_delivery_config()` (opt-in + browser writes + autonomous/A2/approved, validado)
+  para que el bridge del CLI real siga pasando `config.validate()`.
+- `operating_model` se publica arriba en `build_status` (propiedad opcional nueva en
+  `operator-status-v1.schema.json`, que tiene `additionalProperties: false`), en
+  `runtime.operating_model`, en `build_safety` y en el cockpit.
+- `mova-fpl-research.service` tenía `[Install] WantedBy=multi-user.target`. Se quitó para que
+  el servicio solo arranque a mano (`systemctl start`).
+- `install-systemd.sh` borra los archivos de los timers retirados, pero **no** el drop-in del
+  host `/etc/systemd/system/mova-fpl-research.timer.d/` (config del owner; ver `vps.md`). Sin
+  su unidad no hace nada; lo puede borrar el owner durante el rollout.
+- `tick.py` no cambia. Su documentación queda para la Fase C junto con los runbooks, que
+  todavía mencionan los timers (`README.md`, `docs/operations/{vps,execution-preflight,strategic-research}.md`,
+  `.claude/skills/fpl-web-ops`).

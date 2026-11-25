@@ -398,6 +398,11 @@ def test_reboot_workflow_requires_two_phases_and_never_reboots_or_writes_fpl():
     assert "idempotency_unique" in verify
     assert "drill import-host" in verify and "--scenario reboot_recovery" in verify
     assert "ConditionPathExists=/var/lib/mova-fpl/runtime/reboot-recovery.pending.json" in unit
+    # ADR-021: research/delivery timers are retired and never required after reboot.
+    for script in (prepare, verify):
+        assert "mova-fpl-research.timer" not in script
+        assert "mova-fpl-delivery.timer" not in script
+        assert "mova-fpl-collector.timer mova-fpl-analytics.timer" in script
     assert "After=mova-fpl-stack.service" in unit
     for script in (prepare, verify):
         assert not any(token in script for token in (

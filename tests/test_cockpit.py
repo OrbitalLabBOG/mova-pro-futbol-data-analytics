@@ -26,7 +26,7 @@ def _inputs() -> dict:
         "host": {"systemd": {
             name: {"active_state": "active"} for name in (
                 "mova-fpl-collector.timer", "mova-fpl-analytics.timer",
-                "mova-fpl-research.timer", "mova-fpl-backup.timer",
+                "mova-fpl-backup.timer",
             )
         }},
         "data": {"service": {"status": "healthy"}},
@@ -136,6 +136,13 @@ def test_cockpit_contract_is_shared_sanitized_and_read_only():
     assert len(payload["functions"]) == 8
     functions = {row["code"]: row for row in payload["functions"]}
     assert functions["research"]["status"] == "healthy"
+    # ADR-021: research/strategist are on-demand tools, not timers.
+    assert payload["operating_model"] == "copilot"
+    assert functions["research"]["enabled"] is True
+    assert functions["research"]["mode"] == "on_demand"
+    assert functions["strategist"]["mode"] == "on_demand"
+    assert functions["browser_writes"]["mode"] == "owner_validated_manual"
+    assert functions["browser_writes"]["status"] == "fail_closed"
     assert functions["backup"]["status"] == "active_local"
     assert payload["economics"]["gameweek"]["remaining_uses"] == 18
     assert "url" not in json.dumps(payload).lower()

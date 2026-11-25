@@ -27,9 +27,17 @@ systemctl enable --now mova-fpl-tick.timer mova-fpl-private-state.timer \
   mova-fpl-backup.timer mova-fpl-watchdog.timer mova-fpl-collector.timer
 systemctl enable --now mova-fpl-analytics.timer
 systemctl enable --now mova-fpl-backup-retention.timer
-systemctl enable --now mova-fpl-delivery.timer
-systemctl enable --now mova-fpl-research.timer
 systemctl enable --now mova-fpl-postgres-sync.timer
+# ADR-021 (copiloto): la entrega programada y el research por timer quedan
+# retirados. Los servicios se conservan como arranque manual/on-demand
+# (mova-fpl-delivery.service falla cerrado con copilot_mode sin opt-in).
+RETIRED_UNITS=(mova-fpl-delivery.timer mova-fpl-research.timer)
+for unit in "${RETIRED_UNITS[@]}"; do
+  systemctl disable --now "$unit" 2>/dev/null || true
+  rm -f "/etc/systemd/system/$unit"
+done
+systemctl daemon-reload
+systemctl reset-failed 'mova-fpl-delivery-proof-*' 2>/dev/null || true
 systemctl enable mova-fpl-reboot-recovery.service
 if systemctl is-active --quiet mova-fpl-offsite-backup.timer \
   && "$repo_dir/deploy/bin/offsite-backup.sh" --config-paths >/dev/null 2>&1; then

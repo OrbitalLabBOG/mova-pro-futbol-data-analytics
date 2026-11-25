@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # Host dispatcher. The engine never receives Docker/CDP access.
+# Legacy opt-in (ADR-021): sin MOVA_ENABLE_SCHEDULED_DELIVERY el dispatch
+# responde blocked/copilot_mode y este script termina antes del browser.
 set -euo pipefail
 umask 077
 repo_dir=${MOVA_REPO_DIR:-/opt/orbital/services/mova-fpl}

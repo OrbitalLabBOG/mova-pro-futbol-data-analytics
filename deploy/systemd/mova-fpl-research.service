@@ -12,6 +12,5 @@ ExecStart=/usr/bin/flock -n -E 75 /run/lock/mova-fpl-research-host.lock @@REPO_D
 SuccessExitStatus=75
 TimeoutStartSec=10min
 Nice=10
-
-[Install]
-WantedBy=multi-user.target
+# ADR-021: research on-demand (`systemctl start mova-fpl-research.service`);
+# sin timer ni sección de instalación para que nunca arranque solo.

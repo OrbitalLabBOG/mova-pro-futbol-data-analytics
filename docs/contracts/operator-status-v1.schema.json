@@ -16,6 +16,7 @@
     "generated_at": {"type": "string", "format": "date-time"},
     "overall_status": {"enum": ["healthy", "degraded", "critical"]},
     "status_reasons": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "operating_model": {"enum": ["copilot", "scheduled_delivery"]},
     "runtime": {"type": "object"},
     "gameweek": {"type": "object"},
     "data": {"type": "object"},
