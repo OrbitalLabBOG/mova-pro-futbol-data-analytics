@@ -2,14 +2,22 @@
 type: project
 name: "MOVA FPL — Autonomous Harness v1"
 created: 2026-08-23
-updated: 2026-09-20
+updated: 2026-11-25
 tags: [mova, fpl, autonomy, postgres, agents, observability, continuous-improvement]
-status: active-shadow
+status: superseded
+superseded_by: docs/specs/fpl-autonomous-operator/decisions/ADR-021-copilot-operating-model.md
 ---
 
 # Autonomous Harness v1
 
-## Guía de cierre vigente
+> **Superseded por [ADR-021](decisions/ADR-021-copilot-operating-model.md) (25/11/2026).**
+> MOVA opera en modelo copiloto: un asistente usa `mova tools`/`mova week brief` y la
+> memoria de `ops.db`, propone la decisión y Julián la valida antes de cualquier escritura
+> en FPL. Este documento queda como arquitectura y evidencia histórica de la etapa
+> autónoma; no describe la operación vigente. Runbook vigente:
+> [gameweek.md](../../operations/gameweek.md).
+
+## Guía de cierre (histórica)
 
 La única hoja de ruta de cierre es [Cierre de autonomía operativa — 20/09/2026](04-readiness-and-rollout.md#cierre-de-autonomía-operativa--20-de-septiembre-de-2026).
 Este documento conserva la arquitectura y la evidencia histórica de construcción. El programa

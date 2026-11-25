@@ -168,6 +168,10 @@ def evaluate_cockpit(*, operator_status: dict, safety: dict, readiness: dict,
         "healthy"
     )
 
+    # ADR-021: copiloto por defecto; research/strategist son tools on-demand
+    # (sin timer) y las escrituras FPL solo ocurren con validación del owner.
+    operating_model = operator_status.get("operating_model") or "copilot"
+    copilot = operating_model == "copilot"
     functions = [
         {
             "code": "collector", "name": "Colector de datos",
@@ -182,26 +186,27 @@ def evaluate_cockpit(*, operator_status: dict, safety: dict, readiness: dict,
         },
         {
             "code": "research", "name": "Investigación agentic",
-            "enabled": _unit_active(host, "mova-fpl-research.timer"),
+            # La tool CLI (`mova strategy research ...`) siempre está disponible.
+            "enabled": True,
             "status": (
                 "failed" if _unit_failed(host, "mova-fpl-research.service") else
                 research.get("service_status")
                 or ("conflicts" if research.get("conflicts") else None)
                 or ("signals_ready" if research.get("signals") else "idle")
             ),
-            "mode": "bounded_windows",
+            "mode": "on_demand",
         },
         {
             "code": "strategist", "name": "Strategist + Critic",
-            "enabled": _unit_active(host, "mova-fpl-research.timer"),
+            "enabled": True,
             "status": (operator_status.get("deliberation") or {}).get("status"),
-            "mode": "bounded_shadow",
+            "mode": "on_demand",
         },
         {
             "code": "browser_writes", "name": "Escrituras FPL",
             "enabled": bool(controls.get("browser_writes")),
             "status": "enabled" if controls.get("browser_writes") else "fail_closed",
-            "mode": controls.get("action_level"),
+            "mode": "owner_validated_manual" if copilot else controls.get("action_level"),
         },
         {
             "code": "postgres_shadow", "name": "PostgreSQL shadow",
@@ -229,6 +234,7 @@ def evaluate_cockpit(*, operator_status: dict, safety: dict, readiness: dict,
         "schema": SCHEMA,
         "generated_at": generated_at or datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "verdict": verdict,
+        "operating_model": operating_model,
         "headline": (
             "Intervención inmediata requerida" if verdict == "critical" else
             "Operación requiere atención" if verdict == "attention_required" else

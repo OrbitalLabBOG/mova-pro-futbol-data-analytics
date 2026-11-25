@@ -29,6 +29,10 @@ class RuntimeConfig:
     season_value_shadow_manifest: Path | None = None
     season_value_shadow_sha256: str | None = None
     enable_browser_writes: bool = False
+    # ADR-021: copiloto por defecto. La entrega programada (dispatcher de
+    # delivery por timer) es una ruta legacy opt-in que además exige browser
+    # writes; sin este flag ningún path automático escribe en FPL.
+    enable_scheduled_delivery: bool = False
     ops_db: Path = Path("/var/lib/mova-fpl/db/ops.db")
     trace_db: Path = Path("/var/lib/mova-fpl/db/trace.db")
     canonical_db: Path = Path("/var/lib/mova-fpl/db/fpl_canonical.db")
@@ -119,6 +123,7 @@ class RuntimeConfig:
                 os.environ.get("MOVA_LONG_HORIZON_UNCERTAINTY_SHA256") or None
             ),
             enable_browser_writes=_bool("MOVA_ENABLE_BROWSER_WRITES", False),
+            enable_scheduled_delivery=_bool("MOVA_ENABLE_SCHEDULED_DELIVERY", False),
             ops_db=Path(os.environ.get("MOVA_OPS_DB", "/var/lib/mova-fpl/db/ops.db")),
             trace_db=Path(os.environ.get("MOVA_TRACE_DB", "/var/lib/mova-fpl/db/trace.db")),
             canonical_db=Path(os.environ.get("MOVA_CANONICAL_DB", "/var/lib/mova-fpl/db/fpl_canonical.db")),
@@ -270,6 +275,11 @@ class RuntimeConfig:
             git_sha=os.environ.get("MOVA_GIT_SHA", "unknown"),
         )
 
+    @property
+    def operating_model(self) -> str:
+        """Modelo operativo efectivo: ``copilot`` salvo opt-in legacy explícito."""
+        return "scheduled_delivery" if self.enable_scheduled_delivery else "copilot"
+
     def validate(self) -> None:
         if self.mode not in {"shadow", "supervised", "guarded", "autonomous", "paused"}:
             raise ValueError(f"MOVA_MODE inválido: {self.mode}")
@@ -282,6 +292,10 @@ class RuntimeConfig:
         ):
             raise ValueError(
                 "browser writes exige mode guarded/autonomous, action level A1+ y compliance approved"
+            )
+        if self.enable_scheduled_delivery and not self.enable_browser_writes:
+            raise ValueError(
+                "MOVA_ENABLE_SCHEDULED_DELIVERY exige MOVA_ENABLE_BROWSER_WRITES (opt-in legacy)"
             )
         for path in (self.ops_db.parent, self.artifact_root, self.analytics_root,
                      self.analytics_lock_path,

@@ -202,6 +202,9 @@ TABLES = (
               renames={"checks_json": "checks"},
               json_columns=frozenset({"checks_json"}),
               bool_columns=frozenset({"writes_attempted"})),
+    TableSpec("ops", "strategy_notes", "agent.strategy_notes",
+              renames={"players_json": "players"},
+              json_columns=frozenset({"players_json"})),
 )
 
 TARGETS = tuple(dict.fromkeys(spec.target_table for spec in TABLES))

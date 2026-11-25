@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — cockpit, triage y acceso web"
 created: 2026-09-01
-updated: 2026-09-20
+updated: 2026-11-25
 tags: [mova, fpl, cockpit, cli, dashboard, incidents, observability]
 status: active
 ---
@@ -15,12 +15,23 @@ FPL directamente y no concede autoridad. CLI, API y dashboard comparten
 
 ## Operar desde este chat
 
-Orbital OS carga el adaptador `mova-fpl-operator` y la skill canónica del repo
-FPL. El acceso provisionado es SSH como ubuntu y `/usr/local/bin/mova`;
-no registra una tool nueva en Orbix Web. Contrasta fecha y revisión desplegada
-antes de atribuir capacidades; un checkout local antiguo no prueba el release.
-Lee el bloque observability del doctor, conserva su disponibilidad y diferencia
-salud de drills, entrega de alertas y aceptación de autonomía.
+Modelo copiloto ([ADR-021](../specs/fpl-autonomous-operator/decisions/ADR-021-copilot-operating-model.md)):
+el asistente (el Grok Bot de Julián, que orquesta Claude Code para cambios de código) carga
+la skill `mova-fpl-operator` y opera por SSH con `/usr/local/bin/mova`. Orden de lectura:
+
+1. `mova tools --json`: catálogo de tools y side effects.
+2. `mova status --json`: `operating_model` debe ser `copilot`.
+3. `mova cockpit --json`: salud, alertas, revisión desplegada.
+4. `mova week brief --gw N --json`: insumo de la propuesta semanal ([gameweek.md](gameweek.md)).
+
+El cockpit publica `operating_model`; en copiloto los ítems `research` y `strategist` salen
+con `mode=on_demand` (la tool está disponible, sin timer) y `browser_writes` con
+`mode=owner_validated_manual` y `status=fail_closed`: las escrituras automáticas siguen
+cerradas y la operación en FPL solo ocurre con el OK explícito de Julián vía `fpl-web-ops`.
+
+Contrasta fecha y revisión desplegada antes de atribuir capacidades; un checkout local
+antiguo no prueba el release. Lee el bloque observability del doctor y diferencia salud de
+drills y entrega de alertas.
 
 ## Entrada rápida
 
@@ -139,8 +150,9 @@ mova execute ... --actor ... --reason ... --idempotency-key ...
 mova alerts acknowledge --incident-id ... --actor ... --reason ...
 ```
 
-No convertir una acción sugerida por el cockpit en autorización. Promover A1/A2/A3, habilitar
-browser writes, reiniciar el host o cambiar el equipo requiere la aprobación correspondiente.
+No convertir una acción sugerida por el cockpit en autorización. Cambiar controles, habilitar
+browser writes, reiniciar el host o cambiar el equipo requiere el OK explícito de Julián. La
+cadena `mova execute dispatch|begin|...` es legacy opt-in y no se usa en copiloto.
 
 ## API read-only
 

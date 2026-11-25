@@ -2,12 +2,28 @@
 type: runbook
 name: "MOVA FPL — contexto estratégico e investigación"
 created: 2026-08-27
-updated: 2026-10-22
+updated: 2026-11-25
 tags: [mova, fpl, strategy, research, codex, evidence]
 status: active
 ---
 
 # Contexto estratégico e investigación
+
+> **On-demand desde ADR-021 (25/11/2026).** El timer de research está retirado. Research y
+> deliberación se encolan a pedido del asistente o de Julián cuando el brief lo justifica
+> (noticias, dudas de minutos, conflictos), porque consumen cuota:
+>
+> ```bash
+> mova strategy research due
+> mova strategy research enqueue --force --actor julian --reason "noticias GW12" \
+>   --idempotency-key research:2026-27-gw12:1
+> sudo systemctl start mova-fpl-research.service   # o deploy/bin/research-cycle.sh
+> mova strategy research import
+> mova strategy deliberate status
+> ```
+>
+> Las señales validadas aparecen en `research_signals` del `mova week brief`. Las secciones
+> sobre continuación autónoma por timer y campañas de aceptación quedan como antecedentes.
 
 ## Campaña prospectiva v2 — 23 de octubre
 
@@ -176,7 +192,7 @@ La cobertura v2 incluye `teams` con sujetos requeridos, revisados y con evidenci
 por club. El total y el gate 90/80 siguen calculándose sobre los sujetos individuales; este
 desglose diagnostica dónde se agota discovery y no concede cobertura adicional.
 
-## Continuación autónoma de pendientes (1.17.0)
+## Continuación autónoma de pendientes (1.17.0, antecedente)
 
 El timer conserva cada resultado parcial y puede encolar un hijo en el mismo slot.
 `mova strategy research due` distingue `completion_pending`, `research_focus_complete`,
@@ -253,7 +269,7 @@ mova strategy plan --file /path/season-plan.json \
 # sellar el estado sin llamar al LLM
 mova strategy prepare
 
-# flujo manual equivalente al timer
+# flujo on-demand (antes lo disparaba el timer, retirado por ADR-021)
 mova strategy research enqueue
 docker compose --profile research run --rm --no-deps -T research
 mova strategy research import
@@ -389,7 +405,7 @@ El CLI no se expone como endpoint HTTP ni se entrega al worker de research.
 ~~~bash
 mova strategy status
 mova doctor --json
-systemctl status mova-fpl-research.timer mova-fpl-research.service
+systemctl status mova-fpl-research.service
 journalctl -u mova-fpl-research.service -n 100 --no-pager
 find /var/lib/mova-fpl/artifacts/research -maxdepth 2 -type f -printf '%P\n'
 ~~~
@@ -405,15 +421,15 @@ find /var/lib/mova-fpl/artifacts/research -maxdepth 2 -type f -printf '%P\n'
   policy ni contar briefs legacy como evidencia.
 - `evidence_*` fallido: revisar `fetch_status`, `fetch_error_code`, MIME/redirect y locator; una
   cita del proveedor no autoriza marcar el documento como verificado.
-- auth ausente/expirado: detener el timer, renovar por canal autorizado, verificar permisos y
-  reactivar.
+- auth ausente/expirado: no encolar más corridas, renovar por canal autorizado y verificar
+  permisos antes de la próxima corrida on-demand.
 - web/search no disponible: conservar el último brief aceptado hasta su TTL; no volverlo vigente
   artificialmente.
 
 ## Rollback
 
 ~~~bash
-systemctl disable --now mova-fpl-research.timer
+systemctl stop mova-fpl-research.service
 docker compose --profile research down
 ~~~
 

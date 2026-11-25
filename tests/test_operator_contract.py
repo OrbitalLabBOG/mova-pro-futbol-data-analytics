@@ -90,8 +90,8 @@ def _host_probe(config: RuntimeConfig, now: datetime, *, postgres_running=True) 
             "mova-fpl-private-state.timer", "mova-fpl-backup.timer",
             "mova-fpl-watchdog.timer",
             "mova-fpl-analytics.timer",
-            "mova-fpl-research.timer",
             "mova-fpl-postgres-sync.timer",
+            "mova-fpl-backup-retention.timer",
         )
     }
     units.update({
@@ -358,3 +358,37 @@ def test_cli_exposes_human_and_json_operator_modes():
     ])
     assert host_status.drill_command == "host-status"
     assert host_status.scenario == "postgres_recovery"
+
+
+def test_copilot_lineup_scope_does_not_require_delivery_or_research_timers(tmp_path):
+    """ADR-021: an armed legacy scope never makes retired timers mandatory."""
+    from dataclasses import replace
+    from mova_fpl.ops.operator import build_safety
+    config, db, now = _seed(tmp_path)
+    db.set_control("delivery_scope", "lineup-v1", actor="test", reason="legacy scope left armed")
+    _host_probe(config, now)
+    payload = build_doctor(config, db, now=now + timedelta(seconds=10), network=False)
+    units = next(item for item in payload["checks"] if item["name"] == "systemd_units")
+    assert units["status"] == "PASS", units
+    status = build_status(config, db, now=now + timedelta(seconds=10))
+    assert status["operating_model"] == "copilot"
+    assert status["runtime"]["operating_model"] == "copilot"
+    assert build_safety(config, db, now=now + timedelta(seconds=10))["operating_model"] == "copilot"
+
+    opted = replace(config, enable_scheduled_delivery=True)
+    payload = build_doctor(opted, db, now=now + timedelta(seconds=10), network=False)
+    units = next(item for item in payload["checks"] if item["name"] == "systemd_units")
+    assert units["status"] == "FAIL"
+    assert units["detail"]["inactive"] == ["mova-fpl-delivery.timer"]
+    assert build_status(opted, db, now=now)["operating_model"] == "scheduled_delivery"
+
+
+def test_backup_retention_timer_is_always_required(tmp_path):
+    config, db, now = _seed(tmp_path)
+    _host_probe(config, now)
+    probe = json.loads(config.host_probe_path.read_text())
+    del probe["systemd"]["mova-fpl-backup-retention.timer"]
+    config.host_probe_path.write_text(json.dumps(probe))
+    payload = build_doctor(config, db, now=now + timedelta(seconds=10), network=False)
+    units = next(item for item in payload["checks"] if item["name"] == "systemd_units")
+    assert units["detail"]["inactive"] == ["mova-fpl-backup-retention.timer"]

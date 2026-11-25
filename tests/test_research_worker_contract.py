@@ -214,11 +214,13 @@ def test_schema_de_salida_es_json_valido_y_cerrado():
 
 
 def test_timer_no_es_un_agente_residente():
-    timer = (ROOT / "deploy/systemd/mova-fpl-research.timer").read_text(encoding="utf-8")
+    """ADR-021: research es on-demand; no hay timer ni arranque automático."""
+    assert not (ROOT / "deploy/systemd/mova-fpl-research.timer").exists()
     service = (ROOT / "deploy/systemd/mova-fpl-research.service").read_text(encoding="utf-8")
-    assert "OnCalendar=*:7/15" in timer
     assert "Type=oneshot" in service
     assert "TimeoutStartSec=10min" in service
+    assert "[Install]" not in service
+    assert "research-cycle.sh" in service
 
 
 def test_timer_no_levanta_codex_sin_request_pendiente():

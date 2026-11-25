@@ -415,7 +415,9 @@ def build_status(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
         "generated_at": _iso(current),
         "overall_status": severity,
         "status_reasons": reasons,
+        "operating_model": config.operating_model,
         "runtime": {
+            "operating_model": config.operating_model,
             "season": config.season,
             "team_id": config.team_id,
             "git_sha": config.git_sha,
@@ -539,6 +541,7 @@ def build_safety(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
         "schema": "mova-safety-summary-v1",
         "generated_at": status["generated_at"],
         "verdict": verdict,
+        "operating_model": status["operating_model"],
         "reasons": sorted(set(blockers)),
         "gameweek": {key: status["gameweek"].get(key) for key in (
             "gw", "deadline_at", "seconds_to_deadline", "phase", "readiness"
@@ -814,11 +817,13 @@ def build_doctor(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
             "mova-fpl-private-state.timer", "mova-fpl-backup.timer",
             "mova-fpl-watchdog.timer",
             "mova-fpl-analytics.timer",
-            "mova-fpl-research.timer",
             "mova-fpl-postgres-sync.timer",
+            "mova-fpl-backup-retention.timer",
         )
-        if (db.controls().get('delivery_scope') or {}).get('value') == 'lineup-v1':
-            expected_units += ('mova-fpl-delivery.timer', 'mova-fpl-backup-retention.timer')
+        # ADR-021: research es on-demand (sin timer) y la entrega programada
+        # solo se exige con el opt-in legacy explícito.
+        if config.enable_scheduled_delivery:
+            expected_units += ('mova-fpl-delivery.timer',)
         bad_units = [name for name in expected_units
                      if (units.get(name) or {}).get("active_state") != "active"]
         host_fresh = host.get("age_seconds") is not None and host["age_seconds"] <= 600

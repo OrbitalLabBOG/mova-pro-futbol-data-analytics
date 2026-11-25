@@ -275,6 +275,31 @@ def parser() -> argparse.ArgumentParser:
     manual_verified.add_argument("--actor", required=True)
     manual_verified.add_argument("--reason", required=True)
     manual_verified.add_argument("--idempotency-key", required=True)
+    manual_package = execute_commands.add_parser(
+        "manual-package",
+        help="ensambla y valida el paquete manual v2 para record-manual; no escribe FPL",
+    )
+    manual_package.add_argument("--gw", type=int, required=True)
+    manual_package.add_argument("--season")
+    manual_package.add_argument("--approved-by", required=True)
+    manual_package.add_argument("--approved-at", required=True,
+                                help="RFC3339 del OK explícito del owner")
+    manual_package.add_argument("--operations", action="append", required=True,
+                                help="lineup,captaincy,transfers,hits,chip")
+    manual_package.add_argument("--pre-state", required=True,
+                                help="snapshot privado sellado antes de aplicar")
+    manual_package.add_argument("--post-state", required=True,
+                                help="snapshot privado sellado después del reload")
+    manual_package.add_argument("--evidence", required=True,
+                                help="evidencia browser bajo MOVA_ARTIFACT_ROOT")
+    manual_package.add_argument("--rationale", required=True)
+    manual_package.add_argument("--started-at")
+    manual_package.add_argument("--finished-at")
+    manual_package.add_argument("--expires-at")
+    manual_package.add_argument("--chip", choices=("wildcard", "freehit", "bboost", "3xc"))
+    manual_package.add_argument("--hits", type=int)
+    manual_package.add_argument("--out")
+    manual_package.add_argument("--overwrite", action="store_true")
     preflight = execute_commands.add_parser(
         "preflight", help="sella el diff y evalúa autorización sin operar el browser"
     )
@@ -341,6 +366,62 @@ def parser() -> argparse.ArgumentParser:
     fail_execution.add_argument("--actor", required=True)
     fail_execution.add_argument("--reason", required=True)
     fail_execution.add_argument("--claim-token-stdin", action="store_true", required=True)
+    tools = commands.add_parser("tools", help="catálogo de tools del modelo copiloto")
+    tools.add_argument("--json", action="store_true", dest="as_json")
+    week = commands.add_parser("week", help="brief y acta de la GW para el copiloto")
+    week_commands = week.add_subparsers(dest="week_command", required=True)
+    week_brief = week_commands.add_parser(
+        "brief", help="brief read-only; nunca falla por datos faltantes"
+    )
+    week_brief.add_argument("--gw", type=int, required=True)
+    week_brief.add_argument("--json", action="store_true", dest="as_json")
+    week_brief.add_argument("--no-network", action="store_true",
+                            help="omite los GET públicos a FPL")
+    week_brief.add_argument("--no-acta", action="store_true", help="no corre el acta MILP")
+    week_brief.add_argument("--chips", action="store_true",
+                            help="deja que el planificador proponga chips en el acta")
+    week_brief.add_argument("--horizon", type=int, default=3)
+    week_acta = week_commands.add_parser(
+        "acta", help="acta MILP dry-run (sin traza); parsea solo --json-out"
+    )
+    week_acta.add_argument("--gw", type=int, required=True)
+    week_acta.add_argument("--chips", action="store_true")
+    week_acta.add_argument("--horizon", type=int, default=3)
+    week_acta.add_argument("--json", action="store_true", dest="as_json",
+                           help="salida JSON (ya es el formato por defecto)")
+    memory = commands.add_parser("memory", help="memoria del copiloto por GW")
+    memory_commands = memory.add_subparsers(dest="memory_command", required=True)
+    memory_read = memory_commands.add_parser(
+        "read", help="notas, lecciones, deliberación, intervenciones y ejecuciones"
+    )
+    memory_read.add_argument("--gw", type=int, required=True)
+    memory_read.add_argument("--season")
+    memory_read.add_argument("--json", action="store_true", dest="as_json",
+                             help="salida JSON (ya es el formato por defecto)")
+    note = memory_commands.add_parser("note", help="notas append-only")
+    note_commands = note.add_subparsers(dest="note_command", required=True)
+    note_add = note_commands.add_parser("add", help="añade una nota auditada")
+    note_add.add_argument("--gw", type=int, required=True)
+    note_add.add_argument("--season")
+    note_add.add_argument("--kind", required=True, choices=(
+        "reason", "owner_preference", "hypothesis", "constraint", "post_mortem", "decision",
+    ))
+    note_add.add_argument("--text", required=True)
+    note_add.add_argument("--source", choices=("owner", "assistant"), default="assistant")
+    note_add.add_argument("--players-json", help="JSON inline o @ruta")
+    note_add.add_argument("--supersedes", help="note_id que esta nota reemplaza")
+    note_add.add_argument("--actor", required=True)
+    note_add.add_argument("--reason", required=True)
+    note_add.add_argument("--idempotency-key", required=True)
+    note_add.add_argument("--json", action="store_true", dest="as_json",
+                          help="salida JSON (ya es el formato por defecto)")
+    note_list = note_commands.add_parser("list", help="lista notas")
+    note_list.add_argument("--gw", type=int)
+    note_list.add_argument("--season")
+    note_list.add_argument("--kind", action="append")
+    note_list.add_argument("--limit", type=int, default=200)
+    note_list.add_argument("--json", action="store_true", dest="as_json",
+                           help="salida JSON (ya es el formato por defecto)")
     status = commands.add_parser("status", help="estado operativo consolidado")
     status.add_argument("--json", action="store_true", dest="as_json")
     cockpit = commands.add_parser(
@@ -518,6 +599,70 @@ def main(argv: list[str] | None = None) -> int:
     config = RuntimeConfig.from_env()
     if args.command != "doctor":
         config.validate()
+    if args.command == "tools":
+        from mova_fpl.ops.tools import catalog, render as render_tools
+
+        payload = catalog(config.operating_model)
+        print(json.dumps(payload, ensure_ascii=False, sort_keys=True)
+              if args.as_json else render_tools(payload), end="" if not args.as_json else "\n")
+        return 0
+
+    if args.command == "week":
+        from mova_fpl.ops.week_brief import build_week_brief, render_week_brief, run_acta
+
+        # Nunca crear ni migrar ops.db desde una lectura: sin archivo => db=None.
+        db = (OpsDB(config.ops_db, minimum_version=config.sqlite_min_version)
+              if config.ops_db.is_file() else None)
+        if args.week_command == "acta":
+            payload = run_acta(config, db, gw=args.gw, horizon=args.horizon, chips=args.chips)
+            print(json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str))
+            return 0 if payload["status"] == "ok" else 2
+        payload = build_week_brief(
+            config, db, gw=args.gw, network=not args.no_network,
+            run_acta_flag=not args.no_acta, chips=args.chips, horizon=args.horizon,
+        )
+        print(json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str)
+              if args.as_json else render_week_brief(payload), end="" if not args.as_json else "\n")
+        return 0
+
+    if args.command == "memory":
+        from mova_fpl.ops.memory import add_note, list_notes, parse_players, read_memory
+
+        db = OpsDB(config.ops_db, minimum_version=config.sqlite_min_version)
+        season = args.season or config.season
+        if args.memory_command == "read":
+            payload = read_memory(db, season=season, gw=args.gw)
+        elif args.note_command == "add":
+            payload = add_note(
+                db, season=season, gw=args.gw, kind=args.kind, text=args.text,
+                players=parse_players(args.players_json), source=args.source,
+                actor=args.actor, reason=args.reason,
+                idempotency_key=args.idempotency_key, supersedes_note_id=args.supersedes,
+            )
+        else:
+            payload = list_notes(db, season=season, gw=args.gw,
+                                 kinds=tuple(args.kind or ()), limit=args.limit)
+        print(json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str))
+        return 0
+
+    if args.command == "execute" and args.execute_command == "manual-package":
+        from pathlib import Path
+        from mova_fpl.ops.manual_package import build_manual_package
+
+        db = (OpsDB(config.ops_db, minimum_version=config.sqlite_min_version)
+              if config.ops_db.is_file() else None)
+        payload = build_manual_package(
+            config, gw=args.gw, season=args.season, approved_by=args.approved_by,
+            approved_at=args.approved_at, operations=args.operations,
+            pre_state=Path(args.pre_state), post_state=Path(args.post_state),
+            evidence=Path(args.evidence), rationale=args.rationale,
+            started_at=args.started_at, finished_at=args.finished_at,
+            expires_at=args.expires_at, chip=args.chip, hits=args.hits,
+            out=Path(args.out) if args.out else None, overwrite=args.overwrite, db=db,
+        )
+        print(json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str))
+        return 0
+
     if args.command == "postgres":
         from mova_fpl.postgres.importer import import_shadow, sync_shadow, verify_shadow
         from mova_fpl.postgres.store import migrate as postgres_migrate

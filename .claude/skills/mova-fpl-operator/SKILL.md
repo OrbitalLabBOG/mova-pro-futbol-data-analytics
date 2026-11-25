@@ -1,369 +1,165 @@
 ---
 name: mova-fpl-operator
-description: "Operar, diagnosticar y explicar el harness autónomo MOVA FPL mediante el CLI mova, sus contratos JSON y los runbooks del VPS. Usar para salud, datos, modelos, equipo, controles, jobs, incidentes o despliegue; no usar para escoger jugadores ni para hacer clicks en FPL."
+description: "Operar MOVA FPL en modelo copiloto (ADR-021): leer el catálogo `mova tools`, armar el brief semanal, proponer la decisión a Julián, registrar memoria y cerrar la GW; además salud, datos, modelos, incidentes y rollout del VPS. No usar para escoger jugadores sin el motor ni para hacer clicks en FPL."
 metadata:
   vertical: mova
   type: skill
   repo: mova-pro-futbol-data-analytics
-  updated: 2026-10-21
+  updated: 2026-11-25
 ---
 
-# MOVA FPL Operator
+# MOVA FPL Operator — copiloto
 
-Opera el control plane a través de su fachada versionada. En el VPS usa `/usr/local/bin/mova`;
-en desarrollo usa el console script del entorno editable. No abras SQLite directamente para una
-consulta ordinaria: `mova` y `/api/v1/status` son el contrato estable.
+Un asistente de IA (el Grok Bot de Julián, que orquesta Claude Code para cambios de código)
+opera MOVA cada GW con tools y memoria. **Nada se escribe en FPL sin el OK explícito de
+Julián.** Spec vigente: [ADR-021](../../../docs/specs/fpl-autonomous-operator/decisions/ADR-021-copilot-operating-model.md).
+Runbook paso a paso: [gameweek.md](../../../docs/operations/gameweek.md).
 
-## Orientación mínima
+En el VPS usa `/usr/local/bin/mova`; en desarrollo, el console script del venv. No abras
+SQLite a mano: `mova` y `/api/v1/*` son el contrato. Reporta siempre fecha, SHA observado
+(`status.runtime.git_sha`) y `operating_model`; los cortes documentados no son salud viva.
 
-Para operar desde Orbital OS existe un adaptador `mova-fpl-operator`; este archivo
-sigue siendo el workflow canónico. No implica integración de tools en Orbix Web.
-El mapa de preguntas, comandos y límites está en
-[cockpit.md](../../../docs/operations/cockpit.md#operar-desde-este-chat).
-Reportar siempre fecha y SHA observado; los cortes documentados no son salud viva.
-`doctor` diagnostica; los drills de disaster recovery prueban recuperación y son
-acciones distintas. Un doctor sin fallos puede tener `observability.available=false`:
-leer ese bloque antes de afirmar que la telemetría está completa.
-Tokens comprometidos y usos registrados son magnitudes distintas. Una suscripción
-con `estimated_cost_usd=null` no es gratuita ni tiene un costo API inferible.
-El feedback automático necesita cierre verificado y settlement final; no presentar
-propuestas, corridas de evaluación o contadores de proyecciones como lecciones
-validadas ni como jornadas independientes.
+## Primera lectura
 
-1. Lee `AGENTS.md` del repo.
-2. Empieza por `mova cockpit --json`: es el snapshot común de funciones, autoridad, stages,
-   costos, alertas y revisión desplegada. Si hay P0/P1 o `verdict=critical`, ejecuta
-   `mova triage --incident-id ... --json` antes de bajar a comandos específicos. Lee
-   [docs/operations/cockpit.md](../../../docs/operations/cockpit.md) para interpretar el tablero,
-   el acceso web y el sentinel de deadline. El cockpit es read-only y nunca sustituye los gates.
-3. Ejecuta `mova status --json`, `mova readiness`, `mova harness scorecard` y
-   `mova harness workflow`; conserva `schema_version`,
-   `generated_at`, `overall_status` y `activation.technical_eligible_level` al reportar.
-   `readiness` separa capacidad técnica de autoridad: nunca interpreta elegibilidad como
-   promoción. Usa `mova readiness --require-level A1|A2|A3` como gate automatizable; exit 2
-   significa evidencia insuficiente, no un permiso para rebajar requisitos. El scorecard une
-   calidad, costo, aprendizaje y roles sin crear policy nueva. `blocked` exige atención;
-   `pending` puede ser evidencia temporal pendiente. Nunca confundas su `readiness_pass_ratio`
-   con probabilidad de éxito ni con permiso de ejecución.
-   El workflow explica el orden de Researcher → Optimizer/Validator → Strategist/Critic →
-   Policy → Executor/Verifier → Reviewer. Un stage `complete` con outcome `blocked` y un
-   `execute_verify=skipped_policy` es fail-closed correcto; una fila en `violations` sí es una
-   contradicción operativa y bloquea. `runtime_mutated=false` debe permanecer explícito.
-   La iteración 04/10 expone `stages[].evidence`: terminalidad del import, edad,
-   cobertura y relación con el manifest. Imported no acredita calidad/frescura;
-   un manifest distinto es diagnóstico, no invalida por sí solo señales cuyos
-   contratos de TTL/as-of sigan vigentes.
-4. Si el estado es degradado, incompleto o contradictorio, ejecuta `mova doctor --json`.
-   Para una respuesta compacta usa `mova safety` o `/api/v1/safety`: `unsafe` exige atención
-   inmediata, `attention_required` exige leer `reasons`, y `safe_to_wait` sólo describe el estado
-   observado; nunca eleva permisos ni reemplaza `readiness`.
-5. Lee [docs/operations/operator.md](../../../docs/operations/operator.md) para interpretar
-   el contrato y [docs/operations/vps.md](../../../docs/operations/vps.md) solo si hay que
-   desplegar, revisar systemd, backups o browser.
-6. Para recolectar, revisar cobertura o diagnosticar FPL/odds/WhoScored, lee
-   [docs/operations/data-service.md](../../../docs/operations/data-service.md).
-7. Para entrenar un candidato, proyectar, explicar, reconciliar una GW o interpretar
-   scorecards/drift, lee
-   [docs/operations/analytics-service.md](../../../docs/operations/analytics-service.md).
-   Usa `mova model status|train|predict|explain|evaluate`. `train` debe devolver
-   `runtime_mutated=false`: jamás copies el candidato al bundle activo ni omitas el release gate.
-8. Para cerrar una GW, atribuir una intervención y registrar feedback, lee
-   [docs/operations/gameweek.md](../../../docs/operations/gameweek.md). Ejecuta `mova review gw`
-   solo con `finished + data_checked`, package versionado, actor, razón e idempotency key.
-9. Para activar un plan, sellar el manifiesto o investigar noticias, lee
-   [docs/operations/strategic-research.md](../../../docs/operations/strategic-research.md).
-   Verifica `mova strategy status.memory_summary`: debe provenir de GWs anteriores y lecciones
-   validadas; nunca se reemplaza con historial de chat. El brief de Codex es candidato hasta que
-   el importador determinista lo valide. Consulta `mova strategy research coverage`: un brief v2
-   exige fetch independiente, locator sellado y cobertura exacta del foco; v1 es legacy no medido.
-10. Para clasificar riesgo, sellar un diff o diagnosticar un bloqueo previo al browser, lee
-   [docs/operations/execution-preflight.md](../../../docs/operations/execution-preflight.md).
-   `mova execute` conserva preflight, lease apply-once y verifier; `execute ui-plan` sólo compila
-   DOM después del claim. Lee `mova execute status.delivery` y
-   `readiness.delivery_readiness`: `lineup-v1` es el scope A2 acotado de ADR-014,
-   independiente de la promoción general de los drivers. Los contadores históricos
-   de `browser_driver` no revocan ni amplían ese scope. `live_proof` acredita Save
-   físico de revisión vigente; `final_receipt` puede ser `saved_verified` o
-   `unchanged_verified`. El segundo acredita coincidencia fresca, no un clic Save.
-   Entry point instalado no prueba guardado ni habilita R3. No crear ventanas
-   `delivery_proof`, forzar cambios deportivos ni duplicar un intento verificado;
-   un Save ambiguo requiere conciliación sin nuevo clic.
-   Para registrar cobertura browser viva de XI/R3 usa `mova execute rehearsal-capability-probe`
-   únicamente sobre probes sanitizados generados por el host. Esto no prueba el commit ni promueve
-   entrypoints, autonomía o controles.
-11. Para revisar propuestas, uso/costo, memoria validada o releases de modelos, lee
-    [docs/operations/continuous-improvement.md](../../../docs/operations/continuous-improvement.md).
-    `mova improve transition` nunca aplica la hipótesis al runtime. El único aplicador soportado es
-    `mova improve release` para bundles `minutes+points`, tras shadow pareado; no sirve para código,
-    guardrails ni permisos. Antes de encolar trabajo agentic,
-    consulta `mova cost report`; un exceso agregado o reserva huérfana es un bloqueo real y no se
-    fuerza. Un `job_overrun_observed` histórico exige revisar prompt/budget con evidencia, pero no
-    se presenta como exceso agregado mientras GW y mes sigan `within_budget`. Registra la
-    revisión con `mova cost overrun --reservation-id ... --to reviewed --action ... --actor ...
-    --reason ... --idempotency-key ...`. No uses `waived` automáticamente ni declares
-    `resolved` sin `--followup-reservation-id`: la base exige una corrida posterior equivalente,
-    liquidada y dentro del límite.
-    Revisa `semantic_reuse.*_avoided_uses` y `/api/v1/deliberation-bindings` cuando la
-    deliberación parezca repetitiva. Un binding `semantic_reuse` es éxito idempotente: no vuelvas
-    a encolar ni borres el ledger para forzar otra llamada.
-    `mova review auto` solo procede con settlement final y scorecard baseline; `not_ready` es el
-    resultado correcto para una GW preliminar.
-12. Para diagnosticar persistencia, ejecuta `mova postgres status` y `mova postgres verify`, y
-    lee [docs/operations/postgres-shadow.md](../../../docs/operations/postgres-shadow.md).
-    `storage.read_parity=pass` requiere hashes de contenido, no solo conteos. El gate de tres
-    ciclos usa GWs distintas extraídas de las claves auditadas; snapshots y reintentos dentro de
-    una misma GW no cuentan. El writer sigue siendo SQLite hasta que los gates de ciclos, backup
-    off-host y cutover/rollback se aprueben.
-    `mova postgres drill` prueba únicamente el cutover/rollback de lectura sobre snapshots
-    sellados; un pass no cambia el writer ni autoriza promoción.
-    Antes del drill, `mova postgres roles` debe mostrar separación `pass`: owner para
-    migraciones/imports, app sin DELETE y readonly con transacciones read-only por defecto.
-    Para off-host revisa `status.host.offsite_backup` y los gates
-    `OFF_HOST_BACKUP_CONFIGURED`/`OFF_HOST_RESTORE_PROVEN`. Configurado no significa restaurable:
-    exige además evidencia `offsite_restore` de ocho checks. No muestres repository/password,
-    no actives el timer sin destino y owner autorizados, y nunca incluyas browser-profile ni
-    `CODEX_HOME` en la copia.
+1. `mova tools --json` → catálogo `mova-tools-v1`: nombre, argv, side effect, contrato JSON
+   y si necesita datos del VPS. Es la fuente de verdad de la superficie; la tabla de abajo
+   es un resumen.
+2. `mova status --json` → `operating_model` debe ser `copilot`. Si dice
+   `scheduled_delivery`, detente y avisa a Julián: el opt-in legacy está activo.
+3. `mova week brief --gw N --json` → secciones `cycle`, `authority`, `squad`, `flags`,
+   `projections`, `acta`, `strategy_reasons`, `research_signals`, `lessons`, `execution`,
+   `open_decisions`. Cada sección trae `status` (`ok|missing|degraded|error|skipped`) y
+   `needs_vps`; `overall` es `ready|partial|empty`. Nunca rellenes una sección `missing`
+   con memoria de chat o cifras inventadas: decláralo.
 
-`status` no prueba red ni muta estado. `doctor` hace checks acotados y un único GET público a
-FPL; usa `--no-network` cuando la ejecución deba ser hermética. Un `FAIL` requerido devuelve
-código 1 y bloquea decisiones o despliegues dependientes. Un `WARN` se declara y se evalúa por
-contexto; nunca se presenta como `PASS`.
+## Tools
 
-Las alertas se consultan con `mova alerts status`; `mova alerts channel` muestra si el destino
-externo está `configured`, `local_only` o `invalid` sin revelar URL ni token. El watchdog entrega
-automáticamente las pendientes usando leases y retry: conserva journald y, sólo si el secreto
-opt-in es válido, exige también un webhook HTTPS. Una entrega `sent` no equivale a acuse humano. Para
-reconocer un incidente usa `mova alerts acknowledge --incident-id ... --actor ... --reason ...`.
-No marques como resuelto lo que sólo fue reconocido. Para revisar basura transitoria usa `mova
-maintenance cleanup`; el modo normal es dry-run. `--apply` exige actor, razón e idempotency key y
-nunca debe ampliarse a formatos de evidencia.
+| Tool | Comando | Efecto |
+| --- | --- | --- |
+| `tools` | `mova tools --json` | read |
+| `status` | `mova status --json` | read |
+| `safety` | `mova safety` | read |
+| `doctor` | `mova doctor --json --no-network` | read |
+| `cockpit` | `mova cockpit --json` | read |
+| `triage` | `mova triage --incident-id ID --json` | read |
+| `data.status` | `mova data status` | read |
+| `collect` | `mova collect fpl --force --actor A --reason R --idempotency-key K` | write-memory |
+| `analytics.status` | `mova analytics status` | read |
+| `analytics.reconcile` | `mova analytics reconcile` | write-memory |
+| `model.status` | `mova model status` | read |
+| `week.brief` | `mova week brief --gw N --json [--no-network] [--no-acta] [--chips]` | read |
+| `acta.dry_run` | `mova week acta --gw N --horizon 3 [--chips] --json` | read |
+| `acta.commit` | `python -m mova_fpl.cli.live --season S --gw N --horizon 3 --top-k 0 --team-id 3609854` | write-memory |
+| `strategy.status` | `mova strategy status` | read |
+| `research.due` | `mova strategy research due` | read |
+| `research.enqueue` | `mova strategy research enqueue --force --actor A --reason R --idempotency-key K` | write-memory |
+| `deliberate.status` | `mova strategy deliberate status` | read |
+| `deliberate.enqueue` | `mova strategy deliberate enqueue` | write-memory |
+| `memory.read` | `mova memory read --gw N --json` | read |
+| `memory.note.add` | `mova memory note add --gw N --kind K --text T --source S --actor A --reason R --idempotency-key K --json` | write-memory |
+| `memory.note.list` | `mova memory note list --gw N --json` | read |
+| `execute.status` | `mova execute status` | read |
+| `execute.manual_package` | `mova execute manual-package --gw N --approved-by julian --approved-at TS --operations OPS --pre-state DIR --post-state DIR --evidence FILE --rationale R` | read |
+| `execute.record_manual` | `mova execute record-manual --package FILE --actor A --reason R --idempotency-key K` | write-memory |
+| `review.status` | `mova review status --gw N` | read |
+| `review.settle_auto` | `mova review settle-auto --gw N --actor A --reason R --idempotency-key K` | write-memory |
+| `review.gw` | `mova review gw --package FILE --actor A --reason R --idempotency-key K` | write-memory |
+| `improve.status` | `mova improve status --gw N` | read |
+| `alerts.status` | `mova alerts status` | read |
+| `fpl-web-ops` | skill `.claude/skills/fpl-web-ops` | write-fpl |
 
-Un watchdog `down` abre y entrega un P0 deduplicado; `degraded` significa que el heartbeat puede
-estar sano pero la entrega falló o existe un evento `dead`. Tras reparar el sink usa `mova alerts
-retry --outbox-id ... --actor ... --reason ...`; nunca reintentes un evento `sent` o
-`acknowledged`. Para comprobar la ruta sin falsificar un incidente vivo ejecuta `mova drill
-resilience` con actor, razón e idempotency key. El resultado válido declara
-`runtime_mutated=false` y todos sus checks en true. `mova readiness` debe reflejarlo como
-`RESILIENCE_DRILL_PROVEN=pass`; un acta Markdown no sustituye ese job.
+`read` no muta el ledger (brief y acta solo dejan artefactos efímeros bajo
+`artifact_root/copilot/` o `tmp`; `manual-package` solo escribe el paquete). `write-memory`
+escribe en `ops.db`/`trace.db` con actor, razón e idempotency key. `write-fpl` lo tiene
+**solo** `fpl-web-ops`, y solo con OK de Julián.
 
-Antes de A1 ejecuta `mova drill alert-channel --actor ... --reason ... --idempotency-key ...`.
-Debe declarar seis checks, `external_calls=0` y `runtime_mutated=false`. Ese pass cubre el
-adaptador, no un destino real: `EXTERNAL_ALERT_CHANNEL_CONFIGURED` sólo pasa cuando un owner y un
-webhook autorizado están provisionados en `/etc/mova-fpl/alert-webhook.json` y ensayados en vivo.
-No copies esa URL a logs, Git, actas o argumentos de proceso.
+## Ciclo semanal
 
-Después de provisionar el secreto ejecuta una sola vez `mova alerts test --actor ... --reason
-... --idempotency-key ...`. Debe devolver `pass`, `delivered=true`, un outbox `sent` y el
-fingerprint mostrado por `mova alerts channel`. Replay exacto debe ser `reused` con
-`external_calls=0`; nunca cambies la clave sólo para ocultar un fallo. La prueba reclama únicamente
-su P3 y no debe despachar alertas vecinas. Si falla, repara el sink, deja que el outbox conserve
-retry y usa una clave nueva para producir evidencia limpia. Readiness sólo pasa
-`EXTERNAL_ALERT_CHANNEL_LIVE_PROVEN` para el fingerprint actualmente configurado.
+1. **Brief.** `mova week brief --gw N --json`. Lee primero `open_decisions` y
+   `missing_on_vps`. Si `squad` no viene de `private_team_state` fresco, FT/banco/chips están
+   sin confirmar: pide a Julián re-login FPL en el browser del VPS antes de cerrar
+   transferencias o chips.
+2. **Acta y contexto (a demanda).** `mova week acta --gw N --json` para candidatos MILP,
+   violaciones y `acta_path`. Si hace falta: `strategy status`, `research due|enqueue`,
+   `deliberate status|enqueue`, `memory read`. Research y deliberación ya no corren por
+   timer: encolarlos es una decisión explícita (consume cuota).
+3. **Proponer.** Con `fpl-expert`: XI, banca en orden, C/VC, transferencias (y hits) y chip,
+   cada uno con su razón (xP, minutos, flags, fixtures, memoria), más alternativas y riesgos.
+   Mientras la GW actual no esté `finished + data_checked` la propuesta es preliminar: no
+   promover chips ni transferencias.
+4. **Validar con Julián.** Presenta el plan concreto y espera un OK explícito en el chat
+   sobre ese plan exacto (GW, 15, XI, banca, C/VC, transfers, chip). Un "ok" genérico, el
+   silencio o un OK de otra GW no autorizan nada. Si algo cambia, vuelve a presentarlo.
+5. **Aplicar (solo tras el OK).** Julián lo hace a mano o pide `fpl-web-ops`, que devuelve
+   evidencia pre/post.
+6. **Memoria (siempre).** `mova memory note add --gw N --kind decision --source owner
+   --players-json @plan.json ...` con lo aprobado. Preferencias y restricciones de Julián van
+   como `owner_preference`/`constraint`; tus razones, como `reason`/`hypothesis`.
+7. **Registro manual (si hay estado privado y evidencia).** Snapshots pre/post bajo
+   `MOVA_ARTIFACT_ROOT/team_state/`, luego `mova execute manual-package ...` y
+   `mova execute record-manual --package ...`. Sin sesión FPL válida no es posible: dilo y
+   deja solo la nota `decision`.
+8. **Después de `data_checked`.** `mova analytics reconcile`,
+   `mova review settle-auto --gw N ...` (o `review gw --package ...`) y
+   `mova memory note add --kind post_mortem` con qué funcionó y qué no.
 
-El chaos drill real del API se ejecuta exclusivamente desde el host con
-`deploy/bin/api-recovery-drill.sh ACTOR REASON IDEMPOTENCY_KEY`; no improvises `docker stop` sin
-su trap. El script importa evidencia mediante `mova drill import-host`. Confirma después
-`doctor`, revisión checkout/imagen, watchdog y paridad PostgreSQL. Este drill no cubre DB,
-browser, DOM, save ambiguo ni reboot.
+## Prohibiciones
 
-La caída real de PostgreSQL usa exclusivamente
-`deploy/bin/postgres-recovery-drill.sh ACTOR REASON IDEMPOTENCY_KEY`. El script toma todos los
-locks de writers, conserva API/SQLite, verifica el fingerprint privado y exige paridad posterior;
-exit 75 significa que difirió sin detener el servicio. Su job canónico cubre únicamente el
-escenario PostgreSQL; no basta para `HOST_RECOVERY_DRILLS_PROVEN` y no prueba snapshot corrupto,
-DOM/save ambiguo, combinación de fallos ni reboot.
+- No lanzar la cadena de delivery legacy (`execute dispatch|prepare|claim|ui-plan|begin|finalize|fail`,
+  `rehearsal*`, `delivery-cycle.sh`, drivers R2/R3): no está en el catálogo y falla cerrado
+  con `copilot_mode`.
+- No editar controles (`mova control`), envs, SQLite ni artefactos sin OK explícito de Julián;
+  toda mutación lleva `--actor`, `--reason` e `--idempotency-key`.
+- No re-armar timers de delivery o research ni activar `MOVA_ENABLE_SCHEDULED_DELIVERY`.
+- No forzar plantilla, XI ni capitán dentro del motor: solo `Intervention` acotadas vía
+  `fpl-expert`; `decide()` es el único punto de decisión.
+- No pedir, escribir ni copiar contraseña, OTP, cookies, perfil del browser ni auth de agentes.
+- Supabase es solo PM: nunca runtime ni memoria del agente.
 
-La recuperación real del perfil browser usa exclusivamente
-`deploy/bin/browser-recovery-drill.sh ACTOR REASON IDEMPOTENCY_KEY`. Sólo es válida con controles
-fail-closed A0; realiza lecturas autenticadas antes/después, prueba noVNC/CDP indisponibles,
-conserva el fingerprint privado y restaura el estado inicial on-demand. No captures ni copies su
-estado temporal. Readiness exige los aislados y el combinado en `HOST_RECOVERY_DRILLS_PROVEN`.
+## Salud y diagnóstico
 
-El outage conjunto usa `deploy/bin/combined-recovery-drill.sh ACTOR REASON IDEMPOTENCY_KEY` y
-requiere backup previo. Detiene API+PostgreSQL+browser bajo locks, conserva SQLite, recupera los
-tres y compara paridad/fingerprints. `HOST_RECOVERY_DRILLS_PROVEN` exige cinco escenarios:
-API, PostgreSQL, browser, combinado y reboot real. Replay/conflict debe resolverse antes de pedir
-locks de servicio; si un replay retorna 75, hay drift del wrapper y no debe improvisarse otro
-outage.
+- `mova cockpit --json` es el snapshot común; con P0/P1 o `verdict=critical`, corre
+  `mova triage --incident-id ... --json`. Guía: [cockpit.md](../../../docs/operations/cockpit.md).
+- `mova safety` resume: `unsafe` exige atención, `attention_required` exige leer `reasons`.
+  Nunca eleva permisos.
+- `mova doctor --json [--no-network]`: un `FAIL` requerido devuelve 1 y bloquea decisiones
+  dependientes; un `WARN` se declara y nunca se presenta como `PASS`.
+- Contrato completo: [operator.md](../../../docs/operations/operator.md).
 
-El reboot real tiene dos fases. `deploy/bin/reboot-recovery-prepare.sh ACTOR REASON
-IDEMPOTENCY_KEY` sólo valida A0, crea backups y sella estado con TTL de diez minutos; jamás reinicia
-el VPS. Detente ahí hasta obtener autorización explícita separada. Al volver de un reboot iniciado
-dentro del TTL, la unidad `mova-fpl-reboot-recovery.service` exige boot ID distinto, stack/timers,
-tick nuevo, SQLite/PostgreSQL, revisión, controles, team state e idempotencia intactos antes de
-importar evidencia. Un pending expirado no cuenta y no se repara inventando timestamps.
+| Síntoma | Acción |
+| --- | --- |
+| `private_team_state` WARN / `FPL_AUTH_REQUIRED` | Julián re-loguea por noVNC ([vps.md](../../../docs/operations/vps.md)); no inventar estado ni tocar el perfil. |
+| `autonomous_data_service` FAIL/WARN | `mova data status`; aislar la fuente ([data-service.md](../../../docs/operations/data-service.md)). |
+| `canonical_database`, `trace_database`, `model_artifacts` FAIL | No proponer con el acta hasta restaurar y verificar. |
+| `analytics` sin scorecard | `mova analytics status`; si la GW no está `data_checked`, esperar ([analytics-service.md](../../../docs/operations/analytics-service.md)). |
+| `deployment_revision` WARN | Comparar checkout, imagen y SHA antes de atribuir capacidades. |
+| Watchdog failed por disco | Reportar; podar backups/imports solo con OK y según [vps.md](../../../docs/operations/vps.md). |
+| API FPL FAIL | Conservar la última evidencia y declarar la pérdida de frescura. |
 
-Para probar snapshot inválido usa `mova drill snapshot --actor ... --reason ...
---idempotency-key ...`. Es hermético y debe declarar diez checks, `fixture_only=true` y
-`runtime_mutated=false`; no improvises corrupción sobre `postgres-imports/`. Readiness sólo pasa
-`SNAPSHOT_REJECTION_PROVEN` con un job completado y no acepta una nota Markdown como sustituto.
+`mova collect <fuente> --force` es una mutación del ledger (exit 2 = degradado, 75 = lock o
+cadencia). El collector solo lee fuentes externas; no concede autoridad sobre FPL.
 
-Para ensayar deriva DOM y save ambiguo usa `mova drill browser-failure --actor ... --reason ...
---idempotency-key ...`. Debe declarar al menos diez checks completos, `fixture_only=true` y
-`runtime_mutated=false`; no abre el browser ni autoriza clicks. Confirma después
-`BROWSER_FAILURE_DRILL_PROVEN=pass`, `doctor`, `safety` y los controles A0 intactos. Esta evidencia
-no aumenta los contadores de rehearsals vivos.
+## Qué queda en el VPS
 
-Para comprobar el grafo agentic sin gastar tokens ni fabricar una GW usa `mova drill
-orchestration --actor ... --reason ... --idempotency-key ...`. Debe pasar al menos doce checks,
-declarar `external_calls=0` y `runtime_mutated=false`. Replay exacto reutiliza el job; la misma
-clave con actor/razón distintos es conflicto. Este drill prueba policy y dependencias, no cuenta
-como research, rehearsal browser, settlement ni aprobación de autonomía.
-
-## Recuperación y relojes — iteración 04/10
-
-Verifica la revisión desplegada antes de atribuir estas capacidades al VPS.
-`status.host.disaster_recovery`, `cockpit.resilience.backup_freshness` y
-`watchdog.disaster_recovery` deben concordar: reporte horario de la misma revisión,
-seis checks pass, máximo 90 minutos y edad real del snapshot dentro de RPO 7 h.
-Missing/stale/invalid abre P1 deduplicado, no un restore automático. Doctor no usa
-mtime de carpetas de release como evidencia de backup. Sensor sano no prueba
-reboot ni host vacío; sigue `docs/operations/host-recovery.md`.
-
-El probe DOM `fpl-pick-team-a11y-2026.10.1` inspecciona las once fichas en
-etapas CDP independientes, sin toggles ni Save. Su helper del host conserva
-un reloj total de 90 s y un máximo de 25 s por llamada; un timeout falla
-cerrado. HTTP 200 no acredita cancha ni rehearsal. Ver el runbook VPS de
-`fpl-web-ops` para la espera acotada y el inbox protegido.
-
-R2 `fpl-r2-host-driver-2026.10.2` consume lease/hard stop explícitos, reserva 30 s
-para verificación y limita llamadas dentro del contenedor. Begin sin respuesta
-se reconcilia mediante transiciones atómicas. Interrupción tras begin conserva
-ambigüedad y nunca repite Save. No heredar rehearsals de otro contrato ni
-habilitar lineup/R3 por actualizar código.
-
-La captura privada espera la redirección inicial `/` → `/en/` y el documento
-cargado antes del GET; el origen FPL por sí solo no evita perder el contexto CDP.
-No exige controles del pitch ni reintenta el GET por un 403. Un 403 requiere
-revisar autenticación con `fpl-web-ops`; contraseña/MFA los completa el humano.
-Al preparar ese handoff, pausa temporalmente el timer privado para que no cierre
-la ventana y reanúdalo después de verificar sesión o cancelar el handoff.
-
-Timeouts/conexión y HTTP 5xx del collector admiten dos retries programados con
-cooldown 15/30 minutos, después cadencia normal. 403/auth, 429/cuota, calidad
-inválida y errores desconocidos conservan cadencia/escalamiento. Odds conserva
-su planner de cuota. No fuerces retries repetidos ni declares datos viejos frescos.
-
-ADR-011 fue aprobado por Julián el 9 de octubre de 2026 (Colombia).
-`mova strategy research coverage` conserva la auditoría histórica sin borrar fallos.
-Readiness usa `mova strategy acceptance status`: contrato inmutable registrado
-antes de inferencia, al menos tres GWs futuras concretas, primera corrida operativa
-por slot, 90 % cobertura, 80 % evidencia, cero conflictos aplicables y consumo exacto.
-Un fallo de intento o slot no se reemplaza por un éxito posterior. Experimentos no
-cuentan; deriva material requiere nueva aprobación y cohorte futura sin solapamiento.
-Registrar aceptación no promueve permisos ni concede escrituras.
-
-## Investigación y sesión persistente
-
-Para pendientes research usa `mova strategy research due`, `coverage`, `cost report`
-y `/api/v1/agent-queue`. Researcher 1.17 continúa el foco desde T−72h por el timer,
-sin aprobación humana por corrida, máximo artificial de tres runs ni reserva futura
-especulativa. Conserva cuotas reales, locks, hashes, identidad/publicación/TTL y
-cutoff T−80min para continuaciones; refresh T−6h/T−2h reabre dudas/límites.
-`processed_subjects`, `verified_subjects` y `completed_subjects` son distintos.
-`complete_with_limits` requiere lecturas públicas atestadas; no acredita fuentes
-válidas ni aceptación A3. `complete_with_uncertainty` mantiene preguntas abiertas.
-No reencolar un slot terminado para gastar su cuota; no ocultar fallos/charges ni
-reescribir cohortes ADR-011. Contrato completo en strategic-research y ADR-016.
-
-Comprueba perfil montado, keep-running, salud del browser y última lectura privada
-sanitizada. Sesión persistente no implica login Google/FPL desatendido. Ante redirect,
-403 o `FPL_AUTH_INTERACTION_REQUIRED`, inspeccionar antes de atribuir expiración;
-contraseña/MFA/CAPTCHA/consentimiento nuevo requieren al humano. No copiar cookies,
-perfil ni auth Codex. No detener Chromium de rutina si keep-running está activo.
-El dispatcher regular refresca estado autenticado antes de intentar guardar; una
-lectura antigua o un browser healthy no prueban autenticación actual ni Save.
+Collectors público y privado, timers de analytics/ML, tick (envelope + preflight como
+memoria), `ops.db`/`trace.db`/backups, API de datos y watchdog (solo salud). Delivery y
+research ya no tienen timer. Rollout de ADR-021 (requiere OK de Julián):
+[vps.md](../../../docs/operations/vps.md#rollout-adr-021-modelo-copiloto).
 
 ## Fuentes de verdad
 
-- Git: código, contratos, configuración de ejemplo, skills y runbooks.
+- Git: código, contratos, skills y runbooks.
 - VPS: estado operativo, bases, artefactos, backups, logs y browser persistente.
-- `ops.db`: ledger y writer vigente hasta el cutover PostgreSQL explícitamente aprobado.
-- Supabase: seguimiento PM exclusivamente; nunca runtime ni memoria del agente.
+- `ops.db`: ledger y memoria (`copilot_strategy_notes`, lecciones, ejecuciones manuales).
+- Chat: conversación con Julián; lo que deba recordarse se guarda con `mova memory note add`.
 
-No confíes en un SHA documental si `status.runtime.git_sha`, el probe del checkout y la revisión
-de la imagen discrepan. No declares un modelo disponible por estar mencionado en documentación:
-`doctor.model_artifacts` debe verlo y posteriormente su release deberá estar registrado.
+Otras referencias, cargar solo si aplican:
+[strategic-research.md](../../../docs/operations/strategic-research.md),
+[continuous-improvement.md](../../../docs/operations/continuous-improvement.md),
+[postgres-shadow.md](../../../docs/operations/postgres-shadow.md),
+[execution-preflight.md](../../../docs/operations/execution-preflight.md) (preflight y legacy),
+[host-recovery.md](../../../docs/operations/host-recovery.md).
 
-## Autoridad y seguridad
-
-Consultar `status`, `doctor`, API de solo lectura, métricas y logs es lectura. `control`, deploy,
-rollback, restauración y cualquier acción browser cambian estado y requieren que la petición los
-autorice. Toda modificación de control exige `--actor` y `--reason`; no edites el env para saltar
-el ledger.
-
-El operador no elige jugadores. Para estrategia y modelos usa `fpl-expert`; para ejecutar una
-decisión ya aprobada en la web usa `fpl-web-ops`. Con `kill_switch=true`, `shadow/A0`, compliance
-pendiente o `browser_writes=false`, limita el browser a login y lecturas.
-
-## Diagnóstico por síntoma
-
-- `scheduler_heartbeat FAIL`: revisar timer, service y journald antes de lanzar otro tick.
-- `autonomous_data_service FAIL/WARN`: ejecutar `mova data status`; aislar
-  `fpl_official`, `football_data_odds`, `whoscored_schedule` o `whoscored_events` y revisar su
-  último run. No fuerces `all` cuando basta reintentar una fuente.
-- `private_team_state WARN`: refrescar por el collector autenticado; no sustituirlo por datos
-  inventados ni tocar el perfil.
-- `canonical_database`, `trace_database` o `model_artifacts FAIL`: bloquear una decisión basada
-  en modelos hasta restaurar y verificar el componente.
-- `analytics` sin scorecard: ejecutar `mova analytics status`; si la GW no está `data_checked`,
-  esperar. `insufficient` durante las primeras seis referencias no es drift. Ante `alert`, leer
-  `drift.reasons` y componentes antes de proponer reentrenamiento; no promover automáticamente
-  una variante shadow.
-- `deployment_revision WARN`: no asumir qué código corre; comparar checkout, imagen y SHA
-  aprobado antes de reconstruir.
-- `research_worker FAIL`: verificar timer, cola y presencia sanitizada del auth; nunca
-  mostrar, copiar a Git ni incluir el archivo de autenticación en evidencias.
-- research coverage parcial: inspeccionar `fetch_error_code`, `coverage.groups`, conflictos y
-  sujetos `not_checked`; no convertir una cita de search en evidencia ni rebajar el gate multi-GW.
-- propuesta de mejora atascada: consultar `mova improve status`; no saltar `testing`, no aceptar
-  sin evidencia/rollback y no confundir una lección aceptada con un despliegue.
-- release de modelo atascado: consultar `mova improve release status`; comprobar hashes, variante
-  shadow y scorecards pareados. Nunca editar `active_model_bundle` con `mova control` para saltar
-  el gate.
-- `host_probe WARN`: usar el wrapper del host; no montar Docker socket o D-Bus dentro del engine.
-- API FPL `FAIL`: conservar la última evidencia, declarar la pérdida de frescura y no forzar una
-  corrida que parezca vigente.
-
-`mova collect <fuente> --force` es una mutación del ledger y exige `--actor`, `--reason` e
-`--idempotency-key`. El collector sólo lee fuentes externas; no concede autoridad para clicks o
-escrituras en FPL. Código 2 significa corrida degradada y código 75 lock/cadencia conocida, no
-éxito pleno.
-
-`mova review gw` es una mutación post-settlement. Una GW sin batch inmutable predeadline solo
-admite review retrospectivo; nunca backfillea `model_evaluation_runs`. Después del cierre puede
-exportar ops/trace a PostgreSQL shadow mediante el import auditado, fuera del deadline.
-
-Después de un cambio ejecuta la prueba cercana, `pytest -q`, smoke de Docker y nuevamente
-`mova doctor --json`. Actualiza Supabase solo con evidencia ya verificada.
-
-## Entrega semanal progresiva
-
-ADR-019: un manual v2 importado protege sólo su ciclo, sin deshabilitar el scope
-permanente. No apagar delivery_scope para ese hold: usar guarded durante la
-operación aprobada y restaurar A2/autonomous después. manual_receipt es distinto
-del recibo nativo; evidencia alterada conserva el bloqueo y no prueba entrega.
-La GW siguiente no hereda ese hold. Scope=null continúa siendo una revocación.
-Aceptación research v2 es opt-in por campaña completa; el contrato se obtiene
-con `strategy acceptance contract --campaign`. Todas las corridas y fallos cuentan;
-las cohortes v1 no se reescriben. Registrar una nueva exige aprobación trazable
-para sus GWs futuras concretas, nunca permisos por cada corrida ni promoción A3.
-
-ADR-017 añade el control opt-in auditado `delivery_policy="progressive-lineup-v1"`.
-Con `lineup-v1` conserva A2 y cero transfers/hits/chips, pero permite revisiones
-desde T−72h hasta T−30m. Consultar `execute status.delivery.latest_verification`
-(fase/hora/resultado), `final_receipt` y `live_proof` por separado. Provisional no
-cierra GW ni satisface cierre/evaluación final. No repetir el mismo plan ni operar
-tras ambigüedad; el siguiente ajuste requiere estado/solve/preflight nuevos. La
-petición expresa de Julián del22/10 autoriza implementar y activar esta política,
-no una cuota mayor ni otra autoridad. Sin ese control continúa la ventana antigua.
-
-### Excepción de presupuesto aprobada el 28/10/2026
-
-ADR-011 contiene la excepción explícita del owner para una única enmienda
-prospectiva de GW10–12 por el paso Researcher 1.17 → 1.18. Usar únicamente
-`strategy acceptance amend` con manifiesto original, contrato vigente, aprobación
-y experimento independiente completed/exacto. Nunca modificar la fila original.
-El comando bloquea ventanas abiertas, cualquier corrida previa, cuotas/criterios
-alterados y segundas enmiendas. Leer `active.amendment` además del hash original;
-esta excepción no autoriza otras cohortes, A3, transferencias ni chips.
+Después de un cambio de código: prueba cercana, `pytest -q`, `docker compose config` y, en el
+VPS tras un deploy aprobado, `mova doctor --json`. Para estrategia usa `fpl-expert`; para
+aplicar en la web, `fpl-web-ops`.

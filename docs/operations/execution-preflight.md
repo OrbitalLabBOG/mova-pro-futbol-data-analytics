@@ -1,15 +1,28 @@
 ---
 type: runbook
-name: "MOVA FPL — policy de autonomía y preflight"
+name: "MOVA FPL — preflight, registro manual y cadena de delivery legacy"
 created: 2026-08-30
-updated: 2026-10-21
+updated: 2026-11-25
 tags: [mova, fpl, execution, preflight, autonomy, guardrails]
 status: active
 ---
 
 # Policy de autonomía y preflight
 
-## Protección manual por jornada
+> **Copiloto (ADR-021, 25/11/2026).** La cadena de delivery automática de este documento
+> (timer de delivery, `delivery-cycle.sh`, `execute dispatch|prepare|claim|ui-plan|begin|finalize|fail`,
+> drivers R2/R3, `delivery_proof`) es **legacy opt-in**: solo corre con
+> `MOVA_ENABLE_SCHEDULED_DELIVERY` y, sin ese opt-in, `dispatch` devuelve
+> `blocked/copilot_mode`. No se usa ni se recomienda en la operación semanal.
+>
+> Siguen vigentes: `mova execute status`, `execute preflight` (sella el diff como memoria),
+> `execute manual-package` y `execute record-manual` (sección
+> [Ejecución supervisada observada y registro verificable](#ejecución-supervisada-observada-y-registro-verificable)).
+> En copiloto los controles esperados son `browser_writes=false`, A0, `delivery_scope=null`;
+> la escritura en FPL la autoriza el OK explícito de Julián y se hace con `fpl-web-ops`.
+> Runbook vigente: [gameweek.md](gameweek.md).
+
+## Protección manual por jornada (legacy)
 
 Un paquete manual v2 importado conserva su GW mediante `manual_cycle_hold`, sin
 apagar el scope semanal. Tick conserva esa decisión y dispatcher/preflight/claim/
@@ -21,16 +34,16 @@ usar guarded y la autorización concreta; al terminar restaurar A2/autonomous.
 separadamente del recibo nativo. Evidencia dañada o Save ambiguo no acreditan éxito.
 Ver [ADR-019](../specs/fpl-autonomous-operator/decisions/ADR-019-weekly-continuity-campaign-acceptance.md).
 
-## Entrega programada de alineación — lineup-v1
+## Entrega programada de alineación — lineup-v1 (legacy opt-in)
 
-`mova-fpl-delivery.timer` llama cada cinco minutos a `deploy/bin/delivery-cycle.sh`.
+Antecedente retirado por ADR-021: el timer de delivery (legacy) llamaba cada cinco minutos a `deploy/bin/delivery-cycle.sh`.
 Sin scope o autoridad válida observa el bloqueo y termina sin abrir el navegador.
 Con `delivery_scope=lineup-v1`, A2, modo autónomo, compliance aprobado, writes
 habilitados y kill switch off, opera entre T−3h y T−30m. La última ventana de
 verificación conserva el hard stop T−15m. No necesita que el collector esté due.
 
 El host captura e ingresa estado privado, fuerza un tick con clave por ventana,
-ejecuta `mova execute dispatch` y llama al wrapper R2 sobre el intento preparado.
+ejecutaba el dispatch legacy y llamaba al wrapper R2 sobre el intento preparado.
 No transmite auth ni claim tokens por argumentos. Los locks del browser/capacidad
 se reclaman antes del lease; un 75 difiere al próximo timer. El optimizer mantiene
 los quince jugadores, sin chips/hits/transferencias, y preflight revalida el scope.
@@ -64,6 +77,12 @@ reintentos. Esos antecedentes no describen la autoridad viva: el scope acotado
 A0/shadow mantienen writes off; instalar el driver no concede autoridad.
 
 ## Ejecución supervisada observada y registro verificable
+
+En copiloto este es el registro normal de una GW aplicada con OK de Julián:
+`mova execute manual-package` arma el paquete `mova-fpl-manual-verified-execution-v2` desde
+los snapshots privados pre/post y la evidencia, y `mova execute record-manual --package ...`
+lo registra. El cierre posterior lo hace `mova review settle-auto` con contrato
+`mova-fpl-manual-closeout-v2`.
 
 El montaje humano desde el browser del VPS tiene antecedentes verificables en
 [GW2](../decisions/2026-27/gw02-research-and-decision.md) y
@@ -408,7 +427,7 @@ sólo acepta el estado previo intacto, demuestra cada lectura mediante su artifa
 sellado y mantiene todo el historial. No marca delivery ni realiza Save. Si
 cambió cualquier parte del estado o hay otro intento, se detiene.
 
-## Entrega semanal progresiva — ADR-017
+## Entrega semanal progresiva — ADR-017 (legacy)
 
 La política opt-in `delivery_policy="progressive-lineup-v1"` conserva el scope
 `lineup-v1` y habilita preparación/revisión desde T−72h hasta T−30m, sin ampliar

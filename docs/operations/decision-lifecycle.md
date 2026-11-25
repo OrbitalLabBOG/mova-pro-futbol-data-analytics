@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — lifecycle de decisión shadow"
 created: 2026-08-28
-updated: 2026-10-04
+updated: 2026-11-25
 tags: [mova, fpl, decision-envelope, validator, shadow]
 status: active
 ---
@@ -13,6 +13,14 @@ HV1-06A convierte la salida del engine en un paquete máquina reproducible. HV1-
 deliberación acotada de Strategist + Critic. El MILP sigue siendo la única autoridad que arma
 plantillas; los roles comparan opciones y proponen una `Intervention` shadow, pero no reescriben
 la decisión, no suavizan gates y no operan FPL.
+
+En copiloto (ADR-021) el envelope y la deliberación son **memoria para el brief**:
+`mova week brief` los expone en `strategy_reasons` y el asistente los usa para justificar la
+propuesta ante Julián. La deliberación se encola a demanda (`mova strategy deliberate
+enqueue`), no por timer. Una decisión aprobada por Julián se registra con
+`mova memory note add --kind decision` y, si se aplicó con evidencia, con
+`mova execute manual-package` + `mova execute record-manual`; la etapa Executor del
+lifecycle automático queda legacy opt-in.
 
 ## Flujo
 

@@ -1,13 +1,41 @@
+---
+type: agents
+name: AGENTS.md — MOVA Fantasy Fútbol Data Analytics
+updated: 2026-11-25
+---
+
 # AGENTS.md — MOVA Fantasy Fútbol Data Analytics
 
 Este repositorio contiene el motor FPL vivo de MOVA. Codex debe tratar Git como
 fuente canónica de código y documentación, PostgreSQL/SQLite del VPS como datos
 operativos y Supabase únicamente como seguimiento PM.
 
-Julián Zuluaga es el owner y decide la dirección y promoción de MOVA Fantasy.
+Julián Zuluaga es el owner y decide la dirección de MOVA Fantasy.
 No exigir aprobación de otro revisor como gate del proyecto. Las pruebas,
 contratos, límites de operación y decisiones de cumplimiento se verifican por
-su propia evidencia; no se sustituyen por un visto bueno personal.
+su propia evidencia; no se sustituyen por un visto bueno personal. La única
+excepción es la decisión semanal sobre la cuenta FPL: ahí el OK explícito de
+Julián es el gate (ADR-021).
+
+## Modelo operativo: copiloto (ADR-021, 25/11/2026)
+
+Un asistente de IA (el Grok Bot de Julián, que orquesta Claude Code o Codex para
+cambios de código) opera MOVA cada GW con el catálogo `mova tools --json` y la
+memoria de `ops.db`. Propone XI, banca, C/VC, transferencias y chip con razones;
+**nada se escribe en FPL sin el OK explícito de Julián** sobre ese plan concreto.
+Ya no se busca un Save autónomo por jornada: `operating_model=copilot` es el
+default y la cadena de delivery automática falla cerrado (`copilot_mode`).
+
+Ciclo semanal (runbook: `docs/operations/gameweek.md`):
+
+1. `mova week brief --gw N --json`
+2. `mova week acta --gw N --json` (+ `strategy`, `research`, `deliberate` a demanda)
+3. Proponer con razones y validar con Julián en el chat.
+4. Aplicar con `fpl-web-ops` solo después de su OK explícito.
+5. `mova memory note add --kind decision` (siempre) y, si hay estado privado y
+   evidencia, `mova execute manual-package` + `mova execute record-manual`.
+6. Tras `data_checked`: `mova analytics reconcile`, `mova review settle-auto|gw`
+   y `mova memory note add --kind post_mortem`.
 
 ## Qué está vivo
 
@@ -27,13 +55,16 @@ su propia evidencia; no se sustituyen por un visto bueno personal.
 - PostgreSQL 17 corre privado. Sigue en shadow para el path de decisión, pero es
   writer autorizado del data service FPL/odds/WhoScored. No hacer cutover del
   resto del harness sin los gates de HV1-02.
-- API loopback, timers systemd, backups, collector público y collector privado
-  autenticado de solo lectura.
-- Browser separado con perfil persistente. A0/shadow y writes off son los defaults
-  de instalación, no una descripción del VPS vivo. Consultar controles en `mova status`:
-  el corte del 21/10/2026 tiene A2/autonomous, scope `lineup-v1`, mismos 15,
-  XI/banca/C/VC y cero transferencias/hits/chips (ADR-014). La sesión se conserva
-  con Chromium activo y volumen protegido; contraseña/MFA requieren al humano.
+- El VPS conserva: API loopback de datos, collectors público y privado
+  autenticado de solo lectura, timers de analytics/ML, tick (envelope y preflight
+  como memoria), `ops.db`/`trace.db`/backups y watchdog (solo salud). Delivery y
+  research ya no tienen timer; research y deliberación son on-demand.
+- Browser separado con perfil persistente. En copiloto los controles quedan
+  fail-closed (`browser_writes=false`, A0, sin `delivery_scope`); consultar
+  `mova status --json` (`operating_model`) antes de afirmar el estado del VPS: el
+  reset de controles de ADR-021 lo ejecuta Julián o se hace con su OK
+  (`docs/operations/vps.md`). La sesión se conserva con Chromium activo y volumen
+  protegido; contraseña/MFA requieren al humano.
 - Equipo real: `losmillosFPL`, `team_id=3609854`.
 
 La hoja de ruta migra gradualmente los datos analíticos y operativos a
@@ -42,31 +73,32 @@ operarlo. Supabase no es runtime ni almacén FPL.
 
 ## Interfaz operativa
 
-En el VPS, usar el wrapper estable:
+En el VPS, usar el wrapper estable. La superficie de tools es `mova tools --json`
+(`mova-tools-v1`: nombre, argv, side effect `read|write-memory|write-fpl`, contrato):
 
 ```bash
-mova status
+mova tools --json
 mova status --json
-mova doctor
+mova week brief --gw N --json
+mova week acta --gw N --json
+mova memory read --gw N --json
 mova doctor --json --no-network
-mova postgres status
-mova postgres verify
 mova data status
-mova collect all
 mova analytics status
-mova analytics run
 ```
 
-Consultar primero `docs/operations/operator.md` y la skill canónica
-`.claude/skills/mova-fpl-operator/SKILL.md`; `.agents/skills/mova-fpl-operator/SKILL.md`
-es su adaptador nativo. Los cortes antiguos del README son antecedentes fechados.
+Ningún comando del CLI es `write-fpl`; esa clase solo la tiene la skill
+`fpl-web-ops`. Consultar primero la skill canónica
+`.claude/skills/mova-fpl-operator/SKILL.md` (`.agents/skills/mova-fpl-operator/SKILL.md`
+es su adaptador nativo) y `docs/operations/operator.md`. Los cortes antiguos del README son antecedentes fechados.
 Para Docker Compose manual, cargar
 `/etc/mova-fpl/deploy.env`; el runbook exacto está en
 `docs/operations/vps.md`.
 
 No editar envs, SQLite, artefactos ni controles para saltarse un check. Toda
-mutación debe tener actor, razón e idempotency key. Las decisiones y corridas de
-research son observación mientras los controles sigan en A0/shadow.
+mutación debe tener actor, razón e idempotency key. Cambiar controles en el VPS
+(`mova control`), timers o envs requiere OK explícito de Julián. No usar la cadena
+de delivery legacy (`execute dispatch|prepare|claim|ui-plan|begin|finalize|fail`).
 
 ## Flujo FPL
 
@@ -78,9 +110,9 @@ MILP → `Decision` → acta y traza.
 - El agente solo modifica entradas acotadas mediante `Intervention`; nunca
   fuerza plantilla, once o capitán.
 - La primitiva HTTP del motor solo realiza GET. Las escrituras FPL ocurren en el
-  browser aislado, mediante dispatcher/driver y autoridad efectiva auditada.
-  `lineup-v1` no habilita R3, transferencias ni chips; salud, cobertura research
-  o una actualización documental nunca conceden autoridad.
+  browser aislado mediante `fpl-web-ops`, a mano o asistidas, y solo con el OK
+  explícito de Julián sobre un plan concreto. Salud, cobertura research, un acta
+  nueva o una actualización documental nunca conceden autoridad.
 - Una propuesta para la GW siguiente es preliminar mientras la GW actual no
   esté `finished` y `data_checked`. No promover chips ni transferencias en ese
   estado.
@@ -125,8 +157,11 @@ No declarar listo un cambio del VPS sin verificar revisión de checkout/imagen,
 ## Documentación y desarrollo
 
 - Operación: `docs/operations/`.
-- Spec autónoma vigente:
+- Spec vigente: modelo copiloto,
+  `docs/specs/fpl-autonomous-operator/decisions/ADR-021-copilot-operating-model.md`.
+- Spec autónoma (superseded, antecedente):
   `docs/specs/fpl-autonomous-operator/10-autonomous-harness-v1.md`.
+- Plan de la migración: `docs/plans/operator-tools-refactor.md`.
 - Spec histórica del motor:
   `docs/specs/fpl-decision-engine/`.
 - Markdown permanente lleva frontmatter YAML y debe actualizar una fuente

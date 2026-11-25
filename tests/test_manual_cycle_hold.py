@@ -21,6 +21,8 @@ def test_manual_v2_holds_cycle_and_next_cycle_resumes_without_control_write(tmp_
                 'browser_writes':True,'compliance_gate':'approved'}.items():
         db.set_control(k,v,actor='owner',reason='permanent bounded authority')
     record(package,actor='owner',reason='manual override',idempotency_key='manual')
+    # ADR-021: the scheduler is legacy opt-in; this test covers that opt-in path.
+    monkeypatch.setenv('MOVA_ENABLE_SCHEDULED_DELIVERY','1')
     config=RuntimeConfig.from_env()
     before=db.controls()
     d=DeliveryService(config,db)

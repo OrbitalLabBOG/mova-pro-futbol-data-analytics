@@ -1168,6 +1168,37 @@ MIGRATION_024 = (
     ),
 )
 
+# Memoria del modelo copiloto (ADR-021): notas append-only por GW. `decision`
+# registra lo que el owner aprobó aunque no exista evidencia record-manual v2.
+# Sin FK a gameweek_cycles: una nota puede preceder al ciclo observado localmente.
+MIGRATION_025 = (
+    """CREATE TABLE strategy_notes (
+        note_id TEXT PRIMARY KEY,
+        cycle_id TEXT NOT NULL,
+        season TEXT NOT NULL,
+        gw INTEGER NOT NULL CHECK (gw BETWEEN 1 AND 38),
+        kind TEXT NOT NULL CHECK (kind IN ('reason','owner_preference','hypothesis',
+          'constraint','post_mortem','decision')),
+        text TEXT NOT NULL CHECK (length(text) BETWEEN 1 AND 2000),
+        players_json TEXT NOT NULL CHECK (json_valid(players_json)),
+        source TEXT NOT NULL CHECK (source IN ('owner','assistant')),
+        actor TEXT NOT NULL CHECK (length(trim(actor)) > 0),
+        reason TEXT NOT NULL CHECK (length(trim(reason)) > 0),
+        idempotency_key TEXT NOT NULL UNIQUE,
+        request_sha256 TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        supersedes_note_id TEXT REFERENCES strategy_notes(note_id),
+        CHECK (cycle_id = season || '-gw' || printf('%02d', gw))
+    ) STRICT""",
+    "CREATE INDEX idx_strategy_notes_gw ON strategy_notes(season, gw, created_at)",
+    *tuple(
+        f"CREATE TRIGGER immutable_strategy_notes_{op.lower()} "
+        f"BEFORE {op} ON strategy_notes "
+        "BEGIN SELECT RAISE(ABORT, 'strategy notes are append-only'); END"
+        for op in ("UPDATE", "DELETE")
+    ),
+)
+
 MIGRATIONS = (
     (1, "initial_ops_schema", MIGRATION_001),
     (2, "team_state_artifact_provenance", MIGRATION_002),
@@ -1193,4 +1224,5 @@ MIGRATIONS = (
     (22, "prospective_research_acceptance", MIGRATION_022),
     (23, "alert_lifecycle_supersession", MIGRATION_023),
     (24, "prospective_research_budget_amendment", MIGRATION_024),
+    (25, "copilot_strategy_notes", MIGRATION_025),
 )

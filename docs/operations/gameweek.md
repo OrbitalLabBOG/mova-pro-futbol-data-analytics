@@ -1,32 +1,188 @@
 ---
 type: runbook
-name: MOVA FPL — operar y cerrar una jornada
-updated: 2026-10-21
+name: MOVA FPL — operar y cerrar una jornada (modelo copiloto)
+updated: 2026-11-25
 status: active
+supersedes_section: "Ruta operativa vigente (lineup-v1 autónomo, 21/10/2026)"
 ---
 
 # Runbook — operar una jornada de FPL
 
-Para la persona que tiene que emitir el acta antes del cierre, incluso si algo se rompió.
+Para el asistente que opera MOVA cada GW (el Grok Bot de Julián, que orquesta Claude Code
+para cambios de código) y para Julián. Modelo vigente:
+[ADR-021](../specs/fpl-autonomous-operator/decisions/ADR-021-copilot-operating-model.md).
+
+**Regla única: nada se escribe en FPL sin el OK explícito de Julián** sobre un plan
+concreto (GW, 15, XI, banca en orden, C/VC, transferencias, hits, chip). El motor propone;
+el asistente explica; Julián decide.
 
 ---
 
-## Ruta operativa vigente
+## Ciclo semanal del copiloto
 
-En el VPS usar el wrapper `mova`, los timers y [execution-preflight](execution-preflight.md).
-El scope `lineup-v1` conecta lectura autenticada → decisión → driver con lease →
-verifier; conserva los mismos 15, cero transfers/hits/chips y autoridad A2 auditada.
-El resultado final es `saved_verified` o `unchanged_verified` con estado fresco;
-el no-op no demuestra Save físico. No forzar otra propuesta para fabricar un Save.
-Después de settlement final, el cierre financiero v2 puede consumir el recibo
-sellado del no-op y publicar evaluación; sin recibo no inventar cierres GW6/7.
-Research continúa pendientes automáticamente y refresca dudas/límites en T−6h/T−2h.
-Véase [corte del 21/10](../decisions/2026-27/operator-sync-20261021.md).
+| Paso | Qué | Comando / tool | Efecto |
+| --- | --- | --- | --- |
+| 1 | Brief de la GW | `mova week brief --gw N --json` | read |
+| 2 | Acta MILP (dry-run) | `mova week acta --gw N --json [--chips]` | read |
+| 2b | Contexto a demanda | `mova strategy status`, `strategy research due\|enqueue`, `strategy deliberate status\|enqueue`, `mova memory read --gw N --json` | read / write-memory |
+| 3 | Propuesta con razones | skill `fpl-expert` | — |
+| 4 | Validación | chat con Julián: OK explícito sobre el plan exacto | — |
+| 5 | Aplicar en FPL | skill `fpl-web-ops` (solo tras el OK) | write-fpl |
+| 6 | Memoria de la decisión (siempre) | `mova memory note add --kind decision` | write-memory |
+| 7 | Registro manual (si hay estado privado y evidencia) | `mova execute manual-package` → `mova execute record-manual` | write-memory |
+| 8 | Tras `data_checked` | `mova analytics reconcile`, `mova review settle-auto\|gw`, `mova memory note add --kind post_mortem` | write-memory |
 
-Los comandos directos del motor que siguen son utilidades manuales/de investigación;
-no son el entrypoint del scheduler ni sustituyen sus gates. Sus deadlines, cifras y
-estados fechados son antecedentes. Una rutina de operación no reentrena producción:
-para candidatos usar [mova model](analytics-service.md) y el release gate.
+La superficie completa y sus side effects están en `mova tools --json`. En el VPS anteponer
+`sudo /usr/local/bin/` al wrapper.
+
+### 0. Antes de empezar
+
+```bash
+mova status --json      # operating_model debe ser "copilot"
+mova tools --json       # catálogo mova-tools-v1
+```
+
+Si `operating_model` no es `copilot`, detenerse y avisar a Julián: el opt-in legacy
+`MOVA_ENABLE_SCHEDULED_DELIVERY` está activo y la cadena automática puede competir con la
+operación manual.
+
+### 1. Brief
+
+```bash
+mova week brief --gw 12 --json
+```
+
+Nunca falla por datos faltantes: cada sección trae `status`
+(`ok|missing|degraded|error|skipped`), `source` y `needs_vps`; `overall` es
+`ready|partial|empty` y `missing_on_vps` lista lo que solo existe en el VPS. Leer primero
+`open_decisions`:
+
+- `private_state_missing` / `squad.source != private_team_state`: FT, banco y chips sin
+  confirmar. Julián debe re-loguear la sesión FPL en el browser del VPS
+  ([vps.md](vps.md)) antes de cerrar transferencias o chips.
+- GW actual sin `data_checked`: la propuesta es **preliminar**; no promover chips ni
+  transferencias.
+- Titular con flag, margen C vs VC < 0.5 xP, transferencia/hit o chip propuesto,
+  conflictos de research: puntos a discutir con Julián.
+
+Un `missing` no se rellena con memoria de chat ni cifras inventadas: se declara.
+`--no-network` omite los GET públicos; `--no-acta` evita correr el MILP.
+
+### 2. Acta y contexto a demanda
+
+```bash
+mova week acta --gw 12 --horizon 3 --json          # --chips para evaluar chips
+```
+
+Devuelve `mova-acta-dry-run-v1` con `acta_path`, `candidates`, `violations` y
+`elapsed_s`; no escribe traza. Si faltan `fpl_canonical.db` o los `.joblib` del bundle
+activo responde `missing` con las rutas (exit 2): el acta corre en el VPS.
+
+Research y deliberación ya no tienen timer. Encolarlas es una decisión explícita porque
+consume cuota ([strategic-research.md](strategic-research.md)):
+
+```bash
+mova strategy research due
+mova strategy research enqueue --force --actor julian --reason "noticias GW12" \
+  --idempotency-key research:2026-27-gw12:1
+mova strategy deliberate status
+mova memory read --gw 12 --json
+```
+
+### 3. Proponer
+
+Con `fpl-expert`, una propuesta por GW con:
+
+- XI y formación, banca en orden (GK, 1, 2, 3);
+- capitán y vice;
+- transferencias (FT disponibles, hits) o "rollear FT";
+- chip o ninguno;
+- para cada punto, la razón (xP por horizonte, minutos, flags, fixtures, precio, memoria)
+  y la alternativa más cercana.
+
+La propuesta sale de `decide()` vía el acta. Si Julián quiere desviarse, se explica el costo
+en xP y se registra su razón; no se fuerza la salida del motor.
+
+### 4. Validar con Julián
+
+Presentar el plan concreto y esperar un **OK explícito** sobre ese plan exacto, para esa GW
+y antes del deadline. Un "ok" genérico, el silencio, un OK de otra GW, salud verde o un acta
+nueva no autorizan nada. Si el plan cambia, se vuelve a presentar. Anotar la hora del OK
+(`--approved-at`).
+
+### 5. Aplicar (solo tras el OK)
+
+Julián lo aplica a mano en la web o pide `fpl-web-ops`, que opera el browser aislado del
+VPS, captura pre/post-state privados y deja evidencia (captura + SHA-256) bajo
+`MOVA_ARTIFACT_ROOT/manual/`. Ningún comando `mova` escribe en FPL. No cambiar
+`browser_writes`, `action_level` ni `delivery_scope` para esto: gobiernan el driver
+automático legacy y quedan fail-closed.
+
+### 6. Memoria de la decisión (siempre)
+
+```bash
+mova memory note add --gw 12 --kind decision --source owner \
+  --text "XI aprobado por Julián: ..." --players-json @/tmp/gw12-plan.json \
+  --actor julian --reason "OK en chat" --idempotency-key note:2026-27-gw12:decision:1 --json
+```
+
+`players_json` de una nota `decision` se valida: `xi` 11, `bench` 4, C≠VC y titulares,
+transferencias balanceadas, hits múltiplo de 4, chip conocido. La tabla es append-only; para
+corregir se añade otra nota con `--supersedes <note_id>`. Las preferencias o restricciones de
+Julián se guardan como `owner_preference`/`constraint`. El texto se sanea (sin emails,
+tokens ni query strings).
+
+### 7. Registro manual (si hay estado privado y evidencia)
+
+Requiere snapshots privados pre y post (`MOVA_ARTIFACT_ROOT/team_state/...`, ver
+`/api/v1/team-state`) y el JSON de evidencia:
+
+```bash
+mova execute manual-package --gw 12 --approved-by julian \
+  --approved-at 2026-11-26T20:00:00Z --operations lineup,captaincy \
+  --pre-state <dir-pre> --post-state <dir-post> \
+  --evidence /var/lib/mova-fpl/artifacts/manual/gw12-evidence.json \
+  --rationale "OK de Julián en chat"
+mova execute record-manual --package <paquete> --actor julian --reason "GW12 aplicada" \
+  --idempotency-key manual-verified:2026-27-gw12:1
+```
+
+`manual-package` deriva jugadores, C/VC, transferencias, hits y chip de pre/post, valida con
+el mismo código que `record-manual` y solo escribe archivos (R2/A2 sin diff, R3/A3 con diff).
+Misma entrada, mismos bytes; contenido distinto exige `--overwrite`. Sin sesión FPL válida
+(`FPL_AUTH_REQUIRED`) no hay pre/post: declararlo y dejar solo la nota `decision`.
+
+### 8. Después de `data_checked`
+
+```bash
+mova analytics reconcile
+mova review settle-auto --gw 12 --actor julian --reason "cierre GW12" \
+  --idempotency-key settle:2026-27-gw12
+mova review status --gw 12
+mova memory note add --gw 12 --kind post_mortem --source assistant \
+  --text "Qué funcionó y qué no ..." --actor assistant --reason "cierre GW12" \
+  --idempotency-key note:2026-27-gw12:post_mortem:1 --json
+```
+
+`settle-auto` cierra con el recibo manual v2 si existe. Sin recibo, usar `mova review gw
+--package ...` (§8 del anexo). El post-mortem alimenta `lessons` del brief de la GW siguiente.
+
+### Qué no hacer
+
+- No usar la cadena de delivery legacy (`execute dispatch|prepare|claim|ui-plan|begin|finalize|fail`,
+  `rehearsal*`, `delivery-cycle.sh`): falla cerrado con `copilot_mode` y no está en el catálogo.
+- No re-armar timers de delivery o research.
+- No editar controles, envs, SQLite ni artefactos sin OK explícito de Julián.
+- No pedir ni escribir contraseña/MFA: el re-login lo hace Julián por noVNC.
+
+---
+
+# Anexo — referencia del motor y del cierre
+
+Los comandos directos del motor que siguen son utilidades manuales y de investigación; el
+acta del copiloto los envuelve (`mova week acta`). Sus deadlines, cifras y estados fechados
+son antecedentes. Una rutina de operación no reentrena producción: para candidatos usar
+[mova model](analytics-service.md) y el release gate.
 
 ## 0. Lo que hay que saber antes de tocar nada
 
@@ -261,7 +417,8 @@ La traza vive en `data/processed/trace.db`. Cada decisión guarda su huella
 
 ### Cierre automático de una intervención manual verificada
 
-El scheduler también procesa recibos manuales v2 íntegros. El paquete resultante usa
+Es la ruta normal del copiloto tras `execute record-manual`. El tick procesa recibos
+manuales v2 íntegros. El paquete resultante usa
 `mova-fpl-manual-closeout-v2`, `verified_execution_source=manual_verified` y
 `scheduler_save=false`: automatizar el cierre no convierte el montaje en autónomo.
 El seleccionado proviene de las quince posiciones y audit sellados; el comparador
@@ -271,7 +428,10 @@ con picks/puntos oficiales. Las expectativas se atribuyen retrospectivamente des
 un batch aprobado generado antes del deadline. No se registra un scorecard causal
 nuevo ni se incrementa `observed_closeouts` del contrato autónomo.
 
-### Financiación y atribución del cierre autónomo v2
+### Financiación y atribución del cierre autónomo v2 (legacy)
+
+Aplica solo a ciclos de la etapa autónoma o al opt-in legacy; en copiloto el cierre
+usa el contrato manual v2 de arriba.
 
 Una entrega regular sin cambios puede cerrar desde un recibo
 `mova-unchanged-delivery-v1`: captura privada exacta <=300 s, plan/candidato ligados,

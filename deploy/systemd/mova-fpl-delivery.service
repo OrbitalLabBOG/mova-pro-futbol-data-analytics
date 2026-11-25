@@ -1,5 +1,5 @@
 [Unit]
-Description=MOVA FPL bounded autonomous lineup delivery
+Description=MOVA FPL legacy opt-in lineup delivery (manual start; copilot_mode blocks by default)
 Requires=docker.service
 After=docker.service network-online.target mova-fpl-stack.service
 

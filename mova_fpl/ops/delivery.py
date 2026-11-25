@@ -19,6 +19,13 @@ class DeliveryService:
                  now: datetime | None = None, proof: bool = False) -> dict:
         if not actor.strip() or not reason.strip():
             raise ValueError("delivery requires actor and reason")
+        if not getattr(self.config, 'enable_scheduled_delivery', False):
+            # ADR-021: modo copiloto. La entrega programada es legacy opt-in
+            # (MOVA_ENABLE_SCHEDULED_DELIVERY); sin ella, falla cerrado antes
+            # de leer controles o preparar intentos.
+            return {'schema': 'mova-delivery-dispatch-v1', 'cycle_id': None,
+                    'scope': None, 'status': 'blocked', 'reason': 'copilot_mode',
+                    'operating_model': 'copilot'}
         current = now or datetime.now(timezone.utc)
         controls = {k: v['value'] for k, v in self.db.controls().items()}
         cycle = self.db.status().get('cycle') or {}

@@ -80,10 +80,10 @@ Antes de abrir `transfers`, activar un chip, cambiar capitán/vice, ordenar banc
 curl -fsS http://127.0.0.1:8787/api/v1/status
 ```
 
-Detente si `kill_switch` es verdadero, `browser_writes` es falso, compliance no está en
-`approved`, el action level no permite la operación o no hay decisión aprobada para esa GW.
-A0/shadow autoriza sólo login/lectura; no asumir ese modo desde un corte antiguo.
-Consultar scope y controles efectivos: `lineup-v1` usa A2 acotado según ADR-014.
+Detente si `kill_switch` es verdadero, si `operating_model` no es `copilot`, si hay un intento
+de entrega automática abierto o si no existe el OK explícito de Julián en el chat para este
+plan y esta GW (ADR-021). `browser_writes=false`/A0 es el estado esperado en copiloto: ese
+control gobierna el driver automático legacy y no se modifica para operar a mano.
 
 ## Persistencia y cierre
 

@@ -9,10 +9,56 @@ from test_execution_attempts import _seed_authorized_service, _private_state, NO
 from mova_fpl.ops.delivery import DeliveryService, LINEUP_SCOPE
 
 
+def legacy_delivery_config(config):
+    """ADR-021: la entrega programada es opt-in legacy explícito y coherente."""
+    from dataclasses import replace
+    opted = replace(config, enable_scheduled_delivery=True, enable_browser_writes=True,
+                    mode='autonomous', action_level='A2', compliance_gate='approved')
+    opted.validate()
+    return opted
+
+
 def seed(tmp_path):
     service, _, pre = _seed_authorized_service(tmp_path)
+    service.config = legacy_delivery_config(service.config)
     service.db.set_control('delivery_scope', LINEUP_SCOPE, actor='test', reason='scoped delivery')
     return service, DeliveryService(service.config, service.db), pre
+
+
+def test_dispatch_blocked_in_copilot_by_default(tmp_path):
+    service, _, _ = _seed_authorized_service(tmp_path)
+    assert service.config.enable_scheduled_delivery is False
+    assert service.config.operating_model == 'copilot'
+    # Even with every legacy control armed, copilot mode fails closed first.
+    service.db.set_control('delivery_scope', LINEUP_SCOPE, actor='test', reason='armed legacy scope')
+    controls_before = service.db.controls()
+    result = DeliveryService(service.config, service.db).dispatch(
+        actor='timer', reason='dispatch', now=NOW)
+    assert result['status'] == 'blocked' and result['reason'] == 'copilot_mode'
+    check = DeliveryService(service.config, service.db).dispatch(
+        actor='timer', reason='due?', check_only=True, now=NOW)
+    assert check['status'] == 'blocked' and check['reason'] == 'copilot_mode'
+    assert service.db.latest_delivery_attempt('2026-27-gw03') is None
+    assert service.db.controls() == controls_before
+
+
+def test_scheduled_delivery_opt_in_requires_browser_writes():
+    from mova_fpl.ops.config import RuntimeConfig
+    with pytest.raises(ValueError, match='MOVA_ENABLE_SCHEDULED_DELIVERY'):
+        RuntimeConfig(enable_scheduled_delivery=True).validate()
+    assert RuntimeConfig().operating_model == 'copilot'
+
+
+def test_watchdog_does_not_require_delivery_in_copilot(tmp_path, monkeypatch):
+    from mova_fpl.ops.watchdog import assess_workflow_deadline
+    service, _, _ = _seed_authorized_service(tmp_path)
+    service.db.set_control('delivery_scope', LINEUP_SCOPE, actor='test', reason='legacy scope left armed')
+    monkeypatch.setattr('mova_fpl.ops.orchestration.build_workflow',
+                        lambda *a, **k: {'stages': [], 'violations': []})
+    copilot = assess_workflow_deadline(service.config, service.db, now=NOW)
+    assert not any(r['code'] == 'bounded_team_delivery_not_verified' for r in copilot['reasons'])
+    opted = assess_workflow_deadline(legacy_delivery_config(service.config), service.db, now=NOW)
+    assert any(r['code'] == 'bounded_team_delivery_not_verified' for r in opted['reasons'])
 
 
 def test_dispatch_claim_save_verify_and_replay(tmp_path):

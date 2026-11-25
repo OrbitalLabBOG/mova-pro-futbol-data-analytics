@@ -2,14 +2,37 @@
 type: runbook
 name: "MOVA FPL — operación del stack VPS"
 created: 2026-08-22
-updated: 2026-10-21
-tags: [mova, fpl, vps, docker, systemd, observability]
+updated: 2026-11-25
+tags: [mova, fpl, vps, docker, systemd, observability, copilot]
 status: active
 ---
 
 # MOVA FPL — operación del stack VPS
 
-## Corte operativo — 21 de octubre
+## Modelo copiloto — 25 de noviembre (ADR-021)
+
+Desde [ADR-021](../specs/fpl-autonomous-operator/decisions/ADR-021-copilot-operating-model.md)
+el VPS **no entrega alineaciones por su cuenta**. Garantiza datos, modelos, memoria y API;
+la decisión semanal la arma un asistente con Julián ([gameweek.md](gameweek.md)) y nada se
+escribe en FPL sin su OK explícito.
+
+| Se queda en el VPS | Unidades |
+| --- | --- |
+| Collector público (FPL, odds, calendario, eventos) | `mova-fpl-collector.timer` |
+| Collector privado autenticado de solo lectura | `mova-fpl-private-state.timer` |
+| Tick: envelope + preflight como memoria (sin dispatch) | `mova-fpl-tick.timer` |
+| Analytics/ML (proyección, reconciliación, scorecards) | `mova-fpl-analytics.timer` |
+| Memoria y backups (`ops.db`, `trace.db`, PostgreSQL shadow) | `mova-fpl-backup.timer`, `mova-fpl-backup-retention.timer`, `mova-fpl-postgres-sync.timer`, offsite/DR si están configurados |
+| API de datos loopback y cockpit | `mova-fpl-stack.service` |
+| Watchdog (solo salud; el recibo manual cuenta como completado) | `mova-fpl-watchdog.timer` |
+| Research / deliberación on-demand (sin timer) | `mova-fpl-research.service` o `deploy/bin/research-cycle.sh` a mano |
+| Delivery legacy (sin timer; falla cerrado con `copilot_mode`) | `mova-fpl-delivery.service` sin `[Install]` |
+
+Los timers `mova-fpl-delivery.timer` y `mova-fpl-research.timer` están retirados del repo;
+`install-systemd.sh` los deshabilita y borra. Rollout:
+[Rollout ADR-021: modelo copiloto](#rollout-adr-021-modelo-copiloto).
+
+## Antecedente — corte operativo 21 de octubre
 
 El [corte consolidado](../decisions/2026-27/operator-sync-20261021.md) verifica
 `a6966aa`, Researcher 1.17 y A2/autonomous con scope `lineup-v1`. Browser persistente
@@ -77,12 +100,13 @@ compartido se conserva; exit 75 difiere hasta la siguiente oportunidad y nunca c
 adicional de workers. No aumentar la cadencia de descarga de las fuentes ni sus TTLs para
 corregir un desajuste del timer.
 
-Para research se conserva `90-capacity.conf` y se añade
+Antecedente (retirado por ADR-021): para research se conservaba `90-capacity.conf` y se añadía
 `/etc/systemd/system/mova-fpl-research.timer.d/95-autonomous-research.conf`:
 `OnCalendar=` vacío seguido de `OnCalendar=*-*-* *:07/15:00`, `Persistent=true`,
 jitter de 10 s y accuracy de 10 s. Comprobar configuración efectiva, no sólo unidad del repo:
 el override antiguo imponía 30 min. Esta corrección no elimina capacity locks/caps,
-no aumenta cuotas y no fuerza una inferencia cuando due termina el slot.
+no aumenta cuotas y no fuerza una inferencia cuando due termina el slot. Sin su unidad ese
+drop-in ya no hace nada; el owner puede borrarlo durante el rollout de ADR-021.
 
 ## Build e instalación inicial
 
@@ -252,9 +276,10 @@ versiones ya fueron sellados; tampoco evalúa hasta que la API oficial marque `d
 Cada ejecución queda como job `model_analytics`, con pasos, duración, hashes e incidentes. Ver
 [servicio analítico](analytics-service.md).
 
-`mova-fpl-research.timer` sólo abre una corrida en cada slot:
-amplia T-24h…T-6h, refresh T-6h…T-2h y final T-120…T-70 minutos. Fuera de esas ventanas no
-consume Codex. Strategist/Critic corre una vez por research importado y espera un envelope que
+Research es on-demand desde ADR-021 (sin timer): `mova strategy research enqueue` y luego
+`sudo systemctl start mova-fpl-research.service` (o `deploy/bin/research-cycle.sh`). El
+worker conserva sus slots: amplia T-24h…T-6h, refresh T-6h…T-2h y final T-120…T-70 minutos;
+fuera de esas ventanas no consume Codex. Strategist/Critic corre una vez por research importado y espera un envelope que
 ya lo incorpore. El contenedor one-shot no recibe DB, runtime env, navegador ni secretos de
 collector. La preparación, auth, validación y recuperación están en
 [contexto estratégico](strategic-research.md).
@@ -383,8 +408,80 @@ curl -s http://127.0.0.1:8787/api/v1/status | python -m json.tool
 ```
 
 No cambiar `browser_writes`, `mode`, `action_level` o `compliance_gate` directamente en el
-archivo para saltarse el ledger. El runtime rechaza writes salvo `guarded/autonomous`, A1+
-y compliance aprobado; el rollout exige además shadow suficiente y prueba de verificación.
+archivo para saltarse el ledger. En copiloto los valores esperados son `browser_writes=false`,
+A0, `delivery_scope=null` y `mode=supervised`; cambiarlos requiere OK explícito de Julián.
+El runtime rechaza writes automáticos salvo `guarded/autonomous`, A1+ y compliance aprobado;
+la operación manual validada por Julián (`fpl-web-ops`) no depende de esos controles.
+
+## Rollout ADR-021: modelo copiloto
+
+> **Requiere el OK explícito de Julián.** Lo ejecuta Julián, o el asistente solo después de
+> que él lo autorice en el chat para este rollout concreto. Cambia autoridad (controles) y
+> unidades systemd. No hacerlo dentro de una ventana de deadline ni durante una operación
+> browser.
+
+1. Preparar y respaldar:
+
+   ```bash
+   cd /opt/orbital/services/mova-fpl
+   git status --short                      # sin cambios locales ajenos
+   mova status --json > /tmp/pre-adr021-status.json
+   mova backup --force --actor julian --reason "pre ADR-021" \
+     --idempotency-key "backup:pre-adr021:$(date -u +%Y%m%d)"
+   git rev-parse --short HEAD              # SHA previo = rollback
+   ```
+
+2. Actualizar código e imagen (como en [Build e instalación inicial](#build-e-instalación-inicial)):
+
+   ```bash
+   git pull --ff-only
+   export MOVA_GIT_SHA="$(git rev-parse --short HEAD)" MOVA_IMAGE_TAG="$(git rev-parse --short HEAD)"
+   sudo sed -i "s/^MOVA_GIT_SHA=.*/MOVA_GIT_SHA=$MOVA_GIT_SHA/; s/^MOVA_IMAGE_TAG=.*/MOVA_IMAGE_TAG=$MOVA_IMAGE_TAG/" /etc/mova-fpl/deploy.env
+   set -a; source /etc/mova-fpl/deploy.env; set +a
+   docker compose --profile research build api worker research
+   docker compose --profile jobs run --rm --no-deps worker python -m mova_fpl.ops.cli migrate
+   mova postgres migrate                   # 028_strategy_notes
+   docker compose up -d --no-deps --force-recreate api
+   curl --fail http://127.0.0.1:8787/readyz
+   ```
+
+3. Instalar unidades (retira delivery/research timers de forma idempotente):
+
+   ```bash
+   sudo deploy/bin/install-systemd.sh /opt/orbital/services/mova-fpl
+   sudo rm -rf /etc/systemd/system/mova-fpl-research.timer.d   # drop-in del owner, opcional
+   sudo systemctl daemon-reload
+   ```
+
+4. Resetear controles, cada uno con actor y razón:
+
+   ```bash
+   R="ADR-021 copiloto"
+   mova control delivery_scope null      --actor julian --reason "$R"
+   mova control delivery_policy null     --actor julian --reason "$R"
+   mova control browser_writes false     --actor julian --reason "$R"
+   mova control action_level '"A0"'      --actor julian --reason "$R"
+   mova control mode '"supervised"'      --actor julian --reason "$R"
+   ```
+
+   No tocar `kill_switch` ni `compliance_gate` salvo instrucción expresa.
+
+5. Verificar:
+
+   ```bash
+   mova status --json        # operating_model=copilot; controles A0, browser_writes=false, scope null
+   mova doctor --json        # sin FAIL requeridos; revisión checkout = imagen
+   systemctl list-timers --all 'mova-fpl-*' --no-pager   # sin delivery ni research
+   systemctl is-enabled mova-fpl-delivery.timer mova-fpl-research.timer  # not-found
+   mova tools --json | python -m json.tool >/dev/null
+   mova week brief --gw <N> --json --no-acta
+   mova cockpit --json       # research/strategist on_demand; browser_writes owner_validated_manual
+   ```
+
+6. Rollback: reponer el SHA previo e imagen (`git checkout <sha>`, tag anterior en
+   `deploy.env`, `docker compose up -d --no-deps --force-recreate api`). Las migraciones
+   SQLite 25 y PostgreSQL 028 son aditivas y pueden quedarse. Volver a la autonomía exige una
+   decisión nueva de Julián: no se restauran controles A2 ni timers como "rollback".
 
 ## Backup y restore drill
 
