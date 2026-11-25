@@ -1,6 +1,6 @@
 ---
 name: mova-fpl-operator
-description: "Operar MOVA FPL en modelo copiloto (ADR-021): leer el catálogo `mova tools`, armar el brief semanal, proponer la decisión a Julián, registrar memoria y cerrar la GW; además salud, datos, modelos, incidentes y rollout del VPS. No usar para escoger jugadores sin el motor ni para hacer clicks en FPL."
+description: "Operar MOVA FPL en modelo copiloto (ADR-021/022): leer el catálogo `mova tools`, armar el brief semanal, proponer la decisión a Julián, registrar memoria y cerrar la GW; además salud, datos, modelos, incidentes y rollout del VPS. No usar para escoger jugadores sin el motor ni para hacer clicks en FPL."
 metadata:
   vertical: mova
   type: skill
@@ -12,7 +12,7 @@ metadata:
 
 Un asistente de IA (el Grok Bot de Julián, que orquesta Claude Code para cambios de código)
 opera MOVA cada GW con tools y memoria. **Nada se escribe en FPL sin el OK explícito de
-Julián.** Spec vigente: [ADR-021](../../../docs/specs/fpl-autonomous-operator/decisions/ADR-021-copilot-operating-model.md).
+Julián.** Spec vigente: [ADR-021](../../../docs/specs/fpl-autonomous-operator/decisions/ADR-021-copilot-operating-model.md), [ADR-022](../../../docs/specs/fpl-autonomous-operator/decisions/ADR-022-harness-minimo-copiloto.md).
 Runbook paso a paso: [gameweek.md](../../../docs/operations/gameweek.md).
 
 En el VPS usa `/usr/local/bin/mova`; en desarrollo, el console script del venv. No abras
