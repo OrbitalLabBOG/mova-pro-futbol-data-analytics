@@ -3,7 +3,8 @@ from datetime import datetime, timezone
 import re
 
 REPORT_MAX_AGE_SECONDS = 90 * 60
-RPO_SECONDS = 7 * 3600
+# ADR-022: backup diario; RPO local de 36 h (24 h + holgura).
+RPO_SECONDS = 36 * 3600
 REQUIRED_CHECKS = frozenset({
     "local_v2_within_rpo", "external_snapshot_within_rpo", "checkout_images_match",
     "timers", "restore_resources", "api_ready",
@@ -60,3 +61,13 @@ def assess_backup_freshness(host: dict, *, revision: str, now: datetime) -> dict
         "checks": checks if isinstance(checks, dict) else {},
         "host_reconstruction_proven": False, "runtime_mutated": False,
     }
+
+
+def assess_local_backup(host: dict) -> dict:
+    """Edad del ultimo backup local diario segun el host probe (ADR-022)."""
+    fact = host.get("local_backup") if isinstance(host, dict) else None
+    age = fact.get("data_age_seconds") if isinstance(fact, dict) else None
+    known = type(age) is int and age >= 0
+    return {"schema": "mova-local-backup-freshness-v1", "known": known,
+            "age_seconds": age if known else None, "rpo_seconds": RPO_SECONDS,
+            "healthy": bool(known and age <= RPO_SECONDS)}

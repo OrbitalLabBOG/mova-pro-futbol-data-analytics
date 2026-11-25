@@ -22,7 +22,18 @@ if [[ "${1:-}" == maintenance && "${2:-}" == backups ]]; then
     "${@:3}" --root "${MOVA_BACKUP_ROOT:-/opt/orbital/backups/mova-fpl}" \
     --receipt-root /opt/orbital/backups/.mova-fpl-retention
 fi
-if [[ "${1:-}" == "status" || "${1:-}" == "doctor" || "${1:-}" == "watchdog" ]]; then
+# ADR-022: estado privado on-demand. El script de host conserva lock, cooldown e ingest.
+if [[ "${1:-}" == private-state && "${2:-}" == capture ]]; then
+  exec python3 -m mova_fpl.ops.private_capture "${@:3}"
+fi
+if [[ " $* " == *" --capture-private-state "* ]]; then
+  python3 -m mova_fpl.ops.private_capture --force --actor mova-week \
+    --reason "capture previo ($1 $2)" --idempotency-key "week-capture:$(date -u +%Y%m%dT%H%M)" >&2 || true
+  args=()
+  for arg in "$@"; do [[ "$arg" == --capture-private-state ]] || args+=("$arg"); done
+  set -- "${args[@]}"
+fi
+if [[ "${1:-}" == "status" || "${1:-}" == "doctor" || "${1:-}" == "watchdog" || "${1:-}" == "data" ]]; then
   install -d -m 0750 -o 10001 -g 10001 "$data_root/runtime"
   python3 deploy/bin/host-probe.py \
     --repo "$repo_dir" \

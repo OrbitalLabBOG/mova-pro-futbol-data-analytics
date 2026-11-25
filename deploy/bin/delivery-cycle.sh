@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# RETIRADO (ADR-021/022): ya no hay unidad systemd ni timer que lo invoque. Se conserva
+# solo para las pruebas heredadas; el flujo vigente es manual (execute manual-package).
 # Host dispatcher. The engine never receives Docker/CDP access.
 # Legacy opt-in (ADR-021): sin MOVA_ENABLE_SCHEDULED_DELIVERY el dispatch
 # responde blocked/copilot_mode y este script termina antes del browser.

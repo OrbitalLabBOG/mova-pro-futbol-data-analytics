@@ -23,24 +23,33 @@ if [[ -e /usr/local/bin/mova && ! -L /usr/local/bin/mova ]]; then
 fi
 ln -sfn "$repo_dir/deploy/bin/mova" /usr/local/bin/mova
 systemctl enable --now mova-fpl-stack.service
-systemctl enable --now mova-fpl-tick.timer mova-fpl-private-state.timer \
-  mova-fpl-backup.timer mova-fpl-watchdog.timer mova-fpl-collector.timer
-systemctl enable --now mova-fpl-analytics.timer
-systemctl enable --now mova-fpl-backup-retention.timer
-systemctl enable --now mova-fpl-postgres-sync.timer
-# ADR-021 (copiloto): la entrega programada y el research por timer quedan
-# retirados. Los servicios se conservan como arranque manual/on-demand
-# (mova-fpl-delivery.service falla cerrado con copilot_mode sin opt-in).
-RETIRED_UNITS=(mova-fpl-delivery.timer mova-fpl-research.timer)
+# ADR-022: el VPS solo garantiza colector, analytics, backup diario (con poda),
+# offsite semanal y la pila Postgres/API. El resto del harness autonomo se retira.
+systemctl enable --now mova-fpl-collector.timer mova-fpl-analytics.timer \
+  mova-fpl-backup.timer
+# ADR-021/022: tick, watchdog, dr-status, private-state, postgres-sync,
+# backup-retention (poda integrada en el backup diario) y delivery quedan retirados.
+# research es on-demand (sin timer); `mova postgres sync` y
+# collect-private-team-state.sh --force siguen disponibles a demanda.
+RETIRED_UNITS=(
+  mova-fpl-tick.timer mova-fpl-tick.service
+  mova-fpl-watchdog.timer mova-fpl-watchdog.service
+  mova-fpl-dr-status.timer mova-fpl-dr-status.service
+  mova-fpl-private-state.timer mova-fpl-private-state.service
+  mova-fpl-postgres-sync.timer mova-fpl-postgres-sync.service
+  mova-fpl-backup-retention.timer mova-fpl-backup-retention.service
+  mova-fpl-delivery.timer mova-fpl-delivery.service
+  mova-fpl-research.timer
+)
 for unit in "${RETIRED_UNITS[@]}"; do
   systemctl disable --now "$unit" 2>/dev/null || true
   rm -f "/etc/systemd/system/$unit"
 done
 systemctl daemon-reload
 systemctl reset-failed 'mova-fpl-delivery-proof-*' 2>/dev/null || true
+systemctl reset-failed "${RETIRED_UNITS[@]}" 2>/dev/null || true
 systemctl enable mova-fpl-reboot-recovery.service
-if systemctl is-active --quiet mova-fpl-offsite-backup.timer \
-  && "$repo_dir/deploy/bin/offsite-backup.sh" --config-paths >/dev/null 2>&1; then
-  systemctl enable --now mova-fpl-dr-status.timer
-fi
+# Offsite (restic) sigue opt-in: se instala el timer semanal pero no se habilita aqui;
+# habilitarlo a mano (habilitar el timer offsite) tras
+# configurar offsite-backup.json.
 systemctl list-timers --all 'mova-fpl-*' --no-pager

@@ -99,4 +99,4 @@ def create_backup(config: RuntimeConfig, db: OpsDB, *, retention_days: int = 35)
     # Local retention is handled by the independent, audited host retention timer.
     # Backup creation never deletes older sets or depends on a healthy tick.
     return {"status": "completed", "path": str(root), "files": files, "removed": [],
-            "retention": "mova-fpl-backup-retention.timer"}
+            "retention": "mova-fpl-backup.timer (poda diaria integrada)"}

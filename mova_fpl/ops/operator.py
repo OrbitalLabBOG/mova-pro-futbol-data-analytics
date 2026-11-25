@@ -12,7 +12,7 @@ from typing import Callable
 from mova_fpl.data.sources import fetch_bootstrap
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB
-from mova_fpl.ops.dr_health import assess_backup_freshness
+from mova_fpl.ops.dr_health import assess_backup_freshness, assess_local_backup
 from mova_fpl.ops.schedule import (
     phase_for,
     private_state_cadence_seconds,
@@ -24,6 +24,26 @@ SCHEMA_VERSION = "1.0"
 COMMAND_SCHEMA = "mova-fpl-operator-v1"
 MAX_HOST_PROBE_BYTES = 256 * 1024
 TICK_MAX_AGE_SECONDS = 20 * 60
+# ADR-022: incidentes del harness autonomo retirado. Siguen visibles en `status`
+# pero no bloquean la autoridad del brief ni ponen `build_safety` en unsafe.
+HARNESS_INCIDENT_TITLES = frozenset({
+    "Scheduler heartbeat unhealthy",
+    "Agent queue integrity unhealthy",
+    "Autonomous cycle deadline risk",
+    "Backup recovery observation unhealthy",
+    "Local storage headroom low",
+    "Ejecución FPL ambigua",
+    "Shadow decision falló",
+    "Shadow decision omitida por memoria",
+    "Tick MOVA falló",
+})
+
+
+def blocking_incidents(incidents: list[dict]) -> list[dict]:
+    """P0/P1 abiertos que no son ruido del harness retirado (ADR-022)."""
+    return [item for item in incidents
+            if item.get("severity") in {"P0", "P1"}
+            and item.get("title") not in HARNESS_INCIDENT_TITLES]
 POSTGRES_PARITY_MAX_AGE_SECONDS = 8 * 24 * 60 * 60
 
 
@@ -284,6 +304,7 @@ def build_status(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
     host["disaster_recovery"] = assess_backup_freshness(
         host, revision=config.git_sha, now=current,
     )
+    host["local_backup_freshness"] = assess_local_backup(host)
     model_root = config.artifact_root / "models"
     model_artifacts = []
     if model_root.is_dir():
@@ -366,13 +387,10 @@ def build_status(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
 
     severity = "healthy"
     reasons: list[str] = []
-    if any(item["severity"] in {"P0", "P1"} for item in state["incidents"]):
+    if blocking_incidents(state["incidents"]):
         severity, reasons = "critical", ["open_p0_or_p1_incident"]
     else:
-        if not tick or tick.get("status") not in {"completed", "degraded", "running"}:
-            reasons.append("latest_tick_not_successful")
-        elif tick_age is None or tick_age > TICK_MAX_AGE_SECONDS:
-            reasons.append("latest_tick_stale")
+        # ADR-022: el tick ya no es heartbeat; su edad no es motivo de estado.
         if team_age is None:
             reasons.append("team_state_missing")
         elif team_max_age is not None and team_age > team_max_age:
@@ -385,8 +403,8 @@ def build_status(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
             reasons.append("failed_jobs_last_24h")
         if data_service.get("status") == "degraded":
             reasons.append("data_service_degraded")
-        if not host["disaster_recovery"]["healthy"]:
-            reasons.append("backup_recovery_observation_unhealthy")
+        if host.get("available") and not host["local_backup_freshness"]["healthy"]:
+            reasons.append("local_backup_stale_or_unknown")
         if analytics_service.get("status") == "alert":
             reasons.append("model_drift_alert")
         if storage["postgres_role"] == "shadow" and (
@@ -526,8 +544,7 @@ def build_safety(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
     status = build_status(config, db, now=now)
     operations = status["operations"]
     controls = status["runtime"]["controls"]
-    critical = [item for item in operations["open_incidents"]
-                if item.get("severity") in {"P0", "P1"}]
+    critical = blocking_incidents(operations["open_incidents"])
     blockers = list(status["status_reasons"])
     if controls.get("kill_switch") is not True:
         blockers.append("kill_switch_not_engaged")
@@ -623,14 +640,6 @@ def build_doctor(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
         checks.append(_check("ops_schema", migration_status,
                              "schema is current" if migration_status == "PASS" else "schema drift",
                              detail={"applied": versions, "expected_latest": expected}))
-        tick = status["operations"]["latest_tick"] or {}
-        tick_age = status["operations"]["latest_tick_age_seconds"]
-        tick_ok = tick.get("status") in {"completed", "degraded", "running"} \
-            and tick_age is not None and tick_age <= TICK_MAX_AGE_SECONDS
-        checks.append(_check("scheduler_heartbeat", "PASS" if tick_ok else "FAIL",
-                             "worker heartbeat is fresh" if tick_ok else "worker heartbeat is stale",
-                             detail={"status": tick.get("status"), "age_seconds": tick_age,
-                                     "max_age_seconds": TICK_MAX_AGE_SECONDS}))
         team = status["data"]["team_state"]
         team_ok = team["age_seconds"] is not None and team["max_age_seconds"] is not None \
             and team["age_seconds"] <= team["max_age_seconds"] and team["squad_size"] == 15 \
@@ -641,23 +650,6 @@ def build_doctor(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
                                  "observed_at", "age_seconds", "max_age_seconds", "quality",
                                  "squad_size", "free_transfers", "bank_tenths"
                              )}))
-
-        try:
-            from mova_fpl.ops.watchdog import assess_agent_queue
-
-            queue = assess_agent_queue(config, db, now=current)
-            checks.append(_check(
-                "agent_queue_integrity", "PASS" if queue["healthy"] else "WARN",
-                "agent queue lifecycle is consistent" if queue["healthy"]
-                else "agent queue contains lifecycle anomalies",
-                required=False, detail=queue,
-            ))
-        except Exception as exc:  # noqa: BLE001
-            checks.append(_check(
-                "agent_queue_integrity", "WARN", "agent queue could not be inspected",
-                required=False,
-                detail={"error": type(exc).__name__, "message": str(exc)[:300]},
-            ))
 
     for name, path, tables in (
         ("canonical_database", config.canonical_db, ("player_gameweek",)),
@@ -781,13 +773,17 @@ def build_doctor(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
     try:
         disk_free = shutil.disk_usage(resource_path).free
         memory_free = _memory_available_bytes()
-        resources_ok = disk_free >= config.disk_gate_bytes and memory_free >= config.memory_gate_bytes
-        checks.append(_check("resource_gates", "PASS" if resources_ok else "FAIL",
-                             "memory and disk gates pass" if resources_ok else "resource gate failed",
-                             detail={"memory_available_bytes": memory_free,
-                                     "memory_required_bytes": config.memory_gate_bytes,
-                                     "disk_free_bytes": disk_free,
+        disk_ok = disk_free >= config.disk_gate_bytes
+        checks.append(_check("resource_gates", "PASS" if disk_ok else "FAIL",
+                             "disk gate passes" if disk_ok else "disk gate failed",
+                             detail={"disk_free_bytes": disk_free,
                                      "disk_required_bytes": config.disk_gate_bytes}))
+        memory_ok = memory_free >= config.memory_gate_bytes
+        checks.append(_check("memory_gate", "PASS" if memory_ok else "WARN",
+                             "memory gate passes" if memory_ok else "memory below gate",
+                             required=False,
+                             detail={"memory_available_bytes": memory_free,
+                                     "memory_required_bytes": config.memory_gate_bytes}))
     except OSError as exc:
         checks.append(_check("resource_gates", "FAIL", "resources could not be measured",
                              detail={"error": type(exc).__name__}))
@@ -796,36 +792,32 @@ def build_doctor(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
     # releases/postgres folders and falsely report a fresh backup.
     host = _load_host_probe(config.host_probe_path, current)
     dr = assess_backup_freshness(host, revision=config.git_sha, now=current)
-    backup_age = dr["data_age_seconds"]["local_backup"]
-    backup_ok = (backup_age is not None and 0 <= backup_age <= dr["rpo_seconds"]
-                 and dr["checks"].get("local_v2_within_rpo") == "pass"
-                 and dr["report_age_seconds"] is not None
-                 and 0 <= dr["report_age_seconds"] <= dr["report_max_age_seconds"])
-    checks.append(_check("recent_backup", "PASS" if backup_ok else "WARN",
-                         "recent local backup is present" if backup_ok else "recent backup not found",
-                         required=False, detail={"age_seconds": backup_age,
-                                                "rpo_seconds": dr["rpo_seconds"]}))
+    local_backup = assess_local_backup(host)
+    backup_age = local_backup["age_seconds"]
+    backup_ok = local_backup["healthy"]
+    observable = bool(host.get("available"))
+    backup_status = "PASS" if backup_ok else ("FAIL" if observable else "WARN")
+    checks.append(_check("recent_backup", backup_status,
+                         "recent daily local backup is present" if backup_ok
+                         else "recent local backup not found or older than 36h",
+                         required=observable,
+                         detail={"age_seconds": backup_age,
+                                 "rpo_seconds": local_backup["rpo_seconds"]}))
     checks.append(_check("disaster_recovery_observation", "PASS" if dr["healthy"] else "WARN",
                          "DR metadata and backup RPO are current" if dr["healthy"]
-                         else "DR observation needs attention", required=False, detail=dr))
+                         else "DR observation is informational only (ADR-022)",
+                         required=False, detail=dr))
 
     host = _load_host_probe(config.host_probe_path, current)
     if host.get("available"):
         units = host.get("systemd") or {}
-        expected_units = (
-            "mova-fpl-stack.service", "mova-fpl-tick.timer",
-            "mova-fpl-private-state.timer", "mova-fpl-backup.timer",
-            "mova-fpl-watchdog.timer",
-            "mova-fpl-analytics.timer",
-            "mova-fpl-postgres-sync.timer",
-            "mova-fpl-backup-retention.timer",
-        )
-        # ADR-021: research es on-demand (sin timer) y la entrega programada
-        # solo se exige con el opt-in legacy explícito.
-        if config.enable_scheduled_delivery:
-            expected_units += ('mova-fpl-delivery.timer',)
+        # ADR-022: solo se exige la pila y el colector. Analytics/backup se avisan.
+        expected_units = ("mova-fpl-stack.service", "mova-fpl-collector.timer")
+        optional_units = ("mova-fpl-analytics.timer", "mova-fpl-backup.timer")
         bad_units = [name for name in expected_units
                      if (units.get(name) or {}).get("active_state") != "active"]
+        bad_optional = [name for name in optional_units
+                        if (units.get(name) or {}).get("active_state") != "active"]
         host_fresh = host.get("age_seconds") is not None and host["age_seconds"] <= 600
         checks.append(_check("host_probe", "PASS" if host_fresh else "WARN",
                              "host probe is fresh" if host_fresh else "host probe is stale",
@@ -833,12 +825,18 @@ def build_doctor(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
         checks.append(_check("systemd_units", "PASS" if not bad_units else "FAIL",
                              "required units are active" if not bad_units else "required units are inactive",
                              detail={"inactive": bad_units}))
+        checks.append(_check(
+            "systemd_optional_units", "PASS" if not bad_optional else "WARN",
+            "analytics and backup timers are active" if not bad_optional
+            else "analytics or backup timer is inactive",
+            required=False, detail={"inactive": bad_optional},
+        ))
         failed_services = _failed_systemd_services(host)
         checks.append(_check(
-            "systemd_service_results", "PASS" if not failed_services else "FAIL",
+            "systemd_service_results", "PASS" if not failed_services else "WARN",
             "scheduled services have no failed result" if not failed_services
             else "one or more scheduled services failed",
-            detail={"failed": failed_services},
+            required=False, detail={"failed": failed_services},
         ))
         if "mova-fpl-collector.timer" in units:
             collector_timer_ok = (
@@ -860,10 +858,10 @@ def build_doctor(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
                            and postgres.get("container_health") == "healthy"
                            and postgres.get("published_ports") is False)
             checks.append(_check(
-                "postgres_container", "PASS" if postgres_ok else "WARN",
-                "PostgreSQL shadow is healthy and private" if postgres_ok
-                else "PostgreSQL shadow container needs attention",
-                required=False, detail=postgres,
+                "postgres_container", "PASS" if postgres_ok else "FAIL",
+                "PostgreSQL is healthy and private" if postgres_ok
+                else "PostgreSQL container needs attention",
+                detail=postgres,
             ))
         revisions = host.get("revisions") or {}
         checkout_revision = str(revisions.get("checkout") or "")
@@ -891,10 +889,10 @@ def build_doctor(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
                 research_host.get("auth_present") and research_host.get("queue_present")
             )
             checks.append(_check(
-                "research_worker", "PASS" if research_ready else "FAIL",
+                "research_worker", "PASS" if research_ready else "WARN",
                 "isolated Codex research worker is provisioned" if research_ready
-                else "Codex auth or research queue is missing",
-                detail=research_host,
+                else "Codex auth or research queue is missing (on-demand only)",
+                required=False, detail=research_host,
             ))
     else:
         checks.append(_check("host_probe", "WARN", "host-level checks are not observable",
@@ -904,13 +902,13 @@ def build_doctor(config: RuntimeConfig, db: OpsDB, *, now: datetime | None = Non
         try:
             boot = json.loads(bootstrap_fetcher(timeout=10, retries=1))
             valid = bool(boot.get("events")) and bool(boot.get("elements"))
-            checks.append(_check("fpl_public_api", "PASS" if valid else "FAIL",
+            checks.append(_check("fpl_public_api", "PASS" if valid else "WARN",
                                  "official FPL API is reachable" if valid else "unexpected FPL payload",
-                                 detail={"events": len(boot.get("events") or ()),
+                                 required=False, detail={"events": len(boot.get("events") or ()),
                                          "players": len(boot.get("elements") or ())}))
         except Exception as exc:  # noqa: BLE001
-            checks.append(_check("fpl_public_api", "FAIL", "official FPL API is unavailable",
-                                 detail={"error": type(exc).__name__, "message": str(exc)[:300]}))
+            checks.append(_check("fpl_public_api", "WARN", "official FPL API is unavailable",
+                                 required=False, detail={"error": type(exc).__name__, "message": str(exc)[:300]}))
     else:
         checks.append(_check("fpl_public_api", "WARN", "network check was skipped",
                              required=False))

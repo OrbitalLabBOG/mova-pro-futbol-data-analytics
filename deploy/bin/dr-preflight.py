@@ -127,7 +127,7 @@ def main():
         facts['local_backup'] = {'sqlite': sq.name, 'postgres': pg.name,
                                  'data_age_seconds': max(ages),
                                  'postgres_tables': len(pm['inventory']['tables'])}
-        if min(ages) < 0 or max(ages) > 7 * 3600:
+        if min(ages) < 0 or max(ages) > 36 * 3600:
             raise ValueError('local_rpo')
         return facts['local_backup']
 
@@ -156,7 +156,7 @@ def main():
                                   'uploaded_at': uploaded.isoformat(),
                                   'sqlite': sq, 'postgres': pg,
                                   'data_age_seconds': data_age}
-        if min(age(sq, now), age(pg, now)) < 0 or data_age > 7 * 3600:
+        if min(age(sq, now), age(pg, now)) < 0 or data_age > 36 * 3600:
             raise ValueError('remote_rpo')
         return facts['remote_backup']
 
@@ -208,7 +208,7 @@ def main():
                       'mode': args.mode, 'host_fingerprint': machine,
                       'status': 'blocked' if blocked else 'technical_checks_pass',
                       'checks': checks, 'facts': facts,
-                      'targets': {'backup_interval_hours': 6, 'rpo_hours': 7,
+                      'targets': {'backup_interval_hours': 24, 'rpo_hours': 36,
                                   'data_model_restore_rto_minutes': 15,
                                   'host_rebuild_rto_minutes': 120},
                       'host_reconstruction_proven': False,
