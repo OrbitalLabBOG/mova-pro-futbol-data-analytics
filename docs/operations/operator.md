@@ -2,7 +2,7 @@
 type: runbook
 name: "MOVA FPL — contrato del operador"
 created: 2026-08-23
-updated: 2026-10-21
+updated: 2026-11-25
 tags: [mova, fpl, operator, cli, observability, contract]
 status: active
 ---
@@ -13,8 +13,35 @@ HV1-01 expone el runtime mediante comandos versionados. La salida JSON usa
 `schema=mova-fpl-operator-v1` y `schema_version=1.0`; los consumidores deben rechazar una major
 desconocida y tolerar campos adicionales dentro de la misma versión.
 
-La [verificación del 21/10](../decisions/2026-27/operator-sync-20261021.md) separa
-A2 `lineup-v1`, investigación procesada/evidencia y persistencia de autenticación.
+## Modelo copiloto (ADR-021, 25/11/2026)
+
+`status`, `safety` y `cockpit` publican `operating_model`: `copilot` por defecto o
+`scheduled_delivery` con el opt-in legacy `MOVA_ENABLE_SCHEDULED_DELIVERY` (exige además
+browser writes). En copiloto `DeliveryService.dispatch` devuelve `blocked/copilot_mode`, el
+watchdog no exige delivery y los timers requeridos ya no incluyen delivery ni research
+(`mova-fpl-backup-retention.timer` pasa a requerido siempre).
+
+La superficie del asistente es el catálogo `mova tools --json` (`mova-tools-v1`): cada tool
+declara `argv`, `side_effect` (`read`, `write-memory`, `write-fpl`), contrato JSON y
+`needs_vps_data`. Ningún comando del CLI es `write-fpl`; esa clase solo la tiene la skill
+`fpl-web-ops`, con OK explícito de Julián. Las tools nuevas de ADR-021:
+
+```bash
+mova tools --json
+mova week brief --gw N --json [--no-network] [--no-acta] [--chips]   # mova-week-brief-v1
+mova week acta --gw N --horizon 3 [--chips] --json                   # mova-acta-dry-run-v1
+mova memory read --gw N --json                                       # mova-memory-v1
+mova memory note add --gw N --kind decision ... --json               # mova-strategy-note-v1
+mova memory note list --gw N --json
+mova execute manual-package --gw N --approved-by julian ...          # paquete manual v2
+```
+
+`week brief` y `week acta` no crean ni migran `ops.db`: sin archivo, las secciones de memoria
+salen `missing` con `needs_vps=true`. El ciclo semanal completo está en
+[gameweek.md](gameweek.md).
+
+Antecedente: la [verificación del 21/10](../decisions/2026-27/operator-sync-20261021.md)
+separaba A2 `lineup-v1`, investigación procesada/evidencia y persistencia de autenticación.
 Los valores de este runbook no reemplazan controles ni recibos vivos.
 
 ## Ejecución
@@ -23,6 +50,8 @@ En el VPS, el wrapper obtiene un probe sanitizado de systemd/Docker y ejecuta el
 imagen aprobada:
 
 ```bash
+mova tools --json
+mova week brief --gw N --json
 mova cockpit
 mova cockpit --json
 mova cockpit --watch 30
@@ -396,7 +425,7 @@ La revisión causal puede terminar con `no_hypothesis` o `proposals_rejected` cu
 quedan propuestas abiertas. Un review retrospectivo o una evaluación pendiente no
 satisfacen ese resultado. No exigir una lección positiva para completar el proceso.
 
-## Alertas y readiness de la entrega acotada
+## Alertas y readiness de la entrega acotada (legacy)
 
 Las aperturas y escalamientos pendientes se vuelven `superseded` cuando el incidente
 ya está resuelto; conservan fila y auditoría, no se declaran enviados ni reconocidos
@@ -409,7 +438,8 @@ credenciales ni cuerpos de respuesta del proveedor. Los errores de transporte
 distinguen autenticación, permisos, destino, cuota y disponibilidad. Un 429 aplaza
 el siguiente intento según Retry-After; no se reintenta dentro del envío.
 
-Readiness expone `target_level=A2` para `lineup-v1`, sus `blocking_gates` y los
+En copiloto, readiness y `delivery_readiness` son diagnóstico histórico: no son un camino de
+promoción. Readiness expone `target_level=A2` para `lineup-v1`, sus `blocking_gates` y los
 diagnósticos históricos de A3 por separado. `delivery_readiness` distingue salud,
 autoridad, prueba física de la revisión, settlement, ventana y recibo final.
 `overall_status=ready` califica el alcance solicitado, no la autonomía A3; la

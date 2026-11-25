@@ -387,6 +387,8 @@ def parser() -> argparse.ArgumentParser:
     week_acta.add_argument("--gw", type=int, required=True)
     week_acta.add_argument("--chips", action="store_true")
     week_acta.add_argument("--horizon", type=int, default=3)
+    week_acta.add_argument("--json", action="store_true", dest="as_json",
+                           help="salida JSON (ya es el formato por defecto)")
     memory = commands.add_parser("memory", help="memoria del copiloto por GW")
     memory_commands = memory.add_subparsers(dest="memory_command", required=True)
     memory_read = memory_commands.add_parser(
@@ -394,6 +396,8 @@ def parser() -> argparse.ArgumentParser:
     )
     memory_read.add_argument("--gw", type=int, required=True)
     memory_read.add_argument("--season")
+    memory_read.add_argument("--json", action="store_true", dest="as_json",
+                             help="salida JSON (ya es el formato por defecto)")
     note = memory_commands.add_parser("note", help="notas append-only")
     note_commands = note.add_subparsers(dest="note_command", required=True)
     note_add = note_commands.add_parser("add", help="añade una nota auditada")
@@ -409,11 +413,15 @@ def parser() -> argparse.ArgumentParser:
     note_add.add_argument("--actor", required=True)
     note_add.add_argument("--reason", required=True)
     note_add.add_argument("--idempotency-key", required=True)
+    note_add.add_argument("--json", action="store_true", dest="as_json",
+                          help="salida JSON (ya es el formato por defecto)")
     note_list = note_commands.add_parser("list", help="lista notas")
     note_list.add_argument("--gw", type=int)
     note_list.add_argument("--season")
     note_list.add_argument("--kind", action="append")
     note_list.add_argument("--limit", type=int, default=200)
+    note_list.add_argument("--json", action="store_true", dest="as_json",
+                           help="salida JSON (ya es el formato por defecto)")
     status = commands.add_parser("status", help="estado operativo consolidado")
     status.add_argument("--json", action="store_true", dest="as_json")
     cockpit = commands.add_parser(

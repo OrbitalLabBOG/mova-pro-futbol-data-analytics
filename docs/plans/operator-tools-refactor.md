@@ -283,3 +283,20 @@ pytest -q && docker compose config >/dev/null
   `minutes-1.1.0.joblib`/`points-1.1.0.joblib` bajo `artifact_root/models` (`models/` solo
   trae los sidecars JSON). Devuelve `status=missing` con esas rutas y exit 2. En el VPS
   existen en `/var/lib/mova-fpl/db` y `/var/lib/mova-fpl/artifacts/models`.
+
+### Fase C (2026-11-25)
+
+- Docs y skills reescritos al modelo copiloto: `AGENTS.md`, `CLAUDE.md` (una línea),
+  `README.md` (corte 25/11 arriba), `docs/operations/{gameweek,operator,cockpit,execution-preflight,strategic-research,vps,decision-lifecycle}.md`,
+  índices `docs/README.md` y spec README, ADR-021 nuevo y banner superseded en
+  `10-autonomous-harness-v1.md`. `vps.md` gana la sección "Rollout ADR-021: modelo copiloto"
+  (requiere OK de Julián) y la tabla de qué se queda en el VPS.
+- Consistencia de CLI: `week acta`, `memory read` y `memory note add|list` aceptan `--json`
+  (no-op: ya emiten JSON); el catálogo lo incluye en `argv`/`inputs` y
+  `test_tools_catalog.py::test_tools_que_emiten_json_aceptan_json_flag` lo impone.
+- `tests/test_operator_docs.py`: guías sin recomendaciones de la cadena retirada (solo se
+  permiten menciones como prohibición/legacy), ciclo semanal completo en skill y runbook,
+  frontmatter `updated >= 2026-11-25`, adaptadores con la misma `description` que la canónica,
+  skill del operador < 200 líneas y su tabla de tools contrastada contra `TOOLS`
+  (nombre, prefijo de comando y side effect).
+- `docker compose config` no se pudo correr en este clon (sin Docker).

@@ -51,3 +51,13 @@ def test_mova_tools_json(capsys, monkeypatch):
             "output_schema", "command"} <= set(payload["tools"][0])
     assert main(["tools"]) == 0
     assert "week.brief" in capsys.readouterr().out
+
+
+def test_tools_que_emiten_json_aceptan_json_flag():
+    """Consistencia: toda tool `mova` con contrato JSON del flujo semanal acepta --json."""
+    cli = parser()
+    for name in ("week.brief", "acta.dry_run", "memory.read", "memory.note.add",
+                 "memory.note.list", "status", "doctor", "cockpit", "tools"):
+        tool = next(tool for tool in TOOLS if tool.name == name)
+        assert "--json" in tool.argv, name
+        assert cli.parse_args(list(tool.argv)).as_json is True, name

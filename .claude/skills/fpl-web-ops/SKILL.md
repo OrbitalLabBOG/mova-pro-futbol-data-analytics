@@ -1,11 +1,11 @@
 ---
 name: fpl-web-ops
-description: "Operar rápidamente la cuenta real de Fantasy Premier League con agent-browser: crear o reemplazar la plantilla, ordenar titulares y banca, asignar capitán y vice, guardar y producir evidencia verificable. Usar solo para ejecutar en la web una decisión FPL ya aprobada o para leer estado privado no expuesto por la API pública."
+description: "Operar la cuenta real de Fantasy Premier League con agent-browser: crear o reemplazar la plantilla, ordenar titulares y banca, asignar capitán y vice, guardar y producir evidencia pre/post verificable para `mova execute manual-package`. Usar solo para aplicar en la web un plan que Julián aprobó explícitamente en el chat, o para leer estado privado no expuesto por la API pública."
 metadata:
   vertical: mova
   type: skill
   repo: mova-pro-futbol-data-analytics
-  updated: 2026-10-21
+  updated: 2026-11-25
 ---
 
 # FPL Web Ops
@@ -17,20 +17,24 @@ improvisar y demostrar que quedó persistida.
 
 Cuenta conocida: `losmillosFPL`, `entry_id=3609854`.
 
-## Entrega autónoma acotada
+## Gate: OK explícito de Julián (ADR-021)
 
-La ruta normal de `lineup-v1` es `mova-fpl-delivery.timer` → `delivery-cycle.sh`
-→ estado privado fresco → tick → dispatch → driver R2 con lease → verifier.
-No usar clicks manuales para sustituirla ni crear otra ventana de prueba.
-A2 permite los mismos 15, XI/banca/C/VC, cero transfers/hits/chips, sólo con controles
-vivos y ventana T−3h…T−30m; hard stop T−15m. `delivery_proof` exige autorización
-expresa y vigente adicional, no se renueva por leer esta skill.
+En el modelo copiloto esta skill es la **única tool `write-fpl`**. Solo se ejecuta cuando:
 
-Consultar `mova execute status.delivery`: `unchanged_verified` acredita estado
-coincidente y fresco; sólo evidencia física de Save/reload acredita `live_proof`.
-No reintentar Save ambiguo ni repetir entrega ya verificada. Los pasos visuales
-siguientes son procedimientos para operación manual expresamente autorizada;
-no amplían el scope automático ni habilitan R3.
+1. el operador presentó un plan concreto para la GW (15, XI, banca en orden, C/VC,
+   transferencias, hits, chip) con sus razones;
+2. Julián respondió en el chat con un OK explícito sobre **ese** plan exacto, para esa GW y
+   antes del deadline;
+3. el plan no cambió después del OK (si cambió, se vuelve a pedir).
+
+Un "ok" genérico, el silencio, un OK de otra GW, salud verde, cobertura research o un acta
+nueva no autorizan nada. Anota la hora del OK: es `--approved-at` del paquete manual.
+
+`browser_writes`, `action_level` y `delivery_scope` gobiernan el driver automático legacy;
+en copiloto quedan fail-closed (`browser_writes=false`, A0) y **no** se cambian para operar
+esta skill. La cadena automática (dispatch/driver R2) está retirada y no se usa como atajo.
+Si `mova status --json` muestra `operating_model` distinto de `copilot` o un intento de
+entrega abierto en `mova execute status`, detente y avisa.
 
 ## Carga y autorización
 
@@ -44,11 +48,13 @@ Antes de operar:
    el equipo.
 4. Lee [references/recovery.md](references/recovery.md) únicamente si falla CDP, el login,
    una ref o el usuario cambia de pestaña.
-5. Obtén la fuente de verdad: spec/acta con 15 jugadores, XI, banca, capitán, vice y chip.
+5. Obtén la fuente de verdad: el plan aprobado por Julián (15 jugadores, XI, banca, capitán,
+   vice, transferencias y chip), idealmente ya guardado como nota `decision`
+   (`mova memory note list --gw N --kind decision --json`).
 
 Autenticar o leer el equipo no autoriza mutaciones. Montar o transferir jugadores modifica
-una cuenta externa: requiere petición explícita, acta aprobada y gates efectivos. No actives
-chips, confirmes transferencias con coste ni cambies la decisión deportiva por inferencia.
+una cuenta externa: requiere el OK explícito de Julián sobre ese plan. No actives chips,
+confirmes transferencias con coste ni cambies la decisión deportiva por inferencia.
 
 ## Entorno y gates
 
@@ -60,21 +66,19 @@ perfil puede bloquearse. El perfil no entra en Git, `ops.db` ni backups generale
 sólo escucha en loopback y se abre mediante túnel SSH temporal. CDP no se publica y el
 contenedor browser no monta la base operativa.
 
-Antes de cualquier click que pueda mutar FPL, lee `/api/v1/status` desde el host y detente
-salvo que todos los controles permitan exactamente la acción:
+Antes de cualquier click que pueda mutar FPL, lee `/api/v1/status` desde el host y detente si:
 
-- `kill_switch=false`;
-- `browser_writes=true`;
-- `compliance_gate=approved`;
-- `action_level` suficiente para la operación;
-- decisión aprobada, vigente para la GW y aún no ejecutada.
+- `kill_switch=true`;
+- `operating_model` no es `copilot` o hay un intento de entrega automática abierto;
+- no existe el OK explícito de Julián para este plan y esta GW, o el deadline ya pasó;
+- el estado privado actual (pre-state) no coincide con el que se usó para proponer.
 
-Con `shadow`, `A0`, compliance pendiente o kill switch activo sólo se permite login, lectura,
-snapshot y verificación. No uses `docker exec` directo para eludir un gate.
+Sin OK solo se permite login, lectura, snapshot y verificación. No uses `docker exec` directo
+para eludir un gate ni edites controles para "habilitar" el browser.
 
 ## Invariantes
 
-- `mova_fpl` es solo lectura. Toda mutación se hace visualmente en el navegador real.
+- `mova_fpl` no escribe en FPL. Toda mutación se hace visualmente en el navegador real.
 - Nunca escribas contraseña, OTP ni código MFA. El selector de una cuenta Google ya
   autenticada sí puede clicarse; si pide secreto, pausa para el usuario.
 - Nunca ejecutes `cookies`, `storage`, `state save`, HAR o trazas sobre la sesión autenticada;
@@ -115,6 +119,12 @@ Usa un tab FPL estable si hay más de uno. Después de cambiar de tab toma snaps
 refs pertenecen al tab activo y caducan con cualquier render.
 
 ### 2. Ejecutar por bloques verificables
+
+Antes del primer click, captura el **pre-state**: fuerza una lectura privada
+(`sudo deploy/bin/collect-private-team-state.sh --force` desde
+`/opt/orbital/services/mova-fpl`) y anota el
+`artifact_path` del snapshot nuevo (`/api/v1/team-state`, bajo
+`MOVA_ARTIFACT_ROOT/team_state/`). Debe coincidir con la plantilla sobre la que se propuso.
 
 Orden recomendado:
 
@@ -169,6 +179,20 @@ live.team_history(3609854)
 El endpoint público de picks puede devolver 404 antes del deadline; la verificación visual
 autenticada es entonces la evidencia canónica.
 
+### 4. Entregar evidencia para el registro manual
+
+1. Captura el **post-state** con otra lectura privada forzada (mismo script) y anota su
+   `artifact_path`.
+2. Escribe un JSON de evidencia bajo `MOVA_ARTIFACT_ROOT/manual/` con el SHA-256 de la
+   captura final, hora del Save, URL `/en/my-team` y comparación contra el plan. Sin DOM,
+   cookies ni storage.
+3. Devuelve al operador las rutas pre/post/evidencia y la hora del OK. El operador corre
+   `mova execute manual-package --gw N --approved-by julian --approved-at <OK>
+   --operations <lineup,captaincy,...> --pre-state <dir> --post-state <dir> --evidence <json>
+   --rationale "..."` y después `mova execute record-manual --package ...`.
+4. Si el collector privado falla (`FPL_AUTH_REQUIRED`), dilo: sin pre/post no hay paquete
+   manual; la nota `decision` queda como única memoria de la GW.
+
 ## Criterio de parada
 
 Detente y reporta antes de confirmar si:
@@ -178,4 +202,5 @@ Detente y reporta antes de confirmar si:
 - FPL cambió precio, disponibilidad o fixture de forma material;
 - se requiere contraseña/MFA;
 - falta un jugador o la plantilla viola presupuesto/club/posición;
-- no puedes demostrar persistencia tras recargar.
+- no puedes demostrar persistencia tras recargar;
+- el plan en pantalla difiere del que Julián aprobó.

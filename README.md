@@ -1,12 +1,40 @@
 ---
 type: docs
 name: MOVA Fantasy Fútbol Data Analytics
-updated: 2026-10-21
+updated: 2026-11-25
 status: active
-tags: [mova, fpl, runtime, operations]
+tags: [mova, fpl, runtime, operations, copilot]
 ---
 
 # MOVA Fantasy Fútbol Data Analytics
+
+## Modelo copiloto — 25 de noviembre de 2026
+
+[ADR-021](docs/specs/fpl-autonomous-operator/decisions/ADR-021-copilot-operating-model.md)
+deja atrás el harness autónomo. Un asistente de IA (el Grok Bot de Julián, que orquesta
+Claude Code para cambios de código) opera MOVA cada GW con tools y memoria, arma la
+propuesta y la valida con Julián. **Nada se escribe en FPL sin su OK explícito.**
+
+- `operating_model=copilot` es el default: `DeliveryService.dispatch` falla cerrado con
+  `copilot_mode` salvo el opt-in legacy `MOVA_ENABLE_SCHEDULED_DELIVERY`.
+- Superficie: `mova tools --json` (`mova-tools-v1`). Ningún comando del CLI escribe en FPL;
+  la única tool `write-fpl` es la skill `fpl-web-ops`.
+- Ciclo: `mova week brief --gw N --json` → `mova week acta --gw N --json` (+ strategy,
+  research, deliberate a demanda) → propuesta con razones → validación → `fpl-web-ops`
+  → `mova memory note add --kind decision` + `execute manual-package`/`record-manual`
+  → tras `data_checked`: `analytics reconcile`, `review settle-auto|gw`, nota `post_mortem`.
+  Runbook: [gameweek.md](docs/operations/gameweek.md).
+- Memoria: tabla append-only `copilot_strategy_notes` (SQLite 25, Postgres 028).
+- El VPS conserva collectors público y privado, timers de analytics/ML, `ops.db`,
+  `trace.db`, backups, API de datos y watchdog (solo salud). Los timers de delivery y
+  research se retiran; research y deliberación son on-demand.
+- Rollout en el VPS (git pull, `install-systemd.sh`, reset de controles): requiere el OK de
+  Julián; procedimiento en [vps.md](docs/operations/vps.md#rollout-adr-021-modelo-copiloto).
+  Este apartado no prueba que ese rollout ya ocurrió: consultar `mova status --json`.
+
+Estado al corte: GW11 cerrada y `data_checked`, GW12 siguiente; sesión FPL privada vencida
+(`FPL_AUTH_REQUIRED`) hasta que Julián re-loguee. Los cortes siguientes describen la etapa
+autónoma y son antecedentes fechados.
 
 ## Recuperación de sesión y cierre atribuido — 28 de octubre
 
@@ -539,6 +567,9 @@ VPS, usar el wrapper con `sudo`; un checkout local no acredita la versión despl
 
 ```bash
 ssh ubuntu@72.60.245.2
+sudo /usr/local/bin/mova tools --json
+sudo /usr/local/bin/mova status --json
+sudo /usr/local/bin/mova week brief --gw N --json
 sudo /usr/local/bin/mova cockpit --json
 sudo /usr/local/bin/mova doctor
 sudo /usr/local/bin/mova model status
@@ -555,6 +586,7 @@ procedimientos y argumentos auditados en los runbooks; no son pasos de un health
 
 | Necesidad | Procedimiento |
 | --- | --- |
+| Operar la GW como copiloto | [Runbook de jornada](docs/operations/gameweek.md) |
 | Recolectar o diagnosticar fuentes | [Data service](docs/operations/data-service.md) |
 | Entrenar, proyectar y evaluar | [Servicio analítico](docs/operations/analytics-service.md) |
 | Preparar research y deliberación | [Contexto estratégico](docs/operations/strategic-research.md) |
