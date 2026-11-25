@@ -77,7 +77,7 @@ TOOLS: tuple[Tool, ...] = (
           "--reason", "equipo leído del browser", "--idempotency-key", "private-import:gw12:1"),
          "Importa el equipo real leído por el operador (JSON crudo de la API o simplificado: "
          "picks, bank en décimas, free_transfers, chips) y lo sella como `operator_import`.",
-         "write-memory", "mova-private-capture-v1",
+         "write-memory", "mova-private-import-v1",
          inputs=({"name": "--file", "default": "-"}, *AUDIT),
          notes="Devuelve `artifact_path`: pásalo a `week acta --private-state-path` "
                "(no depende de la cadencia). `transfers.limit` null => FT supuestos."),
@@ -115,7 +115,9 @@ TOOLS: tuple[Tool, ...] = (
          "decisiones abiertas. Nunca falla por datos faltantes.", "read", "mova-week-brief-v1",
          inputs=(GW, {"name": "--json", "type": "flag"}, {"name": "--no-network", "type": "flag"},
                  {"name": "--no-acta", "type": "flag"}, {"name": "--chips", "type": "flag"},
-                 {"name": "--horizon", "type": "int", "default": 3}),
+                 {"name": "--horizon", "type": "int", "default": 3},
+                 {"name": "--private-state-path"}, {"name": "--interventions"},
+                 {"name": "--intervention-from-notes", "type": "flag"}),
          notes="con acta escribe artefactos efímeros bajo artifact_root/copilot o tmp"),
     Tool("acta.dry_run", ("week", "acta", "--gw", "12", "--horizon", "3", "--json"),
          "Acta MILP en dry-run (sin traza) con candidatos y violaciones.", "read",

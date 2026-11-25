@@ -272,3 +272,62 @@ def test_notes_mapper_ignores_ordinary_notes_and_maps_structured_ones():
     assert "notes(" in parsed.intervention.author
     assert ops_iv.doc_from_notes(FakeDB(notes[:2]), season="2025-26", gw=GW) is None
     assert ops_iv.doc_from_notes(None, season="2025-26", gw=GW) is None
+
+
+# --- revisión: hold con lock_out sobre un jugador propio; chips del planificador ---------
+
+def _owned_state(lock_out=()):
+    from mova_fpl.rules.base import Squad, SquadPlayer
+
+    frame = roster()
+    cands = _candidates(frame, pd.Series(base_xp(frame)))
+    pick = []
+    for pos, n in ((Position.GKP, 2), (Position.DEF, 5), (Position.MID, 5), (Position.FWD, 3)):
+        pick += [c for c in cands if c.position == pos][:n]
+    players = tuple(SquadPlayer(element=c.element, position=c.position, team=c.team,
+                                price=c.price, purchase_price=c.price) for c in pick)
+    ids = [p.element for p in players]
+    by_pos = {pos: [p.element for p in players if p.position == pos] for pos in Position}
+    starters = tuple(by_pos[Position.GKP][:1] + by_pos[Position.DEF][:4]
+                     + by_pos[Position.MID][:4] + by_pos[Position.FWD][:2])
+    bench = tuple(e for e in ids if e not in starters)
+    squad = Squad(players=players, starters=starters, captain=starters[-1],
+                  vice_captain=starters[-2], bench_order=bench, bank=1.0)
+    return State(season="2025-26", gw=GW, candidates=cands, squad=squad, bank=1.0,
+                 rules=RULES, free_transfers=1,
+                 horizon_xp={GW: {c.element: c.xp for c in cands}},
+                 lock_out=frozenset(lock_out)), ids
+
+
+def test_hold_state_with_owned_lock_out_is_feasible_and_lets_the_veto_leave():
+    from dataclasses import replace
+
+    base, ids = _owned_state()
+    vetoed = ids[7]
+    state = replace(base, lock_out=frozenset({vetoed}))
+    cfg = Config(policy="milp", top_k=0, time_limit=60)
+    # construcción antigua: lock_in = owned choca con lock_out -> infactible
+    with pytest.raises(Exception):
+        decide(GW, replace(state, lock_in=frozenset(ids)), cfg)
+    # construcción de cli.live: owned - lock_out
+    hold = decide(GW, replace(state, lock_in=frozenset(ids) - state.lock_out), cfg)
+    assert vetoed not in hold.squad_15
+    assert vetoed in hold.transfers_out
+    kept = set(ids) - {vetoed}
+    assert kept <= set(hold.squad_15)  # el resto sí se conserva (hold)
+
+
+def test_planner_chips_exclude_blocked_and_keep_allowed():
+    from mova_fpl.engine.state import State as S
+
+    st = S(season="2025-26", gw=GW, candidates=(), rules=RULES, chips=CATALOGO)
+    avail = set(st.chips_available(GW))
+    assert avail
+    victim = sorted(avail)[0]
+    research = rs.parse(doc(block_chips=[victim]), gw=GW)
+    solo = live_cli._planner_chips(st, research)
+    assert victim not in solo and solo == frozenset(avail - {victim})
+    assert live_cli._planner_chips(st, None) == frozenset()
+    everything = rs.parse(doc(block_chips=sorted(avail)), gw=GW)
+    blocked_all = live_cli._planner_chips(st, everything)
+    assert not (blocked_all & avail)  # nada evaluable: el planificador devuelve sin chips

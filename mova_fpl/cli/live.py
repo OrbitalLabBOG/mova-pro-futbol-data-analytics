@@ -130,6 +130,19 @@ def _projection_with_research(args, roster, project):
     return research, adjusted, xp, desglose, info
 
 
+def _planner_chips(state, research) -> frozenset:
+    """Chips que el planificador puede evaluar: disponibles menos los vetados.
+
+    Sin research devuelve vacio (= todos, comportamiento de siempre). Con research,
+    los vetados no se evaluan, asi el planificador cae al siguiente chip permitido
+    en vez de a "sin chip".
+    """
+    if research is None or not research.intervention.block_chips:
+        return frozenset()
+    disponibles = set(state.chips_available(state.gw)) - set(research.intervention.block_chips)
+    return frozenset(disponibles) or frozenset({"__ninguno__"})
+
+
 def _do_nothing_decision(state: State, picks: tuple[dict, ...]):
     """Representa literalmente el estado previo; no optimiza ni cambia C/V."""
     from mova_fpl.engine.state import Decision
@@ -602,15 +615,18 @@ def main() -> None:
 
     veredicto = None
     if args.chips:
-        pcfg = PlannerConfig(enabled=True, structure_lookahead=args.lookahead)
+        solo = _planner_chips(estado, research)
+        pcfg = PlannerConfig(enabled=True, structure_lookahead=args.lookahead, solo=solo)
         veredicto = plan(estado, matriz, optimizer_config(cfg, len(matriz)), pcfg)
         print(f"      {veredicto.as_note()}")
         chip = veredicto.chip
-        if research is not None and chip in research.intervention.block_chips:
-            print(f"      chip {chip} vetado por research: se ignora el veredicto")
+        if chip and chip not in solo and solo:  # defensa: jamas un chip vetado
             chip = None
         if chip:
-            estado = replace(estado, chips_allowed={args.gw: frozenset({chip})})
+            # union con lo ya permitido (allow_chips), no reemplazo
+            permitido = frozenset(estado.chips_allowed.get(args.gw, ())) | {chip}
+            estado = replace(estado, chips_allowed={**estado.chips_allowed,
+                                                    args.gw: permitido})
 
     decision = decide(args.gw, estado, cfg)
 
@@ -648,7 +664,9 @@ def main() -> None:
         )
         hold = decide(
             args.gw,
-            replace(no_chip_state, lock_in=owned),
+            # lock_in y lock_out sobre el mismo jugador hacen el MILP infactible:
+            # el vetado se queda fuera del lock_in y el hold puede venderlo.
+            replace(no_chip_state, lock_in=owned - frozenset(no_chip_state.lock_out)),
             cfg,
         ) if owned else no_chip
         do_nothing = _do_nothing_decision(

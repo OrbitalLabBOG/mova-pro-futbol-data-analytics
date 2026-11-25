@@ -12,7 +12,8 @@ from mova_fpl.ops.schedule import phase_for
 
 
 def ingest(config: RuntimeConfig, db: OpsDB, payload: dict, *,
-           trigger: str = "scheduled", source_name: str = SOURCE_CAPTURE) -> dict:
+           trigger: str = "scheduled", source_name: str = SOURCE_CAPTURE,
+           job_key: str | None = None) -> dict:
     if trigger not in {"scheduled", "forced"}:
         raise ValueError(f"trigger privado inválido: {trigger}")
     normalized, quality = validate(payload, expected_team_id=config.team_id)
@@ -27,19 +28,20 @@ def ingest(config: RuntimeConfig, db: OpsDB, payload: dict, *,
     correlation_id = new_id("corr")
     job_id, reused = db.start_job(
         "private_team_state",
-        f"private-team-state:{config.season}:{gw}:{observation_sha}",
+        job_key or f"private-team-state:{config.season}:{gw}:{observation_sha}",
         correlation_id,
         cycle_id=cycle_id,
         input_sha256=observation_sha,
     )
     if reused:
-        # El snapshot ya está sellado: devuelve su ruta para que el acta lo pueda usar.
-        previous = db.latest_team_state(cycle_id)
-        known = {"team_state_id": previous.get("team_state_id"),
-                 "artifact_path": previous.get("artifact_path")} if previous and \
-            previous.get("fingerprint") == fingerprint else {}
+        # Ya sellado por el job original: devuelve SU snapshot (no el último del ciclo).
+        with db.connect(readonly=True) as con:
+            row = con.execute(
+                "SELECT team_state_id,artifact_path,fingerprint,observed_at "
+                "FROM team_state_snapshots WHERE job_id=?", (job_id,)).fetchone()
+        known = dict(row) if row else {}
         return {"status": "reused", "job_id": job_id, "cycle_id": cycle_id,
-                "fingerprint": fingerprint, "source_name": source_name, **known}
+                "source_name": source_name, **{"fingerprint": fingerprint, **known}}
     try:
         dest, manifest, normalized = seal(
             normalized,
@@ -92,7 +94,13 @@ def import_snapshot(config: RuntimeConfig, db: OpsDB, doc: dict, *, now: datetim
     """
     payload = normalize_import(doc, expected_team_id=config.team_id, now=now,
                                deadline_lookup=deadline_lookup, element_types=element_types)
-    result = ingest(config, db, payload, trigger="forced", source_name=SOURCE_IMPORT)
+    # La key del CLI es la key del job: estable aunque `observed_at` se genere con
+    # now() y cambie entre reintentos, así que repetir el import no duplica nada.
+    job_key = (f"private-import:{config.season}:{actor}:{idempotency_key}"
+               if actor and idempotency_key else None)
+    result = ingest(config, db, payload, trigger="forced", source_name=SOURCE_IMPORT,
+                    job_key=job_key)
+    result.setdefault("schema", "mova-private-import-v1")
     if actor and result.get("status") == "completed":
         db.append_audit(
             "team_state_import", correlation_id=None, cycle_id=result["cycle_id"],

@@ -440,3 +440,16 @@ def test_cli_acta_acepta_flags_nuevos():
                                 "--private-state-path", "/x", "--interventions", "/y",
                                 "--intervention-from-notes", "--require-private-state"])
     assert args.timeout == 30 and args.require_private_state and args.intervention_from_notes
+
+
+def test_brief_private_state_path_feeds_squad_and_keeps_zero_age(tmp_path):
+    config = _config(tmp_path, team_id=424242)
+    path = _sealed_state(config, observed="2026-11-25T12:00:00Z", label="operator_import")
+    brief = build_week_brief(config, None, gw=12, now=NOW, fetcher=FakeFPL(),
+                             acta_runner=_runner(),
+                             acta_options={"private_state_path": str(path)})
+    squad = brief["sections"]["squad"]
+    assert squad["status"] == "ok" and squad["data"]["state_source"] == "import"
+    assert squad["data"]["state_age_h"] == 0.0
+    assert brief["sections"]["acta"]["data"]["state_age_h"] == 0.0
+    assert brief["state"] == {"state_source": "import", "state_age_h": 0.0, "used_by": "acta"}

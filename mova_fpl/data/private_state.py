@@ -37,6 +37,25 @@ def _utc(value: str) -> datetime:
     return parsed.astimezone(timezone.utc)
 
 
+def strict_int(value, name: str) -> int:
+    """Entero exacto. Rechaza None, bool y floats con parte decimal.
+
+    `int(1.4)` daba 1 en silencio: un bank de £1.4M escrito en millones en vez de
+    décimas (14) corrompía el presupuesto y aun así pasaba el rango.
+    """
+    if value is None or isinstance(value, bool):
+        raise ValueError(f"{name} ausente o no numérico: {value!r}")
+    if isinstance(value, float):
+        if not value.is_integer():
+            raise ValueError(f"{name} debe ser entero (décimas/cuentas), recibido {value!r}")
+        return int(value)
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str) and value.strip().lstrip("-").isdigit():
+        return int(value)
+    raise ValueError(f"{name} debe ser entero, recibido {value!r}")
+
+
 def validate(payload: dict, *, expected_team_id: int | None = None) -> tuple[dict, dict]:
     if not isinstance(payload, dict) or payload.get("schema") != SCHEMA:
         raise ValueError("schema privado ausente o incompatible")
@@ -75,7 +94,7 @@ def validate(payload: dict, *, expected_team_id: int | None = None) -> tuple[dic
         if set(pick) != PICK_FIELDS:
             raise ValueError("pick privado no cumple allowlist exacta")
         for field in ("purchase_price", "selling_price"):
-            value = int(pick.get(field, 0))
+            value = strict_int(pick.get(field), f"{field} de element {pick.get('element')}")
             if not 30 <= value <= 200:
                 raise ValueError(f"{field} fuera de rango para element {pick.get('element')}")
         if int(pick.get("multiplier", -1)) not in {0, 1, 2, 3}:
@@ -84,9 +103,10 @@ def validate(payload: dict, *, expected_team_id: int | None = None) -> tuple[dic
     transfers = payload.get("transfers") or {}
     if set(transfers) != TRANSFER_FIELDS:
         raise ValueError("transferencias privadas no cumplen allowlist exacta")
-    bank, value = int(transfers.get("bank", -1)), int(transfers.get("value", -1))
-    made = int(transfers.get("made", -1))
-    cost = int(transfers.get("cost", -1))
+    bank = strict_int(transfers.get("bank"), "transfers.bank")
+    value = strict_int(transfers.get("value"), "transfers.value")
+    made = strict_int(transfers.get("made"), "transfers.made")
+    cost = strict_int(transfers.get("cost"), "transfers.cost")
     # `limit` es null en la API de FPL cuando no hay tope de transferencias de la
     # semana (chip wildcard/free hit activo, o ventana sin límite) y puede faltar
     # en capturas parciales. No es un error: el tope es desconocido. Supuesto
@@ -95,7 +115,7 @@ def validate(payload: dict, *, expected_team_id: int | None = None) -> tuple[dic
     # diga. El operador puede fijar los FT explícitos con `free_transfers` en el
     # snapshot simplificado (se normaliza a limit=FT, made=0).
     raw_limit = transfers.get("limit")
-    limit = None if raw_limit is None else int(raw_limit)
+    limit = None if raw_limit is None else strict_int(raw_limit, "transfers.limit")
     if not 0 <= bank <= 500 or not 700 <= value <= 1500:
         raise ValueError("bank/value privados fuera de rango")
     if (limit is not None and not 0 <= limit <= 5) or not 0 <= made <= 100 \
@@ -215,8 +235,8 @@ def _pick_from_operator(raw: dict, element_types: dict | None) -> dict:
         "element": element, "element_type": int(etype), "position": slot,
         "multiplier": int(multiplier), "is_captain": bool(raw.get("is_captain")),
         "is_vice_captain": bool(raw.get("is_vice_captain")),
-        "purchase_price": int(raw["purchase_price"]),
-        "selling_price": int(raw["selling_price"]),
+        "purchase_price": strict_int(raw.get("purchase_price"), "purchase_price"),
+        "selling_price": strict_int(raw.get("selling_price"), "selling_price"),
     }
 
 
@@ -276,13 +296,18 @@ def normalize_import(doc: dict, *, expected_team_id: int, now: datetime | None =
     else:
         if doc.get("bank") is None or doc.get("free_transfers") is None:
             raise ValueError("snapshot simplificado exige bank (décimas) y free_transfers")
-        transfers = {"bank": doc["bank"], "limit": int(doc["free_transfers"]), "made": 0,
+        transfers = {"bank": doc["bank"],
+                     "limit": strict_int(doc["free_transfers"], "free_transfers"), "made": 0,
                      "cost": 0, "status": SOURCE_IMPORT, "value": doc.get("value")}
-    if transfers["made"] is None:
-        raise ValueError("transfers.made ausente")
+    transfers["made"] = strict_int(transfers["made"], "transfers.made")
+    transfers["cost"] = strict_int(transfers["cost"], "transfers.cost")
     if transfers["value"] is None:  # valor del equipo = ventas + banco no se mezcla: sólo plantilla
         transfers["value"] = sum(p["selling_price"] for p in picks)
-    transfers["bank"] = int(transfers["bank"])
+    transfers["bank"] = strict_int(transfers["bank"], "transfers.bank")
+    if transfers.get("value") is not None:
+        transfers["value"] = strict_int(transfers["value"], "transfers.value")
+    if transfers.get("limit") is not None:
+        transfers["limit"] = strict_int(transfers["limit"], "transfers.limit")
     return {
         "schema": SCHEMA,
         "observed_at": doc.get("observed_at") or now.isoformat(),
@@ -290,7 +315,6 @@ def normalize_import(doc: dict, *, expected_team_id: int, now: datetime | None =
         "event": {"id": int(gw), "deadline_time": str(deadline)},
         "picks_last_updated": doc.get("picks_last_updated"),
         "picks": picks,
-        "transfers": {k: (int(v) if k not in ("status", "limit") and v is not None else v)
-                      for k, v in transfers.items()},
+        "transfers": transfers,
         "chips": [_chip_from_any(c) for c in (doc.get("chips") or ())],
     }

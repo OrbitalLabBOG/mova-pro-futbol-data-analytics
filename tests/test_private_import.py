@@ -103,8 +103,8 @@ def test_null_transfer_limit_handled():
 def test_millions_instead_of_tenths_rejected():
     doc = simplified()
     doc["picks"][0]["selling_price"] = 5.5
-    with pytest.raises(ValueError, match="fuera de rango"):
-        validate(normalize_import(doc, expected_team_id=TEAM), expected_team_id=TEAM)
+    with pytest.raises(ValueError, match="entero"):
+        normalize_import(doc, expected_team_id=TEAM)
 
 
 def _config(tmp_path) -> RuntimeConfig:
@@ -125,7 +125,8 @@ def test_import_seals_with_operator_label_and_is_idempotent(tmp_path):
     assert manifest["source_label"] == "operator_import"
     state = db.latest_team_state(first["cycle_id"])
     assert state["source_name"] == "operator_import"
-    again = import_snapshot(config, db, simplified(), now=NOW)
+    again = import_snapshot(config, db, simplified(), now=NOW, actor="bot", reason="t",
+                            idempotency_key="k1")
     assert again["status"] == "reused" and again["artifact_path"] == first["artifact_path"]
 
 
@@ -140,3 +141,55 @@ def test_cli_private_state_import(tmp_path, monkeypatch, capsys):
                  "--reason", "test", "--idempotency-key", "k"])
     out = json.loads(capsys.readouterr().out)
     assert code == 0 and out["source_name"] == "operator_import"
+
+
+# --- revisión: enteros estrictos e idempotencia real ------------------------------
+
+@pytest.mark.parametrize("field,value", [("bank", 1.4), ("bank", None), ("bank", True),
+                                         ("free_transfers", 1.5)])
+def test_non_integer_or_null_money_and_counts_rejected(field, value):
+    doc = simplified()
+    doc[field] = value
+    with pytest.raises(ValueError):
+        normalize_import(doc, expected_team_id=TEAM)
+
+
+def test_raw_null_bank_cost_and_fractional_price_rejected():
+    for key, value in (("bank", None), ("bank", 1.4), ("cost", None), ("made", None)):
+        doc = raw_my_team()
+        doc["transfers"][key] = value
+        with pytest.raises(ValueError, match="transfers"):
+            validate(normalize_import(doc, expected_team_id=TEAM), expected_team_id=TEAM)
+    doc = raw_my_team()
+    doc["picks"][0]["selling_price"] = 55.5
+    with pytest.raises(ValueError, match="entero"):
+        normalize_import(doc, expected_team_id=TEAM)
+    doc = raw_my_team()
+    doc["transfers"]["bank"] = 14.0  # float entero sí vale
+    validate(normalize_import(doc, expected_team_id=TEAM), expected_team_id=TEAM)
+
+
+def test_import_with_same_key_is_idempotent_even_if_observed_at_is_generated(tmp_path):
+    config = _config(tmp_path)
+    db = OpsDB(config.ops_db, enforce_version=False)
+    db.migrate()
+    doc = simplified()
+    del doc["observed_at"]  # se genera con now(): cambia entre reintentos
+    first = import_snapshot(config, db, doc, now=NOW, actor="bot", reason="r",
+                            idempotency_key="k1")
+    later = datetime(2026, 11, 26, 12, 5, tzinfo=timezone.utc)
+    again = import_snapshot(config, db, doc, now=later, actor="bot", reason="r",
+                            idempotency_key="k1")
+    assert again["status"] == "reused"
+    assert again["artifact_path"] == first["artifact_path"]
+    assert again["team_state_id"] == first["team_state_id"]
+    with db.connect(readonly=True) as con:
+        assert con.execute("SELECT count(*) FROM team_state_snapshots").fetchone()[0] == 1
+    # otro snapshot distinto en medio no cambia lo devuelto por la key original
+    other = simplified()
+    other["bank"] = 20
+    other["observed_at"] = "2026-11-26T11:59:30Z"
+    import_snapshot(config, db, other, now=NOW, actor="bot", reason="r", idempotency_key="k2")
+    third = import_snapshot(config, db, doc, now=later, actor="bot", reason="r",
+                            idempotency_key="k1")
+    assert third["artifact_path"] == first["artifact_path"]

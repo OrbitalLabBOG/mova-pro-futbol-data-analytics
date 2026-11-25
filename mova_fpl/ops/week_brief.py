@@ -428,8 +428,40 @@ def _player_rows(picks: list[dict], names: dict[int, dict]) -> list[dict]:
     return rows
 
 
-def _squad_section(config, db, boot, fetcher, gw, now, network) -> dict:
+def _explicit_squad(config, path, gw, names, now) -> dict | None:
+    """Sección squad desde el snapshot explícito (mismo que usa el acta)."""
+    from mova_fpl.data.private_state import load
+
+    info = explicit_private_state(config, path, gw, now)
+    normalized, _ = load(Path(path), expected_team_id=config.team_id)
+    tr = normalized["transfers"]
+    chips = normalized.get("chips") or []
+    data = {
+        "players": _player_rows(normalized["picks"], names),
+        "free_transfers": None, "bank": tr["bank"] / 10,
+        "chips": [{"name": c["name"], "status": c["status_for_entry"]} for c in chips],
+        "chips_available": sorted(c["name"] for c in chips
+                                  if c["status_for_entry"] == "available"),
+        "observed_at": info["observed_at"], "age_seconds": int(info["age_seconds"] or 0),
+        "fingerprint": info["fingerprint"], "fresh": not info["stale"],
+        "state_source": _label_for_source(info["source_name"]),
+        "state_age_h": None if info["age_seconds"] is None
+        else round(info["age_seconds"] / 3600, 2),
+    }
+    from mova_fpl.data.private_state import validate
+    data["free_transfers"] = validate(normalized, expected_team_id=config.team_id)[1][
+        "free_transfers"]
+    if info["stale"]:
+        return section("degraded", "private_team_state", data=data, needs_vps=True,
+                       detail="snapshot explícito vencido")
+    return section("ok", "private_team_state", data=data)
+
+
+def _squad_section(config, db, boot, fetcher, gw, now, network,
+                   explicit_path: str | None = None) -> dict:
     names = _elements(boot)
+    if explicit_path:
+        return _explicit_squad(config, explicit_path, gw, names, now)
     private = None
     if db is not None:
         private = (db.latest_team_state_for_event(config.season, gw)
@@ -520,7 +552,8 @@ def _acta_section(config, db, gw, horizon, chips, now, run, runner, names,
                        key: payload.get(key) for key in (
                            "missing", "stderr_tail", "returncode", "model_versions",
                            "elapsed_s", "acta_path", "candidates_path", "state_source",
-                           "state_age_h", "state_note") if payload.get(key)})
+                           "state_age_h", "state_note")
+                       if payload.get(key) is not None and payload.get(key) != ""})
 
 
 def _flags_section(boot, squad, acta) -> dict:
@@ -773,7 +806,8 @@ def build_week_brief(config: RuntimeConfig, db: OpsDB | None, *, gw: int,
     sections["cycle"] = _guard(lambda: _cycle_section(config, db, boot, gw, current), "cycle")
     sections["authority"] = _guard(lambda: _authority_section(config, db, current), "ops_db")
     sections["squad"] = _guard(
-        lambda: _squad_section(config, db, boot, fetcher, gw, current, network), "squad")
+        lambda: _squad_section(config, db, boot, fetcher, gw, current, network,
+                               (acta_options or {}).get("private_state_path")), "squad")
     sections["acta"] = _guard(lambda: _acta_section(
         config, db, gw, horizon, chips, current, run_acta_flag, acta_runner, names,
         acta_options), "cli.live")
