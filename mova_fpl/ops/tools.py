@@ -72,6 +72,23 @@ TOOLS: tuple[Tool, ...] = (
          inputs=({"name": "--force", "type": "flag", "required": True}, *AUDIT),
          notes="Sin timer (ADR-022). Requiere sesión FPL viva en el browser del VPS; "
                "ejecutar desde el host. Úsese si el brief marca el estado privado como viejo."),
+    Tool("private_state.import",
+         ("private-state", "import", "--file", "/tmp/team-snapshot.json", "--actor", "julian",
+          "--reason", "equipo leído del browser", "--idempotency-key", "private-import:gw12:1"),
+         "Importa el equipo real leído por el operador (JSON crudo de la API o simplificado: "
+         "picks, bank en décimas, free_transfers, chips) y lo sella como `operator_import`.",
+         "write-memory", "mova-private-capture-v1",
+         inputs=({"name": "--file", "default": "-"}, *AUDIT),
+         notes="Devuelve `artifact_path`: pásalo a `week acta --private-state-path` "
+               "(no depende de la cadencia). `transfers.limit` null => FT supuestos."),
+    Tool("gw.close",
+         ("gw", "close", "--gw", "11", "--actor", "julian", "--reason", "cierre GW11",
+          "--idempotency-key", "gw-close:gw11"),
+         "Cierra una GW finished+data_checked con picks públicos, puntos oficiales y la nota "
+         "decision; escribe post_mortem. No exige ejecución verificada (sin settle-auto).",
+         "write-memory", "mova-gw-close-v1",
+         inputs=(GW, {"name": "--dry-run", "type": "flag"}, *AUDIT),
+         notes="Sale con código 2 si la GW no está finished+data_checked o faltan datos."),
     Tool("incidents.close_obsolete",
          ("incidents", "close-obsolete", "--actor", "julian",
           "--reason", "harness retirado ADR-022", "--idempotency-key", "close-obsolete:1"),
@@ -104,7 +121,13 @@ TOOLS: tuple[Tool, ...] = (
          "Acta MILP en dry-run (sin traza) con candidatos y violaciones.", "read",
          "mova-acta-dry-run-v1",
          inputs=(GW, {"name": "--json", "type": "flag"}, {"name": "--chips", "type": "flag"},
-                 {"name": "--horizon", "type": "int", "default": 3})),
+                 {"name": "--horizon", "type": "int", "default": 3},
+                 {"name": "--private-state-path"}, {"name": "--interventions"},
+                 {"name": "--intervention-from-notes", "type": "flag"},
+                 {"name": "--require-private-state", "type": "flag"},
+                 {"name": "--timeout", "type": "int", "default": 600}),
+         notes="Reporta state_source (import|capture|public_reconstruction) y state_age_h. "
+               "Research: ajusta p_play/xP antes de proyectar, sin solves extra."),
     Tool("acta.commit", ("--season", "2026-27", "--gw", "12", "--horizon", "3", "--top-k", "0",
                          "--team-id", "3609854"),
          "Acta MILP que persiste la traza committed en trace.db.", "write-memory",
@@ -212,6 +235,7 @@ def catalog(operating_model: str | None = None) -> dict:
         "flow": ["week.brief", "acta.dry_run", "owner_validation", "fpl-web-ops",
                  "execute.manual_package", "execute.record_manual", "memory.note.add",
                  "review.settle_auto"],
+        "gw_cycle": ["private_state.import", "acta.dry_run", "gw.close"],
         "tools": [tool.to_dict() for tool in TOOLS],
     }
 

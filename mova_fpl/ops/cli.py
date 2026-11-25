@@ -393,6 +393,28 @@ def parser() -> argparse.ArgumentParser:
                            help="captura estado privado (--force) antes del acta")
     week_acta.add_argument("--json", action="store_true", dest="as_json",
                            help="salida JSON (ya es el formato por defecto)")
+    week_acta.add_argument("--timeout", type=int, default=None,
+                           help="segundos máximos del subprocess cli.live (default 600)")
+    for target in (week_brief, week_acta):
+        target.add_argument("--private-state-path",
+                            help="directorio sellado del snapshot (salida de private-state "
+                                 "import); evita la ventana de cadencia")
+        target.add_argument("--interventions", metavar="FILE",
+                            help="JSON de research (mova-research-adjustments-v1)")
+        target.add_argument("--intervention-from-notes", action="store_true",
+                            help="research desde notas de la GW con research_adjustment")
+    week_acta.add_argument("--require-private-state", action="store_true",
+                           help="falla si no hay estado privado o está vencido")
+    gw_cmd = commands.add_parser("gw", help="ciclo de GW: cierre con picks públicos")
+    gw_commands = gw_cmd.add_subparsers(dest="gw_command", required=True)
+    gw_close = gw_commands.add_parser(
+        "close", help="cierra la GW con picks públicos + nota decision (sin settle-auto)")
+    gw_close.add_argument("--gw", type=int, required=True)
+    gw_close.add_argument("--actor", required=True)
+    gw_close.add_argument("--reason", required=True)
+    gw_close.add_argument("--idempotency-key", required=True)
+    gw_close.add_argument("--dry-run", action="store_true",
+                          help="calcula las métricas sin escribir el post_mortem")
     memory = commands.add_parser("memory", help="memoria del copiloto por GW")
     memory_commands = memory.add_subparsers(dest="memory_command", required=True)
     memory_read = memory_commands.add_parser(
@@ -506,6 +528,13 @@ def parser() -> argparse.ArgumentParser:
     private_capture.add_argument("--actor", required=True)
     private_capture.add_argument("--reason", required=True)
     private_capture.add_argument("--idempotency-key", required=True)
+    private_import = private_commands.add_parser(
+        "import", help="importa el equipo leído por el operador en el browser (JSON)"
+    )
+    private_import.add_argument("--file", default="-", help="JSON; '-' lee stdin")
+    private_import.add_argument("--actor", required=True)
+    private_import.add_argument("--reason", required=True)
+    private_import.add_argument("--idempotency-key", required=True)
     incidents = commands.add_parser("incidents", help="mantenimiento de incidentes")
     incident_commands = incidents.add_subparsers(dest="incidents_command", required=True)
     close_obsolete = incident_commands.add_parser(
@@ -634,6 +663,54 @@ def main(argv: list[str] | None = None) -> int:
               if args.as_json else render_tools(payload), end="" if not args.as_json else "\n")
         return 0
 
+    if args.command == "private-state" and args.private_state_command == "import":
+        from pathlib import Path
+        from mova_fpl.ops.team_state import import_snapshot
+
+        doc = json.loads(
+            sys.stdin.read() if args.file == "-" else Path(args.file).read_text(encoding="utf-8")
+        )
+        db = OpsDB(config.ops_db, minimum_version=config.sqlite_min_version)
+        db.migrate()
+        picks = doc.get("picks") if isinstance(doc, dict) else None
+        element_types = None
+        if picks and any("element_type" not in p and "pos" not in p for p in picks):
+            from mova_fpl.ops.week_brief import PublicFPL
+
+            boot = PublicFPL().bootstrap()  # GET público; solo para element_type
+            element_types = {int(e["id"]): int(e["element_type"]) for e in boot["elements"]}
+
+        def deadline_lookup(gw):
+            cycle = db.cycle_row(config.season, gw)
+            if cycle and cycle.get("deadline_at"):
+                return cycle["deadline_at"]
+            from mova_fpl.data.live import deadline
+            from mova_fpl.ops.week_brief import PublicFPL
+
+            return deadline(PublicFPL().bootstrap(), gw)
+
+        payload = import_snapshot(config, db, doc, deadline_lookup=deadline_lookup,
+                                  element_types=element_types, actor=args.actor,
+                                  reason=args.reason, idempotency_key=args.idempotency_key)
+        print(json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str))
+        return 0
+
+    if args.command == "gw":
+        from mova_fpl.ops.gw import UNSETTLED_EXIT, GWNotSettled, close_gw
+        from mova_fpl.ops.week_brief import PublicFPL
+
+        db = OpsDB(config.ops_db, minimum_version=config.sqlite_min_version)
+        try:
+            payload = close_gw(config, db, gw=args.gw, fetcher=PublicFPL(), actor=args.actor,
+                               reason=args.reason, idempotency_key=args.idempotency_key,
+                               write=not args.dry_run)
+        except GWNotSettled as exc:
+            print(json.dumps({"schema": "mova-gw-close-v1", "status": "unsettled",
+                              "gw": args.gw, "detail": str(exc)}, ensure_ascii=False))
+            return UNSETTLED_EXIT
+        print(json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str))
+        return 0
+
     if args.command == "private-state":
         from mova_fpl.ops.private_capture import capture
 
@@ -656,8 +733,20 @@ def main(argv: list[str] | None = None) -> int:
                 actor="mova-week", reason=f"capture previo a week {args.week_command} GW{args.gw}",
                 idempotency_key=f"week-{args.week_command}:gw{args.gw}:capture", force=True,
             )
+        from mova_fpl.ops import interventions as iv_mod
+
+        research = None
+        if args.interventions:
+            research = iv_mod.load_file(args.interventions, gw=args.gw)
+        if args.intervention_from_notes:
+            research = iv_mod.merge_docs(
+                iv_mod.doc_from_notes(db, season=config.season, gw=args.gw), research)
+        options = {"private_state_path": args.private_state_path, "interventions": research}
         if args.week_command == "acta":
-            payload = run_acta(config, db, gw=args.gw, horizon=args.horizon, chips=args.chips)
+            if args.timeout:
+                options["timeout"] = args.timeout
+            payload = run_acta(config, db, gw=args.gw, horizon=args.horizon, chips=args.chips,
+                               require_private_state=args.require_private_state, **options)
             if capture_result:
                 payload["private_state_capture"] = capture_result
             print(json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str))
@@ -665,6 +754,7 @@ def main(argv: list[str] | None = None) -> int:
         payload = build_week_brief(
             config, db, gw=args.gw, network=not args.no_network,
             run_acta_flag=not args.no_acta, chips=args.chips, horizon=args.horizon,
+            acta_options=options,
         )
         if capture_result:
             payload["private_state_capture"] = capture_result

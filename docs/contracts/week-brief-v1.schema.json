@@ -18,6 +18,17 @@
     "team_id": {"type": "integer"},
     "operating_model": {"type": "string", "enum": ["copilot", "scheduled_delivery"]},
     "overall": {"type": "string", "enum": ["ready", "partial", "empty"]},
+    "state": {
+      "type": "object",
+      "description": "Procedencia del estado usado: import|capture|public_reconstruction|none.",
+      "properties": {
+        "state_source": {"type": "string",
+                         "enum": ["import", "capture", "public_reconstruction", "none"]},
+        "state_age_h": {"description": "horas desde observed_at; null sin estado privado"},
+        "used_by": {"type": "string"},
+        "note": {"type": "string"}
+      }
+    },
     "inputs": {
       "type": "object",
       "additionalProperties": false,

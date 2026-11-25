@@ -45,6 +45,8 @@ SQLite a mano: `mova` y `/api/v1/*` son el contrato. Reporta siempre fecha, SHA 
 | `data.status` | `mova data status` | read |
 | `collect` | `mova collect fpl --force --actor A --reason R --idempotency-key K` | write-memory |
 | `private_state.capture` | `mova private-state capture --force --actor A --reason R --idempotency-key K` | write-memory |
+| `private_state.import` | `mova private-state import --file F --actor A --reason R --idempotency-key K` | write-memory |
+| `gw.close` | `mova gw close --gw N --actor A --reason R --idempotency-key K` | write-memory |
 | `incidents.close_obsolete` | `mova incidents close-obsolete --actor A --reason R --idempotency-key K` | write-memory |
 | `analytics.status` | `mova analytics status` | read |
 | `analytics.reconcile` | `mova analytics reconcile` | write-memory |
