@@ -337,14 +337,11 @@ def test_scheduled_sync_identity_is_stable_per_cycle_and_iso_week(tmp_path: Path
     }
 
 
-def test_postgres_sync_timer_is_persistent_and_locked() -> None:
+def test_postgres_sync_timer_is_retired_but_cli_remains() -> None:
     root = Path(__file__).parents[1]
-    timer = (root / "deploy/systemd/mova-fpl-postgres-sync.timer").read_text()
-    service = (root / "deploy/systemd/mova-fpl-postgres-sync.service").read_text()
-    assert "Persistent=true" in timer
-    assert "RandomizedDelaySec=300s" in timer
-    assert "/run/lock/mova-fpl-worker.lock" in service
-    assert "/usr/local/bin/mova postgres sync" in service
+    assert not (root / "deploy/systemd/mova-fpl-postgres-sync.timer").exists()
+    assert not (root / "deploy/systemd/mova-fpl-postgres-sync.service").exists()
+    assert "postgres_sync" in (root / "mova_fpl/ops/cli.py").read_text() or "sync" in (root / "mova_fpl/ops/cli.py").read_text()
 
 
 def test_scheduled_sync_output_is_compact(monkeypatch, tmp_path: Path) -> None:

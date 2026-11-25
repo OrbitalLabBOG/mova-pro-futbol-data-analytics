@@ -17,30 +17,15 @@ from pathlib import Path
 
 UNITS = (
     "mova-fpl-stack.service",
-    "mova-fpl-tick.service",
-    "mova-fpl-tick.timer",
-    "mova-fpl-delivery.service",
-    "mova-fpl-delivery.timer",
-    "mova-fpl-private-state.service",
-    "mova-fpl-private-state.timer",
     "mova-fpl-backup.service",
     "mova-fpl-backup.timer",
-    "mova-fpl-backup-retention.service",
-    "mova-fpl-backup-retention.timer",
-    "mova-fpl-watchdog.service",
-    "mova-fpl-watchdog.timer",
     "mova-fpl-collector.service",
     "mova-fpl-collector.timer",
     "mova-fpl-analytics.service",
     "mova-fpl-analytics.timer",
     "mova-fpl-research.service",
-    "mova-fpl-research.timer",
-    "mova-fpl-postgres-sync.service",
-    "mova-fpl-postgres-sync.timer",
     "mova-fpl-offsite-backup.service",
     "mova-fpl-offsite-backup.timer",
-    "mova-fpl-dr-status.service",
-    "mova-fpl-dr-status.timer",
 )
 OFFSITE_CONFIG_KEYS = {
     "schema", "enabled", "provider", "owner", "repository_file", "password_file",
@@ -212,6 +197,28 @@ def offsite_backup_status(
         return {**base, "status": "invalid", "reasons": [code]}
 
 
+STAMP = re.compile(r"20\d{6}T\d{6}Z")
+
+
+def local_backup(root: Path) -> dict:
+    """ADR-022: edad del ultimo backup local diario (SQLite y pg_dump)."""
+    now = datetime.now(timezone.utc)
+    ages: dict[str, int | None] = {}
+    for family, parent in (("sqlite", root), ("postgres", root / "postgres")):
+        newest = None
+        try:
+            for entry in parent.iterdir():
+                if entry.is_dir() and STAMP.fullmatch(entry.name):
+                    newest = max(newest or entry.name, entry.name)
+        except OSError:
+            pass
+        ages[family] = None if newest is None else int((now - datetime.strptime(
+            newest, "%Y%m%dT%H%M%SZ").replace(tzinfo=timezone.utc)).total_seconds())
+    known = [v for v in ages.values() if v is not None]
+    return {"sqlite_age_seconds": ages["sqlite"], "postgres_age_seconds": ages["postgres"],
+            "data_age_seconds": max(known) if len(known) == 2 else None}
+
+
 def dr_observation(path: Path) -> dict:
     """Only project metadata; never return arbitrary report fields or paths."""
     try:
@@ -260,6 +267,8 @@ def main() -> int:
         "--offsite-config", type=Path,
         default=Path("/etc/mova-fpl/offsite-backup.json"),
     )
+    parser.add_argument("--backup-root", type=Path,
+                        default=Path("/opt/orbital/backups/mova-fpl"))
     args = parser.parse_args()
 
     services = compose_services(args.repo)
@@ -296,6 +305,7 @@ def main() -> int:
             ).is_dir(),
         },
         "offsite_backup": offsite_backup_status(args.offsite_config),
+        "local_backup": local_backup(args.backup_root),
         "dr_observation": dr_observation(Path("/var/lib/mova-dr/status.json")),
         "revisions": {"checkout": revision(args.repo), "image": revision(args.repo, "api")},
     }

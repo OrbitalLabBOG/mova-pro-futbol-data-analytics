@@ -21,6 +21,17 @@ browser writes). En copiloto `DeliveryService.dispatch` devuelve `blocked/copilo
 watchdog no exige delivery y los timers requeridos ya no incluyen delivery ni research
 (`mova-fpl-backup-retention.timer` pasa a requerido siempre).
 
+> **ADR-022 (25/11/2026):** el doctor requerido se reduce a colector `fpl_official` sano,
+> Postgres y API arriba, `ops.db`/schema, joblibs, disco ≥ 20 GiB, backup local < 36 h y las
+> unidades `mova-fpl-stack.service` + `mova-fpl-collector.timer`. `scheduler_heartbeat` y
+> `agent_queue_integrity` desaparecen del doctor; estado privado, DR, analytics/backup timers,
+> servicios fallidos, memoria y GET a FPL son WARN opcionales. Tick, watchdog y
+> `backup-retention.timer` ya no existen como unidades; `mova watchdog`/`mova tick` quedan solo
+> como CLI a demanda. `build_safety` y el brief ignoran incidentes del harness retirado
+> (heartbeat, DR, colas de agentes, deadline autónomo, Ejecución FPL ambigua, Shadow decision,
+> disco bajo); los demás P0/P1 siguen marcando `unsafe`. Las secciones sobre watchdog/tick de
+> más abajo describen el comportamiento on-demand histórico.
+
 La superficie del asistente es el catálogo `mova tools --json` (`mova-tools-v1`): cada tool
 declara `argv`, `side_effect` (`read`, `write-memory`, `write-fpl`), contrato JSON y
 `needs_vps_data`. Ningún comando del CLI es `write-fpl`; esa clase solo la tiene la skill

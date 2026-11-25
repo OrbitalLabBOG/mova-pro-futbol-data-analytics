@@ -42,7 +42,7 @@ def test_dense_backups_are_tiered_and_dry_run_preserves_everything(tmp_path):
     for family in ('sqlite','postgres'):
         kept=[r for r in proposal['keep'] if r['family']==family]
         assert all((NOW-timedelta(hours=h)).strftime('%Y%m%dT%H%M%SZ') in {r['name'] for r in kept} for h in (0,3))
-        assert any(NOW.timestamp()-r['timestamp']>14*86400 for r in kept)
+        assert all(NOW.timestamp()-r['timestamp']<=14*86400 for r in kept)
     assert (sentinel/'untouched').exists()
 
 

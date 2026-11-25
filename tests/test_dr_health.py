@@ -28,8 +28,14 @@ def test_backup_age_advances_between_hourly_reports():
     after = assess(observation(), NOW + timedelta(minutes=21))
     assert after["report_age_seconds"] == 1260
     assert after["data_age_seconds"]["remote_backup"] == 25260
-    assert after["healthy"] is False
-    assert "remote_backup_outside_rpo" in after["reasons"]
+    # ADR-022: RPO diario de 36 h; 7 h ya no es un límite duro.
+    assert after["rpo_seconds"] == 36 * 3600
+    assert after["healthy"] is True
+    stale = observation()
+    stale["remote_backup"] = {"data_age_seconds": 36 * 3600 - 1000}
+    late = assess(stale, NOW + timedelta(minutes=21))
+    assert late["healthy"] is False
+    assert "remote_backup_outside_rpo" in late["reasons"]
     assert after["host_reconstruction_proven"] is False
 
 

@@ -9,6 +9,10 @@ supersedes: docs/specs/fpl-autonomous-operator/10-autonomous-harness-v1.md
 plan: docs/plans/operator-tools-refactor.md
 ---
 
+> **Ampliado por [ADR-022](ADR-022-harness-minimo-copiloto.md):** el copiloto se mantiene; el
+> harness de timers se reduce aún más (sin tick, watchdog, DR, private-state ni
+> postgres-sync; backup diario con poda).
+
 # Contexto
 
 Al 25/11/2026 (GW11 cerrada, GW12 siguiente) el harness autónomo seguía armado en
@@ -46,9 +50,9 @@ datos, modelos y memoria confiables, y en una decisión semanal que él valida.
 5. **Retiro de timers.** Se eliminan `mova-fpl-delivery.timer` y
    `mova-fpl-research.timer` versionados. `install-systemd.sh` los deshabilita y
    borra de forma idempotente. Research y deliberación pasan a on-demand.
-6. **Qué se queda en el VPS:** collectors público y privado, timers de analytics/ML,
-   tick (envelope + preflight como memoria), `ops.db`/`trace.db`/backups, API de datos
-   y watchdog (solo salud; el recibo manual sigue contando como completado).
+6. **Qué se queda en el VPS:** *(actualizado por ADR-022)* colector, timer de
+   analytics/ML, `ops.db`/`trace.db`/backup diario y API de datos. Tick, watchdog,
+   dr-status y captura privada por timer quedan retirados.
 
 # Ciclo semanal
 

@@ -1,8 +1,8 @@
 [Unit]
-Description=Schedule MOVA FPL encrypted off-host backup
+Description=Schedule MOVA FPL encrypted off-host backup once a week
 
 [Timer]
-OnCalendar=*-*-* 05,11,17,23:17:00 America/Bogota
+OnCalendar=Sun *-*-* 05:17:00 America/Bogota
 RandomizedDelaySec=600s
 Persistent=true
 Unit=mova-fpl-offsite-backup.service

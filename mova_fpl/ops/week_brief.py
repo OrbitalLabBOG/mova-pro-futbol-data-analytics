@@ -586,7 +586,8 @@ def derive_open_decisions(sections: dict, *, gw: int) -> list[dict]:
     if squad.get("source") != "private_team_state" or not squad_data.get("fresh"):
         add("private_state_missing", "decide",
             "Sin estado privado fresco: FT, banco y chips sin confirmar. Reautenticar la "
-            "sesión FPL en el browser del VPS antes de cerrar transferencias/chips.")
+            "sesión FPL en el browser del VPS y correr `mova private-state capture --force` "
+            "(o `mova week brief --capture-private-state`) antes de cerrar transferencias/chips.")
     acta = sections["acta"]
     selected = (acta.get("data") or {}).get("selected") if acta.get("status") == "ok" else None
     if acta.get("status") in {"error", "missing"}:

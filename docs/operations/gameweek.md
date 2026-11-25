@@ -58,8 +58,12 @@ Nunca falla por datos faltantes: cada sección trae `status`
 `open_decisions`:
 
 - `private_state_missing` / `squad.source != private_team_state`: FT, banco y chips sin
-  confirmar. Julián debe re-loguear la sesión FPL en el browser del VPS
-  ([vps.md](vps.md)) antes de cerrar transferencias o chips.
+  confirmar. No hay timer de captura (ADR-022): correr en el host
+  `mova private-state capture --force --actor A --reason R --idempotency-key K` (o
+  `mova week brief --gw N --capture-private-state`). Si la sesión FPL venció, Julián debe
+  re-loguearla en el browser del VPS ([vps.md](vps.md)). Repetir la captura justo antes del
+  acta si faltan < 3 h al deadline, y de nuevo tras el Apply si se registrará el manual. El
+  brief/acta degradan sin estado fresco; nunca esperan al browser.
 - GW actual sin `data_checked`: la propuesta es **preliminar**; no promover chips ni
   transferencias.
 - Titular con flag, margen C vs VC < 0.5 xP, transferencia/hit o chip propuesto,
@@ -171,7 +175,7 @@ mova memory note add --gw 12 --kind post_mortem --source assistant \
 
 - No usar la cadena de delivery legacy (`execute dispatch|prepare|claim|ui-plan|begin|finalize|fail`,
   `rehearsal*`, `delivery-cycle.sh`): falla cerrado con `copilot_mode` y no está en el catálogo.
-- No re-armar timers de delivery o research.
+- No re-armar timers de delivery, research, tick, watchdog ni private-state (ADR-022).
 - No editar controles, envs, SQLite ni artefactos sin OK explícito de Julián.
 - No pedir ni escribir contraseña/MFA: el re-login lo hace Julián por noVNC.
 
@@ -214,8 +218,8 @@ El acta queda en `outputs/fpl/2026-27/gwNN_decision.md`. Tarda unos **5 segundos
 | `--top-k 0` | Sin recorte de mercado: optimalidad garantizada | **0** en vivo |
 | `--policy` | `milp` u `greedy-stub` | `milp`; la voraz es el plan B |
 | `--dry-run` | No escribe en la traza | Para ensayar |
-| `--json-out PATH` | Emite candidatos tipados para el harness | Lo usa el tick |
-| `--as-of RFC3339` | Fija el reloj lógico para replay | Lo usa el tick |
+| `--json-out PATH` | Emite candidatos tipados para el harness | Uso a demanda (el tick está retirado) |
+| `--as-of RFC3339` | Fija el reloj lógico para replay | Uso a demanda (el tick está retirado) |
 
 ### Con el equipo real (desde la GW2)
 
@@ -417,7 +421,7 @@ La traza vive en `data/processed/trace.db`. Cada decisión guarda su huella
 
 ### Cierre automático de una intervención manual verificada
 
-Es la ruta normal del copiloto tras `execute record-manual`. El tick procesa recibos
+Es la ruta normal del copiloto tras `execute record-manual`. El cierre autónomo (analytics) procesa recibos
 manuales v2 íntegros. El paquete resultante usa
 `mova-fpl-manual-closeout-v2`, `verified_execution_source=manual_verified` y
 `scheduler_save=false`: automatizar el cierre no convierte el montaje en autónomo.
@@ -518,3 +522,12 @@ Una corrida fallida puede recuperarse en hasta tres jobs independientes, con cin
 minutos de espera entre intentos. No borra errores ni reinicia contadores. Un replay
 fallido, en ejecución o sin settlement durable no resuelve incidentes. Agotar los
 intentos exige diagnóstico y una corrección verificada.
+
+
+## Salud mínima antes de la GW (ADR-022)
+
+No hay watchdog. Al preparar la GW: `mova data status` y `mova doctor --no-network`. Los
+requeridos son colector `fpl_official` sano, Postgres y API arriba, `ops.db`, joblibs,
+disco ≥ 20 GiB y backup < 36 h. Una alerta única (`mova alerts health`, tras cada
+`collect all`) avisa si `fpl_official` lleva > 6 h mal o el disco baja de 20 GiB. Incidentes
+viejos del harness: `mova incidents close-obsolete --actor A --reason R --idempotency-key K`.

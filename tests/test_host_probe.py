@@ -93,13 +93,12 @@ def test_unit_state_exposes_sanitized_oneshot_result(monkeypatch):
     assert result["exec_main_status"] == 1
 
 
-def test_watchdog_refreshes_host_probe_before_running():
+def test_status_and_doctor_refresh_host_probe_but_watchdog_unit_is_retired():
     wrapper = Path("deploy/bin/mova").read_text(encoding="utf-8")
-    service = Path("deploy/systemd/mova-fpl-watchdog.service").read_text(
-        encoding="utf-8"
-    )
-    assert '"${1:-}" == "watchdog"' in wrapper
-    assert "ExecStart=/usr/local/bin/mova watchdog" in service
+    assert '"${1:-}" == "doctor"' in wrapper
+    for retired in ("watchdog", "tick", "dr-status"):
+        for kind in ("service", "timer"):
+            assert not Path(f"deploy/systemd/mova-fpl-{retired}.{kind}").exists()
 
 
 def test_offsite_service_is_opt_in_and_excludes_runtime_secrets():
@@ -125,23 +124,32 @@ def test_offsite_service_is_opt_in_and_excludes_runtime_secrets():
     assert "MOVA_OPS_DB=" not in local_restore
 
 
-def test_install_retires_delivery_and_research_timers():
-    """ADR-021: copiloto; los timers de entrega/research se deshabilitan y no se versionan."""
+def test_install_retires_harness_timers_adr022():
+    """ADR-022: solo colector, analytics, backup diario y stack; el resto se retira."""
     install = Path("deploy/bin/install-systemd.sh").read_text(encoding="utf-8")
-    for unit in ("mova-fpl-delivery.timer", "mova-fpl-research.timer"):
-        assert f"enable --now {unit}" not in install
-        assert not Path("deploy/systemd", unit).exists()
-    assert "RETIRED_UNITS=(mova-fpl-delivery.timer mova-fpl-research.timer)" in install
+    retired = ("tick", "watchdog", "dr-status", "private-state", "postgres-sync",
+               "backup-retention", "delivery")
+    for name in retired:
+        assert f"mova-fpl-{name}.timer" in install.split("RETIRED_UNITS=(")[1]
+        assert f"enable --now mova-fpl-{name}.timer" not in install
+        for kind in ("service", "timer"):
+            assert not Path("deploy/systemd", f"mova-fpl-{name}.{kind}").exists()
+    assert "mova-fpl-research.timer" in install
     assert 'systemctl disable --now "$unit"' in install
     assert 'rm -f "/etc/systemd/system/$unit"' in install
     assert "reset-failed 'mova-fpl-delivery-proof-*'" in install
+    assert "enable --now mova-fpl-collector.timer mova-fpl-analytics.timer" in install
     assert install.index("RETIRED_UNITS=") < install.rindex("systemctl daemon-reload")
-    assert "enable --now mova-fpl-backup-retention.timer" in install
-    delivery = Path("deploy/systemd/mova-fpl-delivery.service").read_text(encoding="utf-8")
-    assert "[Install]" not in delivery
-    # La sonda sigue observando las unidades retiradas para confirmar que quedan inactivas.
-    probe = Path("deploy/bin/host-probe.py").read_text(encoding="utf-8")
-    assert '"mova-fpl-delivery.timer"' in probe and '"mova-fpl-research.timer"' in probe
+
+
+def test_backup_is_daily_with_integrated_retention_and_weekly_offsite():
+    backup = Path("deploy/systemd/mova-fpl-backup.timer").read_text(encoding="utf-8")
+    offsite = Path("deploy/systemd/mova-fpl-offsite-backup.timer").read_text(encoding="utf-8")
+    script = Path("deploy/bin/backup-all.sh").read_text(encoding="utf-8")
+    assert "OnCalendar=*-*-* 04:17:00 America/Bogota" in backup
+    assert "OnCalendar=Sun *-*-* 05:17:00 America/Bogota" in offsite
+    assert "postgres-shadow-backup.sh" in script and "backup-retention.sh" in script
+    assert not Path("deploy/systemd/mova-fpl-backup.timer.d").exists()
 
 
 def test_dr_report_projects_only_allowlisted_metadata(tmp_path):
@@ -170,3 +178,15 @@ def test_dr_report_projects_only_allowlisted_metadata(tmp_path):
     assert module.dr_observation(path) == {}
     path.write_text("[]")
     assert module.dr_observation(path) == {}
+
+
+def test_local_backup_age_reads_newest_daily_set(tmp_path):
+    from datetime import datetime, timedelta, timezone
+    module = _module()
+    now = datetime.now(timezone.utc)
+    for family, hours in (("", 30), ("postgres/", 10)):
+        stamp = (now - timedelta(hours=hours)).strftime("%Y%m%dT%H%M%SZ")
+        (tmp_path / (family + stamp)).mkdir(parents=True)
+    result = module.local_backup(tmp_path)
+    assert 29 * 3600 < result["data_age_seconds"] < 31 * 3600
+    assert module.local_backup(tmp_path / "missing")["data_age_seconds"] is None

@@ -12,8 +12,8 @@ from pathlib import Path
 
 STAMP = re.compile(r"20\d{6}T\d{6}Z")
 GIB = 1024 ** 3
-POLICY = {"version": "local-backups-v1", "recent_hours": 48,
-          "recent_bucket_hours": 6, "daily_days": 7, "weekly_days": 28,
+POLICY = {"version": "local-backups-v1", "recent_hours": 24,
+          "recent_bucket_hours": 24, "daily_days": 10, "weekly_days": 14,
           "protected_latest": 2, "family_budget_bytes": 6 * GIB}
 
 

@@ -19,12 +19,9 @@ escribe en FPL sin su OK explícito.
 | Se queda en el VPS | Unidades |
 | --- | --- |
 | Collector público (FPL, odds, calendario, eventos) | `mova-fpl-collector.timer` |
-| Collector privado autenticado de solo lectura | `mova-fpl-private-state.timer` |
-| Tick: envelope + preflight como memoria (sin dispatch) | `mova-fpl-tick.timer` |
 | Analytics/ML (proyección, reconciliación, scorecards) | `mova-fpl-analytics.timer` |
-| Memoria y backups (`ops.db`, `trace.db`, PostgreSQL shadow) | `mova-fpl-backup.timer`, `mova-fpl-backup-retention.timer`, `mova-fpl-postgres-sync.timer`, offsite/DR si están configurados |
+| Memoria y backups (`ops.db`, `trace.db`, PostgreSQL): dump diario con poda 7–14 días | `mova-fpl-backup.timer` (04:17 Bogotá; offsite semanal opt-in `mova-fpl-offsite-backup.timer`) |
 | API de datos loopback y cockpit | `mova-fpl-stack.service` |
-| Watchdog (solo salud; el recibo manual cuenta como completado) | `mova-fpl-watchdog.timer` |
 | Research / deliberación on-demand (sin timer) | `mova-fpl-research.service` o `deploy/bin/research-cycle.sh` a mano |
 | Delivery legacy (sin timer; falla cerrado con `copilot_mode`) | `mova-fpl-delivery.service` sin `[Install]` |
 
@@ -345,7 +342,7 @@ curl -s 'http://127.0.0.1:8787/api/v1/audit?limit=20' | python -m json.tool
 sudo journalctl -u mova-fpl-private-state.service -n 100 --no-pager
 ```
 
-`mova-fpl-private-state.timer` evalúa el gate cada cinco minutos sin encender Chromium si el
+*(Retirado por ADR-022: la captura es on-demand con `mova private-state capture --force`.)* El gate histórico `mova-fpl-private-state.timer` evaluaba cada cinco minutos sin encender Chromium si el
 snapshot sigue fresco. La captura efectiva ocurre cada 6 horas en operación normal, cada
 hora durante las últimas 24 horas, cada 15 minutos durante las últimas 3 horas y cada 5
 minutos durante los últimos 30 minutos. Una captura `--force` es obligatoria inmediatamente
@@ -412,6 +409,35 @@ archivo para saltarse el ledger. En copiloto los valores esperados son `browser_
 A0, `delivery_scope=null` y `mode=supervised`; cambiarlos requiere OK explícito de Julián.
 El runtime rechaza writes automáticos salvo `guarded/autonomous`, A1+ y compliance aprobado;
 la operación manual validada por Julián (`fpl-web-ops`) no depende de esos controles.
+
+## Rollout ADR-022: harness mínimo
+
+> **Requiere el OK explícito de Julián.** No ejecutar sin él; este repo no lo corre.
+> Estado: pendiente. Retira tick, watchdog, dr-status, private-state, postgres-sync,
+> backup-retention y delivery; deja colector, analytics, stack y backup diario.
+
+1. `git pull` (SHA de ADR-022), reconstruir imagen y `docker compose up -d --no-deps --force-recreate api`.
+2. `sudo deploy/bin/install-systemd.sh /opt/orbital/services/mova-fpl` (deshabilita y borra las
+   unidades retiradas y hace `reset-failed`; instala los timers diario/semanal).
+   Si restic ya está configurado, deja habilitado (o habilita) `mova-fpl-offsite-backup.timer` (ahora semanal): `sudo systemctl enable --now mova-fpl-offsite-backup.timer`.
+3. Confirmar retiradas: `systemctl list-timers --all 'mova-fpl-*' --no-pager` (solo collector,
+   analytics, backup y, si existe, offsite) y `systemctl --failed`. Si algo quedó:
+   `sudo systemctl disable --now mova-fpl-{tick,watchdog,dr-status,private-state,postgres-sync,backup-retention}.timer; sudo systemctl reset-failed`.
+4. Podar las copias de 6 h: `sudo mova maintenance backups --apply --actor julian --reason
+   "ADR-022 poda a 7-14 días" --idempotency-key adr022-prune` y tomar un backup:
+   `sudo systemctl start mova-fpl-backup.service`. Revisar `df -h` (≥ 28 GiB libres para cerrar
+   "Local storage headroom low").
+5. Cerrar incidentes: `mova incidents close-obsolete --actor julian --reason "ADR-022"
+   --idempotency-key adr022-close` (dry-run con `--dry-run`). "Local storage headroom low" solo
+   se cierra con ≥ 28 GiB libres; repetir tras podar con otra idempotency key.
+6. Verificar: `mova data status`, `mova doctor --json --no-network` (sin FAIL requeridos),
+   `mova safety` (no `unsafe`) y `mova tools --json`.
+7. Antes de GW12: `mova private-state capture --force --actor julian --reason "GW12"
+   --idempotency-key gw12-capture` (sesión FPL viva en el browser del VPS) y luego
+   `mova week brief --gw 12 --json`.
+
+Rollback: reponer el SHA previo y `install-systemd.sh`; no re-armar timers autónomos sin
+decisión nueva de Julián.
 
 ## Rollout ADR-021: modelo copiloto
 
@@ -544,7 +570,7 @@ Elimina sus contenedores, imagen candidata y fixtures al terminar.
 
 El backup usa SQLite Online Backup API y ejecuta `quick_check`; nunca hace `cp` de una base
 viva ignorando WAL. PostgreSQL usa `pg_dump -Fc`, valida el catálogo del dump y conserva un
-manifest SHA-256. Los timers de esta iteración ejecutan ambos cada seis horas. Retención local: 35 días.
+manifest SHA-256. Desde ADR-022 el backup corre una vez al día con poda integrada (7–14 días) y offsite semanal opt-in; RPO 36 h.
 Objetivos, preflight y reconstrucción: [recuperación en host nuevo](host-recovery.md).
 El inventario DR horario conserva el resultado en `/var/lib/mova-dr/status.json`;
 su instalación no modifica los gates de autonomía ni acredita host reconstruido.
@@ -703,7 +729,7 @@ con el Python del host ni cambia controles FPL. Dry-run por defecto; para aplica
 sudo mova maintenance backups --apply --actor julian --reason "retencion local autorizada" --idempotency-key "retention:fecha:revision"
 ```
 
-El timer `mova-fpl-backup-retention.timer` ejecuta la política cada hora bajo el
+Desde ADR-022 `backup-retention.sh` corre al final del backup diario (el timer horario `mova-fpl-backup-retention.timer` está retirado) bajo el
 mismo lock host de backups/offsite, aunque el tick esté bloqueado. Conserva los
 dos sets más recientes, un punto por bloque de seis horas durante 48 h, uno
 diario durante siete días y uno semanal durante 28 días. Presupuesto máximo:

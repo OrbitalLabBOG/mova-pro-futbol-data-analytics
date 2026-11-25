@@ -381,12 +381,16 @@ def parser() -> argparse.ArgumentParser:
     week_brief.add_argument("--chips", action="store_true",
                             help="deja que el planificador proponga chips en el acta")
     week_brief.add_argument("--horizon", type=int, default=3)
+    week_brief.add_argument("--capture-private-state", action="store_true",
+                            help="captura estado privado (--force) antes del brief")
     week_acta = week_commands.add_parser(
         "acta", help="acta MILP dry-run (sin traza); parsea solo --json-out"
     )
     week_acta.add_argument("--gw", type=int, required=True)
     week_acta.add_argument("--chips", action="store_true")
     week_acta.add_argument("--horizon", type=int, default=3)
+    week_acta.add_argument("--capture-private-state", action="store_true",
+                           help="captura estado privado (--force) antes del acta")
     week_acta.add_argument("--json", action="store_true", dest="as_json",
                            help="salida JSON (ya es el formato por defecto)")
     memory = commands.add_parser("memory", help="memoria del copiloto por GW")
@@ -448,6 +452,9 @@ def parser() -> argparse.ArgumentParser:
     alert_test.add_argument("--actor", required=True)
     alert_test.add_argument("--reason", required=True)
     alert_test.add_argument("--idempotency-key", required=True)
+    alert_commands.add_parser(
+        "health", help="alerta única: fpl_official >6h unhealthy o disco <20 GiB"
+    )
     alert_dispatch = alert_commands.add_parser("dispatch", help="entrega alertas vencidas")
     alert_dispatch.add_argument("--limit", type=int, default=20)
     alert_ack = alert_commands.add_parser("acknowledge", help="reconoce un incidente")
@@ -488,6 +495,26 @@ def parser() -> argparse.ArgumentParser:
     team_state.add_argument("--trigger", choices=("scheduled", "forced"),
                             default="scheduled")
     commands.add_parser("private-state-due")
+    private_state = commands.add_parser(
+        "private-state", help="estado privado del equipo on-demand (ADR-022)"
+    )
+    private_commands = private_state.add_subparsers(dest="private_state_command", required=True)
+    private_capture = private_commands.add_parser(
+        "capture", help="captura forzada vía collect-private-team-state.sh --force"
+    )
+    private_capture.add_argument("--force", action="store_true")
+    private_capture.add_argument("--actor", required=True)
+    private_capture.add_argument("--reason", required=True)
+    private_capture.add_argument("--idempotency-key", required=True)
+    incidents = commands.add_parser("incidents", help="mantenimiento de incidentes")
+    incident_commands = incidents.add_subparsers(dest="incidents_command", required=True)
+    close_obsolete = incident_commands.add_parser(
+        "close-obsolete", help="cierra incidentes obsoletos del harness retirado (ADR-022)"
+    )
+    close_obsolete.add_argument("--actor", required=True)
+    close_obsolete.add_argument("--reason", required=True)
+    close_obsolete.add_argument("--idempotency-key", required=True)
+    close_obsolete.add_argument("--dry-run", action="store_true")
     watchdog = commands.add_parser("watchdog")
     watchdog.add_argument("--max-age-seconds", type=int, default=1200)
     drill = commands.add_parser("drill", help="rehearsals herméticos de resiliencia")
@@ -607,20 +634,40 @@ def main(argv: list[str] | None = None) -> int:
               if args.as_json else render_tools(payload), end="" if not args.as_json else "\n")
         return 0
 
+    if args.command == "private-state":
+        from mova_fpl.ops.private_capture import capture
+
+        payload = capture(actor=args.actor, reason=args.reason,
+                          idempotency_key=args.idempotency_key, force=args.force)
+        print(json.dumps(payload, ensure_ascii=False, sort_keys=True))
+        return 0 if payload["status"] == "ok" else (payload.get("returncode") or 2)
+
     if args.command == "week":
         from mova_fpl.ops.week_brief import build_week_brief, render_week_brief, run_acta
 
         # Nunca crear ni migrar ops.db desde una lectura: sin archivo => db=None.
         db = (OpsDB(config.ops_db, minimum_version=config.sqlite_min_version)
               if config.ops_db.is_file() else None)
+        capture_result = None
+        if getattr(args, "capture_private_state", False):
+            from mova_fpl.ops.private_capture import capture
+
+            capture_result = capture(
+                actor="mova-week", reason=f"capture previo a week {args.week_command} GW{args.gw}",
+                idempotency_key=f"week-{args.week_command}:gw{args.gw}:capture", force=True,
+            )
         if args.week_command == "acta":
             payload = run_acta(config, db, gw=args.gw, horizon=args.horizon, chips=args.chips)
+            if capture_result:
+                payload["private_state_capture"] = capture_result
             print(json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str))
             return 0 if payload["status"] == "ok" else 2
         payload = build_week_brief(
             config, db, gw=args.gw, network=not args.no_network,
             run_acta_flag=not args.no_acta, chips=args.chips, horizon=args.horizon,
         )
+        if capture_result:
+            payload["private_state_capture"] = capture_result
         print(json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str)
               if args.as_json else render_week_brief(payload), end="" if not args.as_json else "\n")
         return 0
@@ -1099,6 +1146,12 @@ def main(argv: list[str] | None = None) -> int:
                 reason=args.reason, idempotency_key=args.idempotency_key,
             )
             print(json.dumps(payload, ensure_ascii=False, default=str))
+            if args.source == "all":
+                try:  # ADR-022: única alerta ligera; nunca rompe el colector
+                    from mova_fpl.ops.health_alert import run as run_health_alert
+                    run_health_alert(config, db)
+                except Exception:  # noqa: BLE001
+                    pass
             return 2 if payload.get("status") == "degraded" else 0
         except LockBusy as exc:
             print(json.dumps({"status": "skipped", "reason": str(exc)}))
@@ -1151,6 +1204,9 @@ def main(argv: list[str] | None = None) -> int:
                 config, db, actor=args.actor, reason=args.reason,
                 idempotency_key=args.idempotency_key,
             )
+        elif args.alerts_command == "health":
+            from mova_fpl.ops.health_alert import run as run_health_alert
+            payload = run_health_alert(config, db)
         elif args.alerts_command == "dispatch":
             from mova_fpl.ops.alerts import configured_sink, dispatch
             payload = dispatch(db, limit=args.limit, sink=configured_sink(config))
@@ -1165,6 +1221,14 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str))
         if args.alerts_command == "test":
             return 0 if payload.get("status") in {"pass", "reused"} else 2
+    elif args.command == "incidents":
+        from mova_fpl.ops.incident_cleanup import close_obsolete
+
+        db.migrate()
+        print(json.dumps(close_obsolete(
+            config, db, actor=args.actor, reason=args.reason,
+            idempotency_key=args.idempotency_key, dry_run=args.dry_run,
+        ), ensure_ascii=False, sort_keys=True, default=str))
     elif args.command == "maintenance":
         if args.maintenance_command == "backups":
             raise SystemExit("Use the root host mova facade for backup retention")

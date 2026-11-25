@@ -15,3 +15,10 @@ cd "$repo_dir"
 docker compose --profile jobs run --rm --no-deps -T worker \
   python -m mova_fpl.ops.cli backup --retention-days 35
 deploy/bin/postgres-shadow-backup.sh
+
+# ADR-022: la poda local queda integrada en el backup diario (7-14 dias).
+# Un fallo de poda no invalida el backup recien verificado.
+if [[ $(id -u) -eq 0 ]]; then
+  "$repo_dir/deploy/bin/backup-retention.sh" \
+    || echo "backup retention failed (backup itself verified)" >&2
+fi

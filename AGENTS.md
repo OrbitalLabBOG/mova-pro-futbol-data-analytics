@@ -55,10 +55,15 @@ Ciclo semanal (runbook: `docs/operations/gameweek.md`):
 - PostgreSQL 17 corre privado. Sigue en shadow para el path de decisión, pero es
   writer autorizado del data service FPL/odds/WhoScored. No hacer cutover del
   resto del harness sin los gates de HV1-02.
-- El VPS conserva: API loopback de datos, collectors público y privado
-  autenticado de solo lectura, timers de analytics/ML, tick (envelope y preflight
-  como memoria), `ops.db`/`trace.db`/backups y watchdog (solo salud). Delivery y
-  research ya no tienen timer; research y deliberación son on-demand.
+- El VPS conserva (ADR-022): API loopback de datos, collector público, timer de
+  analytics/ML (solo inferencia), PostgreSQL privado, `ops.db`/`trace.db` y un backup
+  diario con poda (7–14 días; offsite semanal opcional). Tick, watchdog, dr-status,
+  postgres-sync y captura privada por timer están retirados; delivery y research no
+  tienen timer. El estado privado se captura on-demand:
+  `mova private-state capture --force --actor --reason --idempotency-key` (o
+  `mova week brief --capture-private-state`). Una sola alerta ligera
+  (`mova alerts health`, tras `mova collect all`) cubre `fpl_official` > 6 h o disco
+  < 20 GiB. Salud mínima: `mova data status` y `mova doctor --no-network`.
 - Browser separado con perfil persistente. En copiloto los controles quedan
   fail-closed (`browser_writes=false`, A0, sin `delivery_scope`); consultar
   `mova status --json` (`operating_model`) antes de afirmar el estado del VPS: el

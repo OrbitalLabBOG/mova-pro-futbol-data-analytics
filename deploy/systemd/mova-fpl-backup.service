@@ -1,5 +1,5 @@
 [Unit]
-Description=MOVA FPL verified SQLite and PostgreSQL backup
+Description=MOVA FPL daily verified SQLite and PostgreSQL backup with bounded local retention
 Requires=docker.service
 After=docker.service
 

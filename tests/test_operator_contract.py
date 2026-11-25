@@ -86,12 +86,8 @@ def _host_probe(config: RuntimeConfig, now: datetime, *, postgres_running=True) 
     units = {
         name: {"active_state": "active", "unit_file_state": "enabled"}
         for name in (
-            "mova-fpl-stack.service", "mova-fpl-tick.timer",
-            "mova-fpl-private-state.timer", "mova-fpl-backup.timer",
-            "mova-fpl-watchdog.timer",
-            "mova-fpl-analytics.timer",
-            "mova-fpl-postgres-sync.timer",
-            "mova-fpl-backup-retention.timer",
+            "mova-fpl-stack.service", "mova-fpl-collector.timer",
+            "mova-fpl-backup.timer", "mova-fpl-analytics.timer",
         )
     }
     units.update({
@@ -100,16 +96,17 @@ def _host_probe(config: RuntimeConfig, now: datetime, *, postgres_running=True) 
             "result": "success", "exec_main_status": 0,
         }
         for name in (
-            "mova-fpl-tick.service", "mova-fpl-private-state.service",
-            "mova-fpl-backup.service", "mova-fpl-watchdog.service",
+            "mova-fpl-backup.service",
             "mova-fpl-collector.service", "mova-fpl-analytics.service",
-            "mova-fpl-research.service", "mova-fpl-postgres-sync.service",
+            "mova-fpl-research.service",
         )
     })
     config.host_probe_path.write_text(json.dumps({
         "schema": "mova-host-probe-v1",
         "observed_at": now.isoformat(),
         "dr_observation": _dr_observation(now),
+        "local_backup": {"sqlite_age_seconds": 3600, "postgres_age_seconds": 3600,
+                         "data_age_seconds": 3600},
         "systemd": units,
         "api": {"ready": True, "container_state": "running"},
         "postgres": {
@@ -152,26 +149,15 @@ def test_status_contract_is_versioned_and_sanitized(tmp_path):
     assert "squad_json" not in json.dumps(safety)
 
 
-def test_status_degrades_when_heartbeat_is_stale(tmp_path):
+def test_stale_tick_no_longer_degrades_status_or_doctor(tmp_path):
+    """ADR-022: el tick no es heartbeat; ni status ni doctor lo exigen."""
     config, db, now = _seed(tmp_path)
-    payload = build_status(config, db, now=now + timedelta(hours=1))
-    assert payload["overall_status"] == "degraded"
-    assert "latest_tick_stale" in payload["status_reasons"]
-
-
-def test_running_tick_is_healthy_until_heartbeat_limit(tmp_path):
-    config, db, now = _seed(tmp_path)
-    db.start_job("tick", "tick:running-contract", "corr_running_contract")
-
-    status = build_status(config, db, now=now + timedelta(seconds=10))
-    doctor = build_doctor(config, db, now=now + timedelta(seconds=10), network=False)
-    heartbeat = next(check for check in doctor["checks"]
-                     if check["name"] == "scheduler_heartbeat")
-    assert "latest_tick_not_successful" not in status["status_reasons"]
-    assert heartbeat["status"] == "PASS"
-
-    stalled = build_status(config, db, now=now + timedelta(minutes=21))
-    assert "latest_tick_stale" in stalled["status_reasons"]
+    later = now + timedelta(hours=1)
+    payload = build_status(config, db, now=later)
+    assert "latest_tick_stale" not in payload["status_reasons"]
+    assert "latest_tick_not_successful" not in payload["status_reasons"]
+    doctor = build_doctor(config, db, now=later, network=False)
+    assert all(item["name"] != "scheduler_heartbeat" for item in doctor["checks"])
 
 
 def test_status_and_doctor_surface_failed_scheduled_service(tmp_path):
@@ -195,7 +181,7 @@ def test_status_and_doctor_surface_failed_scheduled_service(tmp_path):
 
     assert status["overall_status"] == "degraded"
     assert "failed_systemd_services" in status["status_reasons"]
-    assert service_check["status"] == "FAIL"
+    assert service_check["status"] == "WARN" and service_check["required"] is False
     assert service_check["detail"]["failed"] == ["mova-fpl-research.service"]
 
 
@@ -274,8 +260,6 @@ def test_doctor_passes_complete_runtime_contract(tmp_path):
         model = config.artifact_root / "models" / family / f"{family}.joblib"
         model.parent.mkdir(parents=True, exist_ok=True)
         model.write_bytes(b"model")
-    backup = config.backup_root / "latest"
-    backup.mkdir(parents=True)
     _host_probe(config, now)
 
     def bootstrap(**_kwargs):
@@ -284,7 +268,6 @@ def test_doctor_passes_complete_runtime_contract(tmp_path):
     payload = build_doctor(config, db, now=now + timedelta(seconds=10),
                            bootstrap_fetcher=bootstrap)
     assert payload["overall_status"] == "healthy"
-    assert payload["summary"]["pass"] == len(payload["checks"])
     assert payload["summary"]["warn"] == 0
     assert payload["summary"]["fail"] == 0
     assert payload["summary"]["required_failures"] == 0
@@ -295,31 +278,17 @@ def test_doctor_fails_closed_without_required_databases_or_models(tmp_path):
     config, db, now = _seed(tmp_path)
     payload = build_doctor(config, db, now=now, network=False)
     failures = {item["name"] for item in payload["checks"] if item["status"] == "FAIL"}
-    assert {"canonical_database", "trace_database", "model_artifacts"} <= failures
+    assert {"canonical_database", "trace_database", "model_artifacts",
+            "postgres_container"} <= failures
     assert payload["overall_status"] == "failed"
-    assert payload["summary"]["required_failures"] == 3
+    assert payload["summary"]["required_failures"] == 4
+    assert "scheduler_heartbeat" not in {item["name"] for item in payload["checks"]}
 
 
-def test_doctor_warns_on_agent_queue_lifecycle_anomaly(tmp_path):
+def test_doctor_no_longer_inspects_agent_queue(tmp_path):
     config, db, now = _seed(tmp_path)
-    request_id = "deliberation_" + "6" * 32
-    request = config.research_root / "inbox" / f"{request_id}.request.json"
-    request.parent.mkdir(parents=True)
-    request.write_text(json.dumps({
-        "schema": "mova-decision-deliberation-request-v1",
-        "deliberation_id": request_id,
-    }), encoding="utf-8")
-    old = (now - timedelta(minutes=2)).timestamp()
-    request.touch()
-    os.utime(request, (old, old))
-
     payload = build_doctor(config, db, now=now, network=False)
-    queue = next(item for item in payload["checks"]
-                 if item["name"] == "agent_queue_integrity")
-
-    assert queue["status"] == "WARN"
-    assert queue["required"] is False
-    assert queue["detail"]["anomaly_count"] == 1
+    assert all(item["name"] != "agent_queue_integrity" for item in payload["checks"])
 
 
 def test_cli_exposes_human_and_json_operator_modes():
@@ -378,17 +347,84 @@ def test_copilot_lineup_scope_does_not_require_delivery_or_research_timers(tmp_p
     opted = replace(config, enable_scheduled_delivery=True)
     payload = build_doctor(opted, db, now=now + timedelta(seconds=10), network=False)
     units = next(item for item in payload["checks"] if item["name"] == "systemd_units")
-    assert units["status"] == "FAIL"
-    assert units["detail"]["inactive"] == ["mova-fpl-delivery.timer"]
+    assert units["status"] == "PASS", units  # ADR-022: delivery nunca se exige
     assert build_status(opted, db, now=now)["operating_model"] == "scheduled_delivery"
 
 
-def test_backup_retention_timer_is_always_required(tmp_path):
+REQUIRED_DOCTOR_CHECKS = {
+    "ops_database", "ops_schema", "model_artifacts", "resource_gates", "recent_backup",
+    "systemd_units", "api_container", "postgres_container",
+}
+
+
+def _healthy_runtime(tmp_path):
     config, db, now = _seed(tmp_path)
+    _sqlite(config.canonical_db, ("player_gameweek",))
+    with sqlite3.connect(config.canonical_db) as con:
+        con.execute("INSERT INTO player_gameweek DEFAULT VALUES")
+    _sqlite(config.trace_db,
+            ("agent_runs", "gw_decisions", "model_versions", "interventions"))
+    for family in ("minutes", "points"):
+        model = config.artifact_root / "models" / family / f"{family}.joblib"
+        model.parent.mkdir(parents=True, exist_ok=True)
+        model.write_bytes(b"model")
     _host_probe(config, now)
+    return config, db, now
+
+
+def test_slim_doctor_required_set_and_expected_units(tmp_path):
+    config, db, now = _healthy_runtime(tmp_path)
     probe = json.loads(config.host_probe_path.read_text())
-    del probe["systemd"]["mova-fpl-backup-retention.timer"]
+    # Unidades retiradas apagadas/ausentes no deben afectar al doctor.
+    for retired in ("tick", "private-state", "watchdog", "postgres-sync",
+                    "backup-retention", "delivery", "dr-status"):
+        probe["systemd"].pop(f"mova-fpl-{retired}.timer", None)
+    probe["dr_observation"] = {}
+    config.host_probe_path.write_text(json.dumps(probe))
+    payload = build_doctor(config, db, now=now + timedelta(seconds=10), network=False)
+    required = {item["name"] for item in payload["checks"] if item["required"]}
+    assert REQUIRED_DOCTOR_CHECKS <= required
+    assert not {"scheduler_heartbeat", "agent_queue_integrity", "private_team_state",
+                "disaster_recovery_observation"} & required
+    assert payload["summary"]["required_failures"] == 0, payload["summary"]
+    units = next(item for item in payload["checks"] if item["name"] == "systemd_units")
+    assert units["status"] == "PASS"
+    # Colector parado sí es obligatorio.
+    del probe["systemd"]["mova-fpl-collector.timer"]
     config.host_probe_path.write_text(json.dumps(probe))
     payload = build_doctor(config, db, now=now + timedelta(seconds=10), network=False)
     units = next(item for item in payload["checks"] if item["name"] == "systemd_units")
-    assert units["detail"]["inactive"] == ["mova-fpl-backup-retention.timer"]
+    assert units["detail"]["inactive"] == ["mova-fpl-collector.timer"]
+
+
+def test_doctor_backup_age_uses_36h_rpo(tmp_path):
+    config, db, now = _healthy_runtime(tmp_path)
+    probe = json.loads(config.host_probe_path.read_text())
+    probe["local_backup"]["data_age_seconds"] = 30 * 3600
+    config.host_probe_path.write_text(json.dumps(probe))
+    check = next(i for i in build_doctor(config, db, now=now + timedelta(seconds=10),
+                                         network=False)["checks"] if i["name"] == "recent_backup")
+    assert check["status"] == "PASS"
+    probe["local_backup"]["data_age_seconds"] = 37 * 3600
+    config.host_probe_path.write_text(json.dumps(probe))
+    check = next(i for i in build_doctor(config, db, now=now + timedelta(seconds=10),
+                                         network=False)["checks"] if i["name"] == "recent_backup")
+    assert check["status"] == "FAIL" and check["required"] is True
+
+
+def test_harness_incidents_do_not_make_safety_unsafe(tmp_path):
+    config, db, now = _seed(tmp_path)
+    for severity, title in (
+        ("P0", "Scheduler heartbeat unhealthy"), ("P1", "Agent queue integrity unhealthy"),
+        ("P0", "Autonomous cycle deadline risk"),
+        ("P1", "Backup recovery observation unhealthy"),
+        ("P0", "Ejecución FPL ambigua"), ("P1", "Local storage headroom low"),
+        ("P2", "Shadow decision falló"),
+    ):
+        db.open_incident_once(severity, title)
+    safety = build_safety(config, db, now=now + timedelta(seconds=10))
+    assert safety["verdict"] == "safe_to_wait"
+    assert safety["alerts"]["critical_open"] == 0
+    assert safety["alerts"]["total_open"] == 7
+    db.open_incident_once("P1", "Servicio de datos MOVA falló")
+    assert build_safety(config, db, now=now + timedelta(seconds=10))["verdict"] == "unsafe"
