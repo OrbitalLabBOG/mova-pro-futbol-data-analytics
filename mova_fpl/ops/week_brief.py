@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import os
+import signal
 import subprocess
 import sys
 import tempfile
@@ -22,6 +23,7 @@ from typing import Callable
 
 from mova_fpl.ops.config import RuntimeConfig
 from mova_fpl.ops.db import OpsDB
+from mova_fpl.ops.interventions import write_doc
 from mova_fpl.ops.memory import deliberation_for, lessons_for, sanitize_text
 
 SCHEMA = "mova-week-brief-v1"
@@ -34,7 +36,8 @@ SECTIONS = ("cycle", "authority", "squad", "acta", "flags", "projections",
 CORE_SECTIONS = ("cycle", "squad", "acta", "flags")
 POSITIONS = {1: "GKP", 2: "DEF", 3: "MID", 4: "FWD"}
 CAPTAIN_MARGIN_XP = 0.5
-ACTA_TIMEOUT_SECONDS = 180
+#: CBC puede tardar hasta 600 s en `cli.live` (time_limit); el wrapper no debe cortar antes
+ACTA_TIMEOUT_SECONDS = 600
 
 
 def _utc(now: datetime | None) -> datetime:
@@ -92,12 +95,34 @@ class PublicFPL:
         from mova_fpl.data.sources import fetch_team_picks
         return json.loads(fetch_team_picks(team_id, gw))
 
+    def event_live(self, gw: int) -> dict:
+        from mova_fpl.data.sources import fetch_event_live
+        return json.loads(fetch_event_live(gw))
+
 
 # --- acta MILP (dry-run) ------------------------------------------------------
 
 def _default_runner(argv: list[str], *, env: dict, cwd: Path, timeout: int):
-    return subprocess.run(argv, cwd=cwd, env=env, capture_output=True, text=True,
-                          timeout=timeout)
+    """Corre `cli.live` en su propio grupo de procesos y lo mata entero al vencer.
+
+    `subprocess.run(timeout=)` solo mata al hijo directo; un `cbc` nieto quedaba
+    huérfano consumiendo CPU después del timeout.
+    """
+    proc = subprocess.Popen(argv, cwd=cwd, env=env, stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE, text=True, start_new_session=True)
+    try:
+        out, err = proc.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        try:
+            proc.communicate(timeout=5)
+        except subprocess.TimeoutExpired:  # pragma: no cover - SIGKILL ya cerró los pipes
+            pass
+        raise
+    return subprocess.CompletedProcess(argv, proc.returncode, out, err)
 
 
 def _model_versions(config: RuntimeConfig, db: OpsDB | None) -> tuple[dict, str]:
@@ -153,8 +178,50 @@ def fresh_private_state(config: RuntimeConfig, db: OpsDB | None, cycle_id: str,
     return state if (now - observed).total_seconds() <= max_age else None
 
 
+def _label_for_source(name: str | None) -> str:
+    return "import" if name == "operator_import" else "capture"
+
+
+def explicit_private_state(config: RuntimeConfig, path: str, gw: int,
+                           now: datetime) -> dict:
+    """Snapshot sellado indicado a mano (p. ej. el recién importado).
+
+    Salta la ventana de cadencia a propósito: el operador lo eligió. La edad se
+    reporta (`state_age_h`) y `stale` avisa si excede el máximo configurado.
+    """
+    from mova_fpl.data.private_state import load
+
+    normalized, manifest = load(Path(path), expected_team_id=config.team_id)
+    if int(normalized["event"]["id"]) != int(gw):
+        raise ValueError(f"snapshot privado es GW{normalized['event']['id']}; se pidió GW{gw}")
+    observed = _parse_time(normalized["observed_at"])
+    age = (now - observed).total_seconds() if observed else None
+    return {"artifact_path": str(path), "observed_at": normalized["observed_at"],
+            "fingerprint": (manifest.get("quality") or {}).get("fingerprint"),
+            "source_name": manifest.get("source_label") or "fpl_authenticated_api",
+            "age_seconds": age,
+            "stale": age is None or age > config.private_state_max_age_seconds}
+
+
+def state_provenance(private: dict | None, now: datetime) -> dict:
+    """De dónde salió la plantilla del acta; sin estado privado lo dice claro."""
+    if not private:
+        return {"state_source": "public_reconstruction", "state_age_h": None,
+                "state_note": "sin estado privado: plantilla del último GW público; "
+                              "FT y chips disponibles son supuestos"}
+    age = private.get("age_seconds")
+    if age is None:
+        observed = _parse_time(private.get("observed_at"))
+        age = (now - observed).total_seconds() if observed else None
+    return {"state_source": _label_for_source(private.get("source_name")),
+            "state_age_h": None if age is None else round(age / 3600, 2),
+            "state_fingerprint": private.get("fingerprint"),
+            "state_stale": bool(private.get("stale", False))}
+
+
 def acta_argv(config: RuntimeConfig, *, gw: int, horizon: int, chips: bool,
-              versions: dict, out_dir: Path, private_state_dir: str | None) -> list[str]:
+              versions: dict, out_dir: Path, private_state_dir: str | None,
+              interventions_path: str | None = None) -> list[str]:
     argv = [
         sys.executable, "-m", "mova_fpl.cli.live", "--season", config.season,
         "--gw", str(int(gw)), "--policy", "milp", "--horizon", str(int(horizon)),
@@ -167,13 +234,21 @@ def acta_argv(config: RuntimeConfig, *, gw: int, horizon: int, chips: bool,
         argv.append("--chips")
     if private_state_dir:
         argv.extend(["--private-team-state", str(private_state_dir)])
+    if interventions_path:
+        argv.extend(["--interventions", str(interventions_path)])
     return argv
 
 
 def run_acta(config: RuntimeConfig, db: OpsDB | None, *, gw: int, horizon: int = 3,
              chips: bool = False, now: datetime | None = None, runner=None,
-             timeout: int = ACTA_TIMEOUT_SECONDS) -> dict:
-    """Corre el acta MILP en dry-run (sin traza) y parsea solo `--json-out`."""
+             timeout: int = ACTA_TIMEOUT_SECONDS, private_state_path: str | None = None,
+             require_private_state: bool = False, interventions: dict | None = None) -> dict:
+    """Corre el acta MILP en dry-run (sin traza) y parsea solo `--json-out`.
+
+    `private_state_path`: snapshot explícito (no pasa por la cadencia de
+    `fresh_private_state`). `interventions`: documento ya normalizado de
+    `ops.interventions`; se escribe junto al acta y se pasa a `cli.live`.
+    """
     current = _utc(now)
     versions, version_source = _model_versions(config, db)
     base = {"schema": ACTA_SCHEMA, "season": config.season, "gw": int(gw),
@@ -185,14 +260,36 @@ def run_acta(config: RuntimeConfig, db: OpsDB | None, *, gw: int, horizon: int =
         return {**base, "status": "missing", "needs_vps": True, "missing": missing,
                 "detail": "artefactos canónicos/modelos ausentes; el acta corre en el VPS"}
     private = None
-    try:
-        private = fresh_private_state(config, db, f"{config.season}-gw{int(gw):02d}", current)
-    except Exception:  # noqa: BLE001 - sin estado privado se usa la reconstrucción pública
-        private = None
+    if private_state_path:
+        try:
+            private = explicit_private_state(config, private_state_path, int(gw), current)
+        except Exception as exc:  # noqa: BLE001 - un snapshot explícito inválido es error
+            return {**base, "status": "error", "needs_vps": False,
+                    **state_provenance(None, current),
+                    "detail": f"snapshot privado explícito inválido: {type(exc).__name__}: {exc}"}
+    else:
+        try:
+            private = fresh_private_state(config, db, f"{config.season}-gw{int(gw):02d}", current)
+            if private:
+                observed = _parse_time(private.get("observed_at"))
+                private = {**private, "age_seconds": (
+                    (current - observed).total_seconds() if observed else None)}
+        except Exception:  # noqa: BLE001 - sin estado privado se usa la reconstrucción pública
+            private = None
+    provenance = state_provenance(private, current)
+    base.update(provenance)
+    if require_private_state and (not private or private.get("stale")):
+        return {**base, "status": "error", "needs_vps": False,
+                "detail": "--require-private-state: estado privado ausente o vencido; "
+                          "importa/captura uno y pásalo con --private-state-path"}
     out_dir = _acta_out_dir(config, int(gw), current)
+    interventions_path = None
+    if interventions:
+        interventions_path = str(write_doc(interventions, out_dir))
     argv = acta_argv(config, gw=gw, horizon=horizon, chips=chips, versions=versions,
                      out_dir=out_dir,
-                     private_state_dir=private.get("artifact_path") if private else None)
+                     private_state_dir=private.get("artifact_path") if private else None,
+                     interventions_path=interventions_path)
     env = dict(os.environ)
     env.update({
         "MOVA_CANONICAL_DB": str(config.canonical_db),
@@ -239,6 +336,7 @@ def run_acta(config: RuntimeConfig, db: OpsDB | None, *, gw: int, horizon: int =
         "event_context": payload.get("event_context"),
         "engine": payload.get("engine"),
         "report_artifact": payload.get("report_artifact"),
+        "interventions": payload.get("interventions"),
     }
 
 
@@ -330,8 +428,40 @@ def _player_rows(picks: list[dict], names: dict[int, dict]) -> list[dict]:
     return rows
 
 
-def _squad_section(config, db, boot, fetcher, gw, now, network) -> dict:
+def _explicit_squad(config, path, gw, names, now) -> dict | None:
+    """Sección squad desde el snapshot explícito (mismo que usa el acta)."""
+    from mova_fpl.data.private_state import load
+
+    info = explicit_private_state(config, path, gw, now)
+    normalized, _ = load(Path(path), expected_team_id=config.team_id)
+    tr = normalized["transfers"]
+    chips = normalized.get("chips") or []
+    data = {
+        "players": _player_rows(normalized["picks"], names),
+        "free_transfers": None, "bank": tr["bank"] / 10,
+        "chips": [{"name": c["name"], "status": c["status_for_entry"]} for c in chips],
+        "chips_available": sorted(c["name"] for c in chips
+                                  if c["status_for_entry"] == "available"),
+        "observed_at": info["observed_at"], "age_seconds": int(info["age_seconds"] or 0),
+        "fingerprint": info["fingerprint"], "fresh": not info["stale"],
+        "state_source": _label_for_source(info["source_name"]),
+        "state_age_h": None if info["age_seconds"] is None
+        else round(info["age_seconds"] / 3600, 2),
+    }
+    from mova_fpl.data.private_state import validate
+    data["free_transfers"] = validate(normalized, expected_team_id=config.team_id)[1][
+        "free_transfers"]
+    if info["stale"]:
+        return section("degraded", "private_team_state", data=data, needs_vps=True,
+                       detail="snapshot explícito vencido")
+    return section("ok", "private_team_state", data=data)
+
+
+def _squad_section(config, db, boot, fetcher, gw, now, network,
+                   explicit_path: str | None = None) -> dict:
     names = _elements(boot)
+    if explicit_path:
+        return _explicit_squad(config, explicit_path, gw, names, now)
     private = None
     if db is not None:
         private = (db.latest_team_state_for_event(config.season, gw)
@@ -354,6 +484,8 @@ def _squad_section(config, db, boot, fetcher, gw, now, network) -> dict:
             "fingerprint": private.get("fingerprint"),
             "team_state_id": private.get("team_state_id"),
             "cycle_id": private.get("cycle_id"), "fresh": not stale and valid,
+            "state_source": _label_for_source(private.get("source_name")),
+            "state_age_h": None if age is None else round(age / 3600, 2),
         }
         if stale or not valid:
             return section("degraded", "private_team_state", data=data, needs_vps=True,
@@ -407,18 +539,21 @@ def _acta_summary(acta: dict, names: dict[int, dict]) -> dict:
     return data
 
 
-def _acta_section(config, db, gw, horizon, chips, now, run, runner, names) -> dict:
+def _acta_section(config, db, gw, horizon, chips, now, run, runner, names,
+                  acta_options: dict | None = None) -> dict:
     if not run:
         return section("skipped", "cli.live", detail="--no-acta")
     payload = run_acta(config, db, gw=gw, horizon=horizon, chips=chips, now=now,
-                       runner=runner)
+                       runner=runner, **(acta_options or {}))
     status = payload.get("status")
     return section(status, "cli.live --dry-run", needs_vps=bool(payload.get("needs_vps")),
                    detail=payload.get("detail"),
                    data=_acta_summary(payload, names) if status == "ok" else {
                        key: payload.get(key) for key in (
                            "missing", "stderr_tail", "returncode", "model_versions",
-                           "elapsed_s", "acta_path", "candidates_path") if payload.get(key)})
+                           "elapsed_s", "acta_path", "candidates_path", "state_source",
+                           "state_age_h", "state_note")
+                       if payload.get(key) is not None and payload.get(key) != ""})
 
 
 def _flags_section(boot, squad, acta) -> dict:
@@ -629,10 +764,29 @@ def derive_open_decisions(sections: dict, *, gw: int) -> list[dict]:
     return out
 
 
+def _brief_state(sections: dict) -> dict:
+    """Procedencia del estado: la del acta si corrió; si no, la de la sección squad."""
+    acta = sections.get("acta") or {}
+    data = acta.get("data") or {}
+    if data.get("state_source"):
+        return {"state_source": data["state_source"], "state_age_h": data.get("state_age_h"),
+                "used_by": "acta", **({"note": data["state_note"]}
+                                      if data.get("state_note") else {})}
+    squad = sections.get("squad") or {}
+    sdata = squad.get("data") or {}
+    if sdata.get("state_source"):
+        return {"state_source": sdata["state_source"], "state_age_h": sdata.get("state_age_h"),
+                "used_by": "squad"}
+    source = squad.get("source")
+    return {"state_source": "public_reconstruction" if source == "public_reconstruction"
+            else "none", "state_age_h": None, "used_by": "squad",
+            "note": "sin estado privado usado"}
+
+
 def build_week_brief(config: RuntimeConfig, db: OpsDB | None, *, gw: int,
                      now: datetime | None = None, network: bool = True,
                      run_acta_flag: bool = True, chips: bool = False, horizon: int = 3,
-                     fetcher=None, acta_runner=None) -> dict:
+                     fetcher=None, acta_runner=None, acta_options: dict | None = None) -> dict:
     current = _utc(now)
     gw = int(gw)
     if not 1 <= gw <= 38:
@@ -652,9 +806,11 @@ def build_week_brief(config: RuntimeConfig, db: OpsDB | None, *, gw: int,
     sections["cycle"] = _guard(lambda: _cycle_section(config, db, boot, gw, current), "cycle")
     sections["authority"] = _guard(lambda: _authority_section(config, db, current), "ops_db")
     sections["squad"] = _guard(
-        lambda: _squad_section(config, db, boot, fetcher, gw, current, network), "squad")
+        lambda: _squad_section(config, db, boot, fetcher, gw, current, network,
+                               (acta_options or {}).get("private_state_path")), "squad")
     sections["acta"] = _guard(lambda: _acta_section(
-        config, db, gw, horizon, chips, current, run_acta_flag, acta_runner, names), "cli.live")
+        config, db, gw, horizon, chips, current, run_acta_flag, acta_runner, names,
+        acta_options), "cli.live")
     sections["flags"] = _guard(
         lambda: _flags_section(boot, sections["squad"], sections["acta"]), "public_api")
     sections["projections"] = _guard(lambda: _projections_section(
@@ -680,6 +836,7 @@ def build_week_brief(config: RuntimeConfig, db: OpsDB | None, *, gw: int,
         "team_id": config.team_id,
         "operating_model": config.operating_model,
         "overall": "ready" if ready else "partial" if ok else "empty",
+        "state": _brief_state(sections),
         "inputs": {"network": bool(network), "acta": bool(run_acta_flag),
                    "chips": bool(chips), "horizon": int(horizon),
                    "ops_db_present": db is not None,
@@ -706,6 +863,8 @@ def render_week_brief(brief: dict) -> str:
         f"- Generado: {brief['generated_at']} · overall **{brief['overall']}** · "
         f"modelo `{brief['operating_model']}`",
         f"- Falta en VPS: {', '.join(brief['missing_on_vps']) or 'nada'}",
+        f"- Estado usado: **{(brief.get('state') or {}).get('state_source')}** · edad "
+        f"{(brief.get('state') or {}).get('state_age_h')} h",
         "",
         "## Decisiones abiertas",
     ]

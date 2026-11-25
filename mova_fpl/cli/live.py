@@ -93,6 +93,56 @@ def _estado_equipo(args, boot, roster, rules) -> dict:
     return estado
 
 
+def _projection_with_research(args, roster, project):
+    """Proyecta xP aplicando, si hay, los ajustes de research ANTES de proyectar.
+
+    `project(roster, disponibilidad) -> (xp, desglose)`. Sin `--interventions` es
+    exactamente la proyeccion de siempre (una sola llamada, mismo roster). Con
+    research: se proyecta crudo (solo para reportar el cambio por jugador), se
+    sobrescribe `disponibilidad` con `p_play` y se vuelve a proyectar; ninguna de
+    las dos cosas resuelve el MILP.
+    """
+    disponibilidad = roster["disponibilidad"].to_numpy()
+    research = None
+    if args.interventions:
+        from mova_fpl.agent import research as research_mod
+
+        research = research_mod.parse(
+            json.loads(Path(args.interventions).read_text(encoding="utf-8")), gw=args.gw)
+        if research.intervention.allow_chips and not args.chips:
+            raise ValueError("allow_chips en research exige --chips")
+        if research.is_empty():
+            research = None
+    if research is None:
+        xp, desglose = project(roster, disponibilidad)
+        return None, roster, xp, desglose, None
+    elementos = roster["element"].astype(int).tolist()
+    model_avail: dict = {}
+    for element, value in zip(elementos, disponibilidad):
+        model_avail.setdefault(element, float(value))
+    xp_raw, _ = project(roster, disponibilidad)
+    nueva = research_mod.apply_availability(research, elementos, disponibilidad)
+    adjusted = roster.assign(disponibilidad=nueva)
+    xp, desglose = project(adjusted, nueva)
+    info = {"model_avail": model_avail,
+            "raw_candidates": _candidates(adjusted, xp_raw),
+            "xp_raw_by_el": {c.element: c.xp for c in _candidates(adjusted, xp_raw)}}
+    return research, adjusted, xp, desglose, info
+
+
+def _planner_chips(state, research) -> frozenset:
+    """Chips que el planificador puede evaluar: disponibles menos los vetados.
+
+    Sin research devuelve vacio (= todos, comportamiento de siempre). Con research,
+    los vetados no se evaluan, asi el planificador cae al siguiente chip permitido
+    en vez de a "sin chip".
+    """
+    if research is None or not research.intervention.block_chips:
+        return frozenset()
+    disponibles = set(state.chips_available(state.gw)) - set(research.intervention.block_chips)
+    return frozenset(disponibles) or frozenset({"__ninguno__"})
+
+
 def _do_nothing_decision(state: State, picks: tuple[dict, ...]):
     """Representa literalmente el estado previo; no optimiza ni cambia C/V."""
     from mova_fpl.engine.state import Decision
@@ -404,6 +454,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--private-team-state",
         help="directorio de snapshot autenticado sanitizado; prevalece sobre reconstrucción pública",
     )
+    ap.add_argument(
+        "--interventions",
+        help="JSON mova-research-adjustments-v1 (p_play/xp_multiplier/vetos/chips); "
+             "ajusta entradas antes de proyectar, sin solves MILP adicionales",
+    )
     ap.add_argument("--delivery-scope", choices=("lineup-v1",))
     ap.add_argument("--chips", action="store_true",
                     help="deja que el planificador proponga chips (exige --team-id)")
@@ -518,9 +573,11 @@ def main() -> None:
           f"{len(temporadas_modelo)} temporadas")
 
     print(f"[3/5] Proyectando xP por componentes...")
-    xp, desglose = points_projection(historia, roster, modelos, args.season,
-                                     con_desglose=True, equipos=equipos,
-                                     disponibilidad=roster["disponibilidad"].to_numpy())
+    research, roster, xp, desglose, rinfo = _projection_with_research(
+        args, roster,
+        lambda r, disp: points_projection(historia, r, modelos, args.season,
+                                          con_desglose=True, equipos=equipos,
+                                          disponibilidad=disp))
     candidatos = _candidates(roster, xp)
     print(f"      {len(candidatos)} candidatos · xP maximo {float(xp.max()):.2f}")
 
@@ -544,15 +601,32 @@ def main() -> None:
         schedule=live.team_schedule(fx, boot, args.gw,
                                     args.gw + args.lookahead) if args.chips else {},
     )
+    raw_matriz = None
+    if research is not None:
+        from mova_fpl.agent import contract, research as research_mod
+
+        raw_matriz = build_xp_matrix(rinfo["raw_candidates"], calendario, args.gw,
+                                     tope - args.gw + 1)
+        # p_play ya esta en la proyeccion; aqui van multiplicadores, vetos y chips.
+        base_state = contract.apply(base_state, research.intervention)
+        matriz = base_state.horizon_xp
+        print(f"      research: {contract.describe(research.intervention)}")
     estado = base_state
 
     veredicto = None
     if args.chips:
-        pcfg = PlannerConfig(enabled=True, structure_lookahead=args.lookahead)
+        solo = _planner_chips(estado, research)
+        pcfg = PlannerConfig(enabled=True, structure_lookahead=args.lookahead, solo=solo)
         veredicto = plan(estado, matriz, optimizer_config(cfg, len(matriz)), pcfg)
         print(f"      {veredicto.as_note()}")
-        if veredicto.chip:
-            estado = replace(estado, chips_allowed={args.gw: frozenset({veredicto.chip})})
+        chip = veredicto.chip
+        if chip and chip not in solo and solo:  # defensa: jamas un chip vetado
+            chip = None
+        if chip:
+            # union con lo ya permitido (allow_chips), no reemplazo
+            permitido = frozenset(estado.chips_allowed.get(args.gw, ())) | {chip}
+            estado = replace(estado, chips_allowed={**estado.chips_allowed,
+                                                    args.gw: permitido})
 
     decision = decide(args.gw, estado, cfg)
 
@@ -582,13 +656,17 @@ def main() -> None:
 
     if args.json_out:
         no_chip_state = replace(base_state, chips_allowed={})
-        no_chip = decide(args.gw, no_chip_state, cfg)
+        # Sin --chips `estado` ya es este mismo estado: reutiliza la solucion.
+        no_chip = (decision if not args.chips and not base_state.chips_allowed
+                   else decide(args.gw, no_chip_state, cfg))
         owned = frozenset(
             player.element for player in (base_state.squad.players if base_state.squad else ())
         )
         hold = decide(
             args.gw,
-            replace(no_chip_state, lock_in=owned),
+            # lock_in y lock_out sobre el mismo jugador hacen el MILP infactible:
+            # el vetado se queda fuera del lock_in y el hold puede venderlo.
+            replace(no_chip_state, lock_in=owned - frozenset(no_chip_state.lock_out)),
             cfg,
         ) if owned else no_chip
         do_nothing = _do_nothing_decision(
@@ -634,6 +712,28 @@ def main() -> None:
             },
             "report_artifact": {"path": str(destino), "sha256": report_sha},
         }
+        if research is not None:
+            names = {c.element: c.name for c in candidatos}
+            xp_final = (base_state.horizon_xp or {}).get(
+                args.gw, {c.element: c.xp for c in candidatos})
+            xp_before = (raw_matriz or {}).get(args.gw, rinfo["xp_raw_by_el"])
+            payload["interventions"] = {
+                "schema": "mova-research-report-v1",
+                "applied": research.intervention.to_dict(),
+                "p_play": {str(k): v for k, v in sorted(research.p_play.items())},
+                "extra_milp_solves": 0,
+                "adjustments": research_mod.adjustment_report(
+                    research, names=names, model_availability=rinfo["model_avail"],
+                    xp_raw=xp_before, xp_final=xp_final),
+                "plan_rescore": {
+                    "note": "misma decision (milp_baseline) puntuada con xP crudo vs con "
+                            "research; es cambio de proyeccion, NO ganancia de decision",
+                    "expected_points_raw_xp": round(
+                        research_mod.rescore(decision, xp_before), 2),
+                    "expected_points_research_xp": round(
+                        research_mod.rescore(decision, xp_final), 2),
+                },
+            }
         if args.strategy_shadow == "season_value_v2":
             from mova_fpl.cli.season_value_shadow import build_shadow
             try:

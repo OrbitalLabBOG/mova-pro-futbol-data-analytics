@@ -295,3 +295,161 @@ def test_margen_estrecho_de_capitan(tmp_path):
 def test_gw_fuera_de_rango(tmp_path, gw):
     with pytest.raises(ValueError):
         build_week_brief(_config(tmp_path), None, gw=gw, network=False, run_acta_flag=False)
+
+
+# --- ADR-022 iter1: procedencia, snapshot explícito, timeout, research ------------------
+
+def _sealed_state(config: RuntimeConfig, *, observed="2026-11-25T11:58:00Z", gw=12,
+                  label=None):
+    from mova_fpl.data.private_state import seal
+
+    kinds = [1, 1] + [2] * 5 + [3] * 5 + [4] * 3
+    payload = {
+        "schema": "mova-fpl-private-team-state-v1", "observed_at": observed,
+        "team_id": config.team_id, "event": {"id": gw, "deadline_time": DEADLINE},
+        "picks_last_updated": None,
+        "picks": [{"element": i, "element_type": k, "position": i,
+                   "multiplier": 2 if i == 5 else 1 if i <= 11 else 0,
+                   "is_captain": i == 5, "is_vice_captain": i == 10,
+                   "purchase_price": 55, "selling_price": 55}
+                  for i, k in enumerate(kinds, start=1)],
+        "transfers": {"bank": 14, "value": 1000, "limit": 1, "made": 0, "cost": 0,
+                      "status": ""},
+        "chips": [],
+    }
+    path, _, _ = seal(payload, config.season, config.artifact_root / "team_state",
+                      expected_team_id=config.team_id, source_label=label)
+    return path
+
+
+def test_acta_sin_estado_privado_lo_dice_claro(tmp_path):
+    config = _config(tmp_path, team_id=424242)
+    payload = run_acta(config, None, gw=12, now=NOW, runner=_runner())
+    assert payload["status"] == "ok"
+    assert payload["state_source"] == "public_reconstruction" and payload["state_age_h"] is None
+    assert "sin estado privado" in payload["state_note"]
+    assert payload["private_team_state"] is None
+
+
+def test_snapshot_importado_explicito_no_pasa_por_la_cadencia(tmp_path):
+    """Un import de hace 20 min se usa aunque la cadencia (5 min cerca del deadline) lo rechace."""
+    config = _config(tmp_path, team_id=424242)
+    db = _seed(config)  # ciclo GW12 con deadline en 2 días... forzamos cerca del deadline:
+    near = datetime(2026, 11, 27, 18, 20, tzinfo=timezone.utc)  # 10 min antes
+    path = _sealed_state(config, observed="2026-11-27T18:00:00Z", label="operator_import")
+    calls = []
+    # por la vía normal (sin ruta explícita) el snapshot de 20 min no cuenta
+    implicit = run_acta(config, db, gw=12, now=near, runner=_runner(calls=calls))
+    assert implicit["state_source"] == "public_reconstruction"
+    assert "--private-team-state" not in calls[0]
+    # con la ruta explícita sí se usa, y se reporta como import con su edad
+    explicit = run_acta(config, db, gw=12, now=near, runner=_runner(calls=calls),
+                        private_state_path=str(path))
+    argv = calls[1]
+    assert argv[argv.index("--private-team-state") + 1] == str(path)
+    assert explicit["state_source"] == "import" and explicit["state_age_h"] == 0.33
+    assert explicit["state_stale"] is False
+
+
+def test_captura_se_reporta_como_capture(tmp_path):
+    config = _config(tmp_path, team_id=424242)
+    path = _sealed_state(config)
+    payload = run_acta(config, None, gw=12, now=NOW, runner=_runner(),
+                       private_state_path=str(path))
+    assert payload["state_source"] == "capture" and payload["state_age_h"] == 0.03
+
+
+def test_snapshot_explicito_de_otra_gw_es_error(tmp_path):
+    config = _config(tmp_path, team_id=424242)
+    path = _sealed_state(config, gw=11)
+    payload = run_acta(config, None, gw=12, now=NOW, runner=_runner(),
+                       private_state_path=str(path))
+    assert payload["status"] == "error" and "GW11" in payload["detail"]
+
+
+def test_require_private_state_falla_sin_estado_o_vencido(tmp_path):
+    config = _config(tmp_path, team_id=424242)
+    calls = []
+    payload = run_acta(config, None, gw=12, now=NOW, runner=_runner(calls=calls),
+                       require_private_state=True)
+    assert payload["status"] == "error" and not calls
+    old = _sealed_state(config, observed="2026-11-20T00:00:00Z")
+    payload = run_acta(config, None, gw=12, now=NOW, runner=_runner(calls=calls),
+                       private_state_path=str(old), require_private_state=True)
+    assert payload["status"] == "error" and payload["state_stale"] is True and not calls
+
+
+def test_brief_reporta_state_source_y_pasa_interventions(tmp_path):
+    config = _config(tmp_path, team_id=424242)
+    path = _sealed_state(config)
+    calls = []
+    document = {"gw": 12, "source": "agent:noticias", "rationale": "rueda de prensa",
+                "adjustments": [{"element": 7, "p_play": 0.0}]}
+    brief = build_week_brief(config, None, gw=12, now=NOW, fetcher=FakeFPL(),
+                             acta_runner=_runner(calls=calls),
+                             acta_options={"private_state_path": str(path),
+                                           "interventions": document})
+    assert brief["state"]["state_source"] == "capture"
+    argv = calls[0]
+    iv_path = Path(argv[argv.index("--interventions") + 1])
+    assert json.loads(iv_path.read_text())["adjustments"][0]["element"] == 7
+
+
+def test_timeout_kills_process_group(tmp_path):
+    """El runner por defecto mata hijo Y nietos (cbc) al vencer, sin colgar la suite."""
+    import subprocess
+    import sys
+    import time
+
+    from mova_fpl.ops.week_brief import _default_runner
+
+    pidfile = tmp_path / "grandchild.pid"
+    child = (
+        "import subprocess,sys,time;"
+        "p=subprocess.Popen([sys.executable,'-c','import time;time.sleep(60)']);"
+        f"open({str(pidfile)!r},'w').write(str(p.pid));time.sleep(60)"
+    )
+    started = time.monotonic()
+    with pytest.raises(subprocess.TimeoutExpired):
+        _default_runner([sys.executable, "-c", child], env=dict(__import__("os").environ),
+                        cwd=tmp_path, timeout=2)
+    assert time.monotonic() - started < 15
+    pid = int(pidfile.read_text())
+    import os
+    deadline = time.monotonic() + 5
+    while time.monotonic() < deadline:
+        try:
+            os.kill(pid, 0)
+        except ProcessLookupError:
+            break
+        time.sleep(0.1)
+    else:  # pragma: no cover
+        os.kill(pid, 9)
+        pytest.fail("el nieto sobrevivió al timeout")
+
+
+def test_default_timeout_is_600():
+    from mova_fpl.ops.week_brief import ACTA_TIMEOUT_SECONDS
+    assert ACTA_TIMEOUT_SECONDS == 600
+
+
+def test_cli_acta_acepta_flags_nuevos():
+    from mova_fpl.ops.cli import parser
+
+    args = parser().parse_args(["week", "acta", "--gw", "12", "--timeout", "30",
+                                "--private-state-path", "/x", "--interventions", "/y",
+                                "--intervention-from-notes", "--require-private-state"])
+    assert args.timeout == 30 and args.require_private_state and args.intervention_from_notes
+
+
+def test_brief_private_state_path_feeds_squad_and_keeps_zero_age(tmp_path):
+    config = _config(tmp_path, team_id=424242)
+    path = _sealed_state(config, observed="2026-11-25T12:00:00Z", label="operator_import")
+    brief = build_week_brief(config, None, gw=12, now=NOW, fetcher=FakeFPL(),
+                             acta_runner=_runner(),
+                             acta_options={"private_state_path": str(path)})
+    squad = brief["sections"]["squad"]
+    assert squad["status"] == "ok" and squad["data"]["state_source"] == "import"
+    assert squad["data"]["state_age_h"] == 0.0
+    assert brief["sections"]["acta"]["data"]["state_age_h"] == 0.0
+    assert brief["state"] == {"state_source": "import", "state_age_h": 0.0, "used_by": "acta"}

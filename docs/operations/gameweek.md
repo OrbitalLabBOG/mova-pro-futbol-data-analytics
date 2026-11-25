@@ -32,6 +32,27 @@ el asistente explica; Julián decide.
 | 7 | Registro manual (si hay estado privado y evidencia) | `mova execute manual-package` → `mova execute record-manual` | write-memory |
 | 8 | Tras `data_checked` | `mova analytics reconcile`, `mova review settle-auto\|gw`, `mova memory note add --kind post_mortem` | write-memory |
 
+### Equipo real, research y cierre (iter. 1)
+
+1. **Importar el equipo** leído del browser logueado: `mova private-state import --file
+   snap.json --actor A --reason R --idempotency-key K` (my-team crudo o snapshot simplificado:
+   `picks[{element, position 1..15, selling_price, purchase_price, element_type|pos}]`, `bank` y
+   precios en **décimas**, `free_transfers`, `chips` disponibles, `gw`). Se sella como
+   `operator_import`; `transfers.limit: null` (chip activo / sin tope) no falla y los FT pasan a
+   ser un supuesto declarado (`free_transfers_assumed`). Devuelve `artifact_path`.
+2. **Acta con ese estado e intervenciones**: `mova week acta --gw N --private-state-path
+   <artifact_path> --interventions research.json [--intervention-from-notes]
+   [--require-private-state] [--timeout 600]`. La ruta explícita no pasa por la cadencia del
+   deadline. Acta y brief reportan `state_source` (`import|capture|public_reconstruction`) y
+   `state_age_h`. El research (`mova-research-adjustments-v1`: `source`, `rationale`,
+   `adjustments[{element, p_play|xp_multiplier, confidence}]`, `lock_out`, `block_chips`; máx. 8
+   jugadores) ajusta p_play/xP **antes de proyectar** (p=0 vetea; subir sobre el modelo exige
+   `confidence: "high"`) sin solves MILP extra; el reporte `interventions.adjustments` da el
+   cambio de xP proyectado por jugador, no una ganancia de decisión.
+3. **Cerrar la GW** (sin `settle-auto` ni ejecución verificada): tras `finished + data_checked`,
+   `mova gw close --gw N --actor A --reason R --idempotency-key K` puntúa los picks públicos y la
+   nota `decision` y escribe el `post_mortem`; sale con código 2 si la GW no se puede cerrar.
+
 La superficie completa y sus side effects están en `mova tools --json`. En el VPS anteponer
 `sudo /usr/local/bin/` al wrapper.
 

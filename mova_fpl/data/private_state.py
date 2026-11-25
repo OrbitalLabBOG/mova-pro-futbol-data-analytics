@@ -37,6 +37,25 @@ def _utc(value: str) -> datetime:
     return parsed.astimezone(timezone.utc)
 
 
+def strict_int(value, name: str) -> int:
+    """Entero exacto. Rechaza None, bool y floats con parte decimal.
+
+    `int(1.4)` daba 1 en silencio: un bank de £1.4M escrito en millones en vez de
+    décimas (14) corrompía el presupuesto y aun así pasaba el rango.
+    """
+    if value is None or isinstance(value, bool):
+        raise ValueError(f"{name} ausente o no numérico: {value!r}")
+    if isinstance(value, float):
+        if not value.is_integer():
+            raise ValueError(f"{name} debe ser entero (décimas/cuentas), recibido {value!r}")
+        return int(value)
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str) and value.strip().lstrip("-").isdigit():
+        return int(value)
+    raise ValueError(f"{name} debe ser entero, recibido {value!r}")
+
+
 def validate(payload: dict, *, expected_team_id: int | None = None) -> tuple[dict, dict]:
     if not isinstance(payload, dict) or payload.get("schema") != SCHEMA:
         raise ValueError("schema privado ausente o incompatible")
@@ -75,7 +94,7 @@ def validate(payload: dict, *, expected_team_id: int | None = None) -> tuple[dic
         if set(pick) != PICK_FIELDS:
             raise ValueError("pick privado no cumple allowlist exacta")
         for field in ("purchase_price", "selling_price"):
-            value = int(pick.get(field, 0))
+            value = strict_int(pick.get(field), f"{field} de element {pick.get('element')}")
             if not 30 <= value <= 200:
                 raise ValueError(f"{field} fuera de rango para element {pick.get('element')}")
         if int(pick.get("multiplier", -1)) not in {0, 1, 2, 3}:
@@ -84,14 +103,26 @@ def validate(payload: dict, *, expected_team_id: int | None = None) -> tuple[dic
     transfers = payload.get("transfers") or {}
     if set(transfers) != TRANSFER_FIELDS:
         raise ValueError("transferencias privadas no cumplen allowlist exacta")
-    bank, value = int(transfers.get("bank", -1)), int(transfers.get("value", -1))
-    limit, made = int(transfers.get("limit", -1)), int(transfers.get("made", -1))
-    cost = int(transfers.get("cost", -1))
+    bank = strict_int(transfers.get("bank"), "transfers.bank")
+    value = strict_int(transfers.get("value"), "transfers.value")
+    made = strict_int(transfers.get("made"), "transfers.made")
+    cost = strict_int(transfers.get("cost"), "transfers.cost")
+    # `limit` es null en la API de FPL cuando no hay tope de transferencias de la
+    # semana (chip wildcard/free hit activo, o ventana sin límite) y puede faltar
+    # en capturas parciales. No es un error: el tope es desconocido. Supuesto
+    # conservador documentado: 1 FT menos lo ya hecho (nunca inventamos bolsa de
+    # FT); `free_transfers_assumed` lo declara en la calidad para que el acta lo
+    # diga. El operador puede fijar los FT explícitos con `free_transfers` en el
+    # snapshot simplificado (se normaliza a limit=FT, made=0).
+    raw_limit = transfers.get("limit")
+    limit = None if raw_limit is None else strict_int(raw_limit, "transfers.limit")
     if not 0 <= bank <= 500 or not 700 <= value <= 1500:
         raise ValueError("bank/value privados fuera de rango")
-    if not 0 <= limit <= 5 or not 0 <= made <= 100 or not 0 <= cost <= 20:
+    if (limit is not None and not 0 <= limit <= 5) or not 0 <= made <= 100 \
+            or not 0 <= cost <= 20:
         raise ValueError("bloque de transferencias privado inválido")
-    free_transfers = max(0, min(5, limit - made))
+    free_transfers = (max(0, min(5, 1 - made)) if limit is None
+                      else max(0, min(5, limit - made)))
 
     chips = list(payload.get("chips") or ())
     if len(chips) > 4 or len({str(c.get("name")) for c in chips}) != len(chips):
@@ -122,6 +153,7 @@ def validate(payload: dict, *, expected_team_id: int | None = None) -> tuple[dic
         "parser": PARSER, "team_id": team_id, "gw": gw, "players": 15,
         "bank_tenths": bank, "team_value_tenths": value,
         "free_transfers": free_transfers, "transfers_made": made,
+        "free_transfers_assumed": limit is None,
         "available_chips": sorted(
             c["name"] for c in chips if c["status_for_entry"] == "available"
         ),
@@ -130,7 +162,8 @@ def validate(payload: dict, *, expected_team_id: int | None = None) -> tuple[dic
     return normalized, quality
 
 
-def seal(payload: dict, season: str, out_root: Path, *, expected_team_id: int) -> tuple[Path, dict, dict]:
+def seal(payload: dict, season: str, out_root: Path, *, expected_team_id: int,
+         source_label: str | None = None) -> tuple[Path, dict, dict]:
     normalized, quality = validate(payload, expected_team_id=expected_team_id)
     observed = _utc(normalized["observed_at"])
     stamp = observed.strftime("%Y%m%dT%H%M%S%fZ")
@@ -146,6 +179,8 @@ def seal(payload: dict, season: str, out_root: Path, *, expected_team_id: int) -
         "payload_sha256": payload_sha,
         "quality": quality,
     }
+    if source_label:  # p. ej. "operator_import"; ausente = captura autenticada
+        manifest["source_label"] = source_label
     manifest_raw = (json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode()
     if dest.exists():
         if (dest / 'team-state.json').read_bytes() == raw and (dest / 'manifest.json').read_bytes() == manifest_raw:
@@ -169,3 +204,117 @@ def load(path: Path, *, expected_team_id: int | None = None) -> tuple[dict, dict
     if quality["fingerprint"] != (manifest.get("quality") or {}).get("fingerprint"):
         raise ValueError("fingerprint privado no coincide con el manifest")
     return normalized, manifest
+
+
+# --------------------------------------------------------- import del operador
+
+#: valor de `source_name`/`source_label` para snapshots leídos por el operador
+SOURCE_IMPORT = "operator_import"
+SOURCE_CAPTURE = "fpl_authenticated_api"
+#: chips de la API; los nombres del motor (`free_hit`...) se aceptan y se traducen
+_CHIP_TO_API = {"wildcard": "wildcard", "freehit": "freehit", "free_hit": "freehit",
+                "bboost": "bboost", "bench_boost": "bboost", "3xc": "3xc",
+                "triple_captain": "3xc"}
+_POS_NAMES = {"GKP": 1, "GK": 1, "DEF": 2, "MID": 3, "FWD": 4}
+
+
+def _pick_from_operator(raw: dict, element_types: dict | None) -> dict:
+    element = int(raw["element"])
+    etype = raw.get("element_type", raw.get("pos"))
+    if isinstance(etype, str):
+        etype = _POS_NAMES.get(etype.upper(), etype)
+    if etype is None and element_types:
+        etype = element_types.get(element)
+    if etype is None:
+        raise ValueError(f"element_type ausente para element {element}")
+    slot = int(raw["position"])  # slot de plantilla 1..15, igual que my-team
+    multiplier = raw.get("multiplier")
+    if multiplier is None:
+        multiplier = (2 if raw.get("is_captain") else 1) if slot <= 11 else 0
+    return {
+        "element": element, "element_type": int(etype), "position": slot,
+        "multiplier": int(multiplier), "is_captain": bool(raw.get("is_captain")),
+        "is_vice_captain": bool(raw.get("is_vice_captain")),
+        "purchase_price": strict_int(raw.get("purchase_price"), "purchase_price"),
+        "selling_price": strict_int(raw.get("selling_price"), "selling_price"),
+    }
+
+
+def _chip_from_any(raw) -> dict:
+    """Acepta un nombre (= disponible) o un dict estilo API; devuelve el chip exacto."""
+    if isinstance(raw, str):
+        raw = {"name": raw, "status_for_entry": "available"}
+    name = _CHIP_TO_API.get(str(raw.get("name", "")).lower())
+    if name is None:
+        raise ValueError(f"chip privado desconocido: {raw.get('name')}")
+    return {
+        "name": name, "number": int(raw.get("number") or 1),
+        "status_for_entry": raw.get("status_for_entry", "available"),
+        "is_pending": bool(raw.get("is_pending", False)),
+        "start_event": raw.get("start_event"), "stop_event": raw.get("stop_event"),
+    }
+
+
+def normalize_import(doc: dict, *, expected_team_id: int, now: datetime | None = None,
+                     deadline_lookup=None, element_types: dict | None = None) -> dict:
+    """Snapshot del operador (o my-team crudo/ya sanitizado) -> payload para `validate`.
+
+    Formatos aceptados:
+    * `mova-fpl-private-team-state-v1` ya sanitizado: solo se podan claves ajenas.
+    * my-team crudo de FPL (`picks`, `transfers`, `chips`, `event`/`gw`).
+    * Simplificado: `picks[{element, position(slot 1..15), selling_price,
+      purchase_price, element_type|pos?, multiplier?, is_captain, is_vice_captain}]`,
+      `bank` en DÉCIMAS (55 = £5.5M, unidad de la API), `free_transfers` (se guarda
+      como limit=FT, made=0), `chips` (lista de nombres disponibles o dicts API),
+      `event`/`gw`, `observed_at` (UTC con zona; por defecto ahora).
+    Claves desconocidas se descartan; los precios/bank en millones se rechazan por
+    rango en `validate` en vez de adivinar la unidad.
+    """
+    if not isinstance(doc, dict):
+        raise ValueError("el snapshot debe ser un objeto JSON")
+    now = now or datetime.now(timezone.utc)
+    team_id = doc.get("team_id")
+    if team_id is not None and int(team_id) != int(expected_team_id):
+        raise ValueError(f"team_id inesperado: {team_id}")
+    event = doc.get("event")
+    gw = event.get("id") if isinstance(event, dict) else (event if event is not None else doc.get("gw"))
+    if gw is None:
+        raise ValueError("snapshot sin event/gw")
+    deadline = event.get("deadline_time") if isinstance(event, dict) else doc.get("deadline_time")
+    if not deadline and deadline_lookup:
+        deadline = deadline_lookup(int(gw))
+    if not deadline:
+        raise ValueError(f"sin deadline_time para GW{gw}; inclúyelo en el snapshot")
+
+    picks = [_pick_from_operator(p, element_types) for p in (doc.get("picks") or ())]
+    tr = doc.get("transfers")
+    if isinstance(tr, dict):
+        transfers = {
+            "bank": tr.get("bank"), "value": tr.get("value"), "limit": tr.get("limit"),
+            "made": tr.get("made"), "cost": tr.get("cost", 0), "status": tr.get("status", ""),
+        }
+    else:
+        if doc.get("bank") is None or doc.get("free_transfers") is None:
+            raise ValueError("snapshot simplificado exige bank (décimas) y free_transfers")
+        transfers = {"bank": doc["bank"],
+                     "limit": strict_int(doc["free_transfers"], "free_transfers"), "made": 0,
+                     "cost": 0, "status": SOURCE_IMPORT, "value": doc.get("value")}
+    transfers["made"] = strict_int(transfers["made"], "transfers.made")
+    transfers["cost"] = strict_int(transfers["cost"], "transfers.cost")
+    if transfers["value"] is None:  # valor del equipo = ventas + banco no se mezcla: sólo plantilla
+        transfers["value"] = sum(p["selling_price"] for p in picks)
+    transfers["bank"] = strict_int(transfers["bank"], "transfers.bank")
+    if transfers.get("value") is not None:
+        transfers["value"] = strict_int(transfers["value"], "transfers.value")
+    if transfers.get("limit") is not None:
+        transfers["limit"] = strict_int(transfers["limit"], "transfers.limit")
+    return {
+        "schema": SCHEMA,
+        "observed_at": doc.get("observed_at") or now.isoformat(),
+        "team_id": int(expected_team_id),
+        "event": {"id": int(gw), "deadline_time": str(deadline)},
+        "picks_last_updated": doc.get("picks_last_updated"),
+        "picks": picks,
+        "transfers": transfers,
+        "chips": [_chip_from_any(c) for c in (doc.get("chips") or ())],
+    }
