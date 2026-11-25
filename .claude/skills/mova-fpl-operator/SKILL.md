@@ -44,6 +44,8 @@ SQLite a mano: `mova` y `/api/v1/*` son el contrato. Reporta siempre fecha, SHA 
 | `triage` | `mova triage --incident-id ID --json` | read |
 | `data.status` | `mova data status` | read |
 | `collect` | `mova collect fpl --force --actor A --reason R --idempotency-key K` | write-memory |
+| `private_state.capture` | `mova private-state capture --force --actor A --reason R --idempotency-key K` | write-memory |
+| `incidents.close_obsolete` | `mova incidents close-obsolete --actor A --reason R --idempotency-key K` | write-memory |
 | `analytics.status` | `mova analytics status` | read |
 | `analytics.reconcile` | `mova analytics reconcile` | write-memory |
 | `model.status` | `mova model status` | read |
@@ -128,7 +130,7 @@ escribe en `ops.db`/`trace.db` con actor, razón e idempotency key. `write-fpl` 
 
 | Síntoma | Acción |
 | --- | --- |
-| `private_team_state` WARN / `FPL_AUTH_REQUIRED` | Julián re-loguea por noVNC ([vps.md](../../../docs/operations/vps.md)); no inventar estado ni tocar el perfil. |
+| `private_team_state` WARN / `FPL_AUTH_REQUIRED` | Squad viejo: correr `mova private-state capture --force`; si falla la sesión, Julián re-loguea por noVNC ([vps.md](../../../docs/operations/vps.md)); no inventar estado ni tocar el perfil. |
 | `autonomous_data_service` FAIL/WARN | `mova data status`; aislar la fuente ([data-service.md](../../../docs/operations/data-service.md)). |
 | `canonical_database`, `trace_database`, `model_artifacts` FAIL | No proponer con el acta hasta restaurar y verificar. |
 | `analytics` sin scorecard | `mova analytics status`; si la GW no está `data_checked`, esperar ([analytics-service.md](../../../docs/operations/analytics-service.md)). |
@@ -141,10 +143,13 @@ cadencia). El collector solo lee fuentes externas; no concede autoridad sobre FP
 
 ## Qué queda en el VPS
 
-Collectors público y privado, timers de analytics/ML, tick (envelope + preflight como
-memoria), `ops.db`/`trace.db`/backups, API de datos y watchdog (solo salud). Delivery y
-research ya no tienen timer. Rollout de ADR-021 (requiere OK de Julián):
-[vps.md](../../../docs/operations/vps.md#rollout-adr-021-modelo-copiloto).
+Colector público, timer de analytics/ML (inferencia), PostgreSQL/API, `ops.db`/`trace.db`
+y backup diario con poda (ADR-022). Tick, watchdog, DR, postgres-sync y captura privada por
+timer están retirados; delivery y research no tienen timer. Estado privado a demanda:
+`mova private-state capture --force` (o `week brief --capture-private-state`) antes de armar
+la GW, y de nuevo tras el Apply si se registra el manual. Salud mínima: `mova data status` y
+`mova doctor --no-network`. Rollout (requiere OK de Julián):
+[vps.md](../../../docs/operations/vps.md#rollout-adr-022-harness-mínimo).
 
 ## Fuentes de verdad
 
